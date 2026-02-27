@@ -412,7 +412,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.self().curateFrontendProjectDocument(myStudy);
 
       this.__blockUpdates = true;
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedProjectDocument);
+      const delta = this.__calculateDelta(myStudy, updatedProjectDocument);
       const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
       const uiPatches = [];
       const workbenchPatches = [];
@@ -942,14 +942,34 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         sourceStudy,
         delta: {},
       }
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__lastSyncedProjectDocument, sourceStudy);
+      const delta = this.__calculateDelta(this.__lastSyncedProjectDocument, sourceStudy);
       if (delta) {
-        // lastChangeDate and creationDate should not be taken into account as data change
-        delete delta["creationDate"];
-        delete delta["lastChangeDate"];
         studyDiffs.delta = delta;
       }
       return studyDiffs;
+    },
+
+    __calculateDelta: function(studyA, studyB) {
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(studyA, studyB);
+      // curate delta
+      if (delta) {
+        delete delta["prjOwner"];
+        // lastChangeDate and creationDate should not be taken into account as data change
+        delete delta["creationDate"];
+        delete delta["lastChangeDate"];
+        // Handle edge case: empty string vs null is not a real change
+        ["thumbnail", "description"].forEach(prop => {
+          if (
+            prop in delta &&
+            Object.keys(delta[prop]).length === 2 &&
+            (delta[prop][0] === "" || delta[prop][0] === null) &&
+            (delta[prop][1] === "" || delta[prop][1] === null)
+          ) {
+            delete delta[prop];
+          }
+        });
+      }
+      return delta;
     },
 
     // didStudyChange takes around 0.5ms

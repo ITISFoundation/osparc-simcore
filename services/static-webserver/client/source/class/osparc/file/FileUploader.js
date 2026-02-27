@@ -44,9 +44,11 @@ qx.Class.define("osparc.file.FileUploader", {
 
   statics: {
     PROGRESS_VALUES: {
+      NOT_STARTED: 0,
       FETCHING_PLINK: 1,
       CHUNKING: 2,
-      COMPLETING: 99
+      COMPLETING: 99,
+      COMPLETED: 100,
     },
 
     createChunk: function(file, fileSize, chunkIdx, chunkSize) {
@@ -68,16 +70,17 @@ qx.Class.define("osparc.file.FileUploader", {
         return;
       }
 
-      const download = false;
+      // take the token to upload the file
+      osparc.file.FilePicker.lockRTCToken(this.getNode());
       const locationId = 0;
       const studyId = this.getNode().getStudy().getUuid();
       const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidV4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
       const fileSize = file.size;
-      const dataStore = osparc.store.Data.getInstance();
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.FETCHING_PLINK);
-      dataStore.getPresignedLink(download, locationId, fileUuid, fileSize)
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getPresignedLink(false, locationId, fileUuid, fileSize)
         .then(presignedLinkData => {
           if (presignedLinkData.resp.urls) {
             this.__presignedLinkData = presignedLinkData;

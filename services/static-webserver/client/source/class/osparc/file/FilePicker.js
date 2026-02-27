@@ -64,6 +64,13 @@ qx.Class.define("osparc.file.FilePicker", {
   },
 
   statics: {
+    POS: {
+      RELOAD: 0,
+      FILES_TREE: 1,
+      TOOLBAR: 2,
+      DOWNLOAD_LINK: 3
+    },
+
     getOutput: function(outputs) {
       const output = outputs.find(out => out.getPortKey() === osparc.data.model.NodePort.FP_PORT_KEY);
       // output can be undefined
@@ -114,6 +121,10 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __setOutputValue: function(node, outputValue) {
+      if (outputValue && !("eTag" in outputValue)) {
+        // add eTag from the beginning to avoid issues with the upload progress bar in case of download links that don't have it
+        outputValue["eTag"] = null;
+      }
       node.setOutputData({
         [osparc.data.model.NodePort.FP_PORT_KEY]: outputValue
       });
@@ -124,7 +135,8 @@ qx.Class.define("osparc.file.FilePicker", {
       } else {
         node.setLabel("File Picker");
       }
-      node.getStatus().setProgress(outputValue ? 100 : 0);
+      osparc.file.FilePicker.releaseRTCToken(node);
+      node.getStatus().setProgress(outputValue ? osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED : osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED);
     },
 
     setOutputValueFromStore: function(node, store, dataset, path, label) {
@@ -245,12 +257,23 @@ qx.Class.define("osparc.file.FilePicker", {
       return output;
     },
 
-    POS: {
-      RELOAD: 0,
-      FILES_TREE: 1,
-      TOOLBAR: 2,
-      DOWNLOAD_LINK: 3
-    }
+    /** RTC Token management
+     * The token is used to avoid file picker's file uploading (progress) race conditions in collaborative studies.
+     * The token is added when the file upload starts and it's removed when the file is uploaded. In this way, the node is locked for all users except the one uploading the file.
+     * In case of the File Pickers, to avoid progress race conditions, the token is removed when the file is uploaded.
+     */
+    lockRTCToken: function(node) {
+      node["fpRTCToken"] = true;
+    },
+
+    releaseRTCToken: function(node) {
+      delete node["fpRTCToken"];
+    },
+
+    isRTCTokenMine: function(node) {
+      return "fpRTCToken" in node && node["fpRTCToken"] === true;
+    },
+    /** /RTC Token management */
   },
 
   members: {

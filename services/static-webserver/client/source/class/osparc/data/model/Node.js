@@ -782,8 +782,10 @@ qx.Class.define("osparc.data.model.Node", {
         let hasOutputs = false;
         Object.keys(outputsData).forEach(outputKey => {
           const output = this.getOutput(outputKey);
-          if (output) {
-            output.setValue(outputsData[outputKey]);
+          const outputValue = outputsData[outputKey];
+          // make sure outputValue is not undefined
+          if (output && outputValue !== undefined) {
+            output.setValue(outputValue);
             hasOutputs = true;
           }
         });
@@ -1463,6 +1465,25 @@ qx.Class.define("osparc.data.model.Node", {
 
     updateNodeFromPatch: function(nodePatches) {
       const nodePropertyKeys = this.self().getProperties();
+      let ignorePatch = false;
+      if (this.isFilePicker()) {
+        console.debug(`Received file picker patch`, nodePatches);
+        nodePatches.forEach(patch => {
+          const nodeProperty = patch.path.split("/")[3];
+          const value = patch.value;
+          if (nodeProperty === "progress" &&
+            value > 0 && // uploading or uploaded
+            value < this.getStatus().getProgress() // progress value goes down
+          ) {
+            // the patch might be buggy, ignore it
+            ignorePatch = true;
+          }
+        });
+      }
+      if (ignorePatch) {
+        console.warn("Ignoring file picker patch", nodePatches);
+        return;
+      }
       nodePatches.forEach(patch => {
         const op = patch.op;
         const path = patch.path;
