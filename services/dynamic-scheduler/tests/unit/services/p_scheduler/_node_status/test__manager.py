@@ -6,16 +6,12 @@ import asyncio
 from collections.abc import AsyncIterable, Awaitable, Callable
 from datetime import timedelta
 from typing import Final
-from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
-from models_library.services_enums import ServiceState
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
@@ -23,7 +19,6 @@ from simcore_service_dynamic_scheduler.services.p_scheduler._models import Sched
 from simcore_service_dynamic_scheduler.services.p_scheduler._node_status._manager import (
     _PERIODIC_HANDLING_MESSAGE,
     StatusManager,
-    _get_scheduler_service_status,
 )
 
 _FAST_STATUS_TTL_CACHE: Final[timedelta] = timedelta(seconds=0.1)
@@ -34,80 +29,8 @@ _MAX_PARALLEL_UPDATES: Final[NonNegativeInt] = 20
 
 
 @pytest.fixture
-def mocked_app() -> AsyncMock:
-    return AsyncMock()
-
-
-@pytest.fixture
 def node_id(faker: Faker) -> NodeID:
     return faker.uuid4(cast_to=None)
-
-
-@pytest.fixture
-def mock_get_service_status(mocker: MockerFixture, service_status: NodeGet | DynamicServiceGet | NodeGetIdle) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._manager.get_service_status",
-        return_value=service_status,
-    )
-
-
-def _idle() -> NodeGetIdle:
-    return TypeAdapter(NodeGetIdle).validate_python(NodeGetIdle.model_json_schema()["examples"][0])
-
-
-def _dynamic(service_state: ServiceState) -> DynamicServiceGet:
-    data = DynamicServiceGet.model_json_schema()["examples"][1]
-    data["service_state"] = service_state
-    return TypeAdapter(DynamicServiceGet).validate_python(data)
-
-
-def _node(service_state: ServiceState) -> NodeGet:
-    data = NodeGet.model_json_schema()["examples"][1]
-    data["service_state"] = service_state
-    return TypeAdapter(NodeGet).validate_python(data)
-
-
-@pytest.mark.parametrize(
-    "service_status, expected_scheduler_status",
-    [
-        # IS_PRESENT
-        pytest.param(_dynamic(ServiceState.RUNNING), SchedulerServiceStatus.IS_PRESENT, id="dynamic-RUNNING"),
-        pytest.param(_node(ServiceState.RUNNING), SchedulerServiceStatus.IS_PRESENT, id="node-RUNNING"),
-        # IN_ERROR
-        pytest.param(_dynamic(ServiceState.FAILED), SchedulerServiceStatus.IN_ERROR, id="dynamic-FAILED"),
-        pytest.param(_node(ServiceState.FAILED), SchedulerServiceStatus.IN_ERROR, id="node-FAILED"),
-        # IS_ABSENT
-        pytest.param(_idle(), SchedulerServiceStatus.IS_ABSENT, id="idle"),
-        pytest.param(_dynamic(ServiceState.IDLE), SchedulerServiceStatus.IS_ABSENT, id="dynamic-IDLE"),
-        pytest.param(_node(ServiceState.IDLE), SchedulerServiceStatus.IS_ABSENT, id="node-IDLE"),
-        pytest.param(_dynamic(ServiceState.COMPLETE), SchedulerServiceStatus.IS_ABSENT, id="dynamic-COMPLETE"),
-        pytest.param(_node(ServiceState.COMPLETE), SchedulerServiceStatus.IS_ABSENT, id="node-COMPLETE"),
-        # TRANSITIONING
-        pytest.param(
-            _dynamic(ServiceState.PENDING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="dynamic-PENDING"
-        ),
-        pytest.param(_node(ServiceState.PENDING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="node-PENDING"),
-        pytest.param(
-            _dynamic(ServiceState.PULLING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="dynamic-PULLING"
-        ),
-        pytest.param(_node(ServiceState.PULLING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="node-PULLING"),
-        pytest.param(
-            _dynamic(ServiceState.STARTING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="dynamic-STARTING"
-        ),
-        pytest.param(_node(ServiceState.STARTING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="node-STARTING"),
-        pytest.param(
-            _dynamic(ServiceState.STOPPING), SchedulerServiceStatus.TRANSITION_TO_ABSENT, id="dynamic-STOPPING"
-        ),
-        pytest.param(_node(ServiceState.STOPPING), SchedulerServiceStatus.TRANSITION_TO_ABSENT, id="node-STOPPING"),
-    ],
-)
-async def test__get_scheduler_service_status(
-    mock_get_service_status: None,
-    mocked_app: AsyncMock,
-    node_id: NodeID,
-    expected_scheduler_status: SchedulerServiceStatus,
-):
-    assert await _get_scheduler_service_status(mocked_app, node_id) == expected_scheduler_status
 
 
 @pytest.fixture
@@ -118,7 +41,7 @@ def scheduler_status() -> SchedulerServiceStatus:
 @pytest.fixture
 def mock__get_scheduler_service_status(mocker: MockerFixture, scheduler_status: SchedulerServiceStatus) -> None:
     mocker.patch(
-        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._manager._get_scheduler_service_status",
+        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._manager._status.get_scheduler_service_status",
         return_value=scheduler_status,
     )
 
