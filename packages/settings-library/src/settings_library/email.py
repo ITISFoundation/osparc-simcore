@@ -88,7 +88,7 @@ class SMTPSettings(BaseCustomSettings):
         return self
 
     @model_validator(mode="after")
-    def _disallow_dangerous_headers(self) -> Self:
+    def _validate_extra_headers_allowed(self) -> Self:
         disallowed = {k for k in self.SMTP_EXTRA_HEADERS if k.lower() not in ALLOWED_HEADERS}
         if disallowed:
             msg = (
