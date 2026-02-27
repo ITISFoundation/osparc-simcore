@@ -2,39 +2,26 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from collections.abc import AsyncIterable, Awaitable, Callable
-from typing import Final
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 import pytest_mock
-from aiodocker import Docker, DockerError
 from faker import Faker
 from fastapi import FastAPI
+from models_library.generated_models.docker_rest_api import TaskState
 from models_library.projects_nodes_io import NodeID
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.aiohttp import status
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.p_scheduler._node_status._docker import (
+    _DOCKER_TASK_STATE_TO_SERVICE_STATE,
     _PREFIX_DY_PROXY,
     _PREFIX_DY_SIDECAR,
-    get_service_category,
-    is_service_running,
+    get_services_presence,
 )
-from simcore_service_dynamic_scheduler.services.p_scheduler._node_status._models import ServiceCategory, ServiceName
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    stop_after_delay,
-    wait_fixed,
+from simcore_service_dynamic_scheduler.services.p_scheduler._node_status._models import (
+    ComponentPresence,
+    ServicesPresence,
 )
-
-_RETRY_PARAMS: Final[dict] = {
-    "stop": stop_after_delay(20),
-    "wait": wait_fixed(0.1),
-    "retry": retry_if_exception_type(AssertionError),
-    "reraise": True,
-}
 
 
 @pytest.fixture
@@ -69,7 +56,9 @@ def node_id_new_style_two_of_two(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def mocked_minimal_service_data(
-    node_id_legacy: NodeID, node_id_new_style_one_of_two: NodeID, node_id_new_style_two_of_two: NodeID
+    node_id_legacy: NodeID,
+    node_id_new_style_one_of_two: NodeID,
+    node_id_new_style_two_of_two: NodeID,
 ) -> dict[NodeID, list[dict]]:
     return {
         node_id_legacy: [
@@ -106,11 +95,12 @@ def mocked_minimal_service_data(
 
 
 @pytest.fixture
-async def mock_service_list(
+async def mock_docker_client(
     mocker: pytest_mock.MockerFixture,
     mocked_minimal_service_data: dict[NodeID, list[dict]],
-) -> MagicMock:
-    mock_docker = MagicMock()
+    task_state: TaskState,
+) -> None:
+    mock_docker = AsyncMock()
     all_services = [service for services in mocked_minimal_service_data.values() for service in services]
 
     async def _filter_services(*, filters: dict | None = None) -> list[dict]:
@@ -123,95 +113,45 @@ async def mock_service_list(
             return [s for s in all_services if s.get("Spec", {}).get("Labels", {}).get(_key) == value]
         return all_services
 
+    async def _filter_tasks(*, filters: dict | None = None) -> list[dict]:
+        # returns a single task with the parametrized task_state
+        return [
+            {
+                "UpdatedAt": "2026-01-01T00:00:00.000000000Z",
+                "Status": {"State": task_state.value},
+            }
+        ]
+
     mock_docker.services.list = _filter_services
+    mock_docker.tasks.list = _filter_tasks
     mocker.patch(
         "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._docker.get_remote_docker_client",
         return_value=mock_docker,
     )
-    return mock_docker
 
 
-async def test_get_service_category(
-    mock_service_list: None,
+@pytest.mark.parametrize(
+    "task_state, expected_presence", [(ts, _DOCKER_TASK_STATE_TO_SERVICE_STATE[ts]) for ts in list(TaskState)]
+)
+async def test_get_services_presence(
+    mock_docker_client: None,
+    task_state: TaskState,
+    expected_presence: ComponentPresence,
     app: FastAPI,
     node_id_legacy: NodeID,
     node_id_new_style_one_of_two: NodeID,
     node_id_new_style_two_of_two: NodeID,
 ):
-    assert await get_service_category(app, node_id_legacy) == {
-        ServiceCategory.LEGACY: f"random_{node_id_legacy}",
-    }
-    assert await get_service_category(app, node_id_new_style_one_of_two) == {
-        ServiceCategory.DY_SIDECAR: f"{_PREFIX_DY_SIDECAR}_{node_id_new_style_one_of_two}"
-    }
-    assert await get_service_category(app, node_id_new_style_two_of_two) == {
-        ServiceCategory.DY_SIDECAR: f"{_PREFIX_DY_SIDECAR}_{node_id_new_style_two_of_two}",
-        ServiceCategory.DY_PROXY: f"{_PREFIX_DY_PROXY}_{node_id_new_style_two_of_two}",
-    }
-
-
-# now test the
-@pytest.fixture
-async def mock_get_remote_docker_client(mocker: pytest_mock.MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._docker.get_remote_docker_client",
-        return_value=Docker(),
+    assert await get_services_presence(app, node_id_legacy) == ServicesPresence(
+        legacy=expected_presence,
     )
 
+    assert await get_services_presence(app, node_id_new_style_one_of_two) == ServicesPresence(
+        dy_sidecar=expected_presence,
+        dy_proxy=ComponentPresence.ABSENT,
+    )
 
-async def test_is_service_running_missing_service(
-    docker_swarm: None, mock_get_remote_docker_client: None, app: FastAPI
-):
-    assert await is_service_running(app, "missing_service") is False
-
-
-@pytest.fixture
-async def aiodocker_client(docker_swarm: None) -> AsyncIterable[Docker]:
-    async with Docker() as docker:
-        yield docker
-
-
-@pytest.fixture
-async def create_service(aiodocker_client: Docker) -> AsyncIterable[Callable[[ServiceName], Awaitable[None]]]:
-    started_services: set[ServiceName] = set()
-
-    async def _(service_name: ServiceName) -> None:
-        service = await aiodocker_client.services.create(
-            task_template={"ContainerSpec": {"Image": "busybox:latest", "Command": ["sleep", "300"]}},
-            name=service_name,
-        )
-        assert service
-        started_services.add(service_name)
-
-    yield _
-
-    for service_name in started_services:
-        try:
-            await aiodocker_client.services.delete(service_name)
-        except DockerError as e:
-            if e.status != status.HTTP_404_NOT_FOUND:
-                raise
-
-
-async def test_is_service_running(
-    mock_get_remote_docker_client: None,
-    aiodocker_client: Docker,
-    app: FastAPI,
-    create_service: Callable[[ServiceName], Awaitable[None]],
-):
-    service_name = "test_service"
-    await create_service(service_name)
-
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            print("CHECK IS RUNNING")
-            assert await is_service_running(app, service_name) is True
-
-    # stop the service by removing it
-    await aiodocker_client.services.delete(service_name)
-
-    # wait for the service to be gone
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            print("CHECK IS NOT")
-            assert await is_service_running(app, service_name) is False
+    assert await get_services_presence(app, node_id_new_style_two_of_two) == ServicesPresence(
+        dy_sidecar=expected_presence,
+        dy_proxy=expected_presence,
+    )
