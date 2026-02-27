@@ -71,7 +71,7 @@ qx.Class.define("osparc.file.FileUploader", {
       }
 
       // take the token to upload the file
-      osparc.file.FilePicker.addRTCToken(this.getNode());
+      osparc.file.FilePicker.lockRTCToken(this.getNode());
       const locationId = 0;
       const studyId = this.getNode().getStudy().getUuid();
       const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidV4();

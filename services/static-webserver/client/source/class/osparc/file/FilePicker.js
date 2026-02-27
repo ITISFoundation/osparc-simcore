@@ -135,7 +135,7 @@ qx.Class.define("osparc.file.FilePicker", {
       } else {
         node.setLabel("File Picker");
       }
-      osparc.file.FilePicker.removeRTCToken(node);
+      osparc.file.FilePicker.releaseRTCToken(node);
       node.getStatus().setProgress(outputValue ? osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED : osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED);
     },
 
@@ -262,11 +262,11 @@ qx.Class.define("osparc.file.FilePicker", {
      * The token is added when the file upload starts and it's removed when the file is uploaded. In this way, the node is locked for all users except the one uploading the file.
      * In case of the File Pickers, to avoid progress race conditions, the token is removed when the file is uploaded.
      */
-    addRTCToken: function(node) {
+    lockRTCToken: function(node) {
       node["fpRTCToken"] = true;
     },
 
-    removeRTCToken: function(node) {
+    releaseRTCToken: function(node) {
       delete node["fpRTCToken"];
     },
 
