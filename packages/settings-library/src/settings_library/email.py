@@ -9,27 +9,21 @@ from pydantic.types import SecretStr
 from .base import BaseCustomSettings
 from .basic_types import PortInt
 
-FORBIDDEN_HEADERS = frozenset(
+ALLOWED_HEADERS = frozenset(
     {
-        # SMTP envelope — controlled by the mailer, not config
-        "from",
-        "to",
-        "cc",
-        "bcc",
-        "reply-to",
-        # Authentication / security — must never be overridden
-        "dkim-signature",
-        "domainkey-signature",
-        "authentication-results",
-        "received-spf",
-        "arc-seal",
-        "arc-message-signature",
-        # Structural message fields
-        "mime-version",
-        "content-type",
-        "content-transfer-encoding",
-        "message-id",
-        "date",
+        # AWS SES routing/configuration
+        "x-ses-tenant",
+        "x-ses-configuration-set",
+        "x-ses-source-arn",
+        "x-ses-from-arn",
+        "x-ses-return-path-arn",
+        # Delivery metadata (safe, non-structural)
+        "return-path",
+        "x-mailer",
+        "x-priority",
+        "precedence",
+        "list-unsubscribe",
+        "list-unsubscribe-post",
     }
 )
 
@@ -95,9 +89,12 @@ class SMTPSettings(BaseCustomSettings):
 
     @model_validator(mode="after")
     def _disallow_dangerous_headers(self) -> Self:
-        forbidden = FORBIDDEN_HEADERS & {k.lower() for k in self.SMTP_EXTRA_HEADERS}
-        if forbidden:
-            msg = f"SMTP_EXTRA_HEADERS contains forbidden headers: {sorted(forbidden)}"
+        disallowed = {k for k in self.SMTP_EXTRA_HEADERS if k.lower() not in ALLOWED_HEADERS}
+        if disallowed:
+            msg = (
+                f"SMTP_EXTRA_HEADERS contains non-permitted headers: {sorted(disallowed)}. "
+                f"Allowed: {sorted(ALLOWED_HEADERS)}"
+            )
             raise ValueError(msg)
         return self
 
