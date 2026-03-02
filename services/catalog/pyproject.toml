@@ -1,0 +1,6 @@
+[project]
+name = "catalog"
+version = "0.1.0"
+description = "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)"
+requires-python = ">=3.13.9"
+dependencies = []
