@@ -275,12 +275,15 @@ class RemoteControlHttpClient:
             return dict_response
 
     async def _post_core_stats(self) -> dict:
+        """for details refer to https://rclone.org/rc/#core-stats"""
         return await self._request("POST", "core/stats")
 
     async def _post_vfs_queue(self) -> dict:
+        """for details refer to https://rclone.org/rc/#vfs-queue"""
         return await self._request("POST", "vfs/queue")
 
     async def _rc_noop(self) -> dict:
+        """for details refer to https://rclone.org/rc/#rc-noopauth"""
         return await self._request("POST", "rc/noopauth")
 
     async def get_mount_activity(self) -> MountActivity:
