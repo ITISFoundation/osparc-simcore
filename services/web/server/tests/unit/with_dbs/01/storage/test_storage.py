@@ -167,7 +167,7 @@ async def test_notify_path_change(
     mocker.patch("simcore_service_webserver.dynamic_scheduler.api.notify_path_change", autospec=True)
 
     assert client.app
-    url = f"/v0/storage/locations/{location_id}/paths/{quote(str(s3_path), safe='')}:notifyChange"
+    url = f"/v0/storage/locations/{location_id}/paths/{quote(f'{s3_path}', safe='')}:notifyChange"
 
     resp = await client.post(url)
     data, error = await assert_status(resp, expected)

@@ -197,7 +197,7 @@ async def notify_change_in_path(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(StoragePathNotifyChangeParams, request)
 
     await dynamic_scheduler.notify_path_change(
-        request.app, path=TypeAdapter(StorageFileID).validate_python(path_params.path)
+        request.app, path=TypeAdapter(StorageFileID).validate_python(f"{path_params.path}")
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
