@@ -10,6 +10,7 @@ from typing import Any, Final
 
 from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
@@ -26,7 +27,7 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     MountActivity,
     RCloneMountManager,
 )
-from tenacity import AsyncRetrying, TryAgain
+from tenacity import AsyncRetrying
 from tenacity.before import before_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -41,6 +42,10 @@ _logger = logging.getLogger(__name__)
 
 _EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
 _CONTAINER_REMOVAL_WAIT_S: Final[timedelta] = timedelta(seconds=20)
+
+
+class ContainerStillPresentError(OsparcErrorMixin, RuntimeError):
+    msg_template: str = "Container {container_name} is still present after deletion attempt"
 
 
 @dataclass
@@ -206,7 +211,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
                         if e.status == status.HTTP_404_NOT_FOUND:
                             return
                         raise
-                    raise TryAgain
+                    raise ContainerStillPresentError(container_name=container_name)
 
     async def get_node_address(self) -> str:
         async with _get_docker_client() as client:
