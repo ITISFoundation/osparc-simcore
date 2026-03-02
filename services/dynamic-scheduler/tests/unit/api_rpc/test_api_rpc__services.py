@@ -560,7 +560,7 @@ async def test_update_projects_networks(
 
 
 @pytest.fixture
-def s3_directory(faker: Faker) -> StorageFileID:
+def s3_path(faker: Faker) -> StorageFileID:
     remote = f"{faker.uuid4()}/{faker.uuid4()}/remote-dir"
     return TypeAdapter(StorageFileID).validate_python(remote)
 
