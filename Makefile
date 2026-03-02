@@ -449,6 +449,27 @@ define _wait_for_running
 		echo " OK"
 endef
 
+# Wait for a service to become healthy (Docker healthcheck passes)
+# This is critical for migration: app services must not start until migration is complete
+define _wait_for_healthy
+	@echo -n "  Waiting for $(1) to become healthy..."
+	@count=0; \
+	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+		container_id=$$(docker ps --filter "name=$(SWARM_STACK_NAME)_$(1)" --format "{{.ID}}" 2>/dev/null | head -1); \
+		if [ -n "$$container_id" ]; then \
+			health=$$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$$container_id" 2>/dev/null || echo "none"); \
+			if [ "$$health" = "healthy" ]; then \
+				break; \
+			fi; \
+		fi; \
+		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+	done; \
+	if [ $$count -ge $(MAX_WAIT_ITERATIONS) ]; then \
+		echo " TIMEOUT"; echo "ERROR: Service $(1) did not become healthy"; exit 1; \
+	fi; \
+	echo " OK"
+endef
+
 up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in two phases: infrastructure first, then application services
 	# Deploy ops and vendors stacks
 	@$(MAKE) .deploy-ops
@@ -460,8 +481,13 @@ up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production 
 		'.services |= with_entries(select($(_YQ_INFRA_FILTER)))' \
 		< $< > .stack-infra-tmp.yml
 	@docker stack deploy --detach=true --with-registry-auth -c .stack-infra-tmp.yml $(SWARM_STACK_NAME)
-	@echo "Waiting for infrastructure services to be ready..."
+	@echo "Waiting for infrastructure services to be running..."
 	@$(foreach service,$(INFRA_SERVICES),$(call _wait_for_running,$(service)))
+	@echo "Waiting for infrastructure services to be healthy (including migration completion)..."
+	$(call _wait_for_healthy,postgres)
+	$(call _wait_for_healthy,rabbit)
+	$(call _wait_for_healthy,redis)
+	$(call _wait_for_healthy,migration)
 	# Phase 2: Deploy all services
 	@echo "Phase 2: Deploying all application services..."
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
