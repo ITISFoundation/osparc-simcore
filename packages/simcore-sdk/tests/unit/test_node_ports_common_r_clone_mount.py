@@ -413,7 +413,7 @@ def tracked_mount_with_mocked_client(
         pytest.param(
             [False, False, False],
             [True, True, False],
-            id="four_consecutive_unresponsive_returns_false",
+            id="three_consecutive_unresponsive_third_returns_false",
         ),
         pytest.param(
             [False, False, True, False, False, False],
