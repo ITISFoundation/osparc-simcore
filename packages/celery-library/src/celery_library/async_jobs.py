@@ -116,9 +116,9 @@ async def get_job_status(
     job_id: AsyncJobId,
 ) -> AsyncJobStatus:
     try:
-        task_status = await task_manager.get_task_status(
+        task_status = await task_manager.get_status(
             owner_metadata=owner_metadata,
-            task_uuid=job_id,
+            task_or_group_uuid=job_id,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc

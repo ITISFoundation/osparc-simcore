@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
 from models_library.notifications.rpc.template import (
@@ -20,8 +18,6 @@ from ...models.template import TemplateRef
 from .dependencies import get_notifications_templates_service
 
 router = RPCRouter()
-
-_logger = logging.getLogger(__name__)
 
 
 @router.expose(

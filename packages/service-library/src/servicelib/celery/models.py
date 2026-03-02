@@ -22,7 +22,7 @@ type GroupUUID = UUID
 _KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEY_CHARS = ("*", _KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUE_CHARS = (_KEY_DELIMITATOR, "=")
-AllowedTypes = int | float | bool | str | None | list[str] | list[int] | list[float] | list[bool]
+type AllowedTypes = int | float | bool | str | list[str] | list[int] | list[float] | list[bool] | None
 
 type Wildcard = Literal["*"]
 WILDCARD: Final[Wildcard] = "*"
@@ -218,6 +218,8 @@ class TaskStore(Protocol):
 
     async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
 
+    async def is_group(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...
+
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
     async def remove_task(self, task_key: TaskKey) -> None: ...
@@ -282,6 +284,7 @@ class GroupStatus(BaseModel):
     total_count: NonNegativeInt
     is_done: bool
     is_successful: bool
+    progress_report: ProgressReport
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -298,6 +301,17 @@ class GroupStatus(BaseModel):
                         "total_count": 2,
                         "is_done": False,
                         "is_successful": False,
+                        "progress_report": {
+                            "actual_value": 0.5,
+                            "total": 1.0,
+                            "attempts": 1,
+                            "unit": "Byte",
+                            "message": {
+                                "description": "some description",
+                                "current": 12.2,
+                                "total": 123,
+                            },
+                        },
                     }
                 ]
             }
