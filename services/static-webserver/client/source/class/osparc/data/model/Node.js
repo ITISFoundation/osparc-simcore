@@ -589,6 +589,7 @@ qx.Class.define("osparc.data.model.Node", {
         const oldProgress = this.getStatus().getProgress();
         if (this.isFilePicker() && oldProgress > 0 && oldProgress < 100) {
           // file is being uploaded
+          console.warn("Progress update received during file upload, ignoring it to avoid UI glitches");
           this.getStatus().setProgress(oldProgress);
         } else {
           this.getStatus().setProgress(progress);
