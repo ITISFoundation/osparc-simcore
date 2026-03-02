@@ -281,7 +281,7 @@ class RemoteControlHttpClient:
         return await self._request("POST", "vfs/queue")
 
     async def _rc_noop(self) -> dict:
-        return await self._request("POST", "rc/noop")
+        return await self._request("POST", "rc/noopauth")
 
     async def get_mount_activity(self) -> MountActivity:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
