@@ -388,53 +388,42 @@ def tracked_mount_with_mocked_client(
 
 
 @pytest.mark.parametrize(
-    "is_responsive_sequence, expected_results",
+    "steps",
     [
         pytest.param(
-            [True],
-            [True],
+            # (is_responsive, expected_is_healthy)
+            [(True, True)],
             id="single_responsive_returns_true",
         ),
         pytest.param(
-            [False],
-            [True],
+            [(False, True)],
             id="single_unresponsive_returns_true_below_threshold",
         ),
         pytest.param(
-            [False, False],
-            [True, True],
+            [(False, True), (False, True)],
             id="two_consecutive_unresponsive_still_true",
         ),
         pytest.param(
-            [False, False, False],
-            [True, True, False],
-            id="three_consecutive_unresponsive_returns_true",
-        ),
-        pytest.param(
-            [False, False, False],
-            [True, True, False],
+            [(False, True), (False, True), (False, False)],
             id="three_consecutive_unresponsive_third_returns_false",
         ),
         pytest.param(
-            [False, False, True, False, False, False],
-            [True, True, True, True, True, False],
+            [(False, True), (False, True), (True, True), (False, True), (False, True), (False, False)],
             id="responsive_in_middle_resets_counter",
         ),
         pytest.param(
-            [False, False, False, True, False, False, False],
-            [True, True, False, True, True, True, False],
+            [(False, True), (False, True), (False, False), (True, True), (False, True), (False, True), (False, False)],
             id="responsive_in_middle_resets_failing_counter",
         ),
     ],
 )
 async def test_is_healthy(
     tracked_mount_with_mocked_client: tuple[_TrackedMount, AsyncMock],
-    is_responsive_sequence: list[bool],
-    expected_results: list[bool],
+    steps: list[tuple[bool, bool]],
 ):
     mount, mock_is_responsive = tracked_mount_with_mocked_client
 
-    for i, (is_resp, expected) in enumerate(zip(is_responsive_sequence, expected_results, strict=True)):
+    for i, (is_resp, expected) in enumerate(steps):
         mock_is_responsive.return_value = is_resp
         result = await mount.is_healthy()
         assert result is expected, f"Step {i}: is_responsive={is_resp}, expected is_healthy={expected}, got {result}"
