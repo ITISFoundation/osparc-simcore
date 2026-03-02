@@ -157,5 +157,5 @@ async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> No
 
 async def notify_path_change(app: FastAPI, *, node_id: NodeID, path: StorageFileID, recursive: bool) -> None:
     await container_extensions.notify_path_change(
-        get_rabbitmq_rpc_client(app), node_id=node_id, s3_directory=path, recursive=recursive
+        get_rabbitmq_rpc_client(app), node_id=node_id, path=path, recursive=recursive
     )
