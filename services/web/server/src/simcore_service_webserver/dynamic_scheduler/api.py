@@ -227,6 +227,6 @@ async def update_projects_networks(app: web.Application, *, project_id: ProjectI
     await services.update_projects_networks(get_rabbitmq_rpc_client(app), project_id=project_id)
 
 
-async def refresh_containers_files(app: web.Application, *, s3_directory: StorageFileID) -> None:
-    node_id = NodeID(s3_directory.split("/")[1])
-    await services.refresh_containers_files(get_rabbitmq_rpc_client(app), node_id=node_id, s3_directory=s3_directory)
+async def notify_path_change(app: web.Application, *, path: StorageFileID) -> None:
+    node_id = NodeID(path.split("/")[1])
+    await services.notify_path_change(get_rabbitmq_rpc_client(app), node_id=node_id, path=path)

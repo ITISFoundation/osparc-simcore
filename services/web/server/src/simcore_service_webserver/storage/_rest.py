@@ -29,10 +29,10 @@ from models_library.api_schemas_webserver.storage import (
     SearchBodyParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
-    StoragePathRefreshParams,
+    StoragePathNotifyChangeParams,
 )
 from models_library.products import ProductName
-from models_library.projects_nodes_io import LocationID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import (
@@ -183,20 +183,22 @@ async def list_paths(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"{_storage_locations_prefix}/{{location_id}}/paths/{{s3_directory}}:refresh",
-    name="refresh_files_in_path",
+    f"{_storage_locations_prefix}/{{location_id}}/paths/{{path}}:notifyChange",
+    name="notify_change_in_path",
 )
 @login_required
 @permission_required("storage.files.*")
-async def refresh_files_in_path(request: web.Request) -> web.Response:
+async def notify_change_in_path(request: web.Request) -> web.Response:
     # After a change in a S3 directory, the frontend should call this endpoint.
     # Inform backend service that a change occurred in a S3 directory.
     # This is used by the running dynamic service node to trigger a reload of the files from S3 for a given directory.
     # If no service is running, no errors are raised.
     _ = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(StoragePathRefreshParams, request)
+    path_params = parse_request_path_parameters_as(StoragePathNotifyChangeParams, request)
 
-    await dynamic_scheduler.refresh_containers_files(request.app, s3_directory=path_params.s3_directory)
+    await dynamic_scheduler.notify_path_change(
+        request.app, path=TypeAdapter(StorageFileID).validate_python(path_params.path)
+    )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 

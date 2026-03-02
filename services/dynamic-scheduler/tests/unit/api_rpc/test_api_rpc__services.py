@@ -565,13 +565,13 @@ def s3_directory(faker: Faker) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(remote)
 
 
-async def test_refresh_containers_files_missing(
-    rpc_client: RabbitMQRPCClient, node_id: NodeID, s3_directory: StorageFileID, caplog: pytest.LogCaptureFixture
+async def test_notify_path_change_missing(
+    rpc_client: RabbitMQRPCClient, node_id: NodeID, s3_path: StorageFileID, caplog: pytest.LogCaptureFixture
 ):
     caplog.set_level(logging.DEBUG)
     caplog.clear()
 
-    await services.refresh_containers_files(rpc_client, node_id=node_id, s3_directory=s3_directory, recursive=False)
+    await services.notify_path_change(rpc_client, node_id=node_id, path=s3_path, recursive=False)
 
     assert "Did not find a remote method" in caplog.text
 
@@ -582,22 +582,22 @@ def mock_container_extensions(
 ) -> None:
     module_base = "simcore_service_dynamic_scheduler.services.common_interface"
     mocker.patch(
-        f"{module_base}.container_extensions.refresh_containers_files",
+        f"{module_base}.container_extensions.notify_path_change",
         autospec=True,
         return_value=None,
     )
 
 
-async def test_refresh_containers_files(
+async def test_notify_path_change(
     mock_container_extensions: None,
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
-    s3_directory: StorageFileID,
+    s3_path: StorageFileID,
     caplog: pytest.LogCaptureFixture,
 ):
     caplog.set_level(logging.DEBUG)
     caplog.clear()
 
-    await services.refresh_containers_files(rpc_client, node_id=node_id, s3_directory=s3_directory, recursive=False)
+    await services.notify_path_change(rpc_client, node_id=node_id, path=s3_path, recursive=False)
 
     assert "Did not find a remote method" not in caplog.text

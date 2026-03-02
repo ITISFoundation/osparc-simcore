@@ -15,7 +15,7 @@ from ..api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
     MAX_NUMBER_OF_PATHS_PER_PAGE,
 )
-from ..projects_nodes_io import LocationID, SimcoreS3FileID
+from ..projects_nodes_io import LocationID
 from ..rest_pagination import CursorQueryParameters
 from ._base import InputSchema
 
@@ -28,8 +28,8 @@ class StoragePathComputeSizeParams(StorageLocationPathParams):
     path: Path
 
 
-class StoragePathRefreshParams(StorageLocationPathParams):
-    s3_directory: SimcoreS3FileID
+class StoragePathNotifyChangeParams(StorageLocationPathParams):
+    path: Path
 
 
 class ListPathsQueryParams(InputSchema, CursorQueryParameters):

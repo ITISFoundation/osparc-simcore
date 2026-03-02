@@ -682,16 +682,16 @@ def s3_directory(faker: Faker) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(remote)
 
 
-async def test_refresh_containers_files(
+async def test_notify_path_change(
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     s3_directory: StorageFileID,
 ):
     app_state = AppState(app)
 
-    await container_extensions.refresh_containers_files(
+    await container_extensions.notify_path_change(
         rpc_client,
         node_id=app_state.settings.DY_SIDECAR_NODE_ID,
-        s3_directory=s3_directory,
+        path=s3_directory,
         recursive=True,
     )

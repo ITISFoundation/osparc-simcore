@@ -7576,13 +7576,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CursorPage_TypeVar_Customized_PathMetaDataGet_'
-  /v0/storage/locations/{location_id}/paths/{s3_directory}:refresh:
+  /v0/storage/locations/{location_id}/paths/{path}:notifyChange:
     post:
       tags:
       - storage
-      summary: Refresh Files In Path
+      summary: Notify Path Change
       description: triggers a reload of the files from S3 for a given directory
-      operationId: refresh_files_in_path
+      operationId: notify_path_change
       parameters:
       - name: location_id
         in: path
@@ -7590,13 +7590,13 @@ paths:
         schema:
           type: integer
           title: Location Id
-      - name: s3_directory
+      - name: path
         in: path
         required: true
         schema:
           type: string
-          pattern: ^(exports\/\d+\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$)
-          title: S3 Directory
+          format: path
+          title: Path
       responses:
         '204':
           description: Successful Response

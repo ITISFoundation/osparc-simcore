@@ -85,13 +85,9 @@ async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> No
 
 
 @router.expose()
-async def refresh_containers_files(
-    app: FastAPI, *, node_id: NodeID, s3_directory: StorageFileID, recursive: bool
-) -> None:
+async def notify_path_change(app: FastAPI, *, node_id: NodeID, path: StorageFileID, recursive: bool) -> None:
     try:
-        await common_interface.refresh_containers_files(
-            app, node_id=node_id, s3_directory=s3_directory, recursive=recursive
-        )
+        await common_interface.notify_path_change(app, node_id=node_id, path=path, recursive=recursive)
     except RemoteMethodNotRegisteredError as e:
         _logger.debug(
             "Did not find a remote method '%s'. Service is not running.",

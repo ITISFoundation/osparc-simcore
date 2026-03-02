@@ -46,6 +46,6 @@ async def detach_container_from_network(app: FastAPI, *, container_id: str, netw
 
 
 @router.expose()
-async def refresh_containers_files(app: FastAPI, *, s3_directory: StorageFileID, recursive: bool) -> None:
+async def notify_path_change(app: FastAPI, *, path: StorageFileID, recursive: bool) -> None:
     """refresh directory content from s3, if data is mounted from S3"""
-    await container_extensions.refresh_containers_files(app=app, s3_directory=s3_directory, recursive=recursive)
+    await container_extensions.notify_path_change(app=app, path=path, recursive=recursive)

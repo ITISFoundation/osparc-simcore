@@ -74,14 +74,14 @@ async def detach_container_from_network(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def refresh_containers_files(
-    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, s3_directory: StorageFileID, recursive: bool
+async def notify_path_change(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, path: StorageFileID, recursive: bool
 ) -> None:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("refresh_containers_files"),
-        s3_directory=s3_directory,
+        TypeAdapter(RPCMethodName).validate_python("notify_path_change"),
+        path=path,
         recursive=recursive,
     )
     assert result is None  # nosec

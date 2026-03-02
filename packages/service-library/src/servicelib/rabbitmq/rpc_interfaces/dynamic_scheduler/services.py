@@ -162,14 +162,14 @@ async def update_projects_networks(rabbitmq_rpc_client: RabbitMQRPCClient, *, pr
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def refresh_containers_files(
-    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, s3_directory: StorageFileID, recursive: bool = False
+async def notify_path_change(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, path: StorageFileID, recursive: bool = False
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("refresh_containers_files"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("notify_path_change"),
         node_id=node_id,
-        s3_directory=s3_directory,
+        path=path,
         recursive=recursive,
         timeout_s=_RPC_DEFAULT_TIMEOUT_S,
     )

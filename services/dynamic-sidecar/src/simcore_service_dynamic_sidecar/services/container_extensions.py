@@ -102,8 +102,12 @@ async def detach_container_from_network(*, container_id: str, network_id: str) -
         await network.disconnect({"Container": container_id, "Force": True})
 
 
-async def refresh_containers_files(app: FastAPI, *, s3_directory: StorageFileID, recursive: bool) -> None:
+async def notify_path_change(app: FastAPI, *, path: StorageFileID, recursive: bool) -> None:
+    """
+    Informs that a path inside S3 changed and more than likely needs to be refreshed in the container.
+    This is relevant when the path is mounted from S3.
+    """
     try:
-        await get_r_clone_mount_manager(app).refresh_path(s3_directory, recursive=recursive)
+        await get_r_clone_mount_manager(app).refresh_path(path, recursive=recursive)
     except NoMountFoundForRemotePathError:
-        _logger.warning("No mount found for path='%s'. TIP: ensure mounting is enabled", s3_directory)
+        _logger.warning("No mount found for path='%s'. TIP: ensure mounting is enabled", path)

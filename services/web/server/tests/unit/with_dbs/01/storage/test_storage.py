@@ -141,7 +141,7 @@ async def test_list_storage_paths(
 
 
 @pytest.fixture
-def s3_directory(faker: Faker) -> StorageFileID:
+def s3_path(faker: Faker) -> StorageFileID:
     remote = f"{faker.uuid4()}/{faker.uuid4()}/remote-dir"
     return TypeAdapter(StorageFileID).validate_python(remote)
 
@@ -155,19 +155,19 @@ def s3_directory(faker: Faker) -> StorageFileID:
         (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
-async def test_refresh_files_in_path(
+async def test_notify_path_change(
     client: TestClient,
     logged_user: dict[str, Any],
     expected: int,
     location_id: LocationID,
-    s3_directory: StorageFileID,
+    s3_path: StorageFileID,
     mocker: MockerFixture,
 ):
-    # Mock refresh_containers_files to prevent actual call
-    mocker.patch("simcore_service_webserver.dynamic_scheduler.api.refresh_containers_files", autospec=True)
+    # Mock notify_path_change to prevent actual call
+    mocker.patch("simcore_service_webserver.dynamic_scheduler.api.notify_path_change", autospec=True)
 
     assert client.app
-    url = f"/v0/storage/locations/{location_id}/paths/{quote(str(s3_directory), safe='')}:refresh"
+    url = f"/v0/storage/locations/{location_id}/paths/{quote(str(s3_path), safe='')}:notifyChange"
 
     resp = await client.post(url)
     data, error = await assert_status(resp, expected)
