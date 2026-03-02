@@ -61,6 +61,11 @@ services:
     ports:
       - "9002:9000"
       - "9001:9001"
+    volumes:
+      - rustfs_data_0:/data/rustfs0
+      - rustfs_data_1:/data/rustfs1
+      - rustfs_data_2:/data/rustfs2
+      - rustfs_data_3:/data/rustfs3
     environment:
       - RUSTFS_VOLUMES=/data/rustfs{0..3} # Define 4 storage volumes
       - RUSTFS_ADDRESS=0.0.0.0:9000
