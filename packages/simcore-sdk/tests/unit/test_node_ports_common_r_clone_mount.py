@@ -391,28 +391,53 @@ def tracked_mount_with_mocked_client(
     "steps",
     [
         pytest.param(
-            # (is_responsive, expected_is_healthy)
-            [(True, True)],
+            [
+                (True, True),
+            ],
             id="single_responsive_returns_true",
         ),
         pytest.param(
-            [(False, True)],
+            [
+                (False, True),
+            ],
             id="single_unresponsive_returns_true_below_threshold",
         ),
         pytest.param(
-            [(False, True), (False, True)],
+            [
+                (False, True),
+                (False, True),
+            ],
             id="two_consecutive_unresponsive_still_true",
         ),
         pytest.param(
-            [(False, True), (False, True), (False, False)],
+            [
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
             id="three_consecutive_unresponsive_third_returns_false",
         ),
         pytest.param(
-            [(False, True), (False, True), (True, True), (False, True), (False, True), (False, False)],
+            [
+                (False, True),
+                (False, True),
+                (True, True),
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
             id="responsive_in_middle_resets_counter",
         ),
         pytest.param(
-            [(False, True), (False, True), (False, False), (True, True), (False, True), (False, True), (False, False)],
+            [
+                (False, True),
+                (False, True),
+                (False, False),
+                (True, True),
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
             id="responsive_in_middle_resets_failing_counter",
         ),
     ],
