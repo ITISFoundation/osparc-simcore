@@ -1,3 +1,4 @@
+from fastapi import FastAPI
 from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
 
@@ -18,5 +19,5 @@ def get_notifications_templates_service() -> TemplatesService:
     return TemplatesService(templates_repo, renderer)
 
 
-def get_user_preferences_service(app) -> UserPreferencesService:
+def get_user_preferences_service(app: FastAPI) -> UserPreferencesService:
     return UserPreferencesService(get_repository(app, UserPreferencesRepository))

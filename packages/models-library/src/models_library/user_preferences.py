@@ -121,8 +121,13 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
 class NotificationsUserPreference(_BaseUserPreferenceModel):
     preference_type: Literal[PreferenceType.NOTIFICATIONS] = PreferenceType.NOTIFICATIONS
 
+    value: Any
+
+    def to_db(self) -> dict:
+        return self.model_dump(exclude={"preference_type"})
+
 
 type AnyUserPreference = Annotated[
-    FrontendUserPreference | UserServiceUserPreference,
+    FrontendUserPreference | UserServiceUserPreference | NotificationsUserPreference,
     Field(discriminator="preference_type"),
 ]

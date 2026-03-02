@@ -25,12 +25,12 @@ async def _postgres_liveness_lifespan(app: FastAPI, state: State) -> AsyncIterat
 
     app.state.postgres_liveness = PostgresLiveness(async_engine)
 
-    with log_context(_logger, logging.INFO, msg="setup postgres health"):
+    with log_context(_logger, logging.INFO, msg="setup postgres liveness"):
         await app.state.postgres_liveness.setup()
 
     yield {}
 
-    with log_context(_logger, logging.INFO, msg="teardown postgres health"):
+    with log_context(_logger, logging.INFO, msg="teardown postgres liveness"):
         await app.state.postgres_liveness.teardown()
 
 
