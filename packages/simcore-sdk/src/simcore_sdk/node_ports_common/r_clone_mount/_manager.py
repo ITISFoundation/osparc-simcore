@@ -122,7 +122,6 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         await self._rc_http_client.wait_for_all_transfers_to_complete()
 
     async def is_healthy(self) -> bool:
-        """Returns False only after consecutive unresponsive checks reach the threshold."""
         if await self._rc_http_client.is_responsive():
             self._consecutive_unresponsive_count = 0
             return True
