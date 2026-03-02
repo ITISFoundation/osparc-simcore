@@ -427,7 +427,7 @@ def tracked_mount_with_mocked_client(
         ),
     ],
 )
-async def test_check_responsive(
+async def test_is_healthy(
     tracked_mount_with_mocked_client: tuple[_TrackedMount, AsyncMock],
     is_responsive_sequence: list[bool],
     expected_results: list[bool],
@@ -436,7 +436,5 @@ async def test_check_responsive(
 
     for i, (is_resp, expected) in enumerate(zip(is_responsive_sequence, expected_results, strict=True)):
         mock_is_responsive.return_value = is_resp
-        result = await mount.check_responsive()
-        assert result is expected, (
-            f"Step {i}: is_responsive={is_resp}, expected check_responsive={expected}, got {result}"
-        )
+        result = await mount.is_healthy()
+        assert result is expected, f"Step {i}: is_responsive={is_resp}, expected is_healthy={expected}, got {result}"

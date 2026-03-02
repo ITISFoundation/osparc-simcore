@@ -121,7 +121,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
     async def wait_for_all_transfers_to_complete(self) -> None:
         await self._rc_http_client.wait_for_all_transfers_to_complete()
 
-    async def check_responsive(self) -> bool:
+    async def is_healthy(self) -> bool:
         """Returns False only after consecutive unresponsive checks reach the threshold."""
         if await self._rc_http_client.is_responsive():
             self._consecutive_unresponsive_count = 0
@@ -210,7 +210,7 @@ class RCloneMountManager:
         mount_restored = False
         with log_context(_logger, logging.DEBUG, "ensuring rclone mount is responsive"):
             for mount in self._tracked_mounts.values():
-                if not await mount.check_responsive():
+                if not await mount.is_healthy():
                     with log_context(
                         _logger,
                         logging.WARNING,
