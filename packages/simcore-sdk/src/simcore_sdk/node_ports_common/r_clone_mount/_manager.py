@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
+_MOUNT_RESPONSIVE_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=6)
 _CONSECUTIVE_UNRESPONSIVE_THRESHOLD: Final[NonNegativeInt] = 3
 
 
@@ -233,7 +234,7 @@ class RCloneMountManager:
     async def setup(self) -> None:
         self._task_ensure_mounts_working = create_periodic_task(
             self._worker_ensure_mount_is_responsive,
-            interval=timedelta(seconds=10),
+            interval=_MOUNT_RESPONSIVE_CHECK_INTERVAL,
             task_name="rclone-mount-ensure-mount-is-responsive",
         )
 
