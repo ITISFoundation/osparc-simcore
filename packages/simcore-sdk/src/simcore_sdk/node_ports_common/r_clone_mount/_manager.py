@@ -134,7 +134,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             self._consecutive_unresponsive_count,
             _CONSECUTIVE_UNRESPONSIVE_THRESHOLD,
         )
-        return not self._consecutive_unresponsive_count > _CONSECUTIVE_UNRESPONSIVE_THRESHOLD
+        return self._consecutive_unresponsive_count < _CONSECUTIVE_UNRESPONSIVE_THRESHOLD
 
 
 class RCloneMountManager:
