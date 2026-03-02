@@ -1,5 +1,5 @@
 [project]
-name = "catalog"
+name = "simcore-service-catalog"
 version = "0.1.0"
 description = "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)"
 requires-python = ">=3.13.9"
@@ -7,6 +7,7 @@ requires-python = ">=3.13.9"
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
+
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
