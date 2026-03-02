@@ -20,7 +20,6 @@ install() {
   popd
 }
 
-
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
