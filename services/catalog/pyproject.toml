@@ -55,3 +55,25 @@ dependencies = [
 [build-system]
 requires = ["uv_build>=0.10.7,<0.11.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "alembic>=1.15.1",
+    "asgi-lifespan>=2.1.0",
+    "click>=8.2.1",
+    "docker>=7.1.0",
+    "faker>=37.8.0",
+    "jsonschema>=4.25.1",
+    "ptvsd>=4.3.2",
+    "pytest>=8.4.2",
+    "pytest-aiohttp>=1.1.0",
+    "pytest-benchmark>=5.1.0",
+    "pytest-cov>=7.0.0",
+    "pytest-docker>=3.2.3",
+    "pytest-mock>=3.15.1",
+    "pytest-runner>=6.0.1",
+    "respx>=0.22.0",
+    "sqlalchemy[mypy]>=1.4.54",
+    "types-psycopg2>=2.9.21.20250915",
+    "types-pyyaml>=6.0.12.20250915",
+]
