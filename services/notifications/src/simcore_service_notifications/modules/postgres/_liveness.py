@@ -34,7 +34,7 @@ class PostgresLiveness:
         self._task = create_periodic_task(
             self._check_task,
             interval=_LVENESS_CHECK_INTERVAL,
-            task_name="posgress_liveness_check",
+            task_name="postgres_liveness_check",
         )
 
     async def teardown(self) -> None:

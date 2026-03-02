@@ -9,7 +9,6 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.postgres_lifespan import (
     create_postgres_database_input_state,
-    postgres_database_lifespan,
 )
 
 from .._meta import (
@@ -19,8 +18,8 @@ from .._meta import (
 )
 from ..api.rpc.routes import rpc_api_routes_lifespan
 from ..clients.celery import task_manager_lifespan
-from ..clients.postgres import postgres_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
+from ..modules.postgres import postgres_lifespan_manager
 from .settings import ApplicationSettings
 
 
@@ -55,8 +54,7 @@ def create_app_lifespan(
     app_lifespan.add(_settings_lifespan)
 
     # - postgres
-    app_lifespan.add(postgres_database_lifespan)
-    app_lifespan.add(postgres_lifespan)
+    app_lifespan.include(postgres_lifespan_manager)
 
     if not settings.NOTIFICATIONS_WORKER_MODE:
         # - rabbitmq

@@ -38,8 +38,8 @@ class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta): ...
 
 class PreferenceType(StrAutoEnum):
     FRONTEND = auto()
-    USER_SERVICE = auto()
     NOTIFICATIONS = auto()
+    USER_SERVICE = auto()
 
 
 class NoPreferenceFoundError(RuntimeError):
