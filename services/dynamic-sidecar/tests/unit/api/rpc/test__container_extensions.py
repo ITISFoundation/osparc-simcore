@@ -677,7 +677,7 @@ async def test_container_docker_error(
 
 
 @pytest.fixture
-def s3_directory(faker: Faker) -> StorageFileID:
+def s3_path(faker: Faker) -> StorageFileID:
     remote = f"{faker.uuid4()}/{faker.uuid4()}/remote-dir"
     return TypeAdapter(StorageFileID).validate_python(remote)
 
@@ -685,13 +685,13 @@ def s3_directory(faker: Faker) -> StorageFileID:
 async def test_notify_path_change(
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
-    s3_directory: StorageFileID,
+    s3_path: StorageFileID,
 ):
     app_state = AppState(app)
 
     await container_extensions.notify_path_change(
         rpc_client,
         node_id=app_state.settings.DY_SIDECAR_NODE_ID,
-        path=s3_directory,
+        path=s3_path,
         recursive=True,
     )
