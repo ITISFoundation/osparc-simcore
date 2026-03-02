@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, ClassVar, Literal
 
 from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, Field
@@ -29,8 +29,8 @@ class _AutoRegisterMeta(ModelMetaclass):
         return new_class
 
 
-PreferenceName: TypeAlias = str
-PreferenceIdentifier: TypeAlias = str
+type PreferenceName = str
+type PreferenceIdentifier = str
 
 
 class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta): ...
@@ -39,6 +39,7 @@ class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta): ...
 class PreferenceType(StrAutoEnum):
     FRONTEND = auto()
     USER_SERVICE = auto()
+    NOTIFICATIONS = auto()
 
 
 class NoPreferenceFoundError(RuntimeError):
@@ -117,7 +118,11 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
         return self.model_dump(exclude={"preference_type"})
 
 
-AnyUserPreference: TypeAlias = Annotated[
+class NotificationsUserPreference(_BaseUserPreferenceModel):
+    preference_type: Literal[PreferenceType.NOTIFICATIONS] = PreferenceType.NOTIFICATIONS
+
+
+type AnyUserPreference = Annotated[
     FrontendUserPreference | UserServiceUserPreference,
     Field(discriminator="preference_type"),
 ]
