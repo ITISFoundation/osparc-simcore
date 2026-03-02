@@ -426,45 +426,15 @@ else
 endif
 	@$(_show_endpoints)
 
-# Phased deployment configuration
-# ================================
-# On CI runners with limited CPUs (e.g. 4 cores), deploying all ~26 Python
-# services simultaneously causes severe CPU contention during Python module
-# import. Each process gets ~0.15 CPUs, stretching import time to 55-100s,
-# which exceeds the Docker healthcheck window (start-period=20s + 5×10s=70s)
-# and triggers container restarts: half the services fail and restart at
-# least once, adding 2+ minutes to total startup.
-#
-# Solution: deploy in 3 phases with health-gate between each:
-#   Phase 1: Infrastructure (postgres, redis, rabbit, migration)
-#   Phase 2: Core app services (~10 Python + fast non-Python)
-#   Phase 3: Remaining services (~16 Python)
-#
-# This gives each wave ~0.4-0.5 CPUs per process → import in ~25-30s → well
-# within the 70s healthcheck window → zero restarts.
-#
-# NOTE: dask-scheduler MUST be in Phase 2 so it is healthy before dask-sidecar
-# starts in Phase 3 (sidecar connects to scheduler on boot and crashes if
-# the scheduler is not reachable).
-
+# Infrastructure services for phased deployment
 INFRA_SERVICES := postgres redis rabbit migration
-# Core application services deployed first to reduce CPU contention.
-# Includes: non-Python fast starters + core Python services + dask-scheduler.
-# Any service NOT listed here deploys automatically in Phase 3 (full stack).
-WAVE1_APP_SERVICES := traefik traefik-config-placeholder static-webserver docker-api-proxy whoami \
-	catalog director storage dask-scheduler webserver wb-api-server
-# Subset of WAVE1_APP_SERVICES that have Docker healthchecks (wait for these)
-WAVE1_HEALTHCHECK_SERVICES := catalog director storage dask-scheduler webserver wb-api-server
-
 MAX_WAIT_ITERATIONS := 150
 WAIT_INTERVAL_SECS := 2
 YQ_IMAGE := mikefarah/yq:4
 
-# Helper: generate a yq select filter from a list of service names
-# e.g., _yq_svc_filter(postgres redis) → .key == "postgres" or .key == "redis"
-_yq_svc_filter = $(shell echo $(1) | awk '{for(i=1;i<=NF;i++) printf "%s.key == \"%s\"%s", (i>1?" or ":""), $$i, (i<NF?"":" ")}')
-_YQ_INFRA_FILTER := $(call _yq_svc_filter,$(INFRA_SERVICES))
-_YQ_PHASE2_FILTER := $(call _yq_svc_filter,$(INFRA_SERVICES) $(WAVE1_APP_SERVICES))
+# Generate yq filter for keeping only infra services
+# e.g., ".key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration""
+_YQ_INFRA_FILTER := $(shell echo $(INFRA_SERVICES) | awk '{for(i=1;i<=NF;i++) printf "%s.key == \"%s\"%s", (i>1?" or ":""), $$i, (i<NF?"":" ")}')
 
 define _wait_for_running
 	@count=0; \
@@ -479,8 +449,8 @@ define _wait_for_running
 		echo " OK"
 endef
 
-# Wait for a service to become healthy (Docker healthcheck passes).
-# For services without a healthcheck, considers "running" as healthy.
+# Wait for a service to become healthy (Docker healthcheck passes)
+# This is critical for migration: app services must not start until migration is complete
 define _wait_for_healthy
 	@echo -n "  Waiting for $(1) to become healthy..."
 	@count=0; \
@@ -488,7 +458,7 @@ define _wait_for_healthy
 		container_id=$$(docker ps --filter "name=$(SWARM_STACK_NAME)_$(1)" --format "{{.ID}}" 2>/dev/null | head -1); \
 		if [ -n "$$container_id" ]; then \
 			health=$$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$$container_id" 2>/dev/null || echo "none"); \
-			if [ "$$health" = "healthy" ] || [ "$$health" = "none" ]; then \
+			if [ "$$health" = "healthy" ]; then \
 				break; \
 			fi; \
 		fi; \
@@ -500,7 +470,7 @@ define _wait_for_healthy
 	echo " OK"
 endef
 
-up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in 3 phases to reduce CPU contention on CI
+up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in two phases: infrastructure first, then application services
 	# Deploy ops and vendors stacks
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
@@ -509,8 +479,8 @@ up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production 
 	@echo "Phase 1: Deploying infrastructure services ($(INFRA_SERVICES))..."
 	@docker run --rm -i $(YQ_IMAGE) \
 		'.services |= with_entries(select($(_YQ_INFRA_FILTER)))' \
-		< $< > .stack-phase1-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phase1-tmp.yml $(SWARM_STACK_NAME)
+		< $< > .stack-infra-tmp.yml
+	@docker stack deploy --detach=true --with-registry-auth -c .stack-infra-tmp.yml $(SWARM_STACK_NAME)
 	@echo "Waiting for infrastructure services to be running..."
 	@$(foreach service,$(INFRA_SERVICES),$(call _wait_for_running,$(service)))
 	@echo "Waiting for infrastructure services to be healthy (including migration completion)..."
@@ -518,25 +488,10 @@ up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production 
 	$(call _wait_for_healthy,rabbit)
 	$(call _wait_for_healthy,redis)
 	$(call _wait_for_healthy,migration)
-	# Phase 2: Deploy first wave of application services (core + fast-starting)
-	# This limits Python startup CPU contention to ~10 processes instead of ~26
-	@echo "Phase 2: Deploying core application services ($(WAVE1_APP_SERVICES))..."
-	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(_YQ_PHASE2_FILTER)))' \
-		< $< > .stack-phase2-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phase2-tmp.yml $(SWARM_STACK_NAME)
-	@echo "Waiting for core application services to be healthy..."
-	$(call _wait_for_healthy,catalog)
-	$(call _wait_for_healthy,director)
-	$(call _wait_for_healthy,storage)
-	$(call _wait_for_healthy,dask-scheduler)
-	$(call _wait_for_healthy,webserver)
-	$(call _wait_for_healthy,wb-api-server)
-	# Phase 3: Deploy all remaining services
-	# By now Phase 2 services are idle, freeing CPU for the remaining ~16 services
-	@echo "Phase 3: Deploying all remaining services..."
+	# Phase 2: Deploy all services
+	@echo "Phase 2: Deploying all application services..."
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@rm -f .stack-phase1-tmp.yml .stack-phase2-tmp.yml
+	@rm -f .stack-infra-tmp.yml
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
