@@ -4,11 +4,13 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Final
 
 from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
@@ -25,6 +27,10 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     MountActivity,
     RCloneMountManager,
 )
+from tenacity import AsyncRetrying
+from tenacity.before import before_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from ..core.rabbitmq import get_rabbitmq_rpc_client, post_sidecar_log_message
 from ..core.settings import ApplicationSettings
@@ -35,6 +41,11 @@ _logger = logging.getLogger(__name__)
 
 
 _EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
+_CONTAINER_REMOVAL_WAIT_S: Final[timedelta] = timedelta(seconds=20)
+
+
+class ContainerStillPresentError(OsparcErrorMixin, RuntimeError):
+    msg_template: str = "Container {container_name} is still present after deletion attempt"
 
 
 @dataclass
@@ -167,9 +178,40 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             # if SIGKILL is sent directly FUSE mount will not unmount cleanly
 
             # sends SIGTERM
-            await container.stop()
+            try:
+                await container.stop()
+            except DockerError as e:
+                # container may have already stopped (304) or been removed (404)
+                if e.status not in (
+                    status.HTTP_304_NOT_MODIFIED,
+                    status.HTTP_404_NOT_FOUND,
+                ):
+                    raise
+
             # sends SIGKILL and removes
-            await container.delete(force=True)
+            try:
+                await container.delete(force=True)
+            except DockerError as e:
+                # container may have been auto-removed after stop
+                if e.status != status.HTTP_404_NOT_FOUND:
+                    raise
+
+            # verify the container is fully removed before returning;
+            # Docker can return from delete before the name is freed
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.5),
+                stop=stop_after_delay(_CONTAINER_REMOVAL_WAIT_S.total_seconds()),
+                before=before_log(_logger, logging.WARNING),
+                reraise=True,
+            ):
+                with attempt:
+                    try:
+                        await client.containers.get(container_name)
+                    except DockerError as e:
+                        if e.status == status.HTTP_404_NOT_FOUND:
+                            return
+                        raise
+                    raise ContainerStillPresentError(container_name=container_name)
 
     async def get_node_address(self) -> str:
         async with _get_docker_client() as client:

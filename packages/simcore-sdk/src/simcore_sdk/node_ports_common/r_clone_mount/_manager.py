@@ -26,6 +26,8 @@ _logger = logging.getLogger(__name__)
 
 
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
+_MOUNT_RESPONSIVE_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=6)
+_CONSECUTIVE_UNRESPONSIVE_THRESHOLD: Final[NonNegativeInt] = 3
 
 
 class _TrackedMount:  # pylint:disable=too-many-instance-attributes
@@ -54,6 +56,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         self._last_mount_activity: MountActivity | None = None
         self._last_mount_activity_update: datetime = datetime.fromtimestamp(0, UTC)
         self._task_mount_activity: asyncio.Task[None] | None = None
+        self._consecutive_unresponsive_count: int = 0
 
         rc_user = f"{uuid4()}"
         rc_password = f"{uuid4()}"
@@ -118,8 +121,19 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
     async def wait_for_all_transfers_to_complete(self) -> None:
         await self._rc_http_client.wait_for_all_transfers_to_complete()
 
-    async def is_responsive(self) -> bool:
-        return await self._rc_http_client.is_responsive()
+    async def is_healthy(self) -> bool:
+        if await self._rc_http_client.is_responsive():
+            self._consecutive_unresponsive_count = 0
+            return True
+
+        self._consecutive_unresponsive_count += 1
+        _logger.warning(
+            "Mount '%s' unresponsive %d/%d consecutive times",
+            self.local_mount_path,
+            self._consecutive_unresponsive_count,
+            _CONSECUTIVE_UNRESPONSIVE_THRESHOLD,
+        )
+        return self._consecutive_unresponsive_count < _CONSECUTIVE_UNRESPONSIVE_THRESHOLD
 
 
 class RCloneMountManager:
@@ -195,7 +209,7 @@ class RCloneMountManager:
         mount_restored = False
         with log_context(_logger, logging.DEBUG, "ensuring rclone mount is responsive"):
             for mount in self._tracked_mounts.values():
-                if not await mount.is_responsive():
+                if not await mount.is_healthy():
                     with log_context(
                         _logger,
                         logging.WARNING,
@@ -219,7 +233,7 @@ class RCloneMountManager:
     async def setup(self) -> None:
         self._task_ensure_mounts_working = create_periodic_task(
             self._worker_ensure_mount_is_responsive,
-            interval=timedelta(seconds=10),
+            interval=_MOUNT_RESPONSIVE_CHECK_INTERVAL,
             task_name="rclone-mount-ensure-mount-is-responsive",
         )
 
