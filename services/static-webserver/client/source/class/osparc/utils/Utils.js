@@ -45,6 +45,13 @@ qx.Class.define("osparc.utils.Utils", {
         this.setLocalStorageItem("lastVcsRefUI", vcsRef);
       },
 
+      getLatestSim4LifeVersion: function() {
+        return this.getLocalStorageItem("sim4lifeVersion");
+      },
+      setLatestSim4LifeVersion: function(s4lVersion) {
+        this.setLocalStorageItem("sim4lifeVersion", s4lVersion);
+      },
+
       getDontShowAnnouncements: function() {
         return this.getLocalStorageItem("dontShowAnnouncements") ? JSON.parse(this.getLocalStorageItem("dontShowAnnouncements")) : [];
       },
