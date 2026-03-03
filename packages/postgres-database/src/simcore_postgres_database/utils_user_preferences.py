@@ -64,6 +64,28 @@ class BasePreferencesRepo:
         )
         return payload
 
+    @classmethod
+    async def load_many(
+        cls,
+        conn: AsyncConnection,
+        *,
+        user_id: int,
+        product_name: str,
+        preference_names: list[str],
+    ) -> dict[str, Any]:
+        if not preference_names:
+            return {}
+
+        result = await conn.execute(
+            sa.select(cls.model.c.preference_name, cls.model.c.payload).where(
+                cls.model.c.user_id == user_id,
+                cls.model.c.product_name == product_name,
+                cls.model.c.preference_name.in_(preference_names),
+            )
+        )
+
+        return dict(result.all())
+
 
 class FrontendUserPreferencesRepo(BasePreferencesRepo):
     model = user_preferences_frontend
