@@ -423,6 +423,7 @@ qx.Class.define("osparc.Application", {
           const winHeight = Math.min(700, document.documentElement.clientHeight - 50);
           win.set({
             width: winWidth,
+            height: winHeight,
             minHeight: 500,
             maxHeight: winHeight,
             resizable: true
