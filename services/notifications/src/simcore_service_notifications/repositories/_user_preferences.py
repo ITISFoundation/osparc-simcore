@@ -32,4 +32,4 @@ class UserPreferencesRepository:
                 preference_name=_get_user_preference_name(user_id, preference_class.get_preference_name()),
             )
 
-        return None if preference_payload is None else preference_class.model_validate(preference_payload)
+        return preference_class.model_validate(preference_payload) if preference_payload is not None else None
