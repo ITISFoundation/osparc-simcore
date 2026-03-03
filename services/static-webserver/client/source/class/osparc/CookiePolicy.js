@@ -27,7 +27,9 @@ qx.Class.define("osparc.CookiePolicy", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(6));
+    this._setLayout(new qx.ui.layout.HBox(10).set({
+      alignY: "middle"
+    }));
 
     this.set({
       backgroundColor: "background-main-1",
@@ -87,17 +89,6 @@ qx.Class.define("osparc.CookiePolicy", {
   },
 
   members: {
-    __createRow: function(label, checkBox) {
-      const row = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
-        alignY: "middle"
-      }));
-      row.add(label, {
-        flex: 1
-      });
-      row.add(checkBox);
-      return row;
-    },
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -173,7 +164,8 @@ qx.Class.define("osparc.CookiePolicy", {
         case "accept-button": {
           control = new qx.ui.form.Button(this.tr("Accept")).set({
             allowGrowX: false,
-            alignX: "right"
+            allowGrowY: false,
+            alignY: "middle"
           });
           osparc.utils.Utils.setIdToWidget(control, "acceptCookiesBtn");
           break;
@@ -184,6 +176,11 @@ qx.Class.define("osparc.CookiePolicy", {
 
     __buildLayout: function() {
       const checkButtons = [];
+      let row = 0;
+
+      // Grid: col 0 = texts, col 1 = checkboxes
+      const grid = new qx.ui.layout.Grid(8, 4);
+      const gridContainer = new qx.ui.container.Composite(grid);
 
       // Cookie consent row
       let cookieText;
@@ -194,7 +191,9 @@ qx.Class.define("osparc.CookiePolicy", {
       }
       const acceptCookie = this.getChildControl("accept-cookie");
       checkButtons.push(acceptCookie);
-      this._add(this.__createRow(cookieText, acceptCookie));
+      gridContainer.add(cookieText, { column: 0, row });
+      gridContainer.add(acceptCookie, { column: 1, row });
+      row++;
 
       // License rows (product-specific)
       if (osparc.product.Utils.showLicenseExtra()) {
@@ -206,15 +205,20 @@ qx.Class.define("osparc.CookiePolicy", {
         }
         const acceptLicense = this.getChildControl("accept-license");
         checkButtons.push(acceptLicense);
-        this._add(this.__createRow(licenseText, acceptLicense));
+        gridContainer.add(licenseText, { column: 0, row });
+        gridContainer.add(acceptLicense, { column: 1, row });
+        row++;
 
         const licenseText2 = this.getChildControl("license-text-2");
         const acceptLicense2 = this.getChildControl("accept-license-2");
         checkButtons.push(acceptLicense2);
-        this._add(this.__createRow(licenseText2, acceptLicense2));
+        gridContainer.add(licenseText2, { column: 0, row });
+        gridContainer.add(acceptLicense2, { column: 1, row });
       }
 
-      // Accept button
+      this._add(gridContainer, { flex: 1 });
+
+      // Accept button on the right
       const acceptBtn = this.getChildControl("accept-button");
       this._add(acceptBtn);
 
