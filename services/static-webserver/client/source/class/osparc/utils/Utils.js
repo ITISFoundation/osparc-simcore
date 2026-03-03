@@ -855,6 +855,34 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    /**
+     * Parses a version string (e.g. "9.4.0" or "9.4.0-rc.5") into its components.
+     * @param {string} version - Version string in semver format
+     * @returns {{ major: number, minor: number, patch: number, preRelease: string|null }}
+     */
+    parseVersion: function(version) {
+      const [semver, ...preReleaseParts] = version.split("-");
+      const [major, minor, patch] = semver.split(".").map(Number);
+      return {
+        major,
+        minor,
+        patch: patch || 0,
+        preRelease: preReleaseParts.length ? preReleaseParts.join("-") : null,
+      };
+    },
+
+    /**
+     * Returns true if major or minor version differs between two version strings.
+     * @param {string} versionA
+     * @param {string} versionB
+     * @returns {boolean}
+     */
+    hasMinorOrMajorBump: function(versionA, versionB) {
+      const a = osparc.utils.Utils.parseVersion(versionA);
+      const b = osparc.utils.Utils.parseVersion(versionB);
+      return a.major !== b.major || a.minor !== b.minor;
+    },
+
     compareVersionNumbers: function(v1, v2) {
       // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
       // - a number < 0 if a < b
