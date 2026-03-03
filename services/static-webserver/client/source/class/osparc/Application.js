@@ -418,6 +418,15 @@ qx.Class.define("osparc.Application", {
           resizable: false,
           showClose: true
         });
+        newRelease.addListener("releaseNotesLoaded", () => {
+          win.set({
+            width: 700,
+            minHeight: 500,
+            maxHeight: Math.min(700, document.documentElement.clientHeight - 50),
+            resizable: true
+          });
+          win.center();
+        });
         const closeBtn = win.getChildControl("close-button");
         osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
       }
