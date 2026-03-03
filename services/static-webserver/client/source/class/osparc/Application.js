@@ -419,14 +419,21 @@ qx.Class.define("osparc.Application", {
           showClose: true
         });
         newRelease.addListener("releaseNotesLoaded", () => {
+          const winWidth = 700;
+          const winHeight = Math.min(700, document.documentElement.clientHeight - 50);
           win.set({
-            width: 700,
+            width: winWidth,
             minHeight: 500,
-            maxHeight: Math.min(700, document.documentElement.clientHeight - 50),
+            maxHeight: winHeight,
             resizable: true
           });
-          // Center after the window has actually resized
-          setTimeout(() => win.center(), 100);
+          // Explicitly position the window in the center of the viewport
+          const vpWidth = document.documentElement.clientWidth;
+          const vpHeight = document.documentElement.clientHeight;
+          win.moveTo(
+            Math.round((vpWidth - winWidth) / 2),
+            Math.round((vpHeight - winHeight) / 2)
+          );
         });
         const closeBtn = win.getChildControl("close-button");
         osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
