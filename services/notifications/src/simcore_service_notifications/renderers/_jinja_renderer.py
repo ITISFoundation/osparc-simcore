@@ -1,3 +1,5 @@
+# pylint: disable=assignment-from-no-return
+
 from dataclasses import dataclass
 from typing import Any
 
