@@ -883,23 +883,17 @@ qx.Class.define("osparc.utils.Utils", {
       return a.major !== b.major || a.minor !== b.minor;
     },
 
+    /**
+     * Compares two version strings numerically (major.minor.patch).
+     * Pre-release suffixes (e.g. "-rc.5") are stripped before comparison.
+     * @param {string} v1
+     * @param {string} v2
+     * @returns {number} < 0 if v1 < v2, > 0 if v1 > v2, 0 if equal
+     */
     compareVersionNumbers: function(v1, v2) {
-      // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
-      // - a number < 0 if a < b
-      // - a number > 0 if a > b
-      // - 0 if a = b
-      const regExStrip0 = /(\.0+)+$/;
-      const segmentsA = v1.replace(regExStrip0, "").split(".");
-      const segmentsB = v2.replace(regExStrip0, "").split(".");
-      const l = Math.min(segmentsA.length, segmentsB.length);
-
-      for (let i = 0; i < l; i++) {
-        const diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
-        if (diff) {
-          return diff;
-        }
-      }
-      return segmentsA.length - segmentsB.length;
+      const a = osparc.utils.Utils.parseVersion(v1);
+      const b = osparc.utils.Utils.parseVersion(v2);
+      return (a.major - b.major) || (a.minor - b.minor) || (a.patch - b.patch);
     },
 
     // deep clone of nested objects
