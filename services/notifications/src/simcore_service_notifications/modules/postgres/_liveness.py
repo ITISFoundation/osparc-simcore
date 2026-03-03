@@ -1,5 +1,6 @@
 import logging
 from asyncio import Task
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Final
 
@@ -15,12 +16,11 @@ _logger = logging.getLogger(__name__)
 _LVENESS_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=10)
 
 
+@dataclass
 class PostgresLiveness:
-    def __init__(self, async_engine: AsyncEngine) -> None:
-        self.async_engine = async_engine
-
-        self._liveness_result: LivenessResult = IsResponsive(elapsed=timedelta(0))
-        self._task: Task | None = None
+    async_engine: AsyncEngine
+    _liveness_result: LivenessResult = field(default_factory=lambda: IsResponsive(elapsed=timedelta(0)))
+    _task: Task | None = field(default=None)
 
     async def _check_task(self) -> None:
         self._liveness_result = await check_postgres_liveness(self.async_engine)
