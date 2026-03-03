@@ -92,6 +92,11 @@ qx.Class.define("osparc.CookiePolicy", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "grid-container": {
+          const grid = new qx.ui.layout.Grid(8, 4);
+          control = new qx.ui.container.Composite(grid);
+          break;
+        }
         case "cookie-text": {
           const link = osparc.CookiePolicy.getITISPrivacyPolicyLink("Privacy Policy");
           const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
@@ -178,9 +183,7 @@ qx.Class.define("osparc.CookiePolicy", {
       const checkButtons = [];
       let row = 0;
 
-      // Grid: col 0 = texts, col 1 = checkboxes
-      const grid = new qx.ui.layout.Grid(8, 4);
-      const gridContainer = new qx.ui.container.Composite(grid);
+      const gridContainer = this.getChildControl("grid-container");
 
       // Cookie consent row
       let cookieText;
@@ -216,11 +219,14 @@ qx.Class.define("osparc.CookiePolicy", {
         gridContainer.add(acceptLicense2, { column: 1, row });
       }
 
-      this._add(gridContainer, { flex: 1 });
-
-      // Accept button on the right
+      // Spacer pushes everything to the right
+      this._add(new qx.ui.core.Spacer(), { flex: 1 });
+      // Grid (texts + checkboxes) on the right
+      this._add(gridContainer);
+      // Accept button next to checkboxes
       const acceptBtn = this.getChildControl("accept-button");
       this._add(acceptBtn);
+      this._add(new qx.ui.core.Spacer(), { flex: 1 });
 
       const evalAcceptButton = () => {
         acceptBtn.setEnabled(checkButtons.every(checkButton => checkButton.getValue()));
