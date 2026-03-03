@@ -84,7 +84,7 @@ class BasePreferencesRepo:
             )
         )
 
-        return dict(result.all())
+        return {row.preference_name: row.payload for row in result.all()}
 
 
 class FrontendUserPreferencesRepo(BasePreferencesRepo):
