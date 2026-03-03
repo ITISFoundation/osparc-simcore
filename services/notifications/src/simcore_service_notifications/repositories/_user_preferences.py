@@ -14,7 +14,7 @@ def _get_user_preference_name(user_id: UserID, preference_name: PreferenceName) 
 
 @dataclass(frozen=True)
 class UserPreferencesRepository:
-    engine: AsyncEngine
+    async_engine: AsyncEngine
 
     async def get_user_preferences(
         self,
@@ -24,7 +24,7 @@ class UserPreferencesRepository:
         product_name: ProductName,
         preference_class: type[NotificationsUserPreference],
     ) -> NotificationsUserPreference | None:
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.async_engine, connection) as conn:
             preference_payload: dict | None = await NotificationsUserPreferencesRepo.load(
                 conn,
                 user_id=user_id,
