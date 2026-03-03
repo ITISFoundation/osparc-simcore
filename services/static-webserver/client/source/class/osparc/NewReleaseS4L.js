@@ -36,7 +36,9 @@ qx.Class.define("osparc.NewReleaseS4L", {
         isNewRelease = osparc.utils.Utils.hasMinorOrMajorBump(lastS4LVersion, latestS4LVersion);
       }
 
-      osparc.utils.Utils.localCache.setLatestSim4LifeVersion(latestS4LVersion);
+      if (latestS4LVersion) {
+        osparc.utils.Utils.localCache.setLatestSim4LifeVersion(latestS4LVersion);
+      }
       return isNewRelease;
     },
   },

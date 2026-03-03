@@ -858,16 +858,21 @@ qx.Class.define("osparc.utils.Utils", {
     /**
      * Parses a version string (e.g. "9.4.0" or "9.4.0-rc.5") into its components.
      * @param {string} version - Version string in semver format
-     * @returns {{ major: number, minor: number, patch: number, preRelease: string|null }}
+     * @returns {{ major: number, minor: number, patch: number, preRelease: string|null } | null}
      */
     parseVersion: function(version) {
-      const [semver, ...preReleaseParts] = version.split("-");
-      const [major, minor, patch] = semver.split(".").map(Number);
+      if (!version || typeof version !== "string") {
+        return null;
+      }
+      const match = version.match(/^(\d+)\.(\d+)(?:\.(\d+))?(?:-(.+))?$/);
+      if (!match) {
+        return null;
+      }
       return {
-        major,
-        minor,
-        patch: patch || 0,
-        preRelease: preReleaseParts.length ? preReleaseParts.join("-") : null,
+        major: Number(match[1]),
+        minor: Number(match[2]),
+        patch: match[3] !== undefined ? Number(match[3]) : 0,
+        preRelease: match[4] || null,
       };
     },
 
@@ -880,6 +885,9 @@ qx.Class.define("osparc.utils.Utils", {
     hasMinorOrMajorBump: function(versionA, versionB) {
       const a = osparc.utils.Utils.parseVersion(versionA);
       const b = osparc.utils.Utils.parseVersion(versionB);
+      if (!a || !b) {
+        return false;
+      }
       return a.major !== b.major || a.minor !== b.minor;
     },
 
@@ -893,6 +901,9 @@ qx.Class.define("osparc.utils.Utils", {
     compareVersionNumbers: function(v1, v2) {
       const a = osparc.utils.Utils.parseVersion(v1);
       const b = osparc.utils.Utils.parseVersion(v2);
+      if (!a || !b) {
+        return 0;
+      }
       return (a.major - b.major) || (a.minor - b.minor) || (a.patch - b.patch);
     },
 
