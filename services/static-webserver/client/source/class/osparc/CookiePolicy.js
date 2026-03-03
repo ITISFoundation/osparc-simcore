@@ -85,6 +85,46 @@ qx.Class.define("osparc.CookiePolicy", {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
       const link = `<a href='https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt' style='color: ${color}' target='_blank''>${linkText}</a>`;
       return link;
+    },
+
+    /**
+     * Shows a modal footer banner with blocker overlay on the given application
+     */
+    popUpCookieBanner: function() {
+      const root = qx.core.Init.getApplication().getRoot();
+      const cookiePolicy = new osparc.CookiePolicy();
+      // Semi-transparent blocker to make the banner modal
+      const blocker = new qx.ui.core.Widget();
+      blocker.set({
+        backgroundColor: "background-main-1",
+        opacity: 0.5,
+        zIndex: 999
+      });
+      root.add(blocker, {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+      root.add(cookiePolicy, {
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+      const removeBanner = () => {
+        root.remove(blocker);
+        blocker.dispose();
+        root.remove(cookiePolicy);
+        cookiePolicy.dispose();
+      };
+      cookiePolicy.addListener("cookiesAccepted", () => {
+        osparc.CookiePolicy.acceptCookies();
+        removeBanner();
+      });
+      cookiePolicy.addListener("cookiesDeclined", () => {
+        osparc.CookiePolicy.declineCookies();
+        removeBanner();
+      });
     }
   },
 

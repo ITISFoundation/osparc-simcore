@@ -422,39 +422,7 @@ qx.Class.define("osparc.Application", {
 
     __checkCookiesAccepted: function() {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
-        const cookiePolicy = new osparc.CookiePolicy();
-        const doc = this.getRoot();
-        // Semi-transparent blocker to make the banner modal
-        const blocker = new qx.ui.core.Widget();
-        blocker.set({
-          backgroundColor: "background-main-1",
-          opacity: 0.5,
-          zIndex: 999
-        });
-        doc.add(blocker, {
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0
-        });
-        doc.add(cookiePolicy, {
-          bottom: 0,
-          left: 0,
-          right: 0
-        });
-        const removeBanner = () => {
-          doc.remove(blocker);
-          blocker.dispose();
-          doc.remove(cookiePolicy);
-        };
-        cookiePolicy.addListener("cookiesAccepted", () => {
-          osparc.CookiePolicy.acceptCookies();
-          removeBanner();
-        }, this);
-        cookiePolicy.addListener("cookiesDeclined", () => {
-          osparc.CookiePolicy.declineCookies();
-          removeBanner();
-        }, this);
+        osparc.CookiePolicy.popUpCookieBanner();
       }
     },
 
