@@ -433,12 +433,12 @@ WAIT_INTERVAL_SECS := 2
 YQ_IMAGE := mikefarah/yq:4
 
 # Application service batches (non-infrastructure, groups of 5 by functional area)
-APP_BATCH_1 := api-server api-worker catalog director director-v2
-APP_BATCH_2 := webserver static-webserver wb-api-server wb-auth wb-db-event-listener
-APP_BATCH_3 := storage sto-worker sto-worker-cpu-bound dask-scheduler dask-sidecar
-APP_BATCH_4 := traefik traefik-config-placeholder docker-api-proxy dynamic-schdlr wb-garbage-collector
-APP_BATCH_5 := autoscaling clusters-keeper resource-usage-tracker agent efs-guardian
-APP_BATCH_6 := datcore-adapter invitations notifications notifications-worker payments
+APP_BATCH_1 := catalog director agent docker-api-proxy static-webserver
+APP_BATCH_2 := storage sto-worker sto-worker-cpu-bound dask-scheduler dask-sidecar
+APP_BATCH_3 := director-v2 dynamic-schdlr wb-garbage-collector wb-api-server wb-auth
+APP_BATCH_4 := wb-db-event-listener webserver autoscaling clusters-keeper resource-usage-tracker
+APP_BATCH_5 := efs-guardian api-server api-worker datcore-adapter invitations
+APP_BATCH_6 := notifications notifications-worker payments traefik traefik-config-placeholder
 APP_BATCHES := $(APP_BATCH_1) $(APP_BATCH_2) $(APP_BATCH_3) $(APP_BATCH_4) $(APP_BATCH_5) $(APP_BATCH_6)
 
 # Generate yq filter for keeping only infra services
