@@ -23,12 +23,19 @@ isort==6.1.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
+librt==0.8.1
+    # via
+    #   -c requirements/_test.txt
+    #   mypy
 mccabe==0.7.0
     # via pylint
-mypy==1.18.2
-    # via -r requirements/../../../requirements/devenv.txt
+mypy==1.19.1
+    # via
+    #   -c requirements/_test.txt
+    #   -r requirements/../../../requirements/devenv.txt
 mypy-extensions==1.1.0
     # via
+    #   -c requirements/_test.txt
     #   black
     #   mypy
 nodeenv==1.9.1
@@ -38,8 +45,9 @@ packaging==24.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-pathspec==0.12.1
+pathspec==1.0.4
     # via
+    #   -c requirements/_test.txt
     #   black
     #   mypy
 platformdirs==4.4.0
@@ -66,6 +74,7 @@ tomlkit==0.13.3
 typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   mypy
 virtualenv==20.34.0
     # via pre-commit
