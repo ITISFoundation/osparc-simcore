@@ -200,6 +200,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           if (this.__dataBrowser) {
             this.__dataBrowser.initResources();
           }
+
+          if (osparc.NewReleaseS4L.isNewRelease()) {
+            console.debug("New Sim4Life release detected!");
+          }
         })
         .catch(err => console.error(err));
 

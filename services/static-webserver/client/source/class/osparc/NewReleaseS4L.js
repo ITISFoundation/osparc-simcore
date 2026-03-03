@@ -27,9 +27,13 @@ qx.Class.define("osparc.NewReleaseS4L", {
     isNewRelease: function() {
       let isNewRelease = false;
       const lastS4LVersion = osparc.utils.Utils.localCache.getLatestSim4LifeVersion();
-      const latestS4LVersion = osparc.store.Services.getLatest(osparc.NewReleaseS4L.S4L_SERVICE_KEY);
+      const latestS4L = osparc.store.Services.getLatest(osparc.NewReleaseS4L.S4L_SERVICE_KEY);
+      const latestS4LVersion = latestS4L && latestS4L["versionDisplay"] ? latestS4L["versionDisplay"] : null;
       if (lastS4LVersion && latestS4LVersion) {
-        isNewRelease = lastS4LVersion !== latestS4LVersion;
+        // set it to true if there is a at least a minor version change, ignoring patch changes
+        const [lastMajor, lastMinor] = lastS4LVersion.split(".").map(Number);
+        const [latestMajor, latestMinor] = latestS4LVersion.split(".").map(Number);
+        isNewRelease = lastMajor !== latestMajor || lastMinor !== latestMinor;
       }
       osparc.utils.Utils.localCache.setLatestSim4LifeVersion(latestS4LVersion);
       return isNewRelease;
