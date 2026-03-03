@@ -36,19 +36,52 @@ from .helpers.typing_env import EnvVarsDict
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Phased deployment batches (mirrors Makefile APP_BATCH_1..6 + INFRA_SERVICES)
+# Phased deployment order (mirrors Makefile INFRA_SERVICES + APP_BATCH_1..6)
 # ---------------------------------------------------------------------------
 
 INFRA_SERVICES: list[str] = ["postgres", "redis", "rabbit", "migration"]
 
-APP_BATCHES: list[list[str]] = [
-    ["catalog", "director", "agent", "docker-api-proxy", "static-webserver"],
-    ["storage", "sto-worker", "sto-worker-cpu-bound", "dask-scheduler", "dask-sidecar"],
-    ["director-v2", "dynamic-schdlr", "wb-garbage-collector", "wb-api-server", "wb-auth"],
-    ["wb-db-event-listener", "webserver", "autoscaling", "clusters-keeper", "resource-usage-tracker"],
-    ["efs-guardian", "api-server", "api-worker", "datcore-adapter", "invitations"],
-    ["notifications", "notifications-worker", "payments", "traefik", "traefik-config-placeholder"],
+APP_SERVICES_DEPLOY_ORDER: list[str] = [
+    # Batch 1 - core API
+    "director",
+    "catalog",
+    "agent",
+    "docker-api-proxy",
+    "static-webserver",
+    # Batch 2 - storage / compute
+    "storage",
+    "sto-worker",
+    "sto-worker-cpu-bound",
+    "dask-scheduler",
+    "dask-sidecar",
+    # Batch 3 - directors & workbench
+    "director-v2",
+    "dynamic-schdlr",
+    "wb-garbage-collector",
+    "wb-api-server",
+    "wb-auth",
+    # Batch 4 - webserver & autoscaling
+    "wb-db-event-listener",
+    "webserver",
+    "autoscaling",
+    "clusters-keeper",
+    "resource-usage-tracker",
+    # Batch 5 - external APIs
+    "efs-guardian",
+    "api-server",
+    "api-worker",
+    "datcore-adapter",
+    "invitations",
+    # Batch 6 - notifications / payments / proxy
+    "notifications",
+    "notifications-worker",
+    "payments",
+    "traefik",
+    "traefik-config-placeholder",
 ]
+
+#: Maximum number of app services being started (not yet running) at any time.
+MAX_CONCURRENT_SERVICE_STARTS: int = 4
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -265,21 +298,6 @@ def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _write_filtered_compose(
-    full_compose: dict,
-    services_to_include: list[str],
-    output_path: Path,
-) -> Path:
-    """Write a compose file that only contains *services_to_include*."""
-    filtered = deepcopy(full_compose)
-    all_services = set(filtered.get("services", {}))
-    for name in all_services - set(services_to_include):
-        filtered["services"].pop(name, None)
-    with output_path.open("w") as fh:
-        yaml.dump(filtered, fh, default_flow_style=False)
-    return output_path
-
-
 async def _async_assert_service_is_running(
     async_docker: aiodocker.Docker,
     service_name: str,
@@ -386,37 +404,120 @@ async def _wait_for_services_running(
     await asyncio.gather(*(_async_assert_service_is_running(async_docker, name, stack_name) for name in service_names))
 
 
-def _compute_deployment_batches(
+def _compute_deployment_order(
     selected_services: set[str],
-) -> list[list[str]]:
-    """Return ordered batches of services to deploy, filtered to *selected_services*.
+) -> list[str]:
+    """Return an ordered flat list of services to deploy, filtered to *selected_services*.
 
-    Infrastructure services come first, then APP_BATCHES in order. Any
-    selected service not present in the predefined batches is appended as a
-    final batch so nothing is missed.
+    Infrastructure services come first, then application services in the
+    predefined order.  Any selected service not present in the predefined
+    lists is appended at the end so nothing is missed.
     """
-    batches: list[list[str]] = []
+    ordered: list[str] = []
     accounted_for: set[str] = set()
 
-    # Phase 1 - infrastructure
-    infra = [s for s in INFRA_SERVICES if s in selected_services]
-    if infra:
-        batches.append(infra)
-        accounted_for.update(infra)
+    for name in INFRA_SERVICES:
+        if name in selected_services:
+            ordered.append(name)
+            accounted_for.add(name)
 
-    # Phase 2 - application batches
-    for batch_template in APP_BATCHES:
-        batch = [s for s in batch_template if s in selected_services]
-        if batch:
-            batches.append(batch)
-            accounted_for.update(batch)
+    for name in APP_SERVICES_DEPLOY_ORDER:
+        if name in selected_services:
+            ordered.append(name)
+            accounted_for.add(name)
 
-    # Catch-all - services in the selection but not in any predefined batch
-    remaining = sorted(selected_services - accounted_for)
-    if remaining:
-        batches.append(remaining)
+    # Catch-all - services in the selection but not in any predefined list
+    ordered.extend(sorted(selected_services - accounted_for))
 
-    return batches
+    return ordered
+
+
+def _get_target_replicas(full_compose: dict, service_name: str) -> int:
+    """Return the target replica count for *service_name* from the compose dict."""
+    svc = full_compose.get("services", {}).get(service_name, {})
+    return svc.get("deploy", {}).get("replicas", 1)
+
+
+def _scale_service(full_service_name: str, replicas: int) -> None:
+    """Scale a Docker Swarm service to *replicas* tasks."""
+    subprocess.run(  # noqa: S603
+        ["docker", "service", "scale", "--detach", f"{full_service_name}={replicas}"],  # noqa: S607
+        check=True,
+        capture_output=True,
+    )
+
+
+#: Polling interval for the scaling loop (seconds).
+_SCALE_POLL_INTERVAL: float = 0.5
+
+
+async def _scale_app_services_in_order(
+    async_docker: aiodocker.Docker,
+    app_to_start: list[str],
+    stack_name: str,
+    full_compose: dict,
+) -> None:
+    """Scale app services strictly in the order given by *app_to_start*.
+
+    Maintains an ordered status tracker where each service transitions
+    through ``pending`` -> ``scaling`` -> ``ready``.  A fast polling loop
+    picks up the next pending service as soon as a slot frees up.
+
+    Global services (``deploy.mode: global``) cannot be scaled via
+    ``docker service scale``; they already started from the initial
+    zero-replicas deploy so we just wait for them to become ready.
+    """
+
+    log.info("Services will be started in this exact order: %s", app_to_start)
+
+    # Ordered status tracker - preserves the order of app_to_start
+    status: dict[str, str] = dict.fromkeys(app_to_start, "pending")
+
+    # Index of the next service to scale (always moves forward)
+    next_to_scale = 0
+
+    while any(s != "ready" for s in status.values()):
+        # --- 1. Check which "scaling" services have become ready ----------
+        for name, state in status.items():
+            if state != "scaling":
+                continue
+            if await _is_service_already_running(async_docker, name, stack_name):
+                status[name] = "ready"
+                log.info("--> %s is ready", name)
+
+        # --- 2. Count how many are currently scaling ----------------------
+        currently_scaling = sum(1 for s in status.values() if s == "scaling")
+
+        # --- 3. Fill free slots with the next pending services in order ---
+        while currently_scaling < MAX_CONCURRENT_SERVICE_STARTS and next_to_scale < len(app_to_start):
+            name = app_to_start[next_to_scale]
+            next_to_scale += 1
+
+            svc_def = full_compose.get("services", {}).get(name, {})
+            is_global = svc_def.get("deploy", {}).get("mode") == "global"
+
+            if is_global:
+                # Global services already started from the zero-compose
+                # deploy (we only zeroed replicated services).  Just track
+                # and wait - ``docker service scale`` does not work on them.
+                log.info(
+                    "Tracking global service %s (already started, waiting for ready)",
+                    name,
+                )
+            else:
+                full_name = f"{stack_name}_{name}"
+                target_replicas = _get_target_replicas(full_compose, name)
+                log.info("Scaling %s to %d replica(s)", full_name, target_replicas)
+                await asyncio.to_thread(_scale_service, full_name, target_replicas)
+
+            status[name] = "scaling"
+            currently_scaling += 1
+
+        # --- 4. If anything is still not ready, wait before polling again -
+        if any(s != "ready" for s in status.values()):
+            await asyncio.sleep(_SCALE_POLL_INTERVAL)
+
+    log.info("All %d app services are ready", len(app_to_start))
 
 
 async def _deploy_core_stack_phased(
@@ -425,50 +526,106 @@ async def _deploy_core_stack_phased(
     full_compose: dict,
     selected_services: set[str],
 ) -> None:
-    """Deploy the core stack in batches, waiting for each batch to be ready.
+    """Deploy the core stack in phases to reduce CI pressure.
 
-    Mirrors the Makefile ``up-prod-phased`` target.  Each batch is deployed
-    by writing a filtered compose file and calling ``docker stack deploy``
-    with the accumulated set of services so far.
+    Previous approaches called ``docker stack deploy`` multiple times with
+    progressively larger filtered compose files.  ``yaml.dump`` reformatted
+    YAML, causing Docker Swarm to detect spec changes on already-running
+    services and **restart** them.
+
+    The current strategy avoids both problems:
+
+    1. Deploy once with **app services at replicas=0** and infra services
+       (postgres, redis, rabbit, migration) at their normal replica count.
+       This creates all services and networks in Docker Swarm but only
+       starts infra containers immediately.
+    2. Wait for all infra services to become healthy.
+    3. Use ``docker service scale`` to start app services in the order
+       defined by ``APP_SERVICES_DEPLOY_ORDER``.  A semaphore caps the
+       number of concurrently-starting services to
+       ``MAX_CONCURRENT_SERVICE_STARTS``.  As soon as one service becomes
+       running, its slot is freed and the next service in order is scaled
+       immediately (sliding window, not fixed batches).
+
+    Because ``docker service scale`` only touches the replica count, it
+    never triggers the spec-change restarts that plagued the filtered-
+    compose approach.
     """
-    batches = _compute_deployment_batches(selected_services)
-    cumulative_services: list[str] = []
+    deploy_order = _compute_deployment_order(selected_services)
+    if not deploy_order:
+        return
+
+    # Separate infra vs app services
+    infra_set = set(INFRA_SERVICES)
+    infra_services = [s for s in deploy_order if s in infra_set]
+    app_services = [s for s in deploy_order if s not in infra_set]
 
     async with aiodocker.Docker() as async_docker:
-        for batch_idx, batch in enumerate(batches, start=1):
-            # Skip services that are already running
-            services_to_start = await _filter_already_running(async_docker, batch, stack_name)
+        # Skip services that are already running (e.g. --keep-docker-up)
+        services_to_start = await _filter_already_running(async_docker, deploy_order, stack_name)
 
-            cumulative_services.extend(batch)
-            is_last_batch = batch_idx == len(batches)
+        if not services_to_start:
+            log.info("All services already running, deploying full compose for consistency")
+            _deploy_stack(compose_file, stack_name)
+            return
 
-            if not services_to_start:
-                log.info(
-                    "Phase %d/%d: all services already running, skipping deploy",
-                    batch_idx,
-                    len(batches),
-                )
-                continue
+        infra_to_start = [s for s in infra_services if s in set(services_to_start)]
+        app_to_start = [s for s in app_services if s in set(services_to_start)]
 
-            if is_last_batch:
-                # Final batch - deploy the original (complete) compose file
-                deploy_file = compose_file
-            else:
-                deploy_file = _write_filtered_compose(
-                    full_compose,
-                    cumulative_services,
-                    compose_file.parent / f".phased-batch-{batch_idx}.yml",
-                )
+        # Step 1: Deploy with app services at replicas=0, infra at normal replicas.
+        # This creates all services/networks in Docker Swarm but only starts
+        # infra containers immediately.  App services are held back.
+        zero_compose = deepcopy(full_compose)
+        for svc_name, svc_def in zero_compose.get("services", {}).items():
+            if svc_name not in infra_set:
+                deploy_cfg = svc_def.get("deploy", {})
+                if deploy_cfg.get("mode", "replicated") == "replicated":
+                    svc_def.setdefault("deploy", {})["replicas"] = 0
 
+        zero_file = compose_file.parent / ".phased-zero-replicas.yml"
+        try:
+            with zero_file.open("w") as fh:
+                yaml.dump(zero_compose, fh, default_flow_style=False)
             log.info(
-                "Phase %d/%d: deploying %s (cumulative: %d services)",
-                batch_idx,
-                len(batches),
-                services_to_start,
-                len(cumulative_services),
+                "Deploying compose: %d infra services at normal replicas, %d app services at 0 replicas",
+                len(infra_services),
+                len(app_services),
             )
-            _deploy_stack(deploy_file, stack_name)
-            await _wait_for_services_running(async_docker, services_to_start, stack_name)
+            _deploy_stack(zero_file, stack_name)
+        finally:
+            zero_file.unlink(missing_ok=True)
+
+        # Step 2: Wait for infra services to be ready
+        if infra_to_start:
+            log.info("Waiting for infra services: %s", infra_to_start)
+            await asyncio.gather(
+                *(_async_assert_service_is_running(async_docker, name, stack_name) for name in infra_to_start)
+            )
+            log.info("All infra services are ready")
+
+        # Step 3: Scale up app services strictly in APP_SERVICES_DEPLOY_ORDER.
+        # A status tracker keeps each service in one of three states:
+        #   "pending"  - not yet scaled
+        #   "scaling"  - scale command issued, waiting to become running
+        #   "ready"    - confirmed running
+        # A fast polling loop (every 0.5 s) checks whether scaling services
+        # have become ready.  Whenever the number of currently-scaling
+        # services drops below MAX_CONCURRENT_SERVICE_STARTS, the *next*
+        # pending service (in order) is scaled.  This guarantees services
+        # are always started in the defined order.
+        if app_to_start:
+            log.info(
+                "Scaling up %d app services (max %d concurrent): %s",
+                len(app_to_start),
+                MAX_CONCURRENT_SERVICE_STARTS,
+                app_to_start,
+            )
+            await _scale_app_services_in_order(
+                async_docker=async_docker,
+                app_to_start=app_to_start,
+                stack_name=stack_name,
+                full_compose=full_compose,
+            )
 
 
 @pytest.fixture(scope="module")
