@@ -4,10 +4,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 import os
-import time
 from collections.abc import Awaitable, Callable, Iterator
 from pprint import pformat
 from typing import Any
@@ -60,8 +60,7 @@ def env_vars_for_docker_compose(
 def core_services_selection(simcore_docker_compose: dict) -> list[str]:
     """Selection of services from the simcore stack"""
     # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
-    all_core_services = list(simcore_docker_compose["services"].keys())
-    return all_core_services
+    return list(simcore_docker_compose["services"].keys())
 
 
 @pytest.fixture(scope="module")
@@ -69,7 +68,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
     """Selection of services from the ops stack"""
     # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
     all_ops_services = list(ops_docker_compose["services"].keys())
-    if "CI" in os.environ:
+    if "IN_CI" in os.environ:
         all_ops_services = ["minio"]
         print(f"WARNING: Only required services will be started {all_ops_services=}")
     return all_ops_services
@@ -111,7 +110,7 @@ def registered_user(
         first_name=first_name.lower(),
         last_name=last_name.lower(),
         email=f"{first_name}.{last_name}@company.com".lower(),
-        password="alongpasswordthatisnotweak",
+        password="alongpasswordthatisnotweak",  # noqa: S106
         api_key="",
         api_secret="",
     )
@@ -240,7 +239,7 @@ async def services_registry(
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
-    time.sleep(wait_for_catalog_to_detect + 1)
+    await asyncio.sleep(wait_for_catalog_to_detect + 1)
 
     return {
         "sleeper_service": ServiceInfoDict(
