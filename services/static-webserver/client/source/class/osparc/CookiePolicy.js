@@ -94,6 +94,8 @@ qx.Class.define("osparc.CookiePolicy", {
       switch (id) {
         case "grid-container": {
           const grid = new qx.ui.layout.Grid(8, 4);
+          grid.setColumnFlex(0, 1);
+          grid.setColumnAlign(0, "right", "middle");
           control = new qx.ui.container.Composite(grid);
           break;
         }
@@ -101,7 +103,9 @@ qx.Class.define("osparc.CookiePolicy", {
           const link = osparc.CookiePolicy.getITISPrivacyPolicyLink("Privacy Policy");
           const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
-            rich: true
+            rich: true,
+            wrap: true,
+            textAlign: "right",
           });
           break;
         }
@@ -109,7 +113,9 @@ qx.Class.define("osparc.CookiePolicy", {
           const link = osparc.CookiePolicy.getS4LPrivacyPolicyLink("Privacy Policy");
           const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
-            rich: true
+            rich: true,
+            wrap: true,
+            textAlign: "right",
           });
           break;
         }
@@ -120,7 +126,9 @@ qx.Class.define("osparc.CookiePolicy", {
           break;
         case "license-text-s4llite": {
           control = new qx.ui.basic.Label().set({
-            rich: true
+            rich: true,
+            wrap: true,
+            textAlign: "right",
           });
           const text = this.tr("By visiting the site, you agree to the ");
           const licenseLink = "https://zurichmedtech.github.io/s4l-lite-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt";
@@ -131,7 +139,9 @@ qx.Class.define("osparc.CookiePolicy", {
         }
         case "license-text-s4l": {
           control = new qx.ui.basic.Label().set({
-            rich: true
+            rich: true,
+            wrap: true,
+            textAlign: "right",
           });
           const text = this.tr("By visiting the site, you agree to the ");
           const licenseLink = "https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt";
@@ -148,7 +158,9 @@ qx.Class.define("osparc.CookiePolicy", {
         case "license-text-2": {
           const text = this.tr("It also uses third party software and libraries. By visiting the site, you agree to the ");
           control = new qx.ui.basic.Label(text).set({
-            rich: true
+            rich: true,
+            wrap: true,
+            textAlign: "right",
           });
           const licenseLink = osparc.store.Support.getLicenseURL();
           const lbl = control.getValue();
@@ -170,7 +182,8 @@ qx.Class.define("osparc.CookiePolicy", {
           control = new qx.ui.form.Button(this.tr("Accept")).set({
             allowGrowX: false,
             allowGrowY: false,
-            alignY: "middle"
+            alignY: "middle",
+            appearance: "strong-button",
           });
           osparc.utils.Utils.setIdToWidget(control, "acceptCookiesBtn");
           break;
@@ -220,13 +233,13 @@ qx.Class.define("osparc.CookiePolicy", {
       }
 
       // Spacer pushes everything to the right
-      this._add(new qx.ui.core.Spacer(), { flex: 1 });
-      // Grid (texts + checkboxes) on the right
-      this._add(gridContainer);
+      this._add(new qx.ui.core.Spacer(), { flex: 100 });
+      // Grid takes available space, labels wrap on narrow screens
+      this._add(gridContainer, { flex: 1 });
       // Accept button next to checkboxes
       const acceptBtn = this.getChildControl("accept-button");
       this._add(acceptBtn);
-      this._add(new qx.ui.core.Spacer(), { flex: 1 });
+      this._add(new qx.ui.core.Spacer(), { flex: 100 });
 
       const evalAcceptButton = () => {
         acceptBtn.setEnabled(checkButtons.every(checkButton => checkButton.getValue()));
