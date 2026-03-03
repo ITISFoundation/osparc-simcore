@@ -402,11 +402,8 @@ qx.Class.define("osparc.Application", {
       // first, pop up new release window
       this.__checkNewRelease();
 
-      const platformName = osparc.store.StaticInfo.getPlatformName();
-      if (platformName !== "master") {
-        // then, pop up cookies accepted window. It will go on top.
-        this.__checkCookiesAccepted();
-      }
+      // then, pop up cookies accepted window. It will go on top.
+      this.__checkCookiesAccepted();
     },
 
     __checkNewRelease: function() {
@@ -426,25 +423,19 @@ qx.Class.define("osparc.Application", {
     __checkCookiesAccepted: function() {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
         const cookiePolicy = new osparc.CookiePolicy();
-        let title = this.tr("Privacy Policy");
-        let height = 160;
-        if (osparc.product.Utils.showLicenseExtra()) {
-          // "tis", "tiplite" and "s4llite" include the license terms
-          title = this.tr("Privacy Policy and License Terms");
-          height = 210;
-        }
-        const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: false
+        const doc = this.getRoot();
+        doc.add(cookiePolicy, {
+          bottom: 0,
+          left: 0,
+          right: 0
         });
         cookiePolicy.addListener("cookiesAccepted", () => {
           osparc.CookiePolicy.acceptCookies();
-          win.close();
+          doc.remove(cookiePolicy);
         }, this);
         cookiePolicy.addListener("cookiesDeclined", () => {
           osparc.CookiePolicy.declineCookies();
-          win.close();
+          doc.remove(cookiePolicy);
         }, this);
       }
     },

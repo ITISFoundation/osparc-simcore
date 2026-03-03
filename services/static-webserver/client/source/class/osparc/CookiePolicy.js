@@ -16,8 +16,10 @@
 ************************************************************************ */
 
 /**
- * The Cookie Policy widget and utils
+ * Cookie Policy footer banner.
  *
+ * Displays a horizontal bar pinned to the bottom of the page
+ * with cookie/license consent texts, checkboxes, and an Accept button.
  */
 qx.Class.define("osparc.CookiePolicy", {
   extend: qx.ui.core.Widget,
@@ -25,9 +27,13 @@ qx.Class.define("osparc.CookiePolicy", {
   construct: function() {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(5, 10);
-    grid.setColumnFlex(0, 1);
-    this._setLayout(grid);
+    this._setLayout(new qx.ui.layout.VBox(6));
+
+    this.set({
+      backgroundColor: "background-main-1",
+      padding: 10,
+      zIndex: 1000,
+    });
 
     this.__buildLayout();
   },
@@ -41,6 +47,13 @@ qx.Class.define("osparc.CookiePolicy", {
     COOKIES_ACCEPTED_NAME: "cookies_v0:accepted",
 
     areCookiesAccepted: function() {
+      // testing purposes
+      return false;
+      // for master platforms, we consider cookies accepted by default
+      const platformName = osparc.store.StaticInfo.getPlatformName();
+      if (platformName === "master") {
+        return true;
+      }
       const cookiesAccepted = osparc.utils.Utils.cookie.getCookie(this.COOKIES_ACCEPTED_NAME);
       return (cookiesAccepted === "true");
     },
@@ -74,6 +87,17 @@ qx.Class.define("osparc.CookiePolicy", {
   },
 
   members: {
+    __createRow: function(label, checkBox) {
+      const row = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+        alignY: "middle"
+      }));
+      row.add(label, {
+        flex: 1
+      });
+      row.add(checkBox);
+      return row;
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -81,11 +105,7 @@ qx.Class.define("osparc.CookiePolicy", {
           const link = osparc.CookiePolicy.getITISPrivacyPolicyLink("Privacy Policy");
           const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
-            rich : true
-          });
-          this._add(control, {
-            column: 0,
-            row: 0
+            rich: true
           });
           break;
         }
@@ -93,11 +113,7 @@ qx.Class.define("osparc.CookiePolicy", {
           const link = osparc.CookiePolicy.getS4LPrivacyPolicyLink("Privacy Policy");
           const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
-            rich : true
-          });
-          this._add(control, {
-            column: 0,
-            row: 0
+            rich: true
           });
           break;
         }
@@ -105,54 +121,38 @@ qx.Class.define("osparc.CookiePolicy", {
           control = new qx.ui.form.CheckBox().set({
             value: true
           });
-          this._add(control, {
-            column: 1,
-            row: 0
-          });
           break;
         case "license-text-s4llite": {
           control = new qx.ui.basic.Label().set({
-            rich : true
+            rich: true
           });
           const text = this.tr("By visiting the site, you agree to the ");
           const licenseLink = "https://zurichmedtech.github.io/s4l-lite-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt";
           const color = qx.theme.manager.Color.getInstance().resolve("text");
           const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
           control.setValue(text + textLink);
-          this._add(control, {
-            column: 0,
-            row: 1
-          });
           break;
         }
         case "license-text-s4l": {
           control = new qx.ui.basic.Label().set({
-            rich : true
+            rich: true
           });
           const text = this.tr("By visiting the site, you agree to the ");
           const licenseLink = "https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt";
           const color = qx.theme.manager.Color.getInstance().resolve("text");
           const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
           control.setValue(text + textLink);
-          this._add(control, {
-            column: 0,
-            row: 1
-          });
           break;
         }
         case "accept-license":
           control = new qx.ui.form.CheckBox().set({
             value: true
           });
-          this._add(control, {
-            column: 1,
-            row: 1
-          });
           break;
         case "license-text-2": {
           const text = this.tr("It also uses third party software and libraries. By visiting the site, you agree to the ");
           control = new qx.ui.basic.Label(text).set({
-            rich : true
+            rich: true
           });
           const licenseLink = osparc.store.Support.getLicenseURL();
           const lbl = control.getValue();
@@ -163,41 +163,19 @@ qx.Class.define("osparc.CookiePolicy", {
           } else {
             control.setValue(lbl + this.tr("Licensing."));
           }
-          this._add(control, {
-            column: 0,
-            row: 2
-          });
           break;
         }
         case "accept-license-2":
           control = new qx.ui.form.CheckBox().set({
             value: true
           });
-          this._add(control, {
-            column: 1,
-            row: 2
-          });
           break;
-        case "control-buttons": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignX: "right"
-          })).set({
-            padding: 2
-          });
-          this._add(control, {
-            column: 0,
-            row: 3,
-            colSpan: 2
-          });
-          break;
-        }
         case "accept-button": {
-          const ctrlBtns = this.getChildControl("control-buttons");
           control = new qx.ui.form.Button(this.tr("Accept")).set({
-            allowGrowX: false
+            allowGrowX: false,
+            alignX: "right"
           });
           osparc.utils.Utils.setIdToWidget(control, "acceptCookiesBtn");
-          ctrlBtns.add(control);
           break;
         }
       }
@@ -206,30 +184,40 @@ qx.Class.define("osparc.CookiePolicy", {
 
     __buildLayout: function() {
       const checkButtons = [];
+
+      // Cookie consent row
+      let cookieText;
       if (osparc.product.Utils.isS4LProduct()) {
-        this.getChildControl("cookie-text-s4l");
+        cookieText = this.getChildControl("cookie-text-s4l");
       } else {
-        this.getChildControl("cookie-text");
+        cookieText = this.getChildControl("cookie-text");
       }
       const acceptCookie = this.getChildControl("accept-cookie");
       checkButtons.push(acceptCookie);
+      this._add(this.__createRow(cookieText, acceptCookie));
 
+      // License rows (product-specific)
       if (osparc.product.Utils.showLicenseExtra()) {
+        let licenseText;
         if (osparc.product.Utils.isProduct("s4llite")) {
-          this.getChildControl("license-text-s4llite");
-          const acceptLicense = this.getChildControl("accept-license");
-          checkButtons.push(acceptLicense);
+          licenseText = this.getChildControl("license-text-s4llite");
         } else {
-          this.getChildControl("license-text-s4l");
-          const acceptLicense2 = this.getChildControl("accept-license");
-          checkButtons.push(acceptLicense2);
+          licenseText = this.getChildControl("license-text-s4l");
         }
-        this.getChildControl("license-text-2");
+        const acceptLicense = this.getChildControl("accept-license");
+        checkButtons.push(acceptLicense);
+        this._add(this.__createRow(licenseText, acceptLicense));
+
+        const licenseText2 = this.getChildControl("license-text-2");
         const acceptLicense2 = this.getChildControl("accept-license-2");
         checkButtons.push(acceptLicense2);
+        this._add(this.__createRow(licenseText2, acceptLicense2));
       }
 
+      // Accept button
       const acceptBtn = this.getChildControl("accept-button");
+      this._add(acceptBtn);
+
       const evalAcceptButton = () => {
         acceptBtn.setEnabled(checkButtons.every(checkButton => checkButton.getValue()));
       };
