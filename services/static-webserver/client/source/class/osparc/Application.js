@@ -425,7 +425,8 @@ qx.Class.define("osparc.Application", {
             maxHeight: Math.min(700, document.documentElement.clientHeight - 50),
             resizable: true
           });
-          win.center();
+          // Center after the window has actually resized
+          setTimeout(() => win.center(), 100);
         });
         const closeBtn = win.getChildControl("close-button");
         osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");

@@ -116,8 +116,8 @@ qx.Class.define("osparc.NewRelease", {
           const mdWidget = new osparc.ui.markdown.Markdown(cleaned).set({
             padding: 10
           });
-          mdWidget.addListenerOnce("appear", () => {
-            this.__styleMarkdownDom(mdWidget);
+          mdWidget.addListener("resized", () => {
+            this.__styleMarkdownImages(mdWidget);
           });
           const scrollContainer = new qx.ui.container.Scroll();
           scrollContainer.add(mdWidget);
@@ -136,21 +136,36 @@ qx.Class.define("osparc.NewRelease", {
     /**
      * Post-processes fetched markdown before rendering:
      * - Strips the first top-level heading (e.g. "# Release Notes")
+     * - Collapses multi-line HTML tags into single lines so that
+     *   marked's `breaks: true` option doesn't corrupt them with <br> tags.
      */
     __postProcessMarkdown: function(markdown) {
       // Strip the first top-level heading if present
-      return markdown.replace(/^\s*#\s+.*\n*/, "");
+      let cleaned = markdown.replace(/^\s*#\s+.*\n*/, "");
+      // Iteratively collapse multi-line HTML tags into single lines.
+      // marked's `breaks: true` inserts <br> at every newline, which corrupts
+      // multi-line HTML tags like <img height="800"\nalt="..."\nsrc="...">.
+      // Each pass collapses one newline per tag; repeat until stable.
+      let prev;
+      do {
+        prev = cleaned;
+        cleaned = cleaned.replace(/<([a-zA-Z][^>\n]*)\n\s*/g, "<$1 ");
+      } while (cleaned !== prev);
+      return cleaned;
     },
 
     /**
-     * Injects styles into the Markdown widget's DOM element
+     * Applies max-width style to all images inside the Markdown widget.
+     * Called on every resize so newly loaded images are also styled.
      */
-    __styleMarkdownDom: function(mdWidget) {
+    __styleMarkdownImages: function(mdWidget) {
       const el = mdWidget.getContentElement().getDomElement();
       if (el) {
-        const style = document.createElement("style");
-        style.textContent = "img { max-width: 100%; height: auto; }";
-        el.appendChild(style);
+        const images = qx.bom.Selector.query("img", el);
+        for (let i = 0; i < images.length; i++) {
+          images[i].style.maxWidth = "100%";
+          images[i].style.height = "auto";
+        }
       }
     },
 
