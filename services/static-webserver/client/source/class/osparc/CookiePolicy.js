@@ -49,8 +49,6 @@ qx.Class.define("osparc.CookiePolicy", {
     COOKIES_ACCEPTED_NAME: "cookies_v0:accepted",
 
     areCookiesAccepted: function() {
-      // testing purposes
-      return false;
       // for master platforms, we consider cookies accepted by default
       const platformName = osparc.store.StaticInfo.getPlatformName();
       if (platformName === "master") {
