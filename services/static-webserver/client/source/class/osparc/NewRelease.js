@@ -90,22 +90,15 @@ qx.Class.define("osparc.NewRelease", {
 
   members: {
     __buildLayout: function() {
-      const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
-      const introLabel = new qx.ui.basic.Label(introText).set({
-        font: "text-14",
-        rich: true,
-        wrap: true
-      });
-      this._add(introLabel);
-
       // const releaseLink = osparc.utils.Utils.getReleaseLink();
       // testing
-      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/s4l/v1.88.0.md";
+      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.88.0.md";
       const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
 
       if (rawUrl) {
         this.__fetchAndRenderMarkdown(rawUrl, releaseLink);
       } else {
+        this.__addFallbackIntro();
         this.__addFallbackLink(releaseLink);
       }
     },
@@ -119,7 +112,13 @@ qx.Class.define("osparc.NewRelease", {
           return response.text();
         })
         .then(markdown => {
-          const mdWidget = new osparc.ui.markdown.Markdown(markdown);
+          const cleaned = this.__postProcessMarkdown(markdown);
+          const mdWidget = new osparc.ui.markdown.Markdown(cleaned).set({
+            padding: 10
+          });
+          mdWidget.addListenerOnce("appear", () => {
+            this.__styleMarkdownDom(mdWidget);
+          });
           const scrollContainer = new qx.ui.container.Scroll();
           scrollContainer.add(mdWidget);
           this._add(scrollContainer, {
@@ -129,8 +128,40 @@ qx.Class.define("osparc.NewRelease", {
         })
         .catch(err => {
           console.warn("Could not fetch release notes from GitHub, falling back to link:", err);
+          this.__addFallbackIntro();
           this.__addFallbackLink(originalLink);
         });
+    },
+
+    /**
+     * Post-processes fetched markdown before rendering:
+     * - Strips the first top-level heading (e.g. "# Release Notes")
+     */
+    __postProcessMarkdown: function(markdown) {
+      // Strip the first top-level heading if present
+      return markdown.replace(/^\s*#\s+.*\n*/, "");
+    },
+
+    /**
+     * Injects styles into the Markdown widget's DOM element
+     */
+    __styleMarkdownDom: function(mdWidget) {
+      const el = mdWidget.getContentElement().getDomElement();
+      if (el) {
+        const style = document.createElement("style");
+        style.textContent = "img { max-width: 100%; height: auto; }";
+        el.appendChild(style);
+      }
+    },
+
+    __addFallbackIntro: function() {
+      const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
+      const introLabel = new qx.ui.basic.Label(introText).set({
+        font: "text-14",
+        rich: true,
+        wrap: true
+      });
+      this._add(introLabel);
     },
 
     __addFallbackLink: function(releaseLink) {
