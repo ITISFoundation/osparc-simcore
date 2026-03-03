@@ -36,8 +36,6 @@ qx.Class.define("osparc.NewRelease", {
      * Compare the version logged in the cache with the one being shown
      */
     firstTimeISeeThisFrontend: function() {
-      // testing
-      return true;
       let isIt = false;
       const lastUICommit = osparc.utils.Utils.localCache.getLastCommitVcsRefUI();
       const thisUICommit = osparc.utils.LibVersions.getVcsRefUI();
@@ -90,9 +88,7 @@ qx.Class.define("osparc.NewRelease", {
 
   members: {
     __buildLayout: function() {
-      // const releaseLink = osparc.utils.Utils.getReleaseLink();
-      // testing
-      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.88.0.md";
+      const releaseLink = osparc.utils.Utils.getReleaseLink();
       const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
 
       if (rawUrl) {
