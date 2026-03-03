@@ -10,7 +10,7 @@ import subprocess
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Final
+from typing import Any
 
 import aiodocker
 import docker
@@ -33,19 +33,6 @@ from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
 
 log = logging.getLogger(__name__)
-
-# Service deployment batches for the core stack, matching Makefile's up-prod-phased target.
-# Each batch is deployed and verified running before the next batch starts,
-# avoiding Docker Swarm issues in CI when starting all services simultaneously.
-_CORE_SERVICE_BATCHES: Final[list[list[str]]] = [
-    ["postgres", "redis", "rabbit", "migration"],
-    ["catalog", "director", "agent", "docker-api-proxy", "static-webserver"],
-    ["storage", "sto-worker", "sto-worker-cpu-bound", "dask-scheduler", "dask-sidecar"],
-    ["director-v2", "dynamic-schdlr", "wb-garbage-collector", "wb-api-server", "wb-auth"],
-    ["wb-db-event-listener", "webserver", "autoscaling", "clusters-keeper", "resource-usage-tracker"],
-    ["efs-guardian", "api-server", "api-worker", "datcore-adapter", "invitations"],
-    ["notifications", "notifications-worker", "payments", "traefik", "traefik-config-placeholder"],
-]
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -318,81 +305,6 @@ def interactive_services_subnet_docker_network(
             network.remove()
 
 
-async def _check_stack_services_running(
-    docker_client: docker.client.DockerClient,
-    stack_name: str,
-) -> None:
-    """Wait for all services in a stack namespace to be running (parallel checks)."""
-    services = docker_client.services.list(filters={"label": f"com.docker.stack.namespace={stack_name}"})
-    if not services:
-        return
-    done, pending = await asyncio.wait(
-        [asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service) for service in services],
-        return_when=asyncio.FIRST_EXCEPTION,
-    )
-    for future in done:
-        if exc := future.exception():
-            raise exc
-    assert not pending, f"some services did not start correctly [{pending}]"
-
-
-async def _deploy_core_stack_phased(
-    compose_file: Path,
-    stack_name: str,
-    docker_client: docker.client.DockerClient,
-) -> dict[str, Any]:
-    """Deploy core stack in batches matching Makefile's up-prod-phased target.
-
-    Services are deployed progressively in batches. Each batch is verified
-    running before the next batch starts, avoiding Docker Swarm issues in CI
-    when starting all services simultaneously.
-
-    Returns the parsed compose dict.
-    """
-    core_compose = yaml.safe_load(compose_file.read_text())
-    all_compose_services = set(core_compose.get("services", {}).keys())
-    accumulated_services: set[str] = set()
-    tmp_compose_file = compose_file.parent / ".stack-phased-pytest.yml"
-
-    try:
-        for batch_index, batch_service_names in enumerate(_CORE_SERVICE_BATCHES):
-            services_in_batch = [s for s in batch_service_names if s in all_compose_services]
-            if not services_in_batch:
-                continue
-            accumulated_services.update(services_in_batch)
-
-            # Create filtered compose with only the accumulated services so far
-            filtered_compose = {k: v for k, v in core_compose.items() if k != "services"}
-            filtered_compose["services"] = {
-                k: v for k, v in core_compose["services"].items() if k in accumulated_services
-            }
-
-            log.info(
-                "Deploying core batch %d/%d: %s",
-                batch_index + 1,
-                len(_CORE_SERVICE_BATCHES),
-                services_in_batch,
-            )
-            tmp_compose_file.write_text(yaml.dump(filtered_compose, default_flow_style=False))
-            _deploy_stack(tmp_compose_file, stack_name)
-            await _check_stack_services_running(docker_client, stack_name)
-            log.info("Core batch %d/%d is running", batch_index + 1, len(_CORE_SERVICE_BATCHES))
-
-        # Deploy full compose file to catch any services not covered by batches
-        remaining = all_compose_services - accumulated_services
-        if remaining:
-            log.info(
-                "Deploying remaining core services not in batches: %s",
-                remaining,
-            )
-            _deploy_stack(compose_file, stack_name)
-            await _check_stack_services_running(docker_client, stack_name)
-    finally:
-        tmp_compose_file.unlink(missing_ok=True)
-
-    return core_compose
-
-
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def docker_stack(  # noqa: C901
     osparc_simcore_services_dir: Path,
@@ -414,14 +326,14 @@ async def docker_stack(  # noqa: C901
     assert core_stack_name.startswith("pytest-")
     stacks = [
         (
-            "ops",
-            ops_stack_name,
-            ops_docker_compose_file,
-        ),
-        (
             "core",
             core_stack_name,
             core_docker_compose_file,
+        ),
+        (
+            "ops",
+            ops_stack_name,
+            ops_docker_compose_file,
         ),
     ]
 
@@ -429,43 +341,39 @@ async def docker_stack(  # noqa: C901
     # be force updated so that it does its job. else it remains and tests will fail
     _force_remove_migration_service(docker_client)
     _make_dask_sidecar_certificates(osparc_simcore_services_dir)
-
-    # Deploy stacks in phased order matching Makefile's up-prod-phased target.
-    # Ops stack is deployed first, then core services are deployed in batches
-    # to avoid Docker Swarm issues in CI when starting all services simultaneously.
+    # make up-version
     stacks_deployed: dict[str, dict] = {}
+    for key, stack_name, compose_file in stacks:
+        _deploy_stack(compose_file, stack_name)
 
-    # Phase 1: Deploy ops stack and wait for its services
-    log.info("Deploying ops stack '%s'...", ops_stack_name)
-    _deploy_stack(ops_docker_compose_file, ops_stack_name)
-    stacks_deployed["ops"] = {
-        "name": ops_stack_name,
-        "compose": yaml.safe_load(ops_docker_compose_file.read_text()),
-    }
-    await _check_stack_services_running(docker_client, ops_stack_name)
+        stacks_deployed[key] = {
+            "name": stack_name,
+            "compose": yaml.safe_load(compose_file.read_text()),
+        }
 
-    # Phase 2: Deploy core stack in batches
-    core_compose = await _deploy_core_stack_phased(core_docker_compose_file, core_stack_name, docker_client)
-    stacks_deployed["core"] = {
-        "name": core_stack_name,
-        "compose": core_compose,
-    }
-
-    # Final verification: all services across all stacks
+    # All SELECTED services ready
+    # - notice that the timeout is set for all services in both stacks
+    # - TODO: the time to deploy will depend on the number of services selected
     try:
-        all_services = docker_client.services.list()
-        assert all_services, "no services found after deployment"
-        done, pending = await asyncio.wait(
-            [
-                asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
-                for service in all_services
-            ],
-            return_when=asyncio.FIRST_EXCEPTION,
-        )
-        for future in done:
-            if exc := future.exception():
-                raise exc
-        assert not pending, f"some service did not start correctly [{pending}]"
+
+        async def _check_all_services_are_running():
+            done, pending = await asyncio.wait(
+                [
+                    asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
+                    for service in docker_client.services.list()
+                ],
+                return_when=asyncio.FIRST_EXCEPTION,
+            )
+            assert done, f"no services ready, they all failed! [{pending}]"
+
+            for future in done:
+                if exc := future.exception():
+                    raise exc
+
+            assert not pending, f"some service did not start correctly [{pending}]"
+
+        await _check_all_services_are_running()
+
     finally:
         _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 
