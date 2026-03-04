@@ -23,7 +23,6 @@ class UserPreferencesRepository:
         preference_classes: tuple[type[P]],
     ) -> tuple[P]: ...
 
-    # Two preferences
     @overload
     async def get_user_preferences[P1: NotificationsUserPreference, P2: NotificationsUserPreference](
         self,
@@ -34,7 +33,6 @@ class UserPreferencesRepository:
         preference_classes: tuple[type[P1], type[P2]],
     ) -> tuple[P1, P2]: ...
 
-    # Three preferences
     @overload
     async def get_user_preferences[
         P1: NotificationsUserPreference,
