@@ -37,7 +37,7 @@ class VendorUI(TypedDict, total=True):
 
 
 type _ServiceKey = str
-type _ServiceURL = str
+type _ReleaseNotesURL = str
 
 
 class Vendor(TypedDict, total=False):
@@ -64,7 +64,7 @@ class Vendor(TypedDict, total=False):
 
     # a mapping between service key and release notes url
     # (used for resolving a service's release notes url in the frontend)
-    services_release_notes_urls: dict[_ServiceKey, _ServiceURL]
+    services_release_notes_urls: dict[_ServiceKey, _ReleaseNotesURL]
 
     ui: VendorUI
 
