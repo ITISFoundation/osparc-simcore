@@ -408,15 +408,7 @@ qx.Class.define("osparc.Application", {
 
     __checkNewRelease: function() {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
-        const newRelease = new osparc.NewRelease();
-        const title = this.tr("New Version Released");
-        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: true
-        });
-        const closeBtn = win.getChildControl("close-button");
-        osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+        osparc.NewRelease.popUpReleaseNotes();
       }
     },
 
