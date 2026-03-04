@@ -49,9 +49,9 @@ class NoPreferenceFoundError(RuntimeError):
 
 
 class _BaseUserPreferenceModel(_ExtendedBaseModel):
-    preference_type: PreferenceType = Field(..., description="distinguish between the types of preferences")
+    preference_type: Annotated[PreferenceType, Field(description="distinguish between the types of preferences")]
 
-    value: Any = Field(..., description="value of the preference")
+    value: Annotated[Any, Field(description="value of the preference")]
 
     @classmethod
     def get_preference_class_from_name(cls, preference_name: PreferenceName) -> type["_BaseUserPreferenceModel"]:
@@ -83,7 +83,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 class FrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: Literal[PreferenceType.FRONTEND] = PreferenceType.FRONTEND
 
-    preference_identifier: PreferenceIdentifier = Field(..., description="used by the frontend")
+    preference_identifier: Annotated[PreferenceIdentifier, Field(description="used by the frontend")]
 
     value: Any
 
@@ -111,8 +111,8 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 class UserServiceUserPreference(_BaseUserPreferenceModel):
     preference_type: Literal[PreferenceType.USER_SERVICE] = PreferenceType.USER_SERVICE
 
-    service_key: ServiceKey = Field(..., description="the service which manages the preferences")
-    service_version: ServiceVersion = Field(..., description="version of the service which manages the preference")
+    service_key: Annotated[ServiceKey, Field(description="the service which manages the preferences")]
+    service_version: Annotated[ServiceVersion, Field(description="version of the service which manages the preference")]
 
     def to_db(self) -> dict:
         return self.model_dump(exclude={"preference_type"})
@@ -124,7 +124,7 @@ class NotificationsUserPreference(_BaseUserPreferenceModel):
     value: Any
 
     def to_db(self) -> dict:
-        return self.model_dump(exclude={"preference_type"})
+        return self.model_dump(include={"value"})
 
 
 type AnyUserPreference = Annotated[

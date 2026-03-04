@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
 from models_library.products import ProductName
-from models_library.user_preferences import NotificationsUserPreference
 from models_library.users import UserID
 
+from ..models.user_preferences import (
+    NotificationsEmailSubscriptionPreference,
+    NotificationsGlobalSubscriptionPreference,
+)
 from ..repositories import UserPreferencesRepository
 
 
@@ -11,15 +14,19 @@ from ..repositories import UserPreferencesRepository
 class UserPreferencesService:
     user_preferences_repo: UserPreferencesRepository
 
-    async def get_user_preference(
+    async def is_user_subscribed_to_email_notifications(
         self,
         *,
         user_id: UserID,
         product_name: ProductName,
-        preference_class: type[NotificationsUserPreference],
-    ) -> NotificationsUserPreference | None:
-        return await self.user_preferences_repo.get_user_preferences(
+    ) -> bool:
+        is_user_global_subscribed, is_user_email_subscribed = await self.user_preferences_repo.get_user_preferences(
             user_id=user_id,
             product_name=product_name,
-            preference_class=preference_class,
+            preference_classes=[
+                NotificationsGlobalSubscriptionPreference,
+                NotificationsEmailSubscriptionPreference,
+            ],
         )
+
+        return is_user_global_subscribed.value and is_user_email_subscribed.value
