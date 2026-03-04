@@ -91,6 +91,9 @@
 /* ── images ────────────────────────────────────────────── */
 
 .osparc-release-notes img {
+  display: block;
+  max-width: 100%;
+  height: auto;
   margin: 0.5em 0;
   border-radius: 6px;
 }
