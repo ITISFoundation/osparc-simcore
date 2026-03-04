@@ -191,13 +191,12 @@ qx.Class.define("osparc.NewRelease", {
     },
 
     /**
-     * Sets CSS custom properties (--rn-text, --rn-text-muted)
+     * Sets CSS custom properties (--rn-text-muted)
      * on the document root, resolved from the current qooxdoo theme colors.
      */
     __applyThemeCssVars: function() {
       const colorMgr = qx.theme.manager.Color.getInstance();
       const root = document.documentElement.style;
-      root.setProperty("--rn-text", colorMgr.resolve("text"));
       root.setProperty("--rn-text-muted", colorMgr.resolve("text-opa70"));
     },
 
