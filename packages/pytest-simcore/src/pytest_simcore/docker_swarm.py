@@ -33,7 +33,7 @@ from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Phased deployment order (mirrors Makefile deploy batches)
@@ -85,7 +85,7 @@ _SERVICES_DEPLOY_ORDER: list[str] = [
 ]
 
 #: Maximum number of app services being started (not yet running) at any time.
-MAX_CONCURRENT_SERVICE_STARTS: int = 4
+_MAX_CONCURRENT_SERVICE_STARTS: int = 4
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -105,7 +105,7 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
 @retry(
     wait=wait_fixed(1),
     stop=stop_after_delay(8 * MINUTE),
-    before_sleep=before_sleep_log(log, logging.INFO),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
     reraise=True,
 )
 def assert_service_is_running(service) -> None:
@@ -121,7 +121,7 @@ def assert_service_is_running(service) -> None:
     service_name = service.name
     num_replicas_specified = _get(service.attrs, "Spec.Mode.Replicated.Replicas", default=1)
 
-    log.info(
+    _logger.info(
         "Waiting for service_name='%s' to have num_replicas_specified=%s ...",
         service_name,
         num_replicas_specified,
@@ -335,7 +335,7 @@ async def _async_assert_service_is_running(
             num_running = sum(1 for t in tasks if t.get("Status", {}).get("State") == "running")
 
             assert num_running >= num_replicas, f"'{full_service_name}' has {num_running}/{num_replicas} running tasks"
-            log.info("--> %s is up and running!", full_service_name)
+            _logger.info("--> %s is up and running!", full_service_name)
 
 
 async def _is_service_already_running(
@@ -379,7 +379,7 @@ async def _filter_already_running(
     )
     not_running = [name for name, is_running in zip(service_names, results, strict=True) if not is_running]
     if already := len(service_names) - len(not_running):
-        log.info(
+        _logger.info(
             "Skipping %d service(s) already running: %s",
             already,
             [n for n, r in zip(service_names, results, strict=True) if r],
@@ -395,7 +395,7 @@ async def _wait_for_services_running(
     """Wait for every service in *service_names* to be running (parallel)."""
     if not service_names:
         return
-    log.info(
+    _logger.info(
         "Waiting for %d service(s) to become ready: %s",
         len(service_names),
         service_names,
@@ -456,7 +456,7 @@ async def _scale_app_services_in_order(
     zero-replicas deploy so we just wait for them to become ready.
     """
 
-    log.info("Services will be started in this exact order: %s", app_to_start)
+    _logger.info("Services will be started in this exact order: %s", app_to_start)
 
     # Ordered status tracker - preserves the order of app_to_start
     status: dict[str, str] = dict.fromkeys(app_to_start, "pending")
@@ -471,13 +471,13 @@ async def _scale_app_services_in_order(
                 continue
             if await _is_service_already_running(async_docker, name, stack_name):
                 status[name] = "ready"
-                log.info("--> %s is ready", name)
+                _logger.info("--> %s is ready", name)
 
         # --- 2. Count how many are currently scaling ----------------------
         currently_scaling = sum(1 for s in status.values() if s == "scaling")
 
         # --- 3. Fill free slots with the next pending services in order ---
-        while currently_scaling < MAX_CONCURRENT_SERVICE_STARTS and next_to_scale < len(app_to_start):
+        while currently_scaling < _MAX_CONCURRENT_SERVICE_STARTS and next_to_scale < len(app_to_start):
             name = app_to_start[next_to_scale]
             next_to_scale += 1
 
@@ -487,14 +487,14 @@ async def _scale_app_services_in_order(
             if is_global:
                 # Global services cannot be scaled.  They were started by
                 # the initial deploy and are tracked until ready.
-                log.info(
+                _logger.info(
                     "Tracking global service %s (already started, waiting for ready)",
                     name,
                 )
             else:
                 full_name = f"{stack_name}_{name}"
                 target_replicas = _get_target_replicas(full_compose, name)
-                log.info("Scaling %s to %d replica(s)", full_name, target_replicas)
+                _logger.info("Scaling %s to %d replica(s)", full_name, target_replicas)
                 await asyncio.to_thread(_scale_service, full_name, target_replicas)
 
             status[name] = "scaling"
@@ -504,7 +504,7 @@ async def _scale_app_services_in_order(
         if any(s != "ready" for s in status.values()):
             await asyncio.sleep(_SCALE_POLL_INTERVAL)
 
-    log.info("All %d app services are ready", len(app_to_start))
+    _logger.info("All %d app services are ready", len(app_to_start))
 
 
 async def _deploy_core_stack_phased(
@@ -522,7 +522,7 @@ async def _deploy_core_stack_phased(
        containers — no image pulls, no task scheduling.
     2. Restore the original replica count service-by-service in the
        predefined deploy order.  A sliding window caps concurrent
-       starts to ``MAX_CONCURRENT_SERVICE_STARTS``.  As soon as one
+       starts to ``_MAX_CONCURRENT_SERVICE_STARTS``.  As soon as one
        service becomes running, its slot is freed and the next service
        is scaled up immediately.
 
@@ -542,12 +542,12 @@ async def _deploy_core_stack_phased(
 
         if not services_to_start:
             if keep_docker_up:
-                log.info(
+                _logger.info(
                     "keep_docker_up=True and all %d services already running - skipping redeployment",
                     len(deploy_order),
                 )
                 return
-            log.info("All services already running, deploying full compose for consistency")
+            _logger.info("All services already running, deploying full compose for consistency")
             _deploy_stack(compose_file, stack_name)
             return
 
@@ -567,7 +567,7 @@ async def _deploy_core_stack_phased(
         try:
             with zero_file.open("w") as fh:
                 yaml.dump(zero_compose, fh, default_flow_style=False)
-            log.info(
+            _logger.info(
                 "Deploying compose with all %d services at 0 replicas",
                 len(deploy_order),
             )
@@ -577,13 +577,13 @@ async def _deploy_core_stack_phased(
 
         # Step 2: Scale up services in the predefined deploy order.
         # A sliding-window tracker caps the number of concurrently-starting
-        # services to MAX_CONCURRENT_SERVICE_STARTS.  As soon as one
+        # services to _MAX_CONCURRENT_SERVICE_STARTS.  As soon as one
         # service becomes running, its slot is freed and the next service
         # in order is scaled immediately.
-        log.info(
+        _logger.info(
             "Scaling up %d service(s) (max %d concurrent): %s",
             len(to_start),
-            MAX_CONCURRENT_SERVICE_STARTS,
+            _MAX_CONCURRENT_SERVICE_STARTS,
             to_start,
         )
         await _scale_app_services_in_order(
@@ -764,7 +764,7 @@ async def docker_stack(
                 capture_output=True,
             )
         except subprocess.CalledProcessError as err:
-            log.warning(
+            _logger.warning(
                 "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
                 err.cmd,
                 err.returncode,
@@ -783,7 +783,7 @@ async def docker_stack(
             for attempt in Retrying(
                 wait=wait_fixed(2),
                 stop=stop_after_delay(3 * MINUTE),
-                before_sleep=before_sleep_log(log, logging.INFO),
+                before_sleep=before_sleep_log(_logger, logging.INFO),
                 reraise=True,
             ):
                 with attempt:
