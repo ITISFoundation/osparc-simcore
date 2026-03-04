@@ -158,6 +158,7 @@ jobs:
               - 'packages/**'
               - 'services/agent/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             notifications:
@@ -221,6 +222,7 @@ jobs:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             efs-guardian:
@@ -280,6 +282,7 @@ jobs:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'scripts/install_rclone.bash'
               - 'mypy.ini'
             anything-py:
               - '**/*.py'

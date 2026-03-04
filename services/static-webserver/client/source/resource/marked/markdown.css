@@ -26,6 +26,8 @@
 .osparc-markdown blockquote {
   margin: .25em 0;
   padding-left: 0.6em;
+  border-left: 3px solid currentColor;
+  opacity: 0.7;
 }
 
 /* code blocks */
@@ -33,14 +35,20 @@
   margin: .25em 0;
   padding: .4em .6em;
   border-radius: 4px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
   white-space: pre-wrap;
   word-break: break-word;
 }
 .osparc-markdown code {
-  font-family: monospace;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", monospace;
   font-size: 0.95em;
   padding: 0 .25em;
   border-radius: 4px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+.osparc-markdown pre code {
+  padding: 0;
+  background: none;
 }
 
 /* headings */
@@ -60,7 +68,32 @@
 .osparc-markdown img {
   max-width: 100%;
   height: auto;
-  display: block;       /* avoids weird inline metrics */
-  margin: .25em 0;      /* matches your spacing scale */
-  border-radius: 4px;   /* optional: match bubble style */
+  display: block;
+  margin: .25em 0;
+  border-radius: 4px;
+}
+
+/* horizontal rules */
+.osparc-markdown hr {
+  border: none;
+  border-top: 1px solid currentColor;
+  opacity: 0.2;
+  margin: 1em 0;
+}
+
+/* tables */
+.osparc-markdown table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  width: 100%;
+}
+.osparc-markdown th,
+.osparc-markdown td {
+  padding: 0.4em 0.6em;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  text-align: left;
+}
+.osparc-markdown th {
+  font-weight: 600;
+  background: color-mix(in srgb, currentColor 8%, transparent);
 }
