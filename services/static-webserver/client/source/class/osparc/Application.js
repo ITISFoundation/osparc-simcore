@@ -408,33 +408,7 @@ qx.Class.define("osparc.Application", {
 
     __checkNewRelease: function() {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
-        const newRelease = new osparc.NewRelease();
-        const title = this.tr("New Version Released");
-        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: true
-        });
-        newRelease.addListener("releaseNotesLoaded", () => {
-          const winWidth = 700;
-          const winHeight = Math.min(700, document.documentElement.clientHeight - 50);
-          win.set({
-            width: winWidth,
-            height: winHeight,
-            minHeight: 500,
-            maxHeight: winHeight,
-            resizable: true
-          });
-          // Explicitly position the window in the center of the viewport
-          const vpWidth = document.documentElement.clientWidth;
-          const vpHeight = document.documentElement.clientHeight;
-          win.moveTo(
-            Math.round((vpWidth - winWidth) / 2),
-            Math.round((vpHeight - winHeight) / 2)
-          );
-        });
-        const closeBtn = win.getChildControl("close-button");
-        osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+        osparc.NewRelease.popUpReleaseNotes();
       }
     },
 

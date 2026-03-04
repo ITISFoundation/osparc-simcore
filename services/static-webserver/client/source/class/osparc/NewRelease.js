@@ -89,6 +89,55 @@ qx.Class.define("osparc.NewRelease", {
         return `https://raw.githubusercontent.com/${owner}/${repo}/${branchAndPath}`;
       }
       return null;
+    },
+
+    /**
+     * Always opens a popup with the NewRelease widget.
+     * If the release link is a renderable markdown, it renders it.
+     * Otherwise, shows the fallback intro text and link.
+     */
+    popUpReleaseNotes: function() {
+      const newRelease = new osparc.NewRelease();
+      const title = qx.locale.Manager.tr("New Version Released");
+      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+        clickAwayClose: false,
+        resizable: false,
+        showClose: true
+      });
+      newRelease.addListener("releaseNotesLoaded", () => {
+        const winWidth = 700;
+        const winHeight = Math.min(700, document.documentElement.clientHeight - 50);
+        win.set({
+          width: winWidth,
+          height: winHeight,
+          minHeight: 500,
+          maxHeight: winHeight,
+          resizable: true
+        });
+        const vpWidth = document.documentElement.clientWidth;
+        const vpHeight = document.documentElement.clientHeight;
+        win.moveTo(
+          Math.round((vpWidth - winWidth) / 2),
+          Math.round((vpHeight - winHeight) / 2)
+        );
+      });
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+    },
+
+    /**
+     * Opens a dialog with rendered release notes markdown only if the
+     * releaseLink points to a renderable GitHub markdown file.
+     * @param {String} releaseLink The GitHub blob URL of the release notes.
+     * @returns {Boolean} true if the dialog was opened, false otherwise.
+     */
+    openReleaseNotesDialog: function(releaseLink) {
+      const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
+      if (!rawUrl) {
+        return false;
+      }
+      osparc.NewRelease.popUpReleaseNotes();
+      return true;
     }
   },
 
@@ -96,7 +145,7 @@ qx.Class.define("osparc.NewRelease", {
     __buildLayout: function() {
       // const releaseLink = osparc.utils.Utils.getReleaseLink();
       // testing
-      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.89.0.md";
+      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.88.0.md";
       const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
 
       if (rawUrl) {
