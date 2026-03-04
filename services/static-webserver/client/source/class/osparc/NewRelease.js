@@ -36,6 +36,8 @@ qx.Class.define("osparc.NewRelease", {
      * Compare the version logged in the cache with the one being shown
      */
     firstTimeISeeThisFrontend: function() {
+      // testing
+      return true;
       let isIt = false;
       const lastUICommit = osparc.utils.Utils.localCache.getLastCommitVcsRefUI();
       const thisUICommit = osparc.utils.LibVersions.getVcsRefUI();
@@ -88,7 +90,9 @@ qx.Class.define("osparc.NewRelease", {
 
   members: {
     __buildLayout: function() {
-      const releaseLink = osparc.utils.Utils.getReleaseLink();
+      // const releaseLink = osparc.utils.Utils.getReleaseLink();
+      // testing
+      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.88.0.md";
       const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
 
       if (rawUrl) {
@@ -108,25 +112,30 @@ qx.Class.define("osparc.NewRelease", {
           return response.text();
         })
         .then(markdown => {
-          const cleaned = this.__postProcessMarkdown(markdown);
-          const mdWidget = new osparc.ui.markdown.Markdown(cleaned).set({
-            padding: 10
-          });
-          mdWidget.addListener("resized", () => {
-            this.__styleMarkdownImages(mdWidget);
-          });
-          const scrollContainer = new qx.ui.container.Scroll();
-          scrollContainer.add(mdWidget);
-          this._add(scrollContainer, {
-            flex: 1
-          });
-          this.fireEvent("releaseNotesLoaded");
+          this.__addMarkdown(markdown);
+          this.__addDetailsLink(originalLink);
         })
         .catch(err => {
           console.warn("Could not fetch release notes from GitHub, falling back to link:", err);
           this.__addFallbackIntro();
           this.__addFallbackLink(originalLink);
         });
+    },
+
+    __addMarkdown: function(markdown) {
+      const cleaned = this.__postProcessMarkdown(markdown);
+      const mdWidget = new osparc.ui.markdown.Markdown(cleaned).set({
+        padding: 10
+      });
+      mdWidget.addListener("resized", () => {
+        this.__styleMarkdownImages(mdWidget);
+      });
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(mdWidget);
+      this._add(scrollContainer, {
+        flex: 1
+      });
+      this.fireEvent("releaseNotesLoaded");
     },
 
     /**
@@ -165,6 +174,16 @@ qx.Class.define("osparc.NewRelease", {
       }
     },
 
+    __addDetailsLink: function(releaseLink) {
+      const releaseTag = osparc.utils.Utils.getReleaseTag();
+      const linkLabel = new osparc.ui.basic.LinkLabel().set({
+        value: this.tr("Check more details in ") + releaseTag,
+        url: releaseLink,
+        font: "link-label-14"
+      });
+      this._add(linkLabel);
+    },
+
     __addFallbackIntro: function() {
       const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
       const introLabel = new qx.ui.basic.Label(introText).set({
@@ -183,6 +202,6 @@ qx.Class.define("osparc.NewRelease", {
         font: "link-label-14"
       });
       this._add(linkLabel);
-    }
+    },
   }
 });
