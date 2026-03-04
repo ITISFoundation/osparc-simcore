@@ -97,9 +97,16 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __attachTasks: function() {
       const pollTasks = osparc.store.PollTasks.getInstance();
+
+      // this are tasks that persist after page reload, so we need to re-attach them to the UI
       const exportDataTasks = pollTasks.getExportDataTasks();
       exportDataTasks.forEach(task => {
         osparc.task.ExportData.exportDataTaskReceived(task, false);
+      });
+
+      const sendEmailTasks = pollTasks.getSendEmailTasks();
+      sendEmailTasks.forEach(task => {
+        osparc.task.SendEmail.sendEmailTaskReceived(task);
       });
     },
 
