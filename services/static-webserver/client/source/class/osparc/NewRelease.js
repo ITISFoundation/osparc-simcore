@@ -40,8 +40,6 @@ qx.Class.define("osparc.NewRelease", {
      * Compare the version logged in the cache with the one being shown
      */
     firstTimeISeeThisFrontend: function() {
-      // testing
-      return true;
       let isIt = false;
       const lastUICommit = osparc.utils.Utils.localCache.getLastCommitVcsRefUI();
       const thisUICommit = osparc.utils.LibVersions.getVcsRefUI();
