@@ -166,17 +166,10 @@ qx.Class.define("osparc.po.SendEmail", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
         .then(task => {
-          const sendEmailTaskUI = new osparc.task.SendEmail(subject);
-          sendEmailTaskUI.setTask(task);
-          osparc.task.TasksContainer.getInstance().addTaskUI(sendEmailTaskUI);
-          task.addListener("resultReceived", () => {
-            osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
-            notSending();
-          });
-          task.addListener("pollingError", e => {
-            osparc.FlashMessenger.logError(e.getData());
-            notSending();
-          });
+          osparc.task.SendEmail.sendEmailTaskReceived(task, subject);
+          const text = this.tr("Sending email(s) process started and added to the background tasks");
+          osparc.FlashMessenger.logAs(text, "INFO");
+          notSending();
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");

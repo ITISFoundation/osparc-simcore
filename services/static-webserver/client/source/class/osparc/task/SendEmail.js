@@ -28,5 +28,23 @@ qx.Class.define("osparc.task.SendEmail", {
 
   statics: {
     ICON: "@FontAwesome5Solid/envelope",
-  },
+
+    sendEmailTaskReceived: function(task, subject) {
+      const sendEmailTaskUI = new osparc.task.SendEmail(subject);
+      sendEmailTaskUI.setTask(task);
+      osparc.task.TasksContainer.getInstance().addTaskUI(sendEmailTaskUI);
+
+      task.addListener("resultReceived", () => {
+        osparc.FlashMessenger.logAs(this.tr("Email(s) sent successfully"), "INFO");
+      });
+
+      task.addListener("taskAborted", () => {
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Email(s) cancelled"), "WARNING");
+      });
+
+      task.addListener("pollingError", e => {
+        osparc.FlashMessenger.logError(e.getData());
+      });
+    },
+  }
 });
