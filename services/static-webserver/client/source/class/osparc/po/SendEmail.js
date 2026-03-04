@@ -166,6 +166,9 @@ qx.Class.define("osparc.po.SendEmail", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
         .then(task => {
+          const sendEmailTaskUI = new osparc.task.SendEmail(subject);
+          sendEmailTaskUI.setTask(task);
+          osparc.task.TasksContainer.getInstance().addTaskUI(sendEmailTaskUI);
           task.addListener("resultReceived", () => {
             osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
             notSending();
