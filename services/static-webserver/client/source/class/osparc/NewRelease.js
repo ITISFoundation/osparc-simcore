@@ -15,6 +15,10 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(marked/release-notes.css)
+ */
+
 qx.Class.define("osparc.NewRelease", {
   extend: qx.ui.core.Widget,
 
@@ -92,7 +96,7 @@ qx.Class.define("osparc.NewRelease", {
     __buildLayout: function() {
       // const releaseLink = osparc.utils.Utils.getReleaseLink();
       // testing
-      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.88.0.md";
+      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.89.0.md";
       const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
 
       if (rawUrl) {
@@ -123,9 +127,17 @@ qx.Class.define("osparc.NewRelease", {
     },
 
     __addMarkdown: function(markdown) {
+      // Load release-notes stylesheet
+      const cssUri = qx.util.ResourceManager.getInstance().toUri("marked/release-notes.css");
+      qx.module.Css.includeStylesheet(cssUri);
+
       const cleaned = this.__postProcessMarkdown(markdown);
       const mdWidget = new osparc.ui.markdown.Markdown(cleaned).set({
         padding: 10
+      });
+      // Apply release-notes CSS class for proper typography
+      mdWidget.addListenerOnce("appear", () => {
+        mdWidget.getContentElement().addClass("osparc-release-notes");
       });
       mdWidget.addListener("resized", () => {
         this.__styleMarkdownImages(mdWidget);
@@ -179,7 +191,8 @@ qx.Class.define("osparc.NewRelease", {
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
         value: this.tr("Check more details in ") + releaseTag,
         url: releaseLink,
-        font: "link-label-14"
+        font: "link-label-14",
+        paddingLeft: 10,
       });
       this._add(linkLabel);
     },
