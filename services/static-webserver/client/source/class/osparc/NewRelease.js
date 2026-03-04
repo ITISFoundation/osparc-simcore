@@ -131,6 +131,10 @@ qx.Class.define("osparc.NewRelease", {
       const cssUri = qx.util.ResourceManager.getInstance().toUri("marked/release-notes.css");
       qx.module.Css.includeStylesheet(cssUri);
 
+      // Inject CSS custom properties from the current theme so
+      // release-notes.css works in both dark and light modes
+      this.__applyThemeCssVars();
+
       const cleaned = this.__postProcessMarkdown(markdown);
       const mdWidget = new osparc.ui.markdown.Markdown(cleaned).set({
         padding: 10
@@ -184,6 +188,17 @@ qx.Class.define("osparc.NewRelease", {
           images[i].style.height = "auto";
         }
       }
+    },
+
+    /**
+     * Sets CSS custom properties (--rn-text, --rn-text-muted)
+     * on the document root, resolved from the current qooxdoo theme colors.
+     */
+    __applyThemeCssVars: function() {
+      const colorMgr = qx.theme.manager.Color.getInstance();
+      const root = document.documentElement.style;
+      root.setProperty("--rn-text", colorMgr.resolve("text"));
+      root.setProperty("--rn-text-muted", colorMgr.resolve("text-opa70"));
     },
 
     __addDetailsLink: function(releaseLink) {
