@@ -103,17 +103,18 @@ qx.Class.define("osparc.NewRelease", {
         showClose: true
       });
       newRelease.addListener("releaseNotesLoaded", () => {
-        const winWidth = 700;
-        const winHeight = Math.min(700, document.documentElement.clientHeight - 50);
+        const vpWidth = document.documentElement.clientWidth;
+        const vpHeight = document.documentElement.clientHeight;
+        const winWidth = Math.min(700, vpWidth - 50);
+        const winHeight = Math.min(700, vpHeight - 50);
+        const minHeight = Math.min(500, winHeight);
         win.set({
           width: winWidth,
           height: winHeight,
-          minHeight: 500,
+          minHeight,
           maxHeight: winHeight,
           resizable: true
         });
-        const vpWidth = document.documentElement.clientWidth;
-        const vpHeight = document.documentElement.clientHeight;
         win.moveTo(
           Math.round((vpWidth - winWidth) / 2),
           Math.round((vpHeight - winHeight) / 2)
@@ -141,12 +142,11 @@ qx.Class.define("osparc.NewRelease", {
 
   members: {
     __buildLayout: function() {
-      // const releaseLink = osparc.utils.Utils.getReleaseLink();
-      // testing
-      const releaseLink = "https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/v1.88.0.md";
+      const releaseLink = osparc.utils.Utils.getReleaseLink();
       const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
 
       if (rawUrl) {
+        this.__addLoadingIndicator();
         this.__fetchAndRenderMarkdown(rawUrl, releaseLink);
       } else {
         this.__addFallbackIntro();
@@ -163,11 +163,13 @@ qx.Class.define("osparc.NewRelease", {
           return response.text();
         })
         .then(markdown => {
+          this.__removeLoadingIndicator();
           this.__addMarkdown(markdown);
           this.__addDetailsLink(originalLink);
         })
         .catch(err => {
           console.warn("Could not fetch release notes from GitHub, falling back to link:", err);
+          this.__removeLoadingIndicator();
           this.__addFallbackIntro();
           this.__addFallbackLink(originalLink);
         });
@@ -189,9 +191,6 @@ qx.Class.define("osparc.NewRelease", {
       // Apply release-notes CSS class for proper typography
       mdWidget.addListenerOnce("appear", () => {
         mdWidget.getContentElement().addClass("osparc-release-notes");
-      });
-      mdWidget.addListener("resized", () => {
-        this.__styleMarkdownImages(mdWidget);
       });
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(mdWidget);
@@ -222,18 +221,22 @@ qx.Class.define("osparc.NewRelease", {
       return cleaned;
     },
 
-    /**
-     * Applies max-width style to all images inside the Markdown widget.
-     * Called on every resize so newly loaded images are also styled.
-     */
-    __styleMarkdownImages: function(mdWidget) {
-      const el = mdWidget.getContentElement().getDomElement();
-      if (el) {
-        const images = qx.bom.Selector.query("img", el);
-        for (let i = 0; i < images.length; i++) {
-          images[i].style.maxWidth = "100%";
-          images[i].style.height = "auto";
-        }
+    __addLoadingIndicator: function() {
+      this.__loadingLabel = new qx.ui.basic.Atom().set({
+        label: qx.locale.Manager.tr("Loading release notes..."),
+        icon: "@FontAwesome5Solid/spinner/14",
+        font: "text-14",
+        alignX: "center",
+        alignY: "middle"
+      });
+      this._add(this.__loadingLabel);
+    },
+
+    __removeLoadingIndicator: function() {
+      if (this.__loadingLabel) {
+        this._remove(this.__loadingLabel);
+        this.__loadingLabel.dispose();
+        this.__loadingLabel = null;
       }
     },
 
