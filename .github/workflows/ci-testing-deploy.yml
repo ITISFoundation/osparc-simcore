@@ -282,6 +282,7 @@ jobs:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'scripts/install_rclone.bash'
               - 'mypy.ini'
             anything-py:
               - '**/*.py'
