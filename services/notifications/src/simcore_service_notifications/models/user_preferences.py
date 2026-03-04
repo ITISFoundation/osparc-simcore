@@ -1,9 +1,9 @@
 from models_library.user_preferences import NotificationsUserPreference
 
 
-class NotificationsGlobalSubscriptionPreference(NotificationsUserPreference):
+class NotificationsSubscriptionEnabled(NotificationsUserPreference):
     value: bool = True
 
 
-class NotificationsEmailSubscriptionPreference(NotificationsUserPreference):
+class NotificationsEmailSubscriptionEnabled(NotificationsUserPreference):
     value: bool = True

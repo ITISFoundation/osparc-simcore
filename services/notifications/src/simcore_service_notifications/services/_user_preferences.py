@@ -4,8 +4,8 @@ from models_library.products import ProductName
 from models_library.users import UserID
 
 from ..models.user_preferences import (
-    NotificationsEmailSubscriptionPreference,
-    NotificationsGlobalSubscriptionPreference,
+    NotificationsEmailSubscriptionEnabled,
+    NotificationsSubscriptionEnabled,
 )
 from ..repositories import UserPreferencesRepository
 
@@ -27,8 +27,8 @@ class UserPreferencesService:
             user_id=user_id,
             product_name=product_name,
             preference_classes=(
-                NotificationsGlobalSubscriptionPreference,
-                NotificationsEmailSubscriptionPreference,
+                NotificationsSubscriptionEnabled,
+                NotificationsEmailSubscriptionEnabled,
             ),
         )
 
