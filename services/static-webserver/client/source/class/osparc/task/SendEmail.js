@@ -35,7 +35,7 @@ qx.Class.define("osparc.task.SendEmail", {
       osparc.task.TasksContainer.getInstance().addTaskUI(sendEmailTaskUI);
 
       task.addListener("resultReceived", () => {
-        osparc.FlashMessenger.logAs(this.tr("Email(s) sent successfully"), "INFO");
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Email(s) sent successfully"), "INFO");
       });
 
       task.addListener("taskAborted", () => {
