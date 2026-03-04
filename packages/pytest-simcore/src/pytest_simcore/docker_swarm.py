@@ -541,35 +541,43 @@ async def _deploy_core_stack_phased(
         services_to_start = await _filter_already_running(async_docker, deploy_order, stack_name)
 
         if not services_to_start:
-            if keep_docker_up:
-                _logger.info(
-                    "keep_docker_up=True and all %d services already running - skipping redeployment",
-                    len(deploy_order),
-                )
-                return
             _logger.info("All services already running, deploying full compose for consistency")
             _deploy_stack(compose_file, stack_name)
             return
 
-        # Filter to only services that need starting
-        to_start = [s for s in deploy_order if s in set(services_to_start)]
+        # Build explicit sets: services that need starting vs already running
+        to_start_set = set(services_to_start)
+        already_running_set = set(deploy_order) - to_start_set
+        to_start = [s for s in deploy_order if s in to_start_set]
 
-        # Step 1: Deploy all services at replicas=0.
-        # This creates all services and networks in Docker Swarm without
-        # starting any containers — no image pulls, no task scheduling.
+        # Step 1: Deploy all services at replicas=0 (only for services
+        # that need starting).  When keep_docker_up is True, services
+        # that are already running keep their original replica count so
+        # they are not accidentally scaled down to 0.
         zero_compose = deepcopy(full_compose)
-        for svc_def in zero_compose.get("services", {}).values():
+        for svc_name, svc_def in zero_compose.get("services", {}).items():
             deploy_cfg = svc_def.get("deploy", {})
             if deploy_cfg.get("mode", "replicated") == "replicated":
-                svc_def.setdefault("deploy", {})["replicas"] = 0
+                if svc_name in to_start_set:
+                    # Service needs starting — deploy at 0 replicas first
+                    svc_def.setdefault("deploy", {})["replicas"] = 0
+                elif keep_docker_up and svc_name in already_running_set:
+                    # Service was confirmed running by _filter_already_running
+                    # — preserve its original replica count so the deploy
+                    # does not disrupt it.
+                    _logger.info(
+                        "Preserving replicas for already-running service %s",
+                        svc_name,
+                    )
 
         zero_file = compose_file.parent / ".phased-zero-replicas.yml"
         try:
             with zero_file.open("w") as fh:
                 yaml.dump(zero_compose, fh, default_flow_style=False)
             _logger.info(
-                "Deploying compose with all %d services at 0 replicas",
-                len(deploy_order),
+                "Deploying compose with %d service(s) at 0 replicas (keeping %d already-running service(s) intact)",
+                len(to_start),
+                len(deploy_order) - len(to_start),
             )
             _deploy_stack(zero_file, stack_name)
         finally:
