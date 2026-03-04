@@ -151,7 +151,8 @@ def env_file_for_docker_compose(
         )
         for key, value in sorted(env_vars_for_docker_compose.items()):
             # NOTE: python-dotenv parses JSON encoded strings correctly, but
-            # writing them back shows an issue. if the original ENV is something like MY_ENV='{"correct": "encodedjson"}'
+            # writing them back shows an issue. if the original ENV is something like
+            #   MY_ENV='{"correct": "encodedjson"}'
             # it goes to MY_ENV={"incorrect": "encodedjson"}!
             if value.startswith(("{", "[")) and value.endswith(("}", "]")):
                 print(f"{key}='{value}'", file=fh)
@@ -236,7 +237,8 @@ def core_services_selection(request) -> list[str]:
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
     assert core_services, (
-        f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
+        f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' "
+        f"within '{request.module.__name__}'"
     )
     return core_services
 
@@ -278,7 +280,7 @@ def ops_docker_compose_file(ops_services_selection: list[str], temp_folder: Path
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
     # these services are useless when running in the CI
-    ops_view_only_services = ["adminer", "redis-commander", "portainer"]
+    ops_view_only_services = ("adminer", "jaeger", "portainer", "redis-commander", "opentelemetry-collector")
     if "CI" in os.environ:
         _logger.info(
             "Note that services such as '%s' are removed from the stack when running in the CI",

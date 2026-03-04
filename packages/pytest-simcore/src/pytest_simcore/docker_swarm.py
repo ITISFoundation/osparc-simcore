@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 # Phased deployment order (mirrors Makefile INFRA_SERVICES + APP_BATCH_1..6)
 # ---------------------------------------------------------------------------
 
-INFRA_SERVICES: list[str] = ["postgres", "redis", "rabbit", "migration"]
+INFRA_SERVICES: list[str] = ["postgres", "minio", "redis", "rabbit", "migration"]
 
 APP_SERVICES_DEPLOY_ORDER: list[str] = [
     # Batch 1 - core API
