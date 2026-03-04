@@ -141,6 +141,8 @@ qx.Class.define("osparc.NewRelease", {
   },
 
   members: {
+    __loadingLabel: null,
+
     __buildLayout: function() {
       const releaseLink = osparc.utils.Utils.getReleaseLink();
       const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
@@ -224,11 +226,12 @@ qx.Class.define("osparc.NewRelease", {
     __addLoadingIndicator: function() {
       this.__loadingLabel = new qx.ui.basic.Atom().set({
         label: qx.locale.Manager.tr("Loading release notes..."),
-        icon: "@FontAwesome5Solid/spinner/14",
+        icon: "@FontAwesome5Solid/circle-notch/14",
         font: "text-14",
         alignX: "center",
         alignY: "middle"
       });
+      this.__loadingLabel.getChildControl("icon").getContentElement().addClass("rotate");
       this._add(this.__loadingLabel);
     },
 
