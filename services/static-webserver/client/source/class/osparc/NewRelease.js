@@ -207,8 +207,8 @@ qx.Class.define("osparc.NewRelease", {
      *   marked's `breaks: true` option doesn't corrupt them with <br> tags.
      */
     __postProcessMarkdown: function(markdown) {
-      // Strip the first top-level heading if present
-      let cleaned = markdown.replace(/^\s*#\s+.*\n*/, "");
+      // Strip the first top-level heading only if it says "Release Notes"
+      let cleaned = markdown.replace(/^\s*#\s+Release Notes\s*\n*/, "");
       // Iteratively collapse multi-line HTML tags into single lines.
       // marked's `breaks: true` inserts <br> at every newline, which corrupts
       // multi-line HTML tags like <img height="800"\nalt="..."\nsrc="...">.
