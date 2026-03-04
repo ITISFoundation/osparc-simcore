@@ -58,6 +58,8 @@ class Vendor(TypedDict, total=False):
         str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
     )
 
+    services_release_notes_urls: dict[str, str]  # a mapping between service key and release notes url
+
     ui: VendorUI
 
     footer_social_links: list[tuple[str, str]]  # list of (social_media_name (youtube, linkedin), social_media_url)

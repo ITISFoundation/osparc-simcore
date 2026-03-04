@@ -79,7 +79,7 @@ async def create_cached_indexes(app: web.Application) -> None:
         except ClientError as err:
             _logger.exception("Could not fetch index from static server")
 
-            # ANE: Yes this is supposed to fail the boot process
+            # NOTE: Yes this is supposed to fail the boot process
             msg = f"Could not fetch index at {url!s}. Stopping application boot"
             raise RuntimeError(msg) from err
 
@@ -104,7 +104,7 @@ def _get_product_data(product: Product) -> dict[str, Any]:
 
 async def create_and_cache_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
-    # (qx-compile takes time), therefore we create statics.json
+    # (qx-compile takes time), therefore we create static-frontend-data.json
     # on_startup instead of upon setup
 
     # Adds general server settings
@@ -146,7 +146,6 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             data["vcsReleaseUrl"] = template_url.format(vtag=release_vtag)
 
         data_json = json_dumps(data)
-        _logger.debug("Front-end statics.json: %s", data_json)
+        _logger.debug("Content of `/static-frontend-data.json` for product='%s': %s", product.name, data_json)
 
-        # cache computed statics.json
         app[FRONTEND_CACHED_STATICS_JSON_APPKEY][product.name] = data_json

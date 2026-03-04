@@ -126,8 +126,10 @@ class Product(BaseModel):
     login_settings: Annotated[
         ProductLoginSettingsDict,
         Field(
-            description="Product customization of login settings. "
-            "Note that these are NOT the final plugin settings but those are obtained from login.settings.get_plugin_settings",
+            description=(
+                "Product customization of login settings. Note that these are NOT the final "
+                "plugin settings but those are obtained from login.settings.get_plugin_settings"
+            ),
         ),
     ]
 
@@ -206,7 +208,7 @@ class Product(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        from sqlalchemy import Column
+        from sqlalchemy import Column  # noqa: PLC0415
 
         schema.update(
             {
@@ -323,7 +325,7 @@ class Product(BaseModel):
         """
         Selects **public** fields from product's info
         and prefixes it with its name to produce
-        items for statics.json (reachable by front-end)
+        items for static-frontend-data.json (reachable by front-end)
         """
 
         # SECURITY WARNING: do not expose sensitive information here
