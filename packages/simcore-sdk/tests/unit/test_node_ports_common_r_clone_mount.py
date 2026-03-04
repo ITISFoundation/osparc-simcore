@@ -452,3 +452,41 @@ async def test_is_healthy(
         mock_is_responsive.return_value = is_resp
         result = await mount.is_healthy()
         assert result is expected, f"Step {i}: is_responsive={is_resp}, expected is_healthy={expected}, got {result}"
+
+
+@pytest.fixture
+def expected_fuse_version() -> str:
+    return "3.16.2"
+
+
+async def test_fuse_version_did_not_change(r_clone_version: str, expected_fuse_version: str):
+    image = f"rclone/rclone:{r_clone_version}"
+
+    async with Docker() as client:
+        # pull image
+        await client.images.pull(image)
+
+        # run container with fusermount3 --version, overriding entrypoint
+        container = await client.containers.create_or_replace(
+            name="test-rclone-fuse-version-check",
+            config={
+                "Image": image,
+                "Entrypoint": ["/bin/sh", "-c"],
+                "Cmd": ["fusermount3 --version"],
+                "AttachStdout": True,
+                "AttachStderr": True,
+                # "HostConfig": {"AutoRemove": True},
+            },
+        )
+        await container.start()
+        await container.wait()
+
+        # collect logs
+        logs = await container.log(stdout=True, stderr=True)
+        output = "".join(logs).strip()
+
+    assert expected_fuse_version in output, (
+        "Did you upgrade rclone? Make sure the same fuse version is installed on all "
+        "AMIs for autoscaling compatibility! "
+        f"{expected_fuse_version=} not found in: {output=}"
+    )
