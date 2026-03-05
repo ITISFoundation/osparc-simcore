@@ -15,6 +15,7 @@ from servicelib.celery.models import (
     TaskKey,
     TaskStore,
     TaskStreamItem,
+    TaskType,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -24,7 +25,6 @@ _CELERY_TASK_PREFIX: Final[str] = "celery-task-"
 _CELERY_TASK_ID_KEY_ENCODING: Final[str] = "utf-8"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_EXEC_METADATA_KEY: Final[str] = "exec-meta"
-_CELERY_TASK_IS_GROUP_METADATA_KEY: Final[str] = "is_group"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
 # Redis list to store streamed results
@@ -56,6 +56,7 @@ class RedisTaskStore:
     async def create_group(
         self,
         group_key: GroupKey,
+        group_execution_metadata: ExecutionMetadata,
         executions: list[tuple[TaskKey, ExecutionMetadata]],
         expiry: timedelta,
     ) -> None:
@@ -63,13 +64,15 @@ class RedisTaskStore:
         pipe = self._redis_client_sdk.redis.pipeline()
         pipe.hset(
             name=group_key,
-            key=f"{_CELERY_TASK_IS_GROUP_METADATA_KEY}",
-            value="1",
+            key=_CELERY_TASK_EXEC_METADATA_KEY,
+            value=group_execution_metadata.model_dump_json(),
         )
+
+        # sub-tasks
         for task_key, execution_metadata in executions:
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
-                key=f"{_CELERY_TASK_EXEC_METADATA_KEY}",
+                key=_CELERY_TASK_EXEC_METADATA_KEY,
                 value=execution_metadata.model_dump_json(),
             )
         await handle_redis_returns_union_types(pipe.execute())
@@ -137,16 +140,6 @@ class RedisTaskStore:
             )
             return None
 
-    async def is_group(self, task_or_group_key: TaskKey | GroupKey) -> bool:
-        raw_result = await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.hget(
-                _build_redis_task_or_group_key(task_or_group_key),
-                _CELERY_TASK_IS_GROUP_METADATA_KEY,
-            )
-        )
-
-        return raw_result == "1"
-
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
         search_key = _CELERY_TASK_PREFIX + owner_metadata.model_dump_key(task_or_group_uuid=WILDCARD)
 
@@ -169,6 +162,9 @@ class RedisTaskStore:
 
             with contextlib.suppress(ValidationError):
                 execution_metadata = ExecutionMetadata.model_validate_json(raw_metadata)
+                if execution_metadata.type == TaskType.SUB_TASK:
+                    continue
+
                 tasks.append(
                     Task(
                         uuid=OwnerMetadata.get_task_or_group_uuid(key),

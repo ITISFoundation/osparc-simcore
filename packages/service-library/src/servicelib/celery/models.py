@@ -209,6 +209,7 @@ class TaskStore(Protocol):
     async def create_group(
         self,
         group_key: GroupKey,
+        group_execution_metadata: ExecutionMetadata,
         executions: list[tuple[TaskKey, ExecutionMetadata]],
         expiry: timedelta,
     ) -> None: ...
@@ -225,8 +226,6 @@ class TaskStore(Protocol):
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None: ...
 
     async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
-
-    async def is_group(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
