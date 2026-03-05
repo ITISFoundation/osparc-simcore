@@ -5,17 +5,20 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
 from models_library.progress_bar import ProgressReport
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from servicelib.celery.models import (
     WILDCARD,
     ExecutionMetadata,
+    ExecutorType,
+    GroupExecutionMetadata,
     GroupKey,
+    GroupTaskExecutionMetadata,
     OwnerMetadata,
     Task,
+    TaskExecutionMetadata,
     TaskKey,
     TaskStore,
     TaskStreamItem,
-    TaskType,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -56,8 +59,8 @@ class RedisTaskStore:
     async def create_group(
         self,
         group_key: GroupKey,
-        group_execution_metadata: ExecutionMetadata,
-        executions: list[tuple[TaskKey, ExecutionMetadata]],
+        execution_metadata: GroupExecutionMetadata,
+        task_executions: list[tuple[TaskKey, GroupTaskExecutionMetadata]],
         expiry: timedelta,
     ) -> None:
         group_key = _build_redis_task_or_group_key(group_key)
@@ -65,15 +68,15 @@ class RedisTaskStore:
         pipe.hset(
             name=group_key,
             key=_CELERY_TASK_EXEC_METADATA_KEY,
-            value=group_execution_metadata.model_dump_json(),
+            value=execution_metadata.model_dump_json(),
         )
 
-        # sub-tasks
-        for task_key, execution_metadata in executions:
+        # group tasks
+        for task_key, task_execution_metadata in task_executions:
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
                 key=_CELERY_TASK_EXEC_METADATA_KEY,
-                value=execution_metadata.model_dump_json(),
+                value=task_execution_metadata.model_dump_json(),
             )
         await handle_redis_returns_union_types(pipe.execute())
         await self._redis_client_sdk.redis.expire(
@@ -84,7 +87,7 @@ class RedisTaskStore:
     async def create_task(
         self,
         task_key: TaskKey,
-        execution_metadata: ExecutionMetadata,
+        execution_metadata: TaskExecutionMetadata,
         expiry: timedelta,
     ) -> None:
         redis_key = _build_redis_task_or_group_key(task_key)
@@ -111,7 +114,7 @@ class RedisTaskStore:
             return None
 
         try:
-            return ExecutionMetadata.model_validate_json(raw_result)
+            return TypeAdapter(ExecutionMetadata).validate_json(raw_result)
         except ValidationError as exc:
             _logger.debug(
                 "Failed to deserialize task metadata for task %s: %s",
@@ -161,8 +164,8 @@ class RedisTaskStore:
                 continue
 
             with contextlib.suppress(ValidationError):
-                execution_metadata = ExecutionMetadata.model_validate_json(raw_metadata)
-                if execution_metadata.type == TaskType.SUB_TASK:
+                execution_metadata = TypeAdapter(ExecutionMetadata).validate_json(raw_metadata)
+                if execution_metadata.type == ExecutorType.GROUP_TASK:
                     continue
 
                 tasks.append(

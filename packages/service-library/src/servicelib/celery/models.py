@@ -13,13 +13,17 @@ from pydantic.config import JsonDict
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
-type TaskKey = str
-type GroupKey = str
-type TaskName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
-type TaskParams = dict[str, Any]
+type Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
+type TaskKey = str
+type TaskName = Name
+type TaskParams = dict[str, Any]
 type TaskUUID = UUID
+
+type GroupKey = str
+type GroupName = Name
 type GroupUUID = UUID
+
 _KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEY_CHARS = ("*", _KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUE_CHARS = (_KEY_DELIMITATOR, "=")
@@ -142,23 +146,39 @@ TASK_DONE_STATES: Final[tuple[TaskState, ...]] = (
 )
 
 
-class TasksQueue(StrEnum):
-    CPU_BOUND = "cpu_bound"
-    DEFAULT = "default"
-    API_WORKER_QUEUE = "api_worker_queue"
-
-
-class TaskType(StrAutoEnum):
+class ExecutorType(StrAutoEnum):
     GROUP = auto()
+    GROUP_TASK = auto()
     TASK = auto()
-    SUB_TASK = auto()
 
 
-class ExecutionMetadata(BaseModel):
-    name: TaskName
-    type: TaskType = TaskType.TASK
+class BaseExecutionMetadata(BaseModel):
+    name: TaskName | GroupName
+    type: ExecutorType
     ephemeral: bool = True
     queue: str = DEFAULT_QUEUE
+
+
+class TaskExecutionMetadata(BaseExecutionMetadata):
+    name: TaskName
+    type: ExecutorType = ExecutorType.TASK
+
+
+class GroupTaskExecutionMetadata(BaseExecutionMetadata):
+    name: TaskName
+    type: ExecutorType = ExecutorType.GROUP_TASK
+
+
+class GroupExecutionMetadata(BaseExecutionMetadata):
+    name: GroupName
+    type: ExecutorType = ExecutorType.GROUP
+    tasks: list[tuple[GroupTaskExecutionMetadata, TaskParams]]
+
+
+type ExecutionMetadata = Annotated[
+    TaskExecutionMetadata | GroupExecutionMetadata | GroupTaskExecutionMetadata,
+    Field(discriminator="type"),
+]
 
 
 class TaskStreamItem(BaseModel):
@@ -209,15 +229,15 @@ class TaskStore(Protocol):
     async def create_group(
         self,
         group_key: GroupKey,
-        group_execution_metadata: ExecutionMetadata,
-        executions: list[tuple[TaskKey, ExecutionMetadata]],
+        execution_metadata: GroupExecutionMetadata,
+        task_executions: list[tuple[TaskKey, GroupTaskExecutionMetadata]],
         expiry: timedelta,
     ) -> None: ...
 
     async def create_task(
         self,
         task_key: TaskKey,
-        execution_metadata: ExecutionMetadata,
+        execution_metadata: TaskExecutionMetadata,
         expiry: timedelta,
     ) -> None: ...
 
