@@ -164,7 +164,7 @@ class RedisTaskStore:
                 continue
 
             with contextlib.suppress(ValidationError):
-                execution_metadata = TypeAdapter(ExecutionMetadata).validate_json(raw_metadata)
+                execution_metadata: ExecutionMetadata = TypeAdapter(ExecutionMetadata).validate_json(raw_metadata)
                 if execution_metadata.type == ExecutorType.GROUP_TASK:
                     continue
 
