@@ -25,6 +25,8 @@ from pydantic import TypeAdapter
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     BaseExecutionMetadata,
+    GroupExecutionMetadata,
+    GroupTaskExecutionMetadata,
     GroupUUID,
     OwnerMetadata,
     TaskExecutionMetadata,
@@ -168,7 +170,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
-        BaseExecutionMetadata(
+        TaskExecutionMetadata(
             name=fake_file_processor.__name__,
         ),
         owner_metadata=fake_owner_metadata,
@@ -208,7 +210,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
-        BaseExecutionMetadata(
+        TaskExecutionMetadata(
             name=dreamer_task.__name__,
         ),
         owner_metadata=fake_owner_metadata,
@@ -230,7 +232,7 @@ async def test_listing_task_uuids_contains_submitted_task(
     fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
-        BaseExecutionMetadata(
+        TaskExecutionMetadata(
             name=dreamer_task.__name__,
         ),
         owner_metadata=fake_owner_metadata,
@@ -262,7 +264,7 @@ async def test_filtering_listing_tasks(
         for _ in range(5):
             owner_metadata = MyOwnerMetadata(user_id=user_id, product_name=_faker.word(), owner=owner)
             task_uuid = await task_manager.submit_task(
-                BaseExecutionMetadata(
+                TaskExecutionMetadata(
                     name=dreamer_task.__name__,
                 ),
                 owner_metadata=owner_metadata,
@@ -277,7 +279,7 @@ async def test_filtering_listing_tasks(
                 owner=owner,
             )
             task_uuid = await task_manager.submit_task(
-                BaseExecutionMetadata(
+                TaskExecutionMetadata(
                     name=dreamer_task.__name__,
                 ),
                 owner_metadata=owner_metadata,
@@ -305,7 +307,7 @@ async def test_push_task_result_streams_data_during_execution(
     num_results = 3
 
     task_uuid = await task_manager.submit_task(
-        BaseExecutionMetadata(
+        TaskExecutionMetadata(
             name=streaming_results_task.__name__,
             ephemeral=False,  # Keep task available after completion for result pulling
         ),
@@ -400,16 +402,19 @@ async def test_submit_group_all_tasks_complete_successfully(
 ):
     # Submit a group of tasks
     num_tasks = 3
-    executions = [
+    tasks = [
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": [f"file{i}-{j}" for j in range(2)]},
         )
         for i in range(num_tasks)
     ]
 
     group_id, task_uuids = await task_manager.submit_group(
-        executions,
+        execution_metadata=GroupExecutionMetadata(
+            name="fake_file_processing_group",
+            tasks=tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
