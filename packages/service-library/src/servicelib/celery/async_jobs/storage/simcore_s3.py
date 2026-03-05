@@ -7,8 +7,8 @@ from models_library.products import ProductName
 from models_library.users import UserID
 
 from ...models import (
-    BaseExecutionMetadata,
     OwnerMetadata,
+    TaskExecutionMetadata,
 )
 from ...task_manager import TaskManager
 
@@ -37,7 +37,7 @@ async def submit_export_data(
             msg = f"Invalid export_as value: {export_as}"
             raise ValueError(msg)
     task_uuid = await task_manager.submit_task(
-        execution_metadata=BaseExecutionMetadata(
+        TaskExecutionMetadata(
             name=task_name,
             ephemeral=False,
             queue=TaskQueueNames.CPU_BOUND,
