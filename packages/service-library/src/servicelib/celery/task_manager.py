@@ -22,6 +22,7 @@ from .models import (
 class TaskManager(Protocol):
     async def submit_group(
         self,
+        group_execution_metadata: ExecutionMetadata,
         executions: list[tuple[ExecutionMetadata, TaskParams]],
         *,
         owner_metadata: OwnerMetadata,

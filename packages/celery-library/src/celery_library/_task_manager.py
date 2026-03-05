@@ -24,6 +24,7 @@ from servicelib.celery.models import (
     TaskStatus,
     TaskStore,
     TaskStreamItem,
+    TaskType,
     TaskUUID,
 )
 from servicelib.celery.task_manager import TaskManager
@@ -72,6 +73,7 @@ class CeleryTaskManager:
     @handle_celery_errors
     async def submit_group(
         self,
+        group_execution_metadata: ExecutionMetadata,
         executions: list[tuple[ExecutionMetadata, TaskParams]],
         *,
         owner_metadata: OwnerMetadata,
@@ -94,17 +96,17 @@ class CeleryTaskManager:
                 task_metadata_pairs: list[tuple[str, ExecutionMetadata]] = []
                 expiries: list[timedelta] = []
 
-                for execution_metadata, task_params in executions:
+                for task_execution_metadata, task_params in executions:
                     task_uuid, task_key = self._create_task_ids(owner_metadata)
-                    expiry = self._get_task_expiry(execution_metadata)
+                    expiry = self._get_task_expiry(task_execution_metadata)
                     expiries.append(expiry)
 
-                    task_metadata_pairs.append((task_key, execution_metadata))
+                    task_metadata_pairs.append((task_key, task_execution_metadata))
 
                     sig = signature(
-                        execution_metadata.name,
+                        task_execution_metadata.name,
                         kwargs={"task_key": task_key} | task_params,
-                        queue=execution_metadata.queue,
+                        queue=task_execution_metadata.queue,
                         task_id=task_key,
                         immutable=True,
                         app=self._app,
@@ -120,7 +122,9 @@ class CeleryTaskManager:
 
                 # Create all tasks in the group at once
                 group_expiry = max(expiries) if expiries else self._settings.CELERY_RESULT_EXPIRES
-                await self._task_store.create_group(group_key, task_metadata_pairs, expiry=group_expiry)
+                await self._task_store.create_group(
+                    group_key, group_execution_metadata, task_metadata_pairs, expiry=group_expiry
+                )
 
             except CeleryError as exc:
                 for task_key, _ in created:
@@ -253,7 +257,8 @@ class CeleryTaskManager:
         if not await self.task_or_group_exists(task_or_group_key):
             raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
 
-        if await self._task_store.is_group(task_or_group_key):
+        task_metadata = await self._task_store.get_task_metadata(task_or_group_key)
+        if task_metadata and task_metadata.type == TaskType.GROUP:
             return await self.get_group_status(owner_metadata, task_or_group_uuid)  # type: ignore[no-any-return]
 
         return await self.get_task_status(owner_metadata, task_or_group_uuid)  # type: ignore[no-any-return]
