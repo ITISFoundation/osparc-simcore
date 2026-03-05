@@ -30,6 +30,7 @@ test() {
   source .venv/bin/activate
   pushd tests/swarm-deploy
   make test-ci
+  popd
 }
 
 clean_up() {
