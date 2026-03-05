@@ -36,6 +36,7 @@ from simcore_service_autoscaling.models import (
 from simcore_service_autoscaling.modules.dask import (
     DaskMonitoringSettings,
     DaskTask,
+    _get_scheduler_identity,
     _scheduler_client,
     add_instance_generic_resources,
     compute_cluster_total_resources,
@@ -449,3 +450,54 @@ async def test_is_worker_retired(
                 )
                 is True
             )
+
+
+@pytest.fixture
+def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
+    """Creates 6 workers - more than the scheduler_info(n_workers=5) default cap."""
+    local_ip = get_localhost_ip().replace(".", "-")
+    return {
+        f"worker-{i}": {
+            "cls": distributed.Worker,
+            "options": {
+                "nthreads": 1,
+                "resources": {"CPU": 1, "RAM": 4e9},
+                "name": f"dask-sidecar_ip-{local_ip}_{utcnow()}_worker{i}",
+            },
+        }
+        for i in range(6)
+    }
+
+
+async def test_get_scheduler_identity_returns_all_workers_beyond_default_cap(
+    dask_workers_config_with_more_than_5_workers: dict[str, Any],
+    dask_scheduler_config: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Regression test: scheduler_info() caps at 5 workers for async clients;
+    _get_scheduler_identity() must return all workers regardless."""
+    _NUM_WORKERS: Final[int] = 6
+    assert len(dask_workers_config_with_more_than_5_workers) == _NUM_WORKERS
+
+    async with (
+        distributed.SpecCluster(
+            workers=dask_workers_config_with_more_than_5_workers,
+            scheduler=dask_scheduler_config,
+            asynchronous=True,
+        ) as cluster,
+        distributed.Client(cluster.scheduler_address, asynchronous=True) as client,
+    ):
+        # Demonstrate the bug: scheduler_info() with default n_workers=5 misses
+        # the 6th worker even when called with n_workers=-1 on an async client
+        info_default = client.scheduler_info()
+        assert len(info_default["workers"]) == 5, "scheduler_info() should return at most 5 workers (the default cap)"
+        info_minus1 = client.scheduler_info(n_workers=-1)
+        assert len(info_minus1["workers"]) == 5, (
+            "scheduler_info(n_workers=-1) is still broken for async clients - it ignores the argument"
+        )
+
+        # Our fix: _get_scheduler_identity() bypasses the cache and returns all workers
+        identity = await _get_scheduler_identity(client)
+        assert len(identity["workers"]) == _NUM_WORKERS, (
+            f"_get_scheduler_identity() must return all {_NUM_WORKERS} workers"
+        )
