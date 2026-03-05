@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from enum import StrEnum, auto
+from enum import StrEnum
 from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeVar
 from uuid import UUID
 
@@ -7,7 +7,6 @@ import orjson
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.celery import DEFAULT_QUEUE
 from models_library.progress_bar import ProgressReport
-from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, StringConstraints, TypeAdapter, model_validator
 from pydantic.config import JsonDict
 
@@ -146,10 +145,10 @@ TASK_DONE_STATES: Final[tuple[TaskState, ...]] = (
 )
 
 
-class ExecutorType(StrAutoEnum):
-    GROUP = auto()
-    GROUP_TASK = auto()
-    TASK = auto()
+class ExecutorType(StrEnum):
+    GROUP = "GROUP"
+    GROUP_TASK = "GROUP_TASK"
+    TASK = "TASK"
 
 
 class BaseExecutionMetadata(BaseModel):
@@ -161,17 +160,17 @@ class BaseExecutionMetadata(BaseModel):
 
 class TaskExecutionMetadata(BaseExecutionMetadata):
     name: TaskName
-    type: ExecutorType = ExecutorType.TASK
+    type: Literal[ExecutorType.TASK] = ExecutorType.TASK
 
 
 class GroupTaskExecutionMetadata(BaseExecutionMetadata):
     name: TaskName
-    type: ExecutorType = ExecutorType.GROUP_TASK
+    type: Literal[ExecutorType.GROUP_TASK] = ExecutorType.GROUP_TASK
 
 
 class GroupExecutionMetadata(BaseExecutionMetadata):
     name: GroupName
-    type: ExecutorType = ExecutorType.GROUP
+    type: Literal[ExecutorType.GROUP] = ExecutorType.GROUP
     tasks: list[tuple[GroupTaskExecutionMetadata, TaskParams]]
 
 
@@ -198,6 +197,7 @@ class Task(BaseModel):
                         "uuid": "123e4567-e89b-12d3-a456-426614174000",
                         "metadata": {
                             "name": "task1",
+                            "type": "TASK",
                             "ephemeral": True,
                             "queue": "default",
                         },
@@ -206,17 +206,14 @@ class Task(BaseModel):
                         "uuid": "223e4567-e89b-12d3-a456-426614174001",
                         "metadata": {
                             "name": "task2",
+                            "type": "GROUP_TASK",
                             "ephemeral": False,
                             "queue": "cpu_bound",
                         },
                     },
                     {
                         "uuid": "323e4567-e89b-12d3-a456-426614174002",
-                        "metadata": {
-                            "name": "task3",
-                            "ephemeral": True,
-                            "queue": "default",
-                        },
+                        "metadata": {"name": "group1", "type": "GROUP", "tasks": []},
                     },
                 ]
             }
