@@ -28,13 +28,8 @@ test() {
   # add too much overhead (e.g. low log-level etc)
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --durations=5 \
-    --log-level=INFO \
-    -v \
-    tests/swarm-deploy
+  pushd tests/swarm-deploy
+  make test-ci
 }
 
 clean_up() {
