@@ -37,7 +37,19 @@ _logger = logging.getLogger(__name__)
 
 #
 # HELPERS
-#
+
+
+def _assert_studies_dispatcher_enabled(request: web.Request) -> None:
+    """
+    Guard function to check if studies dispatcher is enabled for the current product.
+
+    Raises:
+        web.HTTPNotFound: If studies dispatcher is disabled for the current product
+    """
+    product = products_web.get_current_product(request)
+    if not product.studies_dispatcher_enabled:
+        _logger.debug("Studies dispatcher is disabled for product %s", product.name)
+        raise web.HTTPNotFound(reason="Studies dispatcher is not available for this product")
 
 
 def _create_redirect_response_to_view_page(
@@ -86,6 +98,9 @@ async def get_redirection_to_viewer(request: web.Request):
 
     NOTE: Can be set as login_required programmatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
+    # Check if studies dispatcher is enabled for this product
+    _assert_studies_dispatcher_enabled(request)
+
     query_params: RedirectionQueryParams = parse_request_query_parameters_as(
         RedirectionQueryParams,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
         request,
