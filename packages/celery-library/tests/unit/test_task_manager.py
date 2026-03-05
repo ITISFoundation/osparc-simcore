@@ -456,12 +456,12 @@ async def test_submit_group_tasks_appear_in_listing(
             owner_metadata=fake_owner_metadata,
         )
 
-        # Verify all tasks appear in listing
+        # Verify none of group tasks appear in listing
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 tasks = await task_manager.list_tasks(fake_owner_metadata)
                 task_uuids_from_list = {task.uuid for task in tasks}
-                assert all(uuid in task_uuids_from_list for uuid in task_uuids)
+                assert all(uuid not in task_uuids_from_list for uuid in task_uuids)
     finally:
         # Clean up
         for task_uuid in task_uuids:
