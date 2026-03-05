@@ -135,8 +135,8 @@ qx.Class.define("osparc.file.FilePicker", {
       } else {
         node.setLabel("File Picker");
       }
-      osparc.file.FilePicker.releaseRTCToken(node);
       node.getStatus().setProgress(outFileValue ? osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED : osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED);
+      osparc.file.FilePicker.releaseRTCToken(node);
     },
 
     setOutputValueFromStore: function(node, outFileValue) {

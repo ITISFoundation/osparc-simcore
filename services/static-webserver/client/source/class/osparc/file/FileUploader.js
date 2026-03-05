@@ -217,6 +217,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __completeUpload: function() {
+      console.log("file upload completed", this.__fileMetadata.name);
       this.getNode()["fileUploadAbortRequested"] = false;
 
       this.__presignedLinkData = null;
