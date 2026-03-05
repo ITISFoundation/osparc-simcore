@@ -7,6 +7,7 @@ from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_message
 from models_library.utils.change_case import snake_to_camel
 from packaging.version import Version
 from servicelib.aiohttp.client_session import get_client_session
@@ -77,10 +78,13 @@ async def create_cached_indexes(app: web.Application) -> None:
                     body = await response.text()
 
         except ClientError as err:
-            _logger.exception("Could not fetch index from static server")
-
             # NOTE: Yes this is supposed to fail the boot process
-            msg = f"Could not fetch index at {url!s}. Stopping application boot"
+            msg = create_troubleshooting_log_message(
+                f"Could not fetch index from static server at {url!s}. Stopping application boot",
+                error=err,
+                error_context={"url": url},
+                tip="This is a test error",
+            )
             raise RuntimeError(msg) from err
 
         # fixes relative paths
