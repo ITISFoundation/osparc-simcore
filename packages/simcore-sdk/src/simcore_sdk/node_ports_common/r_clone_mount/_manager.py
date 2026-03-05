@@ -213,7 +213,7 @@ class RCloneMountManager:
                     with log_context(
                         _logger,
                         logging.WARNING,
-                        f"Restoring mount for path='{mount.local_mount_path}'",
+                        f"restoring mount for path='{mount.local_mount_path}'",
                     ):
                         await mount.stop_mount(skip_transfer_wait=True)
                         await mount.start_mount()
@@ -223,7 +223,7 @@ class RCloneMountManager:
                 with log_context(
                     _logger,
                     logging.WARNING,
-                    "Requesting service shutdown due to mount restoration",
+                    "requesting service shutdown due to mount restoration",
                 ):
                     # NOTE: since the mount is bind mounted, we ensure that it restarts properly
                     # then we shutdown the service since the user service will have an out of date
