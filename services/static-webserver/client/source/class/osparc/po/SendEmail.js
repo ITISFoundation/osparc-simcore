@@ -170,12 +170,22 @@ qx.Class.define("osparc.po.SendEmail", {
           const text = this.tr("Sending email(s) process started and added to the background tasks");
           osparc.FlashMessenger.logAs(text, "INFO");
           notSending();
+          this.__emailSent();
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
           osparc.FlashMessenger.logError(errorMsg);
           notSending();
         });
+    },
+
+    __emailSent: function() {
+      // cleared "To" field
+      this.getChildControl("email-editor").clearRecipients();
+
+      // switch to Editor tab
+      const tabView = previewPage.getLayoutParent().getLayoutParent();
+      tabView.setSelection([previewPage]);
     },
   }
 });
