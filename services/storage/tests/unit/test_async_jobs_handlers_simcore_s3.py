@@ -54,7 +54,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
-from servicelib.celery.models import BaseExecutionMetadata, OwnerMetadata
+from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -93,7 +93,7 @@ async def _request_copy_folders(
 
         async_job = await submit_job(
             task_manager,
-            execution_metadata=BaseExecutionMetadata(name="deep_copy_files_from_project"),
+            execution_metadata=TaskExecutionMetadata(name="deep_copy_files_from_project"),
             owner_metadata=owner_metadata,
             user_id=user_id,
             body=FoldersBody(source=source_project, destination=dst_project, nodes_map=nodes_map),
@@ -517,7 +517,7 @@ async def _request_start_export_data(
 
         async_job = await submit_job(
             task_manager,
-            execution_metadata=BaseExecutionMetadata(name=task_name),
+            execution_metadata=TaskExecutionMetadata(name=task_name),
             owner_metadata=owner_metadata,
             user_id=user_id,
             product_name=product_name,

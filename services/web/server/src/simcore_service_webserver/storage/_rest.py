@@ -52,7 +52,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME, DELETE_PATHS_TASK_NAME
 from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
-from servicelib.celery.models import BaseExecutionMetadata, OwnerMetadata
+from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -208,7 +208,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
 
     async_job_get = await submit_job(
         get_task_manager(request.app),
-        execution_metadata=BaseExecutionMetadata(
+        execution_metadata=TaskExecutionMetadata(
             name=COMPUTE_PATH_SIZE_TASK_NAME,
         ),
         owner_metadata=OwnerMetadata.model_validate(
@@ -239,7 +239,7 @@ async def batch_delete_paths(request: web.Request):
 
     async_job_get = await submit_job(
         get_task_manager(request.app),
-        execution_metadata=BaseExecutionMetadata(
+        execution_metadata=TaskExecutionMetadata(
             name=DELETE_PATHS_TASK_NAME,
         ),
         owner_metadata=OwnerMetadata.model_validate(
@@ -542,7 +542,7 @@ async def search(request: web.Request) -> web.Response:
 
     async_job_get = await submit_job(
         get_task_manager(request.app),
-        execution_metadata=BaseExecutionMetadata(
+        execution_metadata=TaskExecutionMetadata(
             name=SEARCH_TASK_NAME,
         ),
         owner_metadata=OwnerMetadata.model_validate(
