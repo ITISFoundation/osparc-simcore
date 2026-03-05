@@ -73,8 +73,8 @@ class CeleryTaskManager:
     @handle_celery_errors
     async def submit_group(
         self,
-        group_execution_metadata: ExecutionMetadata,
-        executions: list[tuple[ExecutionMetadata, TaskParams]],
+        execution_metadata: ExecutionMetadata,
+        tasks_execution_metadata: list[tuple[ExecutionMetadata, TaskParams]],
         *,
         owner_metadata: OwnerMetadata,
     ) -> tuple[GroupUUID, list[TaskUUID]]:
@@ -86,7 +86,7 @@ class CeleryTaskManager:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Submit group: {owner_metadata=} items={len(executions)}",
+            msg=f"Submit group: {owner_metadata=} items={len(tasks_execution_metadata)}",
         ):
             created: list[tuple[str, TaskUUID]] = []
 
@@ -96,7 +96,7 @@ class CeleryTaskManager:
                 task_metadata_pairs: list[tuple[str, ExecutionMetadata]] = []
                 expiries: list[timedelta] = []
 
-                for task_execution_metadata, task_params in executions:
+                for task_execution_metadata, task_params in tasks_execution_metadata:
                     task_uuid, task_key = self._create_task_ids(owner_metadata)
                     expiry = self._get_task_expiry(task_execution_metadata)
                     expiries.append(expiry)
@@ -123,7 +123,7 @@ class CeleryTaskManager:
                 # Create all tasks in the group at once
                 group_expiry = max(expiries) if expiries else self._settings.CELERY_RESULT_EXPIRES
                 await self._task_store.create_group(
-                    group_key, group_execution_metadata, task_metadata_pairs, expiry=group_expiry
+                    group_key, execution_metadata, task_metadata_pairs, expiry=group_expiry
                 )
 
             except CeleryError as exc:
