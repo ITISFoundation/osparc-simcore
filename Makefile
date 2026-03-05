@@ -439,7 +439,6 @@ APP_BATCH_3 := director-v2 dynamic-schdlr wb-garbage-collector wb-api-server wb-
 APP_BATCH_4 := wb-db-event-listener webserver autoscaling clusters-keeper resource-usage-tracker
 APP_BATCH_5 := efs-guardian api-server api-worker datcore-adapter invitations
 APP_BATCH_6 := notifications notifications-worker payments traefik traefik-config-placeholder
-APP_BATCHES := $(APP_BATCH_1) $(APP_BATCH_2) $(APP_BATCH_3) $(APP_BATCH_4) $(APP_BATCH_5) $(APP_BATCH_6)
 
 # Generate yq filter for keeping only infra services
 # e.g., ".key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration""
