@@ -314,6 +314,19 @@ class CeleryTaskManager:
             )
 
     @handle_celery_errors
+    async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None:
+        task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
+        if not await self.task_or_group_exists(task_or_group_key):
+            raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
+
+        task_metadata = await self._task_store.get_task_metadata(task_or_group_key)
+        if task_metadata and task_metadata.type == ExecutorType.GROUP:
+            await self.cancel_group(owner_metadata, task_or_group_uuid)  # type: ignore[arg-type]
+            return
+
+        await self.cancel_task(owner_metadata, task_or_group_uuid)  # type: ignore[arg-type]
+
+    @handle_celery_errors
     async def get_status(
         self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
     ) -> TaskStatus | GroupStatus:
