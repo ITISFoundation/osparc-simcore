@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeVar
 from uuid import UUID
 
@@ -7,6 +7,7 @@ import orjson
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.celery import DEFAULT_QUEUE
 from models_library.progress_bar import ProgressReport
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, StringConstraints, TypeAdapter, model_validator
 from pydantic.config import JsonDict
 
@@ -147,8 +148,15 @@ class TasksQueue(StrEnum):
     API_WORKER_QUEUE = "api_worker_queue"
 
 
+class TaskType(StrAutoEnum):
+    GROUP = auto()
+    TASK = auto()
+    SUB_TASK = auto()
+
+
 class ExecutionMetadata(BaseModel):
     name: TaskName
+    type: TaskType = TaskType.TASK
     ephemeral: bool = True
     queue: str = DEFAULT_QUEUE
 
