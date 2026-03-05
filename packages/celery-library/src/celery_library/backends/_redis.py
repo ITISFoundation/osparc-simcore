@@ -12,7 +12,6 @@ from servicelib.celery.models import (
     ExecutorType,
     GroupExecutionMetadata,
     GroupKey,
-    GroupTaskExecutionMetadata,
     OwnerMetadata,
     Task,
     TaskExecutionMetadata,
@@ -60,7 +59,7 @@ class RedisTaskStore:
         self,
         group_key: GroupKey,
         execution_metadata: GroupExecutionMetadata,
-        task_executions: list[tuple[TaskKey, GroupTaskExecutionMetadata]],
+        task_keys: list[TaskKey],
         expiry: timedelta,
     ) -> None:
         group_key = _build_redis_task_or_group_key(group_key)
@@ -72,7 +71,7 @@ class RedisTaskStore:
         )
 
         # group tasks
-        for task_key, task_execution_metadata in task_executions:
+        for task_key, (task_execution_metadata, _) in zip(task_keys, execution_metadata.tasks, strict=True):
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
                 key=_CELERY_TASK_EXEC_METADATA_KEY,

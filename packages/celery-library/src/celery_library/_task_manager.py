@@ -162,7 +162,7 @@ class CeleryTaskManager:
                 await self._task_store.create_group(
                     group_key,
                     execution_metadata,
-                    task_metadata_pairs,
+                    [task_key for task_key, _ in task_metadata_pairs],
                     expiry=group_expiry,
                 )
 

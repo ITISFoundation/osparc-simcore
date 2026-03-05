@@ -228,7 +228,7 @@ class TaskStore(Protocol):
         self,
         group_key: GroupKey,
         execution_metadata: GroupExecutionMetadata,
-        task_executions: list[tuple[TaskKey, GroupTaskExecutionMetadata]],
+        task_keys: list[TaskKey],
         expiry: timedelta,
     ) -> None: ...
 
