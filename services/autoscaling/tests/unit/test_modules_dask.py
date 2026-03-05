@@ -133,7 +133,7 @@ async def test_list_processing_tasks(
     dask_spec_cluster_client: distributed.Client,
 ):
     def _add_fct(x: int, y: int) -> int:
-        import time
+        import time  # noqa: PLC0415 # this is sent as remote fct, so it's ok to import here
 
         time.sleep(_REMOTE_FCT_SLEEP_TIME_S)
         return x + y
@@ -323,7 +323,7 @@ async def test_worker_used_resources(
     )
 
     def _add_fct(x: int, y: int) -> int:
-        import time
+        import time  # noqa: PLC0415
 
         time.sleep(_DASK_SCHEDULER_REACTION_TIME_S * 2)
         return x + y
