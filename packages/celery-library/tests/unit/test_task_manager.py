@@ -24,7 +24,6 @@ from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter
 from servicelib.celery.models import (
     TASK_DONE_STATES,
-    BaseExecutionMetadata,
     GroupExecutionMetadata,
     GroupTaskExecutionMetadata,
     GroupUUID,
@@ -189,7 +188,7 @@ async def test_submitting_task_with_failure_results_with_error(
     fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
-        BaseExecutionMetadata(
+        TaskExecutionMetadata(
             name=failure_task.__name__,
         ),
         owner_metadata=fake_owner_metadata,
@@ -402,7 +401,7 @@ async def test_submit_group_all_tasks_complete_successfully(
 ):
     # Submit a group of tasks
     num_tasks = 3
-    tasks = [
+    group_tasks = [
         (
             GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": [f"file{i}-{j}" for j in range(2)]},
@@ -413,7 +412,7 @@ async def test_submit_group_all_tasks_complete_successfully(
     group_id, task_uuids = await task_manager.submit_group(
         execution_metadata=GroupExecutionMetadata(
             name="fake_file_processing_group",
-            tasks=tasks,
+            tasks=group_tasks,
         ),
         owner_metadata=fake_owner_metadata,
     )
@@ -438,9 +437,9 @@ async def test_submit_group_tasks_appear_in_listing(
 ):
     # Submit a group of tasks
     num_tasks = 4
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=dreamer_task.__name__),
+            GroupTaskExecutionMetadata(name=dreamer_task.__name__),
             {},
         )
         for _ in range(num_tasks)
@@ -450,7 +449,10 @@ async def test_submit_group_tasks_appear_in_listing(
 
     try:
         _, task_uuids = await task_manager.submit_group(
-            executions,
+            GroupExecutionMetadata(
+                name="tasks_group",
+                tasks=group_tasks,
+            ),
             owner_metadata=fake_owner_metadata,
         )
 
@@ -473,23 +475,26 @@ async def test_submit_group_with_mixed_task_types(
     fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group with different task types
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": ["file1", "file2"]},
         ),
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": ["file3"]},
         ),
         (
-            BaseExecutionMetadata(name=streaming_results_task.__name__, ephemeral=False),
+            GroupTaskExecutionMetadata(name=streaming_results_task.__name__, ephemeral=False),
             {"num_results": 2},
         ),
     ]
 
     _, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="mixed_tasks_group",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -515,16 +520,19 @@ async def test_submit_group_can_cancel_individual_tasks(
 ):
     # Submit a group of long-running tasks
     num_tasks = 3
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=dreamer_task.__name__),
+            GroupTaskExecutionMetadata(name=dreamer_task.__name__),
             {},
         )
         for _ in range(num_tasks)
     ]
 
     _, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="cancellable_tasks_group",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -549,23 +557,26 @@ async def test_submit_group_with_failures(
     fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group with some failing tasks
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": ["file1"]},
         ),
         (
-            BaseExecutionMetadata(name=failure_task.__name__),
+            GroupTaskExecutionMetadata(name=failure_task.__name__),
             {},
         ),
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": ["file2"]},
         ),
     ]
 
     _, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="group_with_failures",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -592,16 +603,19 @@ async def test_submit_group_with_ephemeral_tasks(
 ):
     # Submit a group with ephemeral tasks
     num_tasks = 2
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__, ephemeral=True),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__, ephemeral=True),
             {"files": [f"file{i}"]},
         )
         for i in range(num_tasks)
     ]
 
     _, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="ephemeral_tasks_group",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -627,7 +641,10 @@ async def test_submit_empty_group(
     fake_owner_metadata: OwnerMetadata,
 ):
     _, task_uuids = await task_manager.submit_group(
-        [],
+        GroupExecutionMetadata(
+            name="empty_group",
+            tasks=[],
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -641,16 +658,19 @@ async def test_get_group_status_returns_status_for_running_group(
 ):
     # Submit a group of long-running tasks
     num_tasks = 3
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=dreamer_task.__name__),
+            GroupTaskExecutionMetadata(name=dreamer_task.__name__),
             {},
         )
         for _ in range(num_tasks)
     ]
 
     group_id, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="running_tasks_group",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -680,16 +700,19 @@ async def test_get_group_status_returns_done_when_all_tasks_complete(
 ):
     # Submit a group of fast tasks
     num_tasks = 2
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": [f"file{i}"]},
         )
         for i in range(num_tasks)
     ]
 
     group_id, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="fast_tasks_group",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -714,19 +737,22 @@ async def test_get_group_status_successful_false_when_task_fails(
     fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group with one failing task
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": ["file1"]},
         ),
         (
-            BaseExecutionMetadata(name=failure_task.__name__),
+            GroupTaskExecutionMetadata(name=failure_task.__name__),
             {},
         ),
     ]
 
     group_id, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="failing_tasks_group",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -764,16 +790,19 @@ async def test_get_group_status_tracks_progress(
 ):
     # Submit a group of longer-running tasks
     num_tasks = 4
-    executions = [
+    group_tasks = [
         (
-            BaseExecutionMetadata(name=fake_file_processor.__name__),
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
             {"files": [f"file{i}-{j}" for j in range(3)]},
         )
         for i in range(num_tasks)
     ]
 
     group_id, task_uuids = await task_manager.submit_group(
-        executions,
+        GroupExecutionMetadata(
+            name="long_running_tasks_group",
+            tasks=group_tasks,
+        ),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -808,7 +837,10 @@ async def test_get_group_status_with_empty_group(
 ):
     # Submit an empty group
     group_id, _ = await task_manager.submit_group(
-        [],
+        GroupExecutionMetadata(
+            name="empty_group",
+            tasks=[],
+        ),
         owner_metadata=fake_owner_metadata,
     )
 

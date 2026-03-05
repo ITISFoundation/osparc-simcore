@@ -7,13 +7,11 @@ from .models import (
     GroupExecutionMetadata,
     GroupKey,
     GroupStatus,
-    GroupTaskExecutionMetadata,
     GroupUUID,
     OwnerMetadata,
     Task,
     TaskExecutionMetadata,
     TaskKey,
-    TaskParams,
     TaskStatus,
     TaskStreamItem,
     TaskUUID,
@@ -25,7 +23,6 @@ class TaskManager(Protocol):
     async def submit_group(
         self,
         execution_metadata: GroupExecutionMetadata,
-        executions: list[tuple[GroupTaskExecutionMetadata, TaskParams]],
         *,
         owner_metadata: OwnerMetadata,
     ) -> tuple[GroupUUID, list[TaskUUID]]: ...
