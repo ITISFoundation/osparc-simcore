@@ -9,7 +9,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function(resourceData, showOrganizations = true, showAccessRights = true, preselectCollaboratorGids = []) {
-    this.base(arguments, "newCollaboratorsManager", this.tr("New collaborators"));
+    this.base(arguments, "newCollaboratorsManager", this.tr("Select recipients"));
 
     this.set({
       layout: new qx.ui.layout.VBox(5),

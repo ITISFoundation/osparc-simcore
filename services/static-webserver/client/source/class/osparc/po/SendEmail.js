@@ -166,20 +166,26 @@ qx.Class.define("osparc.po.SendEmail", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
         .then(task => {
-          task.addListener("resultReceived", () => {
-            osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
-            notSending();
-          });
-          task.addListener("pollingError", e => {
-            osparc.FlashMessenger.logError(e.getData());
-            notSending();
-          });
+          osparc.task.SendEmail.sendEmailTaskReceived(task, subject);
+          const text = this.tr("Sending email(s) process started and added to the background tasks");
+          osparc.FlashMessenger.logAs(text, "INFO");
+          notSending();
+          this.__emailSent();
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
           osparc.FlashMessenger.logError(errorMsg);
           notSending();
         });
+    },
+
+    __emailSent: function() {
+      // cleared "To" field
+      this.getChildControl("email-editor").clearRecipients();
+
+      // switch to Editor tab
+      const tabView = previewPage.getLayoutParent().getLayoutParent();
+      tabView.setSelection([previewPage]);
     },
   }
 });
