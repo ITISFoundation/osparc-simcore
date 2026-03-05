@@ -40,7 +40,7 @@ test-dev: ## runs tests with debug tools
 
 .PHONY: test-ci
 test-ci: export CI=true
-test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
+test-ci: ## runs ci tests (i.e. w/o debug tools)
 	@pytest \
 	-vv \
 	--color=yes \
