@@ -33,6 +33,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
+from sqlalchemy import Column
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 
@@ -208,8 +209,6 @@ class Product(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        from sqlalchemy import Column  # noqa: PLC0415
-
         schema.update(
             {
                 "examples": [
