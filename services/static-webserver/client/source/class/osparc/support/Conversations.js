@@ -239,8 +239,9 @@ qx.Class.define("osparc.support.Conversations", {
     __removeConversationPage: function(conversationId) {
       const conversationItem = this.__getConversationItem(conversationId);
       if (conversationItem) {
-        if (this.getChildControl("conversations-layout")) {
-          this.getChildControl("conversations-layout").remove(conversationItem);
+        const conversationsLayout = this.getChildControl("conversations-layout");
+        if (conversationsLayout && conversationsLayout.getChildren().indexOf(conversationItem) > -1) {
+          conversationsLayout.remove(conversationItem);
         }
         this.__conversationListItems = this.__conversationListItems.filter(item => item !== conversationItem);
       }
