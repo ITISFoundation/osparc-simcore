@@ -89,7 +89,7 @@ aiohttp==3.12.12
     #   aiohttp-jinja2
     #   aiohttp-security
     #   aiohttp-session
-aiohttp-jinja2==1.5
+aiohttp-jinja2==1.6
     # via -r requirements/_base.in
 aiohttp-security==0.5.0
     # via -r requirements/_base.in
