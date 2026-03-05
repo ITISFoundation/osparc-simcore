@@ -158,6 +158,7 @@ jobs:
               - 'packages/**'
               - 'services/agent/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             notifications:
@@ -221,6 +222,7 @@ jobs:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             efs-guardian:
@@ -280,6 +282,7 @@ jobs:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'scripts/install_rclone.bash'
               - 'mypy.ini'
             anything-py:
               - '**/*.py'
@@ -635,7 +638,7 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
@@ -714,7 +717,7 @@ jobs:
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
@@ -751,7 +754,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director/test_failures
@@ -788,7 +791,7 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1481,7 +1484,7 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
@@ -1519,7 +1522,7 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1563,7 +1566,7 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1603,7 +1606,7 @@ jobs:
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
@@ -1641,7 +1644,7 @@ jobs:
         run: ./ci/github/integration-testing/docker-api-proxy.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/docker-api-proxy/test_failures
@@ -1681,7 +1684,7 @@ jobs:
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
@@ -1744,7 +1747,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
@@ -1778,13 +1781,13 @@ jobs:
       - name: dump services setting schemas
         run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
       - name: upload services settings schemas
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_services_settings_schemas
           path: ./services/**/settings-schema.json
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
@@ -1831,13 +1834,13 @@ jobs:
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results

@@ -34,7 +34,7 @@ jobs:
         with:
           driver: docker-container
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
+        uses: crazy-max/ghaction-github-runtime@v4
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: login to Dockerhub
