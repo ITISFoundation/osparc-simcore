@@ -525,3 +525,63 @@ async def test_guest_user_is_not_garbage_collected(
 
     await asyncio.gather(*request_tasks)
     # and now the garbage collector shall delete our users since we are done...
+
+
+@pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
+async def test_access_study_with_dispatcher_disabled(
+    client: TestClient,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+    studies_dispatcher_enabled: bool,
+):
+    """
+    Test that accessing /study returns 404 when studies_dispatcher_enabled is False.
+
+    When the product has studies_dispatcher_enabled=False, the dispatcher feature
+    should be completely disabled, and accessing the /study endpoint should result
+    in a direct 404 response (not a redirect).
+    """
+    assert not _is_user_authenticated(client.session), "Is anonymous"
+    assert client.app
+
+    # Accessing the study should return 404 directly
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    resp = await client.get(f"{study_url}")
+
+    assert resp.status == status.HTTP_404_NOT_FOUND, (
+        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    )
+
+    # User should NOT be auto-logged in as guest when dispatcher is disabled
+    me_url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{me_url}")
+    assert resp.status == status.HTTP_401_UNAUTHORIZED, "Dispatcher disabled, so guest login should not have occurred"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
+@pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
+async def test_access_study_by_logged_user_with_dispatcher_disabled(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+    studies_dispatcher_enabled: bool,
+    user_role: UserRole,
+):
+    """
+    Test that accessing /study returns 404 for logged-in users when
+    studies_dispatcher_enabled is False.
+
+    Even logged-in users should not be able to access the dispatcher
+    when the feature is disabled at the product level.
+    """
+    assert _is_user_authenticated(client.session), "Is already logged-in"
+    assert client.app
+
+    # Accessing the study should return 404 directly, even for authenticated users
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    resp = await client.get(f"{study_url}")
+
+    assert resp.status == status.HTTP_404_NOT_FOUND, (
+        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    )

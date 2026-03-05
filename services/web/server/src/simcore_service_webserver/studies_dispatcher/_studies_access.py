@@ -59,6 +59,19 @@ _logger = logging.getLogger(__name__)
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
+def _assert_studies_dispatcher_enabled(request: web.Request) -> None:
+    """
+    Guard function to check if studies dispatcher is enabled for the current product.
+
+    Raises:
+        web.HTTPNotFound: If studies dispatcher is disabled for the current product
+    """
+    product = products_web.get_current_product(request)
+    if not product.studies_dispatcher_enabled:
+        _logger.debug("Studies dispatcher is disabled for product %s", product.name)
+        raise web.HTTPNotFound(reason="Studies dispatcher is not available for this product")
+
+
 @lru_cache
 def _compose_uuid(template_uuid, user_id, query="") -> str:
     """Creates a new uuid composing a project's and user ids such that
@@ -232,6 +245,10 @@ def _handle_errors_with_error_page(handler: Handler):
         try:
             return await handler(request)
 
+        except web.HTTPNotFound:
+            # Pass through 404 to allow dispatcher-disabled responses
+            raise
+
         except ProjectNotFoundError as err:
             raise create_redirect_to_page_response(
                 request.app,
@@ -282,6 +299,9 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     - if user is not registered, it creates a temporary guest account with limited resources and expiration
     - this handler is NOT part of the API and therefore does NOT respond with json
     """
+    # Check if studies dispatcher is enabled for this product
+    _assert_studies_dispatcher_enabled(request)
+
     project_id = request.match_info["id"]
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 

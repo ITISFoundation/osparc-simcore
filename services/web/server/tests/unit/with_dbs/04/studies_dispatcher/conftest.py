@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import ExitStack
 
 import pytest
@@ -17,6 +17,7 @@ from pytest_simcore.helpers.faker_factories import (
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
@@ -27,6 +28,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from simcore_service_webserver.studies_dispatcher.settings import (
     StudiesDispatcherSettings,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -282,3 +284,43 @@ def services_access_rights_in_db(
             created_access_rights.append(row)
 
         yield created_access_rights
+
+
+@pytest.fixture(autouse=True)
+async def studies_dispatcher_enabled(
+    asyncpg_engine: AsyncEngine,
+    osparc_product_name: str,
+    request: pytest.FixtureRequest,
+) -> AsyncIterator[bool]:
+    """
+    Fixture to enable/disable the studies dispatcher for the current product.
+    Default is True for existing tests. Tests can override by:
+
+        @pytest.mark.parametrize("studies_dispatcher_enabled", [False])
+        async def test_something(studies_dispatcher_enabled):
+            ...
+    """
+    enabled_value = request.param if hasattr(request, "param") else True
+
+    async with asyncpg_engine.begin() as conn:
+        # Store old value
+        old_value = await conn.scalar(
+            sa.select(products.c.studies_dispatcher_enabled).where(products.c.name == osparc_product_name)
+        )
+
+        # Set requested value for test
+        await conn.execute(
+            sa.update(products)
+            .values(studies_dispatcher_enabled=enabled_value)
+            .where(products.c.name == osparc_product_name)
+        )
+
+    yield enabled_value
+
+    # Restore old value
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            sa.update(products)
+            .values(studies_dispatcher_enabled=old_value)
+            .where(products.c.name == osparc_product_name)
+        )
