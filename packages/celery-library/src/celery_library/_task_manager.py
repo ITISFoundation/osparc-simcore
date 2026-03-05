@@ -7,6 +7,7 @@ from uuid import uuid4
 from celery import Celery, group, signature  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from celery.result import GroupResult  # type: ignore[import-untyped]
+from celery.utils.time import rate as celery_rate  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter
@@ -32,7 +33,13 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
-from .errors import GroupNotFoundError, TaskNotFoundError, TaskSubmissionError, handle_celery_errors
+from .errors import (
+    GroupNotFoundError,
+    GroupSubmissionError,
+    TaskNotFoundError,
+    TaskSubmissionError,
+    handle_celery_errors,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -74,6 +81,15 @@ class CeleryTaskManager:
         task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
         return task_uuid, task_key
 
+    def _get_rate_limit_interval(self, task_name: str) -> float | None:
+        """Return the minimum seconds between executions for this task type, or None."""
+        task = self._app.tasks.get(task_name)
+        rate_limit: str | None = getattr(task, "rate_limit", None) if task else None
+        if not rate_limit:
+            return None
+        tokens_per_second = celery_rate(rate_limit)
+        return 1.0 / tokens_per_second if tokens_per_second else None
+
     @handle_celery_errors
     async def submit_group(
         self,
@@ -99,12 +115,19 @@ class CeleryTaskManager:
                 task_metadata_pairs: list[tuple[TaskKey, GroupTaskExecutionMetadata]] = []
                 expiries: list[timedelta] = []
 
-                for group_task_execution_metadata, task_params in execution_metadata.tasks:
+                for idx, (group_task_execution_metadata, task_params) in enumerate(execution_metadata.tasks):
                     task_uuid, task_key = self._create_task_ids(owner_metadata)
                     expiry = self._get_task_expiry(group_task_execution_metadata)
                     expiries.append(expiry)
 
                     task_metadata_pairs.append((task_key, group_task_execution_metadata))
+
+                    # When the task type has a rate limit, space each task in the group
+                    # by its interval using an explicit countdown.  This supplements
+                    # Celery's consumer-side token-bucket rate limiter which can be
+                    # bypassed when many tasks are queued simultaneously.
+                    rate_interval = self._get_rate_limit_interval(group_task_execution_metadata.name)
+                    countdown = idx * rate_interval if rate_interval is not None else None
 
                     sig = signature(
                         group_task_execution_metadata.name,
@@ -113,9 +136,22 @@ class CeleryTaskManager:
                         task_id=task_key,
                         immutable=True,
                         app=self._app,
+                        countdown=countdown,
                     )
                     sigs.append(sig)
                     created.append((task_key, task_uuid))
+
+                group_expiry = max(expiries) if expiries else self._settings.CELERY_RESULT_EXPIRES
+                for (task_key, group_task_meta), expiry in zip(task_metadata_pairs, expiries, strict=True):
+                    await self._task_store.create_task(
+                        task_key,
+                        TaskExecutionMetadata(
+                            name=group_task_meta.name,
+                            queue=group_task_meta.queue,
+                            ephemeral=group_task_meta.ephemeral,
+                        ),
+                        expiry=expiry,
+                    )
 
                 group_result: GroupResult = group(sigs).apply_async()
                 group_result.save()
@@ -123,8 +159,6 @@ class CeleryTaskManager:
                 assert group_result.id is not None  # nosec
                 group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_result.id)
 
-                # Create all tasks in the group at once
-                group_expiry = max(expiries) if expiries else self._settings.CELERY_RESULT_EXPIRES
                 await self._task_store.create_group(
                     group_key,
                     execution_metadata,
@@ -136,10 +170,9 @@ class CeleryTaskManager:
                 for task_key, _ in created:
                     await self._cleanup_task(task_key)
 
-                raise TaskSubmissionError(
-                    task_name="celery.group",
-                    task_key=None,
-                    task_params={"submitted": len(created)},
+                raise GroupSubmissionError(
+                    group_name=execution_metadata.name,
+                    group_key=group_key,
                 ) from exc
 
             return TypeAdapter(GroupUUID).validate_python(group_result.id), [
