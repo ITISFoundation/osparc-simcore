@@ -427,7 +427,7 @@ endif
 	@$(_show_endpoints)
 
 # Infrastructure services for phased deployment
-INFRA_SERVICES := minio postgres migration redis rabbit
+INFRA_SERVICES := postgres migration redis rabbit
 MAX_WAIT_ITERATIONS := 150
 WAIT_INTERVAL_SECS := 2
 YQ_IMAGE := mikefarah/yq:4
