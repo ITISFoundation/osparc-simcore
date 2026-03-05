@@ -344,7 +344,7 @@ async def test_celery_error_propagation(
     )
     task_manager = get_task_manager(app=app)
     task_uuid = await task_manager.submit_task(
-        execution_metadata=TaskExecutionMetadata(name="exception_task", queue=API_SERVER_CELERY_QUEUE_DEFAULT),
+        TaskExecutionMetadata(name="exception_task", queue=API_SERVER_CELERY_QUEUE_DEFAULT),
         owner_metadata=owner_metadata,
     )
 
