@@ -186,7 +186,7 @@ qx.Class.define("osparc.po.SendEmail", {
 
       // switch to Editor tab
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
-      emailContentEditor.setSelection([emailContentEditor.getChildControl("editor-page");]);
+      emailContentEditor.setSelection([emailContentEditor.getChildControl("editor-page")]);
     },
   }
 });
