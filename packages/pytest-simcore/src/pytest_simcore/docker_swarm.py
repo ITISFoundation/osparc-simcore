@@ -80,8 +80,8 @@ _SERVICES_DEPLOY_ORDER: list[str] = [
     "notifications",
     "notifications-worker",
     "payments",
-    "traefik",
     "traefik-config-placeholder",
+    "traefik",
 ]
 
 #: Maximum number of app services being started (not yet running) at any time.
@@ -307,11 +307,7 @@ async def _async_assert_service_is_running(
     service_name: str,
     stack_name: str,
 ) -> None:
-    """Check that a swarm service has the expected number of running tasks.
-
-    Uses *aiodocker* so that many services can be polled concurrently with
-    ``asyncio.gather``.
-    """
+    """Check that a swarm service has the expected number of running tasks."""
     full_service_name = f"{stack_name}_{service_name}"
 
     async for attempt in AsyncRetrying(wait=wait_fixed(0.2), stop=stop_after_delay(8 * MINUTE), reraise=True):
@@ -426,13 +422,21 @@ def _get_target_replicas(full_compose: dict, service_name: str) -> int:
     return svc.get("deploy", {}).get("replicas", 1)
 
 
-def _scale_service(full_service_name: str, replicas: int) -> None:
+async def _scale_service(full_service_name: str, replicas: int) -> None:
     """Scale a Docker Swarm service to *replicas* tasks."""
-    subprocess.run(  # noqa: S603
-        ["docker", "service", "scale", "--detach", f"{full_service_name}={replicas}"],  # noqa: S607
-        check=True,
-        capture_output=True,
+    proc = await asyncio.create_subprocess_exec(
+        "docker",
+        "service",
+        "scale",
+        "--detach",
+        f"{full_service_name}={replicas}",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
     )
+    stdout, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        msg = f"docker service scale failed (rc={proc.returncode}): stdout={stdout.decode()}, stderr={stderr.decode()}"
+        raise RuntimeError(msg)
 
 
 #: Polling interval for the scaling loop (seconds).
@@ -495,7 +499,7 @@ async def _scale_app_services_in_order(
                 full_name = f"{stack_name}_{name}"
                 target_replicas = _get_target_replicas(full_compose, name)
                 _logger.info("Scaling %s to %d replica(s)", full_name, target_replicas)
-                await asyncio.to_thread(_scale_service, full_name, target_replicas)
+                await _scale_service(full_name, target_replicas)
 
             status[name] = "scaling"
             currently_scaling += 1
@@ -708,7 +712,7 @@ async def docker_stack(
         "compose": yaml.safe_load(ops_docker_compose_file.read_text()),
     }
 
-    # Deploy core stack in phases (infra → app batches) using aiodocker
+    # Deploy core stack in phases
     core_compose = yaml.safe_load(core_docker_compose_file.read_text())
     selected_services = set(core_compose.get("services", {}))
 
