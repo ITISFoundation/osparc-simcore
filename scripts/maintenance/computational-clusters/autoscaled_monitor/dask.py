@@ -129,7 +129,7 @@ async def get_scheduler_details(state: AppState, instance: Instance):
             assert client.scheduler  # nosec
             # NOTE: client.scheduler_info() is cached and limited to 5 workers for async clients.
             # Use the direct RPC call instead, which returns all workers live.
-            scheduler_info = SchedulerInfo(await client.scheduler.identity(n_workers=-1))
+            scheduler_info = SchedulerInfo(await client.scheduler.identity(n_workers=-1))  # type: ignore
             datasets_on_cluster = await _wrap_dask_async_call(client.list_datasets())
             processing_jobs = await _wrap_dask_async_call(client.processing())
             all_tasks = await _list_all_tasks(client)
