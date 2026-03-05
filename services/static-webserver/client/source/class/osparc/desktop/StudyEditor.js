@@ -349,7 +349,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (data["projectId"] === this.getStudy().getUuid()) {
             if (data["clientSessionId"] && data["clientSessionId"] === osparc.utils.Utils.getClientSessionID()) {
               // ignore my own updates
-              console.debug("ProjectDocument Discarded: My own", data);
               return;
             }
             this.__projectDocumentReceived(data);
@@ -364,7 +363,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       // Ignore outdated updates
       if (this.__lastSyncedProjectVersion && documentVersion <= this.__lastSyncedProjectVersion) {
         // ignore old updates
-        console.debug("ProjectDocument Discarded: Ignoring old", data);
         return;
       }
 
@@ -375,7 +373,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // Reset the timer if it's already running
       if (this.__applyProjectDocumentTimer) {
-        console.debug("ProjectDocument Discarded: Resetting applyProjectDocument timer");
         clearTimeout(this.__applyProjectDocumentTimer);
       }
 
@@ -493,6 +490,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (!socket.slotExists("nodeUpdated")) {
         socket.on("nodeUpdated", data => {
+          console.log("nodeUpdated Received: ", data);
           this.getStudy().nodeUpdated(data);
         }, this);
       }

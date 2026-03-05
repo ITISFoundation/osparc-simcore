@@ -39,7 +39,7 @@ qx.Class.define("osparc.file.FileUploader", {
 
   events: {
     "uploadAborted": "qx.event.type.Event",
-    "fileUploaded": "qx.event.type.Data",
+    "fileUploaded": "qx.event.type.Event",
   },
 
   statics: {
@@ -220,7 +220,18 @@ qx.Class.define("osparc.file.FileUploader", {
       this.getNode()["fileUploadAbortRequested"] = false;
 
       this.__presignedLinkData = null;
-      this.fireDataEvent("fileUploaded", this.__fileMetadata);
+      if (
+        "location" in this.__fileMetadata &&
+        "dataset" in this.__fileMetadata &&
+        "path" in this.__fileMetadata &&
+        "name" in this.__fileMetadata
+      ) {
+        osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), this.__fileMetadata["location"], this.__fileMetadata["dataset"], this.__fileMetadata["path"], this.__fileMetadata["name"]);
+      } else {
+        console.error("metadata info missing", this.__fileMetadata);
+      }
+      this.fireEvent("fileUploaded");
+      this.getNode().fireEvent("fileUploaded");
     },
 
     __abortUpload: function() {
