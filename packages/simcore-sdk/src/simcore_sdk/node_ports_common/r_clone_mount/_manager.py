@@ -189,8 +189,8 @@ class RCloneMountManager:
                 index=index,
                 delegate=self.delegate,
             )
-            self._tracked_mounts[mount_id] = tracked_mount
             await tracked_mount.start_mount()
+            self._tracked_mounts[mount_id] = tracked_mount
 
     def is_mount_tracked(self, local_mount_path: Path, index: NonNegativeInt) -> bool:
         mount_id = get_mount_id(local_mount_path, index)
