@@ -182,6 +182,11 @@ def fake_ec2_instance_data_with_invalid_ec2_name(
     return fake_ec2_instance_data(aws_private_dns=faker.name())
 
 
+@pytest.fixture
+def disable_aiocache(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
 async def test_get_worker_still_has_results_in_memory_with_invalid_ec2_name_raises(
     scheduler_url: AnyUrl,
     scheduler_authentication: ClusterAuthentication,
@@ -218,6 +223,7 @@ async def test_get_worker_still_has_results_in_memory_with_invalid_worker_host_r
 
 @pytest.mark.parametrize("fct_shall_err", [True, False], ids=str)
 async def test_get_worker_still_has_results_in_memory(
+    disable_aiocache: None,
     scheduler_url: AnyUrl,
     scheduler_authentication: ClusterAuthentication,
     dask_spec_cluster_client: distributed.Client,
