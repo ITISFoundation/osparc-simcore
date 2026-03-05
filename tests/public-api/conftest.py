@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from collections.abc import Awaitable, Callable, Iterator
 from pprint import pformat
 from typing import Any
@@ -157,7 +158,7 @@ def registered_user(
 
 
 @pytest.fixture(scope="module")
-async def services_registry(
+def services_registry(
     docker_registry_image_injector: Callable[[str, str, str | None], Awaitable[dict[str, Any]]],
     registered_user: RegisteredUserDict,
     env_vars_for_docker_compose: dict[str, str],
@@ -168,10 +169,12 @@ async def services_registry(
     #
     user_email = registered_user["email"]
 
-    sleeper_service = await docker_registry_image_injector(
-        "itisfoundation/sleeper",
-        "2.1.1",
-        user_email,
+    sleeper_service = asyncio.run(
+        docker_registry_image_injector(
+            "itisfoundation/sleeper",
+            "2.1.1",
+            user_email,
+        )
     )
 
     assert sleeper_service["image"]["tag"] == "2.1.1"
@@ -239,7 +242,7 @@ async def services_registry(
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
-    await asyncio.sleep(wait_for_catalog_to_detect + 1)
+    time.sleep(wait_for_catalog_to_detect + 1)
 
     return {
         "sleeper_service": ServiceInfoDict(
