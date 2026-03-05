@@ -298,7 +298,7 @@ class CeleryTaskManager:
                 is_done=is_done,
                 is_successful=is_successful,
                 progress_report=ProgressReport(
-                    actual_value=float(completed_count) / len(task_uuids) if not is_done else 1.0,
+                    actual_value=float(completed_count) / len(task_uuids) * 100 if not is_done else 100,
                     total=len(task_uuids),
                 ),
             )
