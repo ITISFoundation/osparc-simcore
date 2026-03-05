@@ -334,16 +334,17 @@ class CeleryTaskManager:
             is_done = group_result.ready()
             is_successful = group_result.successful() if is_done else False
 
+            total_count = len(task_uuids)
             return GroupStatus(
                 group_uuid=group_uuid,
                 task_uuids=task_uuids,
                 completed_count=completed_count,
-                total_count=len(task_uuids),
+                total_count=total_count,
                 is_done=is_done,
                 is_successful=is_successful,
                 progress_report=ProgressReport(
-                    actual_value=float(completed_count) / len(task_uuids) * 100 if not is_done else 100,
-                    total=len(task_uuids),
+                    actual_value=float(total_count) if is_done else float(completed_count),
+                    total=float(total_count),
                 ),
             )
 
