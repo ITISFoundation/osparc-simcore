@@ -191,8 +191,8 @@ async def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
 
 
 @pytest.fixture
-async def simcore_services_ready(services_endpoint: dict[str, URL], monkeypatch: pytest.MonkeyPatch) -> None:
-    await _wait_for_services_ready(services_endpoint)
+def simcore_services_ready(services_endpoint: dict[str, URL], monkeypatch: pytest.MonkeyPatch) -> None:
+    asyncio.run(_wait_for_services_ready(services_endpoint))
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
