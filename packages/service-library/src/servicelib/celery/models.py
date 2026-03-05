@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeVar
 from uuid import UUID
 
@@ -7,6 +7,7 @@ import orjson
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.celery import DEFAULT_QUEUE
 from models_library.progress_bar import ProgressReport
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, StringConstraints, TypeAdapter, model_validator
 from pydantic.config import JsonDict
 
@@ -145,10 +146,10 @@ TASK_DONE_STATES: Final[tuple[TaskState, ...]] = (
 )
 
 
-class ExecutorType(StrEnum):
-    GROUP = "GROUP"
-    GROUP_TASK = "GROUP_TASK"
-    TASK = "TASK"
+class ExecutorType(StrAutoEnum):
+    GROUP = auto()
+    GROUP_TASK = auto()
+    TASK = auto()
 
 
 class BaseExecutionMetadata(BaseModel):
