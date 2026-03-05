@@ -227,6 +227,31 @@ class CeleryTaskManager:
             await self._task_store.remove_task(task_key)
             await self._forget_task(task_key)
 
+    @handle_celery_errors
+    async def cancel_group(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> None:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"group cancellation: {owner_metadata=} {group_uuid=}",
+        ):
+            group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_uuid)
+            if not await self.task_or_group_exists(group_key):
+                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
+
+            group_result = await self._restore_group_result(group_uuid)
+            if group_result is not None:
+                for async_result in group_result.results or []:
+                    task_key: TaskKey = async_result.id
+                    await self._task_store.remove_task(task_key)
+                    await self._forget_task(task_key)
+                await self._forget_group(group_result)
+
+            await self._task_store.remove_task(group_key)
+
+    @make_async()
+    def _forget_group(self, group_result: GroupResult) -> None:
+        group_result.forget()
+
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool:
         return await self._task_store.task_or_group_exists(task_or_group_key)
 
@@ -318,6 +343,10 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Getting group status: {owner_metadata=} {group_uuid=}",
         ):
+            group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_uuid)
+            if not await self.task_or_group_exists(group_key):
+                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
+
             group_result = await self._restore_group_result(group_uuid)
 
             if group_result is None:

@@ -551,6 +551,43 @@ async def test_submit_group_can_cancel_individual_tasks(
         await task_manager.cancel_task(fake_owner_metadata, task_uuid)
 
 
+async def test_cancelling_a_group_cancels_all_tasks(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    num_tasks = 3
+    group_tasks = [
+        (
+            GroupTaskExecutionMetadata(name=dreamer_task.__name__),
+            {},
+        )
+        for _ in range(num_tasks)
+    ]
+
+    group_uuid, task_uuids = await task_manager.submit_group(
+        GroupExecutionMetadata(
+            name="cancellable_group",
+            tasks=group_tasks,
+        ),
+        owner_metadata=fake_owner_metadata,
+    )
+
+    # Wait a bit to ensure tasks are running
+    await asyncio.sleep(2.0)
+
+    await task_manager.cancel_group(fake_owner_metadata, group_uuid)
+
+    # Group itself should no longer exist
+    with pytest.raises(GroupNotFoundError):
+        await task_manager.get_group_status(fake_owner_metadata, group_uuid)
+
+    # All individual tasks should also be gone
+    for task_uuid in task_uuids:
+        with pytest.raises(TaskNotFoundError):
+            await task_manager.get_task_status(fake_owner_metadata, task_uuid)
+
+
 async def test_submit_group_with_failures(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
