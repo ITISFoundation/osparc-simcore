@@ -120,33 +120,28 @@ qx.Class.define("osparc.file.FilePicker", {
       return osparc.file.FilePicker.isOutputFromStore(outputs) || osparc.file.FilePicker.isOutputDownloadLink(outputs);
     },
 
-    __setOutputValue: function(node, outputValue) {
-      if (outputValue && !("eTag" in outputValue)) {
+    __setOutputValue: function(node, outFileValue) {
+      if (outFileValue && !("eTag" in outFileValue)) {
         // add eTag from the beginning to avoid issues with the upload progress bar in case of download links that don't have it
-        outputValue["eTag"] = null;
+        outFileValue["eTag"] = null;
       }
       node.setOutputData({
-        [osparc.data.model.NodePort.FP_PORT_KEY]: outputValue
+        [osparc.data.model.NodePort.FP_PORT_KEY]: outFileValue
       });
       const outputs = node.getOutputs();
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
       if (outLabel && node.getLabel().includes("File Picker")) {
-        node.setLabel(outputValue.label);
+        node.setLabel(outFileValue.label);
       } else {
         node.setLabel("File Picker");
       }
       osparc.file.FilePicker.releaseRTCToken(node);
-      node.getStatus().setProgress(outputValue ? osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED : osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED);
+      node.getStatus().setProgress(outFileValue ? osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED : osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED);
     },
 
-    setOutputValueFromStore: function(node, store, dataset, path, label) {
-      if (store !== undefined && path) {
-        this.__setOutputValue(node, {
-          store,
-          dataset,
-          path,
-          label
-        });
+    setOutputValueFromStore: function(node, outFileValue) {
+      if (outFileValue && outFileValue.store !== undefined && outFileValue.path) {
+        this.__setOutputValue(node, outFileValue);
       }
     },
 
@@ -283,8 +278,8 @@ qx.Class.define("osparc.file.FilePicker", {
     __selectedFileFound: null,
     __fileDownloadLink: null,
 
-    setOutputValueFromStore: function(store, dataset, path, label) {
-      this.self().setOutputValueFromStore(this.getNode(), store, dataset, path, label);
+    setOutputValueFromStore: function(outFileValue) {
+      this.self().setOutputValueFromStore(this.getNode(), outFileValue);
     },
 
     __setOutputValueFromLink: function(downloadLink, label) {
@@ -423,7 +418,13 @@ qx.Class.define("osparc.file.FilePicker", {
       fileDrop.addListener("fileLinkDropped", e => {
         const data = e.getData()["data"];
         const node = this.getNode();
-        osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+        const outFileValue = {
+          store: data.getLocation(),
+          dataset: data.getDatasetId(),
+          path: data.getFileId(),
+          label: data.getLabel()
+        };
+        osparc.file.FilePicker.setOutputValueFromStore(node, outFileValue);
         this.fireEvent("itemSelected");
         fileDrop.resetDropAction();
       });
@@ -636,7 +637,13 @@ qx.Class.define("osparc.file.FilePicker", {
     __itemSelected: function() {
       const selectedItem = this.__selectedFile;
       if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
-        this.setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
+        const outFileValue = {
+          store: selectedItem.getLocation(),
+          dataset: selectedItem.getDatasetId(),
+          path: selectedItem.getFileId(),
+          label: selectedItem.getLabel()
+        };
+        this.setOutputValueFromStore(outFileValue);
         this.fireEvent("itemSelected");
       }
     },

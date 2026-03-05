@@ -503,13 +503,13 @@ qx.Class.define("osparc.data.model.Workbench", {
             if (success) {
               if (file) {
                 const fileObj = file.data;
-                osparc.file.FilePicker.setOutputValueFromStore(
-                  filePicker,
-                  fileObj.getLocation(),
-                  fileObj.getDatasetId(),
-                  fileObj.getFileId(),
-                  fileObj.getLabel()
-                );
+                const outFileValue = {
+                  store: fileObj.getLocation(),
+                  dataset: fileObj.getDatasetId(),
+                  path: fileObj.getFileId(),
+                  label: fileObj.getLabel()
+                };
+                osparc.file.FilePicker.setOutputValueFromStore(filePicker, outFileValue);
               }
               this.fireDataEvent("openNode", filePicker.getNodeId());
               this.fireEvent("reloadModel");

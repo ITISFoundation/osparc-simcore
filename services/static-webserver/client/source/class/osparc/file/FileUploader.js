@@ -226,7 +226,13 @@ qx.Class.define("osparc.file.FileUploader", {
         "path" in this.__fileMetadata &&
         "name" in this.__fileMetadata
       ) {
-        osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), this.__fileMetadata["location"], this.__fileMetadata["dataset"], this.__fileMetadata["path"], this.__fileMetadata["name"]);
+        const outFileValue = {
+          store: this.__fileMetadata["location"],
+          dataset: this.__fileMetadata["dataset"],
+          path: this.__fileMetadata["path"],
+          label: this.__fileMetadata["name"]
+        };
+        osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), outFileValue);
       } else {
         console.error("metadata info missing", this.__fileMetadata);
       }
