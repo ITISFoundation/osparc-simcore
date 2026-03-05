@@ -181,11 +181,12 @@ qx.Class.define("osparc.po.SendEmail", {
 
     __emailSent: function() {
       // cleared "To" field
-      this.getChildControl("email-editor").clearRecipients();
+      const emailEditor = this.getChildControl("email-editor");
+      emailEditor.clearRecipients();
 
       // switch to Editor tab
-      const tabView = previewPage.getLayoutParent().getLayoutParent();
-      tabView.setSelection([previewPage]);
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      emailContentEditor.setSelection([emailContentEditor.getChildControl("editor-page");]);
     },
   }
 });
