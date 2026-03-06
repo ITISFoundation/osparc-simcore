@@ -54,7 +54,6 @@ from ._constants import (
 from ._errors import GuestUsersLimitError
 from ._guards import check_studies_dispatcher_enabled
 from ._users import create_temporary_guest_user, get_authorized_user
-from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -78,76 +77,75 @@ async def _get_published_template_project(
     is_user_authenticated: bool,
 ) -> ProjectDict:
     """
-    raises RedirectToFrontEndPageError
+    Validates and returns a published template project if accessible.
+
+    A project is accessible if:
+    1. It exists and is a template
+    2. It's published (if user is unauthenticated)
+    3. It's shared with either EVERYONE group (gid=1) or the product's group with read access
+
+    Raises:
+        RedirectToFrontEndPageError: If project doesn't meet access requirements
     """
     db = ProjectDBAPI.get_from_app_context(request.app)
-
+    product = products_web.get_current_product(request)
     only_public_projects = not is_user_authenticated
 
+    # Helper to create appropriate error for current context
+    def _create_access_denied_error(reason: str) -> RedirectToFrontEndPageError:
+        _logger.debug(
+            "Access denied to project %s (only_public=%s): %s",
+            project_uuid,
+            only_public_projects,
+            reason,
+        )
+
+        if only_public_projects:
+            return RedirectToFrontEndPageError(
+                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=product.support_email),
+                error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return RedirectToFrontEndPageError(
+            MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+            error_code="PROJECT_NOT_PUBLISHED",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Step 1: Verify project exists and meets template/published requirements
     try:
         prj, _ = await db.get_project_dict_and_type(
             project_uuid=project_uuid,
-            # NOTE: these are the conditions for a published study
-            # 1. MUST be a template
             only_templates=True,
-            # 2. If user is unauthenticated, then MUST be public
             only_published=only_public_projects,
         )
-        # 3. MUST be shared with either EVERYONE=1 or the product's group in read mode
-        product = products_web.get_current_product(request)
-        groups_to_check = [1]  # group 1 = everyone
-        if product.group_id is not None:
-            groups_to_check.append(product.group_id)
+    except (ProjectNotFoundError, ProjectInvalidRightsError) as err:
+        raise _create_access_denied_error(err.debug_message()) from err
 
-        has_read_access = False
-        for gid in groups_to_check:
-            project_group_get = await get_project_group(request.app, project_id=ProjectID(project_uuid), group_id=gid)
-            if project_group_get.read:
-                has_read_access = True
+    # Step 2: Verify project is shared with appropriate groups
+    groups_to_check = [1]  # group 1 = everyone
+    if product.group_id is not None:
+        groups_to_check.append(product.group_id)
+
+    for gid in groups_to_check:
+        try:
+            project_group = await get_project_group(request.app, project_id=ProjectID(project_uuid), group_id=gid)
+            if project_group.read:
                 _logger.debug(
-                    "Project %s has read access via group %s for product %s",
+                    "Project %s accessible via group %s for product %s",
                     project_uuid,
                     gid,
                     product.name,
                 )
-                break
+                return prj
+        except ProjectGroupNotFoundError:
+            # This group doesn't have access, try next group
+            continue
 
-        if not has_read_access:
-            raise ProjectGroupNotFoundError(  # noqa: TRY301
-                details=f"Project {project_uuid} not shared with group 1 or product group {product.group_id}"
-            )
-
-        if not prj:
-            # Not sure this happens but this condition was checked before so better be safe
-            raise ProjectNotFoundError(project_uuid)  # noqa: TRY301
-
-        return prj
-
-    except (
-        ProjectGroupNotFoundError,
-        ProjectNotFoundError,
-        ProjectInvalidRightsError,
-    ) as err:
-        _logger.debug(
-            "Project with %s %s was not found. Reason: %s",
-            f"{project_uuid=}",
-            f"{only_public_projects=}",
-            err.debug_message(),
-        )
-
-        support_email = products_web.get_current_product(request).support_email
-        if only_public_projects:
-            raise RedirectToFrontEndPageError(
-                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
-                error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            ) from err
-
-        raise RedirectToFrontEndPageError(
-            MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
-            error_code="PROJECT_NOT_PUBLISHED",
-            status_code=status.HTTP_404_NOT_FOUND,
-        ) from err
+    # No group has read access
+    reason = f"Project not shared with required groups {groups_to_check}"
+    raise _create_access_denied_error(reason)
 
 
 async def copy_study_to_account(request: web.Request, template_project: dict, user: dict):
@@ -185,8 +183,7 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
         project, nodes_map = clone_project_document(template_project, forced_copy_project_id=UUID(project_uuid))
 
         # remove template access rights
-        # TODO: PC: what should I do with this stuff? can we re-use the same entrypoint?
-        # FIXME: temporary fix until. Unify access management while cloning a project. Right not, at least two workflows have different implementations
+        # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/8887
         project["accessRights"] = {}
 
         # check project inputs and substitute template_parameters
@@ -308,8 +305,6 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     - if user is not registered, it creates a temporary guest account with limited resources and expiration
     - this handler is NOT part of the API and therefore does NOT respond with json
     """
-    assert get_plugin_settings(request.app).STUDIES_ACCESS_ANONYMOUS_ALLOWED  # nosec
-
     # Check if studies dispatcher is enabled for this product
     check_studies_dispatcher_enabled(request)
 
