@@ -672,7 +672,7 @@ class BaseCompScheduler(ABC):
                 processing_tasks = {
                     k: v
                     for k, v in (await self._get_pipeline_tasks(project_id, dag)).items()
-                    if v.state in PROCESSING_STATES
+                    if v.state in PROCESSING_STATES and v.job_id is not None
                 }
                 comp_tasks_repo = CompTasksRepository(self.db_engine)
                 await comp_tasks_repo.update_project_tasks_state(
