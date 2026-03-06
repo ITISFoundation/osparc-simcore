@@ -3,7 +3,7 @@ import contextlib
 import logging
 import re
 from collections import defaultdict
-from collections.abc import AsyncIterator, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
 from typing import Any, Final, TypeAlias, TypedDict
 
 import dask.typing
@@ -52,7 +52,7 @@ _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
 _SCHEDULER_IDENTITY_CACHE_TTL_S: Final[int] = 2
 
 
-def _scheduler_identity_key_builder(func, client: distributed.Client) -> str:
+def _scheduler_identity_key_builder(func: Callable[..., Any], client: distributed.Client) -> str:
     assert client.scheduler  # nosec
     return f"{func.__module__}.{func.__qualname__}|{client.scheduler.address}"
 
