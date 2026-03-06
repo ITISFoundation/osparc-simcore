@@ -321,10 +321,10 @@ class CeleryTaskManager:
 
         task_metadata = await self._task_store.get_task_metadata(task_or_group_key)
         if task_metadata and task_metadata.type == ExecutorType.GROUP:
-            await self.cancel_group(owner_metadata, task_or_group_uuid)  # type: ignore[arg-type]
+            await self.cancel_group(owner_metadata, task_or_group_uuid)
             return
 
-        await self.cancel_task(owner_metadata, task_or_group_uuid)  # type: ignore[arg-type]
+        await self.cancel_task(owner_metadata, task_or_group_uuid)
 
     @handle_celery_errors
     async def get_status(
