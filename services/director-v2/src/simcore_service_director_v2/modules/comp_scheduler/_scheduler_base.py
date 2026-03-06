@@ -1,5 +1,6 @@
 """The scheduler shall be run as a background task.
-Based on oSparc pipelines, it monitors when to start the next worker task(s), either one at a time or as a group of tasks.
+Based on oSparc pipelines, it monitors when to start the next worker task(s),
+either one at a time or as a group of tasks.
 
 In principle the Scheduler maintains the comp_runs table in the database.
 It contains how the pipeline was run and by whom.
@@ -143,7 +144,9 @@ async def _triage_changed_tasks(
     ]
     if lost_tasks:
         _logger.warning(
-            "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
+            "%s are currently in unknown state. "
+            "TIP: If they are running in an external cluster and it is not yet ready,"
+            " that might explain it. But inform @sanderegg nevertheless!",
             [t.current.node_id for t in lost_tasks],
         )
 
@@ -232,7 +235,8 @@ class BaseCompScheduler(ABC):
                 user_id=user_id,
                 project_id=project_id,
                 log=user_message(
-                    f"Project pipeline execution for iteration {iteration} has completed with status: {run_result.value}",
+                    f"Project pipeline execution for iteration {iteration} "
+                    f"has completed with status: {run_result.value}",
                     _version=1,
                 ),
                 log_level=logging.INFO,
@@ -466,8 +470,10 @@ class BaseCompScheduler(ABC):
             executing_tasks,
         ) = await self._get_changed_tasks_from_backend(user_id, tasks_inprocess, comp_run)
         # NOTE: typical states a task goes through
-        # NOT_STARTED (initial state) -> PUBLISHED (user press run/API call) -> PENDING -> WAITING_FOR_CLUSTER (cluster creation) ->
-        # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing) -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
+        # NOT_STARTED (initial state) -> PUBLISHED (user press run/API call)
+        # -> PENDING -> WAITING_FOR_CLUSTER (cluster creation) ->
+        # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing)
+        # -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
         # or ABORTED (user cancelled) or UNKNOWN (lost task - it might be transient, be careful with this one)
         sorted_tasks = await _triage_changed_tasks(tasks_with_changed_states)
         _logger.debug("found the following %s tasks with changed states", sorted_tasks)
@@ -477,7 +483,8 @@ class BaseCompScheduler(ABC):
             # tasks that are only queued and accepted by a dask-worker. We use dask plugins to report on tasks states
             # states are published to log_event, and we directly publish into RabbitMQ the sidecar and services logs.
             # tasks_started should therefore be mostly empty but for cases where
-            # - dask log_event/subscribe_topic mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
+            # - dask log_event/subscribe_topic mechanism failed,
+            #       the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
             # - the task finished so fast that the STARTED state was skipped between 2 runs of the dv-2 comp scheduler
             await self._process_started_tasks(
                 sorted_tasks.started,
@@ -619,7 +626,8 @@ class BaseCompScheduler(ABC):
             except PipelineNotFoundError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
-                        f"pipeline {project_id} is missing from `comp_pipelines` DB table, something is corrupted. Aborting scheduling",
+                        f"pipeline {project_id} is missing from `comp_pipelines` DB table, "
+                        "something is corrupted. Aborting scheduling",
                         error=exc,
                         error_context={
                             "user_id": f"{user_id}",
@@ -654,14 +662,16 @@ class BaseCompScheduler(ABC):
             ) as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
-                        "Unexpectedly lost connection to the computational backend. Tasks are set back to WAITING_FOR_CLUSTER state until we eventually reconnect",
+                        "Unexpectedly lost connection to the computational backend. "
+                        "Tasks are set back to WAITING_FOR_CLUSTER state until we eventually reconnect",
                         error=exc,
                         error_context={
                             "user_id": f"{user_id}",
                             "project_id": f"{project_id}",
                             "iteration": f"{iteration}",
                         },
-                        tip="Check network connection and the status of the computational backend (clusters-keeper, dask-scheduler, dask-workers)",
+                        tip="Check network connection and the status of the computational backend "
+                        "(clusters-keeper, dask-scheduler, dask-workers)",
                     )
                 )
                 processing_tasks = {
@@ -745,9 +755,12 @@ class BaseCompScheduler(ABC):
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
                 **create_troubleshooting_log_kwargs(
-                    "The on demand computational backend is not ready yet. Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
+                    "The on demand computational backend is not ready yet. "
+                    "Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
                     error=exc,
                     error_context=log_error_context,
+                    tip="This can happen when the cluster is still being created. "
+                    "Please wait a bit and the tasks should be scheduled automatically once the cluster is ready.",
                 )
             )
             await publish_project_log(
@@ -783,7 +796,8 @@ class BaseCompScheduler(ABC):
                 user_id,
                 project_id,
                 log=user_message(
-                    "An unexpected error occurred during task scheduling. Please contact oSparc support if this issue persists.",
+                    "An unexpected error occurred during task scheduling. "
+                    "Please contact oSparc support if this issue persists.",
                     _version=1,
                 ),
                 log_level=logging.ERROR,
@@ -800,7 +814,8 @@ class BaseCompScheduler(ABC):
         except Exception as exc:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED and the rest of the pipeline will be ABORTED",
+                    "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED a"
+                    "and the rest of the pipeline will be ABORTED",
                     error=exc,
                     error_context=log_error_context,
                 )
@@ -850,7 +865,8 @@ class BaseCompScheduler(ABC):
             for task in tasks_waiting_for_cluster:
                 task.state = RunningState.FAILED
             msg = user_message(
-                "The system has timed out while waiting for computational resources. Please try running your project again or contact oSparc support if this issue persists.",
+                "The system has timed out while waiting for computational resources. "
+                "Please try running your project again or contact oSparc support if this issue persists.",
                 _version=1,
             )
             _logger.error(msg)
