@@ -372,7 +372,7 @@ printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
-printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
+printf "$$rows" "Storage S3 RustFS" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
 
@@ -386,7 +386,7 @@ show-endpoints:
 
 export HOST_UV_CACHE_DIR := $(shell uv cache dir)
 
-up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+up-devel: .stack-simcore-development.yml .init-swarm .init-rustfs-volumes $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
@@ -411,7 +411,7 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
 
-up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
+up-prod: .stack-simcore-production.yml .init-swarm .init-rustfs-volumes ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy ops and vendors stacks
 	@$(MAKE) .deploy-ops
@@ -503,6 +503,21 @@ endif
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
 
+
+.PHONY: .init-rustfs-volumes
+.init-rustfs-volumes: ## Initialize rustfs volumes with correct ownership for user 10001
+	@echo "Initializing rustfs volumes..."
+	@docker volume create rustfs_data_0 2>/dev/null || true
+	@docker volume create rustfs_data_1 2>/dev/null || true
+	@docker volume create rustfs_data_2 2>/dev/null || true
+	@docker volume create rustfs_data_3 2>/dev/null || true
+	@echo "Setting volume permissions for user 10001..."
+	@docker run --rm \
+		-v rustfs_data_0:/data/rustfs0 \
+		-v rustfs_data_1:/data/rustfs1 \
+		-v rustfs_data_2:/data/rustfs2 \
+		-v rustfs_data_3:/data/rustfs3 \
+		busybox chown -R 10001:10001 /data
 
 .PHONY: .init-swarm
 .init-swarm:
