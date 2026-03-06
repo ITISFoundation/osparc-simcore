@@ -655,6 +655,35 @@ class BaseCompScheduler(ABC):
                 )
                 # NOTE: no need to update task states here as pipeline is already broken
                 await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
+            except ComputationalSchedulerChangedError as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        "The dask scheduler changed - all submitted tasks are lost and marked as failed.",
+                        error=exc,
+                        error_context={
+                            "user_id": f"{user_id}",
+                            "project_id": f"{project_id}",
+                            "iteration": f"{iteration}",
+                        },
+                        tip="The dask scheduler was replaced (e.g. restarted). Tasks running on the old scheduler "
+                        "are irrecoverable. The pipeline must be re-triggered by the user.",
+                    )
+                )
+                processing_tasks = {
+                    k: v
+                    for k, v in (await self._get_pipeline_tasks(project_id, dag)).items()
+                    if v.state in PROCESSING_STATES
+                }
+                comp_tasks_repo = CompTasksRepository(self.db_engine)
+                await comp_tasks_repo.update_project_tasks_state(
+                    project_id,
+                    comp_run.run_id,
+                    [t.node_id for t in processing_tasks.values()],
+                    RunningState.FAILED,
+                    optional_progress=1.0,
+                    optional_stopped=arrow.utcnow().datetime,
+                )
+                await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except (
                 DaskClientAcquisisitonError,
                 ComputationalBackendNotConnectedError,

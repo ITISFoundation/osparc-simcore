@@ -2142,6 +2142,58 @@ async def test_running_task_is_not_restarted_when_dask_scheduler_offline(
     )
 
 
+@pytest.mark.acceptance_test("for https://github.com/ITISFoundation/osparc-simcore/issues/8881")
+async def test_running_task_is_failed_when_dask_scheduler_changes(
+    with_started_project: RunningProject,
+    mocked_dask_client: mock.MagicMock,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+):
+    """When the dask scheduler is replaced while tasks are running,
+    all running tasks are permanently lost and must be marked FAILED.
+    Unlike a transient disconnect (ComputationalBackendNotConnectedError),
+    a scheduler change is non-recoverable."""
+    run_in_db = with_started_project.runs
+    started_tasks = [t for t in with_started_project.tasks if t.state is RunningState.STARTED]
+    processing_tasks = [
+        t for t in with_started_project.tasks if t.state in {RunningState.STARTED, RunningState.PENDING}
+    ]
+    assert started_tasks, "fixture must provide at least one STARTED task"
+
+    mocked_dask_client.get_tasks_status.side_effect = ComputationalSchedulerChangedError(
+        original_scheduler_id="old-scheduler-id",
+        current_scheduler_id="new-scheduler-id",
+    )
+
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+
+    # all processing tasks must be FAILED — they are lost on the old scheduler
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=with_started_project.project.uuid,
+        task_ids=[t.node_id for t in processing_tasks],
+        expected_state=RunningState.FAILED,
+        expected_progress=1,
+        run_id=run_in_db.run_id,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,
+        where_statement=and_(
+            comp_runs.c.user_id == run_in_db.user_id,
+            comp_runs.c.project_uuid == f"{run_in_db.project_uuid}",
+        ),
+    )
+    # no task was resubmitted
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "get_or_create_exception",
     [ClustersKeeperNotAvailableError],
