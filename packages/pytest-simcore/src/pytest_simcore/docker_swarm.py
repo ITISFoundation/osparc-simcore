@@ -39,50 +39,12 @@ _logger = logging.getLogger(__name__)
 # Phased deployment order (mirrors Makefile deploy batches)
 # ---------------------------------------------------------------------------
 
-_SERVICES_DEPLOY_ORDER: list[str] = [
-    # Requirements for all other services
-    "minio",
-    "postgres",
-    "migration",
-    "redis",
-    "rabbit",
-    # Batch 1
-    "director",
-    "catalog",  # depends on director
-    "agent",
-    "docker-api-proxy",
-    "static-webserver",
-    # Batch 2
-    "storage",
-    "sto-worker",
-    "sto-worker-cpu-bound",
-    "dask-scheduler",
-    "dask-sidecar",
-    # Batch 3
-    "director-v2",
-    "dynamic-schdlr",
-    "wb-garbage-collector",
-    "wb-api-server",
-    "wb-auth",
-    # Batch 4
-    "wb-db-event-listener",
-    "webserver",
-    "autoscaling",
-    "clusters-keeper",
-    "resource-usage-tracker",
-    # Batch 5
-    "efs-guardian",
-    "api-server",
-    "api-worker",
-    "datcore-adapter",
-    "invitations",
-    # Batch 6
-    "notifications",
-    "notifications-worker",
-    "payments",
-    "traefik-config-placeholder",
-    "traefik",
-]
+
+def _get_compose_service_order() -> list[str]:
+    docker_compose_path = Path(__file__).parent.parent.parent.parent.parent / "services" / "docker-compose.yml"
+    data = yaml.safe_load(docker_compose_path.read_text())
+    return list(data["services"].keys())
+
 
 #: Maximum number of app services being started (not yet running) at any time.
 _MAX_CONCURRENT_SERVICE_STARTS: int = 4
@@ -408,7 +370,7 @@ def _compute_deployment_order(
     present in the predefined list is appended at the end so nothing is
     missed.
     """
-    ordered: list[str] = [name for name in _SERVICES_DEPLOY_ORDER if name in selected_services]
+    ordered: list[str] = [name for name in _get_compose_service_order() if name in selected_services]
 
     # Catch-all - services in the selection but not in the predefined list
     ordered.extend(sorted(selected_services - set(ordered)))
