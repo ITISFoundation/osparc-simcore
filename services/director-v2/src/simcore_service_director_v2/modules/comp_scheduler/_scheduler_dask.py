@@ -187,8 +187,17 @@ class DaskScheduler(BaseCompScheduler):
             ) as client:
                 return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
 
-        except ComputationalBackendOnDemandNotReadyError:
-            _logger.info("The on demand computational backend is not ready yet...")
+        except ComputationalBackendOnDemandNotReadyError as exc:
+            _logger.info(
+                **create_troubleshooting_log_kwargs(
+                    "The on demand computational backend is not ready yet, cannot retrieve tasks status",
+                    error=exc,
+                    error_context={"user_id": user_id, "project_id": comp_run.project_uuid, "run_id": comp_run.run_id},
+                    tip="This happens when a cluster is starting. "
+                    "This can also happen if the computational backend is overloaded with requests "
+                    "and does not respond in time, and should be transient.",
+                )
+            )
             return [RunningState.WAITING_FOR_CLUSTER] * len(tasks)
 
     async def _process_executing_tasks(
@@ -222,8 +231,17 @@ class DaskScheduler(BaseCompScheduler):
                     progress_event.progress,
                 )
 
-        except ComputationalBackendOnDemandNotReadyError:
-            _logger.info("The on demand computational backend is not ready yet...")
+        except ComputationalBackendOnDemandNotReadyError as exc:
+            _logger.info(
+                **create_troubleshooting_log_kwargs(
+                    "The on demand computational backend is not ready, cannot retrieve tasks progress",
+                    error=exc,
+                    error_context={"user_id": user_id, "project_id": comp_run.project_uuid, "run_id": comp_run.run_id},
+                    tip="This happens when a cluster is starting. "
+                    "This can also happen if the computational backend is overloaded with requests "
+                    "and does not respond in time, and should be transient.",
+                )
+            )
 
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         for task in task_progress_events:
@@ -341,7 +359,8 @@ class DaskScheduler(BaseCompScheduler):
         except PortsValidationError as err:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Unexpected error while parsing output data, comp_tasks/comp_pipeline is not in sync with what was started",
+                    "Unexpected error while parsing output data, "
+                    "comp_tasks/comp_pipeline is not in sync with what was started",
                     error=err,
                     error_context=log_error_context,
                 )
@@ -382,7 +401,8 @@ class DaskScheduler(BaseCompScheduler):
                 f"Retrieval of task {task.job_id} result timed-out",
                 error=result,
                 error_context=log_error_context,
-                tip="This can happen if the computational backend is overloaded with requests. It will be automatically retried again.",
+                tip="This can happen if the computational backend is overloaded with requests. "
+                "It will be automatically retried again.",
             )
         )
         task_errors: list[ErrorDict] = []
@@ -436,7 +456,8 @@ class DaskScheduler(BaseCompScheduler):
                 f"Computational backend disconnected when retrieving task {task.job_id} result",
                 error=result,
                 error_context=log_error_context,
-                tip="This can happen if the computational backend is temporarily disconnected. It will be automatically retried again.",
+                tip="This can happen if the computational backend is temporarily disconnected. "
+                "It will be automatically retried again.",
             )
         )
         # NOTE: the task will be set to UNKNOWN on the next processing loop
@@ -488,7 +509,8 @@ class DaskScheduler(BaseCompScheduler):
         iteration: Iteration,
         comp_run: CompRunsAtDB,
     ) -> tuple[bool, str | None]:
-        """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
+        """Returns True and the job ID if the task was successfully processed
+        and can be released from the Dask cluster."""
         with log_context(_logger, logging.DEBUG, msg=f"{comp_run.run_id=}, {task=}, {result=}"):
             log_error_context = {
                 "user_id": comp_run.user_id,
