@@ -294,10 +294,6 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@swarm
         - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
 
-  flower:
-    ports:
-      - "5555:5555"
-
   whoami:
     image: "containous/whoami"
     # NOTE: helper service allows to better understand how the host gets forwarded inside the simcore stack
