@@ -294,6 +294,10 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@swarm
         - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
 
+  flower:
+    ports:
+      - "5555:5555"
+
   whoami:
     image: "containous/whoami"
     # NOTE: helper service allows to better understand how the host gets forwarded inside the simcore stack
@@ -306,6 +310,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefikmonitor
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@swarm
+
 
 # Override networks to use pre-created external networks for ops-first deployment
 networks:
