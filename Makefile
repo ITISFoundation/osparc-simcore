@@ -436,7 +436,7 @@ up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production 
 	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy all services in batches of 5 (order from docker-compose.yml)
-	@all_services=$$(grep -E '^  [a-z][a-zA-Z0-9_-]+:' services/docker-compose.yml | awk '{print $$1}' | tr -d ':'); \
+	@all_services=$$(awk '/^services:/{found=1; next} found && /^[a-z]/{exit} found && /^  [a-z][a-zA-Z0-9_-]+:/{print substr($$1,1,length($$1)-1)}' services/docker-compose.yml); \
 	deployed=""; \
 	batch_num=0; \
 	batch=""; \
