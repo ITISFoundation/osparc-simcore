@@ -72,7 +72,7 @@ class RedisTaskStore:
                 key=f"{_CELERY_TASK_EXEC_METADATA_KEY}",
                 value=execution_metadata.model_dump_json(),
             )
-        await handle_redis_returns_union_types(pipe.execute())
+        await pipe.execute()
         await self._redis_client_sdk.redis.expire(
             group_key,
             expiry,

@@ -19,14 +19,13 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/celery-library
-  make tests-ci
+  make test-ci
   popd
 }
 
 typecheck() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  uv pip install mypy
   pushd packages/celery-library
   make mypy
   popd

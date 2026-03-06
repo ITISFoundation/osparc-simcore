@@ -593,9 +593,9 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 	@uv pip list --python $@
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
-	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
+	@uv tool install pre-commit --with pre-commit-uv
 	# Installing pre-commit hooks in current .git repo
-	@$</bin/pre-commit install
+	@pre-commit install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
 
 
@@ -892,7 +892,8 @@ _running_containers = $(shell docker ps -aq)
 
 clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	@uv pip sync  --quiet $(CURDIR)/requirements/devenv.txt
+	@uv tool install pre-commit --with pre-commit-uv
+	@pre-commit install
 	@uv pip list
 
 clean-hooks: ## Uninstalls git pre-commit hooks

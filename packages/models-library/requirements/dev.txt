@@ -13,7 +13,7 @@
 
 # installs this repo's packages
 --editable ../common-library/
---editable ../postgres-database/[migration]
+--editable ../postgres-database/
 --editable ../pytest-simcore/
 
 # current module

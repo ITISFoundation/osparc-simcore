@@ -1,0 +1,71 @@
+[project]
+name = "simcore-common-library"
+version = "0.2.0"
+description = "Core service library for simcore pydantic common"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [{ name = "Giancarlo Romeo", email = "support@osparc.io" }]
+license = { text = "MIT" }
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "orjson>=3.11.4",
+  "pydantic>=2.11.9",
+  "pydantic-extra-types>=2.10.5",
+]
+
+
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "common_library"
+
+[tool.uv.sources]
+pytest-simcore = { path = "../pytest-simcore", editable = true }
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "diagnostics: can be used to run diagnostics against deployed data",
+  "testit: marks test to run during development",
+]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+
+[dependency-groups]
+dev = [
+  "coverage>=7.10.7",
+  "faker>=37.8.0",
+  "mypy>=1.18.2",
+  "pydantic-settings>=2.7.0",
+  "pytest>=8.4.2",
+  "pytest-asyncio>=1.2.0",
+  "pytest-cov>=7.0.0",
+  "pytest-icdiff>=0.9",
+  "pytest-instafail>=0.5.0",
+  "pytest-mock>=3.15.1",
+  "pytest-runner>=6.0.1",
+  "pytest-simcore",
+  "pytest-sugar>=1.1.1",
+  "python-dotenv>=1.1.1",
+]
+devtools = [
+  "black>=25.9.0",
+  "bump2version>=1.0.1",
+  "isort>=6.1.0",
+  "mypy>=1.18.2",
+  "pre-commit>=4.3.0",
+  "pylint>=3.3.8",
+  "ruff>=0.13.3",
+]
