@@ -18,15 +18,33 @@ install-dev install-prod install-ci: _check_venv_active ## install requirements 
 	@uv pip sync requirements/$(subst install-,,$@).txt
 
 
-.PHONY: tests
-tests: _check_venv_active ## runs all tests [DEV]
+.PHONY: test-dev
+test-dev: ## runs tests with debug tools
+	# WARNING:
+	#   - do not forget to build latest changes images
+	#   - this test can be affected by existing docker volumes in your host machine
+	#
 	# running unit tests
 	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--pdb \
-		-vv \
-		$(CURDIR)
+	--pdb \
+	--failed-first \
+	-s \
+	--log-cli-level=DEBUG \
+	-vv \
+	--color=yes \
+	--durations=10 \
+	--asyncio-mode=auto \
+	--keep-docker-up \
+	$(CURDIR)
+
+
+.PHONY: test-ci
+test-ci: export CI=true
+test-ci: ## runs ci tests (i.e. w/o debug tools)
+	@pytest \
+	-vv \
+	--color=yes \
+	--durations=10 \
+	--asyncio-mode=auto \
+	--keep-docker-up \
+	$(CURDIR)

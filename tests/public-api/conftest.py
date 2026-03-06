@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 import os
@@ -60,8 +61,7 @@ def env_vars_for_docker_compose(
 def core_services_selection(simcore_docker_compose: dict) -> list[str]:
     """Selection of services from the simcore stack"""
     # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
-    all_core_services = list(simcore_docker_compose["services"].keys())
-    return all_core_services
+    return list(simcore_docker_compose["services"].keys())
 
 
 @pytest.fixture(scope="module")
@@ -111,7 +111,7 @@ def registered_user(
         first_name=first_name.lower(),
         last_name=last_name.lower(),
         email=f"{first_name}.{last_name}@company.com".lower(),
-        password="alongpasswordthatisnotweak",
+        password="alongpasswordthatisnotweak",  # noqa: S106
         api_key="",
         api_secret="",
     )
@@ -158,7 +158,7 @@ def registered_user(
 
 
 @pytest.fixture(scope="module")
-async def services_registry(
+def services_registry(
     docker_registry_image_injector: Callable[[str, str, str | None], Awaitable[dict[str, Any]]],
     registered_user: RegisteredUserDict,
     env_vars_for_docker_compose: dict[str, str],
@@ -169,10 +169,12 @@ async def services_registry(
     #
     user_email = registered_user["email"]
 
-    sleeper_service = await docker_registry_image_injector(
-        "itisfoundation/sleeper",
-        "2.1.1",
-        user_email,
+    sleeper_service = asyncio.run(
+        docker_registry_image_injector(
+            "itisfoundation/sleeper",
+            "2.1.1",
+            user_email,
+        )
     )
 
     assert sleeper_service["image"]["tag"] == "2.1.1"

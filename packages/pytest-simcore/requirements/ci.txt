@@ -1,0 +1,19 @@
+# Shortcut to install all packages for the contiguous integration (CI) of 'pytest-simcore'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+--requirement _test.txt
+--requirement _tools.txt
+
+# installs this repo's packages
+simcore-common-library @ ../common-library
+simcore-service-library @ ../service-library/
+simcore-settings-library @ ../settings-library/
+
+# current module
+pytest-simcore @ .

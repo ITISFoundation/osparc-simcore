@@ -6,6 +6,7 @@
 
 import json
 import logging
+import subprocess
 from threading import Thread
 
 import pytest
@@ -68,7 +69,12 @@ def real_page() -> Page:
         browser.close()
 
 
-def test_robust_websocket_with_socketio(real_page: Page, fastapi_server: str):
+@pytest.fixture
+def download_playwright_browser() -> None:
+    subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
+
+
+def test_robust_websocket_with_socketio(download_playwright_browser: None, real_page: Page, fastapi_server: str):
     # Connect to the FastAPI server
     server_url = f"{fastapi_server}"
     real_page.goto(f"{fastapi_server}")  # Simulate visiting the server
@@ -136,4 +142,4 @@ def test_robust_websocket_with_socketio(real_page: Page, fastapi_server: str):
             response = decoded_message[1]
         assert response == "Echo: Reconnected"
 
-        assert robust_ws._num_reconnections == 2, "Expected 2 restarts due to network issues"
+        assert robust_ws._num_reconnections == 2, "Expected 2 restarts due to network issues"  # noqa: SLF001
