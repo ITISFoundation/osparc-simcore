@@ -108,6 +108,7 @@ class CeleryTaskManager:
             msg=f"Submit group: {owner_metadata=} items={len(execution_metadata.tasks)}",
         ):
             created: list[tuple[str, TaskUUID]] = []
+            group_key: GroupKey | None = None
 
             try:
                 # Prepare data for group creation
