@@ -308,6 +308,10 @@ async def studies_dispatcher_enabled(
             sa.select(products.c.studies_dispatcher_enabled).where(products.c.name == osparc_product_name)
         )
 
+        assert old_value is not None, (
+            f"Expected product '{osparc_product_name}' to exist with a 'studies_dispatcher_enabled' value"
+        )
+
         # Set requested value for test
         await conn.execute(
             sa.update(products)
