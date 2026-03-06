@@ -397,7 +397,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __applyProjectDocument: function(data) {
-      console.debug("ProjectDocument applying:", data);
       this.__lastSyncedProjectVersion = data["version"];
       const updatedProjectDocument = data["document"];
 
@@ -490,7 +489,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (!socket.slotExists("nodeUpdated")) {
         socket.on("nodeUpdated", data => {
-          console.log("nodeUpdated Received: ", data);
           this.getStudy().nodeUpdated(data);
         }, this);
       }

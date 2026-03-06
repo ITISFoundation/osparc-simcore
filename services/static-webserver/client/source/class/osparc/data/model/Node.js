@@ -1468,8 +1468,6 @@ qx.Class.define("osparc.data.model.Node", {
       const nodePropertyKeys = this.self().getProperties();
       let ignorePatch = false;
       if (this.isFilePicker()) {
-        // print also time of the patch for better debugging
-        console.debug(`Received file picker patch at ${new Date().toISOString()}`, nodePatches);
         nodePatches.forEach(patch => {
           const nodeProperty = patch.path.split("/")[3];
           const value = patch.value;
@@ -1483,7 +1481,7 @@ qx.Class.define("osparc.data.model.Node", {
         });
       }
       if (ignorePatch) {
-        console.warn("Ignoring file picker patch", nodePatches);
+        console.debug("Ignoring file picker patch", nodePatches);
         return;
       }
       nodePatches.forEach(patch => {
