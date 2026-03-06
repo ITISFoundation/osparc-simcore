@@ -281,7 +281,6 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
 		services/docker-compose.devel.yml \
-		services/docker-compose.tools.yml \
 		> $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)
