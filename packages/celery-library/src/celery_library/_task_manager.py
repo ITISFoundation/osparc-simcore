@@ -244,13 +244,9 @@ class CeleryTaskManager:
                     task_key: TaskKey = async_result.id
                     await self._task_store.remove_task(task_key)
                     await self._forget_task(task_key)
-                await self._forget_group(group_result)
+                group_result.forget()
 
             await self._task_store.remove_task(group_key)
-
-    @make_async()
-    def _forget_group(self, group_result: GroupResult) -> None:
-        group_result.forget()
 
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool:
         return await self._task_store.task_or_group_exists(task_or_group_key)
