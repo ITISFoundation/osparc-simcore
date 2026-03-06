@@ -222,6 +222,7 @@ async def _assert_publish_in_dask_backend(
         published_tasks[1],
         published_tasks[3],
     ]
+    _with_mock_send_computation_tasks(published_tasks, mocked_dask_client)
     for p in expected_pending_tasks:
         published_tasks.remove(p)
 
@@ -245,7 +246,7 @@ async def _assert_publish_in_dask_backend(
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
         ),
     )
-    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+    updated_pending_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
         task_ids=[p.node_id for p in expected_pending_tasks],
@@ -310,7 +311,7 @@ async def _assert_publish_in_dask_backend(
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[p.node_id for p in expected_pending_tasks],
+        task_ids=[p.node_id for p in updated_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
         run_id=_comp_runs_db[0].run_id,
@@ -325,11 +326,11 @@ async def _assert_publish_in_dask_backend(
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     mocked_dask_client.get_tasks_status.assert_has_calls(
-        calls=[mock.call([p.job_id for p in expected_pending_tasks])], any_order=True
+        calls=[mock.call([p.job_id for p in updated_pending_tasks])], any_order=True
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
-    return expected_pending_tasks, task_to_callback_mapping
+    return updated_pending_tasks, task_to_callback_mapping
 
 
 @pytest.fixture
@@ -385,7 +386,8 @@ async def _assert_message_received(
         ):
             with attempt:
                 print(
-                    f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                    f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, "
+                    f"{attempt.retry_state.idle_for}]"
                 )
                 mocked_message_parser.assert_not_called()
 
@@ -398,11 +400,13 @@ async def _assert_message_received(
     ):
         with attempt:
             print(
-                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, "
+                f"{attempt.retry_state.idle_for}]"
             )
             assert mocked_message_parser.call_count == expected_call_count, mocked_message_parser.call_args_list
             print(
-                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, "
+                f"{attempt.retry_state.idle_for}]"
             )
     parsed_messages = [
         message_parser(mocked_message_parser.call_args_list[c].args[0]) for c in range(expected_call_count)
@@ -413,7 +417,10 @@ async def _assert_message_received(
 
 
 def _with_mock_send_computation_tasks(tasks: list[CompTaskAtDB], mocked_dask_client: mock.MagicMock) -> mock.Mock:
-    node_id_to_job_id_map = {task.node_id: task.job_id for task in tasks}
+    node_id_to_job_id_map = {
+        task.node_id: task.job_id if task.job_id is not None else f"fake-dask-job-id-for-{task.node_id}"
+        for task in tasks
+    }
 
     async def _send_computation_tasks(*args, tasks: dict[NodeID, Image], **kwargs) -> list[PublishedComputationTask]:
         for node_id in tasks:
@@ -1959,6 +1966,55 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
+
+
+async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_not_ready(
+    with_started_project: RunningProject,
+    mocked_dask_client: mock.MagicMock,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    mocked_get_or_create_cluster: mock.Mock,
+    faker: Faker,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+):
+    """Regression test: a task already running (STARTED, job_id set) must NOT be
+    resubmitted when the on-demand cluster is transiently unreachable during
+    _get_tasks_status(). The bug was that WAITING_FOR_CLUSTER is in TASK_TO_START_STATES,
+    so on the next scheduling cycle, the task would be sent to dask again.
+    The fix: _schedule_tasks_to_start() skips tasks that already have a job_id."""
+    run_in_db = with_started_project.runs
+    started_tasks = [t for t in with_started_project.tasks if t.state is RunningState.STARTED]
+    assert started_tasks, "fixture must provide at least one STARTED task"
+    assert all(t.job_id for t in started_tasks), "STARTED tasks must have a job_id"
+
+    # flip to on-demand clusters so _cluster_dask_client calls get_or_create_on_demand_cluster
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_runs.update().where(comp_runs.c.run_id == run_in_db.run_id).values(use_on_demand_clusters=True)
+        )
+
+    # cluster becomes transiently unavailable (the production scenario)
+    mocked_get_or_create_cluster.side_effect = ComputationalBackendOnDemandNotReadyError(
+        eta=faker.time_delta(datetime.timedelta(minutes=5))
+    )
+    mocked_dask_client.send_computation_tasks.reset_mock()
+
+    # first apply: _get_tasks_status raises -> tasks go to WAITING_FOR_CLUSTER
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    # the critical assertion: no task was resubmitted to dask
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+
+    # second apply: same condition, still no restart
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
 
 @pytest.mark.parametrize(
