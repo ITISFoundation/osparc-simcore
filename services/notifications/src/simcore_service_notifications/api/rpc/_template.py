@@ -1,3 +1,4 @@
+from attr import asdict
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
 from models_library.notifications.rpc.template import (
@@ -71,10 +72,7 @@ async def search_templates(
 
     return [
         SearchTemplatesResponse(
-            ref=TemplateRefRpc(
-                channel=template.ref.channel,
-                template_name=template.ref.template_name,
-            ),
+            ref=TemplateRefRpc(**asdict(template.ref)),
             context_schema=template.context_model.model_json_schema(),
         )
         for template in templates
