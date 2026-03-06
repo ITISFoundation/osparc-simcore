@@ -1540,9 +1540,13 @@ qx.Class.define("osparc.data.model.Node", {
           }
           case "progress":
             if (this.isFilePicker()) {
+              if (value ===  undefined) {
+                console.debug("Ignoring undefined value for progress");
+                return;
+              }
               this.getStatus().setProgress(value);
             } else {
-              console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
+              console.warn(`Progress patches are not sent via this channel`);
             }
             break;
           default:
