@@ -50,6 +50,11 @@ dependencies = [
     "prometheus-client>=0.21.1",
     "asyncpg>=0.30.0",
     "packaging>=24.2",
+    "simcore-common-library",
+    "simcore-models-library",
+    "simcore-postgres-database",
+    "simcore-settings-library",
+    "simcore-service-library[fastapi]",
 ]
 
 [build-system]
@@ -78,3 +83,10 @@ dev = [
     "types-psycopg2>=2.9.21.20250915",
     "types-pyyaml>=6.0.12.20250915",
 ]
+
+[tool.uv.sources]
+simcore-common-library = { path = "../../packages/common-library", editable = true }
+simcore-models-library = { path = "../../packages/models-library", editable = true }
+simcore-postgres-database = { path = "../../packages/postgres-database", editable = true }
+simcore-settings-library = { path = "../../packages/settings-library", editable = true }
+simcore-service-library = { path = "../../packages/service-library", editable = true }
