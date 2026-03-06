@@ -1,3 +1,5 @@
+# pylint: disable=assignment-from-no-return
+
 from dataclasses import dataclass
 from typing import Any
 
@@ -5,11 +7,10 @@ from ..models.content import for_channel
 from ..models.preview import TemplatePreview
 from ..models.template import Template
 from ..repositories import TemplatesRepository
-from ._renderer import Renderer
 
 
 @dataclass(frozen=True)
-class JinjaNotificationsRenderer(Renderer):
+class JinjaNotificationsRenderer:
     templates_repo: TemplatesRepository
 
     def preview_template(

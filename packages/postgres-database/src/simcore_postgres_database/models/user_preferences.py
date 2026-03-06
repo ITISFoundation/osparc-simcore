@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import RefActions
 from .base import metadata
@@ -79,5 +80,26 @@ user_preferences_user_service = sa.Table(
         "product_name",
         "preference_name",
         name="user_preferences_user_service_pk",
+    ),
+)
+
+
+user_preferences_notifications = sa.Table(
+    "user_preferences_notifications",
+    metadata,
+    _user_id_column("fk_user_preferences_notifications_id_users"),
+    _product_name_column("fk_user_preferences_notifications_name_products"),
+    _preference_name_column(),
+    sa.Column(
+        "payload",
+        JSONB,
+        nullable=False,
+        doc="preference content encoded as json",
+    ),
+    sa.PrimaryKeyConstraint(
+        "user_id",
+        "product_name",
+        "preference_name",
+        name="user_preferences_notifications_pk",
     ),
 )
