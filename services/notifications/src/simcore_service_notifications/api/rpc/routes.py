@@ -6,10 +6,11 @@ from models_library.notifications.rpc import NOTIFICATIONS_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
 
 from ...clients.rabbitmq import get_rabbitmq_rpc_client
-from . import _notifications
+from . import _messages, _templates
 
 ROUTERS: list[RPCRouter] = [
-    _notifications.router,
+    _messages.router,
+    _templates.router,
 ]
 
 

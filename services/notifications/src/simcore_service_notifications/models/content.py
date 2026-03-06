@@ -17,8 +17,8 @@ class EmailContent(Content):
     """Email notification content model."""
 
     subject: str
-    body_html: str
-    body_text: str
+    body_html: str | None = None
+    body_text: str | None = None
 
 
 _CONTENT_MODELS_BY_CHANNEL: dict[ChannelType, type[Content]] = {

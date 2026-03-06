@@ -58,7 +58,7 @@ if [ "${NOTIFICATIONS_WORKER_MODE:-}" = "true" ]; then
       --recursive \
       -- \
       celery \
-      --app=simcore_service_notifications.modules.celery.worker_main:app \
+      --app=simcore_service_notifications.modules.celery.worker:app \
       worker --pool="${CELERY_POOL}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
@@ -66,7 +66,7 @@ if [ "${NOTIFICATIONS_WORKER_MODE:-}" = "true" ]; then
       --queues="${CELERY_QUEUES}"
   else
     exec celery \
-      --app=simcore_service_notifications.modules.celery.worker_main:app \
+      --app=simcore_service_notifications.modules.celery.worker:app \
       worker --pool="${CELERY_POOL}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
