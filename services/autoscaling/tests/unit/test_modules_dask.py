@@ -478,7 +478,6 @@ def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
 async def test_get_scheduler_identity_returns_all_workers_beyond_default_cap(
     dask_workers_config_with_more_than_5_workers: dict[str, Any],
     dask_scheduler_config: dict[str, Any],
-    monkeypatch: pytest.MonkeyPatch,
 ):
     """Regression test: scheduler_info() caps at 5 workers for async clients;
     _get_scheduler_identity() must return all workers regardless."""
