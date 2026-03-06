@@ -15,7 +15,7 @@ from models_library.notifications_errors import (
 from servicelib.rabbitmq import RPCRouter
 
 from ...models.template import TemplateRef
-from .dependencies import get_notifications_templates_service
+from .dependencies import get_templates_service
 
 router = RPCRouter()
 
@@ -27,11 +27,12 @@ router = RPCRouter()
     )
 )
 async def preview_template(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     request: PreviewTemplateRequest,
 ) -> PreviewTemplateResponse:
-    service = get_notifications_templates_service()
+    assert app  # nosec
+    service = get_templates_service()
 
     preview = service.preview_template(
         ref=TemplateRef(**request.ref.model_dump()),
@@ -46,7 +47,7 @@ async def preview_template(
 
 @router.expose()
 async def search_templates(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     channel: ChannelType | None,
     template_name: str | None,
@@ -63,7 +64,9 @@ async def search_templates(
     Returns:
         A list of notification template responses matching the search criteria.
     """
-    service = get_notifications_templates_service()
+    assert app  # nosec
+
+    service = get_templates_service()
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [
