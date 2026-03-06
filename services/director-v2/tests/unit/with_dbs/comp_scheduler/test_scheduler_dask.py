@@ -66,6 +66,7 @@ from simcore_service_director_v2.core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
     ComputationalSchedulerChangedError,
     ComputationalSchedulerError,
+    DaskClientAcquisisitonError,
 )
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
@@ -2066,6 +2067,77 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
         task_ids=[t.node_id for t in started_tasks],
         expected_state=RunningState.STARTED,
         expected_progress=0.0,
+        run_id=run_in_db.run_id,
+    )
+
+
+@pytest.mark.acceptance_test("for https://github.com/ITISFoundation/osparc-simcore/issues/8881")
+@pytest.mark.parametrize(
+    "dask_offline_error",
+    [
+        ComputationalBackendNotConnectedError(msg="faked disconnected dask backend"),
+        DaskClientAcquisisitonError(msg="faked dask client acquisition error"),
+    ],
+)
+async def test_running_task_is_not_restarted_when_dask_scheduler_offline(
+    with_started_project: RunningProject,
+    mocked_dask_client: mock.MagicMock,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    dask_offline_error: ComputationalSchedulerError,
+):
+    """Regression test: a task already submitted (dask job_id set) must NOT be
+    resubmitted when the dask scheduler is transiently offline.
+    When get_tasks_status raises ComputationalBackendNotConnectedError or
+    DaskClientAcquisisitonError, the outer schedule_pipeline() catch moves
+    all PROCESSING_STATES tasks to WAITING_FOR_CLUSTER.
+    On the next cycle, _schedule_tasks_to_start() must skip them because job_id is set.
+    """
+    run_in_db = with_started_project.runs
+    started_tasks = [t for t in with_started_project.tasks if t.state is RunningState.STARTED]
+    assert started_tasks, "fixture must provide at least one STARTED task"
+    assert all(t.job_id for t in started_tasks), "STARTED tasks must have a job_id"
+
+    mocked_dask_client.get_tasks_status.side_effect = dask_offline_error
+    mocked_dask_client.send_computation_tasks.reset_mock()
+
+    # first apply: outer catch fires -> all PROCESSING_STATES -> WAITING_FOR_CLUSTER
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    # critical: no task was resubmitted to dask
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+
+    # repeated applies must also never trigger resubmission
+    for _ in range(5):
+        await scheduler_api.apply(
+            user_id=run_in_db.user_id,
+            project_id=run_in_db.project_uuid,
+            iteration=run_in_db.iteration,
+        )
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+
+    # dask scheduler comes back online
+    async def _return_tasks_started(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.STARTED for _ in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = _return_tasks_started
+
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+    # task must be back to STARTED, never double-submitted
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=with_started_project.project.uuid,
+        task_ids=[t.node_id for t in started_tasks],
+        expected_state=RunningState.STARTED,
+        expected_progress=0,
         run_id=run_in_db.run_id,
     )
 
