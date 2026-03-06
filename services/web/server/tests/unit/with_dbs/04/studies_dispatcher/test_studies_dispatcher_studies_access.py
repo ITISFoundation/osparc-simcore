@@ -295,7 +295,11 @@ async def _assert_redirected_to_study(response: ClientResponse, session: ClientS
 # -----------------------------------------------------------
 
 
-async def test_access_to_invalid_study(client: TestClient, faker: Faker):
+async def test_access_to_invalid_study(
+    client: TestClient,
+    faker: Faker,
+    studies_dispatcher_enabled: bool,
+):
     invalid_project_id = faker.uuid4()
     response = await client.get(f"/study/{invalid_project_id}")
 
@@ -306,7 +310,11 @@ async def test_access_to_invalid_study(client: TestClient, faker: Faker):
     )
 
 
-async def test_access_to_forbidden_study(client: TestClient, unpublished_project: ProjectDict):
+async def test_access_to_forbidden_study(
+    client: TestClient,
+    unpublished_project: ProjectDict,
+    studies_dispatcher_enabled: bool,
+):
     response = await client.get(f"/study/{unpublished_project['uuid']}")
 
     _assert_redirected_to_error_page(
@@ -326,6 +334,7 @@ async def test_access_study_anonymously(
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
+    studies_dispatcher_enabled: bool,
 ):
     assert not _is_user_authenticated(client.session), "Is anonymous"
     assert client.app
@@ -374,6 +383,7 @@ async def test_access_study_by_logged_user(
     auto_delete_projects: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
+    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     assert _is_user_authenticated(client.session), "Is already logged-in"
@@ -404,6 +414,7 @@ async def test_access_cookie_of_expired_user(
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
+    studies_dispatcher_enabled: bool,
 ):
     # emulates issue #1570
     assert client.app  # nosec
@@ -486,6 +497,7 @@ async def test_guest_user_is_not_garbage_collected(
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
+    studies_dispatcher_enabled: bool,
 ):
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
 
