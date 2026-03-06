@@ -1,4 +1,5 @@
-from attr import asdict
+from dataclasses import asdict
+
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
 from models_library.notifications.rpc import (
