@@ -729,10 +729,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __setProbeValue: function(linkLabel) {
       const populateLinkLabel = linkInfo => {
-        const download = true;
         const locationId = linkInfo.store;
         const fileId = linkInfo.path;
-        osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+        osparc.store.Data.getInstance().getPresignedLink(true, locationId, fileId)
           .then(presignedLinkData => {
             if ("resp" in presignedLinkData && presignedLinkData.resp) {
               const filename = linkInfo.filename || osparc.file.FilePicker.getFilenameFromPath(linkInfo);
@@ -954,9 +953,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
           draggable: true,
           droppable: true,
           alignY: "top",
-          backgroundColor: "background-main"
+          backgroundColor: "background-main",
+          cursor: "pointer",
+          toolTipText: this.tr("Connect Node"),
         });
-        port.setCursor("pointer");
         port.getContentElement().setStyles({
           "border-radius": width+"px"
         });
@@ -964,8 +964,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
       // make the ports exit the NodeUI
       port.set({
-        marginLeft: isInput ? (-10 + this.self().CONTENT_PADDING) : 0,
-        marginRight: isInput ? 0 : (-10 - this.self().CONTENT_PADDING)
+        marginLeft: isInput ? (-11 + this.self().CONTENT_PADDING) : 0,
+        marginRight: isInput ? 0 : (-7 - this.self().CONTENT_PADDING)
       });
 
       this.add(port, {
