@@ -16,11 +16,10 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     STUDIES_ACCESS_ANONYMOUS_ALLOWED: Annotated[
         bool,
         Field(
-            description="If enabled, the study links are accessible to anonymous users. "
-            "This is a app-level policy setting. Individual products can further restrict access via "
-            "the 'studies_dispatcher_enabled' column in the products table. "
-            "Feature is only available when BOTH this setting AND the product flag are enabled. "
-            "When disabled, returns HTTP 404 directly (not an error page)."
+            description="Controls whether anonymous (unauthenticated) users can access study dispatcher links. "
+            "When True: Anonymous users are allowed, guest accounts are auto-created. "
+            "When False: Requires authentication, login_required decorator is applied. "
+            "Note: This is orthogonal to 'product.studies_dispatcher_enabled' which controls feature availability."
         ),
     ] = False
 

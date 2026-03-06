@@ -1,20 +1,19 @@
 ---
-applyTo: '**/test*.py,**/conftest.py, **/pytest_simcore/**/*.py'
+applyTo: '**/test*.py,**/conftest.py,**/pytest_simcore/**/*.py'
 ---
 
-## 🛠️Coding Instructions for Python Tests in This Repository
+## Coding Instructions for Python Tests in This Repository
 
 - Use `pytest` for writing tests.
-- `@pytest.fixture(autouse=True)` is not allowed, use explicit fixtures instead.
-- Do annotate types all fixtures inputs and outputs with full type annotations.
-- Do not add return type annotations in `test_*` functions.
-- Be minimalistic with test and reuse as much as possible existing fixtures and helper functions, including those in `packages/pytest-simcore`.
+- `@pytest.fixture(autouse=True)` is banned in `conftest.py` and in `pytest_simcore` plugins. It is allowed only when defined and used within the same test module file, to keep side effects local and traceable.
+- Annotate all fixture inputs and outputs with full type hints, including pytest-provided fixtures such as `monkeypatch`, `caplog`, and `tmp_path`.
+- Do not add return type annotations to `test_*` functions. Non-test helpers should be fully annotated.
+- Prefer reusing existing fixtures and helpers (including those in `packages/pytest-simcore`) over creating new ones.
 
 ## How to Run Tests
 
-- Make sure you have workspaces .venv activated `source .venv/bin/activate`
-- cd to the package or service you want to test i.e. `cd services/web/server`
-- Install the package in editable mode using `make install-dev`. This will also install the test dependencies.
-- Run you can run tests using `pytest` command or various `make test-*` targets defined in the `Makefile` of each package or service. For example, `make test-unit` to run unit tests or `make test-integration` to run integration tests.
-- Troubleshooting:
-  - sometimes the previous tests may have left some docker containers running; Go to the workspace directory and call `make down leave` to leave swarm or `docker rm -rf $(docker ps -a -q)` to remove all containers launched with docker-compose and try again.
+- Make sure the workspace's venv is activated: `source .venv/bin/activate`
+- Change to the package or service you want to test, e.g. `cd services/web/server`
+- Install the package in editable mode using `make install-dev` (also installs test dependencies)
+- Run tests using `pytest` or `make test-*` targets from the package/service `Makefile` (e.g. `make test-unit`, `make test-integration`)
+- Troubleshooting: previous tests may have left docker containers running; from the workspace directory, run `make down leave` to leave the swarm

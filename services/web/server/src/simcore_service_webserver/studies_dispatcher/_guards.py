@@ -11,25 +11,22 @@ _logger = logging.getLogger(__name__)
 
 def check_studies_dispatcher_enabled(request: web.Request) -> None:
     """
-    Guard function to check if studies dispatcher is enabled for the current product.
+    Guard function to check if studies dispatcher feature is enabled for the current product.
 
-    The dispatcher feature is controlled at two levels:
-    1. **Global**: `STUDIES_ACCESS_ANONYMOUS_ALLOWED` environment variable (startup)
-    2. **Per-Product**: `product.studies_dispatcher_enabled` database column (runtime)
+    This guard checks the **per-product feature flag** (`product.studies_dispatcher_enabled`)
+    which controls whether the dispatcher feature is available for a specific product.
 
-    When `studies_dispatcher_enabled=False` for a product, accessing dispatcher endpoints
-    returns HTTP 404 directly (not an error redirect), preventing any access regardless
-    of the global setting.
+    **Note**: This is orthogonal to authentication requirements:
+    - This guard controls **feature availability** (on/off per product)
+    - `STUDIES_ACCESS_ANONYMOUS_ALLOWED` controls **authentication requirements** (login vs anonymous)
 
-    **Access Control Layer**:
-    - Global setting can be OFF but product flag ON → dispatcher disabled (global wins)
-    - Global setting can be ON but product flag OFF → dispatcher disabled (product wins)
-    - Both must be ON for feature to work
+    When a product has `studies_dispatcher_enabled=False`, the dispatcher feature is disabled
+    and this guard raises HTTP 404, preventing any access to dispatcher endpoints for that product.
 
-    This design allows independent control:
-    - Infrastructure teams set global policy
-    - Product managers enable/disable per-product at runtime
-    - No startup warnings needed (permissive model)
+    **Design rationale**:
+    - Product managers can enable/disable dispatcher per-product at runtime (via database)
+    - Returns 404 (not error page) to indicate feature unavailability
+    - Independent of whether login is required (set by STUDIES_ACCESS_ANONYMOUS_ALLOWED)
 
     Args:
         request: aiohttp request
