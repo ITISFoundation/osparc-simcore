@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 import subprocess
+import sys
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
 from copy import deepcopy
@@ -35,13 +36,12 @@ from .helpers.typing_env import EnvVarsDict
 
 _logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Phased deployment order (mirrors Makefile deploy batches)
-# ---------------------------------------------------------------------------
+
+_CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 def _get_compose_service_order() -> list[str]:
-    docker_compose_path = Path(__file__).parent.parent.parent.parent.parent / "services" / "docker-compose.yml"
+    docker_compose_path = _CURRENT_DIR / ".." / ".." / ".." / ".." / "services" / "docker-compose.yml"
     data = yaml.safe_load(docker_compose_path.read_text())
     return list(data["services"].keys())
 
