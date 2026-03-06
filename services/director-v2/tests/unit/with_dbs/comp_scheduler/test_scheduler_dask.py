@@ -1981,13 +1981,17 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
 
 
 @pytest.mark.acceptance_test("for https://github.com/ITISFoundation/osparc-simcore/issues/8881")
+@pytest.mark.parametrize(
+    "cluster_unavailable_exception",
+    [ComputationalBackendOnDemandNotReadyError(eta=datetime.timedelta(minutes=5)), ClustersKeeperNotAvailableError()],
+)
 async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_not_ready(
     with_started_project: RunningProject,
     mocked_dask_client: mock.MagicMock,
     scheduler_api: BaseCompScheduler,
     sqlalchemy_async_engine: AsyncEngine,
     mocked_get_or_create_cluster: mock.Mock,
-    faker: Faker,
+    cluster_unavailable_exception: Exception,
 ):
     """Regression test: a task already submitted (dask job_id set) must NOT be
     resubmitted when the on-demand cluster is transiently unreachable.
@@ -2018,9 +2022,7 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
 
     # cluster becomes transiently unavailable (the production scenario)
     original_side_effect = mocked_get_or_create_cluster.side_effect
-    mocked_get_or_create_cluster.side_effect = ComputationalBackendOnDemandNotReadyError(
-        eta=faker.time_delta(datetime.timedelta(minutes=5))
-    )
+    mocked_get_or_create_cluster.side_effect = cluster_unavailable_exception
     mocked_dask_client.send_computation_tasks.reset_mock()
 
     # first apply: _get_tasks_status raises -> tasks go to WAITING_FOR_CLUSTER
