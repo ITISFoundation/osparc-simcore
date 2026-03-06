@@ -280,13 +280,12 @@ def ops_docker_compose_file(ops_services_selection: list[str], temp_folder: Path
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
     # these services are useless when running in the CI
-    ops_view_only_services = ("adminer", "jaeger", "portainer", "redis-commander", "opentelemetry-collector")
     if "CI" in os.environ:
+        allowed_services = ["minio"]
         _logger.info(
-            "Note that services such as '%s' are removed from the stack when running in the CI",
-            ops_view_only_services,
+            "Note that services such as '%s' are removed from the stack when running in the CI", allowed_services
         )
-        ops_services_selection = list(filter(lambda item: item not in ops_view_only_services, ops_services_selection))
+        ops_services_selection = allowed_services
 
     _filter_services_and_dump(ops_services_selection, ops_docker_compose, docker_compose_path)
 
