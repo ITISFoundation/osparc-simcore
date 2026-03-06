@@ -1,12 +1,12 @@
 from attr import asdict
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc import (
     PreviewTemplateRequest,
     PreviewTemplateResponse,
     SearchTemplatesResponse,
 )
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc import (
     TemplateRef as TemplateRefRpc,
 )
 from models_library.notifications_errors import (
