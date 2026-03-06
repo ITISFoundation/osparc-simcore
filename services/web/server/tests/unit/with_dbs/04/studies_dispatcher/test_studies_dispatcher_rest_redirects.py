@@ -231,6 +231,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     return client.app.router["get_redirection_to_viewer"].url_for().with_query({k: f"{v}" for k, v in query.items()})
 
 
+@pytest.mark.parametrize("studies_dispatcher_enabled", [True], indirect=True)
 async def test_dispatch_study_anonymously(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -239,6 +240,7 @@ async def test_dispatch_study_anonymously(
     mocker: MockerFixture,
     storage_subsystem_mock,
     mocks_on_projects_api,
+    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     mock_client_director_v2_func = mocker.patch(
@@ -303,6 +305,7 @@ async def test_dispatch_logged_in_user(
     mock_dynamic_scheduler: None,
     storage_subsystem_mock,
     mocks_on_projects_api: None,
+    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     mock_client_director_v2_pipeline_update = mocker.patch(
@@ -369,7 +372,10 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     return message, status_code
 
 
-async def test_viewer_redirect_with_file_type_errors(client: TestClient):
+async def test_viewer_redirect_with_file_type_errors(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
@@ -395,7 +401,10 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
     assert "link" in message.lower()
 
 
-async def test_viewer_redirect_with_client_errors(client: TestClient):
+async def test_viewer_redirect_with_client_errors(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
@@ -422,7 +431,11 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
 
 
 @pytest.mark.parametrize("missing_parameter", ["file_type", "file_size", "download_link"])
-async def test_missing_file_param(client: TestClient, missing_parameter: str):
+async def test_missing_file_param(
+    client: TestClient,
+    missing_parameter: str,
+    studies_dispatcher_enabled: bool,
+):
     assert client.app
 
     query = {
@@ -443,3 +456,35 @@ async def test_missing_file_param(client: TestClient, missing_parameter: str):
 
     message, status_code = assert_error_in_fragment(response)
     assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got {message=}"
+
+
+@pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
+async def test_dispatch_study_anonymously_with_dispatcher_disabled(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
+    """
+    Test that accessing /view endpoint returns 404 when studies_dispatcher_enabled is False.
+
+    When the product has studies_dispatcher_enabled=False, the dispatcher feature
+    should be completely disabled, and accessing the /view endpoint should result
+    in a direct 404 response.
+    """
+    assert client.app
+
+    query = {
+        "file_type": "CSV",
+        "file_size": 1,
+        "viewer_key": "simcore/services/dynamic/raw-graphs",
+        "viewer_version": "2.11.1",
+        "download_link": urllib.parse.quote(
+            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
+        ),
+    }
+
+    redirect_url = client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
+    response = await client.get(f"{redirect_url}")
+
+    assert response.status == status.HTTP_404_NOT_FOUND, (
+        f"Expected 404 when studies_dispatcher_enabled=False, got {response.status}"
+    )
