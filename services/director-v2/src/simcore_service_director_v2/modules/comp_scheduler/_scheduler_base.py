@@ -460,7 +460,7 @@ class BaseCompScheduler(ABC):
         comp_run: CompRunsAtDB,
     ) -> None:
         tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
-        tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES]
+        tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES and t.job_id is not None]
         if not tasks_inprocess:
             return
 
@@ -700,13 +700,15 @@ class BaseCompScheduler(ABC):
         # NOTE: tasks that were not yet started but can be marked as ABORTED straight away,
         # the tasks that are already processing need some time to stop
         # and we need to stop them in the backend
-        tasks_instantly_stopeable = [t for t in comp_tasks.values() if t.state in TASK_TO_START_STATES]
+        tasks_instantly_stopeable = [
+            t for t in comp_tasks.values() if t.state in TASK_TO_START_STATES and t.job_id is None
+        ]
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await comp_tasks_repo.mark_project_published_waiting_for_cluster_tasks_as_aborted(project_id, comp_run.run_id)
         for task in tasks_instantly_stopeable:
             comp_tasks[f"{task.node_id}"].state = RunningState.ABORTED
         # stop any remaining running task, these are already submitted
-        if tasks_to_stop := [t for t in comp_tasks.values() if t.state in PROCESSING_STATES]:
+        if tasks_to_stop := [t for t in comp_tasks.values() if t.state in PROCESSING_STATES and t.job_id is not None]:
             await self._stop_tasks(user_id, tasks_to_stop, comp_run)
 
         return comp_tasks

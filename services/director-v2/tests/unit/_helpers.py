@@ -95,6 +95,7 @@ async def assert_comp_tasks_and_comp_run_snapshot_tasks(
     project_uuid: ProjectID,
     task_ids: list[NodeID],
     expected_state: RunningState,
+    expected_processing_state_has_job_id: bool = True,  # asserts that tasks in a processing state have a job_id
     expected_progress: float | None,
     run_id: (PositiveInt | None),  # If provided, checks the comp_run_snapshot_tasks table as well
 ) -> tuple[list[CompTaskAtDB], list[CompRunSnapshotTaskAtDBGet]]:
@@ -112,7 +113,7 @@ async def assert_comp_tasks_and_comp_run_snapshot_tasks(
     assert all(t.progress == expected_progress for t in original_tasks), (
         f"{expected_progress=}, found: {[t.progress for t in original_tasks]}"
     )
-    if expected_state in PROCESSING_STATES:
+    if expected_state in PROCESSING_STATES and expected_processing_state_has_job_id:
         assert all(t.job_id is not None for t in original_tasks), "job_id should be set for processing tasks"
 
     if run_id:

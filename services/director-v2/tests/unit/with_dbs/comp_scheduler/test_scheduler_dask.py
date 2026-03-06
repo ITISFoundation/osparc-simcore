@@ -534,7 +534,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         1,
         ComputationalPipelineStatusMessage.model_validate_json,
     )
-    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+    updated_started_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
         task_ids=[exp_started_task.node_id],
@@ -542,6 +542,8 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         expected_progress=None,
         run_id=_comp_runs_db[0].run_id,
     )
+    assert len(updated_started_tasks) == 1
+    exp_started_task.job_id = updated_started_tasks[0].job_id
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
@@ -694,7 +696,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     completed_tasks = [exp_started_task]
     next_pending_task = published_project.tasks[2]
     expected_pending_tasks.append(next_pending_task)
-    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+    updated_pending_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
         task_ids=[p.node_id for p in expected_pending_tasks],
@@ -702,10 +704,16 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         expected_progress=None,
         run_id=_comp_runs_db[0].run_id,
     )
+    for p in expected_pending_tasks:
+        p.job_id = next(t.job_id for t in updated_pending_tasks if t.node_id == p.node_id)
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[p.node_id for p in published_project.tasks if p not in expected_pending_tasks + completed_tasks],
+        task_ids=[
+            p.node_id
+            for p in published_project.tasks
+            if p.node_id not in [t.node_id for t in expected_pending_tasks + completed_tasks]
+        ],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
         run_id=_comp_runs_db[0].run_id,
@@ -925,7 +933,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
 
 @pytest.fixture
-async def with_started_project(
+async def with_started_project(  # noqa: PLR0915
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
@@ -1030,9 +1038,10 @@ async def with_started_project(
         run_id=_comp_runs_db[0].run_id,
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
-    mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in (exp_started_task, *expected_pending_tasks)],
-    )
+    assert mocked_dask_client.get_tasks_status.call_count == 1
+    assert set(mocked_dask_client.get_tasks_status.call_args[0][0]) == {
+        p.job_id for p in (exp_started_task, *expected_pending_tasks)
+    }
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
 
@@ -1104,9 +1113,10 @@ async def with_started_project(
     tasks_in_db += tasks
     run_snapshot_tasks_in_db += run_snapshot_tasks
     mocked_dask_client.send_computation_tasks.assert_not_called()
-    mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in (exp_started_task, *expected_pending_tasks)],
-    )
+    assert mocked_dask_client.get_tasks_status.call_count == 1
+    assert set(mocked_dask_client.get_tasks_status.call_args[0][0]) == {
+        p.job_id for p in (exp_started_task, *expected_pending_tasks)
+    }
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
     # check the metrics are properly published
@@ -1937,6 +1947,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
@@ -1963,6 +1974,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
@@ -2021,11 +2033,13 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
     mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # second apply: same condition, still no restart
-    await scheduler_api.apply(
-        user_id=run_in_db.user_id,
-        project_id=run_in_db.project_uuid,
-        iteration=run_in_db.iteration,
-    )
+    for _ in range(5):
+        await scheduler_api.apply(
+            user_id=run_in_db.user_id,
+            project_id=run_in_db.project_uuid,
+            iteration=run_in_db.iteration,
+        )
+        await asyncio.sleep(0.5)
     mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # now make the cluster available again, and check that the task is still not restarted (since it was never stopped)
@@ -2049,7 +2063,7 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
         project_uuid=with_started_project.project.uuid,
         task_ids=[t.node_id for t in started_tasks],
         expected_state=RunningState.STARTED,
-        expected_progress=None,
+        expected_progress=0.0,
         run_id=run_in_db.run_id,
     )
 
@@ -2141,6 +2155,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_waits_and
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_for_cluster_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
@@ -2172,6 +2187,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_waits_and
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_for_cluster_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
