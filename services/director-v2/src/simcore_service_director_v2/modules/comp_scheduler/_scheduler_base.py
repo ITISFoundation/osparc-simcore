@@ -731,6 +731,8 @@ class BaseCompScheduler(ABC):
             node_id: comp_tasks[f"{node_id}"]
             for node_id in next_task_node_ids
             if comp_tasks[f"{node_id}"].state in TASK_TO_START_STATES
+            and comp_tasks[f"{node_id}"].job_id
+            is None  # NOTE: if a dask scheduler is not reachable for some time, we must not start new jobs
         }
 
         if not tasks_ready_to_start:
