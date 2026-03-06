@@ -10,7 +10,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	@uv pip sync requirements/$(subst install-,,$@).txt
 
 
-.PHONY: tests
-tests: ## runs unit tests
-	# running unit tests
+.PHONY: tests-ci
+tests-ci: ## runs unit tests inside CI
+	# running unit tests inside CI
 	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
