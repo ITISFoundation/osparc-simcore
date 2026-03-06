@@ -36,9 +36,9 @@ services:
     image: mher/flower:2.0.1
     init: true
     environment:
-      CELERY_BROKER_URL: amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@rabbit:${RABBIT_PORT}//
+      CELERY_BROKER_URL: amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}//
     networks:
-      - default
+      - simcore_default
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5555/"]
       interval: 10s
