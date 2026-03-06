@@ -1977,9 +1977,9 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
     mocked_get_or_create_cluster: mock.Mock,
     faker: Faker,
 ):
-    """Regression test: a task already running (STARTED, job_id set) must NOT be
-    resubmitted when the on-demand cluster is transiently unreachable during
-    _get_tasks_status(). The bug was that WAITING_FOR_CLUSTER is in TASK_TO_START_STATES,
+    """Regression test: a task already submitted (dask job_id set) must NOT be
+    resubmitted when the on-demand cluster is transiently unreachable.
+    The bug was that WAITING_FOR_CLUSTER is in TASK_TO_START_STATES,
     so on the next scheduling cycle, the task would be sent to dask again.
     The fix: _schedule_tasks_to_start() skips tasks that already have a job_id.
     """
@@ -1988,6 +1988,16 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
     assert started_tasks, "fixture must provide at least one STARTED task"
     assert all(t.job_id for t in started_tasks), "STARTED tasks must have a job_id"
 
+    # check the task is back to STARTED
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=with_started_project.project.uuid,
+        task_ids=[t.node_id for t in started_tasks],
+        expected_state=RunningState.STARTED,
+        expected_progress=0.0,
+        run_id=run_in_db.run_id,
+    )
+
     # flip to on-demand clusters so _cluster_dask_client calls get_or_create_on_demand_cluster
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
@@ -1995,6 +2005,7 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
         )
 
     # cluster becomes transiently unavailable (the production scenario)
+    original_side_effect = mocked_get_or_create_cluster.side_effect
     mocked_get_or_create_cluster.side_effect = ComputationalBackendOnDemandNotReadyError(
         eta=faker.time_delta(datetime.timedelta(minutes=5))
     )
@@ -2018,7 +2029,14 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
     mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # now make the cluster available again, and check that the task is still not restarted (since it was never stopped)
-    mocked_get_or_create_cluster.side_effect = None
+    mocked_get_or_create_cluster.side_effect = original_side_effect
+
+    # Mock get_tasks_status to return STARTED for the running tasks
+    async def _return_tasks_started(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.STARTED for _ in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = _return_tasks_started
+
     await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
