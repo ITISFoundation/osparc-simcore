@@ -15,7 +15,13 @@ _DEFAULT_THUMBNAIL: Final[HttpUrl] = TypeAdapter(HttpUrl).validate_python("https
 class StudiesDispatcherSettings(BaseCustomSettings):
     STUDIES_ACCESS_ANONYMOUS_ALLOWED: Annotated[
         bool,
-        Field(description="If enabled, the study links are accessible to anonymous users"),
+        Field(
+            description="If enabled, the study links are accessible to anonymous users. "
+            "This is a app-level policy setting. Individual products can further restrict access via "
+            "the 'studies_dispatcher_enabled' column in the products table. "
+            "Feature is only available when BOTH this setting AND the product flag are enabled. "
+            "When disabled, returns HTTP 404 directly (not an error page)."
+        ),
     ] = False
 
     STUDIES_GUEST_ACCOUNT_LIFETIME: Annotated[

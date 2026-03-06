@@ -231,6 +231,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     return client.app.router["get_redirection_to_viewer"].url_for().with_query({k: f"{v}" for k, v in query.items()})
 
 
+@pytest.mark.parametrize("studies_dispatcher_enabled", [True], indirect=True)
 async def test_dispatch_study_anonymously(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -239,6 +240,7 @@ async def test_dispatch_study_anonymously(
     mocker: MockerFixture,
     storage_subsystem_mock,
     mocks_on_projects_api,
+    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     mock_client_director_v2_func = mocker.patch(
@@ -303,6 +305,7 @@ async def test_dispatch_logged_in_user(
     mock_dynamic_scheduler: None,
     storage_subsystem_mock,
     mocks_on_projects_api: None,
+    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     mock_client_director_v2_pipeline_update = mocker.patch(
@@ -369,7 +372,10 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     return message, status_code
 
 
-async def test_viewer_redirect_with_file_type_errors(client: TestClient):
+async def test_viewer_redirect_with_file_type_errors(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
@@ -395,7 +401,10 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
     assert "link" in message.lower()
 
 
-async def test_viewer_redirect_with_client_errors(client: TestClient):
+async def test_viewer_redirect_with_client_errors(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
@@ -422,7 +431,11 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
 
 
 @pytest.mark.parametrize("missing_parameter", ["file_type", "file_size", "download_link"])
-async def test_missing_file_param(client: TestClient, missing_parameter: str):
+async def test_missing_file_param(
+    client: TestClient,
+    missing_parameter: str,
+    studies_dispatcher_enabled: bool,
+):
     assert client.app
 
     query = {

@@ -286,7 +286,7 @@ def services_access_rights_in_db(
         yield created_access_rights
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 async def studies_dispatcher_enabled(
     asyncpg_engine: AsyncEngine,
     osparc_product_name: str,

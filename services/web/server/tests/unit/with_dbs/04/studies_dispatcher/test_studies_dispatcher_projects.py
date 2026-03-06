@@ -60,14 +60,14 @@ async def user(client: TestClient) -> AsyncIterator[UserInfo]:
         try:
             # preparation
             await auto_add_user_to_groups(client.app, user_db["id"])
-            user_db = await get_user(client.app, user_db["id"])
+            user_data = await get_user(client.app, user_db["id"])
 
             # this part is under test  ---
             user = UserInfo(
-                id=user_db["id"],
-                name=user_db["name"],
-                primary_gid=user_db["primary_gid"],
-                email=user_db["email"],
+                id=user_data["id"],
+                name=user_data["name"],
+                primary_gid=user_data["primary_gid"],
+                email=user_data["email"],
             )
 
             yield user
@@ -111,10 +111,11 @@ async def test_add_new_project_from_model_instance(
     project_id: ProjectID,
     file_picker_id: NodeID,
     viewer_id: NodeID,
+    studies_dispatcher_enabled: bool,
 ):
     assert client.app
 
-    import simcore_service_webserver.director_v2.director_v2_service
+    import simcore_service_webserver.director_v2.director_v2_service  # noqa: PLC0415
 
     mock_directorv2_api = mocker.patch.object(
         simcore_service_webserver.director_v2.director_v2_service,

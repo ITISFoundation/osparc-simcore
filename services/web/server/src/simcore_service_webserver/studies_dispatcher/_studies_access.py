@@ -52,24 +52,13 @@ from ._constants import (
     MSG_UNEXPECTED_DISPATCH_ERROR,
 )
 from ._errors import GuestUsersLimitError
+from ._guards import check_studies_dispatcher_enabled
 from ._users import create_temporary_guest_user, get_authorized_user
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
-
-
-def _assert_studies_dispatcher_enabled(request: web.Request) -> None:
-    """
-    Guard function to check if studies dispatcher is enabled for the current product.
-
-    Raises:
-        web.HTTPNotFound: If studies dispatcher is disabled for the current product
-    """
-    product = products_web.get_current_product(request)
-    if not product.studies_dispatcher_enabled:
-        _logger.debug("Studies dispatcher is disabled for product %s", product.name)
-        raise web.HTTPNotFound(reason="Studies dispatcher is not available for this product")
 
 
 @lru_cache
@@ -104,14 +93,33 @@ async def _get_published_template_project(
             # 2. If user is unauthenticated, then MUST be public
             only_published=only_public_projects,
         )
-        # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-        project_group_get = await get_project_group(request.app, project_id=ProjectID(project_uuid), group_id=1)
-        if project_group_get.read is False:
-            raise ProjectGroupNotFoundError(details=f"Project {project_uuid} group 1 not read access")
+        # 3. MUST be shared with either EVERYONE=1 or the product's group in read mode
+        product = products_web.get_current_product(request)
+        groups_to_check = [1]  # group 1 = everyone
+        if product.group_id is not None:
+            groups_to_check.append(product.group_id)
+
+        has_read_access = False
+        for gid in groups_to_check:
+            project_group_get = await get_project_group(request.app, project_id=ProjectID(project_uuid), group_id=gid)
+            if project_group_get.read:
+                has_read_access = True
+                _logger.debug(
+                    "Project %s has read access via group %s for product %s",
+                    project_uuid,
+                    gid,
+                    product.name,
+                )
+                break
+
+        if not has_read_access:
+            raise ProjectGroupNotFoundError(  # noqa: TRY301
+                details=f"Project {project_uuid} not shared with group 1 or product group {product.group_id}"
+            )
 
         if not prj:
             # Not sure this happens but this condition was checked before so better be safe
-            raise ProjectNotFoundError(project_uuid)
+            raise ProjectNotFoundError(project_uuid)  # noqa: TRY301
 
         return prj
 
@@ -149,8 +157,9 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY
-    from ..projects.utils import clone_project_document, substitute_parameterized_inputs
+    # NOTE: Avoids circular dependencies until this module is refactored
+    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY  # noqa: PLC0415
+    from ..projects.utils import clone_project_document, substitute_parameterized_inputs  # noqa: PLC0415
 
     db: ProjectDBAPI = request.config_dict[PROJECT_DBAPI_APPKEY]
     template_parameters = dict(request.query)
@@ -299,8 +308,10 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     - if user is not registered, it creates a temporary guest account with limited resources and expiration
     - this handler is NOT part of the API and therefore does NOT respond with json
     """
+    assert get_plugin_settings(request.app).STUDIES_ACCESS_ANONYMOUS_ALLOWED  # nosec
+
     # Check if studies dispatcher is enabled for this product
-    _assert_studies_dispatcher_enabled(request)
+    check_studies_dispatcher_enabled(request)
 
     project_id = request.match_info["id"]
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec

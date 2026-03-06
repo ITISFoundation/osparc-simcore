@@ -62,7 +62,10 @@ def _get_base_url(client: TestClient) -> str:
     return f"{url}"
 
 
-async def test_api_get_viewer_for_file(client: TestClient):
+async def test_api_get_viewer_for_file(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     resp = await client.get("/v0/viewers/default?file_type=JPEG")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -71,19 +74,26 @@ async def test_api_get_viewer_for_file(client: TestClient):
         {
             "file_type": "JPEG",
             "title": "Bio-formats v1.0.1",
-            "view_url": f"{base_url}/view?file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+            "view_url": f"{base_url}/view?"
+            "file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
         },
     ]
 
 
-async def test_api_get_viewer_for_unsupported_type(client: TestClient):
+async def test_api_get_viewer_for_unsupported_type(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     resp = await client.get("/v0/viewers/default?file_type=UNSUPPORTED_TYPE")
     data, error = await assert_status(resp, status.HTTP_200_OK)
     assert data == []
     assert error is None
 
 
-async def test_api_list_supported_filetypes(client: TestClient):
+async def test_api_list_supported_filetypes(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     resp = await client.get("/v0/viewers/default")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -92,52 +102,64 @@ async def test_api_list_supported_filetypes(client: TestClient):
         {
             "title": "Rawgraphs v2.11.1",
             "file_type": "CSV",
-            "view_url": f"{base_url}/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+            "view_url": f"{base_url}/view?"
+            "file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
         },
         {
             "file_type": "HORNET_REPO",
             "title": "Hornet flow v3.2.300",
-            "view_url": f"{base_url}/view?file_type=HORNET_REPO&viewer_key=simcore/services/dynamic/s4l-ui-modeling&viewer_version=3.2.300",
+            "view_url": f"{base_url}/view?"
+            "file_type=HORNET_REPO&viewer_key=simcore/services/dynamic/s4l-ui-modeling&viewer_version=3.2.300",
         },
         {
             "title": "Jupyterlab math v1.6.9",
             "file_type": "IPYNB",
-            "view_url": f"{base_url}/view?file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
+            "view_url": f"{base_url}/view?"
+            "file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
         },
         {
             "title": "Bio-formats v1.0.1",
             "file_type": "JPEG",
-            "view_url": f"{base_url}/view?file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+            "view_url": f"{base_url}/view?"
+            "file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
         },
         {
             "title": "Rawgraphs v2.11.1",
             "file_type": "JSON",
-            "view_url": f"{base_url}/view?file_type=JSON&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+            "view_url": f"{base_url}/view?"
+            "file_type=JSON&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
         },
         {
             "title": "Bio-formats v1.0.1",
             "file_type": "PNG",
-            "view_url": f"{base_url}/view?file_type=PNG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+            "view_url": f"{base_url}/view?"
+            "file_type=PNG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
         },
         {
             "title": "Jupyterlab math v1.6.9",
             "file_type": "PY",
-            "view_url": f"{base_url}/view?file_type=PY&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
+            "view_url": f"{base_url}/view?"
+            "file_type=PY&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
         },
         {
             "title": "Rawgraphs v2.11.1",
             "file_type": "TSV",
-            "view_url": f"{base_url}/view?file_type=TSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+            "view_url": f"{base_url}/view?"
+            "file_type=TSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
         },
         {
             "title": "Rawgraphs v2.11.1",
             "file_type": "XLSX",
-            "view_url": f"{base_url}/view?file_type=XLSX&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+            "view_url": f"{base_url}/view?"
+            "file_type=XLSX&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
         },
     ]
 
 
-async def test_api_list_services(client: TestClient):
+async def test_api_list_services(
+    client: TestClient,
+    studies_dispatcher_enabled: bool,
+):
     assert client.app
 
     url = client.app.router["list_latest_services"].url_for()
