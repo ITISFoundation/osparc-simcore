@@ -79,6 +79,20 @@ async def _cluster_dask_client(
     run_id: PositiveInt,
     run_metadata: RunMetadataDict,
 ) -> AsyncIterator[DaskClient]:
+    """returns the dask client to use for a given user and project, it will automatically create an on-demand
+    cluster if needed and wait for it to be ready
+
+
+    Throws:
+        ComputationalBackendOnDemandNotReadyError: if the on-demand cluster is not ready (clusters-keeper)
+        ClustersKeeperNotAvailableError: if the clusters-keeper service is not available
+        DaskClientAcquisisitonError: if the client could not be acquired for any reason (e.g. scheduler not responsive)
+        ComputationalBackendNotConnectedError: if the dask computational backend is not connected
+        ComputationalSchedulerChangedError: if the dask scheduler changed during the execution
+
+    Yields:
+        the dask client
+    """
     cluster: BaseCluster = scheduler.settings.default_cluster
     if use_on_demand_clusters:
         cluster = await get_or_create_on_demand_cluster(
