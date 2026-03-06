@@ -7,7 +7,6 @@ import asyncio
 import json
 import logging
 import subprocess
-import sys
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
 from copy import deepcopy
@@ -37,7 +36,7 @@ from .helpers.typing_env import EnvVarsDict
 _logger = logging.getLogger(__name__)
 
 
-_CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_CURRENT_DIR = Path(__file__).resolve().parent
 
 
 def _get_compose_service_order() -> list[str]:
