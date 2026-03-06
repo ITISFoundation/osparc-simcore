@@ -1968,6 +1968,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     )
 
 
+@pytest.mark.acceptance_test("for https://github.com/ITISFoundation/osparc-simcore/issues/8881")
 async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_not_ready(
     with_started_project: RunningProject,
     mocked_dask_client: mock.MagicMock,
@@ -1975,13 +1976,13 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
     sqlalchemy_async_engine: AsyncEngine,
     mocked_get_or_create_cluster: mock.Mock,
     faker: Faker,
-    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
 ):
     """Regression test: a task already running (STARTED, job_id set) must NOT be
     resubmitted when the on-demand cluster is transiently unreachable during
     _get_tasks_status(). The bug was that WAITING_FOR_CLUSTER is in TASK_TO_START_STATES,
     so on the next scheduling cycle, the task would be sent to dask again.
-    The fix: _schedule_tasks_to_start() skips tasks that already have a job_id."""
+    The fix: _schedule_tasks_to_start() skips tasks that already have a job_id.
+    """
     run_in_db = with_started_project.runs
     started_tasks = [t for t in with_started_project.tasks if t.state is RunningState.STARTED]
     assert started_tasks, "fixture must provide at least one STARTED task"
@@ -2015,6 +2016,24 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
         iteration=run_in_db.iteration,
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
+
+    # now make the cluster available again, and check that the task is still not restarted (since it was never stopped)
+    mocked_get_or_create_cluster.side_effect = None
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+    # check the task is back to STARTED
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=with_started_project.project.uuid,
+        task_ids=[t.node_id for t in started_tasks],
+        expected_state=RunningState.STARTED,
+        expected_progress=None,
+        run_id=run_in_db.run_id,
+    )
 
 
 @pytest.mark.parametrize(
