@@ -426,93 +426,61 @@ else
 endif
 	@$(_show_endpoints)
 
-# Infrastructure services for phased deployment
-INFRA_SERVICES := postgres migration redis rabbit
 MAX_WAIT_ITERATIONS := 150
 WAIT_INTERVAL_SECS := 2
 YQ_IMAGE := mikefarah/yq:4
 
-# Application service batches (non-infrastructure, groups of 5 by functional area)
-APP_BATCH_1 := catalog director agent docker-api-proxy static-webserver
-APP_BATCH_2 := storage sto-worker sto-worker-cpu-bound dask-scheduler dask-sidecar
-APP_BATCH_3 := director-v2 dynamic-schdlr wb-garbage-collector wb-api-server wb-auth
-APP_BATCH_4 := wb-db-event-listener webserver autoscaling clusters-keeper resource-usage-tracker
-APP_BATCH_5 := efs-guardian api-server api-worker datcore-adapter invitations
-APP_BATCH_6 := notifications notifications-worker payments traefik traefik-config-placeholder
-
-# Generate yq filter for keeping only infra services
-# e.g., ".key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration""
-_YQ_INFRA_FILTER := $(shell echo $(INFRA_SERVICES) | awk '{for(i=1;i<=NF;i++) printf "%s.key == \"%s\"%s", (i>1?" or ":""), $$i, (i<NF?"":" ")}')
-
-define _wait_for_running
-	@count=0; \
-	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
-		running=$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
-		[ "$$running" -gt 0 ] && break; \
-		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
-	done; \
-	if [ $$count -ge $(MAX_WAIT_ITERATIONS) ]; then \
-		echo " TIMEOUT"; echo "ERROR: Service $(1) failed to start"; exit 1; \
-	fi; \
-		echo " OK"
-endef
-
-# Helper: generate a yq select filter from a list of service names
-# Usage: $(call _yq_filter_from_list,svc1 svc2 svc3)
-_yq_filter_from_list = $(shell echo $(1) | awk '{for(i=1;i<=NF;i++) printf "%s.key == \"%s\"%s", (i>1?" or ":""), $$i, (i<NF?"":" ")}')
-
-up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in batched phases: infrastructure first, then app services in groups of 5
+up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in batches of 5 services (in docker-compose.yml order), waiting for each batch before continuing
 	# Deploy ops and vendors stacks
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
-	# Phase 1: Deploy infrastructure services only
-	@echo "Phase 1: Deploying infrastructure services ($(INFRA_SERVICES))..."
-	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(_YQ_INFRA_FILTER)))' \
-		< $< > .stack-phased-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME)
-	@echo "Waiting for infrastructure services to be ready..."
-	$(foreach service,$(INFRA_SERVICES),$(call _wait_for_running,$(service)))
-	# Phase 2 - Batch 1: Core API ($(APP_BATCH_1))
-	@echo "Batch 1/6: Deploying core API services ($(APP_BATCH_1))..."
-	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(call _yq_filter_from_list,$(INFRA_SERVICES) $(APP_BATCH_1))))' \
-		< $< > .stack-phased-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME)
-	$(foreach service,$(APP_BATCH_1),$(call _wait_for_running,$(service)))
-	# Phase 2 - Batch 2: Web/Frontend ($(APP_BATCH_2))
-	@echo "Batch 2/6: Deploying web/frontend services ($(APP_BATCH_2))..."
-	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(call _yq_filter_from_list,$(INFRA_SERVICES) $(APP_BATCH_1) $(APP_BATCH_2))))' \
-		< $< > .stack-phased-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME)
-	$(foreach service,$(APP_BATCH_2),$(call _wait_for_running,$(service)))
-	# Phase 2 - Batch 3: Storage/Compute ($(APP_BATCH_3))
-	@echo "Batch 3/6: Deploying storage/compute services ($(APP_BATCH_3))..."
-	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(call _yq_filter_from_list,$(INFRA_SERVICES) $(APP_BATCH_1) $(APP_BATCH_2) $(APP_BATCH_3))))' \
-		< $< > .stack-phased-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME)
-	$(foreach service,$(APP_BATCH_3),$(call _wait_for_running,$(service)))
-	# Phase 2 - Batch 4: Networking/Proxy ($(APP_BATCH_4))
-	@echo "Batch 4/6: Deploying networking/proxy services ($(APP_BATCH_4))..."
-	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(call _yq_filter_from_list,$(INFRA_SERVICES) $(APP_BATCH_1) $(APP_BATCH_2) $(APP_BATCH_3) $(APP_BATCH_4))))' \
-		< $< > .stack-phased-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME)
-	$(foreach service,$(APP_BATCH_4),$(call _wait_for_running,$(service)))
-	# Phase 2 - Batch 5: Scaling/Agents ($(APP_BATCH_5))
-	@echo "Batch 5/6: Deploying scaling/agent services ($(APP_BATCH_5))..."
-	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(call _yq_filter_from_list,$(INFRA_SERVICES) $(APP_BATCH_1) $(APP_BATCH_2) $(APP_BATCH_3) $(APP_BATCH_4) $(APP_BATCH_5))))' \
-		< $< > .stack-phased-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME)
-	$(foreach service,$(APP_BATCH_5),$(call _wait_for_running,$(service)))
-	# Phase 2 - Batch 6: External/Notifications ($(APP_BATCH_6))
-	@echo "Batch 6/6: Deploying external/notification services ($(APP_BATCH_6))..."
-	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(foreach service,$(APP_BATCH_6),$(call _wait_for_running,$(service)))
+	# Deploy all services in batches of 5 (order from docker-compose.yml)
+	@all_services=$$(grep -E '^  [a-z][a-zA-Z0-9_-]+:' services/docker-compose.yml | awk '{print $$1}' | tr -d ':'); \
+	deployed=""; \
+	batch_num=0; \
+	batch=""; \
+	batch_size=0; \
+	for svc in $$all_services; do \
+		batch="$$batch $$svc"; \
+		batch_size=$$((batch_size + 1)); \
+		deployed="$$deployed $$svc"; \
+		if [ $$batch_size -eq 5 ]; then \
+			batch_num=$$((batch_num + 1)); \
+			echo "--- Batch $$batch_num: deploying$$batch ..."; \
+			filter=$$(echo "$$deployed" | tr ' ' '\n' | grep -v '^$$' | awk '{printf "%s.key == \"%s\"", (NR>1?" or ":""), $$1}'); \
+			docker run --rm -i $(YQ_IMAGE) ".services |= with_entries(select($$filter))" < $< > .stack-phased-tmp.yml; \
+			docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME); \
+			for s in $$batch; do \
+				count=0; \
+				printf "  waiting for $$s"; \
+				while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+					running=$$(docker service ps $(SWARM_STACK_NAME)_$$s --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
+					[ "$$running" -gt 0 ] && break; \
+					printf "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+				done; \
+				[ $$count -ge $(MAX_WAIT_ITERATIONS) ] && echo " TIMEOUT" && echo "ERROR: Service $$s failed to start" && exit 1 || echo " OK"; \
+			done; \
+			batch=""; batch_size=0; \
+		fi; \
+	done; \
+	if [ -n "$$batch" ]; then \
+		batch_num=$$((batch_num + 1)); \
+		echo "--- Batch $$batch_num (final): deploying$$batch ..."; \
+		filter=$$(echo "$$deployed" | tr ' ' '\n' | grep -v '^$$' | awk '{printf "%s.key == \"%s\"", (NR>1?" or ":""), $$1}'); \
+		docker run --rm -i $(YQ_IMAGE) ".services |= with_entries(select($$filter))" < $< > .stack-phased-tmp.yml; \
+		docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME); \
+		for s in $$batch; do \
+			count=0; \
+			printf "  waiting for $$s"; \
+			while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+				running=$$(docker service ps $(SWARM_STACK_NAME)_$$s --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
+				[ "$$running" -gt 0 ] && break; \
+				printf "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+			done; \
+			[ $$count -ge $(MAX_WAIT_ITERATIONS) ] && echo " TIMEOUT" && echo "ERROR: Service $$s failed to start" && exit 1 || echo " OK"; \
+		done; \
+	fi
 	@rm -f .stack-phased-tmp.yml
 	@echo "All services deployed successfully!"
 	@$(_show_endpoints)
