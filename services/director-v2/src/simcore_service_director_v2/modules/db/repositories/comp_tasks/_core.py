@@ -183,7 +183,11 @@ class CompTasksRepository(BaseRepository):
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model(exclude={"created", "modified"}))
 
                 exclusion_rule = {"state", "progress"} if comp_task_db.node_id not in published_nodes else set()
-                update_values = {"progress": None} if comp_task_db.node_id in published_nodes else {}
+                update_values = (
+                    {"progress": None, "job_id": None, "start": None, "end": None, "errors": None}
+                    if comp_task_db.node_id in published_nodes
+                    else {}
+                )
 
                 if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
                     exclusion_rule.add("outputs")
