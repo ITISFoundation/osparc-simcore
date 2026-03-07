@@ -733,9 +733,20 @@ class BaseCompScheduler(ABC):
             t for t in comp_tasks.values() if t.state in TASK_TO_START_STATES and t.job_id is None
         ]
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-        await comp_tasks_repo.mark_project_published_waiting_for_cluster_tasks_as_aborted(project_id, comp_run.run_id)
+        stopped_time = arrow.utcnow().datetime
+        await comp_tasks_repo.update_project_tasks_state(
+            project_id,
+            comp_run.run_id,
+            [t.node_id for t in tasks_instantly_stopeable],
+            RunningState.ABORTED,
+            optional_progress=1.0,
+            optional_stopped=stopped_time,
+        )
+
         for task in tasks_instantly_stopeable:
             comp_tasks[f"{task.node_id}"].state = RunningState.ABORTED
+            comp_tasks[f"{task.node_id}"].progress = 1.0
+            comp_tasks[f"{task.node_id}"].end = stopped_time
         # stop any remaining running task, these are already submitted
         if tasks_to_stop := [t for t in comp_tasks.values() if t.state in PROCESSING_STATES and t.job_id is not None]:
             await self._stop_tasks(user_id, tasks_to_stop, comp_run)
