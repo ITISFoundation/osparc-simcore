@@ -847,7 +847,7 @@ class BaseCompScheduler(ABC):
         except Exception as exc:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED a"
+                    "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED "
                     "and the rest of the pipeline will be ABORTED",
                     error=exc,
                     error_context=log_error_context,
