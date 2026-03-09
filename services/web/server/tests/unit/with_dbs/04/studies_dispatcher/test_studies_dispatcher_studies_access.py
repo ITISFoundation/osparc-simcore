@@ -296,9 +296,9 @@ async def _assert_redirected_to_study(response: ClientResponse, session: ClientS
 
 
 async def test_access_to_invalid_study(
+    studies_dispatcher_enabled: bool,
     client: TestClient,
     faker: Faker,
-    studies_dispatcher_enabled: bool,
 ):
     invalid_project_id = faker.uuid4()
     response = await client.get(f"/study/{invalid_project_id}")
@@ -311,9 +311,9 @@ async def test_access_to_invalid_study(
 
 
 async def test_access_to_forbidden_study(
+    studies_dispatcher_enabled: bool,
     client: TestClient,
     unpublished_project: ProjectDict,
-    studies_dispatcher_enabled: bool,
 ):
     response = await client.get(f"/study/{unpublished_project['uuid']}")
 
@@ -325,6 +325,7 @@ async def test_access_to_forbidden_study(
 
 
 async def test_access_study_anonymously(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
@@ -334,7 +335,6 @@ async def test_access_study_anonymously(
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
-    studies_dispatcher_enabled: bool,
 ):
     assert not _is_user_authenticated(client.session), "Is anonymous"
     assert client.app
@@ -372,6 +372,7 @@ async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 async def test_access_study_by_logged_user(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
@@ -383,7 +384,6 @@ async def test_access_study_by_logged_user(
     auto_delete_projects: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
-    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     assert _is_user_authenticated(client.session), "Is already logged-in"
@@ -405,6 +405,7 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
@@ -414,7 +415,6 @@ async def test_access_cookie_of_expired_user(
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
-    studies_dispatcher_enabled: bool,
 ):
     # emulates issue #1570
     assert client.app  # nosec
@@ -486,6 +486,7 @@ async def test_access_cookie_of_expired_user(
     ],
 )
 async def test_guest_user_is_not_garbage_collected(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     number_of_simultaneous_requests: int,
     web_server: TestServer,
@@ -497,7 +498,6 @@ async def test_guest_user_is_not_garbage_collected(
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
-    studies_dispatcher_enabled: bool,
 ):
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
 
@@ -541,10 +541,10 @@ async def test_guest_user_is_not_garbage_collected(
 
 @pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
 async def test_access_study_with_dispatcher_disabled(
+    studies_dispatcher_enabled: bool,
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
-    studies_dispatcher_enabled: bool,
 ):
     """
     Test that accessing /study returns 404 when studies_dispatcher_enabled is False.
@@ -573,11 +573,11 @@ async def test_access_study_with_dispatcher_disabled(
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 @pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
 async def test_access_study_by_logged_user_with_dispatcher_disabled(
+    studies_dispatcher_enabled: bool,
     client: TestClient,
     logged_user: UserInfoDict,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
-    studies_dispatcher_enabled: bool,
     user_role: UserRole,
 ):
     """
