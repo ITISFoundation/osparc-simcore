@@ -439,8 +439,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         dragMechanism: true,
         hideRoot: true
       });
-      allFilesTree.populateLocations();
-      reloadButton.addListener("execute", () => allFilesTree.populateLocations());
+      const s3Alias = this.tr("Other Projects");
+      allFilesTree.populateLocations(s3Alias);
+      reloadButton.addListener("execute", () => allFilesTree.populateLocations(s3Alias));
       filesTabContent.add(allFilesTree, {
         flex: 1
       });

@@ -107,7 +107,7 @@ qx.Class.define("osparc.file.FilesTree", {
       dataStore.resetCache();
     },
 
-    populateLocations: function() {
+    populateLocations: function(s3Alias) {
       this.__resetChecks();
 
       const treeName = "My Data";
@@ -128,7 +128,7 @@ qx.Class.define("osparc.file.FilesTree", {
             this.__locationsToRoot(locations);
             for (let i=0; i<locations.length; i++) {
               const locationId = locations[i]["id"];
-              datasetPromises.push(this.__populateLocation(locationId));
+              datasetPromises.push(this.__populateLocation(locationId, s3Alias));
             }
           }
           return datasetPromises;
@@ -302,9 +302,12 @@ qx.Class.define("osparc.file.FilesTree", {
       }
     },
 
-    __populateLocation: function(locationId = null) {
+    __populateLocation: function(locationId = null, s3Alias = null) {
       if (locationId !== null) {
         const locationModel = this.__getLocationModel(locationId);
+        if (locationId === 0 && s3Alias) {
+          locationModel.setLabel(s3Alias);
+        }
         if (locationModel) {
           locationModel.getChildren().removeAll();
           this.self().addLoadingChild(locationModel);
