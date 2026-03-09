@@ -1948,7 +1948,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
-        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
+        expected_processing_state_has_job_id=False,  # the cluster was never started, there is no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
@@ -1975,7 +1975,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
-        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
+        expected_processing_state_has_job_id=False,  # the cluster was never started, there is no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
@@ -2281,7 +2281,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_waits_and
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_for_cluster_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
-        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
+        expected_processing_state_has_job_id=False,  # the cluster was never started, there is no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
@@ -2313,7 +2313,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_waits_and
         project_uuid=published_project.project.uuid,
         task_ids=[t.node_id for t in expected_waiting_for_cluster_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
-        expected_processing_state_has_job_id=False,  # we start the scheduler before the cluster is ready no job id
+        expected_processing_state_has_job_id=False,  # the cluster was never started, there is no job id
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
