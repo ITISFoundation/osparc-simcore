@@ -434,30 +434,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       filesTabContent.add(reloadButton);
 
-      const projectFilesTree = new osparc.file.FilesTree().set({
+      const filesTree = new osparc.file.FilesTree().set({
         backgroundColor: "transparent",
         dragMechanism: true,
-        hideRoot: false,
       });
       const studyId = this.getStudy().getUuid();
-      projectFilesTree.populateStudyTree(studyId);
-      filesTabContent.add(projectFilesTree);
-
-      const allFilesTree = new osparc.file.FilesTree().set({
-        backgroundColor: "transparent",
-        dragMechanism: true,
-        hideRoot: true
-      });
       const s3Alias = this.tr("Other Projects");
-      allFilesTree.populateLocations(s3Alias);
-      filesTabContent.add(allFilesTree, {
+      filesTree.populateStudyAndLocations(studyId, s3Alias);
+      filesTabContent.add(filesTree, {
         flex: 1
       });
 
       reloadButton.addListener("execute", () => {
-        projectFilesTree.resetCache();
-        projectFilesTree.populateStudyTree(studyId);
-        allFilesTree.populateLocations(s3Alias);
+        filesTree.resetCache();
+        filesTree.populateStudyAndLocations(studyId, s3Alias);
       });
 
       return filesTabContent;

@@ -99,6 +99,7 @@ qx.Class.define("osparc.file.FilesTree", {
     __locations: null,
     __pathModels: null,
     __loadPaths: null,
+    __locationsParentModel: null,
 
     resetCache: function() {
       this.__resetChecks();
@@ -157,6 +158,59 @@ qx.Class.define("osparc.file.FilesTree", {
         });
     },
 
+    populateStudyAndLocations: function(studyId, s3Alias) {
+      this.__resetChecks();
+
+      const treeName = "Files";
+      this.__resetTree(treeName);
+      const rootModel = this.getModel();
+      rootModel.getChildren().removeAll();
+
+      this.set({
+        hideRoot: true
+      });
+
+      // Study files folder
+      const studyTreeName = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Files";
+      const studyFolderData = osparc.data.Converters.createFolderEntry(studyTreeName, 0, studyId);
+      studyFolderData["pathLabel"] = [studyTreeName];
+      const studyFolderModel = this.__createModel(0, studyId, studyFolderData);
+      this.self().addLoadingChild(studyFolderModel);
+      rootModel.getChildren().append(studyFolderModel);
+
+      // Other Projects folder
+      const locationsTreeName = s3Alias || "Other Projects";
+      const locationsFolderData = osparc.data.Converters.createFolderEntry(locationsTreeName, null, null);
+      locationsFolderData["itemId"] = "OtherProjects";
+      locationsFolderData["pathLabel"] = [locationsTreeName];
+      this.__locationsParentModel = qx.data.marshal.Json.createModel(locationsFolderData, true);
+      this.self().addLoadingChild(this.__locationsParentModel);
+      rootModel.getChildren().append(this.__locationsParentModel);
+
+      // Populate study files
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getItemsByLocationAndPath(0, studyId)
+        .then(items => {
+          if (items.length) {
+            const studyName = osparc.data.Converters.displayPathToLabel(items[0]["display_path"], { first: true });
+            studyFolderModel.setLabel(studyName);
+          }
+          this.__itemsToTree(0, studyId, items, studyFolderModel);
+        });
+
+      // Populate locations
+      dataStore.getLocations()
+        .then(locations => {
+          if (this.__locations.size === 0) {
+            this.__locationsToParent(locations, this.__locationsParentModel);
+            for (let i = 0; i < locations.length; i++) {
+              const locationId = locations[i]["id"];
+              this.__populateLocation(locationId, s3Alias);
+            }
+          }
+        });
+    },
+
     populateNodeTree(studyId, nodeId) {
       const treeName = "Node Files";
       this.__resetTree(treeName);
@@ -207,6 +261,7 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__locations = new Set();
       this.__pathModels = [];
       this.__loadPaths = {};
+      this.__locationsParentModel = null;
     },
 
     __resetTree: function(treeName, itemId) {
@@ -257,7 +312,11 @@ qx.Class.define("osparc.file.FilesTree", {
 
     __locationsToRoot: function(locations) {
       const rootModel = this.getModel();
-      rootModel.getChildren().removeAll();
+      this.__locationsToParent(locations, rootModel);
+    },
+
+    __locationsToParent: function(locations, parentModel) {
+      parentModel.getChildren().removeAll();
       let openThis = null;
       for (let i=0; i<locations.length; i++) {
         const location = locations[i];
@@ -266,9 +325,9 @@ qx.Class.define("osparc.file.FilesTree", {
           location.id,
           ""
         );
-        locationData["pathLabel"] = rootModel.getPathLabel().concat(locationData["label"]);
+        locationData["pathLabel"] = parentModel.getPathLabel().concat(locationData["label"]);
         const locationModel = this.__createModel(location.id, null, locationData);
-        rootModel.getChildren().append(locationModel);
+        parentModel.getChildren().append(locationModel);
         if (this.__hasLocationNeedToBeLoaded(location.id)) {
           openThis = locationModel;
         }
@@ -328,8 +387,8 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __getLocationModel: function(locationId) {
-      const rootModel = this.getModel();
-      const locationModels = rootModel.getChildren();
+      const parentModel = this.__locationsParentModel || this.getModel();
+      const locationModels = parentModel.getChildren();
       for (let i=0; i<locationModels.length; i++) {
         const locationModel = locationModels.toArray()[i];
         if (locationModel.getLocation() === locationId || String(locationModel.getLocation()) === locationId) {
