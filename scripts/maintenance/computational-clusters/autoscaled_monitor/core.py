@@ -18,7 +18,7 @@ from rich.style import Style
 from rich.table import Column, Table
 
 from . import dask, db, ec2, ssh, utils
-from .constants import SSH_USER_NAME, UNDEFINED_BYTESIZE
+from .constants import SSH_USER_NAME, STALE_HEARTBEAT_THRESHOLD_MINUTES, UNDEFINED_BYTESIZE
 from .models import (
     AppState,
     ComputationalCluster,
@@ -28,8 +28,11 @@ from .models import (
     DynamicInstance,
     DynamicService,
     InstanceRole,
+    ResourceTrackerServiceRun,
     TaskId,
+    TaskReconciliationRow,
     TaskState,
+    TrackerReconciliationEntry,
 )
 
 
@@ -426,10 +429,275 @@ async def _parse_dynamic_instances(
     return dynamic_instances
 
 
+def _reconcile_cluster_tasks(
+    cluster: ComputationalCluster,
+    comp_tasks: list[ComputationalTask],
+    tracker_runs: list[ResourceTrackerServiceRun],
+) -> list[TaskReconciliationRow]:
+    """Cross-reference Dask scheduler tasks with comp_tasks and resource_tracker entries.
+
+    Flags:
+    - Dask task not found in comp_tasks (ghost task)
+    - Task being processed but comp_tasks.state != RUNNING
+    - Processing task with no resource_tracker entry (credits not tracked)
+    - comp_task in RUNNING/PUBLISHED state not present in Dask (stuck/orphaned)
+    """
+    comp_tasks_by_job_id: dict[TaskId, ComputationalTask] = {t.job_id: t for t in comp_tasks if t.job_id is not None}
+    tracker_runs_by_node_id: dict[str, ResourceTrackerServiceRun] = {r.node_id: r for r in tracker_runs}
+
+    rows: list[TaskReconciliationRow] = []
+    dask_job_ids_seen: set[TaskId] = set()
+
+    for dask_state, job_ids in cluster.task_states_to_tasks.items():
+        for job_id in job_ids:
+            dask_job_ids_seen.add(job_id)
+            comp_task = comp_tasks_by_job_id.get(job_id)
+            issues: list[str] = []
+
+            if comp_task is None:
+                issues.append("not found in comp_tasks (ghost task in cluster)")
+                tracker_run = None
+            else:
+                if dask_state == "processing" and comp_task.state != "RUNNING":
+                    issues.append(f"processing in Dask but comp_tasks.state={comp_task.state!r} (expected RUNNING)")
+                tracker_run = tracker_runs_by_node_id.get(str(comp_task.node_id))
+                if tracker_run is None and dask_state == "processing":
+                    issues.append("no resource_tracker entry (credits not being tracked)")
+
+            rows.append(
+                TaskReconciliationRow(
+                    job_id=job_id,
+                    dask_state=dask_state,
+                    comp_task=comp_task,
+                    tracker_run=tracker_run,
+                    issues=issues,
+                )
+            )
+
+    # Orphaned DB tasks: RUNNING but absent from the Dask scheduler
+    # (PUBLISHED is expected to not be in Dask yet — it is waiting to be picked up)
+    for comp_task in comp_tasks:
+        if comp_task.job_id not in dask_job_ids_seen and comp_task.state == "RUNNING":
+            tracker_run = tracker_runs_by_node_id.get(str(comp_task.node_id))
+            rows.append(
+                TaskReconciliationRow(
+                    job_id=comp_task.job_id or "n/a",
+                    dask_state="not-in-dask",
+                    comp_task=comp_task,
+                    tracker_run=tracker_run,
+                    issues=["comp_tasks.state=RUNNING but job absent from Dask scheduler (stuck?)"],
+                )
+            )
+
+    return rows
+
+
+def _print_cluster_tasks_table(
+    cluster: ComputationalCluster,
+    rows: list[TaskReconciliationRow],
+    output: Path | None,
+) -> None:
+    if not rows:
+        return
+
+    table = Table(
+        Column("Job ID", overflow="fold"),
+        Column("Dask State", justify="center"),
+        Column("In\ncomp_tasks", justify="center"),
+        Column("DB State", justify="center"),
+        Column("In\ntracker", justify="center"),
+        Column("Credit/h", justify="right"),
+        Column("Issues"),
+        title=(f"Tasks – user_id={cluster.primary.user_id}  wallet_id={cluster.primary.wallet_id}"),
+        padding=(0, 1),
+        title_style=Style(color="magenta", encircle=True),
+    )
+
+    for row in rows:
+        job_id_display = row.job_id[:36] + "…" if len(row.job_id) > 37 else row.job_id
+
+        if row.dask_state == "processing":
+            dask_state_text = f"[green]{row.dask_state}[/green]"
+        elif row.dask_state in {"erred", "not-in-dask"}:
+            dask_state_text = f"[red]{row.dask_state}[/red]"
+        else:
+            dask_state_text = row.dask_state
+
+        if row.comp_task is not None:
+            in_db_text = "[green]\u2705[/green]"
+            db_state = row.comp_task.state
+            if row.dask_state == "processing" and db_state != "RUNNING":
+                db_state_text = f"[red]{db_state}[/red]"
+            elif db_state == "RUNNING":
+                db_state_text = f"[green]{db_state}[/green]"
+            else:
+                db_state_text = db_state
+        else:
+            in_db_text = "[red]\u274c[/red]"
+            db_state_text = "n/a"
+
+        if row.tracker_run is not None:
+            in_tracker_text = "[green]\u2705[/green]"
+            cost = row.tracker_run.pricing_unit_cost
+            credit_text = f"{cost:.4f}" if cost is not None else "n/a"
+        else:
+            in_tracker_text = "[red]\u274c[/red]" if row.dask_state == "processing" else "[dim]\u274c[/dim]"
+            credit_text = "n/a"
+
+        if row.issues:
+            issue_text = "\n".join(f"[red]{i}[/red]" for i in row.issues)
+        else:
+            issue_text = "[green]OK[/green]"
+
+        table.add_row(
+            job_id_display,
+            dask_state_text,
+            in_db_text,
+            db_state_text,
+            in_tracker_text,
+            credit_text,
+            issue_text,
+        )
+
+    if output:
+        with output.open("a") as fp:
+            rich.print(table, file=fp)
+    else:
+        rich.print(table)
+
+
+def _reconcile_clusters_with_tracker(
+    clusters: list[ComputationalCluster],
+    tracker_runs: list[ResourceTrackerServiceRun],
+) -> list[TrackerReconciliationEntry]:
+    """Cross-reference EC2 computational clusters with resource tracker DB entries.
+
+    Groups both sides by (user_id, wallet_id) and flags:
+    - EC2 cluster present but no RUNNING tracker entry (billing failure risk)
+    - RUNNING tracker entries with no active EC2 cluster (ghost entries)
+    - Stale heartbeat on a tracked-and-running cluster
+    """
+    stale_threshold = arrow.utcnow().shift(minutes=-STALE_HEARTBEAT_THRESHOLD_MINUTES).datetime
+
+    cluster_map: dict[tuple[int, int | None], ComputationalCluster] = {
+        (c.primary.user_id, c.primary.wallet_id): c for c in clusters
+    }
+    tracker_map: dict[tuple[int, int | None], list[ResourceTrackerServiceRun]] = {}
+    for run in tracker_runs:
+        key = (run.user_id, run.wallet_id)
+        tracker_map.setdefault(key, []).append(run)
+
+    all_keys = set(cluster_map) | set(tracker_map)
+    entries: list[TrackerReconciliationEntry] = []
+    for key in sorted(all_keys):
+        user_id, wallet_id = key
+        cluster = cluster_map.get(key)
+        runs = tracker_map.get(key, [])
+        issues: list[str] = []
+
+        if cluster is not None and not runs:
+            # Warm-buffer clusters do not run services, so tracker absence is expected
+            if not cluster.primary.is_warm_buffer:
+                issues.append("EC2 cluster not tracked in resource_tracker (potential billing failure)")
+        elif not cluster and runs:
+            issues.append("RUNNING tracker entries with no matching EC2 cluster (ghost entries)")
+        elif cluster and runs:
+            stale = [
+                r
+                for r in runs
+                if r.last_heartbeat_at.replace(tzinfo=None) < stale_threshold.replace(tzinfo=None)
+                or (
+                    r.last_heartbeat_at.tzinfo is not None
+                    and stale_threshold.tzinfo is not None
+                    and r.last_heartbeat_at < stale_threshold
+                )
+            ]
+            if stale:
+                issues.append(
+                    f"{len(stale)} tracker run(s) have stale heartbeat (>{STALE_HEARTBEAT_THRESHOLD_MINUTES} min)"
+                )
+            missed = [r for r in runs if r.missed_heartbeat_counter > 0]
+            if missed:
+                issues.append(f"{len(missed)} tracker run(s) have missed_heartbeat_counter > 0")
+
+        entries.append(
+            TrackerReconciliationEntry(
+                user_id=user_id,
+                wallet_id=wallet_id,
+                ec2_cluster=cluster,
+                tracker_runs=runs,
+                issues=issues,
+            )
+        )
+    return entries
+
+
+def _print_tracker_reconciliation(
+    entries: list[TrackerReconciliationEntry],
+    output: Path | None,
+) -> None:
+    time_now = arrow.utcnow()
+    table = Table(
+        Column("Status", justify="center"),
+        Column("UserID"),
+        Column("WalletID"),
+        Column("EC2 cluster", justify="center"),
+        Column("Tracker RUNNING", justify="center"),
+        Column("Last Heartbeat (newest)"),
+        Column("Max Missed Heartbeats", justify="center"),
+        Column("Issues"),
+        title="Resource tracker reconciliation (computational clusters)",
+        padding=(0, 1),
+        title_style=Style(color="cyan", encircle=True),
+    )
+
+    for entry in entries:
+        if entry.issues:
+            status = "[red]\u274c[/red]"
+            issue_text = "\n".join(f"[red]{i}[/red]" for i in entry.issues)
+        else:
+            status = "[green]\u2705[/green]"
+            issue_text = "[green]OK[/green]"
+
+        ec2_text = "[green]yes[/green]" if entry.ec2_cluster else "[red]no[/red]"
+        tracker_count = f"{len(entry.tracker_runs)}"
+
+        if entry.tracker_runs:
+            newest_heartbeat = max(r.last_heartbeat_at for r in entry.tracker_runs)
+            # strip tz for timedelta computation to avoid mixed-aware comparison issues
+            newest_naive = newest_heartbeat.replace(tzinfo=None)
+            now_naive = time_now.datetime.replace(tzinfo=None)
+            heartbeat_age = utils.timedelta_formatting(now_naive - newest_naive, color_code=True)
+            max_missed = max(r.missed_heartbeat_counter for r in entry.tracker_runs)
+            missed_text = f"[red]{max_missed}[/red]" if max_missed > 0 else f"[green]{max_missed}[/green]"
+        else:
+            heartbeat_age = "n/a"
+            missed_text = "n/a"
+
+        table.add_row(
+            status,
+            f"{entry.user_id}",
+            f"{entry.wallet_id}" if entry.wallet_id is not None else "n/a",
+            ec2_text,
+            tracker_count,
+            heartbeat_age,
+            missed_text,
+            issue_text,
+        )
+
+    if output:
+        with output.open("a") as fp:
+            rich.print(table, file=fp)
+    else:
+        rich.print(table)
+
+
 def _print_summary_as_json(
     dynamic_instances: list[DynamicInstance],
     computational_clusters: list[ComputationalCluster],
     output: Path | None,
+    tracker_reconciliation: list[TrackerReconciliationEntry] | None = None,
+    cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] | None = None,
 ) -> None:
     result = {
         "dynamic_instances": [
@@ -482,6 +750,53 @@ def _print_summary_as_json(
             }
             for cluster in computational_clusters
         ],
+        "cluster_task_reconciliation": [
+            {
+                "user_id": cluster.primary.user_id,
+                "wallet_id": cluster.primary.wallet_id,
+                "tasks": [
+                    {
+                        "job_id": row.job_id,
+                        "dask_state": row.dask_state,
+                        "in_comp_tasks": row.comp_task is not None,
+                        "db_state": row.comp_task.state if row.comp_task else None,
+                        "project_id": str(row.comp_task.project_id) if row.comp_task else None,
+                        "node_id": str(row.comp_task.node_id) if row.comp_task else None,
+                        "service_name": row.comp_task.service_name if row.comp_task else None,
+                        "service_version": row.comp_task.service_version if row.comp_task else None,
+                        "in_tracker": row.tracker_run is not None,
+                        "pricing_unit_cost": row.tracker_run.pricing_unit_cost if row.tracker_run else None,
+                        "issues": row.issues,
+                    }
+                    for row in task_rows
+                ],
+            }
+            for cluster, task_rows in (cluster_task_rows or [])
+        ],
+        "tracker_reconciliation": [
+            {
+                "user_id": entry.user_id,
+                "wallet_id": entry.wallet_id,
+                "has_ec2_cluster": entry.ec2_cluster is not None,
+                "tracker_running_count": len(entry.tracker_runs),
+                "tracker_runs": [
+                    {
+                        "service_run_id": r.service_run_id,
+                        "product_name": r.product_name,
+                        "project_id": r.project_id,
+                        "node_id": r.node_id,
+                        "service_key": r.service_key,
+                        "service_version": r.service_version,
+                        "started_at": r.started_at.isoformat(),
+                        "last_heartbeat_at": r.last_heartbeat_at.isoformat(),
+                        "missed_heartbeat_counter": r.missed_heartbeat_counter,
+                    }
+                    for r in entry.tracker_runs
+                ],
+                "issues": entry.issues,
+            }
+            for entry in (tracker_reconciliation or [])
+        ],
     }
 
     if output:
@@ -516,8 +831,45 @@ async def summary(
         state, computational_instances, state.ssh_key_path, user_id, wallet_id
     )
 
+    # --- Resource tracker reconciliation (read-only, graceful on DB failure) ---
+    try:
+        tracker_runs = await db.list_resource_tracker_running_computational_services(state)
+    except Exception:  # pylint: disable=broad-exception-caught
+        rich.print(
+            "[yellow]Warning: could not query resource_tracker_service_runs "
+            "(DB unreachable?). Skipping tracker reconciliation.[/yellow]"
+        )
+        tracker_runs = []
+
+    # --- Per-cluster task reconciliation ---
+    # tracker_runs indexed by node_id for O(1) lookup
+    tracker_runs_by_node_id: dict[str, ResourceTrackerServiceRun] = {r.node_id: r for r in tracker_runs}
+    # tracker_runs grouped by user_id to pass only relevant runs per cluster
+    tracker_runs_by_user_id: dict[int, list[ResourceTrackerServiceRun]] = {}
+    for _run in tracker_runs:
+        tracker_runs_by_user_id.setdefault(_run.user_id, []).append(_run)
+
+    cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] = []
+    for cluster in computational_clusters:
+        try:
+            comp_tasks = await db.list_computational_tasks_from_db(state, cluster.primary.user_id)
+        except Exception:  # pylint: disable=broad-exception-caught
+            rich.print(f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]")
+            comp_tasks = []
+        cluster_tracker_runs = tracker_runs_by_user_id.get(cluster.primary.user_id, [])
+        task_rows = _reconcile_cluster_tasks(cluster, comp_tasks, cluster_tracker_runs)
+        cluster_task_rows.append((cluster, task_rows))
+
+    reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, tracker_runs)
+
     if output_json:
-        _print_summary_as_json(dynamic_autoscaled_instances, computational_clusters, output=output)
+        _print_summary_as_json(
+            dynamic_autoscaled_instances,
+            computational_clusters,
+            output=output,
+            tracker_reconciliation=reconciliation_entries,
+            cluster_task_rows=cluster_task_rows,
+        )
 
     if not output_json:
         _print_dynamic_instances(
@@ -532,6 +884,9 @@ async def summary(
             state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
             output=output,
         )
+        for cluster, task_rows in cluster_task_rows:
+            _print_cluster_tasks_table(cluster, task_rows, output=output)
+        _print_tracker_reconciliation(reconciliation_entries, output=output)
 
     time_threshold = arrow.utcnow().shift(minutes=-30).datetime
     dynamic_services_in_error = any(
@@ -539,8 +894,14 @@ async def summary(
         for instance in dynamic_autoscaled_instances
         for service in instance.running_services
     )
+    tracker_issues_found = any(
+        entry.issues
+        for entry in reconciliation_entries
+        if entry.ec2_cluster is None or not entry.ec2_cluster.primary.is_warm_buffer
+    )
+    task_issues_found = any(row.issues for _, task_rows in cluster_task_rows for row in task_rows)
 
-    return not dynamic_services_in_error
+    return not dynamic_services_in_error and not tracker_issues_found and not task_issues_found
 
 
 def _print_computational_tasks(

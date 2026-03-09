@@ -106,6 +106,40 @@ class ComputationalCluster:
     task_states_to_tasks: dict[str, list[TaskState]]
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ResourceTrackerServiceRun:
+    service_run_id: str
+    user_id: int
+    wallet_id: int | None
+    product_name: str
+    project_id: str
+    node_id: str
+    service_key: str
+    service_version: str
+    started_at: datetime.datetime
+    last_heartbeat_at: datetime.datetime
+    missed_heartbeat_counter: int
+    pricing_unit_cost: float | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TaskReconciliationRow:
+    job_id: TaskId
+    dask_state: TaskState
+    comp_task: "ComputationalTask | None"
+    tracker_run: ResourceTrackerServiceRun | None
+    issues: list[str]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TrackerReconciliationEntry:
+    user_id: int
+    wallet_id: int | None
+    ec2_cluster: ComputationalCluster | None
+    tracker_runs: list[ResourceTrackerServiceRun]
+    issues: list[str]
+
+
 DockerContainer = namedtuple(  # noqa: PYI024
     "docker_container",
     [
