@@ -336,6 +336,10 @@ endif
 
 .PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops .deploy-vendors
 
+.PHONY: show-compose-services-order
+show-compose-services-order: ## Prints services order as read from services/docker-compose.yml
+	-@docker run --rm -i $(YQ_IMAGE) $(_YQ_STACK_SERVICES_ORDERED) < services/docker-compose.yml
+
 .deploy-vendors: .stack-vendor-services.yml
 	# Deploy stack 'vendors'
 	docker stack deploy --detach=true --with-registry-auth -c $< vendors
@@ -427,63 +431,61 @@ else
 endif
 	@$(_show_endpoints)
 
+# Batched stack deployment
+PHASED_DEPLOY_BATCH_SIZE ?= 5
 MAX_WAIT_ITERATIONS := 150
 WAIT_INTERVAL_SECS := 2
 YQ_IMAGE := mikefarah/yq:4
 
-up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in batches of 5 services (in docker-compose.yml order), waiting for each batch before continuing
+# Extract services in docker-compose.yml order (authoritative desired order)
+# Outputs one service name per line.
+_YQ_STACK_SERVICES_ORDERED := '.services | keys | .[]'
+
+define _wait_for_running
+	count=0; \
+	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+		running=$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
+		[ "$$running" -gt 0 ] && break; \
+		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+	done; \
+	if [ $$count -ge $(MAX_WAIT_ITERATIONS) ]; then \
+		echo " TIMEOUT"; echo "ERROR: Service $(1) failed to start"; exit 1; \
+	fi; \
+		echo " OK"
+endef
+
+up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in batches of $(PHASED_DEPLOY_BATCH_SIZE) services (in YAML order)
 	# Deploy ops and vendors stacks
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
-	# Deploy all services in batches of 5 (order from docker-compose.yml)
-	@all_services=$$(awk '/^services:/{found=1; next} found && /^[a-z]/{exit} found && /^  [a-z][a-zA-Z0-9_-]+:/{print substr($$1,1,length($$1)-1)}' services/docker-compose.yml); \
-	deployed=""; \
-	batch_num=0; \
-	batch=""; \
-	batch_size=0; \
-	for svc in $$all_services; do \
-		batch="$$batch $$svc"; \
-		batch_size=$$((batch_size + 1)); \
-		deployed="$$deployed $$svc"; \
-		if [ $$batch_size -eq 5 ]; then \
-			batch_num=$$((batch_num + 1)); \
-			echo "--- Batch $$batch_num: deploying$$batch ..."; \
-			filter=$$(echo "$$deployed" | tr ' ' '\n' | grep -v '^$$' | awk '{printf "%s.key == \"%s\"", (NR>1?" or ":""), $$1}'); \
-			docker run --rm -i $(YQ_IMAGE) ".services |= with_entries(select($$filter))" < $< > .stack-phased-tmp.yml; \
-			docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME); \
-			for s in $$batch; do \
-				count=0; \
-				printf "  waiting for $$s"; \
-				while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
-					running=$$(docker service ps $(SWARM_STACK_NAME)_$$s --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
-					[ "$$running" -gt 0 ] && break; \
-					printf "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
-				done; \
-				[ $$count -ge $(MAX_WAIT_ITERATIONS) ] && echo " TIMEOUT" && echo "ERROR: Service $$s failed to start" && exit 1 || echo " OK"; \
-			done; \
-			batch=""; batch_size=0; \
+	@echo "Deploying stack $(SWARM_STACK_NAME) in batches of $(PHASED_DEPLOY_BATCH_SIZE)..."
+	@docker run --rm -i $(YQ_IMAGE) \
+		$(_YQ_STACK_SERVICES_ORDERED) \
+		< services/docker-compose.yml > .stack-services-all-tmp.txt
+	@total=$$(wc -l < .stack-services-all-tmp.txt | tr -d ' '); \
+		if [ "$$total" -eq 0 ]; then \
+			echo "ERROR: No services found in $<"; exit 1; \
 		fi; \
-	done; \
-	if [ -n "$$batch" ]; then \
-		batch_num=$$((batch_num + 1)); \
-		echo "--- Batch $$batch_num (final): deploying$$batch ..."; \
-		filter=$$(echo "$$deployed" | tr ' ' '\n' | grep -v '^$$' | awk '{printf "%s.key == \"%s\"", (NR>1?" or ":""), $$1}'); \
-		docker run --rm -i $(YQ_IMAGE) ".services |= with_entries(select($$filter))" < $< > .stack-phased-tmp.yml; \
-		docker stack deploy --detach=true --with-registry-auth -c .stack-phased-tmp.yml $(SWARM_STACK_NAME); \
-		for s in $$batch; do \
-			count=0; \
-			printf "  waiting for $$s"; \
-			while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
-				running=$$(docker service ps $(SWARM_STACK_NAME)_$$s --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
-				[ "$$running" -gt 0 ] && break; \
-				printf "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+		offset=0; \
+		while [ $$offset -lt $$total ]; do \
+			batch_services=$$(sed -n "$$(($$offset + 1)),$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE)))p" .stack-services-all-tmp.txt | tr '\n' ' '); \
+			echo "Deploying services: $$batch_services"; \
+			yq_expr=""; \
+			for s in $$batch_services; do \
+				[ -z "$$yq_expr" ] && yq_expr=".key == \"$$s\"" || yq_expr="$$yq_expr or .key == \"$$s\""; \
 			done; \
-			[ $$count -ge $(MAX_WAIT_ITERATIONS) ] && echo " TIMEOUT" && echo "ERROR: Service $$s failed to start" && exit 1 || echo " OK"; \
-		done; \
-	fi
-	@rm -f .stack-phased-tmp.yml
-	@echo "All services deployed successfully!"
+			docker run --rm -i $(YQ_IMAGE) \
+				".services |= with_entries(select($$yq_expr))" \
+				< $< > .stack-batch-tmp.yml; \
+			docker stack deploy --detach=true --with-registry-auth -c .stack-batch-tmp.yml $(SWARM_STACK_NAME); \
+			echo "Waiting for batch services to be ready..."; \
+			for s in $$batch_services; do \
+				$(call _wait_for_running,$$s); \
+			done; \
+			offset=$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE))); \
+		done
+	@rm -f .stack-services-all-tmp.txt .stack-batch-tmp.yml
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
