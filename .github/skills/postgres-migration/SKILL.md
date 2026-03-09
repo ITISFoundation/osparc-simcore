@@ -27,7 +27,7 @@ From the workspace root, check if the `.venv` is already active:
 which python
 ```
 
-If it shows a path containing `.venv`, it is already active. Otherwise, activate it:
+If it shows a path containing `.venv`, it is already active. Otherwise, activate the venv in the repository's root path:
 
 ```bash
 source .venv/bin/activate
@@ -60,7 +60,7 @@ This command:
 - Spins up a fresh PostgreSQL Docker container with the current schema
 - Outputs logs with the Adminer URL (e.g., `http://127.0.0.1:18080/?pgsql=postgres&username=test&db=test&ns=public`)
 
-Review the output logs to confirm the database is ready.
+Review the output logs to confirm the database is ready. In case of failure, read hints in the log.
 
 ---
 

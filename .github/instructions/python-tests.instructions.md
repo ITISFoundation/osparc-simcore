@@ -5,8 +5,11 @@ applyTo: '**/test*.py,**/conftest.py,**/pytest_simcore/**/*.py'
 ## Coding Instructions for Python Tests in This Repository
 
 - Use `pytest` for writing tests.
-- `@pytest.fixture(autouse=True)` is banned in `conftest.py` and in `pytest_simcore` plugins. It is allowed only when defined and used within the same test module file, to keep side effects local and traceable.
-- Annotate all fixture inputs and outputs with full type hints, including pytest-provided fixtures such as `monkeypatch`, `caplog`, and `tmp_path`.
+- Usage of `@pytest.fixture(autouse=True)`
+  - usage is banned in `conftest.py` and in `pytest_simcore` plugins.
+  - usage is allowed ONLY when defined and used within the same test module file, to keep side effects local and traceable.
+    - Add a comment above the fixture definition explaining why autouse is necessary and how it is scoped to avoid unintended side effects.
+- When copy pasting a fixture from another test, prefer moving it to conftest.py or even pytest-simcore if that already exist for another package/service
 - Do not add return type annotations to `test_*` functions. Non-test helpers should be fully annotated.
 - Prefer reusing existing fixtures and helpers (including those in `packages/pytest-simcore`) over creating new ones.
 
