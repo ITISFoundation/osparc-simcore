@@ -79,7 +79,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 def simcore_docker_stack_and_registry_ready(
     docker_registry: UrlStr,
     docker_stack: StacksDeployedDict,
-    simcore_services_ready_module: None,
+    sync_simcore_services_ready_module: None,
 ) -> StacksDeployedDict:
     # At this point `simcore_services_ready` waited until all services
     # are running. Let's make one more check on the web-api
