@@ -179,7 +179,7 @@ qx.Class.define("osparc.file.FilesTree", {
       rootModel.getChildren().append(studyFolderModel);
 
       // Other Projects folder
-      const locationsTreeName = s3Alias || "Other Projects";
+      const locationsTreeName = s3Alias || "My Data";
       const locationsFolderData = osparc.data.Converters.createFolderEntry(locationsTreeName, null, null);
       locationsFolderData["itemId"] = "OtherProjects";
       locationsFolderData["pathLabel"] = [locationsTreeName];
