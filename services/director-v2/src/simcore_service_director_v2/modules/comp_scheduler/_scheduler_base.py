@@ -683,7 +683,7 @@ class BaseCompScheduler(ABC):
                     optional_progress=1.0,
                     optional_stopped=arrow.utcnow().datetime,
                 )
-                await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
+                # on the next scheduling loop, tasks following failed tasks will be aborted
             except (
                 DaskClientAcquisisitonError,
                 ComputationalBackendNotConnectedError,

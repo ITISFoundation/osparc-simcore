@@ -2185,7 +2185,7 @@ async def test_running_task_is_failed_when_dask_scheduler_changes(
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
-        expected_state=RunningState.FAILED,
+        expected_state=RunningState.STARTED,  # the run is still STARTED, only the tasks are failed
         where_statement=and_(
             comp_runs.c.user_id == run_in_db.user_id,
             comp_runs.c.project_uuid == f"{run_in_db.project_uuid}",
@@ -2193,6 +2193,30 @@ async def test_running_task_is_failed_when_dask_scheduler_changes(
     )
     # no task was resubmitted
     mocked_dask_client.send_computation_tasks.assert_not_called()
+
+    # the pipeline shall be aborted in the next cycles since the tasks are failed
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=with_started_project.project.uuid,
+        task_ids=[t.node_id for t in processing_tasks],
+        expected_state=RunningState.FAILED,
+        expected_progress=1,
+        run_id=run_in_db.run_id,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,  # the run is still STARTED, only the tasks are failed
+        where_statement=and_(
+            comp_runs.c.user_id == run_in_db.user_id,
+            comp_runs.c.project_uuid == f"{run_in_db.project_uuid}",
+        ),
+    )
 
 
 @pytest.mark.parametrize(
