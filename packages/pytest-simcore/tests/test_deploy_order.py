@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pytest_simcore.docker_swarm import _get_compose_service_order
 
 _SERVICES_DEPLOY_ORDER: list[str] = [
@@ -39,8 +41,8 @@ _SERVICES_DEPLOY_ORDER: list[str] = [
 ]
 
 
-def test_appears_in_sequence():
-    compose_services = _get_compose_service_order()
+def test_appears_in_sequence(osparc_simcore_root_dir: Path):
+    compose_services = _get_compose_service_order(osparc_simcore_root_dir)
 
     # Every service in the deploy order must exist in docker-compose
     missing = [s for s in _SERVICES_DEPLOY_ORDER if s not in compose_services]
