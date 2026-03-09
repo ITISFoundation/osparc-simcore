@@ -233,6 +233,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
 
 @pytest.mark.parametrize("studies_dispatcher_enabled", [True], indirect=True)
 async def test_dispatch_study_anonymously(
+    studies_dispatcher_enabled: bool,  # needs to be before client!
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     redirect_url: URL,
@@ -240,8 +241,9 @@ async def test_dispatch_study_anonymously(
     mocker: MockerFixture,
     storage_subsystem_mock,
     mocks_on_projects_api,
-    studies_dispatcher_enabled: bool,
 ):
+    assert studies_dispatcher_enabled, "This test requires studies_dispatcher_enabled=True"
+
     assert client.app
     mock_client_director_v2_func = mocker.patch(
         "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
@@ -297,6 +299,7 @@ async def test_dispatch_study_anonymously(
 )
 async def test_dispatch_logged_in_user(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    studies_dispatcher_enabled: bool,  # needs to be before client!
     client: TestClient,
     redirect_url: URL,
     redirect_type: str,
@@ -305,7 +308,6 @@ async def test_dispatch_logged_in_user(
     mock_dynamic_scheduler: None,
     storage_subsystem_mock,
     mocks_on_projects_api: None,
-    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     mock_client_director_v2_pipeline_update = mocker.patch(
@@ -373,8 +375,8 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
 
 
 async def test_viewer_redirect_with_file_type_errors(
+    studies_dispatcher_enabled: bool,  # needs to be before client!
     client: TestClient,
-    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     redirect_url = (
@@ -402,8 +404,8 @@ async def test_viewer_redirect_with_file_type_errors(
 
 
 async def test_viewer_redirect_with_client_errors(
+    studies_dispatcher_enabled: bool,  # needs to be before client!
     client: TestClient,
-    studies_dispatcher_enabled: bool,
 ):
     assert client.app
     redirect_url = (
@@ -432,9 +434,9 @@ async def test_viewer_redirect_with_client_errors(
 
 @pytest.mark.parametrize("missing_parameter", ["file_type", "file_size", "download_link"])
 async def test_missing_file_param(
+    studies_dispatcher_enabled: bool,  # needs to be before client!
     client: TestClient,
     missing_parameter: str,
-    studies_dispatcher_enabled: bool,
 ):
     assert client.app
 
@@ -460,8 +462,8 @@ async def test_missing_file_param(
 
 @pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
 async def test_dispatch_study_anonymously_with_dispatcher_disabled(
-    client: TestClient,
     studies_dispatcher_enabled: bool,
+    client: TestClient,
 ):
     """
     Test that accessing /view endpoint returns 404 when studies_dispatcher_enabled is False.
