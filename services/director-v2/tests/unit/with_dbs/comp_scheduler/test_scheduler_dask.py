@@ -2042,7 +2042,8 @@ async def test_running_task_is_not_restarted_when_on_demand_cluster_transiently_
             project_id=run_in_db.project_uuid,
             iteration=run_in_db.iteration,
         )
-        await asyncio.sleep(0.5)
+        # simulate some wait time
+        await asyncio.sleep(0.2)
     mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # now make the cluster available again, and check that the task is still not restarted (since it was never stopped)
