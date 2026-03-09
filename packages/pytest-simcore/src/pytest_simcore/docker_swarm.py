@@ -39,8 +39,8 @@ _logger = logging.getLogger(__name__)
 _CURRENT_DIR = Path(__file__).resolve().parent
 
 
-def _get_compose_service_order() -> list[str]:
-    docker_compose_path = _CURRENT_DIR / ".." / ".." / ".." / ".." / "services" / "docker-compose.yml"
+def _get_compose_service_order(osparc_simcore_root_dir: Path) -> list[str]:
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     data = yaml.safe_load(docker_compose_path.read_text())
     return list(data["services"].keys())
 
@@ -360,16 +360,16 @@ async def _wait_for_services_running(
     await asyncio.gather(*(_async_assert_service_is_running(async_docker, name, stack_name) for name in service_names))
 
 
-def _compute_deployment_order(
-    selected_services: set[str],
-) -> list[str]:
+def _compute_deployment_order(selected_services: set[str], osparc_simcore_root_dir: Path) -> list[str]:
     """Return an ordered flat list of services to deploy, filtered to *selected_services*.
 
     Services appear in the predefined order.  Any selected service not
     present in the predefined list is appended at the end so nothing is
     missed.
     """
-    ordered: list[str] = [name for name in _get_compose_service_order() if name in selected_services]
+    ordered: list[str] = [
+        name for name in _get_compose_service_order(osparc_simcore_root_dir) if name in selected_services
+    ]
 
     # Catch-all - services in the selection but not in the predefined list
     ordered.extend(sorted(selected_services - set(ordered)))
@@ -477,6 +477,7 @@ async def _deploy_core_stack_phased(
     stack_name: str,
     full_compose: dict,
     selected_services: set[str],
+    osparc_simcore_root_dir: Path,
     *,
     keep_docker_up: bool,
 ) -> None:
@@ -497,7 +498,7 @@ async def _deploy_core_stack_phased(
     are missing, it deploys the original compose (no spec changes for
     running services) and waits for the missing ones.
     """
-    deploy_order = _compute_deployment_order(selected_services)
+    deploy_order = _compute_deployment_order(selected_services, osparc_simcore_root_dir)
     if not deploy_order:
         return
 
@@ -638,6 +639,7 @@ async def docker_stack(
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
     env_vars_for_docker_compose: EnvVarsDict,
+    osparc_simcore_root_dir: Path,
 ) -> AsyncIterator[dict]:
     """deploys core and ops stacks and returns as soon as all are running"""
 
@@ -683,6 +685,7 @@ async def docker_stack(
             stack_name=core_stack_name,
             full_compose=core_compose,
             selected_services=selected_services,
+            osparc_simcore_root_dir=osparc_simcore_root_dir,
             keep_docker_up=keep_docker_up,
         )
 
