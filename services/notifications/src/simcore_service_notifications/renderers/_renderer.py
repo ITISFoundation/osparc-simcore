@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ..models.preview import TemplatePreview
-from ..models.template import Template
+from ..models.template import Template, TemplatePreview
 
 
 class Renderer(ABC):

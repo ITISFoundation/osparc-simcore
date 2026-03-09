@@ -8,8 +8,7 @@ from models_library.notifications_errors import (
 )
 from pydantic import ValidationError
 
-from ..models.preview import TemplatePreview
-from ..models.template import Template, TemplateRef
+from ..models.template import Template, TemplatePreview, TemplateRef
 from ..renderers import Renderer
 from ..repositories import FileTemplatesRepository
 
