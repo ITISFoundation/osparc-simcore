@@ -12,21 +12,15 @@ from unittest import mock
 
 import pytest
 from aiohttp import ClientResponse, ClientSession
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 from common_library.users_enums import UserRole
 from models_library.projects_state import ProjectShareState, ProjectStatus
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._models import ViewerInfo
 from yarl import URL
@@ -34,35 +28,6 @@ from yarl import URL
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    rabbit_service: RabbitSettings,
-) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
-    )
-
-
-@pytest.fixture
-def web_server(
-    redis_service: RedisSettings,
-    rabbit_service: RabbitSettings,
-    web_server: TestServer,
-    # Add dependencies to ensure database is populated before app starts
-    services_metadata_in_db: list[dict],
-    services_consume_filetypes_in_db: list[dict],
-    services_access_rights_in_db: list[dict],
-) -> TestServer:
-    #
-    # Extends web_server to start redis_service and ensure DB is populated
-    #
-    print("Redis service started with settings: ", redis_service.model_dump_json(indent=1))
-    return web_server
 
 
 @pytest.fixture(autouse=True)
@@ -233,7 +198,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
 
 @pytest.mark.parametrize("studies_dispatcher_enabled", [True], indirect=True)
 async def test_dispatch_study_anonymously(
-    studies_dispatcher_enabled: bool,  # needs to be before client!
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     redirect_url: URL,
@@ -299,7 +264,7 @@ async def test_dispatch_study_anonymously(
 )
 async def test_dispatch_logged_in_user(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
-    studies_dispatcher_enabled: bool,  # needs to be before client!
+    studies_dispatcher_enabled: bool,
     client: TestClient,
     redirect_url: URL,
     redirect_type: str,
@@ -375,7 +340,7 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
 
 
 async def test_viewer_redirect_with_file_type_errors(
-    studies_dispatcher_enabled: bool,  # needs to be before client!
+    studies_dispatcher_enabled: bool,
     client: TestClient,
 ):
     assert client.app
@@ -404,7 +369,7 @@ async def test_viewer_redirect_with_file_type_errors(
 
 
 async def test_viewer_redirect_with_client_errors(
-    studies_dispatcher_enabled: bool,  # needs to be before client!
+    studies_dispatcher_enabled: bool,
     client: TestClient,
 ):
     assert client.app
@@ -434,7 +399,7 @@ async def test_viewer_redirect_with_client_errors(
 
 @pytest.mark.parametrize("missing_parameter", ["file_type", "file_size", "download_link"])
 async def test_missing_file_param(
-    studies_dispatcher_enabled: bool,  # needs to be before client!
+    studies_dispatcher_enabled: bool,
     client: TestClient,
     missing_parameter: str,
 ):

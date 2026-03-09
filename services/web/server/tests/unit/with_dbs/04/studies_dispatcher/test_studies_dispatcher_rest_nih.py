@@ -5,17 +5,10 @@
 # pylint: disable=unused-variable
 
 
-import pytest
-from aiohttp.test_utils import TestClient, TestServer
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
+from aiohttp.test_utils import TestClient
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from simcore_service_webserver.studies_dispatcher._controller.rest.nih_schemas import (
     ServiceGet,
 )
@@ -24,35 +17,6 @@ from yarl import URL
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    rabbit_service: RabbitSettings,
-) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
-    )
-
-
-@pytest.fixture
-def web_server(
-    redis_service: RedisSettings,
-    rabbit_service: RabbitSettings,
-    web_server: TestServer,
-    # Add dependencies to ensure database is populated before app starts
-    services_metadata_in_db: list[dict],
-    services_consume_filetypes_in_db: list[dict],
-    services_access_rights_in_db: list[dict],
-) -> TestServer:
-    #
-    # Extends web_server to start redis_service and ensure DB is populated
-    #
-    print("Redis service started with settings: ", redis_service.model_dump_json(indent=1))
-    return web_server
 
 
 def _get_base_url(client: TestClient) -> str:
