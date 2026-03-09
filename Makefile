@@ -336,10 +336,6 @@ endif
 
 .PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops .deploy-vendors
 
-.PHONY: show-compose-services-order
-show-compose-services-order: ## Prints services order as read from services/docker-compose.yml
-	-@docker run --rm -i $(YQ_IMAGE) $(_YQ_STACK_SERVICES_ORDERED) < services/docker-compose.yml
-
 .deploy-vendors: .stack-vendor-services.yml
 	# Deploy stack 'vendors'
 	docker stack deploy --detach=true --with-registry-auth -c $< vendors
