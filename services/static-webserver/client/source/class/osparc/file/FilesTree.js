@@ -354,10 +354,10 @@ qx.Class.define("osparc.file.FilesTree", {
     __populateLocation: function(locationId = null, s3Alias = null) {
       if (locationId !== null) {
         const locationModel = this.__getLocationModel(locationId);
-        if (locationId === 0 && s3Alias) {
-          locationModel.setLabel(s3Alias);
-        }
         if (locationModel) {
+          if (locationId === 0 && s3Alias) {
+            locationModel.setLabel(s3Alias);
+          }
           locationModel.getChildren().removeAll();
           this.self().addLoadingChild(locationModel);
         }
