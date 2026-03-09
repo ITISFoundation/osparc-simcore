@@ -332,6 +332,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __resetNodeUILayout: function() {
       this.__setNodeUIWidth(this.self().NODE_WIDTH);
+
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.show();
+
+      if (this.hasChildControl("progress")) {
+        this.getChildControl("progress").show();
+      }
+
       this.resetThumbnail();
 
       // make sure metadata is ready
@@ -594,8 +602,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoFileUI: function() {
-      const width = this.self().FILE_NODE_WIDTH;
-      this.__setNodeUIWidth(width);
+      this.__setNodeUIWidth(this.self().FILE_NODE_WIDTH);
 
       const middleContainer = this.getChildControl("middle-container");
       middleContainer.exclude();
