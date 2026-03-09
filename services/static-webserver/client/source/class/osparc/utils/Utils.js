@@ -566,7 +566,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     getEditButton: function(isVisible = true) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
-        appearance: "form-button-outlined",
+        appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
         maxWidth: 20,
@@ -576,7 +576,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     getLinkButton: function(isVisible = true) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/link/12").set({
-        appearance: "form-button-outlined",
+        appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
         maxWidth: 20,
