@@ -32,9 +32,19 @@ async def get_or_create_on_demand_cluster(
         returned_cluster = await get_or_create_cluster(rabbitmq_rpc_client, user_id=user_id, wallet_id=wallet_id)
         _logger.info("received cluster: %s", returned_cluster)
         if returned_cluster.state is not ClusterState.RUNNING:
-            raise ComputationalBackendOnDemandNotReadyError(eta=timedelta_as_minute_second(returned_cluster.eta))
+            raise ComputationalBackendOnDemandNotReadyError(
+                eta=timedelta_as_minute_second(returned_cluster.eta),
+                user_id=user_id,
+                wallet_id=wallet_id,
+                cluster=returned_cluster,
+            )
         if not returned_cluster.dask_scheduler_ready:
-            raise ComputationalBackendOnDemandNotReadyError(eta=timedelta_as_minute_second(returned_cluster.eta))
+            raise ComputationalBackendOnDemandNotReadyError(
+                eta=timedelta_as_minute_second(returned_cluster.eta),
+                user_id=user_id,
+                wallet_id=wallet_id,
+                cluster=returned_cluster,
+            )
 
         return BaseCluster(
             name=f"{user_id=}on-demand-cluster",
