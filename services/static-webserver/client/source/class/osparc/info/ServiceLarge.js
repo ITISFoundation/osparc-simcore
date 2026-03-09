@@ -227,7 +227,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         "THUMBNAIL": {
           view: this.__createThumbnail(),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Thumbnail")),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit thumbnail")),
             callback: canIWrite ? this.__openThumbnailEditor : null,
             ctx: this,
           },
@@ -245,7 +245,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("Version"),
           view: this.__createDisplayVersion(),
           action: {
-            button: canIWrite ? osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Version")) : null,
+            button: canIWrite ? osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit version")) : null,
             callback: this.__openVersionDisplayEditor,
             ctx: this,
           },
@@ -269,7 +269,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("Access"),
           view: this.__createAccessRights(),
           action: {
-            button: canIWrite ? osparc.utils.Utils.getEditButton(true, this.tr("Edit Access Rights")) : null,
+            button: canIWrite ? osparc.utils.Utils.getEditButton(true, this.tr("Edit access rights")) : null,
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this,
           },
@@ -277,7 +277,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         "DESCRIPTION": {
           view: this.__createDescription(),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Description")),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit description")),
             callback: canIWrite ? this.__openDescriptionEditor : null,
             ctx: this,
           },

@@ -95,7 +95,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
         "TITLE": {
           view: osparc.info.FunctionUtils.createTitle(this.getFunction()),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Title")),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit title")),
             callback: canIWrite ? this.__openTitleEditor : null,
             ctx: this
           }
@@ -107,7 +107,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
         "DESCRIPTION": {
           view: osparc.info.FunctionUtils.createDescription(this.getFunction()),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Description")),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit description")),
             callback: canIWrite ? this.__openDescriptionEditor : null,
             ctx: this
           }

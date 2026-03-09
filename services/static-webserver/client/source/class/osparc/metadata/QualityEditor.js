@@ -385,7 +385,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             column: this.self().GridPos.reference
           });
 
-          const button = osparc.utils.Utils.getEditButton(true, this.tr("Edit References"));
+          const button = osparc.utils.Utils.getEditButton(true, this.tr("Edit references"));
           button.addListener("execute", () => {
             const title = this.tr("Edit References");
             const textEditor = new osparc.editor.MarkdownEditor(currentRule.references);
