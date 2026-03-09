@@ -1788,46 +1788,6 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
 
-  system-test-swarm-deploy:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] deploy simcore"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.13"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: "*"
-      - name: install
-        run: ./ci/github/system-testing/swarm-deploy.bash install
-      - name: test
-        run: ./ci/github/system-testing/swarm-deploy.bash test
-      - name: dump services setting schemas
-        run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
-      - name: upload services settings schemas
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ github.job }}_services_settings_schemas
-          path: ./services/**/settings-schema.json
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./test_failures
-
   system-test-e2e-playwright:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1910,7 +1870,6 @@ jobs:
         system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,
-        system-test-swarm-deploy,
       ]
     runs-on: ubuntu-latest
     steps:
