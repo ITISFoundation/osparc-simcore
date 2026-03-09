@@ -1338,8 +1338,6 @@ jobs:
           cache-dependency-glob: "**/pytest-simcore/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/pytest-simcore.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/pytest-simcore.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/pytest-simcore.bash test
       - uses: codecov/codecov-action@v5
@@ -1369,8 +1367,8 @@ jobs:
           cache-dependency-glob: "**/common-library/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/common-library.bash install
-      #- name: typecheck
-      #  run: ./ci/github/unit-testing/common-library.bash typecheck
+      - name: typecheck
+        run: ./ci/github/unit-testing/common-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/common-library.bash test
       - uses: codecov/codecov-action@v5
