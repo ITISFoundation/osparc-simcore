@@ -83,7 +83,7 @@ async def _cluster_dask_client(
     cluster if needed and wait for it to be ready
 
 
-    Throws:
+    Raises:
         ComputationalBackendOnDemandNotReadyError: if the on-demand cluster is not ready (clusters-keeper)
         ClustersKeeperNotAvailableError: if the clusters-keeper service is not available
         DaskClientAcquisisitonError: if the client could not be acquired for any reason (e.g. scheduler not responsive)
