@@ -160,7 +160,11 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__locationsParentModel = qx.data.marshal.Json.createModel(locationsFolderData, true);
       this.self().addLoadingChild(this.__locationsParentModel);
 
-      this.__fetchAndPopulateStudy(studyId, studyFolderModel, false);
+      this.__fetchAndPopulateStudy(studyId, studyFolderModel, false)
+        .then(() => {
+          // open study folder after loading its content, so it is not empty when opened
+          this.openNode(studyFolderModel);
+        });
       this.__fetchAndPopulateLocations(this.__locationsParentModel, s3Alias)
         .then(() => {
           // append them after locations are loaded
