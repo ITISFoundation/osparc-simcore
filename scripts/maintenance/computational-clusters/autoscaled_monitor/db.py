@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from pydantic import PostgresDsn, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from .models import AppState, ComputationalTask, PostgresDB
+from .models import AppState, ComputationalTask, PostgresDB, ResourceTrackerServiceRun
 from .ssh import ssh_tunnel
 
 
@@ -131,6 +131,50 @@ async def list_computational_tasks_from_db(state: AppState, user_id: int) -> lis
                 }
             )
             for row in comp_tasks_list
+        ]
+    msg = "unable to access database!"
+    raise RuntimeError(msg)
+
+
+async def list_resource_tracker_running_computational_services(
+    state: AppState,
+) -> list[ResourceTrackerServiceRun]:
+    """Return all RUNNING COMPUTATIONAL_SERVICE entries from resource_tracker_service_runs.
+
+    Raises:
+        RuntimeError: if the DB cannot be reached.
+    """
+    async with contextlib.AsyncExitStack() as stack:
+        engine = await stack.enter_async_context(db_engine(state))
+        db_connection = await stack.enter_async_context(engine.begin())
+
+        query = sa.text(
+            "SELECT service_run_id, user_id, wallet_id, product_name,"
+            " project_id, node_id, service_key, service_version,"
+            " started_at, last_heartbeat_at, missed_heartbeat_counter,"
+            " pricing_unit_cost"
+            " FROM resource_tracker_service_runs"
+            " WHERE service_run_status = 'RUNNING'"
+            " AND service_type = 'COMPUTATIONAL_SERVICE'"
+        )
+        result = await db_connection.execute(query)
+        rows = result.fetchall()
+        return [
+            ResourceTrackerServiceRun(
+                service_run_id=row.service_run_id,
+                user_id=row.user_id,
+                wallet_id=row.wallet_id,
+                product_name=row.product_name,
+                project_id=row.project_id,
+                node_id=row.node_id,
+                service_key=row.service_key,
+                service_version=row.service_version,
+                started_at=row.started_at,
+                last_heartbeat_at=row.last_heartbeat_at,
+                missed_heartbeat_counter=row.missed_heartbeat_counter,
+                pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
+            )
+            for row in rows
         ]
     msg = "unable to access database!"
     raise RuntimeError(msg)
