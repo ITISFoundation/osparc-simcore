@@ -155,7 +155,7 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    # NOTE: Avoids circular dependencies until this module is refactored
+    # NOTE: Avoids circular dependencies
     from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY  # noqa: PLC0415
     from ..projects.utils import clone_project_document, substitute_parameterized_inputs  # noqa: PLC0415
 
