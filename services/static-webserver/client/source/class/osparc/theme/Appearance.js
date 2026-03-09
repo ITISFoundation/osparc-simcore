@@ -696,6 +696,39 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "form-button-transparent": {
+      include: "strong-ui",
+      style: function(states) {
+        const style = {
+          decorator: "no-border",
+          cursor: "pointer",
+          padding: 5,
+          backgroundColor: "transparent",
+          opacity: 0.6,
+        };
+        if (states.hovered) {
+          style.opacity = 1;
+          style.decorator = "form-button-hovered";
+          style.textColor = "default-button-text-action";
+          style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focused";
+          style.backgroundColor = "default-button-focus-background";
+        }
+        if (states.disabled) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-disabled";
+          style.textColor = "default-button-disabled";
+          style.backgroundColor = "default-button-disabled-background";
+        }
+        if (states.checked || states.selected) {
+          style.decorator = "form-button-checked";
+        }
+        return style;
+      }
+    },
+
     "form-button-outlined": {
       include: "form-button",
       style: function(states) {
