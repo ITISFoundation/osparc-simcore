@@ -120,20 +120,7 @@ qx.Class.define("osparc.file.FilesTree", {
       this.set({
         hideRoot: true
       });
-      const dataStore = osparc.store.Data.getInstance();
-      return dataStore.getLocations()
-        .then(locations => {
-          const datasetPromises = [];
-          if (this.__locations.size === 0) {
-            this.__resetChecks();
-            this.__locationsToRoot(locations);
-            for (let i=0; i<locations.length; i++) {
-              const locationId = locations[i]["id"];
-              datasetPromises.push(this.__populateLocation(locationId, s3Alias));
-            }
-          }
-          return datasetPromises;
-        });
+      return this.__fetchAndPopulateLocations(rootModel, s3Alias);
     },
 
     populateStudyTree: function(studyId) {
@@ -142,20 +129,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const studyModel = this.getModel();
       this.self().addLoadingChild(studyModel);
 
-      const dataStore = osparc.store.Data.getInstance();
-      const locationId = 0;
-      const path = studyId;
-      return dataStore.getItemsByLocationAndPath(locationId, path)
-        .then(items => {
-          if (items.length) {
-            const studyName = osparc.data.Converters.displayPathToLabel(items[0]["display_path"], { first: true });
-            studyModel.setLabel(studyName);
-          }
-          this.__itemsToTree(locationId, path, items, studyModel);
-
-          this.setSelection(new qx.data.Array([studyModel]));
-          this.__selectionChanged();
-        });
+      return this.__fetchAndPopulateStudy(studyId, studyModel, true);
     },
 
     populateStudyAndLocations: function(studyId, s3Alias) {
@@ -187,27 +161,39 @@ qx.Class.define("osparc.file.FilesTree", {
       this.self().addLoadingChild(this.__locationsParentModel);
       rootModel.getChildren().append(this.__locationsParentModel);
 
-      // Populate study files
+      this.__fetchAndPopulateStudy(studyId, studyFolderModel, false);
+      this.__fetchAndPopulateLocations(this.__locationsParentModel, null);
+    },
+
+    __fetchAndPopulateStudy: function(studyId, parentModel, selectAfter) {
       const dataStore = osparc.store.Data.getInstance();
-      dataStore.getItemsByLocationAndPath(0, studyId)
+      return dataStore.getItemsByLocationAndPath(0, studyId)
         .then(items => {
           if (items.length) {
             const studyName = osparc.data.Converters.displayPathToLabel(items[0]["display_path"], { first: true });
-            studyFolderModel.setLabel(studyName);
+            parentModel.setLabel(studyName);
           }
-          this.__itemsToTree(0, studyId, items, studyFolderModel);
+          this.__itemsToTree(0, studyId, items, parentModel);
+          if (selectAfter) {
+            this.setSelection(new qx.data.Array([parentModel]));
+            this.__selectionChanged();
+          }
         });
+    },
 
-      // Populate locations
-      dataStore.getLocations()
+    __fetchAndPopulateLocations: function(parentModel, s3Alias) {
+      const dataStore = osparc.store.Data.getInstance();
+      return dataStore.getLocations()
         .then(locations => {
+          const datasetPromises = [];
           if (this.__locations.size === 0) {
-            this.__locationsToParent(locations, this.__locationsParentModel);
+            this.__locationsToParent(locations, parentModel);
             for (let i = 0; i < locations.length; i++) {
               const locationId = locations[i]["id"];
-              this.__populateLocation(locationId, s3Alias);
+              datasetPromises.push(this.__populateLocation(locationId, s3Alias));
             }
           }
+          return datasetPromises;
         });
     },
 
@@ -308,11 +294,6 @@ qx.Class.define("osparc.file.FilesTree", {
           this.__addDragAndDropMechanisms(item);
         }
       });
-    },
-
-    __locationsToRoot: function(locations) {
-      const rootModel = this.getModel();
-      this.__locationsToParent(locations, rootModel);
     },
 
     __locationsToParent: function(locations, parentModel) {
