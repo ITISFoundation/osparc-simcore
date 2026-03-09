@@ -704,7 +704,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           cursor: "pointer",
           padding: 5,
           backgroundColor: "transparent",
-          opacity: 0.6,
+          opacity: 0.4,
         };
         if (states.hovered) {
           style.opacity = 1;
