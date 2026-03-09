@@ -138,7 +138,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         "TITLE": {
           view: osparc.info.StudyUtils.createTitle(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Title")),
             callback: canIWrite ? this.__openTitleEditor : null,
             ctx: this
           }
@@ -146,7 +146,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         "THUMBNAIL": {
           view: this.__createThumbnail(),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Thumbnail")),
             callback: canIWrite ? this.__openThumbnailEditor : null,
             ctx: this
           }
@@ -154,7 +154,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         "DESCRIPTION": {
           view: osparc.info.StudyUtils.createDescription(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit Description")),
             callback: canIWrite ? this.__openDescriptionEditor : null,
             ctx: this
           }
