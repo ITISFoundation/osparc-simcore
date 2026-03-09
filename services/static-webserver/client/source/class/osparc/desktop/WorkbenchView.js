@@ -434,6 +434,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       filesTabContent.add(reloadButton);
 
+      const projectFilesTree = new osparc.file.FilesTree().set({
+        backgroundColor: "transparent",
+        dragMechanism: true,
+        hideRoot: false,
+      });
+      const studyId = this.getStudy().getUuid();
+      projectFilesTree.populateStudyTree(studyId);
+      reloadButton.addListener("execute", () => projectFilesTree.populateStudyTree(studyId));
+      filesTabContent.add(projectFilesTree);
+
       const allFilesTree = new osparc.file.FilesTree().set({
         backgroundColor: "transparent",
         dragMechanism: true,
