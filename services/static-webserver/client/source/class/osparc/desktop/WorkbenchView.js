@@ -441,7 +441,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       const studyId = this.getStudy().getUuid();
       projectFilesTree.populateStudyTree(studyId);
-      reloadButton.addListener("execute", () => projectFilesTree.populateStudyTree(studyId));
       filesTabContent.add(projectFilesTree);
 
       const allFilesTree = new osparc.file.FilesTree().set({
@@ -451,9 +450,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       const s3Alias = this.tr("Other Projects");
       allFilesTree.populateLocations(s3Alias);
-      reloadButton.addListener("execute", () => allFilesTree.populateLocations(s3Alias));
       filesTabContent.add(allFilesTree, {
         flex: 1
+      });
+
+      reloadButton.addListener("execute", () => {
+        projectFilesTree.resetCache();
+        projectFilesTree.populateStudyTree(studyId);
+        allFilesTree.populateLocations(s3Alias);
       });
 
       return filesTabContent;
