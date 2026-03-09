@@ -152,17 +152,20 @@ qx.Class.define("osparc.file.FilesTree", {
       this.self().addLoadingChild(studyFolderModel);
       rootModel.getChildren().append(studyFolderModel);
 
-      // Other Projects folder
-      const locationsTreeName = s3Alias || "My Data";
+      // Other Projects folder + datcore if available
+      const locationsTreeName = "Locations";
       const locationsFolderData = osparc.data.Converters.createFolderEntry(locationsTreeName, null, null);
-      locationsFolderData["itemId"] = "OtherProjects";
+      locationsFolderData["itemId"] = "Locations";
       locationsFolderData["pathLabel"] = [locationsTreeName];
       this.__locationsParentModel = qx.data.marshal.Json.createModel(locationsFolderData, true);
       this.self().addLoadingChild(this.__locationsParentModel);
-      rootModel.getChildren().append(this.__locationsParentModel);
 
       this.__fetchAndPopulateStudy(studyId, studyFolderModel, false);
-      this.__fetchAndPopulateLocations(this.__locationsParentModel, null);
+      this.__fetchAndPopulateLocations(this.__locationsParentModel, s3Alias)
+        .then(() => {
+          // append them after locations are loaded
+          rootModel.getChildren().append(this.__locationsParentModel.getChildren());
+        });
     },
 
     __fetchAndPopulateStudy: function(studyId, parentModel, selectAfter) {
@@ -178,7 +181,8 @@ qx.Class.define("osparc.file.FilesTree", {
             this.setSelection(new qx.data.Array([parentModel]));
             this.__selectionChanged();
           }
-        });
+        })
+        .catch(err => console.error("Error fetching study files", err));
     },
 
     __fetchAndPopulateLocations: function(parentModel, s3Alias) {
@@ -194,7 +198,8 @@ qx.Class.define("osparc.file.FilesTree", {
             }
           }
           return datasetPromises;
-        });
+        })
+        .catch(err => console.error("Error fetching locations", err));
     },
 
     populateNodeTree(studyId, nodeId) {
