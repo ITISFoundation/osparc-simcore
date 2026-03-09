@@ -440,15 +440,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       const studyId = this.getStudy().getUuid();
       const s3Alias = this.tr("Other Projects");
-      filesTree.populateStudyAndLocations(studyId, s3Alias);
       filesTabContent.add(filesTree, {
         flex: 1
       });
 
-      reloadButton.addListener("execute", () => {
+      const loadTree = () => {
         filesTree.resetCache();
         filesTree.populateStudyAndLocations(studyId, s3Alias);
-      });
+
+        if (filesTree.getModel() && filesTree.getModel().getChildren().length > 0) {
+          const projectModel = filesTree.getModel().getChildren().getItem(0);
+          if (projectModel) {
+            this.getStudy().bind("name", projectModel, "label");
+          }
+        }
+      };
+      loadTree();
+      reloadButton.addListener("execute", () => loadTree());
 
       return filesTabContent;
     },
