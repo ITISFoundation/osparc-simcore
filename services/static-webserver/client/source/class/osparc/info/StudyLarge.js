@@ -168,7 +168,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Access"),
           view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getLinkButton(canIWrite),
+            button: osparc.utils.Utils.getLinkButton(canIWrite, this.tr("Go to Sharing")),
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this
           }
@@ -187,7 +187,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Tags"),
           view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getLinkButton(canIWrite),
+            button: osparc.utils.Utils.getLinkButton(canIWrite, this.tr("Go to Tags")),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
             ctx: this
           }
@@ -203,7 +203,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Quality"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getLinkButton(),
+            button: osparc.utils.Utils.getLinkButton(true, this.tr("Go to Quality")),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
@@ -215,7 +215,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Classifiers"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || canIWrite) ? {
-            button: osparc.utils.Utils.getLinkButton(),
+            button: osparc.utils.Utils.getLinkButton(true, this.tr("Go to Classifiers")),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           } : null

@@ -575,12 +575,13 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
-    getLinkButton: function(isVisible = true) {
+    getLinkButton: function(isVisible = true, toolTipText = "") {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/link/12").set({
         appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
         maxWidth: 20,
+        toolTipText,
         visibility: isVisible ? "visible" : "excluded"
       });
     },
