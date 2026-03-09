@@ -423,17 +423,25 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initFilesTab: function() {
-      const filesTabContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+      const filesTabContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         backgroundColor: "transparent"
       });
 
-      const filesTree = new osparc.file.FilesTree().set({
+      const reloadButton = new qx.ui.form.Button().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/sync-alt/14",
+        allowGrowX: false,
+      });
+      filesTabContent.add(reloadButton);
+
+      const allFilesTree = new osparc.file.FilesTree().set({
         backgroundColor: "transparent",
         dragMechanism: true,
         hideRoot: true
       });
-      filesTree.populateLocations();
-      filesTabContent.add(filesTree, {
+      allFilesTree.populateLocations();
+      reloadButton.addListener("execute", () => allFilesTree.populateLocations());
+      filesTabContent.add(allFilesTree, {
         flex: 1
       });
 
