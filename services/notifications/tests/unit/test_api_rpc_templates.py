@@ -12,7 +12,7 @@ from models_library.notifications_errors import (
     NotificationsTemplateNotFoundError,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template,
     search_templates,
 )
