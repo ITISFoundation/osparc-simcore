@@ -236,6 +236,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       sharedIcon.set({
         cursor: canIWrite ? "pointer" : null,
         enabled: canIWrite,
+        opacity: canIWrite ? 1 : 0.4,
       });
       if (canIWrite) {
         sharedIcon.addListener("tap", () => this.__openAccessRights(), this);
