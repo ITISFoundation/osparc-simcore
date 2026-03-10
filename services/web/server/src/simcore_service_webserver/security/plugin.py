@@ -9,7 +9,7 @@ Based on https://aiohttp-security.readthedocs.io/en/latest/
 
 import logging
 
-import aiohttp_security  # type: ignore[import-untyped]
+import aiohttp_security
 from aiohttp import web
 
 from ..application_setup import ModuleCategory, app_setup_func
