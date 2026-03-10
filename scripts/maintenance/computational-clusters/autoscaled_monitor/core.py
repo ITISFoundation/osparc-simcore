@@ -166,16 +166,83 @@ def _print_dynamic_instances(
         rich.print(table, flush=True)
 
 
+def _format_cluster_identity(user_id: int, wallet_id: int | None) -> str:
+    wid = str(wallet_id) if wallet_id is not None else "n/a"
+    return f"[bold cyan]UserID: {user_id}[/bold cyan]   [bold yellow]WalletID: {wid}[/bold yellow]"
+
+
+def _build_cluster_tasks_table(rows: list[TaskReconciliationRow]) -> Table | None:
+    if not rows:
+        return None
+
+    table = Table(
+        Column("Job ID", overflow="fold"),
+        Column("Dask State", justify="center"),
+        Column("In\ncomp_tasks", justify="center"),
+        Column("DB State", justify="center"),
+        Column("In\ntracker", justify="center"),
+        Column("Credit/h", justify="right"),
+        Column("Issues"),
+        padding=(0, 1),
+    )
+
+    for row in rows:
+        job_id_display = row.job_id[:36] + "\u2026" if len(row.job_id) > 37 else row.job_id  # noqa: PLR2004
+
+        if row.dask_state == "processing":
+            dask_state_text = f"[green]{row.dask_state}[/green]"
+        elif row.dask_state in {"erred", "not-in-dask"}:
+            dask_state_text = f"[red]{row.dask_state}[/red]"
+        else:
+            dask_state_text = row.dask_state
+
+        if row.comp_task is not None:
+            in_db_text = "[green]\u2705[/green]"
+            db_state = row.comp_task.state
+            if row.dask_state == "processing" and db_state != "RUNNING":
+                db_state_text = f"[red]{db_state}[/red]"
+            elif db_state == "RUNNING":
+                db_state_text = f"[green]{db_state}[/green]"
+            else:
+                db_state_text = db_state
+        else:
+            in_db_text = "[red]\u274c[/red]"
+            db_state_text = "n/a"
+
+        if row.tracker_run is not None:
+            in_tracker_text = "[green]\u2705[/green]"
+            cost = row.tracker_run.pricing_unit_cost
+            credit_text = f"{cost:.4f}" if cost is not None else "n/a"
+        else:
+            in_tracker_text = "[red]\u274c[/red]" if row.dask_state == "processing" else "[dim]\u274c[/dim]"
+            credit_text = "n/a"
+
+        issue_text = "\n".join(f"[red]{i}[/red]" for i in row.issues) if row.issues else "[green]OK[/green]"
+
+        table.add_row(
+            job_id_display,
+            dask_state_text,
+            in_db_text,
+            db_state_text,
+            in_tracker_text,
+            credit_text,
+            issue_text,
+        )
+
+    return table
+
+
 def _print_computational_clusters(
     clusters: list[ComputationalCluster],
     environment: dict[str, str | None],
     aws_region: str,
     output: Path | None,
+    cluster_task_rows: dict[tuple[int, int | None], list[TaskReconciliationRow]] | None = None,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
         Column("Instance", justify="left", overflow="ellipsis", ratio=1),
-        Column("Computational details", overflow="fold", ratio=2),
+        Column("Tasks / Cluster details", overflow="fold", ratio=2),
         title=f"computational clusters: {aws_region}",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
@@ -209,26 +276,33 @@ def _print_computational_clusters(
                 f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
                 f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
                 f"DaskSchedulerIP: {cluster.primary.dask_ip}",
-                f"UserID: {cluster.primary.user_id}",
-                f"WalletID: {cluster.primary.wallet_id}",
                 f"Heartbeat: {color_encoded_heartbeat}",
                 f"/mnt/docker(free): {color_encoded_free_docker_space}",
             ]
         )
         if cluster.primary.is_warm_buffer:
             primary_info = f"[dim]{primary_info}[/dim]"
-        table.add_row(
-            primary_info,
-            "\n".join(
-                [
-                    f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
-                    f"Dask Scheduler TLS: tls://{cluster.primary.ec2_instance.public_ip_address}:8786",
-                    f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-                    f"Prometheus: http://{cluster.primary.ec2_instance.public_ip_address}:9090",
-                    f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
-                ]
-            ),
+        # Build tasks sub-table for the right column (skip for warm-buffer)
+        _tasks_table: Table | None = None
+        if not cluster.primary.is_warm_buffer and cluster_task_rows is not None:
+            _task_rows = cluster_task_rows.get((cluster.primary.user_id, cluster.primary.wallet_id))
+            if _task_rows:
+                _tasks_table = _build_cluster_tasks_table(_task_rows)
+        cluster_links = "\n".join(
+            [
+                f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
+                f"Dask Scheduler TLS: tls://{cluster.primary.ec2_instance.public_ip_address}:8786",
+                f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
+                f"Prometheus: http://{cluster.primary.ec2_instance.public_ip_address}:9090",
+            ]
         )
+        # Header row: left col empty, right col shows cluster ownership
+        table.add_row("", _format_cluster_identity(cluster.primary.user_id, cluster.primary.wallet_id))
+        # Primary machine row: left col = instance info, right col = tasks table or links
+        table.add_row(primary_info, _tasks_table if _tasks_table is not None else cluster_links)
+        # If tasks were shown in right col, add links as a follow-up row
+        if _tasks_table is not None:
+            table.add_row("", cluster_links)
 
         # now add the workers
         for index, worker in enumerate(cluster.workers):
@@ -490,80 +564,6 @@ def _reconcile_cluster_tasks(
             )
 
     return rows
-
-
-def _print_cluster_tasks_table(  # noqa: C901, PLR0912
-    cluster: ComputationalCluster,
-    rows: list[TaskReconciliationRow],
-    output: Path | None,
-) -> None:
-    if not rows:
-        return
-
-    table = Table(
-        Column("Job ID", overflow="fold"),
-        Column("Dask State", justify="center"),
-        Column("In\ncomp_tasks", justify="center"),
-        Column("DB State", justify="center"),
-        Column("In\ntracker", justify="center"),
-        Column("Credit/h", justify="right"),
-        Column("Issues"),
-        title=(f"Tasks user_id={cluster.primary.user_id}  wallet_id={cluster.primary.wallet_id}"),
-        padding=(0, 1),
-        title_style=Style(color="magenta", encircle=True),
-    )
-
-    for row in rows:
-        job_id_display = row.job_id[:36] + "…" if len(row.job_id) > 37 else row.job_id
-
-        if row.dask_state == "processing":
-            dask_state_text = f"[green]{row.dask_state}[/green]"
-        elif row.dask_state in {"erred", "not-in-dask"}:
-            dask_state_text = f"[red]{row.dask_state}[/red]"
-        else:
-            dask_state_text = row.dask_state
-
-        if row.comp_task is not None:
-            in_db_text = "[green]\u2705[/green]"
-            db_state = row.comp_task.state
-            if row.dask_state == "processing" and db_state != "RUNNING":
-                db_state_text = f"[red]{db_state}[/red]"
-            elif db_state == "RUNNING":
-                db_state_text = f"[green]{db_state}[/green]"
-            else:
-                db_state_text = db_state
-        else:
-            in_db_text = "[red]\u274c[/red]"
-            db_state_text = "n/a"
-
-        if row.tracker_run is not None:
-            in_tracker_text = "[green]\u2705[/green]"
-            cost = row.tracker_run.pricing_unit_cost
-            credit_text = f"{cost:.4f}" if cost is not None else "n/a"
-        else:
-            in_tracker_text = "[red]\u274c[/red]" if row.dask_state == "processing" else "[dim]\u274c[/dim]"
-            credit_text = "n/a"
-
-        if row.issues:
-            issue_text = "\n".join(f"[red]{i}[/red]" for i in row.issues)
-        else:
-            issue_text = "[green]OK[/green]"
-
-        table.add_row(
-            job_id_display,
-            dask_state_text,
-            in_db_text,
-            db_state_text,
-            in_tracker_text,
-            credit_text,
-            issue_text,
-        )
-
-    if output:
-        with output.open("a") as fp:
-            rich.print(table, file=fp)
-    else:
-        rich.print(table)
 
 
 def _reconcile_clusters_with_tracker(
@@ -842,8 +842,6 @@ async def summary(
         tracker_runs = []
 
     # --- Per-cluster task reconciliation ---
-    # tracker_runs indexed by node_id for O(1) lookup
-    tracker_runs_by_node_id: dict[str, ResourceTrackerServiceRun] = {r.node_id: r for r in tracker_runs}
     # tracker_runs grouped by user_id to pass only relevant runs per cluster
     tracker_runs_by_user_id: dict[int, list[ResourceTrackerServiceRun]] = {}
     for _run in tracker_runs:
@@ -883,9 +881,8 @@ async def summary(
             state.environment,
             state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
             output=output,
+            cluster_task_rows={(c.primary.user_id, c.primary.wallet_id): rows for c, rows in cluster_task_rows},
         )
-        for cluster, task_rows in cluster_task_rows:
-            _print_cluster_tasks_table(cluster, task_rows, output=output)
         _print_tracker_reconciliation(reconciliation_entries, output=output)
 
     time_threshold = arrow.utcnow().shift(minutes=-30).datetime
