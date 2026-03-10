@@ -107,8 +107,9 @@ def test_robust_websocket_with_socketio(download_playwright_browser: None, real_
         robust_ws = RobustWebSocket(page=real_page, ws=websocket)
 
         # Test sending and receiving messages
-        real_page.evaluate("window.ws.send('Hello')")  # Send a message via WebSocket
+        real_page.wait_for_function("() => window.ws && window.ws.connected === true")
         with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
+            real_page.evaluate("window.ws.send('Hello')")  # Send a message via WebSocket
             raw_response = frame_received_event.value
             # Decode the socket.io message format
             assert raw_response.startswith("42"), "Invalid socket.io message format"
@@ -132,8 +133,9 @@ def test_robust_websocket_with_socketio(download_playwright_browser: None, real_
             real_page.wait_for_timeout(2000)  # Wait for 2 seconds to simulate network downtime
 
         # Test sending and receiving messages after automatic reconnection
-        real_page.evaluate("window.ws.send('Reconnected')")  # Send a message
+        real_page.wait_for_function("() => window.ws && window.ws.connected === true")
         with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
+            real_page.evaluate("window.ws.send('Reconnected')")  # Send a message
             raw_response = frame_received_event.value
             # Decode the socket.io message format
             assert raw_response.startswith("42"), "Invalid socket.io message format"
