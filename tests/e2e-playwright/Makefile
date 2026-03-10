@@ -57,8 +57,8 @@ requirements: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-.PHONY: install-dev install-prod
-install-dev install-prod: _check_venv_active ## install app in development/production or CI mode
+.PHONY: install-dev install-prod install-ci
+install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
 	# installing playwright dependencies
