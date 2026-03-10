@@ -257,7 +257,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
         icon: "@FontAwesome5Solid/trash/12",
         toolTipText: this.tr("Delete"),
         appearance: "danger-button-transparent",
-        opacity: 1,
         enabled: canIDelete,
       });
       buttonContainer.add(deleteButton);
