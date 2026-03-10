@@ -1107,6 +1107,12 @@ qx.Theme.define("osparc.theme.Appearance", {
         textColor: state.disabled ? "text": "black",
       })
     },
+    "danger-button-transparent": {
+      include: "form-button-transparent",
+      style: state => ({
+        textColor: state.disabled ? "text": "error",
+      })
+    },
 
     /*
     ---------------------------------------------------------------------------
