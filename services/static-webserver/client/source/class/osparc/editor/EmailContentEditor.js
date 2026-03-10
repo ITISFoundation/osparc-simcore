@@ -226,5 +226,13 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
         });
       });
     },
+
+    isPreviewActive: function() {
+      return this.getSelection()[0] === this.getChildControl("preview-page");
+    },
+
+    makePreviewActive: function() {
+      this.setSelection([this.getChildControl("preview-page")]);
+    },
   }
 });
