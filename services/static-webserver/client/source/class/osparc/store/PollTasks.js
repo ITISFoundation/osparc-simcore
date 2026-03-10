@@ -88,7 +88,7 @@ qx.Class.define("osparc.store.PollTasks", {
     },
 
     getSendEmailTasks: function() {
-      return this.getTasks().filter(task => task.getTaskName() && task.getTaskName() === "send_email_message");
+      return this.getTasks().filter(task => task.getTaskName() && task.getTaskName() === "send_messages");
     },
 
     removeTasks: function() {
