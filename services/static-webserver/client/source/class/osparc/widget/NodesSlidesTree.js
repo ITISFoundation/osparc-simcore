@@ -30,10 +30,10 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
 
     const tree = this.getChildControl("tree");
 
-    const disable = this.getChildControl("disable");
-    disable.addListener("execute", () => this.__disableSlides(), this);
-    const enable = this.getChildControl("save-button");
-    enable.addListener("execute", () => this.__saveSlides(), this);
+    const disableAppModeButton = this.getChildControl("disable");
+    disableAppModeButton.addListener("execute", () => this.__disableSlides(), this);
+    const closeButton = this.getChildControl("close-button");
+    closeButton.addListener("execute", () => this.fireEvent("close"), this);
 
     const model = this.__initRoot();
     tree.setModel(model);
@@ -44,7 +44,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
 
   events: {
     "changeSelectedNode": "qx.event.type.Data",
-    "finished": "qx.event.type.Event"
+    "close": "qx.event.type.Event",
   },
 
   members: {
@@ -96,8 +96,8 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           buttons.add(control);
           break;
         }
-        case "save-button": {
-          control = new qx.ui.form.Button(this.tr("Save")).set({
+        case "close-button": {
+          control = new qx.ui.form.Button(this.tr("Close")).set({
             allowGrowX: false,
             appearance: "no-shadow-button"
           });
@@ -133,10 +133,10 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           c.bindProperty("instructions", "instructions", null, item, id);
         },
         configureItem: item => {
-          item.addListener("showNode", () => this.__itemActioned(item, "show"), this);
-          item.addListener("hideNode", () => this.__itemActioned(item, "hide"), this);
-          item.addListener("moveUp", () => this.__itemActioned(item, "moveUp"), this);
-          item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
+          item.addListener("showNode", () => this.__stepUpdated(item, "show"), this);
+          item.addListener("hideNode", () => this.__stepUpdated(item, "hide"), this);
+          item.addListener("moveUp", () => this.__stepUpdated(item, "moveUp"), this);
+          item.addListener("moveDown", () => this.__stepUpdated(item, "moveDown"), this);
           item.addListener("saveInstructions", e => this.__saveInstructions(item, e.getData()), this);
           item.addListener("tap", () => this.fireDataEvent("changeSelectedNode", item.getNodeId()), this);
         },
@@ -203,7 +203,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       }
     },
 
-    __itemActioned: function(item, action) {
+    __stepUpdated: function(item, action) {
       let fnct;
       switch (action) {
         case "show":
@@ -222,6 +222,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       if (fnct.call(this, item.getModel())) {
         this.getChildControl("tree").refresh();
       }
+      this.__saveSlides();
     },
 
     __getVisibleItems: function() {
@@ -313,7 +314,6 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     __saveSlides: function() {
       const slideshow = this.__serialize();
       this.__study.getUi().getSlideshow().setData(slideshow);
-      this.fireEvent("finished");
     },
 
     __disableSlides: function() {
@@ -322,7 +322,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       });
       const slideshow = this.__serialize();
       this.__study.getUi().getSlideshow().setData(slideshow);
-      this.fireEvent("finished");
+      this.fireEvent("close");
     }
   }
 });
