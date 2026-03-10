@@ -11,22 +11,22 @@ from models_library.notifications_errors import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.celery.async_jobs.notifications import submit_send_message_task, submit_send_messages_task
-from servicelib.celery.models import GroupUUID, OwnerMetadata, TaskName, TaskUUID
+from servicelib.celery.models import GroupUUID, TaskUUID
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template as remote_preview_template,
 )
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     search_templates as remote_search_templates,
 )
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
+    send_message as remote_send_message,
+)
 
-from ..celery import get_task_manager
-from ..models import WebServerOwnerMetadata
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent, EmailMessage
+from ._models import Contact, EmailContact, EmailContent
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -56,14 +56,14 @@ async def _collect_active_recipients(app: web.Application, group_ids: list[Group
     return list(recipients_dict.values())
 
 
-async def _create_email_messages(
+async def _create_email_message(
     app: web.Application,
     *,
     product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
-) -> list[EmailMessage]:
+) -> dict[str, Any]:
     product = products_service.get_product(app, product_name)
 
     from_contact = EmailContact(
@@ -87,14 +87,12 @@ async def _create_email_messages(
 
     email_content = EmailContent(**content)
 
-    return [
-        EmailMessage(
-            from_=from_contact,
-            to=to_contact,
-            content=email_content,
-        )
-        for to_contact in to_contacts
-    ]
+    return {
+        "channel": ChannelType.email,
+        "from": from_contact.model_dump(),
+        "to": [c.model_dump() for c in to_contacts],
+        "content": email_content.model_dump(),
+    }
 
 
 async def preview_template(
@@ -135,16 +133,16 @@ async def search_templates(
 async def send_message(
     app: web.Application,
     *,
-    user_id: UserID,
+    user_id: UserID,  # noqa: ARG001
     product_name: ProductName,
     channel: ChannelType,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
-) -> tuple[TaskUUID | GroupUUID, TaskName]:
+) -> tuple[TaskUUID | GroupUUID, str]:
     match channel:
         case ChannelType.email:
-            messages = await _create_email_messages(
+            message = await _create_email_message(
                 app,
                 product_name=product_name,
                 group_ids=group_ids,
@@ -154,26 +152,10 @@ async def send_message(
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
-    if len(messages) != 1:
-        group_uuid, _, task_name = await submit_send_messages_task(
-            get_task_manager(app),
-            owner_metadata=OwnerMetadata.model_validate(
-                WebServerOwnerMetadata(
-                    user_id=user_id,
-                    product_name=product_name,
-                ).model_dump()
-            ),
-            messages=[message.model_dump() for message in messages],
-        )
-        return group_uuid, task_name
+    rpc_client = get_rabbitmq_rpc_client(app)
 
-    return await submit_send_message_task(
-        get_task_manager(app),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=user_id,
-                product_name=product_name,
-            ).model_dump()
-        ),
-        message=messages[0].model_dump(),
+    response = await remote_send_message(
+        rpc_client,
+        message=message,
     )
+    return response.task_or_group_uuid, response.task_name

@@ -3,6 +3,10 @@ from typing import Final
 from pydantic import TypeAdapter
 
 from ...rabbitmq_basic_types import RPCNamespace
+from ._message import (
+    SendMessageRequest,
+    SendMessageResponse,
+)
 from ._template import (
     PreviewTemplateRequest,
     PreviewTemplateResponse,
@@ -16,5 +20,7 @@ __all__: tuple[str, ...] = (
     "PreviewTemplateRequest",
     "PreviewTemplateResponse",
     "SearchTemplatesResponse",
+    "SendMessageRequest",
+    "SendMessageResponse",
     "TemplateRef",
 )

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from aiohttp import web
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
@@ -24,6 +26,12 @@ routes = web.RouteTableDef()
 _notifications_prefix = f"/{API_VTAG}/notifications"
 
 
+def _create_async_job_href(request: web.Request, route: str, task_uuid: UUID) -> str:
+    task_id = f"{task_uuid}"
+    path = f"{request.app.router[route].url_for(task_id=task_id)}"
+    return f"{request.url.with_path(path)}"
+
+
 @routes.post(f"{_notifications_prefix}/messages:send", name="send_message")
 @login_required
 @permission_required("notification.message.send")
@@ -33,7 +41,7 @@ async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(MessageBody, request)
 
-    task_uuid, task_name = await notifications_service.send_message(
+    task_or_group_uuid, task_name = await notifications_service.send_message(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -44,15 +52,13 @@ async def send_message(request: web.Request) -> web.Response:
         content=body.content.model_dump(),
     )
 
-    task_id = f"{task_uuid}"
-
     return create_data_response(
         TaskGet(
-            task_id=task_id,
+            task_id=f"{task_or_group_uuid}",
             task_name=task_name,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=task_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=task_id)))}",
-            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=task_id)))}",
+            status_href=_create_async_job_href(request, "get_async_job_status", task_or_group_uuid),
+            abort_href=_create_async_job_href(request, "cancel_async_job", task_or_group_uuid),
+            result_href=_create_async_job_href(request, "get_async_job_result", task_or_group_uuid),
         ),
         status=status.HTTP_202_ACCEPTED,
     )
