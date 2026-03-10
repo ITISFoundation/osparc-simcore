@@ -2151,7 +2151,13 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const nodeUI = await this.__addNode(service, pos);
         if (nodeUI) {
           const node = nodeUI.getNode();
-          osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+          const outFileValue = {
+            store: data.getLocation(),
+            dataset: data.getDatasetId(),
+            path: data.getFileId(),
+            label: data.getLabel()
+          };
+          osparc.file.FilePicker.setOutputValueFromStore(node, outFileValue);
         }
       }
     },
