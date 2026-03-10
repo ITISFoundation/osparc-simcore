@@ -399,7 +399,7 @@ async def preview_approval_user_account(
             },
             "link": invitation_url,
             "trial_account_days": trial_account_days,
-            "extra_credits": extra_credits_in_usd * product.credits_per_usd
+            "extra_credits": int((extra_credits_in_usd * product.credits_per_usd).to_integral_value())
             if extra_credits_in_usd and product.credits_per_usd
             else None,
         },
