@@ -315,6 +315,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           "instructions": child.getInstructions()
         };
       });
+      console.log("slideshow", slideshow);
       return slideshow;
     },
 
