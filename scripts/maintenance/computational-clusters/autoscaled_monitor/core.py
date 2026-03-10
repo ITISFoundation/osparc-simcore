@@ -155,8 +155,8 @@ def _print_dynamic_instances(
             service_table,
         )
         table.add_row(
-            "Graylog: ",
-            f"{_create_graylog_permalinks(environment, instance.ec2_instance)}",
+            "",
+            f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
             end_section=True,
         )
     if output:
@@ -223,8 +223,8 @@ def _print_computational_clusters(
                 [
                     f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
                     f"Dask Scheduler TLS: tls://{cluster.primary.ec2_instance.public_ip_address}:8786",
-                    f"Graylog UI: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-                    f"Prometheus UI: http://{cluster.primary.ec2_instance.public_ip_address}:9090",
+                    f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
+                    f"Prometheus: http://{cluster.primary.ec2_instance.public_ip_address}:9090",
                     f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
                 ]
             ),
@@ -492,7 +492,7 @@ def _reconcile_cluster_tasks(
     return rows
 
 
-def _print_cluster_tasks_table(
+def _print_cluster_tasks_table(  # noqa: C901, PLR0912
     cluster: ComputationalCluster,
     rows: list[TaskReconciliationRow],
     output: Path | None,
@@ -508,7 +508,7 @@ def _print_cluster_tasks_table(
         Column("In\ntracker", justify="center"),
         Column("Credit/h", justify="right"),
         Column("Issues"),
-        title=(f"Tasks – user_id={cluster.primary.user_id}  wallet_id={cluster.primary.wallet_id}"),
+        title=(f"Tasks user_id={cluster.primary.user_id}  wallet_id={cluster.primary.wallet_id}"),
         padding=(0, 1),
         title_style=Style(color="magenta", encircle=True),
     )
