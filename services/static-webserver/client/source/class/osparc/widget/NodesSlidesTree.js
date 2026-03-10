@@ -69,7 +69,14 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           break;
         }
         case "tree":
-          control = this.__buildTree();
+          control = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+            hideRoot: true,
+            decorator: "service-tree",
+            openMode: "none",
+            contentPadding: 0,
+            padding: 0,
+            backgroundColor: "background-main-2"
+          });
           this._add(control, {
             flex: 1
           });
@@ -101,18 +108,6 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       }
 
       return control || this.base(arguments, id);
-    },
-
-    __buildTree: function() {
-      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-        hideRoot: true,
-        decorator: "service-tree",
-        openMode: "none",
-        contentPadding: 0,
-        padding: 0,
-        backgroundColor: "background-main-2"
-      });
-      return tree;
     },
 
     __initRoot: function() {
