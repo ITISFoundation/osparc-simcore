@@ -17,7 +17,7 @@
 APP_NAME          = $(notdir $(CURDIR))
 APP_CLI_NAME      = simcore-service-$(APP_NAME)
 APP_PACKAGE_NAME  = $(subst -,_,$(APP_CLI_NAME))
-APP_VERSION      := $(shell cat VERSION)
+APP_VERSION      := $(shell uv version --short)
 SRC_DIR           = $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
 
 export APP_VERSION
@@ -35,9 +35,14 @@ export APP_VERSION
 
 .PHONY: install-dev install-prod install-ci
 
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# Installing in $(subst install-,,$@) mode
-	@uv pip sync requirements/$(subst install-,,$@).txt
+install-dev: _check_venv_active ## install app in development mode
+	@uv sync --all-groups
+
+install-prod: _check_venv_active ## install app in production mode
+	@uv sync --no-dev --no-editable
+
+install-ci: _check_venv_active ## install app in CI mode
+	@uv sync --group dev --no-editable
 
 
 
