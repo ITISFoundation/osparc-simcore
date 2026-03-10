@@ -8,7 +8,7 @@ References:
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import TypeAlias, TypedDict
+from typing import TypedDict
 
 from common_library.async_tools import maybe_await
 from models_library.products import ProductName
@@ -24,9 +24,9 @@ class AuthContextDict(TypedDict, total=False):
     product_name: ProductName
 
 
-OptionalContext: TypeAlias = AuthContextDict | dict | None
+type OptionalContext = AuthContextDict | dict | None
 
-CheckFunction: TypeAlias = (
+type CheckFunction = (
     # Type for check functions that can be either sync or async
     Callable[[OptionalContext], bool] | Callable[[OptionalContext], Awaitable[bool]]
 )

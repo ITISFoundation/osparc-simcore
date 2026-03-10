@@ -16,6 +16,7 @@ from ..._catalog import ValidService, validate_requested_service
 from ..._errors import (
     InvalidRedirectionParamsError,
 )
+from ..._guards import check_studies_dispatcher_enabled
 from ..._models import ServiceInfo, ViewerInfo
 from ..._projects import (
     get_or_create_project_with_file,
@@ -37,7 +38,6 @@ _logger = logging.getLogger(__name__)
 
 #
 # HELPERS
-#
 
 
 def _create_redirect_response_to_view_page(
@@ -86,6 +86,9 @@ async def get_redirection_to_viewer(request: web.Request):
 
     NOTE: Can be set as login_required programmatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
+    # Check if studies dispatcher is enabled for this product
+    check_studies_dispatcher_enabled(request)
+
     query_params: RedirectionQueryParams = parse_request_query_parameters_as(
         RedirectionQueryParams,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
         request,
@@ -183,7 +186,7 @@ async def get_redirection_to_viewer(request: web.Request):
         response = _create_redirect_response_to_view_page(
             request.app,
             project_id=project_id,
-            viewer_node_id=file_picker_id,  # TODO: ask odei about this?
+            viewer_node_id=file_picker_id,
             file_name=file_params_.file_name,
             file_size=file_params_.file_size,
         )
@@ -202,6 +205,7 @@ async def get_redirection_to_viewer(request: web.Request):
     )
 
     # NOTE: Why raising the response?
-    #  SEE aiohttp/web_protocol.py: DeprecationWarning: returning HTTPException object is deprecated (#2415) and will be removed, please raise the exception instead
+    #  SEE aiohttp/web_protocol.py: DeprecationWarning: returning HTTPException object is deprecated (#2415)
+    #  and will be removed, please raise the exception instead
     assert isinstance(response, web.HTTPFound)  # nosec
     raise response

@@ -15,7 +15,12 @@ _DEFAULT_THUMBNAIL: Final[HttpUrl] = TypeAdapter(HttpUrl).validate_python("https
 class StudiesDispatcherSettings(BaseCustomSettings):
     STUDIES_ACCESS_ANONYMOUS_ALLOWED: Annotated[
         bool,
-        Field(description="If enabled, the study links are accessible to anonymous users"),
+        Field(
+            description="Controls whether anonymous (unauthenticated) users can access study dispatcher links. "
+            "When True: Anonymous users are allowed, guest accounts are auto-created. "
+            "When False: Requires authentication, login_required decorator is applied. "
+            "Note: This is orthogonal to 'product.studies_dispatcher_enabled' which controls feature availability."
+        ),
     ] = False
 
     STUDIES_GUEST_ACCOUNT_LIFETIME: Annotated[
