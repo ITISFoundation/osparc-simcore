@@ -700,13 +700,10 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "form-button",
       style: function(states) {
         const style = {
+          textColor: "text",
           decorator: "no-border",
           backgroundColor: "transparent",
-          opacity: 0.4,
         };
-        if (states.hovered) {
-          style.opacity = 1;
-        }
         if (states.disabled) {
           style.cursor = "not-allowed";
         }
