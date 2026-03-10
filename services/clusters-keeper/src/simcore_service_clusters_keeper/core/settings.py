@@ -110,7 +110,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
             "(default to seconds, or see "
             "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for "
             "string formatting)."
-            "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
+            "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances "
             "that take longer than this time will be terminated as sometimes it "
             "happens that EC2 machine fail on start.",
         ),
