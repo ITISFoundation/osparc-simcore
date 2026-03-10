@@ -4,7 +4,7 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 
 import parse
 from mypy_boto3_ec2 import EC2ServiceResource
@@ -75,8 +75,8 @@ class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
 
 
-TaskId: TypeAlias = str
-TaskState: TypeAlias = str
+type TaskId = str
+type TaskState = str
 
 
 @dataclass(slots=True, kw_only=True, frozen=True)
@@ -102,8 +102,9 @@ class ComputationalCluster:
 
     scheduler_info: dict[str, Any]
     datasets: tuple[str, ...]
-    processing_jobs: dict[str, str]
+    processing_jobs: dict[str, set[str]]
     task_states_to_tasks: dict[str, list[TaskState]]
+    task_resources: dict[str, dict[str, Any]]  # resource_restrictions per job_id
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -128,6 +129,7 @@ class TaskReconciliationRow:
     dask_state: TaskState
     comp_task: "ComputationalTask | None"
     tracker_run: ResourceTrackerServiceRun | None
+    required_resources: dict[str, Any]
     issues: list[str]
 
 

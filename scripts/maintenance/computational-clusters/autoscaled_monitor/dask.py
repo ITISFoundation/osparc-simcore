@@ -4,6 +4,7 @@ from typing import Any, Final
 
 import distributed
 import rich
+from aiocache import SimpleMemoryCache
 from distributed.objects import SchedulerInfo
 from mypy_boto3_ec2.service_resource import Instance
 from pydantic import AnyUrl
@@ -14,6 +15,9 @@ from .models import AppState, ComputationalCluster, TaskId, TaskState
 from .ssh import ssh_tunnel
 
 _SCHEDULER_PORT: Final[int] = 8786
+_SCHEDULER_CACHE_TTL: Final[int] = 30  # seconds
+
+_scheduler_task_cache: Final = SimpleMemoryCache(ttl=_SCHEDULER_CACHE_TTL)
 
 
 def _wrap_dask_async_call(called_fct) -> Awaitable[Any]:
@@ -89,41 +93,43 @@ async def trigger_job_cancellation_in_scheduler(
         rich.print(f"cancelled {task_id} in scheduler/workers")
 
 
-async def _list_all_tasks(
-    client: distributed.Client,
-) -> dict[TaskState, list[TaskId]]:
-    def _list_tasks(
+async def _get_cached_scheduler_task_data(client: distributed.Client, instance_id: str) -> dict[str, Any]:
+    """Single cached call to the scheduler that returns all task data at once."""
+    cached_data: dict[str, Any] | None = await _scheduler_task_cache.get(instance_id)
+    if cached_data is not None:
+        return cached_data
+
+    def _collect_all_task_data(
         dask_scheduler: distributed.Scheduler,
-    ) -> dict[TaskId, TaskState]:
-        # NOTE: this is ok and needed: this runs on the dask scheduler, so don't remove this import
-
-        task_state_to_tasks = {}
+    ) -> dict[str, Any]:
+        # NOTE: this runs on the dask scheduler process — must be a local function so
+        # cloudpickle serialises it by value (bytecode) rather than by module reference.
+        tasks_by_state: dict[str, list[str]] = {}
+        task_resources: dict[str, dict[str, Any]] = {}
         for task in dask_scheduler.tasks.values():
-            if task.state in task_state_to_tasks:
-                task_state_to_tasks[task.state].append(task.key)
-            else:
-                task_state_to_tasks[task.state] = [task.key]
+            tasks_by_state.setdefault(str(task.state), []).append(str(task.key))
+            if task.resource_restrictions:
+                task_resources[str(task.key)] = dict(task.resource_restrictions)
+        return {"tasks_by_state": tasks_by_state, "task_resources": task_resources}
 
-        return dict(task_state_to_tasks)
-
-    list_of_tasks: dict[TaskState, list[TaskId]] = {}
     try:
-        list_of_tasks = await client.run_on_scheduler(_list_tasks)  # type: ignore
-    except TypeError:
-        rich.print("ERROR while recoverring unrunnable tasks . Defaulting to empty list of tasks!!")
-    except Exception as e:
+        data: dict[str, Any] = await client.run_on_scheduler(_collect_all_task_data)  # type: ignore
+    except Exception as e:  # pylint: disable=broad-exception-caught
         rich.print(
-            f"Unexpected error while recovering unrunnable tasks: {e} when communicating with {client.scheduler}"
-            ". Defaulting to empty list of tasks!!"
+            f"Unexpected error fetching task data from scheduler: {e} "
+            f"when communicating with {client.scheduler}. Defaulting to empty."
         )
-    return list_of_tasks
+        data = {"tasks_by_state": {}, "task_resources": {}}
+    await _scheduler_task_cache.set(instance_id, data)
+    return data
 
 
 async def get_scheduler_details(state: AppState, instance: Instance):
     scheduler_info = {}
     datasets_on_cluster = ()
     processing_jobs = {}
-    all_tasks = {}
+    all_tasks: dict[TaskState, list[TaskId]] = {}
+    task_resources: dict[TaskId, dict[str, Any]] = {}
     try:
         async with dask_client(state, instance) as client:
             assert client.scheduler  # nosec
@@ -132,11 +138,13 @@ async def get_scheduler_details(state: AppState, instance: Instance):
             scheduler_info = SchedulerInfo(await client.scheduler.identity(n_workers=-1))  # type: ignore
             datasets_on_cluster = await _wrap_dask_async_call(client.list_datasets())
             processing_jobs = await _wrap_dask_async_call(client.processing())
-            all_tasks = await _list_all_tasks(client)
+            task_data = await _get_cached_scheduler_task_data(client, instance.id)
+            all_tasks = task_data["tasks_by_state"]
+            task_resources = task_data["task_resources"]
     except (TimeoutError, OSError, TypeError):
         rich.print("ERROR while recoverring scheduler details !! no scheduler info found!!")
 
-    return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks
+    return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks, task_resources
 
 
 def get_worker_metrics(scheduler_info: dict[str, Any]) -> dict[str, Any]:

@@ -66,7 +66,14 @@ async def abort_job_in_db(state: AppState, project_id: uuid.UUID, node_id: uuid.
         db_connection = await stack.enter_async_context(engine.begin())
 
         await db_connection.execute(
-            sa.text(f"UPDATE comp_tasks SET state = 'ABORTED' WHERE project_id='{project_id}' AND node_id='{node_id}'")
+            sa.update(sa.table("comp_tasks"))
+            .where(
+                sa.and_(
+                    sa.column("project_id") == str(project_id),
+                    sa.column("node_id") == str(node_id),
+                )
+            )
+            .values(state="ABORTED")
         )
         rich.print(f"set comp_tasks for {project_id=}/{node_id=} set to ABORTED")
 
@@ -77,7 +84,7 @@ async def check_db_connection(state: AppState) -> bool:
             engine = await stack.enter_async_context(db_engine(state))
             async with asyncio.timeout(5):
                 db_connection = await stack.enter_async_context(engine.connect())
-                result = await db_connection.execute(sa.text("SELECT 1"))
+                result = await db_connection.execute(sa.select(sa.literal(1)))
             result.one()
             rich.print("[green]Database connection test completed successfully![/green]")
             return True
@@ -148,14 +155,28 @@ async def list_resource_tracker_running_computational_services(
         engine = await stack.enter_async_context(db_engine(state))
         db_connection = await stack.enter_async_context(engine.begin())
 
-        query = sa.text(
-            "SELECT service_run_id, user_id, wallet_id, product_name,"
-            " project_id, node_id, service_key, service_version,"
-            " started_at, last_heartbeat_at, missed_heartbeat_counter,"
-            " pricing_unit_cost"
-            " FROM resource_tracker_service_runs"
-            " WHERE service_run_status = 'RUNNING'"
-            " AND service_type = 'COMPUTATIONAL_SERVICE'"
+        query = (
+            sa.select(
+                sa.column("service_run_id"),
+                sa.column("user_id"),
+                sa.column("wallet_id"),
+                sa.column("product_name"),
+                sa.column("project_id"),
+                sa.column("node_id"),
+                sa.column("service_key"),
+                sa.column("service_version"),
+                sa.column("started_at"),
+                sa.column("last_heartbeat_at"),
+                sa.column("missed_heartbeat_counter"),
+                sa.column("pricing_unit_cost"),
+            )
+            .select_from(sa.table("resource_tracker_service_runs"))
+            .where(
+                sa.and_(
+                    sa.cast(sa.column("service_run_status"), sa.VARCHAR) == "RUNNING",
+                    sa.cast(sa.column("service_type"), sa.VARCHAR) == "COMPUTATIONAL_SERVICE",
+                )
+            )
         )
         result = await db_connection.execute(query)
         rows = result.fetchall()
@@ -178,3 +199,57 @@ async def list_resource_tracker_running_computational_services(
         ]
     msg = "unable to access database!"
     raise RuntimeError(msg)
+
+
+async def get_user_and_wallet_info(
+    state: AppState,
+    user_id: int,
+    wallet_id: int | None,
+) -> tuple[str | None, str | None]:
+    """Returns (user_email, wallet_name)."""
+    async with contextlib.AsyncExitStack() as stack:
+        engine = await stack.enter_async_context(db_engine(state))
+        db_connection = await stack.enter_async_context(engine.connect())
+
+        email: str | None = None
+        wallet_name: str | None = None
+
+        result = await db_connection.execute(
+            sa.select(sa.column("email")).select_from(sa.table("users")).where(sa.column("id") == user_id)
+        )
+        row = result.fetchone()
+        if row:
+            email = str(row.email)
+
+        if wallet_id is not None:
+            result = await db_connection.execute(
+                sa.select(sa.column("name")).select_from(sa.table("wallets")).where(sa.column("wallet_id") == wallet_id)
+            )
+            row = result.fetchone()
+            if row:
+                wallet_name = str(row.name)
+
+        return email, wallet_name
+
+
+async def get_product_usd_per_credit(
+    state: AppState,
+    product_name: str,
+) -> float | None:
+    """Returns the latest usd_per_credit for the product, or None if not found/zero."""
+    async with contextlib.AsyncExitStack() as stack:
+        engine = await stack.enter_async_context(db_engine(state))
+        db_connection = await stack.enter_async_context(engine.connect())
+
+        result = await db_connection.execute(
+            sa.select(sa.column("usd_per_credit"))
+            .select_from(sa.table("products_prices"))
+            .where(sa.column("product_name") == product_name)
+            .order_by(sa.column("valid_from").desc())
+            .limit(1)
+        )
+        row = result.fetchone()
+        if row and row.usd_per_credit is not None:
+            value = float(row.usd_per_credit)
+            return value if value > 0 else None
+        return None
