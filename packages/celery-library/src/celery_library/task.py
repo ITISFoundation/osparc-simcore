@@ -62,6 +62,7 @@ def _async_task_wrapper(
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                     )
                                     raise TaskAbortedError
+                                await asyncio.sleep(_DEFAULT_ABORT_TASK_TIMEOUT.total_seconds())
 
                         tg.create_task(_abort_monitor())
 
