@@ -198,7 +198,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       emailContentEditor.setTemplateEmail(value);
 
       // show the preview by default, give it one cycle to render the content
-      setTimeout(() => emailContentEditor.makePreviewActive(), 0);
+      setTimeout(() => emailContentEditor.makePreviewActive(), 100);
     },
 
     __sendEmailClicked: function() {
