@@ -21,7 +21,7 @@ define _up_simcore
 echo TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=null >> $(SIMCORE_DOT_ENV)
 echo TRACING_OPENTELEMETRY_COLLECTOR_PORT=null >> $(SIMCORE_DOT_ENV)
 @$(MAKE_C) $(REPO_BASE_DIR) local-registry
-@$(MAKE_C) $(REPO_BASE_DIR) up-prod-phased ops_ci=1
+@$(MAKE_C) $(REPO_BASE_DIR) up-prod-phased $(if $(filter install-ci,$@),ops_ci=1,)
 endef
 
 .PHONY: requirements
