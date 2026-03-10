@@ -15,7 +15,7 @@ install:  install-ci
 
 install-dev install-prod install-ci:  ## install requirements in dev/prod/ci mode
 	# installing in $(subst install-,,$@) mode
-	@uv pip install -r requirements/$(subst install-,,$@).txt
+	@uv pip sync --no-cache requirements/$(subst install-,,$@).txt
 
 
 .PHONY: tests

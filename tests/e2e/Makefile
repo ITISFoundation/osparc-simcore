@@ -25,7 +25,7 @@ endef
 define _setup_test_environment
 # setup the python environment
 $(MAKE_C) $(REPO_BASE_DIR) devenv
-uv pip install -r requirements/requirements.txt
+uv pip install --no-cache -r requirements/requirements.txt
 # setup node environment for puppeteer
 npm install
 endef
