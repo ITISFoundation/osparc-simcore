@@ -33,6 +33,7 @@ Structure your summary following [PULL_REQUEST_TEMPLATE.md](../PULL_REQUEST_TEMP
 ### Related issue/s
 - Link related issues using `closes #XXX`, `fixes #XXX`, or `resolves #XXX`
 - If no issue exists, write "N/A"
+- Always use bullet points, even for a single issue
 
 ### How to test
 - Provide 3-5 clear, actionable steps for reviewers
