@@ -156,7 +156,7 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
         paymentId
       };
       const req = osparc.data.Resources.getInstance().replaceUrlParams("payments", "invoiceLink", urlParams);
-      return `<a href='${req.url}' target='_blank' style='font-family: FontAwesome5Solid; font-size: 16px; text-decoration: none; color: inherit;' title='Invoice'>&#xf1c1;</a>`;
+      return `<a href='${req.url}' target='_blank' rel='noopener noreferrer' style='font-family: FontAwesome5Solid; font-size: 16px; text-decoration: none; color: inherit;' title='Invoice'>&#xf1c1;</a>`;
     }
   }
 })
