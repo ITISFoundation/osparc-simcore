@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeVar
 from uuid import UUID
 
@@ -7,18 +7,23 @@ import orjson
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.celery import DEFAULT_QUEUE
 from models_library.progress_bar import ProgressReport
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, StringConstraints, TypeAdapter, model_validator
 from pydantic.config import JsonDict
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
-type TaskKey = str
-type GroupKey = str
-type TaskName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
-type TaskParams = dict[str, Any]
+type Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
+type TaskKey = str
+type TaskName = Name
+type TaskParams = dict[str, Any]
 type TaskUUID = UUID
+
+type GroupKey = str
+type GroupName = Name
 type GroupUUID = UUID
+
 _KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEY_CHARS = ("*", _KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUE_CHARS = (_KEY_DELIMITATOR, "=")
@@ -141,16 +146,39 @@ TASK_DONE_STATES: Final[tuple[TaskState, ...]] = (
 )
 
 
-class TasksQueue(StrEnum):
-    CPU_BOUND = "cpu_bound"
-    DEFAULT = "default"
-    API_WORKER_QUEUE = "api_worker_queue"
+class ExecutorType(StrAutoEnum):
+    GROUP = auto()
+    GROUP_TASK = auto()
+    TASK = auto()
 
 
-class ExecutionMetadata(BaseModel):
-    name: TaskName
+class BaseExecutionMetadata(BaseModel):
+    name: TaskName | GroupName
+    type: ExecutorType
     ephemeral: bool = True
     queue: str = DEFAULT_QUEUE
+
+
+class TaskExecutionMetadata(BaseExecutionMetadata):
+    name: TaskName
+    type: Literal[ExecutorType.TASK] = ExecutorType.TASK
+
+
+class GroupTaskExecutionMetadata(BaseExecutionMetadata):
+    name: TaskName
+    type: Literal[ExecutorType.GROUP_TASK] = ExecutorType.GROUP_TASK
+
+
+class GroupExecutionMetadata(BaseExecutionMetadata):
+    name: GroupName
+    type: Literal[ExecutorType.GROUP] = ExecutorType.GROUP
+    tasks: list[tuple[GroupTaskExecutionMetadata, TaskParams]]
+
+
+type ExecutionMetadata = Annotated[
+    TaskExecutionMetadata | GroupExecutionMetadata | GroupTaskExecutionMetadata,
+    Field(discriminator="type"),
+]
 
 
 class TaskStreamItem(BaseModel):
@@ -170,6 +198,7 @@ class Task(BaseModel):
                         "uuid": "123e4567-e89b-12d3-a456-426614174000",
                         "metadata": {
                             "name": "task1",
+                            "type": "TASK",
                             "ephemeral": True,
                             "queue": "default",
                         },
@@ -178,17 +207,14 @@ class Task(BaseModel):
                         "uuid": "223e4567-e89b-12d3-a456-426614174001",
                         "metadata": {
                             "name": "task2",
+                            "type": "GROUP_TASK",
                             "ephemeral": False,
                             "queue": "cpu_bound",
                         },
                     },
                     {
                         "uuid": "323e4567-e89b-12d3-a456-426614174002",
-                        "metadata": {
-                            "name": "task3",
-                            "ephemeral": True,
-                            "queue": "default",
-                        },
+                        "metadata": {"name": "group1", "type": "GROUP", "tasks": []},
                     },
                 ]
             }
@@ -201,14 +227,15 @@ class TaskStore(Protocol):
     async def create_group(
         self,
         group_key: GroupKey,
-        executions: list[tuple[TaskKey, ExecutionMetadata]],
+        execution_metadata: GroupExecutionMetadata,
+        task_keys: list[TaskKey],
         expiry: timedelta,
     ) -> None: ...
 
     async def create_task(
         self,
         task_key: TaskKey,
-        execution_metadata: ExecutionMetadata,
+        execution_metadata: TaskExecutionMetadata,
         expiry: timedelta,
     ) -> None: ...
 
@@ -217,8 +244,6 @@ class TaskStore(Protocol):
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None: ...
 
     async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
-
-    async def is_group(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
