@@ -81,7 +81,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
 
       const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
         toolTipText: this.tr("Move up"),
-        appearance: "no-shadow-button"
+        appearance: "form-button-transparent",
       });
       moveUpBtn.addListener("execute", () => this.fireEvent("moveUp"), this);
       this.bind("position", moveUpBtn, "visibility", {
@@ -94,7 +94,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
 
       const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
         toolTipText: this.tr("Move down"),
-        appearance: "no-shadow-button",
+        appearance: "form-button-transparent",
       });
       moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
       this.bind("position", moveDownBtn, "visibility", {
@@ -129,7 +129,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       const editInstructionsBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/10").set({
         toolTipText: this.tr("Edit Instructions"),
         marginRight: 5,
-        appearance: "no-shadow-button"
+        appearance: "form-button-transparent",
       });
       editInstructionsBtn.addListener("execute", () => this.__editInstructions(), this);
       this.bind("position", editInstructionsBtn, "visibility", {
