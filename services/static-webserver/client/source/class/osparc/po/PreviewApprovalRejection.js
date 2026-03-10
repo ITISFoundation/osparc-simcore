@@ -212,7 +212,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       }
 
       // if the user is not in the preview page, force them there so they can see the final email before sending
-      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview")
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       if (!emailContentEditor.isPreviewActive()) {
         osparc.FlashMessenger.logAs(this.tr("Please preview the email before sending"), "WARNING");
         emailContentEditor.makePreviewActive();
