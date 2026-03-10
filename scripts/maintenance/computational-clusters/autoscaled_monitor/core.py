@@ -1,10 +1,12 @@
 #! /usr/bin/env python3
 
 import asyncio
+import contextlib
 import datetime
 import json
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import arrow
 import parse
@@ -13,6 +15,7 @@ import typer
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import TagTypeDef
 from pydantic import ByteSize, TypeAdapter, ValidationError
+from rich.console import Group
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
@@ -166,27 +169,105 @@ def _print_dynamic_instances(
         rich.print(table, flush=True)
 
 
-def _format_cluster_identity(user_id: int, wallet_id: int | None) -> str:
+def _format_cluster_identity(
+    user_id: int,
+    wallet_id: int | None,
+    *,
+    email: str | None = None,
+    wallet_name: str | None = None,
+    product_name: str | None = None,
+) -> str:
     wid = str(wallet_id) if wallet_id is not None else "n/a"
-    return f"[bold cyan]UserID: {user_id}[/bold cyan]   [bold yellow]WalletID: {wid}[/bold yellow]"
+    identity = f"Cluster details for [bold cyan]UserID: {user_id}[/bold cyan]"
+    if email:
+        identity += f" [dim]({email})[/dim]"
+    identity += f", [bold yellow]WalletID: {wid}[/bold yellow]"
+    if wallet_name:
+        identity += f" [dim]({wallet_name})[/dim]"
+    if product_name:
+        identity += f" — [dim]Product: {product_name}[/dim]"
+    return identity
 
 
-def _build_cluster_tasks_table(rows: list[TaskReconciliationRow]) -> Table | None:
+def _format_resource_value(key: str, value: float) -> str:
+    if key in {"RAM", "VRAM"} and isinstance(value, (int, float)):
+        return TypeAdapter(ByteSize).validate_python(int(value)).human_readable()
+    if isinstance(value, float) and value == int(value):
+        return str(int(value))
+    return str(value)
+
+
+def _format_comp_task_cell(row: "TaskReconciliationRow") -> str:
+    if row.comp_task is None:
+        return "[red]\u274c n/a[/red]"
+    db_state = row.comp_task.state
+    if row.dask_state == "processing" and db_state != "RUNNING":
+        return f"[red]\u2705 {db_state}[/red]"
+    if db_state == "RUNNING":
+        return f"[green]\u2705 {db_state}[/green]"
+    return f"\u2705 {db_state}"
+
+
+def _format_tracker_cells(
+    row: "TaskReconciliationRow",
+    time_now: "arrow.Arrow",
+    usd_per_credit: float | None,
+) -> tuple[str, str, str, str, str, str]:
+    """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text, heartbeat_text)."""
+    if row.tracker_run is None:
+        rut = "[red]\u274c n/a[/red]" if row.dask_state == "processing" else "[dim]\u274c n/a[/dim]"
+        return rut, "n/a", "n/a", "n/a", "n/a", "n/a"
+    cost = row.tracker_run.pricing_unit_cost
+    rate = f"{cost:.1f}" if cost is not None else "n/a"
+    now_naive = time_now.datetime.replace(tzinfo=None)
+    elapsed_hours = (now_naive - row.tracker_run.started_at.replace(tzinfo=None)).total_seconds() / 3600
+    elapsed = f"{elapsed_hours:.1f}h"
+    total_credits = cost * elapsed_hours if cost is not None else None
+    total = f"{total_credits:.1f}" if total_credits is not None else "n/a"
+    usd = f"{total_credits * usd_per_credit:.2f}" if total_credits is not None and usd_per_credit is not None else "n/a"
+    heartbeat_age = utils.timedelta_formatting(
+        now_naive - row.tracker_run.last_heartbeat_at.replace(tzinfo=None), color_code=True
+    )
+    return "[green]\u2705 RUNNING[/green]", rate, elapsed, total, usd, heartbeat_age
+
+
+def _build_cluster_tasks_table(
+    rows: list[TaskReconciliationRow],
+    job_to_worker: dict[str, str] | None = None,
+    usd_per_credit: float | None = None,
+) -> Table | None:
     if not rows:
         return None
 
+    time_now = arrow.utcnow()
+
+    def _worker_sort_key(r: TaskReconciliationRow) -> tuple[int, str]:
+        label = (job_to_worker or {}).get(r.job_id, "")
+        try:
+            return (int(label.rsplit(None, 1)[-1]), r.job_id)
+        except (ValueError, IndexError):
+            return (999, r.job_id)
+
+    sorted_rows = sorted(rows, key=_worker_sort_key)
+
     table = Table(
         Column("Job ID", overflow="fold"),
+        Column("Worker", justify="center"),
         Column("Dask State", justify="center"),
-        Column("In\ncomp_tasks", justify="center"),
-        Column("DB State", justify="center"),
-        Column("In\ntracker", justify="center"),
-        Column("Credit/h", justify="right"),
+        Column("DB\ncomp_tasks", justify="center"),
+        Column("DB\nRUT", justify="center"),
+        Column("RUT\nHeartbeat", justify="right"),
+        Column("Resources", overflow="fold"),
+        Column("Rate\n(💶/h)", justify="right"),
+        Column("Elapsed", justify="right"),
+        Column("Total\n(💶)", justify="right"),
+        Column("Total\n(💲)", justify="right"),
         Column("Issues"),
         padding=(0, 1),
+        expand=True,
     )
 
-    for row in rows:
+    for row in sorted_rows:
         job_id_display = row.job_id[:36] + "\u2026" if len(row.job_id) > 37 else row.job_id  # noqa: PLR2004
 
         if row.dask_state == "processing":
@@ -196,40 +277,118 @@ def _build_cluster_tasks_table(rows: list[TaskReconciliationRow]) -> Table | Non
         else:
             dask_state_text = row.dask_state
 
-        if row.comp_task is not None:
-            in_db_text = "[green]\u2705[/green]"
-            db_state = row.comp_task.state
-            if row.dask_state == "processing" and db_state != "RUNNING":
-                db_state_text = f"[red]{db_state}[/red]"
-            elif db_state == "RUNNING":
-                db_state_text = f"[green]{db_state}[/green]"
-            else:
-                db_state_text = db_state
-        else:
-            in_db_text = "[red]\u274c[/red]"
-            db_state_text = "n/a"
+        db_comp_tasks_text = _format_comp_task_cell(row)
 
-        if row.tracker_run is not None:
-            in_tracker_text = "[green]\u2705[/green]"
-            cost = row.tracker_run.pricing_unit_cost
-            credit_text = f"{cost:.4f}" if cost is not None else "n/a"
-        else:
-            in_tracker_text = "[red]\u274c[/red]" if row.dask_state == "processing" else "[dim]\u274c[/dim]"
-            credit_text = "n/a"
+        resources_text = (
+            "\n".join(f"{k}: {_format_resource_value(k, v)}" for k, v in sorted(row.required_resources.items()))
+            if row.required_resources
+            else "[dim]n/a[/dim]"
+        )
+
+        rut_text, rate_text, elapsed_str, total_text, usd_text, heartbeat_text = _format_tracker_cells(
+            row, time_now, usd_per_credit
+        )
 
         issue_text = "\n".join(f"[red]{i}[/red]" for i in row.issues) if row.issues else "[green]OK[/green]"
+        worker_text = (job_to_worker or {}).get(row.job_id, "[dim]n/a[/dim]")
 
         table.add_row(
             job_id_display,
+            worker_text,
             dask_state_text,
-            in_db_text,
-            db_state_text,
-            in_tracker_text,
-            credit_text,
+            db_comp_tasks_text,
+            rut_text,
+            heartbeat_text,
+            resources_text,
+            rate_text,
+            elapsed_str,
+            total_text,
+            usd_text,
             issue_text,
         )
 
     return table
+
+
+def _build_worker_metrics_table(
+    metrics: dict[str, Any] | str,
+    graylog_link: str,
+) -> Table:
+    table = Table(
+        Column(""),
+        Column(""),
+        padding=(0, 1),
+        show_header=False,
+        box=None,
+        expand=True,
+    )
+    table.add_row("Graylog", graylog_link)
+    resources: dict[str, Any] = metrics.get("resources", {}) if isinstance(metrics, dict) else {}
+    if resources:
+        resources_str = " | ".join(f"{k}: {_format_resource_value(k, v)}" for k, v in sorted(resources.items()))
+        table.add_row("Resources", resources_str)
+    task_counts: dict[str, Any] = metrics.get("tasks", {}) if isinstance(metrics, dict) else {}
+    if task_counts:
+        table.add_row("", "", end_section=True)
+        for state, count in task_counts.items():
+            color = "green" if state in {"executing", "memory"} else "dim"
+            table.add_row(f"[{color}]{state}[/{color}]", f"[{color}]{count}[/{color}]")
+    return table
+
+
+def _build_worker_tasks_table(
+    processing_jobs: list[str],
+    task_resources: dict[str, dict[str, Any]],
+) -> Table | None:
+    if not processing_jobs:
+        return None
+    table = Table(
+        Column("Job ID", overflow="fold"),
+        Column("Worker State", justify="center"),
+        Column("Resources", overflow="fold"),
+        padding=(0, 1),
+        expand=True,
+    )
+    for job_id in processing_jobs:
+        resources = task_resources.get(job_id, {})
+        resources_text = (
+            " | ".join(f"{k}: {_format_resource_value(k, v)}" for k, v in sorted(resources.items()))
+            if resources
+            else "[dim]n/a[/dim]"
+        )
+        table.add_row(job_id, "[green]executing[/green]", resources_text)
+    return table
+
+
+def _build_cluster_links_table(
+    environment: dict[str, str | None],
+    cluster: ComputationalCluster,
+) -> Table:
+    table = Table(
+        Column(""),
+        Column(""),
+        padding=(0, 1),
+        show_header=False,
+        box=None,
+        expand=True,
+    )
+    ip = cluster.primary.ec2_instance.public_ip_address
+    table.add_row("Dask Scheduler", f"http://{ip}:8787")
+    table.add_row("Graylog", _create_graylog_permalinks(environment, cluster.primary.ec2_instance))
+    table.add_row("Prometheus", f"http://{ip}:9090")
+    return table
+
+
+def _build_job_to_worker(cluster: ComputationalCluster) -> dict[str, str]:
+    """Build a reverse mapping from job_id to human-readable worker label."""
+    job_to_worker: dict[str, str] = {}
+    for worker_name, job_ids in cluster.processing_jobs.items():
+        for i, w in enumerate(cluster.workers):
+            if w.dask_ip in worker_name:
+                for job_id in job_ids:
+                    job_to_worker[job_id] = f"Worker {i + 1}"
+                break
+    return job_to_worker
 
 
 def _print_computational_clusters(
@@ -238,20 +397,37 @@ def _print_computational_clusters(
     aws_region: str,
     output: Path | None,
     cluster_task_rows: dict[tuple[int, int | None], list[TaskReconciliationRow]] | None = None,
+    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]]
+    | None = None,
 ) -> None:
     time_now = arrow.utcnow()
-    table = Table(
-        Column("Instance", justify="left", overflow="ellipsis", ratio=1),
-        Column("Tasks / Cluster details", overflow="fold", ratio=2),
-        title=f"computational clusters: {aws_region}",
-        padding=(0, 0),
-        title_style=Style(color="red", encircle=True),
-        expand=True,
-    )
 
     for cluster in track(clusters, "Collecting information about computational clusters..."):
         cluster_worker_metrics = dask.get_worker_metrics(cluster.scheduler_info)
-        # first print primary machine info
+        job_to_worker = _build_job_to_worker(cluster)
+
+        extra = (cluster_extra_info or {}).get((cluster.primary.user_id, cluster.primary.wallet_id))
+        email, wallet_name, product_name, usd_per_credit = extra if extra else (None, None, None, None)
+
+        table = Table(
+            Column("Instance", justify="left", overflow="fold", ratio=1),
+            Column(
+                _format_cluster_identity(
+                    cluster.primary.user_id,
+                    cluster.primary.wallet_id,
+                    email=email,
+                    wallet_name=wallet_name,
+                    product_name=product_name,
+                ),
+                overflow="fold",
+                ratio=3,
+            ),
+            title=f"computational cluster: {aws_region}",
+            padding=(0, 0),
+            title_style=Style(color="red", encircle=True),
+            expand=True,
+        )
+
         color_encoded_up_time = utils.timedelta_formatting(
             time_now - cluster.primary.ec2_instance.launch_time, color_code=True
         )
@@ -268,7 +444,7 @@ def _print_computational_clusters(
         primary_info = "\n".join(
             [
                 f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
-                f"Name: {cluster.primary.name}",
+                f"{cluster.primary.name}",
                 f"ID: {cluster.primary.ec2_instance.id}",
                 f"AMI: {cluster.primary.ec2_instance.image_id}",
                 f"Type: {cluster.primary.ec2_instance.instance_type}",
@@ -282,29 +458,21 @@ def _print_computational_clusters(
         )
         if cluster.primary.is_warm_buffer:
             primary_info = f"[dim]{primary_info}[/dim]"
-        # Build tasks sub-table for the right column (skip for warm-buffer)
+
         _tasks_table: Table | None = None
         if not cluster.primary.is_warm_buffer and cluster_task_rows is not None:
             _task_rows = cluster_task_rows.get((cluster.primary.user_id, cluster.primary.wallet_id))
             if _task_rows:
-                _tasks_table = _build_cluster_tasks_table(_task_rows)
-        cluster_links = "\n".join(
-            [
-                f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
-                f"Dask Scheduler TLS: tls://{cluster.primary.ec2_instance.public_ip_address}:8786",
-                f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-                f"Prometheus: http://{cluster.primary.ec2_instance.public_ip_address}:9090",
-            ]
+                _tasks_table = _build_cluster_tasks_table(
+                    _task_rows, job_to_worker=job_to_worker, usd_per_credit=usd_per_credit
+                )
+        cluster_links_table = _build_cluster_links_table(environment, cluster)
+        # Links always first, tasks table right below in the same cell if present
+        right_content: object = (
+            Group(cluster_links_table, _tasks_table) if _tasks_table is not None else cluster_links_table
         )
-        # Header row: left col empty, right col shows cluster ownership
-        table.add_row("", _format_cluster_identity(cluster.primary.user_id, cluster.primary.wallet_id))
-        # Primary machine row: left col = instance info, right col = tasks table or links
-        table.add_row(primary_info, _tasks_table if _tasks_table is not None else cluster_links)
-        # If tasks were shown in right col, add links as a follow-up row
-        if _tasks_table is not None:
-            table.add_row("", cluster_links)
+        table.add_row(primary_info, right_content)
 
-        # now add the workers
         for index, worker in enumerate(cluster.workers):
             worker_dask_metrics = next(
                 (
@@ -315,45 +483,46 @@ def _print_computational_clusters(
                 "no metrics???",
             )
             worker_processing_jobs = [
-                job_id for worker_name, job_id in cluster.processing_jobs.items() if worker.dask_ip in worker_name
+                job_id
+                for worker_name, job_ids in cluster.processing_jobs.items()
+                if worker.dask_ip in worker_name
+                for job_id in job_ids
             ]
             table.add_row()
             color_encoded_free_docker_space = utils.color_encode_with_threshold(
                 worker.disk_space.human_readable(), worker.disk_space, TypeAdapter(ByteSize).validate_python("15Gib")
             )
+            indent = "  "
+            worker_label = utils.color_encode_with_state(f"Worker {index + 1}", worker.ec2_instance)
+            worker_up = utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)
             worker_info = "\n".join(
                 [
-                    f"[italic]{utils.color_encode_with_state(f'Worker {index + 1}', worker.ec2_instance)}[/italic]",
-                    f"Name: {worker.name}",
-                    f"ID: {worker.ec2_instance.id}",
-                    f"AMI: {worker.ec2_instance.image_id}",
-                    f"Type: {worker.ec2_instance.instance_type}",
-                    f"Up: {utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
-                    f"ExtIP: {worker.ec2_instance.public_ip_address}",
-                    f"IntIP: {worker.ec2_instance.private_ip_address}",
-                    f"DaskWorkerIP: {worker.dask_ip}",
-                    f"/mnt/docker(free): {color_encoded_free_docker_space}",
+                    f"{indent}[italic]{worker_label}[/italic]",
+                    f"{indent}{worker.name}",
+                    f"{indent}ID: {worker.ec2_instance.id}",
+                    f"{indent}AMI: {worker.ec2_instance.image_id}",
+                    f"{indent}Type: {worker.ec2_instance.instance_type}",
+                    f"{indent}Up: {worker_up}",
+                    f"{indent}ExtIP: {worker.ec2_instance.public_ip_address}",
+                    f"{indent}IntIP: {worker.ec2_instance.private_ip_address}",
+                    f"{indent}DaskWorkerIP: {worker.dask_ip}",
+                    f"{indent}/mnt/docker(free): {color_encoded_free_docker_space}",
                     "",
                 ]
             )
             if worker.is_warm_buffer:
                 worker_info = f"[dim]{worker_info}[/dim]"
-            table.add_row(
-                worker_info,
-                "\n".join(
-                    [
-                        f"Graylog: {_create_graylog_permalinks(environment, worker.ec2_instance)}",
-                        f"Dask metrics: {json.dumps(worker_dask_metrics, indent=2)}",
-                        f"Running tasks: {worker_processing_jobs}",
-                    ]
-                ),
-            )
-        table.add_row(end_section=True)
-    if output:
-        with output.open("a") as fp:
-            rich.print(table, file=fp)
-    else:
-        rich.print(table)
+            worker_graylog = _create_graylog_permalinks(environment, worker.ec2_instance)
+            metrics_table = _build_worker_metrics_table(worker_dask_metrics, worker_graylog)
+            worker_tasks = _build_worker_tasks_table(worker_processing_jobs, cluster.task_resources)
+            worker_right: object = Group(metrics_table, worker_tasks) if worker_tasks is not None else metrics_table
+            table.add_row(worker_info, worker_right)
+
+        if output:
+            with output.open("a") as fp:
+                rich.print(table, file=fp)
+        else:
+            rich.print(table)
 
 
 async def _fetch_instance_details(
@@ -437,6 +606,7 @@ async def _analyze_computational_instances(
                 datasets_on_cluster,
                 processing_jobs,
                 all_tasks,
+                task_resources,
             ) = await dask.get_scheduler_details(
                 state,
                 instance.ec2_instance,
@@ -453,6 +623,7 @@ async def _analyze_computational_instances(
                     datasets=datasets_on_cluster,
                     processing_jobs=processing_jobs,
                     task_states_to_tasks=all_tasks,
+                    task_resources=task_resources,
                 )
             )
 
@@ -531,12 +702,14 @@ def _reconcile_cluster_tasks(
             if comp_task is None:
                 issues.append("not found in comp_tasks (ghost task in cluster)")
                 tracker_run = None
+                required_resources: dict[str, Any] = cluster.task_resources.get(job_id, {})
             else:
                 if dask_state == "processing" and comp_task.state != "RUNNING":
                     issues.append(f"processing in Dask but comp_tasks.state={comp_task.state!r} (expected RUNNING)")
                 tracker_run = tracker_runs_by_node_id.get(str(comp_task.node_id))
                 if tracker_run is None and dask_state == "processing":
                     issues.append("no resource_tracker entry (credits not being tracked)")
+                required_resources = cluster.task_resources.get(job_id, {})
 
             rows.append(
                 TaskReconciliationRow(
@@ -544,6 +717,7 @@ def _reconcile_cluster_tasks(
                     dask_state=dask_state,
                     comp_task=comp_task,
                     tracker_run=tracker_run,
+                    required_resources=required_resources,
                     issues=issues,
                 )
             )
@@ -559,6 +733,7 @@ def _reconcile_cluster_tasks(
                     dask_state="not-in-dask",
                     comp_task=comp_task,
                     tracker_run=tracker_run,
+                    required_resources=cluster.task_resources.get(comp_task.job_id or "", {}),
                     issues=["comp_tasks.state=RUNNING but job absent from Dask scheduler (stuck?)"],
                 )
             )
@@ -860,6 +1035,28 @@ async def summary(
 
     reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, tracker_runs)
 
+    # Fetch display info (email, wallet name, product, usd/credit) for each cluster
+    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]] = {}
+    for _cluster in computational_clusters:
+        try:
+            _email, _wallet_name = await db.get_user_and_wallet_info(
+                state, _cluster.primary.user_id, _cluster.primary.wallet_id
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            _email, _wallet_name = None, None
+        _cluster_tracker = tracker_runs_by_user_id.get(_cluster.primary.user_id, [])
+        _product_name = next((r.product_name for r in _cluster_tracker), None)
+        _usd_per_credit: float | None = None
+        if _product_name:
+            with contextlib.suppress(Exception):
+                _usd_per_credit = await db.get_product_usd_per_credit(state, _product_name)
+        cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
+            _email,
+            _wallet_name,
+            _product_name,
+            _usd_per_credit,
+        )
+
     if output_json:
         _print_summary_as_json(
             dynamic_autoscaled_instances,
@@ -882,8 +1079,8 @@ async def summary(
             state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
             output=output,
             cluster_task_rows={(c.primary.user_id, c.primary.wallet_id): rows for c, rows in cluster_task_rows},
+            cluster_extra_info=cluster_extra_info,
         )
-        _print_tracker_reconciliation(reconciliation_entries, output=output)
 
     time_threshold = arrow.utcnow().shift(minutes=-30).datetime
     dynamic_services_in_error = any(
