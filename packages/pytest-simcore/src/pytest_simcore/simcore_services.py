@@ -239,23 +239,3 @@ async def simcore_services_ready_module(
 
         _monkeypatch_module.setenv(f"{env_prefix}_HOST", endpoint.host)
         _monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
-
-
-@pytest.fixture(scope="module")
-def sync_simcore_services_ready_module(
-    services_endpoint: dict[str, URL], _monkeypatch_module: pytest.MonkeyPatch
-) -> None:
-    warnings.warn(
-        "This fixture uses deprecated monkeypatch_module fixturePlease do NOT use it!",
-        DeprecationWarning,
-        stacklevel=1,
-    )
-    asyncio.run(_wait_for_services_ready(services_endpoint))
-    # patches environment variables with right host/port per service
-    for service, endpoint in services_endpoint.items():
-        env_prefix = service.upper().replace("-", "_")
-
-        assert endpoint.host
-
-        _monkeypatch_module.setenv(f"{env_prefix}_HOST", endpoint.host)
-        _monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
