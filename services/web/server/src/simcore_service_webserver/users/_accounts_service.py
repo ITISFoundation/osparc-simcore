@@ -15,7 +15,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..invitations import api as invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact
-from ..products import _service as products_service
+from ..products import products_service
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval
 from .exceptions import (
