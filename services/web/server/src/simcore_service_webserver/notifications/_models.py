@@ -73,15 +73,11 @@ class EmailContent(BaseModel):
     )
 
 
-class EmailMessage(BaseModel):
-    channel: ChannelType = ChannelType.email
-
+class EmailEnvelope(BaseModel):
     from_: Annotated[EmailContact, Field(alias="from")]
     to: EmailContact
     reply_to: EmailContact | None = None
     bcc: EmailContact | None = None
-
-    content: EmailContent
 
     attachments: list[EmailAttachment] | None = None
 
@@ -89,6 +85,17 @@ class EmailMessage(BaseModel):
         frozen=True,
         validate_by_alias=True,
         validate_by_name=True,
+    )
+
+
+class EmailMessage(BaseModel):
+    channel: ChannelType = ChannelType.email
+
+    envelope: EmailEnvelope
+    content: EmailContent
+
+    model_config = ConfigDict(
+        frozen=True,
     )
 
 

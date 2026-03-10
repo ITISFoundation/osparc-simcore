@@ -6,7 +6,7 @@ from email.headerregistry import Address
 from celery import (  # type: ignore[import-untyped]
     Task,
 )
-from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
+from models_library.notifications.celery import EmailContact, EmailMessage
 from notifications_library._email import (
     compose_email,
     create_email_session,
@@ -30,25 +30,18 @@ async def send_email_message(
     assert task  # nosec
     assert task_key  # nosec
 
-    msg = EmailMessage(
-        from_=EmailContact(**message.from_.model_dump()),
-        to=EmailContact(**message.to.model_dump()),
-        reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
-        content=EmailContent(**message.content.model_dump()),
-    )
-
-    with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
+    with log_context(_logger, logging.INFO, "Send email to %s", message.envelope.to.email):
         settings = SMTPSettings.create_from_envs()
 
         async with create_email_session(settings=settings) as smtp:
             await smtp.send_message(
                 compose_email(
-                    from_=_to_address(msg.from_),
-                    to=_to_address(msg.to),
-                    subject=msg.content.subject,
-                    content_text=msg.content.body_text,
-                    content_html=msg.content.body_html,
-                    reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
+                    from_=_to_address(message.envelope.from_),
+                    to=_to_address(message.envelope.to),
+                    subject=message.content.subject,
+                    content_text=message.content.body_text,
+                    content_html=message.content.body_html,
+                    reply_to=_to_address(message.envelope.reply_to) if message.envelope.reply_to else None,
                     extra_headers=settings.SMTP_EXTRA_HEADERS,
                 )
             )

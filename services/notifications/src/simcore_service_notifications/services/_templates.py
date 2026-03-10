@@ -2,14 +2,13 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from models_library.notifications_errors import (
-    NotificationsTemplateContextValidationError,
-    NotificationsTemplateNotFoundError,
+from models_library.notifications._errors import (
+    TemplateContextValidationError,
+    TemplateNotFoundError,
 )
 from pydantic import ValidationError
 
-from ..models.preview import TemplatePreview
-from ..models.template import Template, TemplateRef
+from ..models.template import Template, TemplatePreview, TemplateRef
 from ..renderers import Renderer
 from ..repositories import FileTemplatesRepository
 
@@ -28,7 +27,7 @@ class TemplatesService:
         )
 
         if not templates:
-            raise NotificationsTemplateNotFoundError(channel=ref.channel, template_name=ref.template_name)
+            raise TemplateNotFoundError(channel=ref.channel, template_name=ref.template_name)
 
         template = templates[0]
 
@@ -42,7 +41,7 @@ class TemplatesService:
                 context,
                 e,
             )
-            raise NotificationsTemplateContextValidationError(
+            raise TemplateContextValidationError(
                 template_name=ref.template_name,
                 channel=ref.channel,
             ) from e
