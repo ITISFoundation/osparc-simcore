@@ -35,13 +35,13 @@ export APP_VERSION
 
 .PHONY: install-dev install-prod install-ci
 
-install-dev: _check_venv_active ## install app in development mode
+install-dev: ## install app in development mode
 	@uv sync --all-groups
 
-install-prod: _check_venv_active ## install app in production mode
+install-prod: ## install app in production mode
 	@uv sync --no-dev --no-editable
 
-install-ci: _check_venv_active ## install app in CI mode
+install-ci: ## install app in CI mode
 	@uv sync --group dev --no-editable
 
 
@@ -50,7 +50,7 @@ install-ci: _check_venv_active ## install app in CI mode
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
 
-test-dev-unit test-ci-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
+test-dev-unit test-ci-unit: ## run app unit tests (specifying test-path can restrict to a folder)
 	# Targets tests/unit folder
 	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_PATH)
 
