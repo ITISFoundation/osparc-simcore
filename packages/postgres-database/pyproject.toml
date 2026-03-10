@@ -11,7 +11,7 @@ dependencies = [
   "click>=8.3.0",
   "docker>=7.1.0",
   "orjson>=3.11.4",
-  "pydantic>=2.11.9",
+  "pydantic>=2.11.0",
   "pydantic-extra-types>=2.10.5",
   "simcore-common-library",
   "sqlalchemy[postgresql-asyncpg,postgresql-psycopg2binary]>=1.4.54",

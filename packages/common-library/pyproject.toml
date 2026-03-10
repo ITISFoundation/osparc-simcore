@@ -16,7 +16,7 @@ classifiers = [
 ]
 dependencies = [
   "orjson>=3.11.4",
-  "pydantic>=2.11.9",
+  "pydantic>=2.11.0",
   "pydantic-extra-types>=2.10.5",
 ]
 
