@@ -17,4 +17,4 @@ class AccountApprovedTemplateContext(BaseTemplateContext):
 
     # extra fields provided by frontend
     trial_account_days: int | None = None
-    extra_credits_in_usd: int | None = None
+    extra_credits: int | None = None

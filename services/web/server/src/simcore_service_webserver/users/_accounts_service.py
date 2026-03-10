@@ -15,6 +15,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..invitations import api as invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact
+from ..products import _service as products_service
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval
 from .exceptions import (
@@ -382,6 +383,8 @@ async def preview_approval_user_account(
     user_account = found[0]
     assert user_account.email == approval_email  # nosec
 
+    product = products_service.get_product(app, product_name)
+
     # Preview the notification template
     preview = await notifications_service.preview_template(
         app=app,
@@ -396,7 +399,9 @@ async def preview_approval_user_account(
             },
             "link": invitation_url,
             "trial_account_days": trial_account_days,
-            "extra_credits_in_usd": extra_credits_in_usd,
+            "extra_credits": extra_credits_in_usd * product.credits_per_usd
+            if extra_credits_in_usd and product.credits_per_usd
+            else None,
         },
     )
 
