@@ -242,7 +242,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
 
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
-        toolTipText: this.tr("Edit"),
+        toolTipText: this.tr("Edit tag"),
+        decorator: "no-border",
+        backgroundColor: "transparent",
         enabled: canIWrite,
       });
       buttonContainer.add(editButton);
