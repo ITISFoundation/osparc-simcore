@@ -260,14 +260,19 @@ def api_client(
         yield api_client
 
 
+def _cleanup_files(api: osparc.FilesApi) -> None:
+    for file in api.list_files():
+        api.delete_file(file.id)
+
+
 @pytest.fixture(scope="module")
 def files_api(api_client: osparc.ApiClient) -> Iterator[osparc.FilesApi]:
     api = osparc.FilesApi(api_client)
+    _cleanup_files(api)
     try:
         yield api
     finally:
-        for file in api.list_files():
-            api.delete_file(file.id)
+        _cleanup_files(api)
 
 
 @pytest.fixture(scope="module")
