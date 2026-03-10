@@ -452,20 +452,25 @@ endef
 
 up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in batches of $(PHASED_DEPLOY_BATCH_SIZE) services (in YAML order)
 	# Deploy ops and vendors stacks
+	# Ensure external networks (referenced by ops/vendor stacks) exist before deploy
+	@docker network inspect pytest-simcore_default >/dev/null 2>&1 || \
+		docker network create --driver overlay --attachable pytest-simcore_default
+	@docker network inspect pytest-simcore_interactive_services_subnet >/dev/null 2>&1 || \
+		docker network create --driver overlay --attachable pytest-simcore_interactive_services_subnet
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
 	@echo "Deploying stack $(SWARM_STACK_NAME) in batches of $(PHASED_DEPLOY_BATCH_SIZE)..."
 	@docker run --rm -i $(YQ_IMAGE) \
 		$(_YQ_STACK_SERVICES_ORDERED) \
-		< services/docker-compose.yml > .stack-services-all-tmp.txt
-	@total=$$(wc -l < .stack-services-all-tmp.txt | tr -d ' '); \
+		< services/docker-compose.yml > .stack-services-all.ignore.txt
+	@total=$$(wc -l < .stack-services-all.ignore.txt | tr -d ' '); \
 		if [ "$$total" -eq 0 ]; then \
 			echo "ERROR: No services found in $<"; exit 1; \
 		fi; \
 		offset=0; \
 		while [ $$offset -lt $$total ]; do \
-			batch_services=$$(sed -n "$$(($$offset + 1)),$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE)))p" .stack-services-all-tmp.txt | tr '\n' ' '); \
+			batch_services=$$(sed -n "$$(($$offset + 1)),$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE)))p" .stack-services-all.ignore.txt | tr '\n' ' '); \
 			echo "Deploying services: $$batch_services"; \
 			yq_expr=""; \
 			for s in $$batch_services; do \
@@ -481,7 +486,7 @@ up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production 
 			done; \
 			offset=$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE))); \
 		done
-	@rm -f .stack-services-all-tmp.txt .stack-batch-tmp.yml
+	@rm -f .stack-services-all.ignore.txt .stack-batch-tmp.yml
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
