@@ -58,7 +58,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       this.addLabel();
       const label = this.getChildControl("label");
       if (label) {
-        label.setMaxWidth(150);
+        label.setMaxWidth(200);
         // override the one set in osparc-theme
         label.setPaddingTop(0);
       }
@@ -68,7 +68,8 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       });
 
       const posLbl = new qx.ui.basic.Label().set({
-        marginRight: 5
+        marginRight: 5,
+        alignY: "middle",
       });
       this.bind("position", posLbl, "value", {
         converter: val => (val+1).toString()
@@ -79,15 +80,20 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       this.addWidget(posLbl);
 
       const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
+        toolTipText: this.tr("Move up"),
         appearance: "no-shadow-button"
       });
       moveUpBtn.addListener("execute", () => this.fireEvent("moveUp"), this);
       this.bind("position", moveUpBtn, "visibility", {
         converter: val => val > -1 ? "visible" : "excluded"
       });
+      this.bind("position", moveUpBtn, "enabled", {
+        converter: val => val > 0
+      });
       this.addWidget(moveUpBtn);
 
       const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
+        toolTipText: this.tr("Move down"),
         appearance: "no-shadow-button"
       });
       moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
@@ -97,6 +103,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       this.addWidget(moveDownBtn);
 
       const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
+        toolTipText: this.tr("Hide node"),
         marginRight: 5,
         appearance: "no-shadow-button"
       });
@@ -107,6 +114,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       this.addWidget(hideBtn);
 
       const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
+        toolTipText: this.tr("Show node"),
         marginRight: 5,
         appearance: "no-shadow-button"
       });

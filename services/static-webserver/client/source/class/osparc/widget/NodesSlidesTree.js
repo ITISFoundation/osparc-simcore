@@ -82,7 +82,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           this._add(control);
           break;
         case "disable": {
-          control = new qx.ui.form.Button(this.tr("Disable")).set({
+          control = new qx.ui.form.Button(this.tr("Disable App Mode")).set({
             allowGrowX: false,
             appearance: "no-shadow-button"
           });
