@@ -87,6 +87,7 @@ dev = [
   "pytest-docker>=3.2.3",
   "pytest-mock>=3.15.1",
   "pytest-runner>=6.0.1",
+  "pytest-simcore",
   "respx>=0.22.0",
   "sqlalchemy[mypy]>=1.4.54",
   "types-psycopg2>=2.9.21.20250915",
@@ -99,3 +100,4 @@ simcore-models-library = { path = "../../packages/models-library", editable = tr
 simcore-postgres-database = { path = "../../packages/postgres-database", editable = true }
 simcore-settings-library = { path = "../../packages/settings-library", editable = true }
 simcore-service-library = { path = "../../packages/service-library", editable = true }
+pytest-simcore = { path = "../../packages/pytest-simcore", editable = true }
