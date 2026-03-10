@@ -17,13 +17,7 @@ import httpx
 import osparc
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
-from pytest_simcore.helpers.typing_docker import UrlStr
-from pytest_simcore.helpers.typing_public_api import (
-    RegisteredUserDict,
-    ServiceInfoDict,
-    ServiceNameStr,
-    StacksDeployedDict,
-)
+from pytest_simcore.helpers.typing_public_api import RegisteredUserDict, ServiceInfoDict, ServiceNameStr
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -76,13 +70,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def simcore_docker_stack_and_registry_ready(
-    docker_registry: UrlStr,
-    docker_stack: StacksDeployedDict,
-    sync_simcore_services_ready_module: None,
-) -> StacksDeployedDict:
-    # At this point `simcore_services_ready` waited until all services
-    # are running. Let's make one more check on the web-api
+def registry_ready() -> None:
     for attempt in Retrying(
         wait=wait_fixed(1),
         stop=stop_after_delay(0.5 * _MINUTE),
@@ -97,13 +85,9 @@ def simcore_docker_stack_and_registry_ready(
                 json.dumps(attempt.retry_state.retry_object.statistics),
             )
 
-    return docker_stack
-
 
 @pytest.fixture(scope="module")
-def registered_user(
-    simcore_docker_stack_and_registry_ready: StacksDeployedDict,
-) -> Iterator[RegisteredUserDict]:
+def registered_user(registry_ready: None) -> Iterator[RegisteredUserDict]:
     first_name = "john"
     last_name = "smith"
     user = RegisteredUserDict(
@@ -159,7 +143,7 @@ def registered_user(
 
 @pytest.fixture(scope="module")
 def services_registry(
-    docker_registry_image_injector: Callable[[str, str, str | None], Awaitable[dict[str, Any]]],
+    existing_docker_registry_image_injector: Callable[[str, str, str, str | None], Awaitable[dict[str, Any]]],
     registered_user: RegisteredUserDict,
     env_vars_for_docker_compose: dict[str, str],
 ) -> dict[ServiceNameStr, ServiceInfoDict]:
@@ -170,7 +154,8 @@ def services_registry(
     user_email = registered_user["email"]
 
     sleeper_service = asyncio.run(
-        docker_registry_image_injector(
+        existing_docker_registry_image_injector(
+            "127.0.0.1:5000",
             "itisfoundation/sleeper",
             "2.1.1",
             user_email,

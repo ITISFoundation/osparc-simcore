@@ -11,8 +11,17 @@ include ../../scripts/common-package.Makefile
 leave build:
 	$(MAKE_C) $(REPO_BASE_DIR) $@
 
-
 # LOCAL ------------------
+
+SIMCORE_DOT_ENV = $(abspath $(CURDIR)/../../.env)
+
+define _up_simcore
+# DISABLED: test setup has no otl service
+echo TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=null >> $(SIMCORE_DOT_ENV)
+echo TRACING_OPENTELEMETRY_COLLECTOR_PORT=null >> $(SIMCORE_DOT_ENV)
+@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+$(MAKE_C) $(REPO_BASE_DIR) up-prod-phased ops_ci=1
+endef
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
@@ -23,6 +32,8 @@ requirements: ## compiles pip requirements (.in -> .txt)
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
+	@$(_up_simcore)
+	@$(REPO_BASE_DIR)/tests/utils/wait_for_services.py
 
 
 .PHONY: test-dev
