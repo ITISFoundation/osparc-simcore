@@ -16,7 +16,7 @@ dependencies = [
   "jsonref>=1.1.0",
   "jsonschema>=4.25.1",
   "orjson>=3.11.4",
-  "pydantic[email]>=2.11.7",
+  "pydantic[email]==2.11.9",
   "pydantic-extra-types>=2.10.5",
   "pydantic-settings>=2.7.0",
   "alembic>=1.15.1",
