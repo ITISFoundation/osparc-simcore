@@ -289,6 +289,12 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       return false;
     },
 
+    __saveSlides: function() {
+      const slideshow = this.__serialize();
+      this.__study.getUi().getSlideshow().setData(slideshow);
+      this.__study.getUi().getSlideshow().fireEvent("changeSlideshow");
+    },
+
     __saveInstructions: function(item, instructions) {
       const itemMdl = item.getModel();
       itemMdl.setInstructions(instructions);
@@ -296,6 +302,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       // save instructions
       const nodeId = itemMdl.getNodeId();
       this.__study.getUi().getSlideshow().setInstructions(nodeId, instructions);
+      this.__study.getUi().getSlideshow().fireEvent("changeSlideshow");
     },
 
     __serialize: function() {
@@ -309,11 +316,6 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
         };
       });
       return slideshow;
-    },
-
-    __saveSlides: function() {
-      const slideshow = this.__serialize();
-      this.__study.getUi().getSlideshow().setData(slideshow);
     },
 
     __disableSlides: function() {
