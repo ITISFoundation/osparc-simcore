@@ -94,7 +94,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
 
       const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
         toolTipText: this.tr("Move down"),
-        appearance: "no-shadow-button"
+        appearance: "no-shadow-button",
       });
       moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
       this.bind("position", moveDownBtn, "visibility", {
@@ -105,7 +105,8 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
         toolTipText: this.tr("Hide node"),
         marginRight: 5,
-        appearance: "no-shadow-button"
+        appearance: "form-button-transparent",
+        minWidth: 25,
       });
       hideBtn.addListener("execute", () => this.fireEvent("hideNode"), this);
       this.bind("position", hideBtn, "visibility", {
@@ -116,7 +117,8 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
         toolTipText: this.tr("Show node"),
         marginRight: 5,
-        appearance: "no-shadow-button"
+        appearance: "form-button-transparent",
+        minWidth: 25,
       });
       showBtn.addListener("execute", () => this.fireEvent("showNode"), this);
       this.bind("position", showBtn, "visibility", {
@@ -124,19 +126,19 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       });
       this.addWidget(showBtn);
 
-      const editTextBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/10").set({
+      const editInstructionsBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/10").set({
         toolTipText: this.tr("Edit Instructions"),
         marginRight: 5,
         appearance: "no-shadow-button"
       });
-      editTextBtn.addListener("execute", () => this.__editText(), this);
-      this.bind("position", editTextBtn, "visibility", {
-        converter: val => val > -1 ? "visible" : "excluded"
+      editInstructionsBtn.addListener("execute", () => this.__editInstructions(), this);
+      this.bind("position", editInstructionsBtn, "visibility", {
+        converter: val => val > -1 ? "visible" : "hidden"
       });
-      this.addWidget(editTextBtn);
+      this.addWidget(editInstructionsBtn);
     },
 
-    __editText: function() {
+    __editInstructions: function() {
       const title = this.tr("Edit Instructions");
       const textEditor = new osparc.editor.MarkdownEditor(this.getInstructions());
       textEditor.getChildControl("accept-button").setLabel(this.tr("Save"));
