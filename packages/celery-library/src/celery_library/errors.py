@@ -28,6 +28,10 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
     return result
 
 
+class GroupSubmissionError(OsparcErrorMixin, Exception):
+    msg_template = "Unable to submit group {group_name} with key '{group_key}'"
+
+
 class TaskSubmissionError(OsparcErrorMixin, Exception):
     msg_template = "Unable to submit task {task_name} with key '{task_key}' and params {task_params}"
 

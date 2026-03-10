@@ -1,6 +1,14 @@
 from typing import Any, Final
 
-from ..models import ExecutionMetadata, GroupUUID, OwnerMetadata, TaskName, TaskUUID
+from ..models import (
+    GroupExecutionMetadata,
+    GroupTaskExecutionMetadata,
+    GroupUUID,
+    OwnerMetadata,
+    TaskExecutionMetadata,
+    TaskName,
+    TaskUUID,
+)
 from ..task_manager import TaskManager
 
 NOTIFICATIONS_SERVICE_QUEUE_NAME: Final[str] = "notifications"
@@ -14,7 +22,7 @@ async def submit_send_message_task(
     message: dict[str, Any],  # NOTE: validated internally
 ) -> tuple[TaskUUID, TaskName]:
     return await task_manager.submit_task(
-        ExecutionMetadata(
+        TaskExecutionMetadata(
             name=SEND_MESSAGE_TASK_NAME_TEMPLATE.format(message["channel"]),
             queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
         ),
@@ -29,16 +37,20 @@ async def submit_send_messages_task(
     owner_metadata: OwnerMetadata,
     messages: list[dict[str, Any]],  # NOTE: validated internally
 ) -> tuple[GroupUUID, list[TaskUUID], TaskName]:
-    return await task_manager.submit_group(
-        [
-            (
-                ExecutionMetadata(
-                    name=SEND_MESSAGE_TASK_NAME_TEMPLATE.format(message["channel"]),
-                    queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
-                ),
-                {"message": message},
-            )
-            for message in messages
-        ],
+    group_uuid, task_uuids = await task_manager.submit_group(
+        GroupExecutionMetadata(
+            name="send_messages",
+            tasks=[
+                (
+                    GroupTaskExecutionMetadata(
+                        name=SEND_MESSAGE_TASK_NAME_TEMPLATE.format(message["channel"]),
+                        queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
+                    ),
+                    {"message": message},
+                )
+                for message in messages
+            ],
+        ),
         owner_metadata=owner_metadata,
-    ) + (SEND_MESSAGE_TASK_NAME_TEMPLATE.format(messages[0]["channel"]),)
+    )
+    return group_uuid, task_uuids, SEND_MESSAGE_TASK_NAME_TEMPLATE.format(messages[0]["channel"])
