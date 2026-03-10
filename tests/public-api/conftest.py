@@ -261,8 +261,13 @@ def api_client(
 
 
 @pytest.fixture(scope="module")
-def files_api(api_client: osparc.ApiClient) -> osparc.FilesApi:
-    return osparc.FilesApi(api_client)
+def files_api(api_client: osparc.ApiClient) -> Iterator[osparc.FilesApi]:
+    api = osparc.FilesApi(api_client)
+    try:
+        yield api
+    finally:
+        for file in api.list_files():
+            api.delete_file(file.id)
 
 
 @pytest.fixture(scope="module")
