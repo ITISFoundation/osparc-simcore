@@ -28,7 +28,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
 
     this.getChildControl("instructions");
 
-    this.__tree = this.getChildControl("tree");
+    const tree = this.getChildControl("tree");
 
     const disable = this.getChildControl("disable");
     disable.addListener("execute", () => this.__disableSlides(), this);
@@ -36,7 +36,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     enable.addListener("execute", () => this.__saveSlides(), this);
 
     const model = this.__initRoot();
-    this.__tree.setModel(model);
+    tree.setModel(model);
 
     this.__initTree();
     this.__initData();
@@ -49,7 +49,6 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
 
   members: {
     __study: null,
-    __tree: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -129,7 +128,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     },
 
     __initTree: function() {
-      this.__tree.setDelegate({
+      this.getChildControl("tree").setDelegate({
         createItem: () => new osparc.widget.NodeSlideTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
@@ -186,23 +185,25 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     __initData: function() {
       const topLevelNodes = this.__study.getWorkbench().getNodes();
 
-      this.__tree.getModel().getChildren().removeAll();
+      const tree = this.getChildControl("tree");
+      tree.getModel().getChildren().removeAll();
       const allChildren = this.__convertToModel(topLevelNodes);
-      this.__tree.getModel().setChildren(qx.data.marshal.Json.createModel(allChildren));
+      tree.getModel().setChildren(qx.data.marshal.Json.createModel(allChildren));
 
-      this.__tree.refresh();
+      tree.refresh();
     },
 
     changeSelectedNode: function(nodeId) {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const tree = this.getChildControl("tree");
+      const children = tree.getModel().getChildren().toArray();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
         const item = children[idx];
-        this.__tree.setSelection(new qx.data.Array([item]));
+        tree.setSelection(new qx.data.Array([item]));
         // show by default
         if (item.getPosition() === -1) {
           this.__show(item);
-          this.__tree.refresh();
+          tree.refresh();
         }
       }
     },
@@ -224,12 +225,12 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           break;
       }
       if (fnct.call(this, item.getModel())) {
-        this.__tree.refresh();
+        this.getChildControl("tree").refresh();
       }
     },
 
     __getVisibleItems: function() {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const children = this.getChildControl("tree").getModel().getChildren().toArray();
       return children.filter(elem => elem.getPosition() !== -1);
     },
 
@@ -253,7 +254,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     },
 
     __moveUp: function(itemMdl) {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const children = this.getChildControl("tree").getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
@@ -273,7 +274,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     },
 
     __moveDown: function(itemMdl) {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const children = this.getChildControl("tree").getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
@@ -303,7 +304,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
 
     __serialize: function() {
       const slideshow = {};
-      const model = this.__tree.getModel();
+      const model = this.getChildControl("tree").getModel();
       const children = model.getChildren().toArray();
       children.forEach(child => {
         slideshow[child.getNodeId()] = {
