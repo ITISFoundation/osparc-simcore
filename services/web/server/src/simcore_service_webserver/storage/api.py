@@ -26,7 +26,7 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
+from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.logging_utils import log_context
 from yarl import URL
 
@@ -106,7 +106,7 @@ async def copy_data_folders_from_project(
         task_manager = get_task_manager(app)
         async for job_composed_result in submit_job_and_wait(
             task_manager,
-            execution_metadata=ExecutionMetadata(name="deep_copy_files_from_project"),
+            execution_metadata=TaskExecutionMetadata(name="deep_copy_files_from_project"),
             owner_metadata=OwnerMetadata.model_validate(
                 WebServerOwnerMetadata(
                     user_id=user_id,

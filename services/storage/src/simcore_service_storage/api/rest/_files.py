@@ -20,7 +20,7 @@ from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskUUID
+from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from yarl import URL
@@ -295,7 +295,7 @@ async def complete_upload_file(
 
     owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
     task_uuid = await task_manager.submit_task(
-        ExecutionMetadata(
+        TaskExecutionMetadata(
             name=remote_complete_upload_file.__name__,
         ),
         owner_metadata=owner_metadata,
