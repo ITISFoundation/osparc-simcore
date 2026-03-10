@@ -112,8 +112,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
           break;
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
-            minWidth: 30,
+            minWidth: 25,
             alignY: "middle",
+            appearance: "form-button-transparent",
           });
           osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights());
           break;
@@ -234,6 +235,8 @@ qx.Class.define("osparc.form.tag.TagItem", {
       const sharedIcon = this.getChildControl("shared-icon");
       sharedIcon.set({
         cursor: canIWrite ? "pointer" : null,
+        enabled: canIWrite,
+        opacity: canIWrite ? 1 : 0.4,
       });
       if (canIWrite) {
         sharedIcon.addListener("tap", () => this.__openAccessRights(), this);
@@ -242,16 +245,18 @@ qx.Class.define("osparc.form.tag.TagItem", {
 
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
-        toolTipText: this.tr("Edit"),
+        toolTipText: this.tr("Edit tag"),
+        appearance: "form-button-transparent",
+        opacity: canIWrite ? 1 : null,
         enabled: canIWrite,
       });
       buttonContainer.add(editButton);
       editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
 
       const deleteButton = new osparc.ui.form.FetchButton().set({
-        appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
         toolTipText: this.tr("Delete"),
+        appearance: "danger-button-transparent",
         enabled: canIDelete,
       });
       buttonContainer.add(deleteButton);
