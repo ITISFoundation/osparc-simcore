@@ -4,14 +4,14 @@ from typing import Any, Protocol, runtime_checkable
 from models_library.progress_bar import ProgressReport
 
 from .models import (
-    ExecutionMetadata,
+    GroupExecutionMetadata,
     GroupKey,
     GroupStatus,
     GroupUUID,
     OwnerMetadata,
     Task,
+    TaskExecutionMetadata,
     TaskKey,
-    TaskParams,
     TaskStatus,
     TaskStreamItem,
     TaskUUID,
@@ -22,16 +22,20 @@ from .models import (
 class TaskManager(Protocol):
     async def submit_group(
         self,
-        executions: list[tuple[ExecutionMetadata, TaskParams]],
+        execution_metadata: GroupExecutionMetadata,
         *,
         owner_metadata: OwnerMetadata,
     ) -> tuple[GroupUUID, list[TaskUUID]]: ...
 
     async def submit_task(
-        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params
+        self, execution_metadata: TaskExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params
     ) -> TaskUUID: ...
 
     async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None: ...
+
+    async def cancel_group(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> None: ...
+
+    async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None: ...
 
     async def get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any: ...
 
