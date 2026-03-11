@@ -178,7 +178,9 @@ qx.Class.define("osparc.study.StudyOptions", {
             marginTop: 15,
             marginBottom: 15,
           });
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "tiers-checkbox":
           control = new qx.ui.form.CheckBox().set({
@@ -197,13 +199,6 @@ qx.Class.define("osparc.study.StudyOptions", {
             flex: 1
           });
           break;
-        case "tiers-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-            minHeight: 40,
-          });
-          this.getChildControl("tiers-container").add(control);
-          break;
-        }
         case "loading-units-spinner":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/48",
@@ -212,19 +207,19 @@ qx.Class.define("osparc.study.StudyOptions", {
             marginTop: 20
           });
           control.getContentElement().addClass("rotate");
-          this.getChildControl("tiers-layout").add(control);
+          this.getChildControl("advanced-layout").add(control);
           break;
         case "study-pricing-units": {
           control = new osparc.study.StudyPricingUnits();
           const loadingImage = this.getChildControl("loading-units-spinner");
-          const unitsBoxesLayout = this.getChildControl("tiers-layout");
+          const tiersContainer = this.getChildControl("tiers-container");
           const unitsLoading = () => {
             loadingImage.show();
-            unitsBoxesLayout.exclude();
+            tiersContainer.exclude();
           };
           const unitsReady = () => {
             loadingImage.exclude();
-            unitsBoxesLayout.show();
+            tiersContainer.show();
             control.getNodePricingUnits().forEach(nodePricingUnits => {
               this.bind("patchStudy", nodePricingUnits, "patchNode");
             });
@@ -232,7 +227,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           unitsLoading();
           control.addListener("loadingUnits", () => unitsLoading());
           control.addListener("unitsReady", () => unitsReady());
-          unitsBoxesLayout.add(control);
+          tiersContainer.add(control);
           break;
         }
         case "buttons-layout":
