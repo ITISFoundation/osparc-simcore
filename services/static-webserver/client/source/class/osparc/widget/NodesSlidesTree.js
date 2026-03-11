@@ -219,10 +219,13 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           fnct = this.__moveDown;
           break;
       }
-      if (fnct.call(this, itemMdl)) {
-        this.getChildControl("tree").refresh();
+      if (fnct) {
+        const changed = fnct.call(this, itemMdl);
+        if (changed) {
+          this.getChildControl("tree").refresh();
+          this.__saveSlides();
+        }
       }
-      this.__saveSlides();
     },
 
     __getVisibleItems: function() {
