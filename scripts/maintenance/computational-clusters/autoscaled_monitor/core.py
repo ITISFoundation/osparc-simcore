@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+import dataclasses
 import datetime
 from dataclasses import replace
 from pathlib import Path
@@ -1098,44 +1099,32 @@ def _print_summary_as_json(
         rich.print_json(orjson.dumps(result).decode())
 
 
-async def summary(
+@dataclasses.dataclass
+class _ReconciliationResult:
+    tracker_runs: list[ResourceTrackerServiceRun] = dataclasses.field(default_factory=list)
+    cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] = dataclasses.field(
+        default_factory=list
+    )
+    reconciliation_entries: list[TrackerReconciliationEntry] = dataclasses.field(default_factory=list)
+    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]] = (
+        dataclasses.field(default_factory=dict)
+    )
+
+
+async def _reconcile_computational_clusters(
     state: AppState,
-    user_id: int | None,
-    wallet_id: int | None,
-    *,
-    output_json: bool,
-    output: Path | None,
-) -> bool:
-    # get all the running instances
-    assert state.ec2_resource_autoscaling
-    dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
-        state,
-        filter_by_user_id=user_id,
-        filter_by_wallet_id=wallet_id,
-        filter_by_instance_id=None,
-    )
-    dynamic_autoscaled_instances = await _parse_dynamic_instances(
-        state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
-    )
-
-    assert state.ec2_resource_clusters_keeper
-    computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
-    computational_clusters = await _parse_computational_clusters(
-        state, computational_instances, state.ssh_key_path, user_id, wallet_id
-    )
-
-    # --- Resource tracker reconciliation (read-only, graceful on DB failure) ---
+    computational_clusters: list[ComputationalCluster],
+) -> _ReconciliationResult:
+    """Reconcile computational clusters with resource tracker and DB data."""
+    result = _ReconciliationResult()
     try:
         async with db.db_engine(state) as engine:
-            tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
+            result.tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
 
-            # --- Per-cluster task reconciliation ---
-            # tracker_runs grouped by user_id to pass only relevant runs per cluster
             tracker_runs_by_user_id: dict[int, list[ResourceTrackerServiceRun]] = {}
-            for _run in tracker_runs:
+            for _run in result.tracker_runs:
                 tracker_runs_by_user_id.setdefault(_run.user_id, []).append(_run)
 
-            cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] = []
             for cluster in computational_clusters:
                 try:
                     comp_tasks = await db.list_computational_tasks_from_db(engine, cluster.primary.user_id)
@@ -1146,14 +1135,12 @@ async def summary(
                     comp_tasks = []
                 cluster_tracker_runs = tracker_runs_by_user_id.get(cluster.primary.user_id, [])
                 task_rows = _reconcile_cluster_tasks(cluster, comp_tasks, cluster_tracker_runs)
-                cluster_task_rows.append((cluster, task_rows))
+                result.cluster_task_rows.append((cluster, task_rows))
 
-            reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, tracker_runs)
+            result.reconciliation_entries = _reconcile_clusters_with_tracker(
+                computational_clusters, result.tracker_runs
+            )
 
-            # Fetch display info (email, wallet name, product, usd/credit) for each cluster
-            cluster_extra_info: dict[
-                tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]
-            ] = {}
             for _cluster in computational_clusters:
                 try:
                     _email, _wallet_name = await db.get_user_and_wallet_info(
@@ -1167,7 +1154,7 @@ async def summary(
                 if _product_name:
                     with contextlib.suppress(Exception):
                         _usd_per_credit = await db.get_product_usd_per_credit(engine, _product_name)
-                cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
+                result.cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
                     _email,
                     _wallet_name,
                     _product_name,
@@ -1175,36 +1162,77 @@ async def summary(
                 )
     except Exception:  # pylint: disable=broad-exception-caught
         rich.print("[yellow]Warning: could not query database (DB unreachable?). Skipping DB reconciliation.[/yellow]")
-        tracker_runs = []
-        tracker_runs_by_user_id = {}
-        cluster_task_rows = []
-        reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, tracker_runs)
-        cluster_extra_info = {}
+        result.reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, result.tracker_runs)
+    return result
+
+
+async def summary(
+    state: AppState,
+    user_id: int | None,
+    wallet_id: int | None,
+    *,
+    output_json: bool,
+    output: Path | None,
+    include_dynamic: bool = True,
+    include_computational: bool = True,
+) -> bool:
+    dynamic_autoscaled_instances: list[DynamicInstance] = []
+    computational_clusters: list[ComputationalCluster] = []
+
+    # get all the running instances
+    if include_dynamic:
+        assert state.ec2_resource_autoscaling
+        dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
+            state,
+            filter_by_user_id=user_id,
+            filter_by_wallet_id=wallet_id,
+            filter_by_instance_id=None,
+        )
+        dynamic_autoscaled_instances = await _parse_dynamic_instances(
+            state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
+        )
+
+    if include_computational:
+        assert state.ec2_resource_clusters_keeper
+        computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
+        computational_clusters = await _parse_computational_clusters(
+            state, computational_instances, state.ssh_key_path, user_id, wallet_id
+        )
+
+    # --- Resource tracker reconciliation (read-only, graceful on DB failure) ---
+    recon = _ReconciliationResult()
+    if include_computational:
+        recon = await _reconcile_computational_clusters(state, computational_clusters)
 
     if output_json:
         _print_summary_as_json(
             dynamic_autoscaled_instances,
             computational_clusters,
             output=output,
-            tracker_reconciliation=reconciliation_entries,
-            cluster_task_rows=cluster_task_rows,
+            tracker_reconciliation=recon.reconciliation_entries,
+            cluster_task_rows=recon.cluster_task_rows,
         )
-
-    if not output_json:
-        _print_dynamic_instances(
-            dynamic_autoscaled_instances,
-            state.environment,
-            state.ec2_resource_autoscaling.meta.client.meta.region_name,
-            output=output,
-        )
-        _print_computational_clusters(
-            computational_clusters,
-            state.environment,
-            state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
-            output=output,
-            cluster_task_rows={(c.primary.user_id, c.primary.wallet_id): rows for c, rows in cluster_task_rows},
-            cluster_extra_info=cluster_extra_info,
-        )
+    else:
+        if include_dynamic:
+            assert state.ec2_resource_autoscaling
+            _print_dynamic_instances(
+                dynamic_autoscaled_instances,
+                state.environment,
+                state.ec2_resource_autoscaling.meta.client.meta.region_name,
+                output=output,
+            )
+        if include_computational:
+            assert state.ec2_resource_clusters_keeper
+            _print_computational_clusters(
+                computational_clusters,
+                state.environment,
+                state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+                output=output,
+                cluster_task_rows={
+                    (c.primary.user_id, c.primary.wallet_id): rows for c, rows in recon.cluster_task_rows
+                },
+                cluster_extra_info=recon.cluster_extra_info,
+            )
 
     time_threshold = arrow.utcnow().shift(minutes=-30).datetime
     dynamic_services_in_error = any(
@@ -1214,10 +1242,10 @@ async def summary(
     )
     tracker_issues_found = any(
         entry.issues
-        for entry in reconciliation_entries
+        for entry in recon.reconciliation_entries
         if entry.ec2_cluster is None or not entry.ec2_cluster.primary.is_warm_buffer
     )
-    task_issues_found = any(row.issues for _, task_rows in cluster_task_rows for row in task_rows)
+    task_issues_found = any(row.issues for _, task_rows in recon.cluster_task_rows for row in task_rows)
 
     return not dynamic_services_in_error and not tracker_issues_found and not task_issues_found
 
