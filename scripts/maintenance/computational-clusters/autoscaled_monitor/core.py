@@ -3,12 +3,12 @@
 import asyncio
 import contextlib
 import datetime
-import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import arrow
+import orjson
 import parse
 import rich
 import typer
@@ -975,9 +975,9 @@ def _print_summary_as_json(
     }
 
     if output:
-        output.write_text(json.dumps(result))
+        output.write_text(orjson.dumps(result).decode())
     else:
-        rich.print_json(json.dumps(result))
+        rich.print_json(orjson.dumps(result).decode())
 
 
 async def summary(

@@ -1,6 +1,5 @@
 import contextlib
 import datetime
-import json
 import logging
 import re
 from collections import defaultdict
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import arrow
+import orjson
 import paramiko
 import rich
 import typer
@@ -233,8 +233,8 @@ async def list_running_dyn_services(
                             tzinfo=datetime.UTC,
                         ).datetime,
                         container,
-                        (json.loads(match["service_name"])["name"] if match["service_name"] else ""),
-                        (json.loads(match["service_version"])["version"] if match["service_version"] else ""),
+                        (orjson.loads(match["service_name"])["name"] if match["service_name"] else ""),
+                        (orjson.loads(match["service_version"])["version"] if match["service_version"] else ""),
                         match["product_name"],
                         match["simcore_user_agent"],
                     )
