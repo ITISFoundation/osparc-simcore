@@ -19,6 +19,7 @@ from rich.console import Group
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from . import dask, db, ec2, ssh, utils
 from .constants import SSH_USER_NAME, STALE_HEARTBEAT_THRESHOLD_MINUTES, UNDEFINED_BYTESIZE
@@ -1008,54 +1009,60 @@ async def summary(
 
     # --- Resource tracker reconciliation (read-only, graceful on DB failure) ---
     try:
-        tracker_runs = await db.list_resource_tracker_running_computational_services(state)
+        async with db.db_engine(state) as engine:
+            tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
+
+            # --- Per-cluster task reconciliation ---
+            # tracker_runs grouped by user_id to pass only relevant runs per cluster
+            tracker_runs_by_user_id: dict[int, list[ResourceTrackerServiceRun]] = {}
+            for _run in tracker_runs:
+                tracker_runs_by_user_id.setdefault(_run.user_id, []).append(_run)
+
+            cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] = []
+            for cluster in computational_clusters:
+                try:
+                    comp_tasks = await db.list_computational_tasks_from_db(engine, cluster.primary.user_id)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    rich.print(
+                        f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]"
+                    )
+                    comp_tasks = []
+                cluster_tracker_runs = tracker_runs_by_user_id.get(cluster.primary.user_id, [])
+                task_rows = _reconcile_cluster_tasks(cluster, comp_tasks, cluster_tracker_runs)
+                cluster_task_rows.append((cluster, task_rows))
+
+            reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, tracker_runs)
+
+            # Fetch display info (email, wallet name, product, usd/credit) for each cluster
+            cluster_extra_info: dict[
+                tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]
+            ] = {}
+            for _cluster in computational_clusters:
+                try:
+                    _email, _wallet_name = await db.get_user_and_wallet_info(
+                        engine, _cluster.primary.user_id, _cluster.primary.wallet_id
+                    )
+                except Exception:  # pylint: disable=broad-exception-caught
+                    _email, _wallet_name = None, None
+                _cluster_tracker = tracker_runs_by_user_id.get(_cluster.primary.user_id, [])
+                _product_name = next((r.product_name for r in _cluster_tracker), None)
+                _usd_per_credit: float | None = None
+                if _product_name:
+                    with contextlib.suppress(Exception):
+                        _usd_per_credit = await db.get_product_usd_per_credit(engine, _product_name)
+                cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
+                    _email,
+                    _wallet_name,
+                    _product_name,
+                    _usd_per_credit,
+                )
     except Exception:  # pylint: disable=broad-exception-caught
-        rich.print(
-            "[yellow]Warning: could not query resource_tracker_service_runs "
-            "(DB unreachable?). Skipping tracker reconciliation.[/yellow]"
-        )
+        rich.print("[yellow]Warning: could not query database (DB unreachable?). Skipping DB reconciliation.[/yellow]")
         tracker_runs = []
-
-    # --- Per-cluster task reconciliation ---
-    # tracker_runs grouped by user_id to pass only relevant runs per cluster
-    tracker_runs_by_user_id: dict[int, list[ResourceTrackerServiceRun]] = {}
-    for _run in tracker_runs:
-        tracker_runs_by_user_id.setdefault(_run.user_id, []).append(_run)
-
-    cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] = []
-    for cluster in computational_clusters:
-        try:
-            comp_tasks = await db.list_computational_tasks_from_db(state, cluster.primary.user_id)
-        except Exception:  # pylint: disable=broad-exception-caught
-            rich.print(f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]")
-            comp_tasks = []
-        cluster_tracker_runs = tracker_runs_by_user_id.get(cluster.primary.user_id, [])
-        task_rows = _reconcile_cluster_tasks(cluster, comp_tasks, cluster_tracker_runs)
-        cluster_task_rows.append((cluster, task_rows))
-
-    reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, tracker_runs)
-
-    # Fetch display info (email, wallet name, product, usd/credit) for each cluster
-    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]] = {}
-    for _cluster in computational_clusters:
-        try:
-            _email, _wallet_name = await db.get_user_and_wallet_info(
-                state, _cluster.primary.user_id, _cluster.primary.wallet_id
-            )
-        except Exception:  # pylint: disable=broad-exception-caught
-            _email, _wallet_name = None, None
-        _cluster_tracker = tracker_runs_by_user_id.get(_cluster.primary.user_id, [])
-        _product_name = next((r.product_name for r in _cluster_tracker), None)
-        _usd_per_credit: float | None = None
-        if _product_name:
-            with contextlib.suppress(Exception):
-                _usd_per_credit = await db.get_product_usd_per_credit(state, _product_name)
-        cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
-            _email,
-            _wallet_name,
-            _product_name,
-            _usd_per_credit,
-        )
+        tracker_runs_by_user_id = {}
+        cluster_task_rows = []
+        reconciliation_entries = _reconcile_clusters_with_tracker(computational_clusters, tracker_runs)
+        cluster_extra_info = {}
 
     if output_json:
         _print_summary_as_json(
@@ -1144,6 +1151,7 @@ async def _cancel_all_jobs(
     *,
     task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]],
     abort_in_db: bool,
+    engine: AsyncEngine | None = None,
 ) -> None:
     rich.print("cancelling all tasks")
     for comp_task, dask_task in task_to_dask_job:
@@ -1161,7 +1169,8 @@ async def _cancel_all_jobs(
                     dask_task.job_id,
                 )
         if comp_task is not None and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"] and abort_in_db:
-            await db.abort_job_in_db(state, comp_task.project_id, comp_task.node_id)
+            assert engine is not None  # nosec
+            await db.abort_job_in_db(engine, comp_task.project_id, comp_task.node_id)
 
         rich.print("cancelled all tasks")
 
@@ -1198,74 +1207,76 @@ async def _get_db_task_to_dask_job(
 async def cancel_jobs(  # noqa: C901, PLR0912
     state: AppState, user_id: int, wallet_id: int | None, *, abort_in_db: bool
 ) -> None:
-    # get the theory
-    computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
+    async with db.db_engine(state) as engine:
+        # get the theory
+        computational_tasks = await db.list_computational_tasks_from_db(engine, user_id)
 
-    # get the reality
-    computational_clusters = await _list_computational_clusters(state, user_id, wallet_id)
+        # get the reality
+        computational_clusters = await _list_computational_clusters(state, user_id, wallet_id)
 
-    if computational_clusters:
-        assert len(computational_clusters) == 1, (
-            "too many clusters found! TIP: fix this code or something weird is playing out"
+        if computational_clusters:
+            assert len(computational_clusters) == 1, (
+                "too many clusters found! TIP: fix this code or something weird is playing out"
+            )
+
+            the_cluster = computational_clusters[0]
+            rich.print(f"{the_cluster.task_states_to_tasks=}")
+
+        job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
+        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = await _get_db_task_to_dask_job(
+            computational_tasks, job_id_to_dask_state
         )
 
-        the_cluster = computational_clusters[0]
-        rich.print(f"{the_cluster.task_states_to_tasks=}")
+        if not task_to_dask_job:
+            rich.print("[red]nothing found![/red]")
+            raise typer.Exit
 
-    job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
-    task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = await _get_db_task_to_dask_job(
-        computational_tasks, job_id_to_dask_state
-    )
+        _print_computational_tasks(user_id, wallet_id, task_to_dask_job)
+        rich.print(the_cluster.datasets)
+        try:
+            if response := typer.prompt(
+                "Which dataset to cancel? (all: will cancel everything, 1-5: "
+                "will cancel jobs 1-5, or 4: will cancel job #4)",
+                default="none",
+            ):
+                if response == "none":
+                    rich.print("[yellow]not cancelling anything[/yellow]")
+                elif response == "all":
+                    await _cancel_all_jobs(
+                        state,
+                        the_cluster,
+                        task_to_dask_job=task_to_dask_job,
+                        abort_in_db=abort_in_db,
+                        engine=engine,
+                    )
+                else:
+                    try:
+                        # Split the response and handle ranges
+                        indices = response.split("-")
+                        if len(indices) == 2:  # noqa: PLR2004
+                            start_index, end_index = map(int, indices)
+                            selected_indices = range(start_index, end_index + 1)
+                        else:
+                            selected_indices = [int(indices[0])]
 
-    if not task_to_dask_job:
-        rich.print("[red]nothing found![/red]")
-        raise typer.Exit
+                        for selected_index in selected_indices:
+                            comp_task, dask_task = task_to_dask_job[selected_index]
+                            if dask_task is not None and dask_task.state != "unknown":
+                                await dask.trigger_job_cancellation_in_scheduler(state, the_cluster, dask_task.job_id)
+                                if comp_task is None:
+                                    # we need to clear it of the cluster
+                                    await dask.remove_job_from_scheduler(state, the_cluster, dask_task.job_id)
 
-    _print_computational_tasks(user_id, wallet_id, task_to_dask_job)
-    rich.print(the_cluster.datasets)
-    try:
-        if response := typer.prompt(
-            "Which dataset to cancel? (all: will cancel everything, 1-5: "
-            "will cancel jobs 1-5, or 4: will cancel job #4)",
-            default="none",
-        ):
-            if response == "none":
-                rich.print("[yellow]not cancelling anything[/yellow]")
-            elif response == "all":
-                await _cancel_all_jobs(
-                    state,
-                    the_cluster,
-                    task_to_dask_job=task_to_dask_job,
-                    abort_in_db=abort_in_db,
-                )
-            else:
-                try:
-                    # Split the response and handle ranges
-                    indices = response.split("-")
-                    if len(indices) == 2:  # noqa: PLR2004
-                        start_index, end_index = map(int, indices)
-                        selected_indices = range(start_index, end_index + 1)
-                    else:
-                        selected_indices = [int(indices[0])]
+                            if comp_task is not None and abort_in_db:
+                                await db.abort_job_in_db(engine, comp_task.project_id, comp_task.node_id)
+                        rich.print(f"Cancelled selected tasks: {response}")
 
-                    for selected_index in selected_indices:
-                        comp_task, dask_task = task_to_dask_job[selected_index]
-                        if dask_task is not None and dask_task.state != "unknown":
-                            await dask.trigger_job_cancellation_in_scheduler(state, the_cluster, dask_task.job_id)
-                            if comp_task is None:
-                                # we need to clear it of the cluster
-                                await dask.remove_job_from_scheduler(state, the_cluster, dask_task.job_id)
-
-                        if comp_task is not None and abort_in_db:
-                            await db.abort_job_in_db(state, comp_task.project_id, comp_task.node_id)
-                    rich.print(f"Cancelled selected tasks: {response}")
-
-                except ValidationError:
-                    rich.print("[yellow]wrong index format, not cancelling anything[/yellow]")
-                except IndexError:
-                    rich.print("[yellow]index out of range, not cancelling anything[/yellow]")
-    except ValidationError:
-        rich.print("[yellow]wrong input, not cancelling anything[/yellow]")
+                    except ValidationError:
+                        rich.print("[yellow]wrong index format, not cancelling anything[/yellow]")
+                    except IndexError:
+                        rich.print("[yellow]index out of range, not cancelling anything[/yellow]")
+        except ValidationError:
+            rich.print("[yellow]wrong input, not cancelling anything[/yellow]")
 
 
 async def trigger_cluster_termination(state: AppState, user_id: int, wallet_id: int | None, *, force: bool) -> None:
@@ -1286,12 +1297,15 @@ async def trigger_cluster_termination(state: AppState, user_id: int, wallet_id: 
     if (force is True) or typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
 
-        computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
-        job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
-        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = await _get_db_task_to_dask_job(
-            computational_tasks, job_id_to_dask_state
-        )
-        await _cancel_all_jobs(state, the_cluster, task_to_dask_job=task_to_dask_job, abort_in_db=force)
+        async with db.db_engine(state) as engine:
+            computational_tasks = await db.list_computational_tasks_from_db(engine, user_id)
+            job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
+            task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = await _get_db_task_to_dask_job(
+                computational_tasks, job_id_to_dask_state
+            )
+            await _cancel_all_jobs(
+                state, the_cluster, task_to_dask_job=task_to_dask_job, abort_in_db=force, engine=engine
+            )
 
         new_heartbeat_tag: TagTypeDef = {
             "Key": "last_heartbeat",
