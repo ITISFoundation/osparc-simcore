@@ -26,6 +26,7 @@ from ..r_clone_utils import overwrite_command
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY
 from ._errors import (
+    RefreshMountError,
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
 )
@@ -296,8 +297,7 @@ class RemoteControlHttpClient:
         refresh_result = await self._request("POST", "vfs/refresh", params=params)
 
         if refresh_result.get("result") != {dir_to_refresh: "OK"}:
-            msg = f"Failed to refresh the mount, rclone response: {refresh_result=}"
-            raise RuntimeError(msg)
+            raise RefreshMountError(refresh_result=refresh_result)
 
     async def get_mount_activity(self) -> MountActivity:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())

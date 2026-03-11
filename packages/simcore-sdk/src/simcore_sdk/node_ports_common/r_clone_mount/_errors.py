@@ -9,6 +9,10 @@ class WaitingForTransfersToCompleteError(_BaseRcloneMountError):
     msg_template: str = "Waiting for all transfers to complete"
 
 
+class RefreshMountError(_BaseRcloneMountError):
+    msg_template: str = "Failed to refresh the mount, rclone response: refresh_result={refresh_result}"
+
+
 class WaitingForQueueToBeEmptyError(_BaseRcloneMountError):
     msg_template: str = "Waiting for VFS queue to be empty: queue={queue}"
 
