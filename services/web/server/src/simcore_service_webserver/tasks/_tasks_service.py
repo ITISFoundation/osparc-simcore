@@ -43,9 +43,9 @@ async def cancel_task(
     task_uuid: TaskUUID,
 ):
     try:
-        await task_manager.cancel_task(
+        await task_manager.cancel(
             owner_metadata=owner_metadata,
-            task_uuid=task_uuid,
+            task_or_group_uuid=task_uuid,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc

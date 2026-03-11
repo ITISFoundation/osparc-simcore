@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 from faker import Faker
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskState
+from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api.celery.tasks import (
     send_email_message,
@@ -43,7 +43,7 @@ async def test_send_mail(
 
     user_email = faker.email()
     task_uuid = await task_manager.submit_task(
-        ExecutionMetadata(
+        TaskExecutionMetadata(
             name=send_email_message.__name__,
         ),
         owner_metadata=owner_metadata,

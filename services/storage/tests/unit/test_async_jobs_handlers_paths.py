@@ -28,7 +28,7 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, Wildcard
+from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
@@ -69,7 +69,7 @@ async def _assert_compute_path_size(
 ) -> ByteSize:
     async_job = await submit_job(
         task_manager,
-        execution_metadata=ExecutionMetadata(name="compute_path_size"),
+        execution_metadata=TaskExecutionMetadata(name="compute_path_size"),
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         location_id=location_id,
         path=path,
@@ -103,7 +103,7 @@ async def _assert_delete_paths(
 ) -> None:
     async_job = await submit_job(
         task_manager,
-        execution_metadata=ExecutionMetadata(name="delete_paths"),
+        execution_metadata=TaskExecutionMetadata(name="delete_paths"),
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         location_id=location_id,
         user_id=user_id,
