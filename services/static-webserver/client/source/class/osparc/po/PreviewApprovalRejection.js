@@ -197,7 +197,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       emailContentEditor.setTemplateEmail(value);
 
-      // show the preview by default, give it one cycle to render the content
+      // show the preview by default
       emailContentEditor.makePreviewActive();
     },
 
