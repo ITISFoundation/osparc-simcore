@@ -50,6 +50,7 @@ jobs:
       celery-library: ${{ steps.filter.outputs.celery-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
       models-library: ${{ steps.filter.outputs.models-library }}
+      pytest-simcore: ${{ steps.filter.outputs.pytest-simcore }}
       common-library: ${{ steps.filter.outputs.common-library }}
       notifications-library: ${{ steps.filter.outputs.notifications-library }}
       postgres-database: ${{ steps.filter.outputs.postgres-database }}
@@ -114,6 +115,11 @@ jobs:
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
+            pytest-simcore:
+              - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             common-library:
               - 'packages/common-library/**'
               - 'packages/pytest-simcore/**'
@@ -158,6 +164,7 @@ jobs:
               - 'packages/**'
               - 'services/agent/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             notifications:
@@ -221,6 +228,7 @@ jobs:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             efs-guardian:
@@ -280,6 +288,7 @@ jobs:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'scripts/install_rclone.bash'
               - 'mypy.ini'
             anything-py:
               - '**/*.py'
@@ -635,7 +644,7 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
@@ -714,7 +723,7 @@ jobs:
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
@@ -751,7 +760,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director/test_failures
@@ -788,7 +797,7 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1308,6 +1317,35 @@ jobs:
         with:
           flags: unittests #optional
 
+  unit-test-pytest-simcore:
+    needs: changes
+    if: ${{ needs.changes.outputs.pytest-simcore == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] pytest-simcore"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.13"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/pytest-simcore/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/pytest-simcore.bash install
+      - name: test
+        run: ./ci/github/unit-testing/pytest-simcore.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
   unit-test-common-library:
     needs: changes
     if: ${{ needs.changes.outputs.common-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1424,6 +1462,7 @@ jobs:
         unit-test-dynamic-sidecar,
         unit-test-efs-guardian,
         unit-test-models-library,
+        unit-test-pytest-simcore,
         unit-test-common-library,
         unit-test-notifications-library,
         unit-test-payments,
@@ -1481,7 +1520,7 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
@@ -1519,7 +1558,7 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1563,7 +1602,7 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1603,7 +1642,7 @@ jobs:
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
@@ -1641,7 +1680,7 @@ jobs:
         run: ./ci/github/integration-testing/docker-api-proxy.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/docker-api-proxy/test_failures
@@ -1681,7 +1720,7 @@ jobs:
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
@@ -1744,50 +1783,22 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
-
-  system-test-swarm-deploy:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] deploy simcore"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.13"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: "*"
-      - name: install
-        run: ./ci/github/system-testing/swarm-deploy.bash install
-      - name: test
-        run: ./ci/github/system-testing/swarm-deploy.bash test
-      - name: dump services setting schemas
-        run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
-      - name: upload services settings schemas
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ github.job }}_services_settings_schemas
-          path: ./services/**/settings-schema.json
-      - name: upload failed tests logs
+      - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
-          path: ./test_failures
+          path: ./tests/public-api/test_failures
+      - name: upload tracing if failed
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ github.job }}_tracing
+          path: tests/public-api/test-results
 
   system-test-e2e-playwright:
     needs: [changes, build-test-images]
@@ -1831,13 +1842,13 @@ jobs:
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
@@ -1871,7 +1882,6 @@ jobs:
         system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,
-        system-test-swarm-deploy,
       ]
     runs-on: ubuntu-latest
     steps:

@@ -37,6 +37,7 @@ WAITING_FOR_START_STATES: set[RunningState] = {
 PROCESSING_STATES: set[RunningState] = {
     RunningState.PENDING,
     RunningState.WAITING_FOR_RESOURCES,
+    RunningState.WAITING_FOR_CLUSTER,
     RunningState.STARTED,
 }
 

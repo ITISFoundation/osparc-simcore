@@ -212,9 +212,19 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+@pytest.fixture
+async def pre_app_init() -> None:
+    """Hook fixture to prepare state before the app starts.
+
+    Test folders can override this fixture and declare dependencies that must
+    run before ``create_application`` and startup callbacks are executed.
+    """
+
+
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def web_server(
     app_environment: EnvVarsDict,
+    pre_app_init: None,
     postgres_db: sa.engine.Engine,
     webserver_test_server_port: int,
     # tools

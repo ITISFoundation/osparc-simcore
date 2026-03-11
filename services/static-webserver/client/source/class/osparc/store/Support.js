@@ -259,7 +259,11 @@ qx.Class.define("osparc.store.Support", {
       return {
         label: qx.locale.Manager.tr("What's New in") + " " + releaseTag,
         icon: "@FontAwesome5Solid/bullhorn/14",
-        callback: () => { window.open(releaseLink); },
+        callback: () => {
+          if (!osparc.NewRelease.openReleaseNotesDialog(releaseLink)) {
+            window.open(releaseLink);
+          }
+        },
       };
     },
 

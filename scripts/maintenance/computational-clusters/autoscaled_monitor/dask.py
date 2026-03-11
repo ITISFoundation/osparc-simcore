@@ -4,6 +4,7 @@ from typing import Any, Final
 
 import distributed
 import rich
+from distributed.objects import SchedulerInfo
 from mypy_boto3_ec2.service_resource import Instance
 from pydantic import AnyUrl
 
@@ -112,7 +113,7 @@ async def _list_all_tasks(
         rich.print("ERROR while recoverring unrunnable tasks . Defaulting to empty list of tasks!!")
     except Exception as e:
         rich.print(
-            f"Unexpected error while recovering unrunnable tasks: {e} when communicating with {client.scheduler_info()}"
+            f"Unexpected error while recovering unrunnable tasks: {e} when communicating with {client.scheduler}"
             ". Defaulting to empty list of tasks!!"
         )
     return list_of_tasks
@@ -125,7 +126,10 @@ async def get_scheduler_details(state: AppState, instance: Instance):
     all_tasks = {}
     try:
         async with dask_client(state, instance) as client:
-            scheduler_info = client.scheduler_info()
+            assert client.scheduler  # nosec
+            # NOTE: client.scheduler_info() is cached and limited to 5 workers for async clients.
+            # Use the direct RPC call instead, which returns all workers live.
+            scheduler_info = SchedulerInfo(await client.scheduler.identity(n_workers=-1))  # type: ignore
             datasets_on_cluster = await _wrap_dask_async_call(client.list_datasets())
             processing_jobs = await _wrap_dask_async_call(client.processing())
             all_tasks = await _list_all_tasks(client)

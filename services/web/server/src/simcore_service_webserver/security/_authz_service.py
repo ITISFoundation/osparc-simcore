@@ -1,7 +1,7 @@
 # mypy: disable-error-code=truthy-function
 
 
-import aiohttp_security.api  # type: ignore[import-untyped]
+import aiohttp_security.api
 import passlib.hash
 from aiohttp import web
 
@@ -13,12 +13,14 @@ assert PERMISSION_PRODUCT_LOGIN_KEY  # nosec
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:
-    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
+    autz_policy = app[aiohttp_security.api.AUTZ_KEY]
+    assert isinstance(autz_policy, AuthorizationPolicy)  # nosec
     return autz_policy.access_model
 
 
 async def clean_auth_policy_cache(app: web.Application) -> None:
-    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
+    autz_policy = app[aiohttp_security.api.AUTZ_KEY]
+    assert isinstance(autz_policy, AuthorizationPolicy)  # nosec
     await autz_policy.clear_cache()
 
 
