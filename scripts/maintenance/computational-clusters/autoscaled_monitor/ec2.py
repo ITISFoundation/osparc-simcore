@@ -1,7 +1,7 @@
-import json
 from typing import Final
 
 import boto3
+import orjson
 from aiocache import cached
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
@@ -54,7 +54,7 @@ async def list_computational_instances_from_ec2(
             state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]
             == state.environment["WORKERS_EC2_INSTANCES_CUSTOM_TAGS"]
         ), "custom tags are different on primary and workers. TIP: adjust this code now"
-        custom_tags = json.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
+        custom_tags = orjson.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
     assert state.ec2_resource_clusters_keeper
     return await _list_running_ec2_instances(
         state.ec2_resource_clusters_keeper,
@@ -76,7 +76,7 @@ async def list_dynamic_instances_from_ec2(
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     custom_tags = {}
     if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
-        custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
+        custom_tags = orjson.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
     assert state.ec2_resource_autoscaling
     return await _list_running_ec2_instances(
         state.ec2_resource_autoscaling,
