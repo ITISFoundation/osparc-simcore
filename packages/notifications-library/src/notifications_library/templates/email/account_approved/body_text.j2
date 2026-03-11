@@ -4,8 +4,6 @@ Thank you for your interest in {{ product.display_name }} . We are pleased to pr
 
 {% if trial_account_days is defined and trial_account_days %}
 Your account includes {{ trial_account_days }} day{{ "s" if trial_account_days > 1 }} trial period.
-{% else %}
-Your account includes unlimited access.
 {% endif %}
 
 {% if extra_credits is defined and extra_credits %}
