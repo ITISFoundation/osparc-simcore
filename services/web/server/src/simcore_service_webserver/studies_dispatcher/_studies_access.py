@@ -248,7 +248,6 @@ class RedirectToFrontEndPageError(Exception):
 def _handle_errors_with_error_page(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
-        support_email = products_web.get_current_product(request).support_email
         try:
             return await handler(request)
 
@@ -263,7 +262,6 @@ def _handle_errors_with_error_page(handler: Handler):
                 message=compose_support_error_msg(
                     msg=MSG_PROJECT_NOT_FOUND.format(project_id=err.project_uuid),
                     error_code="PROJECT_NOT_FOUND",
-                    support_email=support_email,
                 ),
                 status_code=status.HTTP_404_NOT_FOUND,
             ) from err
@@ -281,7 +279,6 @@ def _handle_errors_with_error_page(handler: Handler):
             user_error_msg = compose_support_error_msg(
                 msg=MSG_UNEXPECTED_DISPATCH_ERROR,
                 error_code=error_code,
-                support_email=support_email,
             )
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
@@ -389,12 +386,9 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
-        support_email = products_web.get_current_product(request).support_email
-
         user_error_msg = compose_support_error_msg(
             msg=MSG_UNEXPECTED_DISPATCH_ERROR,
             error_code=error_code,
-            support_email=support_email,
         )
         _logger.exception(
             **create_troubleshooting_log_kwargs(
