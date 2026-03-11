@@ -69,7 +69,7 @@ def real_page() -> Page:
         browser.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def download_playwright_browser() -> None:
     subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
 
