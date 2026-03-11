@@ -428,7 +428,7 @@ def _print_computational_clusters(
 ) -> None:
     time_now = arrow.utcnow()
 
-    for cluster in track(clusters, "Collecting information about computational clusters..."):
+    for cluster in clusters:
         cluster_worker_metrics = dask.get_worker_metrics(cluster.scheduler_info)
         job_to_worker = _build_job_to_worker(cluster)
 
@@ -467,6 +467,9 @@ def _print_computational_clusters(
             cluster.primary.disk_space,
             TypeAdapter(ByteSize).validate_python("15Gib"),
         )
+        dask_ip_display = cluster.primary.dask_ip
+        if "Not Ready" in dask_ip_display:
+            dask_ip_display = f"[red]{dask_ip_display}[/red]"
         primary_info = "\n".join(
             [
                 f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
@@ -477,7 +480,7 @@ def _print_computational_clusters(
                 f"Up: {color_encoded_up_time}",
                 f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
                 f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
-                f"DaskSchedulerIP: {cluster.primary.dask_ip}",
+                f"DaskSchedulerIP: {dask_ip_display}",
                 f"Heartbeat: {color_encoded_heartbeat}",
                 f"/mnt/docker(free): {color_encoded_free_docker_space}",
             ]
