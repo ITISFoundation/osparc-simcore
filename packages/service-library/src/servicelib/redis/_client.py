@@ -35,7 +35,9 @@ _HEALTHCHECK_TIMEOUT_S: Final[float] = 3.0
     reraise=True,
 )
 async def wait_till_redis_is_responsive(client: aioredis.Redis) -> None:
-    if not await client.ping():
+    ping_result = client.ping()
+    assert asyncio.isfuture(ping_result) or asyncio.iscoroutine(ping_result)  # nosec
+    if not await ping_result:
         raise tenacity.TryAgain
 
 
@@ -112,7 +114,9 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            await asyncio.wait_for(self._client.ping(), timeout=_HEALTHCHECK_TIMEOUT_S)
+            ping_result = self._client.ping()
+            assert asyncio.isfuture(ping_result) or asyncio.iscoroutine(ping_result)  # nosec
+            await asyncio.wait_for(ping_result, timeout=_HEALTHCHECK_TIMEOUT_S)
             return True
 
         return False
