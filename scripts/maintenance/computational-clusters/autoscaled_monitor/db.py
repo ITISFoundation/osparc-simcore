@@ -24,7 +24,7 @@ async def db_engine(
         if state.main_bastion_host:
             assert state.ssh_key_path  # nosec
             db_host, db_port = db_endpoint.split(":")
-            tunnel = stack.enter_context(
+            host, port = await stack.enter_async_context(
                 ssh_tunnel(
                     ssh_host=state.main_bastion_host.ip,
                     username=state.main_bastion_host.user_name,
@@ -33,8 +33,7 @@ async def db_engine(
                     remote_bind_port=int(db_port),
                 )
             )
-            assert tunnel
-            db_endpoint = f"{tunnel.local_bind_address[0]}:{tunnel.local_bind_address[1]}"
+            db_endpoint = f"{host}:{port}"
 
         engine = None
         try:

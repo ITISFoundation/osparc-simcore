@@ -46,7 +46,7 @@ async def dask_client(state: AppState, instance: Instance) -> AsyncGenerator[dis
                 bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
                 assert state.ssh_key_path  # nosec
                 assert state.environment  # nosec
-                tunnel = stack.enter_context(
+                host, port = await stack.enter_async_context(
                     ssh_tunnel(
                         ssh_host=bastion_instance.public_dns_name,
                         username=SSH_USER_NAME,
@@ -55,8 +55,6 @@ async def dask_client(state: AppState, instance: Instance) -> AsyncGenerator[dis
                         remote_bind_port=_SCHEDULER_PORT,
                     )
                 )
-                assert tunnel  # nosec
-                host, port = tunnel.local_bind_address
                 url = AnyUrl(f"tls://{host}:{port}")
             client = await stack.enter_async_context(
                 distributed.Client(f"{url}", security=security, timeout="5", asynchronous=True)
