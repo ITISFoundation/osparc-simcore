@@ -25,6 +25,7 @@ from ._utils import get_mount_id
 
 _logger = logging.getLogger(__name__)
 
+_MIN_PATH_PARTS: Final[NonNegativeInt] = 3
 
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 _MOUNT_RESPONSIVE_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=6)
@@ -217,8 +218,9 @@ class RCloneMountManager:
     async def refresh_path(self, remote_path: StorageFileID, *, recursive: bool = False) -> None:
         with log_context(_logger, logging.INFO, f"refreshing mount for {remote_path=}", log_duration=True):
             remote_path_parts = remote_path.split("/")
-            base_s3_path = "/".join(remote_path_parts[:3])
+            assert len(remote_path_parts) >= _MIN_PATH_PARTS, "Expected {project_id}/{node_id}/DIRECTORY_PATH"
 
+            base_s3_path = "/".join(remote_path_parts[:_MIN_PATH_PARTS])
             tracked_mount: _TrackedMount | None = None
 
             for mount_id, remote in self._reverse_path_search.items():
@@ -229,7 +231,7 @@ class RCloneMountManager:
             if tracked_mount is None:
                 raise NoMountFoundForRemotePathError(remote_path=remote_path)
 
-            dir_to_refresh = "/".join(remote_path_parts[3:])
+            dir_to_refresh = "/".join(remote_path_parts[_MIN_PATH_PARTS:])
             await tracked_mount.refresh_path(dir_to_refresh=dir_to_refresh, recursive=recursive)
 
     async def _worker_ensure_mount_is_responsive(self) -> None:
