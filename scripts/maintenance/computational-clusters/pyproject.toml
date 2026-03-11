@@ -2,6 +2,7 @@
 dependencies = [
   "arrow",
   "aiocache",
+  "asyncssh",
   "asyncpg",
   "black",
   "boto3",
@@ -11,14 +12,12 @@ dependencies = [
   "mypy_boto3_ec2",
   "types-boto3",
   "parse",
-  "paramiko<4",          # sshtunnel not yet compatible with paramiko 4
   "pydantic[email]",
   "pylint",
   "python-dotenv",
   "typer",
   "rich",
   "sqlalchemy[asyncio]",
-  "sshtunnel",
   "ansible>=10.7.0",
   "lz4",
   "orjson>=3.11.7",
