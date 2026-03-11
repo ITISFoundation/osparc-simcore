@@ -2,8 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import re
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -49,8 +49,14 @@ async def test_python_package_installation(
 
         print(cmd)
 
-        assert subprocess.run(
+        process = await asyncio.create_subprocess_shell(
             cmd,
-            shell=True,
-            check=True,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        assert process.returncode == 0, (
+            f"Command failed with exit code {process.returncode}: {cmd}\n"
+            f"stdout:\n{stdout.decode(errors='replace')}\n"
+            f"stderr:\n{stderr.decode(errors='replace')}\n"
         )
