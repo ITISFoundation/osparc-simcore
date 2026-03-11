@@ -67,7 +67,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
             description=(
                 "Describes how the dynamic services was started (legacy=V0, modern=V2)."
                 "Since legacy services do not have this label it defaults to V0."
-            ),
+            )
         ),
     ] = ServiceBootType.V0
     data_mounting_enabled: Annotated[bool, Field(description="True if data mounting is enabled")] = False
@@ -79,20 +79,16 @@ class RunningDynamicServiceDetails(ServiceDetails):
     ] = None
 
     entry_point: Annotated[
-        str | None, Field(description="if empty the service entrypoint is on the root endpoint.", deprecated=True)
+        str | None,
+        Field(description="if empty string the service entrypoint is on the root endpoint.", deprecated=True),
     ] = None
     state: Annotated[ServiceState, Field(description="service current state", alias="service_state")]
     message: Annotated[
-        str | None,
-        Field(
-            description="additional information related to service state",
-            alias="service_message",
-        ),
+        str | None, Field(description="additional information related to service state", alias="service_message")
     ] = None
 
     is_collaborative: Annotated[
-        bool,
-        Field(description="True if service allows collaboration (multi-tenant access)"),
+        bool, Field(description="True if service allows collaboration (multi-tenant access)")
     ] = False
 
     @staticmethod
