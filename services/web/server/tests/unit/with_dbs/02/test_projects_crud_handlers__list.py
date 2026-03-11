@@ -193,7 +193,7 @@ async def test_list_projects_with_pagination(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST])
-async def test_guest_user_only_lists_and_accesses_owned_projects(
+async def test_guest_user_lists_and_accesses_owned_or_published_projects(
     client: TestClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -201,7 +201,7 @@ async def test_guest_user_only_lists_and_accesses_owned_projects(
     director_v2_service_mock: aioresponses,
     mocked_dynamic_services_interface,
 ):
-    """GUEST users must only see/access projects they own, even if other projects are shared with them."""
+    """GUEST users can access owned projects or published templates, but not non-published shared projects."""
     assert client.app
 
     async with (
@@ -234,19 +234,45 @@ async def test_guest_user_only_lists_and_accesses_owned_projects(
             product_name=osparc_product_name,
             tests_data_dir=tests_data_dir,
         ) as other_project,
+        NewProject(
+            {
+                "name": "published-template-project",
+                "published": True,
+                "access_rights": {
+                    "1": {
+                        "read": True,
+                        "write": False,
+                        "delete": False,
+                    }
+                },
+            },
+            client.app,
+            user_id=other_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+            as_template=True,
+        ) as published_template_project,
     ):
-        # GUEST listing should only return their own project
+        # GUEST listing should include owned and published-template projects
         data, _, _ = await _list_projects(client, HTTPStatus(status.HTTP_200_OK))
         project_uuids = {p["uuid"] for p in data}
         assert guest_project["uuid"] in project_uuids
-        assert other_project["uuid"] not in project_uuids, "GUEST must not see projects they don't own, even if shared"
+        assert published_template_project["uuid"] in project_uuids
+        assert other_project["uuid"] not in project_uuids, (
+            "GUEST must not see non-published projects they don't own, even if shared"
+        )
 
         # GUEST can GET their own project
         url = client.app.router["get_project"].url_for(project_id=guest_project["uuid"])
         resp = await client.get(f"{url}")
         await assert_status(resp, status.HTTP_200_OK)
 
-        # GUEST cannot GET another user's project even if shared with them
+        # GUEST can GET a published template project
+        url = client.app.router["get_project"].url_for(project_id=published_template_project["uuid"])
+        resp = await client.get(f"{url}")
+        await assert_status(resp, status.HTTP_200_OK)
+
+        # GUEST cannot GET a non-published project owned by another user even if shared with them
         url = client.app.router["get_project"].url_for(project_id=other_project["uuid"])
         resp = await client.get(f"{url}")
         await assert_status(resp, status.HTTP_403_FORBIDDEN)

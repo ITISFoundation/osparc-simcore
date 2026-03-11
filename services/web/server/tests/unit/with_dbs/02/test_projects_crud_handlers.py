@@ -187,51 +187,70 @@ async def _assert_get_same_project(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_list_projects(
+async def test_list_projects(  # noqa: PLR0915
     rabbit_settings: RabbitSettings,
     client: TestClient,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     template_project: dict[str, Any],
+    user_role: UserRole,
     expected: HTTPStatus,
     director_v2_service_mock: aioresponses,
 ):
     data, *_ = await _list_and_assert_projects(client, expected)
 
     if data:
-        assert len(data) == 2
+        if user_role == UserRole.GUEST:
+            assert len(data) == 1
+            # ONLY published project
+            got = data[0]
+            project_state = got.pop("state")
+            project_permalink = got.pop("permalink", None)
+            folder_id = got.pop("folderId")
 
-        # template project
-        got = data[0]
-        project_state = got.pop("state")
-        project_permalink = got.pop("permalink")
-        folder_id = got.pop("folderId")
+            assert not DeepDiff(
+                got,
+                {k: user_project[k] for k in got},
+                exclude_paths="root['lastChangeDate']",
+            )
 
-        assert not DeepDiff(
-            got,
-            {k: template_project[k] for k in got},
-            exclude_paths="root['lastChangeDate']",
-        )
+            assert ProjectStateOutputSchema(**project_state)
+            assert project_permalink is None
+            assert folder_id is None
+        else:
+            assert len(data) == 2
 
-        assert not ProjectStateOutputSchema(**project_state).share_state.locked, "Templates are not locked"
-        assert ProjectPermalink.model_validate(project_permalink)
+            # template project
+            got = data[0]
+            project_state = got.pop("state")
+            project_permalink = got.pop("permalink")
+            folder_id = got.pop("folderId")
 
-        # standard project
-        got = data[1]
-        project_state = got.pop("state")
-        project_permalink = got.pop("permalink", None)
-        folder_id = got.pop("folderId")
+            assert not DeepDiff(
+                got,
+                {k: template_project[k] for k in got},
+                exclude_paths="root['lastChangeDate']",
+            )
 
-        assert not DeepDiff(
-            got,
-            {k: user_project[k] for k in got},
-            exclude_paths="root['lastChangeDate']",
-        )
+            assert not ProjectStateOutputSchema(**project_state).share_state.locked, "Templates are not locked"
+            assert ProjectPermalink.model_validate(project_permalink)
 
-        assert ProjectStateOutputSchema(**project_state)
-        assert project_permalink is None
-        assert folder_id is None
+            # standard project
+            got = data[1]
+            project_state = got.pop("state")
+            project_permalink = got.pop("permalink", None)
+            folder_id = got.pop("folderId")
+
+            assert not DeepDiff(
+                got,
+                {k: user_project[k] for k in got},
+                exclude_paths="root['lastChangeDate']",
+            )
+
+            assert ProjectStateOutputSchema(**project_state)
+            assert project_permalink is None
+            assert folder_id is None
 
     # GET /v0/projects?type=user
     data, *_ = await _list_and_assert_projects(client, expected, {"type": "user"})
@@ -256,6 +275,9 @@ async def test_list_projects(
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
     data, *_ = await _list_and_assert_projects(client, expected, {"type": "template"})
+    if user_role == UserRole.GUEST:
+        assert data == []
+
     if data:
         assert len(data) == 1
 
@@ -381,13 +403,15 @@ async def test_get_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     template_project: ProjectDict,
+    user_role: UserRole,
     expected,
 ):
     # standard project
     await _assert_get_same_project(client, user_project, expected)
 
     # with a template
-    await _assert_get_same_project(client, template_project, expected)
+    template_expected = status.HTTP_403_FORBIDDEN if user_role == UserRole.GUEST else expected
+    await _assert_get_same_project(client, template_project, template_expected)
 
 
 # POST --------
