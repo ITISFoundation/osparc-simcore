@@ -21,6 +21,7 @@ class S3Provider(StrEnum):
     AWS_MOTO = "AWS_MOTO"
     CEPH = "CEPH"
     MINIO = "MINIO"
+    RUSTFS = "RUSTFS"
 
 
 type SearchArgument = str

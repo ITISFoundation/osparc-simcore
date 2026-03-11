@@ -70,7 +70,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
     # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
     all_ops_services = list(ops_docker_compose["services"].keys())
     if "CI" in os.environ:
-        all_ops_services = ["minio"]
+        all_ops_services = ["rustfs"]
         print(f"WARNING: Only required services will be started {all_ops_services=}")
     return all_ops_services
 
