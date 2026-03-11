@@ -434,13 +434,14 @@ class ProjectDBAPI(BaseProjectDB):
         return None
 
     @staticmethod
-    def _create_attributes_filters(
+    def _create_attributes_filters(  # pylint: disable=too-many-branches  # noqa: C901
         *,
         filter_by_project_type: ProjectType | None,
         filter_by_template_type: ProjectTemplateType | None,
         filter_hidden: bool | None,
         filter_published: bool | None,
         filter_trashed: bool | None,
+        filter_by_owner_id: UserID | None,
         search_by_multi_columns: str | None,
         search_by_project_name: str | None,
         folder_query: FolderQuery,
@@ -468,6 +469,9 @@ class ProjectDBAPI(BaseProjectDB):
                 else projects.c.trashed.is_(None)
             )
 
+        if filter_by_owner_id is not None:
+            attributes_filters.append(projects.c.prj_owner == filter_by_owner_id)
+
         if search_by_multi_columns is not None:
             attributes_filters.append(
                 (projects.c.name.ilike(f"%{search_by_multi_columns}%"))
@@ -488,7 +492,7 @@ class ProjectDBAPI(BaseProjectDB):
 
         return attributes_filters
 
-    async def list_projects_dicts(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
+    async def list_projects_dicts(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches  # noqa: PLR0913
         self,
         *,
         product_name: ProductName,
@@ -502,6 +506,7 @@ class ProjectDBAPI(BaseProjectDB):
         filter_published: bool | None = None,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
+        filter_by_owner_id: UserID | None = None,
         # search
         search_by_multi_columns: str | None = None,
         search_by_project_name: str | None = None,
@@ -547,6 +552,7 @@ class ProjectDBAPI(BaseProjectDB):
                 filter_hidden=filter_hidden,
                 filter_published=filter_published,
                 filter_trashed=filter_trashed,
+                filter_by_owner_id=filter_by_owner_id,
                 search_by_multi_columns=search_by_multi_columns,
                 search_by_project_name=search_by_project_name,
                 folder_query=folder_query,
@@ -680,18 +686,18 @@ class ProjectDBAPI(BaseProjectDB):
 
         User project access rights. Aggregated across all his groups.
         """
-        _SELECTION_ARGS = (
+        _selection_args = (
             user_to_groups.c.uid,
             func.max(project_to_groups.c.read.cast(INTEGER)).cast(BOOLEAN).label("read"),
             func.max(project_to_groups.c.write.cast(INTEGER)).cast(BOOLEAN).label("write"),
             func.max(project_to_groups.c.delete.cast(INTEGER)).cast(BOOLEAN).label("delete"),
         )
 
-        _JOIN_TABLES = user_to_groups.join(project_to_groups, user_to_groups.c.gid == project_to_groups.c.gid)
+        _join_tables = user_to_groups.join(project_to_groups, user_to_groups.c.gid == project_to_groups.c.gid)
 
         stmt = (
-            sa.select(*_SELECTION_ARGS)
-            .select_from(_JOIN_TABLES)
+            sa.select(*_selection_args)
+            .select_from(_join_tables)
             .where(
                 (user_to_groups.c.uid == user_id)
                 & (project_to_groups.c.project_uuid == f"{project_uuid}")
@@ -871,11 +877,13 @@ class ProjectDBAPI(BaseProjectDB):
         """patches an EXISTING project workbench from a user
         new_project_data only contains the entries to modify
 
-        - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version, "label": node_label, ...}}```
+        - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version,
+        "label": node_label, ...}}```
         - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
         - Example: to remove a node ```{node_id: None}```
 
-        raises NodeNotFoundError, ProjectInvalidRightsError, ProjectInvalidUsageError if allow_workbench_changes=False and nodes are added/removed
+        raises NodeNotFoundError, ProjectInvalidRightsError, ProjectInvalidUsageError if allow_workbench_changes=False
+        and nodes are added/removed
 
         """
         async with AsyncExitStack() as stack:
@@ -973,8 +981,12 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             await project_nodes_repo.delete(conn, node_id=node_id)
 
-    async def get_project_node(  # NOTE: Not all Node data are here yet; they are in the workbench of a Project, waiting to be moved here.
-        self, project_id: ProjectID, node_id: NodeID
+    async def get_project_node(
+        # NOTE: Not all Node data are here yet; they are in the workbench of a
+        # Project, waiting to be moved here.
+        self,
+        project_id: ProjectID,
+        node_id: NodeID,
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:

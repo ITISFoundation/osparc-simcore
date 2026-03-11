@@ -16,6 +16,7 @@ from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
+from simcore_postgres_database.models.users import UserRole
 
 from ..folders import _folders_repository
 from ..users import users_service
@@ -100,7 +101,7 @@ async def _legacy_convert_db_projects_to_api_projects(
     return api_projects
 
 
-async def list_projects(  # pylint: disable=too-many-arguments
+async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     app: web.Application,
     user_id: UserID,
     product_name: str,
@@ -145,6 +146,10 @@ async def list_projects(  # pylint: disable=too-many-arguments
             workspace_id=workspace_id,
         )
 
+    # GUEST users may only access projects they own
+    user_role = await users_service.get_user_role(app, user_id=user_id)
+    filter_by_owner_id = user_id if user_role == UserRole.GUEST else None
+
     db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
@@ -163,6 +168,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         filter_by_template_type=template_type,
         filter_trashed=trashed,
         filter_hidden=show_hidden,
+        filter_by_owner_id=filter_by_owner_id,
         # composed attrs
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
@@ -182,7 +188,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     return final_projects, total_number_projects
 
 
-async def list_projects_full_depth(  # pylint: disable=too-many-arguments
+async def list_projects_full_depth(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     app: web.Application,
     *,
     user_id: UserID,
@@ -201,6 +207,10 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
+    # GUEST users may only access projects they own
+    user_role = await users_service.get_user_role(app, user_id=user_id)
+    filter_by_owner_id = user_id if user_role == UserRole.GUEST else None
+
     db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
@@ -209,6 +219,7 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments
         filter_trashed=trashed,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(filter_by_project_type),
         filter_by_template_type=filter_by_template_type,
+        filter_by_owner_id=filter_by_owner_id,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,

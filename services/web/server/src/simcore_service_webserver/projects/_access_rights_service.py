@@ -2,8 +2,10 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from simcore_postgres_database.models.users import UserRole
 
 from ..db.plugin import get_database_engine_legacy
+from ..users import users_service
 from ..workspaces.api import get_workspace
 from ._access_rights_repository import get_project_owner
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
@@ -92,6 +94,11 @@ async def check_user_project_permission(
     project_id: ProjectID,
     permission: PermissionStr = "read",
 ) -> UserProjectAccessRightsWithWorkspace:
+    # GUEST users may only access projects they own
+    user_role = await users_service.get_user_role(app, user_id=user_id)
+    if user_role == UserRole.GUEST:
+        await validate_project_ownership(app, user_id=user_id, project_uuid=project_id)
+
     _user_project_access_rights = await get_user_project_access_rights(
         app, project_id=project_id, user_id=user_id, product_name=product_name
     )
