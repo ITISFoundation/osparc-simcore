@@ -25,6 +25,7 @@ from common_library.heartbeat import is_healthy
 from pydantic import TypeAdapter
 
 SUCCESS, UNHEALTHY = 0, 1
+HTTP_OK = 200
 
 # Disabled if boots with debugger
 is_debug_mode = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
@@ -42,7 +43,7 @@ def is_service_healthy() -> bool:
                 host=sys.argv[1], baseurl=os.getenv("SIMCORE_NODE_BASEPATH", "")
             )  # adds a base-path if defined in environ
         ).getcode()
-        == 200  # noqa: PLR2004
+        == HTTP_OK
     )
 
 
