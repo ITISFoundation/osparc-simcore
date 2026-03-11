@@ -32,12 +32,12 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
 
     const disableAppModeButton = this.getChildControl("disable");
     disableAppModeButton.addListener("execute", () => this.__disableSlides(), this);
+
     const closeButton = this.getChildControl("close-button");
     closeButton.addListener("execute", () => this.fireEvent("close"), this);
 
     const model = this.__initRoot();
     tree.setModel(model);
-
     this.__initTree();
     this.__initData();
   },
@@ -197,13 +197,13 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
         tree.setSelection(new qx.data.Array([item]));
         // show by default
         if (item.getPosition() === -1) {
-          this.__show(item);
-          tree.refresh();
+          this.__stepUpdated(item, "show");
         }
       }
     },
 
     __stepUpdated: function(item, action) {
+      const itemMdl = item.getModel ? item.getModel() : item;
       let fnct;
       switch (action) {
         case "show":
@@ -219,7 +219,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           fnct = this.__moveDown;
           break;
       }
-      if (fnct.call(this, item.getModel())) {
+      if (fnct.call(this, itemMdl)) {
         this.getChildControl("tree").refresh();
       }
       this.__saveSlides();
