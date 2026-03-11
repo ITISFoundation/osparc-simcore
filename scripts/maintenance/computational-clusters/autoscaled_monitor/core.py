@@ -192,7 +192,7 @@ def _format_cluster_identity(
     return identity
 
 
-def _format_resource_value(key: str, value: float) -> str:
+def _format_resource_value(key: str, value: float | str | None) -> str:
     if key in {"RAM", "VRAM"} and isinstance(value, (int, float)):
         return TypeAdapter(ByteSize).validate_python(int(value)).human_readable()
     if isinstance(value, float) and value == int(value):
@@ -854,7 +854,7 @@ def _reconcile_cluster_tasks(  # noqa: C901, PLR0912
             )
             # Attach the warning to every row on that worker
             for row in rows:
-                if row.job_id in cluster.processing_jobs.get(busy_worker_name, set()):
+                if row.job_id in cluster.processing_jobs.get(busy_worker_name, []):
                     row.issues.append(imbalance_msg)
 
     return rows
@@ -1121,9 +1121,9 @@ async def _reconcile_computational_clusters(
         async with db.db_engine(state) as engine:
             result.tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
 
-            tracker_runs_by_user_id: dict[int, list[ResourceTrackerServiceRun]] = {}
+            tracker_runs_by_key: dict[tuple[int, int | None], list[ResourceTrackerServiceRun]] = {}
             for _run in result.tracker_runs:
-                tracker_runs_by_user_id.setdefault(_run.user_id, []).append(_run)
+                tracker_runs_by_key.setdefault((_run.user_id, _run.wallet_id), []).append(_run)
 
             for cluster in computational_clusters:
                 try:
@@ -1133,7 +1133,8 @@ async def _reconcile_computational_clusters(
                         f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]"
                     )
                     comp_tasks = []
-                cluster_tracker_runs = tracker_runs_by_user_id.get(cluster.primary.user_id, [])
+                _cluster_key = (cluster.primary.user_id, cluster.primary.wallet_id)
+                cluster_tracker_runs = tracker_runs_by_key.get(_cluster_key, [])
                 task_rows = _reconcile_cluster_tasks(cluster, comp_tasks, cluster_tracker_runs)
                 result.cluster_task_rows.append((cluster, task_rows))
 
@@ -1148,7 +1149,8 @@ async def _reconcile_computational_clusters(
                     )
                 except Exception:  # pylint: disable=broad-exception-caught
                     _email, _wallet_name = None, None
-                _cluster_tracker = tracker_runs_by_user_id.get(_cluster.primary.user_id, [])
+                _cluster_key = (_cluster.primary.user_id, _cluster.primary.wallet_id)
+                _cluster_tracker = tracker_runs_by_key.get(_cluster_key, [])
                 _product_name = next((r.product_name for r in _cluster_tracker), None)
                 _usd_per_credit: float | None = None
                 if _product_name:
