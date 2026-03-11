@@ -6,7 +6,7 @@ Read operations are list, get
 """
 
 from collections.abc import Coroutine
-from typing import Any
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
@@ -19,6 +19,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.models.users import UserRole
 
 from ..folders import _folders_repository
+from ..products import products_service
 from ..users import users_service
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
@@ -27,6 +28,20 @@ from ._projects_repository import batch_get_trashed_by_primary_gid
 from ._projects_repository_legacy import ProjectDBAPI
 from ._projects_repository_legacy_utils import convert_to_schema_names
 from .models import ProjectDict, ProjectTypeAPI
+
+
+class _GuestFilters(NamedTuple):
+    owner_id: UserID | None
+    product_group_id: int | None
+
+
+async def _get_guest_filters(app: web.Application, *, user_id: UserID, product_name: str) -> _GuestFilters:
+    """Returns guest owner/product-group filters for GUEST users, (None, None) otherwise."""
+    user_role = await users_service.get_user_role(app, user_id=user_id)
+    if user_role == UserRole.GUEST:
+        product_group_id = products_service.get_product(app, product_name).group_id
+        return _GuestFilters(owner_id=user_id, product_group_id=product_group_id)
+    return _GuestFilters(owner_id=None, product_group_id=None)
 
 
 def _batch_update(
@@ -146,9 +161,8 @@ async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             workspace_id=workspace_id,
         )
 
-    # GUEST users may only access projects they own
-    user_role = await users_service.get_user_role(app, user_id=user_id)
-    filter_by_owner_id = user_id if user_role == UserRole.GUEST else None
+    # GUEST users may only access projects they own or published projects
+    guest_filters = await _get_guest_filters(app, user_id=user_id, product_name=product_name)
 
     db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
@@ -168,7 +182,8 @@ async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         filter_by_template_type=template_type,
         filter_trashed=trashed,
         filter_hidden=show_hidden,
-        filter_by_owner_id=filter_by_owner_id,
+        filter_guest_owner_id=guest_filters.owner_id,
+        filter_guest_product_group_id=guest_filters.product_group_id,
         # composed attrs
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
@@ -207,9 +222,8 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments  # noq
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    # GUEST users may only access projects they own
-    user_role = await users_service.get_user_role(app, user_id=user_id)
-    filter_by_owner_id = user_id if user_role == UserRole.GUEST else None
+    # GUEST users may only access projects they own or published projects
+    guest_filters = await _get_guest_filters(app, user_id=user_id, product_name=product_name)
 
     db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
@@ -219,7 +233,8 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments  # noq
         filter_trashed=trashed,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(filter_by_project_type),
         filter_by_template_type=filter_by_template_type,
-        filter_by_owner_id=filter_by_owner_id,
+        filter_guest_owner_id=guest_filters.owner_id,
+        filter_guest_product_group_id=guest_filters.product_group_id,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,

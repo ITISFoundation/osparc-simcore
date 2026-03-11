@@ -77,6 +77,7 @@ from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 from ..application_settings import get_application_settings
 from ..models import ClientSessionID
 from ..utils import now_str
+from ._access_rights_repository import published_project_read_condition
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository import PROJECT_DB_COLS
 from ._projects_repository_legacy_utils import (
@@ -441,7 +442,8 @@ class ProjectDBAPI(BaseProjectDB):
         filter_hidden: bool | None,
         filter_published: bool | None,
         filter_trashed: bool | None,
-        filter_by_owner_id: UserID | None,
+        filter_guest_owner_id: UserID | None,
+        filter_guest_product_group_id: GroupID | None,
         search_by_multi_columns: str | None,
         search_by_project_name: str | None,
         folder_query: FolderQuery,
@@ -469,8 +471,16 @@ class ProjectDBAPI(BaseProjectDB):
                 else projects.c.trashed.is_(None)
             )
 
-        if filter_by_owner_id is not None:
-            attributes_filters.append(projects.c.prj_owner == filter_by_owner_id)
+        if filter_guest_owner_id is not None:
+            attributes_filters.append(
+                (projects.c.prj_owner == filter_guest_owner_id)
+                | published_project_read_condition(
+                    project_uuid_column=projects.c.uuid,
+                    project_type_column=projects.c.type,
+                    project_published_column=projects.c.published,
+                    product_group_id=filter_guest_product_group_id,
+                )
+            )
 
         if search_by_multi_columns is not None:
             attributes_filters.append(
@@ -506,7 +516,8 @@ class ProjectDBAPI(BaseProjectDB):
         filter_published: bool | None = None,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
-        filter_by_owner_id: UserID | None = None,
+        filter_guest_owner_id: UserID | None = None,
+        filter_guest_product_group_id: GroupID | None = None,
         # search
         search_by_multi_columns: str | None = None,
         search_by_project_name: str | None = None,
@@ -552,7 +563,8 @@ class ProjectDBAPI(BaseProjectDB):
                 filter_hidden=filter_hidden,
                 filter_published=filter_published,
                 filter_trashed=filter_trashed,
-                filter_by_owner_id=filter_by_owner_id,
+                filter_guest_owner_id=filter_guest_owner_id,
+                filter_guest_product_group_id=filter_guest_product_group_id,
                 search_by_multi_columns=search_by_multi_columns,
                 search_by_project_name=search_by_project_name,
                 folder_query=folder_query,
