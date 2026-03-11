@@ -168,7 +168,7 @@ async def get_scheduler_details(
 ):
     scheduler_info = {}
     datasets_on_cluster = ()
-    processing_jobs = {}
+    processing_jobs: dict[str, list[str]] = {}
     all_tasks: dict[TaskState, list[TaskId]] = {}
     task_resources: dict[TaskId, dict[str, Any]] = {}
     task_worker_states: dict[TaskId, str] = {}

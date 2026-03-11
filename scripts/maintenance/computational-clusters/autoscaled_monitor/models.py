@@ -102,8 +102,8 @@ class ComputationalCluster:
 
     scheduler_info: dict[str, Any]
     datasets: tuple[str, ...]
-    processing_jobs: dict[str, set[str]]
-    task_states_to_tasks: dict[str, list[TaskState]]
+    processing_jobs: dict[str, list[str]]
+    task_states_to_tasks: dict[TaskState, list[TaskId]]
     task_resources: dict[str, dict[str, Any]]  # resource_restrictions per job_id
     task_worker_states: dict[str, str]  # job_id -> worker-level state (executing/constrained/long-running)
 
