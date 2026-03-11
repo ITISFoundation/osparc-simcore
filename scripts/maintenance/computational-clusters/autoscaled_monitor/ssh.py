@@ -160,7 +160,7 @@ async def get_dask_ip(state: AppState, instance: Instance, username: str, privat
             if not ip_address:
                 _logger.error("Dask IP address not found in the output")
                 return "Not IP Found / Drained / Not Ready"
-
+            assert isinstance(ip_address, str)  # nosec
             return ip_address
     except (
         asyncssh.Error,
@@ -188,6 +188,7 @@ async def list_running_dyn_services(
                 raise typer.Abort(result.stderr)
 
             output = result.stdout or ""
+            assert isinstance(output, str)  # nosec
             running_service: dict[str, list[DockerContainer]] = defaultdict(list)
             for container in output.splitlines():
                 if match := re.match(DYN_SERVICES_NAMING_CONVENTION, container):
