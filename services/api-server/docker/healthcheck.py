@@ -21,7 +21,7 @@ import os
 import sys
 from urllib.request import urlopen
 
-from celery_library.worker.heartbeat import is_healthy
+from common_library.heartbeat import is_healthy
 from pydantic import TypeAdapter
 
 SUCCESS, UNHEALTHY = 0, 1
@@ -37,12 +37,12 @@ def is_service_healthy() -> bool:
 
     return (
         # Queries host
-        urlopen(
+        urlopen(  # noqa: S310
             "{host}{baseurl}".format(
                 host=sys.argv[1], baseurl=os.getenv("SIMCORE_NODE_BASEPATH", "")
             )  # adds a base-path if defined in environ
         ).getcode()
-        == 200
+        == 200  # noqa: PLR2004
     )
 
 
