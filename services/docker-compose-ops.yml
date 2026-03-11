@@ -72,7 +72,7 @@ services:
 
   mailpit:
     # Fake SMTP server with web UI — https://mailpit.axllent.org
-    image: axllent/mailpit:1.29.3
+    image: axllent/mailpit:v1.29.3
     init: true
     command:
       - --smtp-auth-accept-any
