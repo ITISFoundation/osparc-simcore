@@ -204,7 +204,7 @@ async def test_list_projects(  # noqa: PLR0915
     if data:
         if user_role == UserRole.GUEST:
             assert len(data) == 1
-            # ONLY published project
+            # ONLY owned project in this fixture setup
             got = data[0]
             project_state = got.pop("state")
             project_permalink = got.pop("permalink", None)

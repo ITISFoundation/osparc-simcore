@@ -10,6 +10,7 @@ from typing import Any, NamedTuple
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
+from models_library.groups import GroupID
 from models_library.projects import ProjectTemplateType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
@@ -32,7 +33,7 @@ from .models import ProjectDict, ProjectTypeAPI
 
 class _GuestFilters(NamedTuple):
     owner_id: UserID | None
-    product_group_id: int | None
+    product_group_id: GroupID | None
 
 
 async def _get_guest_filters(app: web.Application, *, user_id: UserID, product_name: str) -> _GuestFilters:
