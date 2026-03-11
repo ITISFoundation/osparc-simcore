@@ -106,6 +106,16 @@ x-invitations-settings: &invitations_settings
   INVITATIONS_OSPARC_URL: ${INVITATIONS_OSPARC_URL}
 
 services:
+  # NOTE: Services are categorised to reduce startup failures.
+  # They are divided into groups:
+  # Group infrastructure: services we do not directly maintain (external).
+  # Group simcore no dependencies: services that do not rely on others to start (besides infrastructure).
+  # Group dependent simcore: services that depend on any of the above.
+
+  ###########################
+  ### Group infrastrcture ###
+  ###########################
+
   postgres:
     image: "postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc"
     init: true
@@ -166,15 +176,6 @@ services:
         "statement_timeout=120000",
       ]
 
-  migration:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment:
-      <<: *postgres_settings
-    networks:
-      - default # actually needed for the postgres service only
-
   redis:
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
     init: true
@@ -231,72 +232,148 @@ services:
       retries: 5
       start_period: 5s
 
-  director:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
+  # use to define fallback routes for simcore services
+  # if docker healthcheck fails, container's traefik configuration is removed
+  # leading to 404 https://github.com/traefik/traefik/issues/7842
+  #
+  # use fallback routes to return proper 503 (instead of 404)
+  # this service must be running at all times
+  traefik-config-placeholder:
+    image: busybox:1.35.0
+    command: sleep infinity
+    networks:
+      - default
+    deploy:
+      labels:
+        # route to internal traefik
+        - traefik.enable=true
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+
+        ### Fallback for api-server
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.service=${SWARM_STACK_NAME}_api-server_fallback
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcoreapi
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.priority=1
+        # always fail and return 503 via unhealthy loadbalancer healthcheck
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.server.port=0 # port is required (otherwise traefik service is not created)
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.healthcheck.interval=10s
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.healthcheck.timeout=1ms
+
+        ### Fallback for webserver
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.service=${SWARM_STACK_NAME}_webserver_fallback
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.rule=(Path(`/`) || Path(`/v0`) || Path(`/socket.io/`) || Path(`/static-frontend-data.json`) || PathRegexp(`^/study/(?P<study_uuid>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)`) || Path(`/view`) || Path(`/#/view`) || Path(`/#/error`) || PathPrefix(`/v0/`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.priority=1
+        # always fail and return 503 via unhealthy loadbalancer healthcheck
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.server.port=0
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.healthcheck.path=/v0/
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.healthcheck.interval=10s
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.healthcheck.timeout=1ms
+
+        ### Fallback for static-webserver
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.rule=(Path(`/osparc`) || Path(`/s4l`) || Path(`/s4llite`) || Path(`/s4lacad`) || Path(`/s4lengine`) || Path(`/s4ldesktop`) || Path(`/s4ldesktopacad`) || Path(`/tis`) || Path(`/tiplite`) || Path(`/transpiled`) || Path(`/resource`) || PathPrefix(`/osparc/`) || PathPrefix(`/s4l/`) || PathPrefix(`/s4llite/`) || PathPrefix(`/s4lacad/`) || PathPrefix(`/s4lengine/`) || PathPrefix(`/s4ldesktop/`) || PathPrefix(`/s4ldesktopacad/`) || PathPrefix(`/tis/`) || PathPrefix(`/tiplite/`) || PathPrefix(`/transpiled/`) || PathPrefix(`/resource/`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.service=${SWARM_STACK_NAME}_static_webserver_fallback
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.priority=1
+        # always fail and return 503 via unhealthy loadbalancer healthcheck
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.server.port=0
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.interval=10s
+        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.timeout=1ms
+    healthcheck:
+      test: command -v sleep
+      interval: 10s
+      timeout: 1s
+      start_period: 1s
+      retries: 3
+
+  traefik:
+    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
     environment:
-      <<:
-        - *postgres_settings
-        - *registry_settings
-        - *tracing_open_telemetry_environments
-
-      DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
-      DIRECTOR_DEFAULT_MAX_NANO_CPUS: ${DIRECTOR_DEFAULT_MAX_NANO_CPUS}
-      DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: ${DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS}
-      DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      DIRECTOR_LOGLEVEL: ${DIRECTOR_LOGLEVEL}
-      DIRECTOR_MONITORING_ENABLED: ${DIRECTOR_MONITORING_ENABLED}
-      DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: ${DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS}
-      DIRECTOR_PUBLISHED_HOST_NAME: ${DIRECTOR_PUBLISHED_HOST_NAME}
-      DIRECTOR_REGISTRY_CACHING_TTL: ${DIRECTOR_REGISTRY_CACHING_TTL}
-      DIRECTOR_REGISTRY_CACHING: ${DIRECTOR_REGISTRY_CACHING}
-      DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: ${DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS}
-      DIRECTOR_SERVICES_CUSTOM_LABELS: ${DIRECTOR_SERVICES_CUSTOM_LABELS}
-      DIRECTOR_TRACING: ${DIRECTOR_TRACING}
-
-      SIMCORE_SERVICES_NETWORK_NAME: interactive_services_subnet
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      SWARM_STACK_NAME: ${SWARM_STACK_NAME}
-
-      TRAEFIK_SIMCORE_ZONE: ${TRAEFIK_SIMCORE_ZONE}
-
+      TRAEFIK_API: "true"
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_PING: "true"
+      TRAEFIK_ENTRYPOINTS_PING_ADDRESS: ":9082"
+      TRAEFIK_PING_ENTRYPOINT: "ping"
+      TRAEFIK_LOG_LEVEL: "WARN"
+      TRAEFIK_ACCESSLOG: "false"
+      TRAEFIK_ACCESSLOG_FORMAT: "json"
+      TRAEFIK_METRICS_PROMETHEUS: "true"
+      TRAEFIK_METRICS_PROMETHEUS_ADDENTRYPOINTSLABELS: "true"
+      TRAEFIK_METRICS_PROMETHEUS_ADDSERVICESLABELS: "true"
+      TRAEFIK_ENTRYPOINTS_METRICS_ADDRESS: ":8082"
+      TRAEFIK_METRICS_PROMETHEUS_ENTRYPOINT: "metrics"
+      TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_HTTP_FORWARDEDHEADERS_INSECURE: "true"
+      # 6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
+      # 6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_ADDRESS: ":10081"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_ADDRESS: ":8080"
+      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_PROVIDERS_SWARM_ENDPOINT: "unix:///var/run/docker.sock"
+      TRAEFIK_PROVIDERS_SWARM_NETWORK: "${SWARM_STACK_NAME}_default"
+      TRAEFIK_PROVIDERS_SWARM_REFRESHSECONDS: "1" # https://github.com/traefik/traefik/issues/7886
+      TRAEFIK_PROVIDERS_SWARM_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_SWARM_CONSTRAINTS: "Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
+      TRAEFIK_TRACING: "true"
+      TRAEFIK_TRACING_ADDINTERNALS: "true"
+      TRAEFIK_TRACING_OTLP: "true"
+      TRAEFIK_TRACING_OTLP_HTTP: "true"
+      TRAEFIK_TRACING_SAMPLERATE: "${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}"
+    healthcheck:
+      # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
+      test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+      start_interval: 1s
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       placement:
         constraints:
           - node.role == manager
+      labels:
+        # for each service in the stack a new middlaware for rate limiting needs to be registered here
+        # requests = average / period this is how the limits are defined
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.average=1
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.period=1m
+        # a burst is computed over a period of 1 second
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
+        # X-Forwarded-For header extracts second IP from the right, count starts at one
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
+        # middleware for limiting total inflight requests the api-server is handling
+        - traefik.http.middlewares.ensure-group-header-${SWARM_STACK_NAME}_api-server.headers.customrequestheaders.X-Inflight-Limit-Group=all
+        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.amount=${TRAEFIK_API_SERVER_INFLIGHTREQ_AMOUNT}
+        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.sourcecriterion.requestheadername=X-Inflight-Limit-Group
+        - traefik.http.middlewares.inflightreq-${SWARM_STACK_NAME}_api-server.chain.middlewares=ensure-group-header-${SWARM_STACK_NAME}_api-server,limit-reqs-${SWARM_STACK_NAME}_api-server
     networks:
       - default
-      - interactive_services_subnet
+      - interactive_services_subnet # for legacy dynamic services
 
-  catalog:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
+  #####################################
+  ### Group simcore no dependencies ###
+  #####################################
+
+  migration:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "cat-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      <<:
-        - *catalog_settings
-        - *common_logging_environments
-        - *postgres_settings
-        - *rabbit_settings
-        - *tracing_open_telemetry_environments
-
-      CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
-      CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
-      CATALOG_LOGLEVEL: ${CATALOG_LOGLEVEL}
-      CATALOG_PROFILING: ${CATALOG_PROFILING}
-      CATALOG_SERVICES_DEFAULT_RESOURCES: ${CATALOG_SERVICES_DEFAULT_RESOURCES}
-      CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ${CATALOG_SERVICES_DEFAULT_SPECIFICATIONS}
-      CATALOG_TRACING: ${CATALOG_TRACING}
-      DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
-      DIRECTOR_DEFAULT_MAX_NANO_CPUS: ${DIRECTOR_DEFAULT_MAX_NANO_CPUS}
-      DIRECTOR_HOST: ${DIRECTOR_HOST:-director}
-      DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
-
+      <<: *postgres_settings
     networks:
-      - default
+      - default # actually needed for the postgres service only
 
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
@@ -342,6 +419,236 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker_api_subnet
+
+  director:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<:
+        - *postgres_settings
+        - *registry_settings
+        - *tracing_open_telemetry_environments
+
+      DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: ${DIRECTOR_DEFAULT_MAX_NANO_CPUS}
+      DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: ${DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS}
+      DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      DIRECTOR_LOGLEVEL: ${DIRECTOR_LOGLEVEL}
+      DIRECTOR_MONITORING_ENABLED: ${DIRECTOR_MONITORING_ENABLED}
+      DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: ${DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS}
+      DIRECTOR_PUBLISHED_HOST_NAME: ${DIRECTOR_PUBLISHED_HOST_NAME}
+      DIRECTOR_REGISTRY_CACHING_TTL: ${DIRECTOR_REGISTRY_CACHING_TTL}
+      DIRECTOR_REGISTRY_CACHING: ${DIRECTOR_REGISTRY_CACHING}
+      DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: ${DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS}
+      DIRECTOR_SERVICES_CUSTOM_LABELS: ${DIRECTOR_SERVICES_CUSTOM_LABELS}
+      DIRECTOR_TRACING: ${DIRECTOR_TRACING}
+
+      SIMCORE_SERVICES_NETWORK_NAME: interactive_services_subnet
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME}
+
+      TRAEFIK_SIMCORE_ZONE: ${TRAEFIK_SIMCORE_ZONE}
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - default
+      - interactive_services_subnet
+
+  datcore-adapter:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - storage_subnet
+    environment:
+      <<:
+        - *tracing_open_telemetry_environments
+
+      DATCORE_ADAPTER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
+      DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      DATCORE_ADAPTER_TRACING: ${DATCORE_ADAPTER_TRACING}
+
+  autoscaling:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - autoscaling_subnet
+    environment:
+      <<:
+        - *common_logging_environments
+        - *rabbit_settings
+        - *redis_settings
+        - *registry_settings
+        - *tracing_open_telemetry_environments
+
+      AUTOSCALING_LOGLEVEL: ${AUTOSCALING_LOGLEVEL}
+      AUTOSCALING_POLL_INTERVAL: ${AUTOSCALING_POLL_INTERVAL}
+      AUTOSCALING_DRAIN_NODES_WITH_LABELS: ${AUTOSCALING_DRAIN_NODES_WITH_LABELS}
+      AUTOSCALING_DOCKER_JOIN_DRAINED: ${AUTOSCALING_DOCKER_JOIN_DRAINED}
+      AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION: ${AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION}
+
+      AUTOSCALING_DASK: ${AUTOSCALING_DASK} # comp autoscaling
+      DASK_MONITORING_URL: ${DASK_MONITORING_URL}
+      DASK_SCHEDULER_AUTH: ${DASK_SCHEDULER_AUTH}
+
+      AUTOSCALING_EC2_ACCESS: ${AUTOSCALING_EC2_ACCESS} # used to enable/disable
+      AUTOSCALING_EC2_ACCESS_KEY_ID: ${AUTOSCALING_EC2_ACCESS_KEY_ID}
+      AUTOSCALING_EC2_SECRET_ACCESS_KEY: ${AUTOSCALING_EC2_SECRET_ACCESS_KEY}
+      AUTOSCALING_EC2_REGION_NAME: ${AUTOSCALING_EC2_REGION_NAME}
+
+      AUTOSCALING_EC2_INSTANCES: ${AUTOSCALING_EC2_INSTANCES} # used to enable/disable
+      EC2_INSTANCES_ALLOWED_TYPES: ${EC2_INSTANCES_ALLOWED_TYPES}
+      EC2_INSTANCES_ATTACHED_IAM_PROFILE: ${EC2_INSTANCES_ATTACHED_IAM_PROFILE}
+      EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: ${EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING}
+      EC2_INSTANCES_CUSTOM_TAGS: ${EC2_INSTANCES_CUSTOM_TAGS}
+      EC2_INSTANCES_KEY_NAME: ${EC2_INSTANCES_KEY_NAME}
+      EC2_INSTANCES_MAX_INSTANCES: ${EC2_INSTANCES_MAX_INSTANCES}
+      EC2_INSTANCES_MAX_START_TIME: ${EC2_INSTANCES_MAX_START_TIME}
+      EC2_INSTANCES_NAME_PREFIX: ${EC2_INSTANCES_NAME_PREFIX}
+      EC2_INSTANCES_SECURITY_GROUP_IDS: ${EC2_INSTANCES_SECURITY_GROUP_IDS}
+      EC2_INSTANCES_SUBNET_IDS: ${EC2_INSTANCES_SUBNET_IDS}
+      EC2_INSTANCES_TIME_BEFORE_DRAINING: ${EC2_INSTANCES_TIME_BEFORE_DRAINING}
+      EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${EC2_INSTANCES_TIME_BEFORE_TERMINATION}
+
+      AUTOSCALING_NODES_MONITORING: ${AUTOSCALING_NODES_MONITORING} # dyn autoscaling envvar
+      NODES_MONITORING_NODE_LABELS: ${NODES_MONITORING_NODE_LABELS}
+      NODES_MONITORING_SERVICE_LABELS: ${NODES_MONITORING_SERVICE_LABELS}
+      NODES_MONITORING_NEW_NODES_LABELS: ${NODES_MONITORING_NEW_NODES_LABELS}
+
+      AUTOSCALING_SSM_ACCESS: ${AUTOSCALING_SSM_ACCESS} # used to enable/disable
+      SSM_ENDPOINT: ${SSM_ENDPOINT}
+      SSM_ACCESS_KEY_ID: ${SSM_ACCESS_KEY_ID}
+      SSM_SECRET_ACCESS_KEY: ${SSM_SECRET_ACCESS_KEY}
+      SSM_REGION_NAME: ${SSM_REGION_NAME}
+
+      AUTOSCALING_TRACING: ${AUTOSCALING_TRACING}
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+        limits:
+          cpus: "0.5"
+          memory: "512M"
+
+  clusters-keeper:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      <<:
+        - *common_logging_environments
+        - *rabbit_settings
+        - *redis_settings
+        - *tracing_open_telemetry_environments
+
+      CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}
+      CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH}
+      CLUSTERS_KEEPER_DASK_NPROCS: ${CLUSTERS_KEEPER_DASK_NPROCS}
+      CLUSTERS_KEEPER_DASK_NTHREADS: ${CLUSTERS_KEEPER_DASK_NTHREADS}
+      CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER: ${CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER}
+      CLUSTERS_KEEPER_DASK_WORKER_SATURATION: ${CLUSTERS_KEEPER_DASK_WORKER_SATURATION}
+      CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: ${CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION}
+      CLUSTERS_KEEPER_TASK_INTERVAL: ${CLUSTERS_KEEPER_TASK_INTERVAL}
+      CLUSTERS_KEEPER_LOGLEVEL: ${CLUSTERS_KEEPER_LOGLEVEL}
+      CLUSTERS_KEEPER_EC2_ACCESS: ${CLUSTERS_KEEPER_EC2_ACCESS}
+      CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID}
+      CLUSTERS_KEEPER_EC2_ENDPOINT: ${CLUSTERS_KEEPER_EC2_ENDPOINT}
+      CLUSTERS_KEEPER_EC2_REGION_NAME: ${CLUSTERS_KEEPER_EC2_REGION_NAME}
+      CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY}
+      CLUSTERS_KEEPER_SSM_ACCESS: ${CLUSTERS_KEEPER_SSM_ACCESS}
+      CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID}
+      CLUSTERS_KEEPER_SSM_ENDPOINT: ${CLUSTERS_KEEPER_SSM_ENDPOINT}
+      CLUSTERS_KEEPER_SSM_REGION_NAME: ${CLUSTERS_KEEPER_SSM_REGION_NAME}
+      CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY}
+      CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: ${CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}
+      CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: ${CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES}
+      PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: ${PRIMARY_EC2_INSTANCES_ALLOWED_TYPES}
+      PRIMARY_EC2_INSTANCES_KEY_NAME: ${PRIMARY_EC2_INSTANCES_KEY_NAME}
+      PRIMARY_EC2_INSTANCES_MAX_INSTANCES: ${PRIMARY_EC2_INSTANCES_MAX_INSTANCES}
+      PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: ${PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS}
+      PRIMARY_EC2_INSTANCES_SUBNET_IDS: ${PRIMARY_EC2_INSTANCES_SUBNET_IDS}
+      PRIMARY_EC2_INSTANCES_CUSTOM_TAGS: ${PRIMARY_EC2_INSTANCES_CUSTOM_TAGS}
+      PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE: ${PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE}
+      PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}
+      PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}
+      PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}
+      PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME}
+      PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD}
+      PRIMARY_EC2_INSTANCES_MAX_START_TIME: ${PRIMARY_EC2_INSTANCES_MAX_START_TIME}
+      PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL: ${PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}
+      PRIMARY_EC2_INSTANCES_RABBIT: ${PRIMARY_EC2_INSTANCES_RABBIT}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME}
+      CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES: ${CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES}
+      WORKERS_EC2_INSTANCES_ALLOWED_TYPES: ${WORKERS_EC2_INSTANCES_ALLOWED_TYPES}
+      WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}
+      WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}
+      WORKERS_EC2_INSTANCES_KEY_NAME: ${WORKERS_EC2_INSTANCES_KEY_NAME}
+      WORKERS_EC2_INSTANCES_MAX_INSTANCES: ${WORKERS_EC2_INSTANCES_MAX_INSTANCES}
+      WORKERS_EC2_INSTANCES_MAX_START_TIME: ${WORKERS_EC2_INSTANCES_MAX_START_TIME}
+      WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: ${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
+      WORKERS_EC2_INSTANCES_SUBNET_IDS: ${WORKERS_EC2_INSTANCES_SUBNET_IDS}
+      WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: ${WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING}
+      WORKERS_EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
+      CLUSTERS_KEEPER_TRACING: ${CLUSTERS_KEEPER_TRACING}
+    secrets: *dask_tls_secrets
+
+  dask-sidecar:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    deploy:
+      mode: global
+      endpoint_mode: dnsrr
+      resources:
+        reservations:
+          cpus: "0.10"
+          memory: "100M"
+    volumes:
+      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment: &sidecar-environment
+      <<:
+        - *rabbit_settings
+
+      DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
+      DASK_TLS_KEY: ${DASK_TLS_KEY}
+      DASK_TLS_CERT: ${DASK_TLS_CERT}
+      DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
+      DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      DASK_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
+      DASK_SIDECAR_LOGLEVEL: ${DASK_SIDECAR_LOGLEVEL}
+      SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
+      SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+    networks:
+      - computational_services_subnet
+    secrets: *dask_tls_secrets
+
+  dask-scheduler:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<: *sidecar-environment
+      DASK_START_AS_SCHEDULER: 1
+
+    networks:
+      - computational_services_subnet
+    secrets: *dask_tls_secrets
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -396,6 +703,37 @@ services:
     networks:
       - default
 
+###############################
+### Group dependent simcore ###
+###############################
+
+  catalog:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "cat-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<:
+        - *catalog_settings
+        - *common_logging_environments
+        - *postgres_settings
+        - *rabbit_settings
+        - *tracing_open_telemetry_environments
+
+      CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
+      CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
+      CATALOG_LOGLEVEL: ${CATALOG_LOGLEVEL}
+      CATALOG_PROFILING: ${CATALOG_PROFILING}
+      CATALOG_SERVICES_DEFAULT_RESOURCES: ${CATALOG_SERVICES_DEFAULT_RESOURCES}
+      CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ${CATALOG_SERVICES_DEFAULT_SPECIFICATIONS}
+      CATALOG_TRACING: ${CATALOG_TRACING}
+      DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: ${DIRECTOR_DEFAULT_MAX_NANO_CPUS}
+      DIRECTOR_HOST: ${DIRECTOR_HOST:-director}
+      DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
+
+    networks:
+      - default
+
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -446,49 +784,6 @@ services:
       CELERY_QUEUES: cpu_bound
       CELERY_POOL: prefork
     networks: *storage_networks
-
-  dask-sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    deploy:
-      mode: global
-      endpoint_mode: dnsrr
-      resources:
-        reservations:
-          cpus: "0.10"
-          memory: "100M"
-    volumes:
-      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment: &sidecar-environment
-      <<:
-        - *rabbit_settings
-
-      DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
-      DASK_TLS_KEY: ${DASK_TLS_KEY}
-      DASK_TLS_CERT: ${DASK_TLS_CERT}
-      DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
-      DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      DASK_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
-      DASK_SIDECAR_LOGLEVEL: ${DASK_SIDECAR_LOGLEVEL}
-      SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
-      SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
-    networks:
-      - computational_services_subnet
-    secrets: *dask_tls_secrets
-
-  dask-scheduler:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment:
-      <<: *sidecar-environment
-      DASK_START_AS_SCHEDULER: 1
-
-    networks:
-      - computational_services_subnet
-    secrets: *dask_tls_secrets
 
   director-v2:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
@@ -1072,139 +1367,6 @@ services:
     networks:
       - default
 
-  autoscaling:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    networks:
-      - autoscaling_subnet
-    environment:
-      <<:
-        - *common_logging_environments
-        - *rabbit_settings
-        - *redis_settings
-        - *registry_settings
-        - *tracing_open_telemetry_environments
-
-      AUTOSCALING_LOGLEVEL: ${AUTOSCALING_LOGLEVEL}
-      AUTOSCALING_POLL_INTERVAL: ${AUTOSCALING_POLL_INTERVAL}
-      AUTOSCALING_DRAIN_NODES_WITH_LABELS: ${AUTOSCALING_DRAIN_NODES_WITH_LABELS}
-      AUTOSCALING_DOCKER_JOIN_DRAINED: ${AUTOSCALING_DOCKER_JOIN_DRAINED}
-      AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION: ${AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION}
-
-      AUTOSCALING_DASK: ${AUTOSCALING_DASK} # comp autoscaling
-      DASK_MONITORING_URL: ${DASK_MONITORING_URL}
-      DASK_SCHEDULER_AUTH: ${DASK_SCHEDULER_AUTH}
-
-      AUTOSCALING_EC2_ACCESS: ${AUTOSCALING_EC2_ACCESS} # used to enable/disable
-      AUTOSCALING_EC2_ACCESS_KEY_ID: ${AUTOSCALING_EC2_ACCESS_KEY_ID}
-      AUTOSCALING_EC2_SECRET_ACCESS_KEY: ${AUTOSCALING_EC2_SECRET_ACCESS_KEY}
-      AUTOSCALING_EC2_REGION_NAME: ${AUTOSCALING_EC2_REGION_NAME}
-
-      AUTOSCALING_EC2_INSTANCES: ${AUTOSCALING_EC2_INSTANCES} # used to enable/disable
-      EC2_INSTANCES_ALLOWED_TYPES: ${EC2_INSTANCES_ALLOWED_TYPES}
-      EC2_INSTANCES_ATTACHED_IAM_PROFILE: ${EC2_INSTANCES_ATTACHED_IAM_PROFILE}
-      EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: ${EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING}
-      EC2_INSTANCES_CUSTOM_TAGS: ${EC2_INSTANCES_CUSTOM_TAGS}
-      EC2_INSTANCES_KEY_NAME: ${EC2_INSTANCES_KEY_NAME}
-      EC2_INSTANCES_MAX_INSTANCES: ${EC2_INSTANCES_MAX_INSTANCES}
-      EC2_INSTANCES_MAX_START_TIME: ${EC2_INSTANCES_MAX_START_TIME}
-      EC2_INSTANCES_NAME_PREFIX: ${EC2_INSTANCES_NAME_PREFIX}
-      EC2_INSTANCES_SECURITY_GROUP_IDS: ${EC2_INSTANCES_SECURITY_GROUP_IDS}
-      EC2_INSTANCES_SUBNET_IDS: ${EC2_INSTANCES_SUBNET_IDS}
-      EC2_INSTANCES_TIME_BEFORE_DRAINING: ${EC2_INSTANCES_TIME_BEFORE_DRAINING}
-      EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${EC2_INSTANCES_TIME_BEFORE_TERMINATION}
-
-      AUTOSCALING_NODES_MONITORING: ${AUTOSCALING_NODES_MONITORING} # dyn autoscaling envvar
-      NODES_MONITORING_NODE_LABELS: ${NODES_MONITORING_NODE_LABELS}
-      NODES_MONITORING_SERVICE_LABELS: ${NODES_MONITORING_SERVICE_LABELS}
-      NODES_MONITORING_NEW_NODES_LABELS: ${NODES_MONITORING_NEW_NODES_LABELS}
-
-      AUTOSCALING_SSM_ACCESS: ${AUTOSCALING_SSM_ACCESS} # used to enable/disable
-      SSM_ENDPOINT: ${SSM_ENDPOINT}
-      SSM_ACCESS_KEY_ID: ${SSM_ACCESS_KEY_ID}
-      SSM_SECRET_ACCESS_KEY: ${SSM_SECRET_ACCESS_KEY}
-      SSM_REGION_NAME: ${SSM_REGION_NAME}
-
-      AUTOSCALING_TRACING: ${AUTOSCALING_TRACING}
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
-      resources:
-        reservations:
-          cpus: "0.5"
-          memory: "512M"
-        limits:
-          cpus: "0.5"
-          memory: "512M"
-
-  clusters-keeper:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    networks:
-      - default
-    environment:
-      <<:
-        - *common_logging_environments
-        - *rabbit_settings
-        - *redis_settings
-        - *tracing_open_telemetry_environments
-
-      CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}
-      CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH}
-      CLUSTERS_KEEPER_DASK_NPROCS: ${CLUSTERS_KEEPER_DASK_NPROCS}
-      CLUSTERS_KEEPER_DASK_NTHREADS: ${CLUSTERS_KEEPER_DASK_NTHREADS}
-      CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER: ${CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER}
-      CLUSTERS_KEEPER_DASK_WORKER_SATURATION: ${CLUSTERS_KEEPER_DASK_WORKER_SATURATION}
-      CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: ${CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION}
-      CLUSTERS_KEEPER_TASK_INTERVAL: ${CLUSTERS_KEEPER_TASK_INTERVAL}
-      CLUSTERS_KEEPER_LOGLEVEL: ${CLUSTERS_KEEPER_LOGLEVEL}
-      CLUSTERS_KEEPER_EC2_ACCESS: ${CLUSTERS_KEEPER_EC2_ACCESS}
-      CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID}
-      CLUSTERS_KEEPER_EC2_ENDPOINT: ${CLUSTERS_KEEPER_EC2_ENDPOINT}
-      CLUSTERS_KEEPER_EC2_REGION_NAME: ${CLUSTERS_KEEPER_EC2_REGION_NAME}
-      CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY}
-      CLUSTERS_KEEPER_SSM_ACCESS: ${CLUSTERS_KEEPER_SSM_ACCESS}
-      CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID}
-      CLUSTERS_KEEPER_SSM_ENDPOINT: ${CLUSTERS_KEEPER_SSM_ENDPOINT}
-      CLUSTERS_KEEPER_SSM_REGION_NAME: ${CLUSTERS_KEEPER_SSM_REGION_NAME}
-      CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY}
-      CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: ${CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}
-      CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: ${CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES}
-      PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: ${PRIMARY_EC2_INSTANCES_ALLOWED_TYPES}
-      PRIMARY_EC2_INSTANCES_KEY_NAME: ${PRIMARY_EC2_INSTANCES_KEY_NAME}
-      PRIMARY_EC2_INSTANCES_MAX_INSTANCES: ${PRIMARY_EC2_INSTANCES_MAX_INSTANCES}
-      PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: ${PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS}
-      PRIMARY_EC2_INSTANCES_SUBNET_IDS: ${PRIMARY_EC2_INSTANCES_SUBNET_IDS}
-      PRIMARY_EC2_INSTANCES_CUSTOM_TAGS: ${PRIMARY_EC2_INSTANCES_CUSTOM_TAGS}
-      PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE: ${PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE}
-      PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}
-      PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}
-      PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}
-      PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME}
-      PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD}
-      PRIMARY_EC2_INSTANCES_MAX_START_TIME: ${PRIMARY_EC2_INSTANCES_MAX_START_TIME}
-      PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL: ${PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}
-      PRIMARY_EC2_INSTANCES_RABBIT: ${PRIMARY_EC2_INSTANCES_RABBIT}
-      SWARM_STACK_NAME: ${SWARM_STACK_NAME}
-      CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES: ${CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES}
-      WORKERS_EC2_INSTANCES_ALLOWED_TYPES: ${WORKERS_EC2_INSTANCES_ALLOWED_TYPES}
-      WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}
-      WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}
-      WORKERS_EC2_INSTANCES_KEY_NAME: ${WORKERS_EC2_INSTANCES_KEY_NAME}
-      WORKERS_EC2_INSTANCES_MAX_INSTANCES: ${WORKERS_EC2_INSTANCES_MAX_INSTANCES}
-      WORKERS_EC2_INSTANCES_MAX_START_TIME: ${WORKERS_EC2_INSTANCES_MAX_START_TIME}
-      WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: ${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
-      WORKERS_EC2_INSTANCES_SUBNET_IDS: ${WORKERS_EC2_INSTANCES_SUBNET_IDS}
-      WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: ${WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING}
-      WORKERS_EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
-      CLUSTERS_KEEPER_TRACING: ${CLUSTERS_KEEPER_TRACING}
-    secrets: *dask_tls_secrets
-
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1316,20 +1478,6 @@ services:
       CELERY_QUEUES: api_server
     networks: *api_server_networks
 
-  datcore-adapter:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    networks:
-      - storage_subnet
-    environment:
-      <<:
-        - *tracing_open_telemetry_environments
-
-      DATCORE_ADAPTER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
-      DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      DATCORE_ADAPTER_TRACING: ${DATCORE_ADAPTER_TRACING}
-
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1417,136 +1565,6 @@ services:
       PAYMENTS_SWAGGER_API_DOC_ENABLED: ${PAYMENTS_SWAGGER_API_DOC_ENABLED}
       PAYMENTS_TRACING: ${PAYMENTS_TRACING}
       PAYMENTS_USERNAME: ${PAYMENTS_USERNAME}
-
-  # use to define fallback routes for simcore services
-  # if docker healthcheck fails, container's traefik configuration is removed
-  # leading to 404 https://github.com/traefik/traefik/issues/7842
-  #
-  # use fallback routes to return proper 503 (instead of 404)
-  # this service must be running at all times
-  traefik-config-placeholder:
-    image: busybox:1.35.0
-    command: sleep infinity
-    networks:
-      - default
-    deploy:
-      labels:
-        # route to internal traefik
-        - traefik.enable=true
-        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
-
-        ### Fallback for api-server
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.service=${SWARM_STACK_NAME}_api-server_fallback
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcoreapi
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.priority=1
-        # always fail and return 503 via unhealthy loadbalancer healthcheck
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.server.port=0 # port is required (otherwise traefik service is not created)
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.healthcheck.interval=10s
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.healthcheck.timeout=1ms
-
-        ### Fallback for webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.service=${SWARM_STACK_NAME}_webserver_fallback
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.rule=(Path(`/`) || Path(`/v0`) || Path(`/socket.io/`) || Path(`/static-frontend-data.json`) || PathRegexp(`^/study/(?P<study_uuid>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)`) || Path(`/view`) || Path(`/#/view`) || Path(`/#/error`) || PathPrefix(`/v0/`))
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_fallback.priority=1
-        # always fail and return 503 via unhealthy loadbalancer healthcheck
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.server.port=0
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.healthcheck.path=/v0/
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.healthcheck.interval=10s
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver_fallback.loadbalancer.healthcheck.timeout=1ms
-
-        ### Fallback for static-webserver
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.rule=(Path(`/osparc`) || Path(`/s4l`) || Path(`/s4llite`) || Path(`/s4lacad`) || Path(`/s4lengine`) || Path(`/s4ldesktop`) || Path(`/s4ldesktopacad`) || Path(`/tis`) || Path(`/tiplite`) || Path(`/transpiled`) || Path(`/resource`) || PathPrefix(`/osparc/`) || PathPrefix(`/s4l/`) || PathPrefix(`/s4llite/`) || PathPrefix(`/s4lacad/`) || PathPrefix(`/s4lengine/`) || PathPrefix(`/s4ldesktop/`) || PathPrefix(`/s4ldesktopacad/`) || PathPrefix(`/tis/`) || PathPrefix(`/tiplite/`) || PathPrefix(`/transpiled/`) || PathPrefix(`/resource/`))
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.service=${SWARM_STACK_NAME}_static_webserver_fallback
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver_fallback.priority=1
-        # always fail and return 503 via unhealthy loadbalancer healthcheck
-        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.server.port=0
-        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
-        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.interval=10s
-        - traefik.http.services.${SWARM_STACK_NAME}_static_webserver_fallback.loadbalancer.healthcheck.timeout=1ms
-    healthcheck:
-      test: command -v sleep
-      interval: 10s
-      timeout: 1s
-      start_period: 1s
-      retries: 3
-
-  traefik:
-    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
-    environment:
-      TRAEFIK_API: "true"
-      TRAEFIK_API_DASHBOARD: "true"
-      TRAEFIK_PING: "true"
-      TRAEFIK_ENTRYPOINTS_PING_ADDRESS: ":9082"
-      TRAEFIK_PING_ENTRYPOINT: "ping"
-      TRAEFIK_LOG_LEVEL: "WARN"
-      TRAEFIK_ACCESSLOG: "false"
-      TRAEFIK_ACCESSLOG_FORMAT: "json"
-      TRAEFIK_METRICS_PROMETHEUS: "true"
-      TRAEFIK_METRICS_PROMETHEUS_ADDENTRYPOINTSLABELS: "true"
-      TRAEFIK_METRICS_PROMETHEUS_ADDSERVICESLABELS: "true"
-      TRAEFIK_ENTRYPOINTS_METRICS_ADDRESS: ":8082"
-      TRAEFIK_METRICS_PROMETHEUS_ENTRYPOINT: "metrics"
-      TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: ":80"
-      TRAEFIK_ENTRYPOINTS_HTTP_FORWARDEDHEADERS_INSECURE: "true"
-      # 6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
-      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
-      # 6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
-      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
-      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_ADDRESS: ":10081"
-      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_FORWARDEDHEADERS_INSECURE: "true"
-      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
-      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
-      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_ADDRESS: ":8080"
-      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_FORWARDEDHEADERS_INSECURE: "true"
-      TRAEFIK_PROVIDERS_SWARM_ENDPOINT: "unix:///var/run/docker.sock"
-      TRAEFIK_PROVIDERS_SWARM_NETWORK: "${SWARM_STACK_NAME}_default"
-      TRAEFIK_PROVIDERS_SWARM_REFRESHSECONDS: "1" # https://github.com/traefik/traefik/issues/7886
-      TRAEFIK_PROVIDERS_SWARM_EXPOSEDBYDEFAULT: "false"
-      TRAEFIK_PROVIDERS_SWARM_CONSTRAINTS: "Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
-      TRAEFIK_TRACING: "true"
-      TRAEFIK_TRACING_ADDINTERNALS: "true"
-      TRAEFIK_TRACING_OTLP: "true"
-      TRAEFIK_TRACING_OTLP_HTTP: "true"
-      TRAEFIK_TRACING_SAMPLERATE: "${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}"
-    healthcheck:
-      # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
-      test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-      start_interval: 1s
-    volumes:
-      # So that Traefik can listen to the Docker events
-      - /var/run/docker.sock:/var/run/docker.sock
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
-      labels:
-        # for each service in the stack a new middlaware for rate limiting needs to be registered here
-        # requests = average / period this is how the limits are defined
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.average=1
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.period=1m
-        # a burst is computed over a period of 1 second
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
-        # X-Forwarded-For header extracts second IP from the right, count starts at one
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
-        # middleware for limiting total inflight requests the api-server is handling
-        - traefik.http.middlewares.ensure-group-header-${SWARM_STACK_NAME}_api-server.headers.customrequestheaders.X-Inflight-Limit-Group=all
-        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.amount=${TRAEFIK_API_SERVER_INFLIGHTREQ_AMOUNT}
-        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.sourcecriterion.requestheadername=X-Inflight-Limit-Group
-        - traefik.http.middlewares.inflightreq-${SWARM_STACK_NAME}_api-server.chain.middlewares=ensure-group-header-${SWARM_STACK_NAME}_api-server,limit-reqs-${SWARM_STACK_NAME}_api-server
-    networks:
-      - default
-      - interactive_services_subnet # for legacy dynamic services
 
 volumes:
   postgres_data:
