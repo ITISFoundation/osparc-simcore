@@ -60,11 +60,8 @@ async def db_engine(
                 await engine.dispose()
 
 
-async def abort_job_in_db(state: AppState, project_id: uuid.UUID, node_id: uuid.UUID) -> None:
-    async with contextlib.AsyncExitStack() as stack:
-        engine = await stack.enter_async_context(db_engine(state))
-        db_connection = await stack.enter_async_context(engine.begin())
-
+async def abort_job_in_db(engine: AsyncEngine, project_id: uuid.UUID, node_id: uuid.UUID) -> None:
+    async with engine.begin() as db_connection:
         await db_connection.execute(
             sa.update(sa.table("comp_tasks"))
             .where(
@@ -80,24 +77,20 @@ async def abort_job_in_db(state: AppState, project_id: uuid.UUID, node_id: uuid.
 
 async def check_db_connection(state: AppState) -> bool:
     try:
-        async with contextlib.AsyncExitStack() as stack:
-            engine = await stack.enter_async_context(db_engine(state))
+        async with db_engine(state) as engine:
             async with asyncio.timeout(5):
-                db_connection = await stack.enter_async_context(engine.connect())
-                result = await db_connection.execute(sa.select(sa.literal(1)))
-            result.one()
-            rich.print("[green]Database connection test completed successfully![/green]")
-            return True
+                async with engine.connect() as db_connection:
+                    result = await db_connection.execute(sa.select(sa.literal(1)))
+                result.one()
+                rich.print("[green]Database connection test completed successfully![/green]")
+                return True
     except Exception as e:  # pylint: disable=broad-exception-caught
         rich.print(f"[red]Database connection test failed: {e}[/red]")
     return False
 
 
-async def list_computational_tasks_from_db(state: AppState, user_id: int) -> list[ComputationalTask]:
-    async with contextlib.AsyncExitStack() as stack:
-        engine = await stack.enter_async_context(db_engine(state))
-        db_connection = await stack.enter_async_context(engine.begin())
-
+async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) -> list[ComputationalTask]:
+    async with engine.begin() as db_connection:
         # Get the list of running project UUIDs with a subquery
         subquery = (
             sa.select(sa.column("project_uuid"))
@@ -139,22 +132,13 @@ async def list_computational_tasks_from_db(state: AppState, user_id: int) -> lis
             )
             for row in comp_tasks_list
         ]
-    msg = "unable to access database!"
-    raise RuntimeError(msg)
 
 
 async def list_resource_tracker_running_computational_services(
-    state: AppState,
+    engine: AsyncEngine,
 ) -> list[ResourceTrackerServiceRun]:
-    """Return all RUNNING COMPUTATIONAL_SERVICE entries from resource_tracker_service_runs.
-
-    Raises:
-        RuntimeError: if the DB cannot be reached.
-    """
-    async with contextlib.AsyncExitStack() as stack:
-        engine = await stack.enter_async_context(db_engine(state))
-        db_connection = await stack.enter_async_context(engine.begin())
-
+    """Return all RUNNING COMPUTATIONAL_SERVICE entries from resource_tracker_service_runs."""
+    async with engine.begin() as db_connection:
         query = (
             sa.select(
                 sa.column("service_run_id"),
@@ -197,20 +181,15 @@ async def list_resource_tracker_running_computational_services(
             )
             for row in rows
         ]
-    msg = "unable to access database!"
-    raise RuntimeError(msg)
 
 
 async def get_user_and_wallet_info(
-    state: AppState,
+    engine: AsyncEngine,
     user_id: int,
     wallet_id: int | None,
 ) -> tuple[str | None, str | None]:
     """Returns (user_email, wallet_name)."""
-    async with contextlib.AsyncExitStack() as stack:
-        engine = await stack.enter_async_context(db_engine(state))
-        db_connection = await stack.enter_async_context(engine.connect())
-
+    async with engine.connect() as db_connection:
         email: str | None = None
         wallet_name: str | None = None
 
@@ -233,14 +212,11 @@ async def get_user_and_wallet_info(
 
 
 async def get_product_usd_per_credit(
-    state: AppState,
+    engine: AsyncEngine,
     product_name: str,
 ) -> float | None:
     """Returns the latest usd_per_credit for the product, or None if not found/zero."""
-    async with contextlib.AsyncExitStack() as stack:
-        engine = await stack.enter_async_context(db_engine(state))
-        db_connection = await stack.enter_async_context(engine.connect())
-
+    async with engine.connect() as db_connection:
         result = await db_connection.execute(
             sa.select(sa.column("usd_per_credit"))
             .select_from(sa.table("products_prices"))
