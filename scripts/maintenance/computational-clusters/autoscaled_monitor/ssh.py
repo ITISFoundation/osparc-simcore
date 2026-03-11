@@ -33,17 +33,24 @@ async def ssh_tunnel(
     private_key_path: Path,
     remote_bind_host: str,
     remote_bind_port: int,
+    bastion_conn: asyncssh.SSHClientConnection | None = None,
 ) -> AsyncGenerator[tuple[str, int], Any]:
     """Open an asyncssh TCP port-forward and yield (local_host, local_port)."""
     try:
-        async with asyncssh.connect(
-            ssh_host,
-            port=_DEFAULT_SSH_PORT,
-            username=username,
-            client_keys=[str(private_key_path)],
-            known_hosts=None,
-            keepalive_interval=10,
-        ) as conn:
+        async with contextlib.AsyncExitStack() as stack:
+            if bastion_conn is not None:
+                conn = bastion_conn
+            else:
+                conn = await stack.enter_async_context(
+                    asyncssh.connect(
+                        ssh_host,
+                        port=_DEFAULT_SSH_PORT,
+                        username=username,
+                        client_keys=[str(private_key_path)],
+                        known_hosts=None,
+                        keepalive_interval=10,
+                    )
+                )
             listener = await conn.forward_local_port(_LOCAL_BIND_ADDRESS, 0, remote_bind_host, remote_bind_port)
             try:
                 yield (_LOCAL_BIND_ADDRESS, listener.get_port())
@@ -58,8 +65,32 @@ async def ssh_tunnel(
 
 
 @contextlib.asynccontextmanager
+async def connect_bastion(
+    bastion_instance: Instance,
+    *,
+    username: str,
+    private_key_path: Path,
+) -> AsyncGenerator[asyncssh.SSHClientConnection, Any]:
+    """Open a persistent SSH connection to a bastion host for reuse."""
+    async with asyncssh.connect(
+        bastion_instance.public_dns_name,
+        port=_DEFAULT_SSH_PORT,
+        username=username,
+        client_keys=[str(private_key_path)],
+        known_hosts=None,
+        keepalive_interval=10,
+    ) as conn:
+        yield conn
+
+
+@contextlib.asynccontextmanager
 async def ssh_instance(
-    instance: Instance, *, state: AppState, username: str, private_key_path: Path
+    instance: Instance,
+    *,
+    state: AppState,
+    username: str,
+    private_key_path: Path,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> AsyncGenerator[asyncssh.SSHClientConnection, Any]:
     """SSH into an instance, tunnelling through the bastion when needed."""
     assert state.ssh_key_path  # nosec
@@ -67,6 +98,15 @@ async def ssh_instance(
         if instance.public_ip_address:
             async with asyncssh.connect(
                 instance.public_ip_address,
+                port=_DEFAULT_SSH_PORT,
+                username=username,
+                client_keys=[str(private_key_path)],
+                known_hosts=None,
+            ) as conn:
+                yield conn
+        elif bastion_conn is not None:
+            async with bastion_conn.connect_ssh(
+                instance.private_ip_address,
                 port=_DEFAULT_SSH_PORT,
                 username=username,
                 client_keys=[str(private_key_path)],
@@ -83,8 +123,8 @@ async def ssh_instance(
                     client_keys=[str(state.ssh_key_path)],
                     known_hosts=None,
                     keepalive_interval=10,
-                ) as bastion_conn,
-                bastion_conn.connect_ssh(
+                ) as new_bastion_conn,
+                new_bastion_conn.connect_ssh(
                     instance.private_ip_address,
                     port=_DEFAULT_SSH_PORT,
                     username=username,
@@ -103,12 +143,19 @@ async def _run_command(conn: asyncssh.SSHClientConnection, command: str) -> asyn
 
 
 async def get_available_disk_space(
-    state: AppState, instance: Instance, username: str, private_key_path: Path
+    state: AppState,
+    instance: Instance,
+    username: str,
+    private_key_path: Path,
+    *,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> ByteSize:
     assert state.ssh_key_path
 
     try:
-        async with ssh_instance(instance, state=state, username=username, private_key_path=private_key_path) as conn:
+        async with ssh_instance(
+            instance, state=state, username=username, private_key_path=private_key_path, bastion_conn=bastion_conn
+        ) as conn:
             disk_space_command = "df --block-size=1 /mnt/docker | awk 'NR==2{print $4}'"
             result = await _run_command(conn, disk_space_command)
 
@@ -126,9 +173,18 @@ async def get_available_disk_space(
         return ByteSize(0)
 
 
-async def get_dask_ip(state: AppState, instance: Instance, username: str, private_key_path: Path) -> str:
+async def get_dask_ip(
+    state: AppState,
+    instance: Instance,
+    username: str,
+    private_key_path: Path,
+    *,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+) -> str:
     try:
-        async with ssh_instance(instance, state=state, username=username, private_key_path=private_key_path) as conn:
+        async with ssh_instance(
+            instance, state=state, username=username, private_key_path=private_key_path, bastion_conn=bastion_conn
+        ) as conn:
             list_containers_command = "docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}'"
             result = await _run_command(conn, list_containers_command)
             container_ids = (result.stdout or "").strip()
@@ -171,10 +227,17 @@ async def get_dask_ip(state: AppState, instance: Instance, username: str, privat
 
 
 async def list_running_dyn_services(
-    state: AppState, instance: Instance, username: str, private_key_path: Path
+    state: AppState,
+    instance: Instance,
+    username: str,
+    private_key_path: Path,
+    *,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> list[DynamicService]:
     try:
-        async with ssh_instance(instance, state=state, username=username, private_key_path=private_key_path) as conn:
+        async with ssh_instance(
+            instance, state=state, username=username, private_key_path=private_key_path, bastion_conn=bastion_conn
+        ) as conn:
             docker_command = (
                 'docker ps --format=\'{{.Names}}\t{{.CreatedAt}}\t{{.Label "io.simcore.runtime.user-id"}}'
                 '\t{{.Label "io.simcore.runtime.project-id"}}\t{{.Label "io.simcore.name"}}'

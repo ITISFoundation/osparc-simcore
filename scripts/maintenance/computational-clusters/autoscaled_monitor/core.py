@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import arrow
+import asyncssh
 import orjson
 import parse
 import rich
@@ -552,7 +553,11 @@ def _print_computational_clusters(
 
 
 async def _fetch_instance_details(
-    state: AppState, instance: DynamicInstance, ssh_key_path: Path
+    state: AppState,
+    instance: DynamicInstance,
+    ssh_key_path: Path,
+    *,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> tuple[list[DynamicService] | BaseException, ByteSize | BaseException]:
     # Run both SSH operations concurrently for this instance
     running_services, disk_space = await asyncio.gather(
@@ -561,8 +566,15 @@ async def _fetch_instance_details(
             instance.ec2_instance,
             SSH_USER_NAME,
             ssh_key_path,
+            bastion_conn=bastion_conn,
         ),
-        ssh.get_available_disk_space(state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path),
+        ssh.get_available_disk_space(
+            state,
+            instance.ec2_instance,
+            SSH_USER_NAME,
+            ssh_key_path,
+            bastion_conn=bastion_conn,
+        ),
         return_exceptions=True,
     )
     return running_services, disk_space
@@ -574,10 +586,27 @@ async def _analyze_dynamic_instances_running_services_concurrently(
     ssh_key_path: Path,
     user_id: int | None,
 ) -> list[DynamicInstance]:
-    details = await asyncio.gather(
-        *(_fetch_instance_details(state, instance, ssh_key_path) for instance in dynamic_instances),
-        return_exceptions=True,
-    )
+    bastion_conn: asyncssh.SSHClientConnection | None = None
+    async with contextlib.AsyncExitStack() as stack:
+        try:
+            bastion_instance = await ec2.get_dynamic_bastion_instance(state)
+            bastion_conn = await stack.enter_async_context(
+                ssh.connect_bastion(
+                    bastion_instance,
+                    username=SSH_USER_NAME,
+                    private_key_path=ssh_key_path,
+                )
+            )
+        except (AssertionError, asyncssh.Error, OSError):
+            rich.print("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
+
+        details = await asyncio.gather(
+            *(
+                _fetch_instance_details(state, instance, ssh_key_path, bastion_conn=bastion_conn)
+                for instance in dynamic_instances
+            ),
+            return_exceptions=True,
+        )
 
     # Filter and update instances based on results and given criteria
     return [
@@ -594,66 +623,97 @@ async def _analyze_dynamic_instances_running_services_concurrently(
     ]
 
 
-async def _analyze_computational_instances(
+async def _analyze_computational_instances(  # noqa: C901
     state: AppState,
     computational_instances: list[ComputationalInstance],
     ssh_key_path: Path | None,
 ) -> list[ComputationalCluster]:
-    all_disk_spaces = [UNDEFINED_BYTESIZE] * len(computational_instances)
-    if ssh_key_path is not None:
-        all_disk_spaces = await asyncio.gather(
-            *(
-                ssh.get_available_disk_space(state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path)
-                for instance in computational_instances
-            ),
-            return_exceptions=True,
-        )
+    all_disk_spaces: list[ByteSize | BaseException] = [UNDEFINED_BYTESIZE] * len(computational_instances)
+    all_dask_ips: list[str | BaseException] = [""] * len(computational_instances)
 
-        all_dask_ips = await asyncio.gather(
-            *(
-                ssh.get_dask_ip(state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path)
-                for instance in computational_instances
-            ),
-            return_exceptions=True,
-        )
-
-    computational_clusters = []
-    for instance, disk_space, dask_ip in track(
-        zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True),
-        description="Collecting computational clusters data...",
-    ):
-        if isinstance(disk_space, ByteSize):
-            instance.disk_space = disk_space
-        if isinstance(dask_ip, str):
-            instance.dask_ip = dask_ip
-        if instance.role is InstanceRole.manager:
-            (
-                scheduler_info,
-                datasets_on_cluster,
-                processing_jobs,
-                all_tasks,
-                task_resources,
-                task_worker_states,
-            ) = await dask.get_scheduler_details(
-                state,
-                instance.ec2_instance,
-            )
-
-            assert isinstance(datasets_on_cluster, tuple)
-            assert isinstance(processing_jobs, dict)
-
-            computational_clusters.append(
-                ComputationalCluster(
-                    primary=instance,
-                    workers=[],
-                    scheduler_info=scheduler_info,
-                    datasets=datasets_on_cluster,
-                    processing_jobs=processing_jobs,
-                    task_states_to_tasks=all_tasks,
-                    task_resources=task_resources,
-                    task_worker_states=task_worker_states,
+    async with contextlib.AsyncExitStack() as stack:
+        bastion_conn: asyncssh.SSHClientConnection | None = None
+        if ssh_key_path is not None:
+            try:
+                bastion_instance = await ec2.get_computational_bastion_instance(state)
+                bastion_conn = await stack.enter_async_context(
+                    ssh.connect_bastion(
+                        bastion_instance,
+                        username=SSH_USER_NAME,
+                        private_key_path=ssh_key_path,
+                    )
                 )
+            except (AssertionError, asyncssh.Error, OSError):
+                rich.print(
+                    "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
+                )
+
+            all_disk_spaces = await asyncio.gather(
+                *(
+                    ssh.get_available_disk_space(
+                        state,
+                        instance.ec2_instance,
+                        SSH_USER_NAME,
+                        ssh_key_path,
+                        bastion_conn=bastion_conn,
+                    )
+                    for instance in computational_instances
+                ),
+                return_exceptions=True,
             )
+
+            all_dask_ips = await asyncio.gather(
+                *(
+                    ssh.get_dask_ip(
+                        state,
+                        instance.ec2_instance,
+                        SSH_USER_NAME,
+                        ssh_key_path,
+                        bastion_conn=bastion_conn,
+                    )
+                    for instance in computational_instances
+                ),
+                return_exceptions=True,
+            )
+
+        computational_clusters = []
+        for instance, disk_space, dask_ip in track(
+            zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True),
+            description="Collecting computational clusters data...",
+        ):
+            if isinstance(disk_space, ByteSize):
+                instance.disk_space = disk_space
+            if isinstance(dask_ip, str):
+                instance.dask_ip = dask_ip
+            if instance.role is InstanceRole.manager:
+                (
+                    scheduler_info,
+                    datasets_on_cluster,
+                    processing_jobs,
+                    all_tasks,
+                    task_resources,
+                    task_worker_states,
+                ) = await dask.get_scheduler_details(
+                    state,
+                    instance.ec2_instance,
+                    bastion_conn,
+                )
+
+                assert isinstance(datasets_on_cluster, tuple)
+                assert isinstance(processing_jobs, dict)
+
+                computational_clusters.append(
+                    ComputationalCluster(
+                        primary=instance,
+                        workers=[],
+                        scheduler_info=scheduler_info,
+                        datasets=datasets_on_cluster,
+                        processing_jobs=processing_jobs,
+                        task_states_to_tasks=all_tasks,
+                        task_resources=task_resources,
+                        task_worker_states=task_worker_states,
+                    )
+                )
 
     for instance in computational_instances:
         if instance.role is InstanceRole.worker:
@@ -1209,6 +1269,7 @@ async def _cancel_all_jobs(
     task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]],
     abort_in_db: bool,
     engine: AsyncEngine | None = None,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> None:
     rich.print("cancelling all tasks")
     for comp_task, dask_task in task_to_dask_job:
@@ -1217,6 +1278,7 @@ async def _cancel_all_jobs(
                 state,
                 the_cluster,
                 dask_task.job_id,
+                bastion_conn,
             )
             if comp_task is None:
                 # we need to clear it of the cluster
@@ -1224,6 +1286,7 @@ async def _cancel_all_jobs(
                     state,
                     the_cluster,
                     dask_task.job_id,
+                    bastion_conn,
                 )
         if comp_task is not None and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"] and abort_in_db:
             assert engine is not None  # nosec
@@ -1261,7 +1324,7 @@ async def _get_db_task_to_dask_job(
     return task_to_dask_job
 
 
-async def cancel_jobs(  # noqa: C901, PLR0912
+async def cancel_jobs(  # noqa: C901, PLR0912, PLR0915
     state: AppState, user_id: int, wallet_id: int | None, *, abort_in_db: bool
 ) -> None:
     async with db.db_engine(state) as engine:
@@ -1290,50 +1353,73 @@ async def cancel_jobs(  # noqa: C901, PLR0912
 
         _print_computational_tasks(user_id, wallet_id, task_to_dask_job)
         rich.print(the_cluster.datasets)
-        try:
-            if response := typer.prompt(
-                "Which dataset to cancel? (all: will cancel everything, 1-5: "
-                "will cancel jobs 1-5, or 4: will cancel job #4)",
-                default="none",
-            ):
-                if response == "none":
-                    rich.print("[yellow]not cancelling anything[/yellow]")
-                elif response == "all":
-                    await _cancel_all_jobs(
-                        state,
-                        the_cluster,
-                        task_to_dask_job=task_to_dask_job,
-                        abort_in_db=abort_in_db,
-                        engine=engine,
+
+        assert state.ssh_key_path  # nosec
+        bastion_conn: asyncssh.SSHClientConnection | None = None
+        async with contextlib.AsyncExitStack() as bastion_stack:
+            try:
+                bastion_instance = await ec2.get_computational_bastion_instance(state)
+                bastion_conn = await bastion_stack.enter_async_context(
+                    ssh.connect_bastion(
+                        bastion_instance,
+                        username=SSH_USER_NAME,
+                        private_key_path=state.ssh_key_path,
                     )
-                else:
-                    try:
-                        # Split the response and handle ranges
-                        indices = response.split("-")
-                        if len(indices) == 2:  # noqa: PLR2004
-                            start_index, end_index = map(int, indices)
-                            selected_indices = range(start_index, end_index + 1)
-                        else:
-                            selected_indices = [int(indices[0])]
+                )
+            except (AssertionError, asyncssh.Error, OSError):
+                rich.print(
+                    "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
+                )
 
-                        for selected_index in selected_indices:
-                            comp_task, dask_task = task_to_dask_job[selected_index]
-                            if dask_task is not None and dask_task.state != "unknown":
-                                await dask.trigger_job_cancellation_in_scheduler(state, the_cluster, dask_task.job_id)
-                                if comp_task is None:
-                                    # we need to clear it of the cluster
-                                    await dask.remove_job_from_scheduler(state, the_cluster, dask_task.job_id)
+            try:
+                if response := typer.prompt(
+                    "Which dataset to cancel? (all: will cancel everything, 1-5: "
+                    "will cancel jobs 1-5, or 4: will cancel job #4)",
+                    default="none",
+                ):
+                    if response == "none":
+                        rich.print("[yellow]not cancelling anything[/yellow]")
+                    elif response == "all":
+                        await _cancel_all_jobs(
+                            state,
+                            the_cluster,
+                            task_to_dask_job=task_to_dask_job,
+                            abort_in_db=abort_in_db,
+                            engine=engine,
+                            bastion_conn=bastion_conn,
+                        )
+                    else:
+                        try:
+                            # Split the response and handle ranges
+                            indices = response.split("-")
+                            if len(indices) == 2:  # noqa: PLR2004
+                                start_index, end_index = map(int, indices)
+                                selected_indices = range(start_index, end_index + 1)
+                            else:
+                                selected_indices = [int(indices[0])]
 
-                            if comp_task is not None and abort_in_db:
-                                await db.abort_job_in_db(engine, comp_task.project_id, comp_task.node_id)
-                        rich.print(f"Cancelled selected tasks: {response}")
+                            for selected_index in selected_indices:
+                                comp_task, dask_task = task_to_dask_job[selected_index]
+                                if dask_task is not None and dask_task.state != "unknown":
+                                    await dask.trigger_job_cancellation_in_scheduler(
+                                        state, the_cluster, dask_task.job_id, bastion_conn
+                                    )
+                                    if comp_task is None:
+                                        # we need to clear it of the cluster
+                                        await dask.remove_job_from_scheduler(
+                                            state, the_cluster, dask_task.job_id, bastion_conn
+                                        )
 
-                    except ValidationError:
-                        rich.print("[yellow]wrong index format, not cancelling anything[/yellow]")
-                    except IndexError:
-                        rich.print("[yellow]index out of range, not cancelling anything[/yellow]")
-        except ValidationError:
-            rich.print("[yellow]wrong input, not cancelling anything[/yellow]")
+                                if comp_task is not None and abort_in_db:
+                                    await db.abort_job_in_db(engine, comp_task.project_id, comp_task.node_id)
+                            rich.print(f"Cancelled selected tasks: {response}")
+
+                        except ValidationError:
+                            rich.print("[yellow]wrong index format, not cancelling anything[/yellow]")
+                        except IndexError:
+                            rich.print("[yellow]index out of range, not cancelling anything[/yellow]")
+            except ValidationError:
+                rich.print("[yellow]wrong input, not cancelling anything[/yellow]")
 
 
 async def trigger_cluster_termination(state: AppState, user_id: int, wallet_id: int | None, *, force: bool) -> None:
@@ -1360,9 +1446,31 @@ async def trigger_cluster_termination(state: AppState, user_id: int, wallet_id: 
             task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = await _get_db_task_to_dask_job(
                 computational_tasks, job_id_to_dask_state
             )
-            await _cancel_all_jobs(
-                state, the_cluster, task_to_dask_job=task_to_dask_job, abort_in_db=force, engine=engine
-            )
+            assert state.ssh_key_path  # nosec
+            bastion_conn: asyncssh.SSHClientConnection | None = None
+            async with contextlib.AsyncExitStack() as bastion_stack:
+                try:
+                    bastion_instance = await ec2.get_computational_bastion_instance(state)
+                    bastion_conn = await bastion_stack.enter_async_context(
+                        ssh.connect_bastion(
+                            bastion_instance,
+                            username=SSH_USER_NAME,
+                            private_key_path=state.ssh_key_path,
+                        )
+                    )
+                except (AssertionError, asyncssh.Error, OSError):
+                    rich.print(
+                        "[yellow]No computational bastion available,"
+                        " SSH operations will use per-instance fallback[/yellow]"
+                    )
+                await _cancel_all_jobs(
+                    state,
+                    the_cluster,
+                    task_to_dask_job=task_to_dask_job,
+                    abort_in_db=force,
+                    engine=engine,
+                    bastion_conn=bastion_conn,
+                )
 
         new_heartbeat_tag: TagTypeDef = {
             "Key": "last_heartbeat",

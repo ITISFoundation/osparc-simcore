@@ -2,6 +2,7 @@ import contextlib
 from collections.abc import AsyncGenerator, Awaitable, Coroutine
 from typing import Any, Final
 
+import asyncssh
 import distributed
 import rich
 from aiocache import SimpleMemoryCache
@@ -26,7 +27,11 @@ def _wrap_dask_async_call(called_fct) -> Awaitable[Any]:
 
 
 @contextlib.asynccontextmanager
-async def dask_client(state: AppState, instance: Instance) -> AsyncGenerator[distributed.Client]:
+async def dask_client(
+    state: AppState,
+    instance: Instance,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+) -> AsyncGenerator[distributed.Client]:
     security = distributed.Security()
     assert state.deploy_config
     dask_certificates = state.deploy_config / "assets" / "dask-certificates"
@@ -43,16 +48,21 @@ async def dask_client(state: AppState, instance: Instance) -> AsyncGenerator[dis
             if instance.public_ip_address is not None:
                 url = AnyUrl(f"tls://{instance.public_ip_address}:{_SCHEDULER_PORT}")
             else:
-                bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
+                if bastion_conn is None:
+                    bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
+                    ssh_host = bastion_instance.public_dns_name
+                else:
+                    ssh_host = instance.private_ip_address
                 assert state.ssh_key_path  # nosec
                 assert state.environment  # nosec
                 host, port = await stack.enter_async_context(
                     ssh_tunnel(
-                        ssh_host=bastion_instance.public_dns_name,
+                        ssh_host=ssh_host,
                         username=SSH_USER_NAME,
                         private_key_path=state.ssh_key_path,
                         remote_bind_host=instance.private_ip_address,
                         remote_bind_port=_SCHEDULER_PORT,
+                        bastion_conn=bastion_conn,
                     )
                 )
                 url = AnyUrl(f"tls://{host}:{port}")
@@ -69,8 +79,9 @@ async def remove_job_from_scheduler(
     state: AppState,
     cluster: ComputationalCluster,
     task_id: TaskId,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> None:
-    async with dask_client(state, cluster.primary.ec2_instance) as client:
+    async with dask_client(state, cluster.primary.ec2_instance, bastion_conn) as client:
         await _wrap_dask_async_call(client.unpublish_dataset(task_id))
         rich.print(f"unpublished {task_id} from scheduler")
 
@@ -79,8 +90,9 @@ async def trigger_job_cancellation_in_scheduler(
     state: AppState,
     cluster: ComputationalCluster,
     task_id: TaskId,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> None:
-    async with dask_client(state, cluster.primary.ec2_instance) as client:
+    async with dask_client(state, cluster.primary.ec2_instance, bastion_conn) as client:
         task_future = distributed.Future(task_id, client=client)
         cancel_event = distributed.Event(
             name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
@@ -149,7 +161,11 @@ async def _get_cached_scheduler_task_data(client: distributed.Client, instance_i
     return data
 
 
-async def get_scheduler_details(state: AppState, instance: Instance):
+async def get_scheduler_details(
+    state: AppState,
+    instance: Instance,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+):
     scheduler_info = {}
     datasets_on_cluster = ()
     processing_jobs = {}
@@ -157,7 +173,7 @@ async def get_scheduler_details(state: AppState, instance: Instance):
     task_resources: dict[TaskId, dict[str, Any]] = {}
     task_worker_states: dict[TaskId, str] = {}
     try:
-        async with dask_client(state, instance) as client:
+        async with dask_client(state, instance, bastion_conn) as client:
             assert client.scheduler  # nosec
             # NOTE: client.scheduler_info() is cached and limited to 5 workers for async clients.
             # Use the direct RPC call instead, which returns all workers live.
