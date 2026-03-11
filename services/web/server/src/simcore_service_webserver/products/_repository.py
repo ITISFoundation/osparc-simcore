@@ -58,6 +58,7 @@ _PRODUCTS_COLUMNS = [
     products.c.support_chatbot_user_id,
     products.c.support_assigned_fogbugz_person_id,
     products.c.support_assigned_fogbugz_project_id,
+    products.c.studies_dispatcher_enabled,
 ]
 
 assert {column.name for column in _PRODUCTS_COLUMNS}.issubset(  # nosec

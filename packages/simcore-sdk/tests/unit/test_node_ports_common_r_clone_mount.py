@@ -36,6 +36,9 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     NoMountFoundForRemotePathError,
     RCloneMountManager,
 )
+from simcore_sdk.node_ports_common.r_clone_mount._manager import (
+    _TrackedMount,
+)
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
     AsyncRetrying,
@@ -492,3 +495,86 @@ async def test_refresh_path(
             assert s3_create_files_checums == local_checksums_2
 
     assert len(local_checksums_2) == file_count
+
+
+@pytest.fixture
+def tracked_mount_with_mocked_client(
+    local_mount_path: Path,
+) -> tuple[_TrackedMount, AsyncMock]:
+    """Creates a _TrackedMount with a mocked RemoteControlHttpClient."""
+    mount = object.__new__(_TrackedMount)
+    mount.local_mount_path = local_mount_path
+    mount._consecutive_unresponsive_count = 0  # noqa: SLF001
+
+    mock_is_responsive = AsyncMock()
+    mount._rc_http_client = AsyncMock()  # noqa: SLF001
+    mount._rc_http_client.is_responsive = mock_is_responsive  # noqa: SLF001
+
+    return mount, mock_is_responsive
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [
+        pytest.param(
+            [
+                (True, True),
+            ],
+            id="single_responsive_returns_true",
+        ),
+        pytest.param(
+            [
+                (False, True),
+            ],
+            id="single_unresponsive_returns_true_below_threshold",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+            ],
+            id="two_consecutive_unresponsive_still_true",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
+            id="three_consecutive_unresponsive_third_returns_false",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+                (True, True),
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
+            id="responsive_in_middle_resets_counter",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+                (False, False),
+                (True, True),
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
+            id="responsive_in_middle_resets_failing_counter",
+        ),
+    ],
+)
+async def test_is_healthy(
+    tracked_mount_with_mocked_client: tuple[_TrackedMount, AsyncMock],
+    steps: list[tuple[bool, bool]],
+):
+    mount, mock_is_responsive = tracked_mount_with_mocked_client
+
+    for i, (is_resp, expected) in enumerate(steps):
+        mock_is_responsive.return_value = is_resp
+        result = await mount.is_healthy()
+        assert result is expected, f"Step {i}: is_responsive={is_resp}, expected is_healthy={expected}, got {result}"
