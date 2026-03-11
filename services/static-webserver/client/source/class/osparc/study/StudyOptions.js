@@ -190,18 +190,20 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           this.getChildControl("advanced-layout").add(control);
           break;
+        case "tiers-container":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("tiers-checkbox").bind("value", control, "visibility", {
+            converter: checked => checked ? "visible" : "excluded"
+          });
+          this.getChildControl("advanced-layout").add(control, {
+            flex: 1
+          });
+          break;
         case "tiers-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             minHeight: 40,
           });
-          const scroll = new qx.ui.container.Scroll();
-          this.getChildControl("tiers-checkbox").bind("value", scroll, "visibility", {
-            converter: checked => checked ? "visible" : "excluded"
-          });
-          scroll.add(control);
-          this.getChildControl("advanced-layout").add(scroll, {
-            flex: 1
-          });
+          this.getChildControl("tiers-container").add(control);
           break;
         }
         case "loading-units-spinner":
@@ -416,6 +418,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __addTierSelector: function() {
+      this.getChildControl("tiers-checkbox");
       this.getChildControl("study-pricing-units");
     },
 
