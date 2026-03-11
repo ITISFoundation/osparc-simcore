@@ -227,8 +227,8 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     },
 
     __openInstructions: function() {
-      if (this.getInstructionsWindow()) {
-        this.getInstructionsWindow().center();
+      if (this.__instructionsWindow) {
+        this.__instructionsWindow.center();
         return;
       }
 
@@ -241,8 +241,10 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       }
     },
 
-    getInstructionsWindow: function() {
-      return this.__instructionsWindow;
+    closeInstructionsWindow: function() {
+      if (this.__instructionsWindow) {
+        this.__instructionsWindow.close();
+      }
     },
 
     getHeaderLayout: function() {
