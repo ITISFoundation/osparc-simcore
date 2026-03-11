@@ -91,7 +91,7 @@ async def trigger_job_cancellation_in_scheduler(
         rich.print(f"cancelled {task_id} in scheduler/workers")
 
 
-async def _get_cached_scheduler_task_data(client: distributed.Client, instance_id: str) -> dict[str, Any]:
+async def _get_cached_scheduler_task_data(client: distributed.Client, instance_id: str) -> dict[str, Any]:  # noqa: C901
     """Single cached call to the scheduler that returns all task data at once."""
     cached_data: dict[str, Any] | None = await _scheduler_task_cache.get(instance_id)
     if cached_data is not None:
@@ -108,7 +108,34 @@ async def _get_cached_scheduler_task_data(client: distributed.Client, instance_i
             tasks_by_state.setdefault(str(task.state), []).append(str(task.key))
             if task.resource_restrictions:
                 task_resources[str(task.key)] = dict(task.resource_restrictions)
-        return {"tasks_by_state": tasks_by_state, "task_resources": task_resources}
+        # Collect per-task worker-level state.
+        # The scheduler-side WorkerState tracks executing and long_running,
+        # but NOT constrained/ready/waiting (those are worker-internal).
+        # For tasks in processing but not executing/long_running, we infer
+        # constrained vs queued from whether they have resource_restrictions.
+        task_worker_states: dict[str, str] = {}
+        for worker in dask_scheduler.workers.values():
+            known_keys: set[str] = set()
+            for task in getattr(worker, "executing", set()):
+                key = str(task.key)
+                task_worker_states[key] = "executing"
+                known_keys.add(key)
+            for task in getattr(worker, "long_running", set()):
+                key = str(task.key)
+                task_worker_states[key] = "long-running"
+                known_keys.add(key)
+            for task in getattr(worker, "processing", {}):
+                key = str(task.key)
+                if key not in known_keys:
+                    if task.resource_restrictions:
+                        task_worker_states[key] = "constrained"
+                    else:
+                        task_worker_states[key] = "queued"
+        return {
+            "tasks_by_state": tasks_by_state,
+            "task_resources": task_resources,
+            "task_worker_states": task_worker_states,
+        }
 
     try:
         data: dict[str, Any] = await client.run_on_scheduler(_collect_all_task_data)  # type: ignore
@@ -117,7 +144,7 @@ async def _get_cached_scheduler_task_data(client: distributed.Client, instance_i
             f"Unexpected error fetching task data from scheduler: {e} "
             f"when communicating with {client.scheduler}. Defaulting to empty."
         )
-        data = {"tasks_by_state": {}, "task_resources": {}}
+        data = {"tasks_by_state": {}, "task_resources": {}, "task_worker_states": {}}
     await _scheduler_task_cache.set(instance_id, data)
     return data
 
@@ -128,6 +155,7 @@ async def get_scheduler_details(state: AppState, instance: Instance):
     processing_jobs = {}
     all_tasks: dict[TaskState, list[TaskId]] = {}
     task_resources: dict[TaskId, dict[str, Any]] = {}
+    task_worker_states: dict[TaskId, str] = {}
     try:
         async with dask_client(state, instance) as client:
             assert client.scheduler  # nosec
@@ -139,10 +167,11 @@ async def get_scheduler_details(state: AppState, instance: Instance):
             task_data = await _get_cached_scheduler_task_data(client, instance.id)
             all_tasks = task_data["tasks_by_state"]
             task_resources = task_data["task_resources"]
+            task_worker_states = task_data["task_worker_states"]
     except (TimeoutError, OSError, TypeError):
         rich.print("ERROR while recoverring scheduler details !! no scheduler info found!!")
 
-    return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks, task_resources
+    return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks, task_resources, task_worker_states
 
 
 def get_worker_metrics(scheduler_info: dict[str, Any]) -> dict[str, Any]:
