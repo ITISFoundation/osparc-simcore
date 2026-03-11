@@ -199,6 +199,11 @@ qx.Class.define("osparc.study.StudyOptions", {
             flex: 1
           });
           break;
+        case "tiers-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this.getChildControl("tiers-container").add(control);
+          break;
+        }
         case "loading-units-spinner":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/48",
@@ -207,19 +212,18 @@ qx.Class.define("osparc.study.StudyOptions", {
             marginTop: 20
           });
           control.getContentElement().addClass("rotate");
-          this.getChildControl("advanced-layout").add(control);
+          this.getChildControl("tiers-layout").add(control);
           break;
         case "study-pricing-units": {
           control = new osparc.study.StudyPricingUnits();
           const loadingImage = this.getChildControl("loading-units-spinner");
-          const tiersContainer = this.getChildControl("tiers-container");
           const unitsLoading = () => {
             loadingImage.show();
-            tiersContainer.exclude();
+            control.exclude();
           };
           const unitsReady = () => {
             loadingImage.exclude();
-            tiersContainer.show();
+            control.show();
             control.getNodePricingUnits().forEach(nodePricingUnits => {
               this.bind("patchStudy", nodePricingUnits, "patchNode");
             });
@@ -227,7 +231,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           unitsLoading();
           control.addListener("loadingUnits", () => unitsLoading());
           control.addListener("unitsReady", () => unitsReady());
-          tiersContainer.add(control);
+          this.getChildControl("tiers-layout").add(control);
           break;
         }
         case "buttons-layout":
