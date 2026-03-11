@@ -5,7 +5,7 @@ import contextlib
 import datetime
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import arrow
 import orjson
@@ -202,7 +202,7 @@ def _format_comp_task_cell(row: "TaskReconciliationRow") -> str:
     if row.comp_task is None:
         return "[red]\u274c n/a[/red]"
     db_state = row.comp_task.state
-    if row.dask_state == "processing" and db_state != "RUNNING":
+    if row.is_actively_executing and db_state != "RUNNING":
         return f"[red]\u2705 {db_state}[/red]"
     if db_state == "RUNNING":
         return f"[green]\u2705 {db_state}[/green]"
@@ -216,7 +216,7 @@ def _format_tracker_cells(
 ) -> tuple[str, str, str, str, str, str]:
     """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text, heartbeat_text)."""
     if row.tracker_run is None:
-        rut = "[red]\u274c n/a[/red]" if row.dask_state == "processing" else "[dim]\u274c n/a[/dim]"
+        rut = "[red]\u274c n/a[/red]" if row.is_actively_executing else "[dim]\u274c n/a[/dim]"
         return rut, "n/a", "n/a", "n/a", "n/a", "n/a"
     cost = row.tracker_run.pricing_unit_cost
     rate = f"{cost:.1f}" if cost is not None else "n/a"
@@ -271,12 +271,20 @@ def _build_cluster_tasks_table(
     for row in sorted_rows:
         job_id_display = row.job_id[:36] + "\u2026" if len(row.job_id) > 37 else row.job_id  # noqa: PLR2004
 
-        if row.dask_state == "processing":
-            dask_state_text = f"[green]{row.dask_state}[/green]"
-        elif row.dask_state in {"erred", "not-in-dask"}:
-            dask_state_text = f"[red]{row.dask_state}[/red]"
+        # Compose scheduler state / worker state
+        if row.worker_state and row.worker_state != row.dask_state:
+            combined = f"{row.dask_state}\n{row.worker_state}"
         else:
-            dask_state_text = row.dask_state
+            combined = row.dask_state
+
+        if row.is_actively_executing:
+            dask_state_text = f"[green]{combined}[/green]"
+        elif row.dask_state == "processing":
+            dask_state_text = f"[yellow]{combined}[/yellow]"
+        elif row.dask_state in {"erred", "not-in-dask"}:
+            dask_state_text = f"[red]{combined}[/red]"
+        else:
+            dask_state_text = combined
 
         db_comp_tasks_text = _format_comp_task_cell(row)
 
@@ -328,18 +336,30 @@ def _build_worker_metrics_table(
     if resources:
         resources_str = " | ".join(f"{k}: {_format_resource_value(k, v)}" for k, v in sorted(resources.items()))
         table.add_row("Resources", resources_str)
-    task_counts: dict[str, Any] = metrics.get("tasks", {}) if isinstance(metrics, dict) else {}
-    if task_counts:
-        table.add_row("", "", end_section=True)
-        for state, count in task_counts.items():
-            color = "green" if state in {"executing", "memory"} else "dim"
-            table.add_row(f"[{color}]{state}[/{color}]", f"[{color}]{count}[/{color}]")
     return table
+
+
+_STATE_STYLES: Final[dict[str, str]] = {
+    "executing": "green",
+    "long-running": "green",
+    "memory": "green",
+    "constrained": "yellow",
+    "queued": "cyan",
+    "ready": "cyan",
+    "waiting": "cyan",
+    "fetch": "dim",
+    "flight": "dim",
+    "cancelled": "red",
+    "error": "red",
+    "missing": "red",
+    "resumed": "yellow",
+}
 
 
 def _build_worker_tasks_table(
     processing_jobs: list[str],
     task_resources: dict[str, dict[str, Any]],
+    task_worker_states: dict[str, str],
 ) -> Table | None:
     if not processing_jobs:
         return None
@@ -350,6 +370,7 @@ def _build_worker_tasks_table(
         padding=(0, 1),
         expand=True,
     )
+
     for job_id in processing_jobs:
         resources = task_resources.get(job_id, {})
         resources_text = (
@@ -357,7 +378,9 @@ def _build_worker_tasks_table(
             if resources
             else "[dim]n/a[/dim]"
         )
-        table.add_row(job_id, "[green]executing[/green]", resources_text)
+        state = task_worker_states.get(job_id, "processing")
+        color = _STATE_STYLES.get(state, "dim")
+        table.add_row(job_id, f"[{color}]{state}[/{color}]", resources_text)
     return table
 
 
@@ -515,7 +538,9 @@ def _print_computational_clusters(
                 worker_info = f"[dim]{worker_info}[/dim]"
             worker_graylog = _create_graylog_permalinks(environment, worker.ec2_instance)
             metrics_table = _build_worker_metrics_table(worker_dask_metrics, worker_graylog)
-            worker_tasks = _build_worker_tasks_table(worker_processing_jobs, cluster.task_resources)
+            worker_tasks = _build_worker_tasks_table(
+                worker_processing_jobs, cluster.task_resources, cluster.task_worker_states
+            )
             worker_right: object = Group(metrics_table, worker_tasks) if worker_tasks is not None else metrics_table
             table.add_row(worker_info, worker_right)
 
@@ -608,6 +633,7 @@ async def _analyze_computational_instances(
                 processing_jobs,
                 all_tasks,
                 task_resources,
+                task_worker_states,
             ) = await dask.get_scheduler_details(
                 state,
                 instance.ec2_instance,
@@ -625,6 +651,7 @@ async def _analyze_computational_instances(
                     processing_jobs=processing_jobs,
                     task_states_to_tasks=all_tasks,
                     task_resources=task_resources,
+                    task_worker_states=task_worker_states,
                 )
             )
 
@@ -675,7 +702,7 @@ async def _parse_dynamic_instances(
     return dynamic_instances
 
 
-def _reconcile_cluster_tasks(
+def _reconcile_cluster_tasks(  # noqa: C901, PLR0912
     cluster: ComputationalCluster,
     comp_tasks: list[ComputationalTask],
     tracker_runs: list[ResourceTrackerServiceRun],
@@ -705,10 +732,12 @@ def _reconcile_cluster_tasks(
                 tracker_run = None
                 required_resources: dict[str, Any] = cluster.task_resources.get(job_id, {})
             else:
-                if dask_state == "processing" and comp_task.state != "RUNNING":
-                    issues.append(f"processing in Dask but comp_tasks.state={comp_task.state!r} (expected RUNNING)")
+                worker_state = cluster.task_worker_states.get(job_id, dask_state)
+                actively_executing = worker_state in {"executing", "long-running"}
+                if actively_executing and comp_task.state != "RUNNING":
+                    issues.append(f"executing in Dask but comp_tasks.state={comp_task.state!r} (expected RUNNING)")
                 tracker_run = tracker_runs_by_node_id.get(str(comp_task.node_id))
-                if tracker_run is None and dask_state == "processing":
+                if tracker_run is None and actively_executing:
                     issues.append("no resource_tracker entry (credits not being tracked)")
                 required_resources = cluster.task_resources.get(job_id, {})
 
@@ -716,6 +745,7 @@ def _reconcile_cluster_tasks(
                 TaskReconciliationRow(
                     job_id=job_id,
                     dask_state=dask_state,
+                    worker_state=cluster.task_worker_states.get(job_id, dask_state),
                     comp_task=comp_task,
                     tracker_run=tracker_run,
                     required_resources=required_resources,
@@ -732,12 +762,39 @@ def _reconcile_cluster_tasks(
                 TaskReconciliationRow(
                     job_id=comp_task.job_id or "n/a",
                     dask_state="not-in-dask",
+                    worker_state="not-in-dask",
                     comp_task=comp_task,
                     tracker_run=tracker_run,
                     required_resources=cluster.task_resources.get(comp_task.job_id or "", {}),
                     issues=["comp_tasks.state=RUNNING but job absent from Dask scheduler (stuck?)"],
                 )
             )
+
+    # Detect load imbalance: all processing tasks on one worker while others are idle
+    num_workers = len(cluster.workers)
+    if num_workers > 1:
+        # Count processing tasks per worker
+        tasks_per_worker: dict[str, int] = {}
+        for worker_name, job_ids in cluster.processing_jobs.items():
+            if job_ids:
+                tasks_per_worker[worker_name] = len(job_ids)
+        total_processing = sum(tasks_per_worker.values())
+        workers_with_tasks = len(tasks_per_worker)
+        if total_processing > 1 and workers_with_tasks == 1:
+            busy_worker_name = next(iter(tasks_per_worker))
+            # Find human-readable worker label
+            busy_label = busy_worker_name
+            for i, w in enumerate(cluster.workers):
+                if w.dask_ip in busy_worker_name:
+                    busy_label = f"Worker {i + 1}"
+                    break
+            imbalance_msg = (
+                f"load imbalance: all {total_processing} tasks on {busy_label}, {num_workers - 1} idle worker(s)"
+            )
+            # Attach the warning to every row on that worker
+            for row in rows:
+                if row.job_id in cluster.processing_jobs.get(busy_worker_name, set()):
+                    row.issues.append(imbalance_msg)
 
     return rows
 

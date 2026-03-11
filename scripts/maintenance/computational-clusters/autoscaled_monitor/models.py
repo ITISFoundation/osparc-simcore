@@ -105,6 +105,7 @@ class ComputationalCluster:
     processing_jobs: dict[str, set[str]]
     task_states_to_tasks: dict[str, list[TaskState]]
     task_resources: dict[str, dict[str, Any]]  # resource_restrictions per job_id
+    task_worker_states: dict[str, str]  # job_id -> worker-level state (executing/constrained/long-running)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -127,10 +128,16 @@ class ResourceTrackerServiceRun:
 class TaskReconciliationRow:
     job_id: TaskId
     dask_state: TaskState
+    worker_state: str  # worker-level state: executing, constrained, queued, etc.
     comp_task: "ComputationalTask | None"
     tracker_run: ResourceTrackerServiceRun | None
     required_resources: dict[str, Any]
     issues: list[str]
+
+    @property
+    def is_actively_executing(self) -> bool:
+        """True when the task is actually running on a thread (not just queued/constrained)."""
+        return self.worker_state in {"executing", "long-running"}
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
