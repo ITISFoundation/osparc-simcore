@@ -16,10 +16,10 @@ install() {
   make pull-externals
   # shellcheck source=/dev/null
   source .venv/bin/activate
+  make info-images
   pushd tests/public-api
   make install-ci
   popd
-  make info-images
 }
 
 test() {
