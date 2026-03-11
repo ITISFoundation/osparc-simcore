@@ -325,8 +325,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       this.__getVisibleItems().forEach(item => {
         item.setPosition(-1);
       });
-      const slideshow = this.__serialize();
-      this.__study.getUi().getSlideshow().setData(slideshow);
+      this.__saveSlides();
       this.fireEvent("close");
     }
   }
