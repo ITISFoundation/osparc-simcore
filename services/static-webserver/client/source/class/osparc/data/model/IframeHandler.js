@@ -305,6 +305,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             srvUrl &&
             srvUrl !== node.getServiceUrl() // if it's already connected, do not restart the connection process
           ) {
+            this.__stopNodeStateFallbackPolling();
             this.__statusInteractiveChanged("connecting", node.getStatus().getInteractive());
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
