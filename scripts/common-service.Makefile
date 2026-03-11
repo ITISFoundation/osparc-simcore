@@ -17,7 +17,7 @@
 APP_NAME          = $(notdir $(CURDIR))
 APP_CLI_NAME      = simcore-service-$(APP_NAME)
 APP_PACKAGE_NAME  = $(subst -,_,$(APP_CLI_NAME))
-APP_VERSION      := $(shell cat VERSION)
+APP_VERSION      := $(shell uv version --short)
 SRC_DIR           = $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
 
 export APP_VERSION
@@ -35,9 +35,14 @@ export APP_VERSION
 
 .PHONY: install-dev install-prod install-ci
 
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# Installing in $(subst install-,,$@) mode
-	@uv pip sync requirements/$(subst install-,,$@).txt
+install-dev: ## install app in development mode
+	@uv sync --all-groups
+
+install-prod: ## install app in production mode
+	@uv sync --no-dev --no-editable
+
+install-ci: ## install app in CI mode
+	@uv sync --group dev --no-editable
 
 
 
@@ -45,7 +50,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
 
-test-dev-unit test-ci-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
+test-dev-unit test-ci-unit: ## run app unit tests (specifying test-path can restrict to a folder)
 	# Targets tests/unit folder
 	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_PATH)
 

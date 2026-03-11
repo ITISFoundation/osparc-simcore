@@ -119,10 +119,10 @@ inf%: ## displays basic info
 	# installed in .venv
 	@uv pip list
 	# package setup
-	-@echo ' name         : ' $(shell python ${CURDIR}/setup.py --name)
-	-@echo ' version      : ' $(shell python ${CURDIR}/setup.py --version)
-	-@echo ' authors      : ' "$(shell python ${CURDIR}/setup.py --author)"
-	-@echo ' description  : ' "$(shell python ${CURDIR}/setup.py --description)"
+	-@echo ' name         : ' $(shell python -c "import tomllib; f=open('${CURDIR}/pyproject.toml','rb'); d=tomllib.load(f); f.close(); print(d.get('project',{}).get('name',''))")
+	-@echo ' version      : ' $(shell python -c "import tomllib; f=open('${CURDIR}/pyproject.toml','rb'); d=tomllib.load(f); f.close(); print(d.get('project',{}).get('version',''))")
+	-@echo ' authors      : ' "$(shell python -c "import tomllib; f=open('${CURDIR}/pyproject.toml','rb'); d=tomllib.load(f); f.close(); a=d.get('project',{}).get('authors',[]); print(', '.join([x['name'] for x in a if 'name' in x]) if a else '')")"
+	-@echo ' description  : ' "$(shell python -c "import tomllib; f=open('${CURDIR}/pyproject.toml','rb'); d=tomllib.load(f); f.close(); print(d.get('project',{}).get('description',''))")"
 
 
 

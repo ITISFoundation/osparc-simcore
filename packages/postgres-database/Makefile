@@ -1,58 +1,19 @@
 #
 # Targets for DEVELOPMENT of postgres-database
 #
+# All standard targets (install-dev/prod/ci, tests/test-ci) are defined in
+# ../../scripts/common-package.Makefile and included below.
+#
+
 include ../../scripts/common.Makefile
 include ../../scripts/common-package.Makefile
 
 
-.PHONY: requirements
-requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE_C) requirements reqs
+#
+# Database-specific targets
+#
 
-
-.PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# installing in $(subst install-,,$@) mode
-	@uv pip sync requirements/$(subst install-,,$@).txt
-
-
-.PHONY: tests tests-ci
-tests: ## runs unit tests
-	# running unit tests
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov=simcore_postgres_database \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
-
-tests-ci: ## runs unit tests [ci-mode]
-	# running unit tests
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=simcore_postgres_database \
-		--durations=10 \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-		$(CURDIR)/tests
-
-
-.PHONY: import-db
-#guard-SOURCE_HOST guard-SOURCE_DATA_VOLUME guard-TARGET_DATA_VOLUME
+.PHONY: import-db import-db-from-docker-volume import-db-from-folder
 import-db-from-docker-volume import-db-from-folder: scripts/copy_database_volume.sh  ## copy postgresql data from remote $host from $host_volume or $host_folder to a local $local_volume docker volume
 	@:$(if $(findstring -from-folder,$@),\
 	$(call check_defined, host host_folder local_volume, please define this variable when calling $@), \
@@ -137,15 +98,15 @@ doc-erd: ## Creates entity relationship diagram (ERD) defined under ``simcore_po
 
 
 .PHONY: merge-heads check-multiple-heads
-check-multiple-heads: ## checks that multiple postgress heads exist
+check-multiple-heads: ## checks that multiple postgres heads exist
 	@cd src/simcore_postgres_database; \
 	nheads=$$(alembic heads | wc -l); \
-	echo "Number of postgress heads: $${nheads}"; \
+	echo "Number of postgres heads: $${nheads}"; \
 	if [ "$${nheads}" -lt "2" ]; then \
 	 	exit 1; \
 	fi
 
-merge-heads: check-multiple-heads ## merges multiple postgress heads
+merge-heads: check-multiple-heads ## merges multiple postgres heads
 	@cd src/simcore_postgres_database; \
 	merge_msg="merge "$$(alembic heads | sed 's/(head)//g' | tr '\n' ' '); \
 	echo "$${merge_msg}"; \
