@@ -43,15 +43,11 @@ class ComputationGet(_DirectorV2ComputationGet, OutputSchemaWithoutCamelCase):
 
 class ComputationStart(InputSchemaWithoutCamelCase):
     force_restart: bool = False
-    subgraph: Annotated[
-        set[str], Field(default_factory=set, json_schema_extra={"default": []})
-    ] = DEFAULT_FACTORY
+    subgraph: Annotated[set[str], Field(default_factory=set, json_schema_extra={"default": []})] = DEFAULT_FACTORY
 
 
 class ComputationStarted(OutputSchemaWithoutCamelCase):
-    pipeline_id: Annotated[
-        ProjectID, Field(description="ID for created pipeline (=project identifier)")
-    ]
+    pipeline_id: Annotated[ProjectID, Field(description="ID for created pipeline (=project identifier)")]
     ref_ids: Annotated[
         list[CommitID],
         Field(
@@ -164,9 +160,9 @@ class ComputationTaskRestGet(OutputSchema):
 class ComputationCollectionRunListQueryParams(
     PageQueryParameters,
 ):
-    filter_only_running: Annotated[
-        bool, Field(description="If true, only running collection runs are returned")
-    ] = False
+    filter_only_running: Annotated[bool, Field(description="If true, only running collection runs are returned")] = (
+        False
+    )
 
     filter_by_root_project_id: ProjectID | None = None
 

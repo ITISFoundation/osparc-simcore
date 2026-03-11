@@ -39,7 +39,6 @@ async def _create_user_in_db(
     exit_stack: contextlib.AsyncExitStack,
     data: dict | None = None,
 ) -> UserInfoDict:
-
     # create fake
     data = data or {}
     data.setdefault("status", UserStatus.ACTIVE.name)
@@ -64,16 +63,8 @@ async def _create_user_in_db(
         name=user["name"],
         email=user["email"],
         primary_gid=user["primary_gid"],
-        status=(
-            UserStatus(user["status"])
-            if not isinstance(user["status"], UserStatus)
-            else user["status"]
-        ),
-        role=(
-            UserRole(user["role"])
-            if not isinstance(user["role"], UserRole)
-            else user["role"]
-        ),
+        status=(UserStatus(user["status"]) if not isinstance(user["status"], UserStatus) else user["status"]),
+        role=(UserRole(user["role"]) if not isinstance(user["role"], UserRole) else user["role"]),
         # optional
         #  - in db
         created_at=(
@@ -95,9 +86,7 @@ async def _register_user_in_default_product(app: web.Application, user_id: UserI
     assert products
     product_name = products[0].name
 
-    return await groups_service.auto_add_user_to_product_group(
-        app, user_id, product_name=product_name
-    )
+    return await groups_service.auto_add_user_to_product_group(app, user_id, product_name=product_name)
 
 
 async def _create_account_in_db(
@@ -106,9 +95,7 @@ async def _create_account_in_db(
     user_data: dict[str, Any] | None = None,
 ) -> UserInfoDict:
     # users, groups in db
-    user = await _create_user_in_db(
-        get_asyncpg_engine(app), exit_stack=exit_stack, data=user_data
-    )
+    user = await _create_user_in_db(get_asyncpg_engine(app), exit_stack=exit_stack, data=user_data)
 
     # user has default product
     await _register_user_in_default_product(app, user_id=user["id"])
@@ -130,9 +117,7 @@ class NewUser:
         self.exit_stack = contextlib.AsyncExitStack()
 
     async def __aenter__(self) -> UserInfoDict:
-        self.user = await _create_account_in_db(
-            self.app, self.exit_stack, self.user_data
-        )
+        self.user = await _create_account_in_db(self.app, self.exit_stack, self.user_data)
         return self.user
 
     async def __aexit__(self, *args):

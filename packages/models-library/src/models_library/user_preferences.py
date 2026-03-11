@@ -48,18 +48,14 @@ class NoPreferenceFoundError(RuntimeError):
 
 
 class _BaseUserPreferenceModel(_ExtendedBaseModel):
-    preference_type: PreferenceType = Field(
-        ..., description="distinguish between the types of preferences"
-    )
+    preference_type: PreferenceType = Field(..., description="distinguish between the types of preferences")
 
     value: Any = Field(..., description="value of the preference")
 
     @classmethod
-    def get_preference_class_from_name(
-        cls, preference_name: PreferenceName
-    ) -> type["_BaseUserPreferenceModel"]:
-        preference_class: type["_BaseUserPreferenceModel"] | None = (
-            cls.registered_user_preference_classes.get(preference_name, None)
+    def get_preference_class_from_name(cls, preference_name: PreferenceName) -> type["_BaseUserPreferenceModel"]:
+        preference_class: type[_BaseUserPreferenceModel] | None = cls.registered_user_preference_classes.get(
+            preference_name, None
         )
         if preference_class is None:
             raise NoPreferenceFoundError(preference_name)
@@ -86,9 +82,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 class FrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: Literal[PreferenceType.FRONTEND] = PreferenceType.FRONTEND
 
-    preference_identifier: PreferenceIdentifier = Field(
-        ..., description="used by the frontend"
-    )
+    preference_identifier: PreferenceIdentifier = Field(..., description="used by the frontend")
 
     value: Any
 
@@ -101,9 +95,7 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
         expected_type = get_type(cls.model_fields["value"])
         detected_type = type(new_default)
         if expected_type != detected_type:
-            msg = (
-                f"Error, {cls.__name__} {expected_type=} differs from {detected_type=}"
-            )
+            msg = f"Error, {cls.__name__} {expected_type=} differs from {detected_type=}"
             raise TypeError(msg)
 
         if cls.model_fields["value"].default is None:
@@ -118,12 +110,8 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 class UserServiceUserPreference(_BaseUserPreferenceModel):
     preference_type: Literal[PreferenceType.USER_SERVICE] = PreferenceType.USER_SERVICE
 
-    service_key: ServiceKey = Field(
-        ..., description="the service which manages the preferences"
-    )
-    service_version: ServiceVersion = Field(
-        ..., description="version of the service which manages the preference"
-    )
+    service_key: ServiceKey = Field(..., description="the service which manages the preferences")
+    service_version: ServiceVersion = Field(..., description="version of the service which manages the preference")
 
     def to_db(self) -> dict:
         return self.model_dump(exclude={"preference_type"})

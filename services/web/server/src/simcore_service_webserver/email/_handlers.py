@@ -56,9 +56,7 @@ async def test_email(request: web.Request):
 
     product: Product = products_web.get_current_product(request)
 
-    template_path = await products_web.get_product_template_path(
-        request, filename=body.template_name
-    )
+    template_path = await products_web.get_product_template_path(request, filename=body.template_name)
 
     context = {
         "host": request.host,

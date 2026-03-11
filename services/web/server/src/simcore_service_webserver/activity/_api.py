@@ -14,12 +14,16 @@ async def get_cpu_usage(session, url, user_id):
 
 
 async def get_memory_usage(session, url, user_id):
-    memory_query = f'container_memory_usage_bytes{{container_label_node_id=~".+", container_label_user_id="{user_id}"}} / 1000000'
+    memory_query = (
+        f'container_memory_usage_bytes{{container_label_node_id=~".+", container_label_user_id="{user_id}"}} / 1000000'
+    )
     return await query_prometheus(session, url, memory_query)
 
 
 async def get_container_metric_for_labels(session, url, user_id):
-    just_a_metric = f'container_cpu_user_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}'
+    just_a_metric = (
+        f'container_cpu_user_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}'
+    )
     return await query_prometheus(session, url, just_a_metric)
 
 

@@ -23,13 +23,13 @@ TODO: finish!
 
 
 
-- tests packages with the latest (i.e. compile requirements to lastest version)
+- tests packages with the latest (i.e. compile requirements to latest version)
   - if tests fails, then add constraints in input requirements
     - try adding tests that check inter-library compatibility
   - if tests succeed, you can use them in services
   - if at least one service has a problem, we need to decide whether to add a constraint:
     a) at the package level => will ensure is tested but is constraining all services
-    b) at the service level => only affects service but cannot do isolate tests against latests upgrades
+    b) at the service level => only affects service but cannot do isolate tests against latest upgrades
 
 
 ### How to purge unused requirements?
@@ -57,13 +57,13 @@ Every python package specifies its dependencies to the installer via the ``setup
 - There are two type of files there with extensions ``*.in`` and ``*.txt``
 - All ``*.in`` files contain third-party dependencies
   - created by the developer
-  - should not be very restrictive with versions. Add only contraints that must be enforced: e.g. to fix vulnerabilities, compatibility issues, etc
+  - should not be very restrictive with versions. Add only constraints that must be enforced: e.g. to fix vulnerabilities, compatibility issues, etc
   - used as input to [pip-tools] which will determine the final version used
 - All ``*.txt`` files are actual requirements, i.e. can be used in ``pip install -r requirements/filename.txt``. There are two types:
-  1. *frozen dependencies* are automaticaly created using [pip-tools] from ``_*.in`` files. These includes a strict list of libraries with pinned versions. Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these files start with ``_`` and therefore are listed at the top of the tree. These follow a [workflow of layered requirements](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements) in which ``_base.txt`` contains dependencies for production and ``_test.txt`` **extra** dependencies for setting up testing.
+  1. *frozen dependencies* are automatically created using [pip-tools] from ``_*.in`` files. These includes a strict list of libraries with pinned versions. Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these files start with ``_`` and therefore are listed at the top of the tree. These follow a [workflow of layered requirements](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements) in which ``_base.txt`` contains dependencies for production and ``_test.txt`` **extra** dependencies for setting up testing.
   2. installation *shortcuts* for three different *contexts*:
      1. **development**: ``pip install -r requirements/dev.txt``
-        - Installs target package in [develop (or edit)](https://pip.pypa.io/en/stable/reference/pip_install/#usage) mode as well as  other tools or packages whithin the simcore repository
+        - Installs target package in [develop (or edit)](https://pip.pypa.io/en/stable/reference/pip_install/#usage) mode as well as  other tools or packages within the simcore repository
      2. **contiguous integration**: ``pip install -r requirements/ci.txt``
         - Installs target package, simcore-repo  and tests dependencies
      3. **production**: ``pip install -r requirements/prod.txt``
@@ -79,7 +79,7 @@ Every package's ``setup.py`` defines the [dependency management](https://setupto
 ``tests_require``, ``extras_require`` and ``setup_require``.
 
 
-The files under ``requirements`` and have ``*.in`` or ``*.txt`` extensions to separate input requirements (w/o many constraints) from frozen requirements (every library is constrainted to a pinned version). Depending on whether we are setting up a library or a service, different listing apply.
+The files under ``requirements`` and have ``*.in`` or ``*.txt`` extensions to separate input requirements (w/o many constraints) from frozen requirements (every library is constrained to a pinned version). Depending on whether we are setting up a library or a service, different listing apply.
 
 Basically, the idea is that *libraries* shall have *weak* constraint requirements while *services* shall have *hard* constraints requirements.  Weak requirements are in the ``*.in`` files while *hard* are in the ``*.txt`` files.
 
@@ -92,8 +92,8 @@ Libraries requirements are only frozen for testing (therefore ``tests_require= .
 ## Limitations [@ May 6, 2019]
 
 1. Needs to install [pip-tools]
-   - polutes the venv
-   - **SOLUTION** under devlopment: [pip-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/pip-kit) is a containarized solution with multiple packages
+   - pollutes the venv
+   - **SOLUTION** under development: [pip-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/pip-kit) is a containarized solution with multiple packages
 1. Requirements from in-place packages are not accounted in services upon *pip-compilation* since they cannot be added to ``_base.txt`` or ``_test.txt`` !!!!!!
 1. Adding dependencies to **in-place simcore's repo packages** is error-prone since it requires changes in multiple places, namely:
    - paths entries in ``requirements/[dev|ci|prod].txt``
@@ -124,7 +124,7 @@ to **deploy** your service
 ```console
 $ pip install -r requirements/prod.txt
 ```
-or if it is a library, then ``pip install .`` is prefered.
+or if it is a library, then ``pip install .`` is preferred.
 
 
 ### Updating dependencies

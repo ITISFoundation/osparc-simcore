@@ -52,19 +52,14 @@ async def test_all_pg_engines_in_app(web_server: TestServer):
         result_aiopg = await (await conn.execute(query)).scalar()
 
 
-def test_uses_same_postgres_version(
-    docker_compose_file: Path, osparc_simcore_root_dir: Path
-):
+def test_uses_same_postgres_version(docker_compose_file: Path, osparc_simcore_root_dir: Path):
     with Path.open(docker_compose_file) as fh:
         fixture = yaml.safe_load(fh)
 
     with Path.open(osparc_simcore_root_dir / "services" / "docker-compose.yml") as fh:
         expected = yaml.safe_load(fh)
 
-    assert (
-        fixture["services"]["postgres"]["image"]
-        == expected["services"]["postgres"]["image"]
-    )
+    assert fixture["services"]["postgres"]["image"] == expected["services"]["postgres"]["image"]
 
 
 async def test_responsive(web_server: TestServer):

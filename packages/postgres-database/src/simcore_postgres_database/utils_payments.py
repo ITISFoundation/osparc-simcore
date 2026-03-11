@@ -137,9 +137,7 @@ async def get_user_payments_transactions(
     limit: int | None = None,
 ) -> tuple[int, list[PaymentTransactionRow]]:
     total_number_of_items = await connection.scalar(
-        sa.select(sa.func.count())
-        .select_from(payments_transactions)
-        .where(payments_transactions.c.user_id == user_id)
+        sa.select(sa.func.count()).select_from(payments_transactions).where(payments_transactions.c.user_id == user_id)
     )
     assert total_number_of_items is not None  # nosec
 

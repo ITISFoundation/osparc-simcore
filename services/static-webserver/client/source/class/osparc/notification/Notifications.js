@@ -134,42 +134,42 @@ qx.Class.define("osparc.notification.Notifications", {
       const params = {
         data: this.__newOrganizationObj(userId, orgId)
       };
-      return osparc.data.Resources.fetch("notifications", "post", params);
+      return osparc.data.Resources.fetch("bellNotifications", "post", params);
     },
 
     pushStudyShared: function(userId, studyId) {
       const params = {
         data: this.__newStudyObj(userId, studyId)
       };
-      return osparc.data.Resources.fetch("notifications", "post", params);
+      return osparc.data.Resources.fetch("bellNotifications", "post", params);
     },
 
     postNewTemplate: function(userId, templateId) {
       const params = {
         data: this.__newTemplateObj(userId, templateId)
       };
-      return osparc.data.Resources.fetch("notifications", "post", params);
+      return osparc.data.Resources.fetch("bellNotifications", "post", params);
     },
 
     pushConversationNotification: function(userId, studyId) {
       const params = {
         data: this.__newConversationNotificationObj(userId, studyId)
       };
-      return osparc.data.Resources.fetch("notifications", "post", params);
+      return osparc.data.Resources.fetch("bellNotifications", "post", params);
     },
 
     pushNewAnnotationNote: function(userId, studyId) {
       const params = {
         data: this.__newAnnotationNoteObj(userId, studyId)
       };
-      return osparc.data.Resources.fetch("notifications", "post", params);
+      return osparc.data.Resources.fetch("bellNotifications", "post", params);
     },
 
     postNewWallet: function(userId, walletId) {
       const params = {
         data: this.__newWalletObj(userId, walletId)
       };
-      return osparc.data.Resources.fetch("notifications", "post", params);
+      return osparc.data.Resources.fetch("bellNotifications", "post", params);
     },
 
     markAsRead: function(notification) {
@@ -183,7 +183,7 @@ qx.Class.define("osparc.notification.Notifications", {
             "read": true
           }
         };
-        osparc.data.Resources.fetch("notifications", "patch", params)
+        osparc.data.Resources.fetch("bellNotifications", "patch", params)
           .then(() => notification.setRead(true))
           .catch(() => notification.setRead(false));
       }

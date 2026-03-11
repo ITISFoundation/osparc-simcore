@@ -36,10 +36,7 @@ def test_invalid_json_schema():
 
     error = err_info.value
     assert isinstance(error, InvalidJsonSchema)
-    assert (
-        error.message
-        == "'this_is_a_wrong_type' is not valid under any of the given schemas"
-    )
+    assert error.message == "'this_is_a_wrong_type' is not valid under any of the given schemas"
     assert error.path == deque(["type"])
     assert error.schema_path == deque(["allOf", 3, "properties", "type", "anyOf"])
     assert error.schema == {
@@ -53,9 +50,7 @@ def test_invalid_json_schema():
             },
         ]
     }
-    assert (
-        error.context
-    )  # [<ValidationError: "'this_is_a_wrong_type' is not one of ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']">, <ValidationError: "'this_is_a_wrong_type' is not of type 'array'">]
+    assert error.context  # [<ValidationError: "'this_is_a_wrong_type' is not one of ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']">, <ValidationError: "'this_is_a_wrong_type' is not of type 'array'">]
     assert error.cause is None
     assert error.validator == "anyOf"
     assert error.validator_value == error.schema["anyOf"]

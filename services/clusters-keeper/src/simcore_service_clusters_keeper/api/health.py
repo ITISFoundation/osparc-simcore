@@ -9,6 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
+from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from pydantic import BaseModel
 
 from ..modules.rabbitmq import get_rabbitmq_client, is_rabbitmq_enabled
@@ -18,8 +19,15 @@ from .dependencies.application import get_app
 router = APIRouter()
 
 
+class HealthCheckError(RuntimeError):
+    """Failed a health check"""
+
+
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
-async def health_check():
+async def health_check(app: Annotated[FastAPI, Depends(get_app)]):
+    if not get_rabbitmq_client(app).healthy:
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
+
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
     return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
 
@@ -41,17 +49,11 @@ async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
     return _StatusGet(
         rabbitmq=_ComponentStatus(
             is_enabled=is_rabbitmq_enabled(app),
-            is_responsive=(
-                await get_rabbitmq_client(app).ping()
-                if is_rabbitmq_enabled(app)
-                else False
-            ),
+            is_responsive=(await get_rabbitmq_client(app).ping() if is_rabbitmq_enabled(app) else False),
         ),
         ec2=_ComponentStatus(
             is_enabled=bool(app.state.ec2_client),
-            is_responsive=(
-                await app.state.ec2_client.ping() if app.state.ec2_client else False
-            ),
+            is_responsive=(await app.state.ec2_client.ping() if app.state.ec2_client else False),
         ),
         redis_client_sdk=_ComponentStatus(
             is_enabled=bool(app.state.redis_client_sdk),
@@ -59,8 +61,6 @@ async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
         ),
         ssm=_ComponentStatus(
             is_enabled=(app.state.ssm_client is not None),
-            is_responsive=(
-                await app.state.ssm_client.ping() if app.state.ssm_client else False
-            ),
+            is_responsive=(await app.state.ssm_client.ping() if app.state.ssm_client else False),
         ),
     )

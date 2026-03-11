@@ -14,10 +14,10 @@ ENTRYPOINT ["json-schema-diff"]
 EOF
 
 #
-# To interprete differences is not obvious (for me), SEE https://www.npmjs.com/package/json-schema-diff
+# To interpret differences is not obvious (for me), SEE https://www.npmjs.com/package/json-schema-diff
 #
 # TIPS to debug
-#  1. create the dst json-schema manually through the pydantic type (see Makefile recipies in models-library)
+#  1. create the dst json-schema manually through the pydantic type (see Makefile recipes in models-library)
 #  2. resolve both src/dst using json-resolver (see https://github.com/davidkelley/json-dereference-cli
 #      callable from ./scripts/json-schema-dereference.bash schema.json schema-deref.json)
 #  3. compare both files in vscode

@@ -122,13 +122,10 @@ def create__check_only_one_is_set__root_validator(
         assert set(mutually_exclusive_field_names).issubset(  # nosec
             cls.model_fields
         ), f"Invalid {mutually_exclusive_field_names=} passed in the factory arguments"
-        got = {
-            field_name: getattr(values, field_name)
-            for field_name in mutually_exclusive_field_names
-        }
+        got = {field_name: getattr(values, field_name) for field_name in mutually_exclusive_field_names}
 
         if not functools.reduce(operator.xor, (v is not None for v in got.values())):
-            msg = f"Either { ' or '.join(got.keys()) } must be set, but not both. Got {got}"
+            msg = f"Either {' or '.join(got.keys())} must be set, but not both. Got {got}"
             raise ValueError(msg)
         return values
 

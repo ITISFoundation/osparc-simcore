@@ -40,7 +40,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1.functions import FunctionsRpcApi
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1.projects import ProjectsRpcApi
-from simcore_service_api_server.api.dependencies import services
 
 
 @pytest.fixture
@@ -59,13 +58,12 @@ def app_environment(
 
 
 @pytest.fixture
-async def mock_dependency_get_celery_task_manager(
-    app: FastAPI, mocker: MockerFixture
-) -> MockType:
-    def _new(app: FastAPI):
-        return None
+def mock_dependency_get_celery_task_manager(app: FastAPI, mock_task_manager_object: MockType) -> MockType:
+    from simcore_service_api_server.api.dependencies.celery import get_task_manager  # noqa: PLC0415
 
-    return mocker.patch.object(services, services.get_task_manager.__name__, _new)
+    app.dependency_overrides[get_task_manager] = lambda: mock_task_manager_object
+    yield mock_task_manager_object
+    app.dependency_overrides.pop(get_task_manager, None)
 
 
 @pytest.fixture
@@ -213,9 +211,7 @@ def fake_function_job_collection(
         "function_uid": fake_registered_project_function_job.function_uid,
         "function_class": FunctionClass.PROJECT,
         "project_id": f"{uuid4()}",
-        "function_job_ids": [
-            fake_registered_project_function_job.uid for _ in range(5)
-        ],
+        "function_job_ids": [fake_registered_project_function_job.uid for _ in range(5)],
     }
     return FunctionJobCollection(**mock_function_job_collection)
 
@@ -244,7 +240,6 @@ def mock_handler_in_functions_rpc_interface(
         exception: Exception | None = None,
         side_effect: Callable | None = None,
     ) -> MockType:
-
         assert exception is None or side_effect is None
 
         return mocker.patch.object(
@@ -270,7 +265,6 @@ def mock_handler_in_projects_rpc_interface(
         exception: Exception | None = None,
         side_effect: Callable | None = None,
     ) -> MockType:
-
         assert exception is None or side_effect is None
 
         return mocker.patch.object(

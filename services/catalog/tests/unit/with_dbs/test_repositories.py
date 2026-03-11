@@ -71,7 +71,6 @@ async def fake_catalog_with_jupyterlab(
     create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ) -> FakeCatalogInfo:
-
     # injects fake data in db
     await services_db_tables_injector(
         [
@@ -135,26 +134,20 @@ async def test_create_services(
 
     # validation
     service_db_create = ServiceMetaDataDBCreate.model_validate(fake_service)
-    service_access_rights = [
-        ServiceAccessRightsDB.model_validate(a) for a in fake_access_rights
-    ]
+    service_access_rights = [ServiceAccessRightsDB.model_validate(a) for a in fake_access_rights]
 
-    new_service = await services_repo.create_or_update_service(
-        service_db_create, service_access_rights
+    new_service = await services_repo.create_or_update_service(service_db_create, service_access_rights)
+
+    assert new_service.model_dump(include=service_db_create.model_fields_set) == service_db_create.model_dump(
+        exclude_unset=True
     )
-
-    assert new_service.model_dump(
-        include=service_db_create.model_fields_set
-    ) == service_db_create.model_dump(exclude_unset=True)
 
 
 @pytest.mark.parametrize(
     "url_object",
     [
         "https://github.com/some/path/to/image.png?raw=true",
-        TypeAdapter(HttpUrl).validate_python(
-            "https://github.com/some/path/to/image.png?raw=true"
-        ),
+        TypeAdapter(HttpUrl).validate_python("https://github.com/some/path/to/image.png?raw=true"),
         "",
         None,
     ],
@@ -181,7 +174,6 @@ async def test_read_services(
     create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
-
     # injects fake data in db
     await services_db_tables_injector(
         [
@@ -224,9 +216,7 @@ async def test_read_services(
     assert len(services) == 1
 
     # get 1.0.0
-    service = await services_repo.get_service(
-        "simcore/services/dynamic/jupyterlab", "1.0.0"
-    )
+    service = await services_repo.get_service("simcore/services/dynamic/jupyterlab", "1.0.0")
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
@@ -237,9 +227,7 @@ async def test_read_services(
     } == {a.gid for a in access_rights}
 
     # get patched version
-    service = await services_repo.get_service(
-        "simcore/services/dynamic/jupyterlab", "1.0.2"
-    )
+    service = await services_repo.get_service("simcore/services/dynamic/jupyterlab", "1.0.2")
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
@@ -265,56 +253,37 @@ async def test_list_service_releases(
     assert len(patches) == 2
 
     # check limit
-    releases = await services_repo.list_service_releases(
-        "simcore/services/dynamic/jupyterlab", limit_count=2
-    )
+    releases = await services_repo.list_service_releases("simcore/services/dynamic/jupyterlab", limit_count=2)
 
     assert len(releases) == 2
     last_release, previous_release = releases
 
     assert is_patch_release(last_release.version, previous_release.version)
 
-    assert last_release == await services_repo.get_latest_release(
-        "simcore/services/dynamic/jupyterlab"
-    )
+    assert last_release == await services_repo.get_latest_release("simcore/services/dynamic/jupyterlab")
 
 
 async def test_list_service_releases_version_filtered(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
     services_repo: ServicesRepository,
 ):
-    latest = await services_repo.get_latest_release(
-        "simcore/services/dynamic/jupyterlab"
-    )
+    latest = await services_repo.get_latest_release("simcore/services/dynamic/jupyterlab")
     assert latest
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
-    releases_1_1_x: list[ServiceMetaDataDBGet] = (
-        await services_repo.list_service_releases(
-            "simcore/services/dynamic/jupyterlab", major=1, minor=1
-        )
+    releases_1_1_x: list[ServiceMetaDataDBGet] = await services_repo.list_service_releases(
+        "simcore/services/dynamic/jupyterlab", major=1, minor=1
     )
-    assert [
-        s.version for s in releases_1_1_x
-    ] == fake_catalog_with_jupyterlab.expected_1_1_x
+    assert [s.version for s in releases_1_1_x] == fake_catalog_with_jupyterlab.expected_1_1_x
 
-    expected_0_x_x: list[ServiceMetaDataDBGet] = (
-        await services_repo.list_service_releases(
-            "simcore/services/dynamic/jupyterlab", major=0
-        )
+    expected_0_x_x: list[ServiceMetaDataDBGet] = await services_repo.list_service_releases(
+        "simcore/services/dynamic/jupyterlab", major=0
     )
-    assert [
-        s.version for s in expected_0_x_x
-    ] == fake_catalog_with_jupyterlab.expected_0_x_x
+    assert [s.version for s in expected_0_x_x] == fake_catalog_with_jupyterlab.expected_0_x_x
 
 
-async def test_get_latest_release(
-    services_repo: ServicesRepository, fake_catalog_with_jupyterlab: FakeCatalogInfo
-):
-
-    latest = await services_repo.get_latest_release(
-        "simcore/services/dynamic/jupyterlab"
-    )
+async def test_get_latest_release(services_repo: ServicesRepository, fake_catalog_with_jupyterlab: FakeCatalogInfo):
+    latest = await services_repo.get_latest_release("simcore/services/dynamic/jupyterlab")
 
     assert latest
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
@@ -326,10 +295,7 @@ async def test_list_latest_services(
     services_repo: ServicesRepository,
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
 ):
-
-    total_count, services_items = await services_repo.list_latest_services(
-        product_name=target_product, user_id=user_id
-    )
+    total_count, services_items = await services_repo.list_latest_services(product_name=target_product, user_id=user_id)
     assert len(services_items) == 1
     assert total_count == 1
 
@@ -337,9 +303,7 @@ async def test_list_latest_services(
     assert services_items[0].key == "simcore/services/dynamic/jupyterlab"
     assert services_items[0].version == fake_catalog_with_jupyterlab.expected_latest
 
-    assert (
-        len(services_items[0].history) == 0
-    ), "list_latest_service does NOT show history"
+    assert len(services_items[0].history) == 0, "list_latest_service does NOT show history"
 
 
 async def test_list_latest_services_with_no_services(
@@ -347,9 +311,7 @@ async def test_list_latest_services_with_no_services(
     services_repo: ServicesRepository,
     user_id: UserID,
 ):
-    total_count, services_items = await services_repo.list_latest_services(
-        product_name=target_product, user_id=user_id
-    )
+    total_count, services_items = await services_repo.list_latest_services(product_name=target_product, user_id=user_id)
     assert len(services_items) == 0
     assert total_count == 0
 
@@ -377,11 +339,9 @@ async def test_list_latest_services_with_pagination(
             for v in range(num_versions_per_service)
         ]
     )
-    expected_latest_version = f"{num_versions_per_service-1}.0.0"
+    expected_latest_version = f"{num_versions_per_service - 1}.0.0"
 
-    total_count, services_items = await services_repo.list_latest_services(
-        product_name=target_product, user_id=user_id
-    )
+    total_count, services_items = await services_repo.list_latest_services(product_name=target_product, user_id=user_id)
     assert len(services_items) == num_services
     assert total_count == num_services
 
@@ -397,20 +357,12 @@ async def test_list_latest_services_with_pagination(
     for service in services_items:
         assert len(service.history) == 0, "Do not show history in listing"
 
-        assert TypeAdapter(EmailStr).validate_python(
-            service.owner_email
-        ), "resolved own'es email"
+        assert TypeAdapter(EmailStr).validate_python(service.owner_email), "resolved own'es email"
 
     duplicates = [
-        service_key
-        for service_key, count in Counter(
-            service.key for service in services_items
-        ).items()
-        if count > 1
+        service_key for service_key, count in Counter(service.key for service in services_items).items() if count > 1
     ]
-    assert (
-        not duplicates
-    ), f"list of latest versions of services cannot have duplicates, found: {duplicates}"
+    assert not duplicates, f"list of latest versions of services cannot have duplicates, found: {duplicates}"
 
 
 async def test_list_latest_services_with_filters(
@@ -451,9 +403,7 @@ async def test_list_latest_services_with_filters(
     )
     assert total_count == 3
     assert len(services_items) == 3
-    assert all(
-        service.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for service in services_items
-    )
+    assert all(service.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for service in services_items)
 
     # Test: Apply filter for ServiceType.COMPUTATIONAL
     filters = ServiceDBFilters(service_type=ServiceType.COMPUTATIONAL)
@@ -462,10 +412,7 @@ async def test_list_latest_services_with_filters(
     )
     assert total_count == 2
     assert len(services_items) == 2
-    assert all(
-        service.key.startswith(COMPUTATIONAL_SERVICE_KEY_PREFIX)
-        for service in services_items
-    )
+    assert all(service.key.startswith(COMPUTATIONAL_SERVICE_KEY_PREFIX) for service in services_items)
 
 
 async def test_list_latest_services_with_pattern_filters(
@@ -545,9 +492,7 @@ async def test_list_latest_services_with_pattern_filters(
     assert len(services_items) == 3
 
     # Test: Combined filters
-    filters = ServiceDBFilters(
-        service_key_pattern="*/jupyter-*", version_display_pattern="*2024*"
-    )
+    filters = ServiceDBFilters(service_key_pattern="*/jupyter-*", version_display_pattern="*2024*")
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
@@ -564,7 +509,6 @@ async def test_get_and_update_service_meta_data(
     services_repo: ServicesRepository,
     user_id: UserID,
 ):
-
     # inject service
     service_key = "simcore/services/dynamic/some-service"
     service_version = "1.2.3"
@@ -604,7 +548,6 @@ async def test_can_get_service(
     services_repo: ServicesRepository,
     user_id: UserID,
 ):
-
     # inject service
     service_key = "simcore/services/dynamic/some-service"
     service_version = "1.2.3"
@@ -700,9 +643,7 @@ async def test_get_service_history_page(
         key=service_key,
     )
     assert len(deprecated_history) == len(history)
-    assert [release.version for release in deprecated_history] == [
-        release.version for release in history
-    ]
+    assert [release.version for release in deprecated_history] == [release.version for release in history]
 
     # fetch paginated history
     limit = 3
@@ -716,17 +657,13 @@ async def test_get_service_history_page(
     )
     assert total_count == num_versions
     assert len(paginated_history) == limit
-    assert [release.version for release in paginated_history] == release_versions[
-        offset : offset + limit
-    ]
+    assert [release.version for release in paginated_history] == release_versions[offset : offset + limit]
 
     # compare paginated results with the corresponding slice of the full history
     assert paginated_history == history[offset : offset + limit]
 
 
-@pytest.mark.parametrize(
-    "expected_service_type,service_prefix", SERVICE_TYPE_TO_PREFIX_MAP.items()
-)
+@pytest.mark.parametrize("expected_service_type,service_prefix", SERVICE_TYPE_TO_PREFIX_MAP.items())
 async def test_get_service_history_page_with_filters(
     target_product: ProductName,
     create_fake_service_data: CreateFakeServiceDataCallable,
@@ -781,9 +718,7 @@ async def test_get_service_history_page_with_filters(
 
     # Final check: filter by a different service type expecting no results
     different_service_type = (
-        ServiceType.COMPUTATIONAL
-        if expected_service_type != ServiceType.COMPUTATIONAL
-        else ServiceType.DYNAMIC
+        ServiceType.COMPUTATIONAL if expected_service_type != ServiceType.COMPUTATIONAL else ServiceType.DYNAMIC
     )
     filters = ServiceDBFilters(service_type=different_service_type)
     total_count, no_history = await services_repo.get_service_history_page(
@@ -959,9 +894,7 @@ async def test_compare_list_all_and_latest_services(
     await services_db_tables_injector(service_data)
 
     # Test 1: Compare all services vs latest without filters
-    total_all, all_services = await services_repo.list_all_services(
-        product_name=target_product, user_id=user_id
-    )
+    total_all, all_services = await services_repo.list_all_services(product_name=target_product, user_id=user_id)
     total_latest, latest_services = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id
     )
@@ -989,10 +922,8 @@ async def test_compare_list_all_and_latest_services(
     total_all_filtered, all_services_filtered = await services_repo.list_all_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
-    total_latest_filtered, latest_services_filtered = (
-        await services_repo.list_latest_services(
-            product_name=target_product, user_id=user_id, filters=filters
-        )
+    total_latest_filtered, latest_services_filtered = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
     )
 
     # Verify counts with filter
@@ -1000,12 +931,8 @@ async def test_compare_list_all_and_latest_services(
     assert total_latest_filtered == 2  # 1 latest each for service 1 and 2
 
     # Verify service types are correct after filtering
-    assert all(
-        s.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for s in all_services_filtered
-    )
-    assert all(
-        s.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for s in latest_services_filtered
-    )
+    assert all(s.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for s in all_services_filtered)
+    assert all(s.key.startswith(DYNAMIC_SERVICE_KEY_PREFIX) for s in latest_services_filtered)
 
     # Verify latest versions are correct
     latest_versions_by_key = {s.key: s.version for s in latest_services_filtered}
@@ -1019,10 +946,8 @@ async def test_compare_list_all_and_latest_services(
     total_all_filtered, all_services_filtered = await services_repo.list_all_services(
         product_name=target_product, user_id=user_id, filters=filters
     )
-    total_latest_filtered, latest_services_filtered = (
-        await services_repo.list_latest_services(
-            product_name=target_product, user_id=user_id, filters=filters
-        )
+    total_latest_filtered, latest_services_filtered = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id, filters=filters
     )
 
     # Verify counts with key pattern filter
@@ -1069,9 +994,7 @@ async def test_list_all_services_empty_database(
 ):
     """Test list_all_services and list_latest_services with an empty database."""
     # Test with empty database
-    total_all, all_services = await services_repo.list_all_services(
-        product_name=target_product, user_id=user_id
-    )
+    total_all, all_services = await services_repo.list_all_services(product_name=target_product, user_id=user_id)
     total_latest, latest_services = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id
     )
@@ -1133,9 +1056,7 @@ async def test_list_all_services_deprecated_versions(
     await services_db_tables_injector(service_data)
 
     # Get all services - should include both deprecated and non-deprecated
-    total_all, all_services = await services_repo.list_all_services(
-        product_name=target_product, user_id=user_id
-    )
+    total_all, all_services = await services_repo.list_all_services(product_name=target_product, user_id=user_id)
 
     # Get latest services - should only show latest non-deprecated
     total_latest, latest_services = await services_repo.list_latest_services(

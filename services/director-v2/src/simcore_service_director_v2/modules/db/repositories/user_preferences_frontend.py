@@ -22,14 +22,8 @@ class UserPreferencesFrontendRepository(BaseRepository):
             preference_payload: dict | None = await FrontendUserPreferencesRepo.load(
                 conn,
                 user_id=user_id,
-                preference_name=_get_user_preference_name(
-                    user_id, preference_class.get_preference_name()
-                ),
+                preference_name=_get_user_preference_name(user_id, preference_class.get_preference_name()),
                 product_name=product_name,
             )
 
-        return (
-            None
-            if preference_payload is None
-            else preference_class.model_validate(preference_payload)
-        )
+        return None if preference_payload is None else preference_class.model_validate(preference_payload)

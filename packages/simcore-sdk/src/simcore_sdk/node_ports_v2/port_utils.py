@@ -38,9 +38,7 @@ async def get_value_link_from_port_link(
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value link", other_nodeports)
 
-    other_value: ItemValue | None = await other_nodeports.get_value_link(
-        value.output, file_link_type=file_link_type
-    )
+    other_value: ItemValue | None = await other_nodeports.get_value_link(value.output, file_link_type=file_link_type)
     return other_value
 
 
@@ -58,9 +56,7 @@ async def get_value_from_link(
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value", other_nodeports)
 
-    other_value: ItemConcreteValue | None = await other_nodeports.get(
-        value.output, progress_bar
-    )
+    other_value: ItemConcreteValue | None = await other_nodeports.get(value.output, progress_bar)
     if isinstance(other_value, Path):
         file_name = other_value.name
         # move the file to the right final location
@@ -82,9 +78,7 @@ async def get_value_from_link(
     return other_value
 
 
-async def get_download_link_from_storage(
-    user_id: UserID, value: FileLink, link_type: LinkType
-) -> AnyUrl:
+async def get_download_link_from_storage(user_id: UserID, value: FileLink, link_type: LinkType) -> AnyUrl:
     """
     :raises exceptions.NodeportsException
     :raises exceptions.S3InvalidPathError
@@ -115,9 +109,7 @@ async def get_download_link_from_storage_overload(
 
     """
     # NOTE: might consider using https://github.com/mrocklin/multipledispatch/ in the future?
-    s3_object = data_items_utils.create_simcore_file_id(
-        Path(file_name), project_id, node_id
-    )
+    s3_object = data_items_utils.create_simcore_file_id(Path(file_name), project_id, node_id)
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
         store_name=None,
@@ -139,9 +131,7 @@ async def get_upload_links_from_storage(
     sha256_checksum: SHA256Str | None,
 ) -> FileUploadSchema:
     log.debug("getting link to file from storage for %s", file_name)
-    s3_object = data_items_utils.create_simcore_file_id(
-        Path(file_name), project_id, node_id
-    )
+    s3_object = data_items_utils.create_simcore_file_id(Path(file_name), project_id, node_id)
     _, links = await filemanager.get_upload_links_from_s3(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
@@ -155,15 +145,9 @@ async def get_upload_links_from_storage(
     return links
 
 
-async def target_link_exists(
-    user_id: UserID, project_id: str, node_id: str, file_name: str
-) -> bool:
-    log.debug(
-        "checking if target of link to file from storage for %s exists", file_name
-    )
-    s3_object = data_items_utils.create_simcore_file_id(
-        Path(file_name), project_id, node_id
-    )
+async def target_link_exists(user_id: UserID, project_id: str, node_id: str, file_name: str) -> bool:
+    log.debug("checking if target of link to file from storage for %s exists", file_name)
+    s3_object = data_items_utils.create_simcore_file_id(Path(file_name), project_id, node_id)
     return await filemanager.entry_exists(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
@@ -172,16 +156,10 @@ async def target_link_exists(
     )
 
 
-async def delete_target_link(
-    user_id: UserID, project_id: str, node_id: str, file_name: str
-) -> None:
+async def delete_target_link(user_id: UserID, project_id: str, node_id: str, file_name: str) -> None:
     log.debug("deleting target of link to file from storage for %s", file_name)
-    s3_object = data_items_utils.create_simcore_file_id(
-        Path(file_name), project_id, node_id
-    )
-    return await filemanager.delete_file(
-        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
-    )
+    s3_object = data_items_utils.create_simcore_file_id(Path(file_name), project_id, node_id)
+    return await filemanager.delete_file(user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object)
 
 
 async def pull_file_from_store(
@@ -204,8 +182,7 @@ async def pull_file_from_store(
         local_path=local_path,
         io_log_redirect_cb=io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
-        progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, description="pulling file"),
+        progress_bar=progress_bar or ProgressBarData(num_steps=1, description="pulling file"),
     )
     # if a file alias is present use it to rename the file accordingly
     if file_to_key_map:
@@ -235,9 +212,7 @@ async def push_file_to_store(
     """
 
     log.debug("file path %s will be uploaded to s3", file)
-    s3_object = data_items_utils.create_simcore_file_id(
-        file, project_id, node_id, file_base_path=file_base_path
-    )
+    s3_object = data_items_utils.create_simcore_file_id(file, project_id, node_id, file_base_path=file_base_path)
     if not file.is_file():
         msg = f"Expected path={file} should be a file"
         raise NodeportsException(msg)
@@ -254,9 +229,7 @@ async def push_file_to_store(
     )
     assert isinstance(upload_result, UploadedFile)  # nosec
     log.debug("file path %s uploaded, received ETag %s", file, upload_result.etag)
-    return FileLink(
-        store=upload_result.store_id, path=s3_object, eTag=upload_result.etag
-    )
+    return FileLink(store=upload_result.store_id, path=s3_object, eTag=upload_result.etag)
 
 
 async def pull_file_from_download_link(
@@ -278,8 +251,7 @@ async def pull_file_from_download_link(
         URL(f"{value.download_link}"),
         local_path,
         io_log_redirect_cb=io_log_redirect_cb,
-        progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, description="pulling file"),
+        progress_bar=progress_bar or ProgressBarData(num_steps=1, description="pulling file"),
     )
 
     # if a file alias is present use it to rename the file accordingly
@@ -306,17 +278,11 @@ async def get_file_link_from_url(
 ) -> FileLink:
     log.debug("url %s will now be converted to a file link", new_value)
     assert new_value.path  # nosec
-    s3_object = data_items_utils.create_simcore_file_id(
-        Path(new_value.path), project_id, node_id
-    )
+    s3_object = data_items_utils.create_simcore_file_id(Path(new_value.path), project_id, node_id)
     file_metadata = await filemanager.get_file_metadata(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
     )
-    log.debug(
-        "file meta data for %s found, received ETag %s", new_value, file_metadata.etag
-    )
-    return FileLink(
-        store=file_metadata.location, path=s3_object, eTag=file_metadata.etag
-    )
+    log.debug("file meta data for %s found, received ETag %s", new_value, file_metadata.etag)
+    return FileLink(store=file_metadata.location, path=s3_object, eTag=file_metadata.etag)

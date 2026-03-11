@@ -1,7 +1,5 @@
 from typing import Annotated, Self
 
-from models_library.groups import GroupID
-from models_library.projects import ProjectID
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -11,6 +9,9 @@ from pydantic import (
     StringConstraints,
     model_validator,
 )
+
+from models_library.groups import GroupID
+from models_library.projects import ProjectID
 
 from ..access_rights import AccessRights
 from ._base import InputSchema, OutputSchema
@@ -44,9 +45,7 @@ class ProjectShare(InputSchema):
 
     @model_validator(mode="after")
     def _validate_access_rights(self) -> Self:
-        AccessRights.model_construct(
-            read=self.read, write=self.write, delete=self.delete
-        ).verify_access_integrity()
+        AccessRights.model_construct(read=self.read, write=self.write, delete=self.delete).verify_access_integrity()
         return self
 
 

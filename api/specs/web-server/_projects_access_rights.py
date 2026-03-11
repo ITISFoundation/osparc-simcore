@@ -32,7 +32,7 @@ router = APIRouter(
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_202_ACCEPTED: {
-            "description": "The request to share the project has been accepted, but the actual sharing process has to be confirmd."
+            "description": "The request to share the project has been accepted, but the actual sharing process has to be confirmed."
         }
     },
 )

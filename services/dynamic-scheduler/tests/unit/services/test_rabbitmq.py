@@ -9,7 +9,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_scheduler.services.rabbitmq import (
     get_rabbitmq_client,
-    get_rabbitmq_rpc_server,
+    get_rabbitmq_rpc_client,
     post_message,
 )
 
@@ -35,7 +35,7 @@ def app_environment(
 
 async def test_health(app: FastAPI):
     assert get_rabbitmq_client(app)
-    assert get_rabbitmq_rpc_server(app)
+    assert get_rabbitmq_rpc_client(app)
 
     class TestMessage(RabbitMessageBase):
         channel_name: str = "test"

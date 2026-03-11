@@ -31,9 +31,7 @@ def upgrade():
         sa.Column("cost_per_unit", sa.Numeric(scale=2), nullable=False),
         sa.Column("valid_from", sa.DateTime(timezone=True), nullable=False),
         sa.Column("valid_to", sa.DateTime(timezone=True), nullable=True),
-        sa.Column(
-            "specific_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("specific_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -75,9 +73,7 @@ def upgrade():
         sa.Column("pricing_plan_id", sa.BigInteger(), nullable=False),
         sa.Column("unit_name", sa.String(), nullable=False),
         sa.Column("default", sa.Boolean(), nullable=False),
-        sa.Column(
-            "specific_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("specific_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -98,9 +94,7 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("pricing_unit_id"),
-        sa.UniqueConstraint(
-            "pricing_plan_id", "unit_name", name="pricing_plan_and_unit_constrain_key"
-        ),
+        sa.UniqueConstraint("pricing_plan_id", "unit_name", name="pricing_plan_and_unit_constrain_key"),
     )
     op.create_index(
         op.f("ix_resource_tracker_pricing_units_pricing_plan_id"),
@@ -258,9 +252,7 @@ def downgrade():
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
-        sa.PrimaryKeyConstraint(
-            "pricing_detail_id", name="resource_tracker_pricing_details_pkey"
-        ),
+        sa.PrimaryKeyConstraint("pricing_detail_id", name="resource_tracker_pricing_details_pkey"),
     )
     op.create_index(
         "ix_resource_tracker_pricing_details_valid_to",

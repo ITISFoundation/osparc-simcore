@@ -105,11 +105,7 @@ async def delete_all_project_to_folder_by_project_id(
     project_id: ProjectID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(
-            projects_to_folders.delete().where(
-                projects_to_folders.c.project_uuid == f"{project_id}"
-            )
-        )
+        await conn.stream(projects_to_folders.delete().where(projects_to_folders.c.project_uuid == f"{project_id}"))
 
 
 async def update_project_to_folder(
@@ -132,9 +128,7 @@ async def update_project_to_folder(
 
     if isinstance(folders_id_or_ids, set):
         # batch-update
-        query = query.where(
-            projects_to_folders.c.folder_id.in_(list(folders_id_or_ids))
-        )
+        query = query.where(projects_to_folders.c.folder_id.in_(list(folders_id_or_ids)))
     else:
         # single-update
         query = query.where(projects_to_folders.c.folder_id == folders_id_or_ids)
@@ -155,15 +149,11 @@ async def delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
     if isinstance(project_id_or_ids, set):
         # batch-delete
         query = query.where(
-            projects_to_folders.c.project_uuid.in_(
-                [f"{project_id}" for project_id in project_id_or_ids]
-            )
+            projects_to_folders.c.project_uuid.in_([f"{project_id}" for project_id in project_id_or_ids])
         )
     else:
         # single-delete
-        query = query.where(
-            projects_to_folders.c.project_uuid == f"{project_id_or_ids}"
-        )
+        query = query.where(projects_to_folders.c.project_uuid == f"{project_id_or_ids}")
 
     query = query.where(
         projects_to_folders.c.folder_id.not_in(not_in_folder_ids)  # <-- NOT IN!

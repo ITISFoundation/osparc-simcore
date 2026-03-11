@@ -48,7 +48,8 @@ fail-under=10
 ignore=CVS,
        migration,
        sandbox,
-       generated_code
+       generated_code,
+       pytest_simcore
 
 
 # Add files or directories matching the regex patterns to the ignore-list. The
@@ -94,9 +95,6 @@ py-version=3.13
 # Discover python modules and packages in the file system subtree.
 recursive=true
 
-# When enabled, pylint would attempt to guess common misconfiguration and emit
-# user-friendly hints instead of false-positive error messages.
-suggestion-mode=yes
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.

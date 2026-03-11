@@ -64,9 +64,7 @@ class RPCRouter:
                         raise
 
                     except Exception as exc:  # pylint: disable=broad-except
-                        if reraise_if_error_type and isinstance(
-                            exc, reraise_if_error_type
-                        ):
+                        if reraise_if_error_type and isinstance(exc, reraise_if_error_type):
                             raise
 
                         error_code = create_error_code(exc)
@@ -84,9 +82,7 @@ class RPCRouter:
                             )
                         )
                         # NOTE: we do not return internal exceptions over RPC
-                        formatted_traceback = "\n".join(
-                            traceback.format_tb(exc.__traceback__)
-                        )
+                        formatted_traceback = "\n".join(traceback.format_tb(exc.__traceback__))
                         raise RPCServerError(
                             method_name=func.__name__,
                             exc_type=f"{exc.__class__.__module__}.{exc.__class__.__name__}",

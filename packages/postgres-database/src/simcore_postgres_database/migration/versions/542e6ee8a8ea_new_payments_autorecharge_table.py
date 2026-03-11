@@ -22,9 +22,7 @@ depends_on = None
 # TRIGGERS ------------------------
 _TABLE_NAME: Final[str] = "payments_autorecharge"
 _TRIGGER_NAME: Final[str] = "trigger_auto_update"  # NOTE: scoped on table
-_PROCEDURE_NAME: Final[str] = (
-    f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
-)
+_PROCEDURE_NAME: Final[str] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
 modified_timestamp_trigger = sa.DDL(
     f"""
 DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};
@@ -54,9 +52,7 @@ def upgrade():
         "payments_autorecharge",
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("wallet_id", sa.BigInteger(), nullable=False),
-        sa.Column(
-            "enabled", sa.Boolean(), server_default=sa.text("false"), nullable=False
-        ),
+        sa.Column("enabled", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column("primary_payment_method_id", sa.String(), nullable=False),
         sa.Column(
             "min_balance_in_usd",
@@ -101,7 +97,6 @@ def upgrade():
 
 
 def downgrade():
-
     # custom
     op.execute(f"DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};")
     op.execute(f"DROP FUNCTION {_PROCEDURE_NAME};")

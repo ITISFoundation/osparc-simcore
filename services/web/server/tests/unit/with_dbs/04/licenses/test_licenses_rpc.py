@@ -122,9 +122,7 @@ def mock_release_licensed_item(mocker: MockerFixture) -> tuple:
     )
 
 
-@pytest.mark.acceptance_test(
-    "Implements https://github.com/ITISFoundation/osparc-issues/issues/1800"
-)
+@pytest.mark.acceptance_test("Implements https://github.com/ITISFoundation/osparc-issues/issues/1800")
 async def test_license_checkout_workflow(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
@@ -155,21 +153,19 @@ async def test_license_checkout_workflow(
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
-    got_licensed_resource_duke = (
-        await _licensed_resources_repository.create_if_not_exists(
-            client.app,
-            display_name="Duke",
-            licensed_resource_name="Duke",
-            licensed_resource_type=LicensedResourceType.VIP_MODEL,
-            licensed_resource_data={
-                "category_id": "HumanWholeBody",
-                "category_display": "Humans",
-                "source": VIP_DETAILS_EXAMPLE,
-            },
-        )
+    got_licensed_resource_duke = await _licensed_resources_repository.create_if_not_exists(
+        client.app,
+        display_name="Duke",
+        licensed_resource_name="Duke",
+        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+        licensed_resource_data={
+            "category_id": "HumanWholeBody",
+            "category_display": "Humans",
+            "source": VIP_DETAILS_EXAMPLE,
+        },
     )
 
-    # Connect them via licensed_item_to_resorce DB table
+    # Connect them via licensed_item_to_resource DB table
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(
             licensed_item_to_resource.insert().values(

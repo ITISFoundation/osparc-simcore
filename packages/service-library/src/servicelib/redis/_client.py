@@ -10,6 +10,7 @@ import redis.asyncio as aioredis
 import redis.exceptions
 import tenacity
 from common_library.async_tools import cancel_wait_task
+from common_library.network import redact_url
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
@@ -93,14 +94,12 @@ class RedisClientSDK:
 
         _logger.info(
             "Connection to %s succeeded with %s",
-            f"redis at {self.redis_dsn=}",
+            f"Redis at dsn={redact_url(self.redis_dsn)}",
             f"{self._client=}",
         )
 
     async def shutdown(self) -> None:
-        with log_context(
-            _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
-        ):
+        with log_context(_logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"):
             if self._task_health_check:
                 assert self._started_event_task_health_check  # nosec
                 await self._started_event_task_health_check.wait()
@@ -130,9 +129,7 @@ class RedisClientSDK:
         """
         return self._is_healthy
 
-    def create_lock(
-        self, lock_name: str, *, ttl: datetime.timedelta | None = DEFAULT_LOCK_TTL
-    ) -> Lock:
+    def create_lock(self, lock_name: str, *, ttl: datetime.timedelta | None = DEFAULT_LOCK_TTL) -> Lock:
         return self._client.lock(
             name=lock_name,
             timeout=ttl.total_seconds() if ttl is not None else None,

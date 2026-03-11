@@ -75,32 +75,26 @@ async def complete_upload(
     ) as resp:
         resp.raise_for_status()
         # now poll for state
-        file_upload_complete_response = TypeAdapter(
-            Envelope[FileUploadCompleteResponse]
-        ).validate_python(await resp.json())
+        file_upload_complete_response = TypeAdapter(Envelope[FileUploadCompleteResponse]).validate_python(
+            await resp.json()
+        )
         assert file_upload_complete_response.data  # nosec
-    state_url = _get_https_link_if_storage_secure(
-        f"{file_upload_complete_response.data.links.state}"
-    )
-    _logger.info(
-        "required upload completion of %s", f"{len(parts)} parts, received {state_url}"
-    )
+    state_url = _get_https_link_if_storage_secure(f"{file_upload_complete_response.data.links.state}")
+    _logger.info("required upload completion of %s", f"{len(parts)} parts, received {state_url}")
 
     async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_fixed(1),
-        stop=stop_after_delay(
-            NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S
-        ),
+        stop=stop_after_delay(NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S),
         retry=retry_if_exception_type(ValueError),
         before_sleep=before_sleep_log(_logger, logging.DEBUG),
     ):
         with attempt:
             async with session.post(state_url, auth=get_basic_auth()) as resp:
                 resp.raise_for_status()
-                future_enveloped = TypeAdapter(
-                    Envelope[FileUploadCompleteFutureResponse]
-                ).validate_python(await resp.json())
+                future_enveloped = TypeAdapter(Envelope[FileUploadCompleteFutureResponse]).validate_python(
+                    await resp.json()
+                )
                 assert future_enveloped.data  # nosec
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
                     msg = "upload not ready yet (FileUploadCompleteState.NOK)"
@@ -131,16 +125,12 @@ async def resolve_location_id(
         raise exceptions.NodeportsException(msg)
 
     if store_name is not None:
-        store_id = await _get_location_id_from_location_name(
-            user_id, store_name, client_session
-        )
+        store_id = await _get_location_id_from_location_name(user_id, store_name, client_session)
     assert store_id is not None  # nosec
     return store_id
 
 
-async def abort_upload(
-    session: ClientSession, abort_upload_link: AnyUrl, *, reraise_exceptions: bool
-) -> None:
+async def abort_upload(session: ClientSession, abort_upload_link: AnyUrl, *, reraise_exceptions: bool) -> None:
     # abort the upload correctly, so it can revert back to last version
     try:
         async with session.post(

@@ -91,9 +91,7 @@ async def create_function_job_collection(
             f" Function job collection: {title}"
         )  # nosec
 
-        function_job_collection_db = RegisteredFunctionJobCollectionDB.model_validate(
-            row
-        )
+        function_job_collection_db = RegisteredFunctionJobCollectionDB.model_validate(row)
         job_collection_entries: list[Row] = []
         for order, job_id in enumerate(job_ids, 1):
             result = await transaction.execute(
@@ -115,9 +113,7 @@ async def create_function_job_collection(
             )  # nosec
             job_collection_entries.append(entry)
 
-        user_primary_group_id = await users_service.get_user_primary_group_id(
-            app, user_id=user_id
-        )
+        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
         await _internal_set_group_permissions(
             app,
             connection=transaction,
@@ -130,9 +126,7 @@ async def create_function_job_collection(
             execute=True,
         )
 
-    return function_job_collection_db, [
-        entry.function_job_uuid for entry in job_collection_entries
-    ]
+    return function_job_collection_db, [entry.function_job_uuid for entry in job_collection_entries]
 
 
 async def list_function_job_collections(
@@ -166,20 +160,15 @@ async def list_function_job_collections(
         filter_condition: sqlalchemy.sql.ColumnElement = sqlalchemy.sql.true()
 
         if filters and filters.has_function_id:
-            function_id = TypeAdapter(FunctionID).validate_python(
-                filters.has_function_id
-            )
+            function_id = TypeAdapter(FunctionID).validate_python(filters.has_function_id)
             subquery = (
                 function_job_collections_to_function_jobs_table.select()
                 .with_only_columns(
-                    func.distinct(
-                        function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                    )
+                    func.distinct(function_job_collections_to_function_jobs_table.c.function_job_collection_uuid)
                 )
                 .join(
                     function_jobs_table,
-                    function_job_collections_to_function_jobs_table.c.function_job_uuid
-                    == function_jobs_table.c.uuid,
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid == function_jobs_table.c.uuid,
                 )
                 .where(function_jobs_table.c.function_uuid == function_id)
             )
@@ -188,15 +177,10 @@ async def list_function_job_collections(
 
         access_subquery = (
             function_job_collections_access_rights_table.select()
-            .with_only_columns(
-                function_job_collections_access_rights_table.c.function_job_collection_uuid
-            )
+            .with_only_columns(function_job_collections_access_rights_table.c.function_job_collection_uuid)
             .where(
-                function_job_collections_access_rights_table.c.group_id.in_(
-                    user_groups
-                ),
-                function_job_collections_access_rights_table.c.product_name
-                == product_name,
+                function_job_collections_access_rights_table.c.group_id.in_(user_groups),
+                function_job_collections_access_rights_table.c.product_name == product_name,
                 function_job_collections_access_rights_table.c.read,
             )
         )
@@ -207,33 +191,21 @@ async def list_function_job_collections(
         )
 
         total_count_result = await conn.scalar(
-            func.count()
-            .select()
-            .select_from(function_job_collections_table)
-            .where(filter_and_access_condition)
+            func.count().select().select_from(function_job_collections_table).where(filter_and_access_condition)
         )
         if total_count_result == 0:
-            return [], PageMetaInfoLimitOffset(
-                total=0, offset=pagination_offset, limit=pagination_limit, count=0
-            )
+            return [], PageMetaInfoLimitOffset(total=0, offset=pagination_offset, limit=pagination_limit, count=0)
 
-        query = function_job_collections_table.select().where(
-            filter_and_access_condition
-        )
+        query = function_job_collections_table.select().where(filter_and_access_condition)
 
         collections = []
-        async for row in await conn.stream(
-            query.offset(pagination_offset).limit(pagination_limit)
-        ):
+        async for row in await conn.stream(query.offset(pagination_offset).limit(pagination_limit)):
             collection = RegisteredFunctionJobCollectionDB.model_validate(row)
             job_ids = [
                 job_row.function_job_uuid
                 async for job_row in await conn.stream(
                     function_job_collections_to_function_jobs_table.select()
-                    .where(
-                        function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                        == row.uuid
-                    )
+                    .where(function_job_collections_to_function_jobs_table.c.function_job_collection_uuid == row.uuid)
                     .order_by(
                         function_job_collections_to_function_jobs_table.c.order,
                         function_job_collections_to_function_jobs_table.c.function_job_uuid,
@@ -276,19 +248,14 @@ async def get_function_job_collection(
         row = result.one_or_none()
 
         if row is None:
-            raise FunctionJobCollectionIDNotFoundError(
-                function_job_collection_id=function_job_collection_id
-            )
+            raise FunctionJobCollectionIDNotFoundError(function_job_collection_id=function_job_collection_id)
 
         # Retrieve associated job ids from the join table
         job_ids = [
             job_row.function_job_uuid
             async for job_row in await conn.stream(
                 function_job_collections_to_function_jobs_table.select()
-                .where(
-                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
-                    == row.uuid
-                )
+                .where(function_job_collections_to_function_jobs_table.c.function_job_collection_uuid == row.uuid)
                 .order_by(
                     function_job_collections_to_function_jobs_table.c.order,
                     function_job_collections_to_function_jobs_table.c.function_job_uuid,
@@ -328,9 +295,7 @@ async def delete_function_job_collection(
         )
         row = result.one_or_none()
         if row is None:
-            raise FunctionJobCollectionIDNotFoundError(
-                function_job_collection_id=function_job_collection_id
-            )
+            raise FunctionJobCollectionIDNotFoundError(function_job_collection_id=function_job_collection_id)
         # Proceed with deletion
         await transaction.execute(
             function_job_collections_table.delete().where(

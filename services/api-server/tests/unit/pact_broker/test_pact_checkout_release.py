@@ -63,14 +63,9 @@ async def mock_wb_api_server_rpc(
     mocked_app_rpc_dependencies: None,
     mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
 ) -> None:
+    mock_handler_in_licenses_rpc_interface("checkout_licensed_item_for_wallet", return_value=EXPECTED_CHECKOUT)
 
-    mock_handler_in_licenses_rpc_interface(
-        "checkout_licensed_item_for_wallet", return_value=EXPECTED_CHECKOUT
-    )
-
-    mock_handler_in_licenses_rpc_interface(
-        "release_licensed_item_for_wallet", return_value=EXPECTED_RELEASE
-    )
+    mock_handler_in_licenses_rpc_interface("release_licensed_item_for_wallet", return_value=EXPECTED_RELEASE)
 
 
 @pytest.fixture
@@ -78,10 +73,8 @@ def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> Iterable[None]:
     import simcore_service_api_server.services_rpc.resource_usage_tracker  # noqa: PLC0415
     from servicelib.rabbitmq import RabbitMQRPCClient  # noqa: PLC0415
 
-    app.dependency_overrides[get_resource_usage_tracker_client] = (
-        lambda: ResourceUsageTrackerClient(
-            _client=mocker.MagicMock(spec=RabbitMQRPCClient)
-        )
+    app.dependency_overrides[get_resource_usage_tracker_client] = lambda: ResourceUsageTrackerClient(
+        _client=mocker.MagicMock(spec=RabbitMQRPCClient)
     )
 
     mocker.patch.object(

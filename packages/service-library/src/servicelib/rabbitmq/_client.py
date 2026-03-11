@@ -43,10 +43,7 @@ _DELAYED_QUEUE_NAME: Final[ExchangeName] = ExchangeName("delayed_{queue_name}")
 def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
     count: int = 0
     if (x_death := message.headers.get(_HEADER_X_DEATH, [])) and (
-        isinstance(x_death, list)
-        and x_death
-        and isinstance(x_death[0], dict)
-        and "count" in x_death[0]
+        isinstance(x_death, list) and x_death and isinstance(x_death[0], dict) and "count" in x_death[0]
     ):
         assert isinstance(x_death[0]["count"], int)  # nosec
         count = x_death[0]["count"]
@@ -69,10 +66,7 @@ async def _nack_message(
     )
     if count < max_retries_upon_error:
         _logger.warning(
-            (
-                "Retry [%s/%s] for handler '%s', which raised "
-                "an unexpected error caused by message_id='%s'"
-            ),
+            ("Retry [%s/%s] for handler '%s', which raised an unexpected error caused by message_id='%s'"),
             count,
             max_retries_upon_error,
             message_handler,
@@ -118,9 +112,7 @@ async def _on_message(
                                 logging.DEBUG,
                                 msg=f"Nack message {message.exchange=}, {message.routing_key=}",
                             ):
-                                await _nack_message(
-                                    message_handler, max_retries_upon_error, message
-                                )
+                                await _nack_message(message_handler, max_retries_upon_error, message)
                 except Exception as exc:  # pylint: disable=broad-exception-caught
                     _logger.exception(
                         **create_troubleshooting_log_kwargs(
@@ -131,9 +123,7 @@ async def _on_message(
                         )
                     )
                     with log_catch(_logger, reraise=False):
-                        await _nack_message(
-                            message_handler, max_retries_upon_error, message
-                        )
+                        await _nack_message(message_handler, max_retries_upon_error, message)
 
     except ChannelInvalidStateError as exc:
         # NOTE: this error can happen as can be seen in aio-pika code
@@ -163,9 +153,7 @@ class RabbitMQClient(RabbitMQClientBase):
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
 
-    async def _get_connection(
-        self, rabbit_broker: str, connection_name: str
-    ) -> aio_pika.abc.AbstractRobustConnection:
+    async def _get_connection(self, rabbit_broker: str, connection_name: str) -> aio_pika.abc.AbstractRobustConnection:
         # NOTE: to show the connection name in the rabbitMQ UI see there
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
         #
@@ -198,9 +186,7 @@ class RabbitMQClient(RabbitMQClientBase):
             return channel
 
     async def _create_consumer_tag(self, exchange_name) -> ConsumerTag:
-        return ConsumerTag(
-            f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}_{uuid4()}"
-        )
+        return ConsumerTag(f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}_{uuid4()}")
 
     async def subscribe(
         self,
@@ -256,11 +242,7 @@ class RabbitMQClient(RabbitMQClientBase):
 
             exchange = await channel.declare_exchange(
                 exchange_name,
-                (
-                    aio_pika.ExchangeType.FANOUT
-                    if topics is None
-                    else aio_pika.ExchangeType.TOPIC
-                ),
+                (aio_pika.ExchangeType.FANOUT if topics is None else aio_pika.ExchangeType.TOPIC),
                 durable=True,
                 timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )
@@ -270,9 +252,7 @@ class RabbitMQClient(RabbitMQClientBase):
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
             # NOTE what is a dead letter exchange, see https://www.rabbitmq.com/dlx.html
-            delayed_exchange_name = _DELAYED_EXCHANGE_NAME.format(
-                exchange_name=exchange_name
-            )
+            delayed_exchange_name = _DELAYED_EXCHANGE_NAME.format(exchange_name=exchange_name)
             queue = await declare_queue(
                 channel,
                 self.client_name,
@@ -284,16 +264,12 @@ class RabbitMQClient(RabbitMQClientBase):
             if topics is None:
                 await queue.bind(exchange, routing_key="")
             else:
-                await asyncio.gather(
-                    *(queue.bind(exchange, routing_key=topic) for topic in topics)
-                )
+                await asyncio.gather(*(queue.bind(exchange, routing_key=topic) for topic in topics))
 
             delayed_exchange = await channel.declare_exchange(
                 delayed_exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
-            delayed_queue_name = _DELAYED_QUEUE_NAME.format(
-                queue_name=non_exclusive_queue_name or exchange_name
-            )
+            delayed_queue_name = _DELAYED_QUEUE_NAME.format(queue_name=non_exclusive_queue_name or exchange_name)
 
             delayed_queue = await declare_queue(
                 channel,
@@ -328,16 +304,10 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=True,
-                arguments={
-                    "x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(
-                        exchange_name=exchange_name
-                    )
-                },
+                arguments={"x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(exchange_name=exchange_name)},
             )
 
-            await asyncio.gather(
-                *(queue.bind(exchange, routing_key=topic) for topic in topics)
-            )
+            await asyncio.gather(*(queue.bind(exchange, routing_key=topic) for topic in topics))
 
     async def remove_topics(
         self,
@@ -353,11 +323,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=True,
-                arguments={
-                    "x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(
-                        exchange_name=exchange_name
-                    )
-                },
+                arguments={"x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(exchange_name=exchange_name)},
             )
 
             await asyncio.gather(
@@ -371,9 +337,7 @@ class RabbitMQClient(RabbitMQClientBase):
         """This will delete the queue if there are no consumers left"""
         assert self._connection_pool  # nosec
         if self._connection_pool.is_closed:
-            _logger.warning(
-                "Connection to RabbitMQ is already closed, skipping unsubscribe from queue..."
-            )
+            _logger.warning("Connection to RabbitMQ is already closed, skipping unsubscribe from queue...")
             return
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
@@ -381,9 +345,7 @@ class RabbitMQClient(RabbitMQClientBase):
             # NOTE: we force delete here
             await queue.delete(if_unused=False, if_empty=False)
 
-    async def publish(
-        self, exchange_name: ExchangeName, message: RabbitMessage
-    ) -> None:
+    async def publish(self, exchange_name: ExchangeName, message: RabbitMessage) -> None:
         """publish message in the exchange exchange_name.
         specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
 
@@ -395,11 +357,7 @@ class RabbitMQClient(RabbitMQClientBase):
         async with self._channel_pool.acquire() as channel:
             exchange = await channel.declare_exchange(
                 exchange_name,
-                (
-                    aio_pika.ExchangeType.FANOUT
-                    if topic is None
-                    else aio_pika.ExchangeType.TOPIC
-                ),
+                (aio_pika.ExchangeType.FANOUT if topic is None else aio_pika.ExchangeType.TOPIC),
                 durable=True,
                 timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )
@@ -408,15 +366,11 @@ class RabbitMQClient(RabbitMQClientBase):
                 routing_key=message.routing_key() or "",
             )
 
-    async def unsubscribe_consumer(
-        self, queue_name: QueueName, consumer_tag: ConsumerTag
-    ) -> None:
+    async def unsubscribe_consumer(self, queue_name: QueueName, consumer_tag: ConsumerTag) -> None:
         """This will only remove the consumers without deleting the queue"""
         assert self._connection_pool  # nosec
         if self._connection_pool.is_closed:
-            _logger.warning(
-                "Connection to RabbitMQ is already closed, skipping unsubscribe consumers from queue..."
-            )
+            _logger.warning("Connection to RabbitMQ is already closed, skipping unsubscribe consumers from queue...")
             return
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:

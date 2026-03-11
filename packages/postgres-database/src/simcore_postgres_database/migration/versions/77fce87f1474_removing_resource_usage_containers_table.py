@@ -27,9 +27,7 @@ def upgrade():
         "ix_resource_tracker_container_prometheus_last_scraped",
         table_name="resource_tracker_container",
     )
-    op.drop_index(
-        "ix_resource_tracker_container_user_id", table_name="resource_tracker_container"
-    )
+    op.drop_index("ix_resource_tracker_container_user_id", table_name="resource_tracker_container")
     op.drop_table("resource_tracker_container")
     # ### end Alembic commands ###
     sa.Enum(name="containerclassification").drop(op.get_bind(), checkfirst=False)
@@ -90,9 +88,7 @@ def downgrade():
         sa.Column("memory_limit", sa.BIGINT(), autoincrement=False, nullable=False),
         sa.Column(
             "classification",
-            postgresql.ENUM(
-                "DYNAMIC_SIDECAR", "USER_SERVICE", name="containerclassification"
-            ),
+            postgresql.ENUM("DYNAMIC_SIDECAR", "USER_SERVICE", name="containerclassification"),
             autoincrement=False,
             nullable=True,
         ),

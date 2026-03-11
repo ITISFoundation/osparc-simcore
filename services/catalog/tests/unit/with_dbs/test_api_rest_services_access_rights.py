@@ -56,12 +56,10 @@ async def test_get_service_access_rights(
     # injects fake data in db
     await services_db_tables_injector(fake_services)
 
-    service_to_check = fake_services[random.choice(range(NUM_SERVICES))][
-        0
-    ]  # --> service_meta_data table format
-    url = URL(
-        f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights"
-    ).with_query({"user_id": user_id})
+    service_to_check = fake_services[random.choice(range(NUM_SERVICES))][0]  # --> service_meta_data table format
+    url = URL(f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights").with_query(
+        {"user_id": user_id}
+    )
     response = client.get(
         f"{url}",
         headers={"x-simcore-products-name": target_product},
@@ -70,9 +68,7 @@ async def test_get_service_access_rights(
     data = TypeAdapter(ServiceAccessRightsGet).validate_python(response.json())
     assert data.service_key == service_to_check["key"]
     assert data.service_version == service_to_check["version"]
-    assert data.gids_with_access_rights == {
-        user_primary_gid: {"execute_access": True, "write_access": True}
-    }
+    assert data.gids_with_access_rights == {user_primary_gid: {"execute_access": True, "write_access": True}}
 
 
 async def test_get_service_access_rights_with_more_gids(
@@ -101,9 +97,9 @@ async def test_get_service_access_rights_with_more_gids(
     await services_db_tables_injector([fake_service])
 
     service_to_check = fake_service[0]  # --> service_meta_data table format
-    url = URL(
-        f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights"
-    ).with_query({"user_id": user_id})
+    url = URL(f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights").with_query(
+        {"user_id": user_id}
+    )
     response = client.get(
         f"{url}",
         headers={"x-simcore-products-name": other_product},

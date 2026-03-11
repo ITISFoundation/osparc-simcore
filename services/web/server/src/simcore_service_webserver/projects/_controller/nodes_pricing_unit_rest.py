@@ -53,9 +53,7 @@ async def get_project_node_pricing_unit(request: web.Request):
         include_state=False,
     )
 
-    output = await db.get_project_node_pricing_unit_id(
-        path_params.project_id, path_params.node_id
-    )
+    output = await db.get_project_node_pricing_unit_id(path_params.project_id, path_params.node_id)
     if output is None:
         return envelope_json_response(None)
     pricing_plan_id, pricing_unit_id = output
@@ -90,9 +88,7 @@ class _ProjectNodePricingUnitPathParams(BaseModel):
 async def connect_pricing_unit_to_project_node(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectNodePricingUnitPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectNodePricingUnitPathParams, request)
 
     # ensure the project exists
     project = await _projects_service.get_project_for_user(

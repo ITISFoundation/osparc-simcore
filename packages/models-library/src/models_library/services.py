@@ -14,13 +14,13 @@ from .services_types import (
 )
 
 __all__: tuple[str, ...] = (
+    "LATEST_INTEGRATION_VERSION",
     "Author",
     "Badge",
     "BaseServiceIOModel",
     "BootOption",
     "BootOptions",
     "DynamicServiceKey",
-    "LATEST_INTEGRATION_VERSION",
     "ServiceInput",
     "ServiceInputsDict",
     "ServiceKey",

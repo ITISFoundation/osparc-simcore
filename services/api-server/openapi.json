@@ -2880,6 +2880,9 @@
               }
             }
           },
+          "409": {
+            "description": "Job not finished yet"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -8336,9 +8339,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8395,9 +8396,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8447,9 +8446,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8515,6 +8512,10 @@
           "data"
         ],
         "title": "ApiServerEnvelope[list[TaskGet]]"
+      },
+      "AsyncJobId": {
+        "type": "string",
+        "format": "uuid"
       },
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {
@@ -9136,12 +9137,11 @@
             "title": "Node Id"
           },
           "log_level": {
-            "type": "integer",
-            "title": "Log Level"
+            "$ref": "#/components/schemas/LogLevelInt"
           },
           "messages": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/LogMessageStr"
             },
             "type": "array",
             "title": "Messages"
@@ -9799,6 +9799,9 @@
         ],
         "title": "Links"
       },
+      "LogLevelInt": {
+        "type": "integer"
+      },
       "LogLink": {
         "properties": {
           "node_name": {
@@ -9818,6 +9821,13 @@
           "download_link"
         ],
         "title": "LogLink"
+      },
+      "LogMessageStr": {
+        "type": "string"
+      },
+      "LowerCaseEmailStr": {
+        "type": "string",
+        "format": "email"
       },
       "Meta": {
         "properties": {
@@ -10563,9 +10573,7 @@
             "minimum": 0
           },
           "login": {
-            "type": "string",
-            "format": "email",
-            "title": "Login"
+            "$ref": "#/components/schemas/LowerCaseEmailStr"
           },
           "role": {
             "$ref": "#/components/schemas/UserRoleEnum"
@@ -12251,7 +12259,7 @@
             "type": "string",
             "format": "uuid",
             "title": "Key name",
-            "description": "port identifier name.Correponds to the UUID of the parameter/probe node in the study"
+            "description": "port identifier name.Corresponds to the UUID of the parameter/probe node in the study"
           },
           "kind": {
             "type": "string",

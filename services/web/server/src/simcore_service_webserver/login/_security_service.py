@@ -14,9 +14,7 @@ from .constants import MSG_LOGGED_IN
 _logger = logging.getLogger(__name__)
 
 
-async def login_granted_response(
-    request: web.Request, *, user: UserInfoDict
-) -> web.Response:
+async def login_granted_response(request: web.Request, *, user: UserInfoDict) -> web.Response:
     """
     Grants authorization for user creating a responses with an auth cookie
 

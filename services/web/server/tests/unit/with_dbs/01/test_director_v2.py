@@ -56,9 +56,7 @@ async def test_get_computation_task(
 ):
     assert client.app
 
-    task_out = await director_v2_service.get_computation_task(
-        client.app, user_id, project_id
-    )
+    task_out = await director_v2_service.get_computation_task(client.app, user_id, project_id)
     assert task_out
     assert isinstance(task_out, ComputationTask)
     assert task_out.state == RunningState.NOT_STARTED

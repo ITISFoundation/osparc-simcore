@@ -70,9 +70,7 @@ async def list_solvers(
     solvers = [Solver.create_from_service(service=service) for service in services]
 
     for solver in solvers:
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
+        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
 
     return sorted(solvers, key=attrgetter("id"))
 
@@ -102,9 +100,7 @@ async def list_all_solvers_paginated(
     )
 
     for solver in solvers:
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
+        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
 
     assert page_params.limit == page_meta.limit  # nosec
     assert page_params.offset == page_meta.offset  # nosec
@@ -134,11 +130,8 @@ async def list_solvers_releases(
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-
     latest_solvers: list[Solver] = []
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         solvers, page_meta = await solver_service.latest_solvers(
             pagination_offset=page_params.offset,
             pagination_limit=page_params.limit,
@@ -148,9 +141,7 @@ async def list_solvers_releases(
 
     all_solvers = []
     for solver in latest_solvers:
-        for page_params in iter_pagination_params(
-            offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-        ):
+        for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
             solvers, page_meta = await solver_service.solver_release_history(
                 solver_key=solver.id,
                 pagination_offset=page_params.offset,
@@ -160,9 +151,7 @@ async def list_solvers_releases(
             all_solvers.extend(solvers)
 
     for solver in all_solvers:
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
+        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
 
     return sorted(all_solvers, key=attrgetter("id", "pep404_version"))
 
@@ -174,9 +163,7 @@ async def list_solvers_releases(
     description=create_route_description(
         base="Gets latest release of a solver",
         changelog=[
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-                "0.7.1", "`version_display` field in the response"
-            ),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.7.1", "`version_display` field in the response"),
         ],
     ),
 )
@@ -189,9 +176,7 @@ async def get_solver(
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
         solver = await solver_service.get_latest_release(solver_key=solver_key)
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
+        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
         assert solver.id == solver_key  # nosec
         return solver
 
@@ -209,9 +194,7 @@ async def get_solver(
     description=create_route_description(
         base="Lists all releases of a given (one) solver",
         changelog=[
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-                "0.7.1", "`version_display` field in the response"
-            ),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.7.1", "`version_display` field in the response"),
         ],
     ),
 )
@@ -221,9 +204,7 @@ async def list_solver_releases(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     all_releases: list[Solver] = []
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         solvers, page_meta = await solver_service.solver_release_history(
             solver_key=solver_key,
             pagination_offset=page_params.offset,
@@ -233,9 +214,7 @@ async def list_solver_releases(
         all_releases.extend(solvers)
 
     for solver in all_releases:
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
+        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
 
     return sorted(all_releases, key=attrgetter("pep404_version"))
 
@@ -264,9 +243,7 @@ async def list_solver_releases_paginated(
     )
 
     for solver in solvers:
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
+        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
     page_params.limit = page_meta.limit
     page_params.offset = page_meta.offset
     return create_page(
@@ -283,9 +260,7 @@ async def list_solver_releases_paginated(
     description=create_route_description(
         base="Gets a specific release of a solver",
         changelog=[
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-                "0.7.1", "`version_display` field in the response"
-            ),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.7.1", "`version_display` field in the response"),
         ],
     ),
 )
@@ -301,9 +276,7 @@ async def get_solver_release(
             solver_version=version,
         )
 
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
+        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
         return solver
 
     except (
@@ -326,9 +299,7 @@ async def get_solver_release(
         base="Lists inputs and outputs of a given solver",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-                "0.7.1", "`version_display` field in the response"
-            ),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.7.1", "`version_display` field in the response"),
         ],
     ),
 )
@@ -354,9 +325,7 @@ async def list_solver_ports(
         base="Gets solver pricing plan",
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-                "0.7.1", "`version_display` field in the response"
-            ),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.7.1", "`version_display` field in the response"),
         ],
     ),
 )
@@ -369,9 +338,7 @@ async def get_solver_pricing_plan(
 ):
     assert user_id
     assert product_name
-    pricing_plan_or_none = await webserver_api.get_service_pricing_plan(
-        solver_key=solver_key, version=version
-    )
+    pricing_plan_or_none = await webserver_api.get_service_pricing_plan(solver_key=solver_key, version=version)
     # NOTE: pricing_plan_or_none https://github.com/ITISFoundation/osparc-simcore/issues/6901
     assert pricing_plan_or_none  # nosec
     return pricing_plan_or_none

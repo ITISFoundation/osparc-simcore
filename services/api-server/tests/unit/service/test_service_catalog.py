@@ -14,9 +14,7 @@ from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services_rpc.catalog import CatalogService
 
 
-def _to_solver_schema(
-    service: LatestServiceGet | ServiceGetV2, href_self: HttpUrl | None = None
-) -> Solver:
+def _to_solver_schema(service: LatestServiceGet | ServiceGetV2, href_self: HttpUrl | None = None) -> Solver:
     # NOTE: this is an adapter around models on CatalogService interface
     return Solver(
         id=service.key,

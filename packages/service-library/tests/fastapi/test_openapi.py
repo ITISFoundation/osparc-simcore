@@ -32,9 +32,7 @@ def test_naming_operation_id(app: FastAPI):
             assert isinstance(route, starlette.routing.Route)
 
 
-@pytest.mark.xfail(
-    reason="fastapi unresolved issue. Waiting for review of new OAS update by PC"
-)
+@pytest.mark.xfail(reason="fastapi unresolved issue. Waiting for review of new OAS update by PC")
 def test_exclusive_min_openapi_issue(app: FastAPI):
     # Tests patched issues is still unresolved https://github.com/tiangolo/fastapi/issues/240
     # When this test fails, remove patch
@@ -48,7 +46,7 @@ def test_exclusive_min_openapi_issue(app: FastAPI):
 
 def test_overriding_openapi_method(app: FastAPI):
     assert not hasattr(app, "_original_openapi")
-    # assert app.openapi.__doc__ is None # PC why was this set to check that it is none? it's coming from the base fastapi applicaiton and now they provide some docs
+    # assert app.openapi.__doc__ is None # PC why was this set to check that it is none? it's coming from the base fastapi application and now they provide some docs
 
     override_fastapi_openapi_method(app)
 

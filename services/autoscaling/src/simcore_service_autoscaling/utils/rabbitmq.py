@@ -29,9 +29,7 @@ def _get_task_ids(task: DockerTask | DaskTask) -> tuple[UserID, ProjectID, NodeI
     if isinstance(task, DockerTask):
         labels = SimcoreContainerLabels.from_docker_task(task)
         return labels.user_id, labels.project_id, labels.node_id
-    _service_key, _service_version, user_id, project_id, node_id = parse_dask_job_id(
-        task.task_id
-    )
+    _service_key, _service_version, user_id, project_id, node_id = parse_dask_job_id(task.task_id)
     return user_id, project_id, node_id
 
 
@@ -56,9 +54,7 @@ async def post_tasks_log_message(
                     log=message,
                     level=level,
                 )
-                for user_id, project_id, node_id in (
-                    _get_task_ids(task) for task in tasks
-                )
+                for user_id, project_id, node_id in (_get_task_ids(task) for task in tasks)
             ),
             return_exceptions=True,
         )
@@ -85,9 +81,7 @@ async def post_tasks_progress_message(
                     progress=progress,
                     progress_type=progress_type,
                 )
-                for user_id, project_id, node_id in (
-                    _get_task_ids(task) for task in tasks
-                )
+                for user_id, project_id, node_id in (_get_task_ids(task) for task in tasks)
             ),
             return_exceptions=True,
         )
@@ -148,11 +142,7 @@ async def _create_autoscaling_status_message(
     elif app_settings.AUTOSCALING_DASK:
         origin = f"computational:scheduler_url={app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL!s}"
 
-    total_nodes = (
-        len(cluster.active_nodes)
-        + len(cluster.drained_nodes)
-        + len(cluster.hot_buffer_drained_nodes)
-    )
+    total_nodes = len(cluster.active_nodes) + len(cluster.drained_nodes) + len(cluster.hot_buffer_drained_nodes)
     drained_nodes = len(cluster.drained_nodes) + len(cluster.hot_buffer_drained_nodes)
 
     return RabbitAutoscalingStatusMessage.model_construct(

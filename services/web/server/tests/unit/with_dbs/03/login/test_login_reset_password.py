@@ -34,8 +34,8 @@ from yarl import URL
 #       and might fail with 'HTTPTooManyRequests' error.
 #       At this point we did not find a clean solution to mock 'global_rate_limit_route'
 #       and therefore disable the rate-limiting for tests. We ended up raising a bit the
-#       request rate threashold.
-#       SEE 'simcore_service_webserver.loging.handlers.py:reset_password'
+#       request rate threshold.
+#       SEE 'simcore_service_webserver.logging.handlers.py:reset_password'
 #
 
 
@@ -81,16 +81,12 @@ async def test_two_steps_action_confirmation_workflow(
         assert response.status == 200
         assert (
             response.url.path_qs
-            == URL(login_options.LOGIN_REDIRECT)
-            .with_fragment(f"reset-password?code={code}")
-            .path_qs
+            == URL(login_options.LOGIN_REDIRECT).with_fragment(f"reset-password?code={code}").path_qs
         ), "Should redirect to front-end with special fragment"
 
         # Emulates FRONT-END:
         # SEE api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
-        complete_reset_password_url = client.app.router[
-            "complete_reset_password"
-        ].url_for(code=code)
+        complete_reset_password_url = client.app.router["complete_reset_password"].url_for(code=code)
         new_password = generate_password(10)
         response = await client.post(
             f"{complete_reset_password_url}",
@@ -120,9 +116,7 @@ async def test_two_steps_action_confirmation_workflow(
         assert response.url.path == login_url.path
 
         # Ensure there are no warnings
-        assert not any(
-            record.levelname == "WARNING" for record in caplog.records
-        ), "Unexpected warnings found"
+        assert not any(record.levelname == "WARNING" for record in caplog.records), "Unexpected warnings found"
 
 
 async def test_unknown_email(
@@ -141,22 +135,18 @@ async def test_unknown_email(
         },
     )
     assert response.url.path == reset_url.path
-    await assert_status(
-        response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(email=user_email)
-    )
+    await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(email=user_email))
 
     # email is not sent
     out, _ = capsys.readouterr()
     assert not parse_test_marks(out), "Expected no email to be sent"
 
     # Check logger warning
-    logged_warnings = [
-        record.message for record in caplog.records if record.levelname == "WARNING"
-    ]
+    logged_warnings = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
-    assert any(
-        message.startswith("Password reset initiated") for message in logged_warnings
-    ), f"Missing warning in {logged_warnings}"
+    assert any(message.startswith("Password reset initiated") for message in logged_warnings), (
+        f"Missing warning in {logged_warnings}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -192,25 +182,18 @@ async def test_blocked_user(
     assert not parse_test_marks(out), "Expected no email to be sent"
 
     # expected_msg contains {support_email} at the end of the string
-    logged_warnings = [
-        record.message for record in caplog.records if record.levelname == "WARNING"
-    ]
+    logged_warnings = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
     assert any(
-        message.startswith("Password reset initiated") and expected_msg[:10] in message
-        for message in logged_warnings
+        message.startswith("Password reset initiated") and expected_msg[:10] in message for message in logged_warnings
     ), f"Missing warning in {logged_warnings}"
 
 
-async def test_inactive_user(
-    client: TestClient, capsys: pytest.CaptureFixture, caplog: pytest.LogCaptureFixture
-):
+async def test_inactive_user(client: TestClient, capsys: pytest.CaptureFixture, caplog: pytest.LogCaptureFixture):
     assert client.app
     reset_url = client.app.router["initiate_reset_password"].url_for()
 
-    async with NewUser(
-        {"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app
-    ) as user:
+    async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app) as user:
         response = await client.post(
             f"{reset_url}",
             json={
@@ -225,13 +208,10 @@ async def test_inactive_user(
     out, _ = capsys.readouterr()
     assert not parse_test_marks(out), "Expected no email to be sent"
 
-    logged_warnings = [
-        record.message for record in caplog.records if record.levelname == "WARNING"
-    ]
+    logged_warnings = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
     assert any(
-        message.startswith("Password reset initiated")
-        and MSG_ACTIVATION_REQUIRED[:20] in message
+        message.startswith("Password reset initiated") and MSG_ACTIVATION_REQUIRED[:20] in message
         for message in logged_warnings
     ), f"Missing warning in {logged_warnings}"
 
@@ -258,9 +238,7 @@ async def test_unregistered_product(
         await groups_service.auto_add_user_to_product_group(
             client.app, user_id=user["id"], product_name=default_product_name
         )
-        assert await users_service.is_user_in_product(
-            client.app, user_id=user["id"], product_name=default_product_name
-        )
+        assert await users_service.is_user_in_product(client.app, user_id=user["id"], product_name=default_product_name)
         assert not await users_service.is_user_in_product(
             client.app, user_id=user["id"], product_name=other_product_name
         )
@@ -282,11 +260,8 @@ async def test_unregistered_product(
         assert not parse_test_marks(out), "Expected no email to be sent"
 
         # expected_msg contains {support_email} at the end of the string
-        logged_warnings = [
-            record.message for record in caplog.records if record.levelname == "WARNING"
-        ]
+        logged_warnings = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
-        assert any(
-            message.startswith("Password reset initiated")
-            for message in logged_warnings
-        ), f"Missing warning in {logged_warnings}"
+        assert any(message.startswith("Password reset initiated") for message in logged_warnings), (
+            f"Missing warning in {logged_warnings}"
+        )

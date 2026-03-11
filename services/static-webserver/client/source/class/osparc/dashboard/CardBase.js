@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
-    "emptyStudyClicked": "qx.event.type.Data"
+    "emptyProjectIconClicked": "qx.event.type.Data",
   },
 
   statics: {
@@ -896,6 +896,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __showCurrentUserGroupIds: function(currentUserGroupIds) {
       const avatarGroup = this.getChildControl("avatar-group");
       avatarGroup.setUserGroupIds(currentUserGroupIds);
+
+      if (this.openButton) {
+        const resourceData = this.getResourceData();
+        const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(resourceData);
+        this.openButton.setLabel(openText);
+      }
     },
 
     __showBlockedCardFromStatus: function(reason, state) {
@@ -1052,9 +1058,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (moveToButton) {
           moveToButton.setEnabled(osparc.study.Utils.canMoveTo(resourceData));
         }
-        const trashButton = menuButtons.find(menuBtn => "trashButton" in menuBtn);
-        if (trashButton) {
-          trashButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
+        const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
+        if (deleteButton) {
+          deleteButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
         }
       }
     },
@@ -1167,7 +1173,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
       control.addListener("tap", e => {
         e.stopPropagation();
-        this.fireDataEvent("emptyStudyClicked", this.getUuid());
+        this.fireDataEvent("emptyProjectIconClicked", this.getUuid());
       }, this);
       return control;
     },

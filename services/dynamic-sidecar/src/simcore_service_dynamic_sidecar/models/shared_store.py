@@ -1,6 +1,6 @@
 from asyncio import Lock
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import Final
 
 import aiofiles
 from fastapi import FastAPI
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 
 from ..core.settings import ApplicationSettings
 
-ContainerNameStr: TypeAlias = str
+type ContainerNameStr = str
 
 STORE_FILE_NAME: Final[str] = "data.json"
 
@@ -28,16 +28,14 @@ class _StoreMixin(BaseModel):
 
     async def _persist_to_disk(self) -> None:
         assert self._shared_store_dir  # nosec
-        async with aiofiles.open(
-            self._shared_store_dir / STORE_FILE_NAME, "w"
-        ) as data_file:
+        async with aiofiles.open(self._shared_store_dir / STORE_FILE_NAME, "w") as data_file:
             await data_file.write(self.model_dump_json())
 
     def post_init(self, shared_store_dir: Path):
         self._shared_store_dir = shared_store_dir
 
 
-class SharedStore(_StoreMixin):
+class SharedStore(_StoreMixin):  # noqa: PLW1641
     """
     When used as a context manager will persist the state to the disk upon exit.
 
@@ -51,9 +49,7 @@ class SharedStore(_StoreMixin):
             shared_store.container_names = copied_list
     """
 
-    compose_spec: DockerComposeYamlStr | None = Field(
-        default=None, description="stores the stringified compose spec"
-    )
+    compose_spec: DockerComposeYamlStr | None = Field(default=None, description="stores the stringified compose spec")
     container_names: list[ContainerNameStr] = Field(
         default_factory=list,
         description="stores the container names from the compose_spec",
@@ -90,15 +86,13 @@ class SharedStore(_StoreMixin):
                 self.volume_states[category] = VolumeState(status=status)
 
     @classmethod
-    async def init_from_disk(
-        cls, shared_store_dir: Path, *, store_file_name: "str"
-    ) -> "SharedStore":
+    async def init_from_disk(cls, shared_store_dir: Path, *, store_file_name: "str") -> "SharedStore":
         data_file_path = shared_store_dir / store_file_name
 
         if not data_file_path.exists():
             obj = cls()
             obj.post_init(shared_store_dir)
-            await obj._setup_initial_volume_states()  # noqa SLF001
+            await obj._setup_initial_volume_states()
             return obj
 
         # if the sidecar is started for a second time (usually the container dies)

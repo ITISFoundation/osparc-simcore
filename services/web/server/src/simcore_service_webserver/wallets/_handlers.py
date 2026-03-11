@@ -86,9 +86,7 @@ def _create_error_response_with_support_id_and_logging(
             error_code=error_code,
         )
     )
-    error = ErrorGet.model_construct(
-        message=user_msg, support_id=error_code, status=status_code
-    )
+    error = ErrorGet.model_construct(message=user_msg, support_id=error_code, status=status_code)
     return create_error_response(error, status_code=error.status)
 
 
@@ -152,9 +150,7 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
             raise web.HTTPPaymentRequired(text=f"{exc}") from exc
 
         except BillingDetailsNotFoundError as exc:
-            raise web.HTTPServiceUnavailable(
-                text=MSG_BILLING_DETAILS_NOT_DEFINED_ERROR
-            ) from exc
+            raise web.HTTPServiceUnavailable(text=MSG_BILLING_DETAILS_NOT_DEFINED_ERROR) from exc
 
     return wrapper
 
@@ -202,10 +198,8 @@ async def create_wallet(request: web.Request):
 async def list_wallets(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
 
-    wallets: list[WalletGetWithAvailableCredits] = (
-        await _api.list_wallets_with_available_credits_for_user(
-            app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
-        )
+    wallets: list[WalletGetWithAvailableCredits] = await _api.list_wallets_with_available_credits_for_user(
+        app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
     return envelope_json_response(wallets)
@@ -218,10 +212,8 @@ async def list_wallets(request: web.Request):
 async def get_default_wallet(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
 
-    wallet: WalletGetWithAvailableCredits = (
-        await _api.get_user_default_wallet_with_available_credits(
-            app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
-        )
+    wallet: WalletGetWithAvailableCredits = await _api.get_user_default_wallet_with_available_credits(
+        app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
     return envelope_json_response(wallet)
 
@@ -234,13 +226,11 @@ async def get_wallet(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
-    wallet: WalletGetWithAvailableCredits = (
-        await _api.get_wallet_with_available_credits_by_user_and_wallet(
-            app=request.app,
-            wallet_id=path_params.wallet_id,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-        )
+    wallet: WalletGetWithAvailableCredits = await _api.get_wallet_with_available_credits_by_user_and_wallet(
+        app=request.app,
+        wallet_id=path_params.wallet_id,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(wallet)

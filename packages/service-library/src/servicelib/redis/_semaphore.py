@@ -83,16 +83,10 @@ class DistributedSemaphore(BaseModel):
 
     # Configuration fields with validation
     redis_client: RedisClientSDK
-    key: Annotated[
-        str, Field(min_length=1, description="Unique identifier for the semaphore")
-    ]
-    capacity: Annotated[
-        PositiveInt, Field(description="Maximum number of concurrent holders")
-    ]
+    key: Annotated[str, Field(min_length=1, description="Unique identifier for the semaphore")]
+    capacity: Annotated[PositiveInt, Field(description="Maximum number of concurrent holders")]
     ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL
-    blocking: Annotated[
-        bool, Field(description="Whether acquire() should block until available")
-    ] = True
+    blocking: Annotated[bool, Field(description="Whether acquire() should block until available")] = True
     blocking_timeout: Annotated[
         datetime.timedelta | None,
         Field(description="Maximum time to wait when blocking"),
@@ -120,18 +114,10 @@ class DistributedSemaphore(BaseModel):
         caches the script SHA, so this is efficient. Even if called multiple times,
         the script is only registered once."""
         if cls.acquire_script is None:
-            cls.register_semaphore = redis_client.redis.register_script(
-                REGISTER_SEMAPHORE_TOKEN_SCRIPT
-            )
-            cls.acquire_script = redis_client.redis.register_script(
-                ACQUIRE_SEMAPHORE_SCRIPT
-            )
-            cls.release_script = redis_client.redis.register_script(
-                RELEASE_SEMAPHORE_SCRIPT
-            )
-            cls.renew_script = redis_client.redis.register_script(
-                RENEW_SEMAPHORE_SCRIPT
-            )
+            cls.register_semaphore = redis_client.redis.register_script(REGISTER_SEMAPHORE_TOKEN_SCRIPT)
+            cls.acquire_script = redis_client.redis.register_script(ACQUIRE_SEMAPHORE_SCRIPT)
+            cls.release_script = redis_client.redis.register_script(RELEASE_SEMAPHORE_SCRIPT)
+            cls.renew_script = redis_client.redis.register_script(RENEW_SEMAPHORE_SCRIPT)
 
     def __init__(self, **data) -> None:
         super().__init__(**data)
@@ -183,9 +169,7 @@ class DistributedSemaphore(BaseModel):
 
     @field_validator("blocking_timeout")
     @classmethod
-    def validate_timeout(
-        cls, v: datetime.timedelta | None
-    ) -> datetime.timedelta | None:
+    def validate_timeout(cls, v: datetime.timedelta | None) -> datetime.timedelta | None:
         if v is not None and v.total_seconds() <= 0:
             msg = "Timeout must be positive"
             raise ValueError(msg)
@@ -225,18 +209,14 @@ class DistributedSemaphore(BaseModel):
             # The BRPOP command itself could timeout but the redis-py socket timeout defeats the purpose
             # so we always block forever on BRPOP, tenacity takes care of retrying when a socket timeout happens
             # and we use asyncio.timeout to enforce the blocking_timeout if defined
-            async with asyncio.timeout(
-                self.blocking_timeout.total_seconds() if self.blocking_timeout else None
-            ):
+            async with asyncio.timeout(self.blocking_timeout.total_seconds() if self.blocking_timeout else None):
                 tokens_key_token = await _acquire_forever_on_socket_timeout()
             assert tokens_key_token is not None  # nosec
             assert len(tokens_key_token) == 2  # nosec  # noqa: PLR2004
             assert tokens_key_token[0] == self.tokens_key  # nosec
             return tokens_key_token[1]
         except TimeoutError as e:
-            raise SemaphoreAcquisitionError(
-                name=self.key, instance_id=self.instance_id
-            ) from e
+            raise SemaphoreAcquisitionError(name=self.key, instance_id=self.instance_id) from e
 
     async def _non_blocking_acquire(self) -> str | None:
         token: str | list[str] | None = await handle_redis_returns_union_types(
@@ -409,25 +389,16 @@ class DistributedSemaphore(BaseModel):
 
     async def is_acquired(self) -> bool:
         """Check if the semaphore is currently acquired by this instance."""
-        return bool(
-            await handle_redis_returns_union_types(
-                self.redis_client.redis.exists(self.holder_key)
-            )
-            == 1
-        )
+        return bool(await handle_redis_returns_union_types(self.redis_client.redis.exists(self.holder_key)) == 1)
 
     async def current_count(self) -> int:
         """Get the current number of semaphore holders"""
-        return await handle_redis_returns_union_types(
-            self.redis_client.redis.scard(self.holders_set)
-        )
+        return await handle_redis_returns_union_types(self.redis_client.redis.scard(self.holders_set))
 
     async def available_tokens(self) -> int:
         """Get the size of the semaphore (number of available tokens)"""
         await self._ensure_semaphore_initialized()
-        return await handle_redis_returns_union_types(
-            self.redis_client.redis.llen(self.tokens_key)
-        )
+        return await handle_redis_returns_union_types(self.redis_client.redis.llen(self.tokens_key))
 
 
 @contextlib.asynccontextmanager
@@ -483,9 +454,7 @@ async def distributed_semaphore(  # noqa: C901
             auto_reacquisition_started = asyncio.Event()
             cancellation_event = asyncio.Event()
             auto_reacquisition_task = tg.create_task(
-                _periodic_reacquisition(
-                    semaphore, auto_reacquisition_started, cancellation_event
-                ),
+                _periodic_reacquisition(semaphore, auto_reacquisition_started, cancellation_event),
                 name=f"semaphore/auto_reacquisition_task_{semaphore.key}_{semaphore.instance_id}",
             )
             await auto_reacquisition_started.wait()

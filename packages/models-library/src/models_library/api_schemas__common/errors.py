@@ -8,14 +8,10 @@ from ..basic_types import IDStr
 
 class DefaultApiError(BaseModel):
     name: Annotated[IDStr, Field(description="Exception's class name")]
-    detail: Annotated[Any | None, Field(description="Human readable error message")] = (
-        None
-    )
+    detail: Annotated[Any | None, Field(description="Human readable error message")] = None
 
     @classmethod
-    def from_status_code(
-        cls, code: int, *, detail: str | None = None
-    ) -> "DefaultApiError":
+    def from_status_code(cls, code: int, *, detail: str | None = None) -> "DefaultApiError":
         httplib_code = http.HTTPStatus(code)
 
         return cls(

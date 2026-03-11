@@ -31,10 +31,7 @@ class ProjectsRepo:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             return (
                 await conn.scalar(
-                    sa.select(1)
-                    .select_from(projects)
-                    .where(projects.c.uuid == f"{project_uuid}")
-                    .limit(1)
+                    sa.select(1).select_from(projects).where(projects.c.uuid == f"{project_uuid}").limit(1)
                 )
                 is not None
             )
@@ -46,9 +43,7 @@ class ProjectsRepo:
         connection: AsyncConnection | None = None,
     ) -> datetime:
         async with transaction_context(self.engine, connection) as conn:
-            get_stmt = sa.select(projects.c.last_change_date).where(
-                projects.c.uuid == f"{project_uuid}"
-            )
+            get_stmt = sa.select(projects.c.last_change_date).where(projects.c.uuid == f"{project_uuid}")
 
             result = await conn.execute(get_stmt)
             row = result.first()

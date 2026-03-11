@@ -44,8 +44,7 @@ async def get(
 ) -> Node:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         get_stmt = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            (projects_nodes.c.project_uuid == f"{project_id}")
-            & (projects_nodes.c.node_id == f"{node_id}")
+            (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
         )
 
         result = await conn.execute(get_stmt)
@@ -53,9 +52,7 @@ async def get(
 
         row = result.one_or_none()
         if row is None:
-            raise NodeNotFoundError(
-                project_uuid=f"{project_id}", node_uuid=f"{node_id}"
-            )
+            raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
         assert row  # nosec
         return Node.model_validate(row, from_attributes=True)
 
@@ -74,8 +71,5 @@ async def update(
         await conn.execute(
             projects_nodes.update()
             .values(**values)
-            .where(
-                (projects_nodes.c.project_uuid == f"{project_id}")
-                & (projects_nodes.c.node_id == f"{node_id}")
-            )
+            .where((projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}"))
         )

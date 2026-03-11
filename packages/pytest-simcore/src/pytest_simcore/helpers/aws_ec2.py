@@ -50,6 +50,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     instance_filters: Sequence[FilterTypeDef] | None,
     expected_user_data: list[str] | None = None,
     check_reservation_index: int | None = None,
+    check_instance_type: InstanceTypeType | None = None,
 ) -> list[InstanceTypeDef]:
     if expected_user_data is None:
         expected_user_data = ["docker swarm join"]
@@ -68,6 +69,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
         expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_filters,
         check_reservation_index=check_reservation_index,
+        check_instance_type=check_instance_type,
     )
 
 
@@ -82,6 +84,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
     expected_pre_pulled_images: list[DockerGenericTag] | None,
     instance_filters: Sequence[FilterTypeDef] | None,
     check_reservation_index: int | None = None,
+    check_instance_type: InstanceTypeType | None = None,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -99,6 +102,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
         expected_user_data=[],
         instance_filters=instance_filters,
         check_reservation_index=check_reservation_index,
+        check_instance_type=check_instance_type,
     )
 
 
@@ -115,9 +119,9 @@ async def _assert_reservation(
 ) -> list[InstanceTypeDef]:
     list_instances: list[InstanceTypeDef] = []
     assert "Instances" in reservation
-    assert (
-        len(reservation["Instances"]) == expected_num_instances
-    ), f"expected {expected_num_instances}, found {len(reservation['Instances'])}"
+    assert len(reservation["Instances"]) == expected_num_instances, (
+        f"expected {expected_num_instances}, found {len(reservation['Instances'])}"
+    )
     for instance in reservation["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == expected_instance_type
@@ -140,13 +144,9 @@ async def _assert_reservation(
                 assert "Key" in ec2_tag
                 return ec2_tag["Key"] == "io.simcore.autoscaling.pre_pulled_images"
 
-            instance_pre_pulled_images_aws_tag = next(
-                iter(filter(_by_pre_pull_image, instance["Tags"]))
-            )
+            instance_pre_pulled_images_aws_tag = next(iter(filter(_by_pre_pull_image, instance["Tags"])))
             assert "Value" in instance_pre_pulled_images_aws_tag
-            assert sorted(
-                json_loads(instance_pre_pulled_images_aws_tag["Value"])
-            ) == sorted(expected_pre_pulled_images)
+            assert sorted(json_loads(instance_pre_pulled_images_aws_tag["Value"])) == sorted(expected_pre_pulled_images)
 
         assert "PrivateDnsName" in instance
         instance_private_dns_name = instance["PrivateDnsName"]
@@ -183,12 +183,35 @@ async def assert_ec2_instances(
     expected_pre_pulled_images: list[DockerGenericTag] | None = None,
     instance_filters: Sequence[FilterTypeDef] | None = None,
     check_reservation_index: int | None = None,
+    check_instance_type: InstanceTypeType | None = None,
 ) -> list[InstanceTypeDef]:
     all_instances = await ec2_client.describe_instances(Filters=instance_filters or [])
     assert len(all_instances["Reservations"]) == expected_num_reservations
     if check_reservation_index is not None:
         assert check_reservation_index < len(all_instances["Reservations"])
         reservation = all_instances["Reservations"][check_reservation_index]
+        return await _assert_reservation(
+            ec2_client,
+            reservation,
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=expected_instance_type,
+            expected_instance_state=expected_instance_state,
+            expected_instance_tag_keys=expected_instance_tag_keys,
+            expected_user_data=expected_user_data,
+            expected_pre_pulled_images=expected_pre_pulled_images,
+        )
+    if check_instance_type is not None:
+        reservation_index: set[int] = set()
+        for reservation in all_instances["Reservations"]:
+            assert "Instances" in reservation
+            for instance in reservation["Instances"]:
+                assert "InstanceType" in instance
+                if instance["InstanceType"] == check_instance_type:
+                    reservation_index.add(all_instances["Reservations"].index(reservation))
+        assert len(reservation_index) == 1, (
+            f"Expected only one reservation with the given instance type, got {reservation_index}"
+        )
+        reservation = all_instances["Reservations"][reservation_index.pop()]
         return await _assert_reservation(
             ec2_client,
             reservation,

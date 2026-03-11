@@ -18,18 +18,10 @@ from typing import Final
 from ..utils import load_script
 
 # fair semaphore scripts (token pool based)
-REGISTER_SEMAPHORE_TOKEN_SCRIPT: Final[str] = load_script(
-    "servicelib.redis.lua", "register_semaphore_tokens"
-)
-ACQUIRE_SEMAPHORE_SCRIPT: Final[str] = load_script(
-    "servicelib.redis.lua", "acquire_semaphore"
-)
-RELEASE_SEMAPHORE_SCRIPT: Final[str] = load_script(
-    "servicelib.redis.lua", "release_semaphore"
-)
-RENEW_SEMAPHORE_SCRIPT: Final[str] = load_script(
-    "servicelib.redis.lua", "renew_semaphore"
-)
+REGISTER_SEMAPHORE_TOKEN_SCRIPT: Final[str] = load_script("servicelib.redis.lua", "register_semaphore_tokens")
+ACQUIRE_SEMAPHORE_SCRIPT: Final[str] = load_script("servicelib.redis.lua", "acquire_semaphore")
+RELEASE_SEMAPHORE_SCRIPT: Final[str] = load_script("servicelib.redis.lua", "release_semaphore")
+RENEW_SEMAPHORE_SCRIPT: Final[str] = load_script("servicelib.redis.lua", "renew_semaphore")
 
 
 SCRIPT_OK_EXIT_CODE: Final[int] = 0

@@ -22,9 +22,7 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
 
 
 @pytest.fixture
-def account_request_form(
-    faker: Faker, user_phone_number: PhoneNumberStr
-) -> dict[str, Any]:
+def account_request_form(faker: Faker, user_phone_number: PhoneNumberStr) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     form = {
         "firstName": faker.first_name(),
@@ -91,11 +89,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
 def test_preuserprofile_parse_model_without_extras(
     account_request_form: dict[str, Any],
 ):
-    required = {
-        f.alias or f_name
-        for f_name, f in UserAccountRestPreRegister.model_fields.items()
-        if f.is_required()
-    }
+    required = {f.alias or f_name for f_name, f in UserAccountRestPreRegister.model_fields.items() if f.is_required()}
     data = {k: account_request_form[k] for k in required}
     assert not UserAccountRestPreRegister(**data).extras
 
@@ -107,9 +101,7 @@ def test_preuserprofile_max_bytes_size_extras_limits(faker: Faker):
     assert data_size < MAX_BYTES_SIZE_EXTRAS
 
 
-@pytest.mark.parametrize(
-    "given_name", ["PEDrO-luis", "pedro luis", "   pedro  LUiS   ", "pedro  lUiS   "]
-)
+@pytest.mark.parametrize("given_name", ["PEDrO-luis", "pedro luis", "   pedro  LUiS   ", "pedro  lUiS   "])
 def test_preuserprofile_pre_given_names(
     given_name: str,
     account_request_form: dict[str, Any],

@@ -28,12 +28,8 @@ from simcore_service_webserver.statics._events import _get_product_data
     "model_cls, example_name, example_data",
     walk_model_examples_in_package(simcore_service_webserver.products),
 )
-def test_all_products_models_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-):
-    model_instance = assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_all_products_models_examples(model_cls: type[BaseModel], example_name: str, example_data: Any):
+    model_instance = assert_validation_model(model_cls, example_name=example_name, example_data=example_data)
 
     # Some extra checks for Products
     if isinstance(model_instance, Product):
@@ -47,7 +43,6 @@ def test_all_products_models_examples(
 
 
 def test_product_to_static():
-
     product = Product.model_validate(Product.model_json_schema()["examples"][0])
     product_data = _get_product_data(product)
     assert product_data == {
@@ -121,20 +116,16 @@ def test_safe_load_empty_blanks_on_string_cols_from_db(
     fake_product_from_db: dict[str, Any],
 ):
     nullable_strings_column_names = [
-        c.name
-        for c in products_table.columns
-        if isinstance(c.type, sa.String) and c.nullable
+        c.name for c in products_table.columns if isinstance(c.type, sa.String) and c.nullable
     ]
 
-    fake_product_from_db.update(
-        {name: " " * len(name) for name in nullable_strings_column_names}
-    )
+    fake_product_from_db.update({name: " " * len(name) for name in nullable_strings_column_names})
 
     product = Product.model_validate(fake_product_from_db)
 
-    assert product.model_dump(include=set(nullable_strings_column_names)) == {
-        name: None for name in nullable_strings_column_names
-    }
+    assert product.model_dump(include=set(nullable_strings_column_names)) == dict.fromkeys(
+        nullable_strings_column_names
+    )
 
 
 @pytest.mark.parametrize(
@@ -176,24 +167,16 @@ def test_twilio_sender_id_is_truncated(fake_product_from_db: dict[str, Any]):
     fake_product_from_db.update(short_name=None, display_name="very long name" * 12)
     product = Product.model_validate(fake_product_from_db)
 
-    assert re.match(
-        TWILIO_ALPHANUMERIC_SENDER_ID_RE, product.twilio_alpha_numeric_sender_id
-    )
+    assert re.match(TWILIO_ALPHANUMERIC_SENDER_ID_RE, product.twilio_alpha_numeric_sender_id)
 
 
 def test_template_names_from_file(fake_product_from_db: dict[str, Any]):
     fake_product_from_db.update(registration_email_template="some_template_name_id")
     product = Product.model_validate(fake_product_from_db)
 
-    assert (
-        product.get_template_name_for(filename="registration_email.jinja2")
-        == "some_template_name_id"
-    )
+    assert product.get_template_name_for(filename="registration_email.jinja2") == "some_template_name_id"
     assert product.get_template_name_for(filename="other_template.jinja2") is None
 
     fake_product_from_db.update(registration_email_template=None)
     product = Product.model_validate(fake_product_from_db)
-    assert (
-        product.get_template_name_for(filename="registration_email_template.jinja2")
-        is None
-    )
+    assert product.get_template_name_for(filename="registration_email_template.jinja2") is None

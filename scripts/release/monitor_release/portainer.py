@@ -1,3 +1,6 @@
+from rich.console import Console
+from rich.table import Table
+
 from monitor_release.models import RunningSidecar
 from monitor_release.portainer_utils import (
     check_simcore_deployed_services,
@@ -7,8 +10,6 @@ from monitor_release.portainer_utils import (
     get_services,
     get_tasks,
 )
-from rich.console import Console
-from rich.table import Table
 
 console = Console()
 
@@ -36,8 +37,7 @@ def check_containers_deploys(settings, deployment):
         for task in item["tasks"]:
             oldest_running_task_timestamp = None
             if task["status"] == "running" and (
-                oldest_running_task_timestamp is None
-                or oldest_running_task_timestamp > task["timestamp"]
+                oldest_running_task_timestamp is None or oldest_running_task_timestamp > task["timestamp"]
             ):
                 container_status = f"[green]{task['status']}[/green]"
                 container_timestamp = f"{task['timestamp']}"
@@ -50,9 +50,7 @@ def check_containers_deploys(settings, deployment):
                 container_git_sha = task["git_sha"]
                 break
 
-        table.add_row(
-            service_name, container_status, container_timestamp, container_git_sha
-        )
+        table.add_row(service_name, container_status, container_timestamp, container_git_sha)
 
     console.print(table)
 

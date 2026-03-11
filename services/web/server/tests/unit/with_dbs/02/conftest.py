@@ -43,9 +43,7 @@ from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATE
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> dict[str, str]:
+def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     # NOTE: overrides app_environment
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
@@ -129,9 +127,7 @@ async def shared_project(
 ) -> AsyncIterator[ProjectDict]:
     fake_project.update(
         {
-            "accessRights": {
-                f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
-            },
+            "accessRights": {f"{all_group['gid']}": {"read": True, "write": False, "delete": False}},
         },
     )
     async with NewProject(
@@ -159,9 +155,7 @@ async def template_project(
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-    project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
-    }
+    project_data["accessRights"] = {str(all_group["gid"]): {"read": True, "write": False, "delete": False}}
 
     async with NewProject(
         project_data,
@@ -192,9 +186,7 @@ async def create_template_project(
         project_data = deepcopy(fake_project)
         project_data["name"] = "Fake template"
         project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-        project_data["accessRights"] = {
-            str(all_group["gid"]): {"read": True, "write": False, "delete": False}
-        }
+        project_data["accessRights"] = {str(all_group["gid"]): {"read": True, "write": False, "delete": False}}
         project_data |= prj_kwargs
 
         new_template_project = await created_projects_exit_stack.enter_async_context(
@@ -516,11 +508,7 @@ def with_enabled_rtc_collaboration(
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
-                {"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions}
-            )
-        },
+        {"WEBSERVER_REALTIME_COLLABORATION": json_dumps({"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions})},
     )
 
 
@@ -531,11 +519,7 @@ def with_enabled_rtc_collaboration_limited_to_1_user(
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
-                {"RTC_MAX_NUMBER_OF_USERS": 1}
-            )
-        },
+        {"WEBSERVER_REALTIME_COLLABORATION": json_dumps({"RTC_MAX_NUMBER_OF_USERS": 1})},
     )
 
 
@@ -580,25 +564,17 @@ async def client_on_running_server_factory(
 
 @pytest.fixture
 async def create_socketio_connection_with_handlers(
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     mocker: MockerFixture,
 ) -> Callable[
     [str | None, TestClient],
     Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
 ]:
-    async def _(
-        client_session_id: str | None, client: TestClient
-    ) -> tuple[socketio.AsyncClient, str, SocketHandlers]:
-        sio, received_client_id = await create_socketio_connection(
-            client_session_id, client
-        )
+    async def _(client_session_id: str | None, client: TestClient) -> tuple[socketio.AsyncClient, str, SocketHandlers]:
+        sio, received_client_id = await create_socketio_connection(client_session_id, client)
         assert sio.sid
 
-        event_handlers = SocketHandlers(
-            **{SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()}
-        )
+        event_handlers = SocketHandlers(**{SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()})
 
         for event, handler in event_handlers.items():
             sio.on(event, handler=handler)

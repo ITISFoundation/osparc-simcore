@@ -16,14 +16,23 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
     NoServiceVolumesFoundRPCError,
 )
+from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 from tenacity import AsyncRetrying, before_sleep_log, stop_after_delay, wait_fixed
 
 from ..core.settings import ApplicationSettings
-from .docker_utils import get_unused_dynamc_sidecar_volumes, remove_volume
+from .docker_utils import get_unused_dynamic_sidecar_volumes, remove_volume
 
 _logger = logging.getLogger(__name__)
 
 _WAIT_FOR_UNUSED_SERVICE_VOLUMES: Final[timedelta] = timedelta(minutes=1)
+
+_VOLUMES_TO_NEVER_BACKUP: Final[set[str]] = {
+    "stupni",  # inputs -> usually all services use this name
+    "stuptuo",  # outputs -> can be regenerated, usually all services use this name
+    "erots-derahs",  # shared-store -> defined by the dynamic-sidecar
+    f"{DEFAULT_VFS_CACHE_PATH}".strip("/")[::-1],  # vfs-cache
+    "secnereferP",  # Preferences -> usually defined by the user this is the one we use in the only service that supports if for now
+}
 
 
 @dataclass
@@ -68,9 +77,7 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
 
     async def _bookkeeping_task(self) -> None:
         with log_context(_logger, logging.DEBUG, "volume bookkeeping"):
-            current_unused_volumes = await get_unused_dynamc_sidecar_volumes(
-                self.docker
-            )
+            current_unused_volumes = await get_unused_dynamic_sidecar_volumes(self.docker)
             old_unused_volumes = set(self._unused_volumes.keys())
 
             # remove
@@ -83,9 +90,13 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
             for volume in to_add:
                 self._unused_volumes[volume] = arrow.utcnow().datetime
 
-    async def _remove_volume_safe(
-        self, *, volume_name: str, requires_backup: bool
-    ) -> None:
+    async def _remove_volume_safe(self, *, volume_name: str, requires_backup: bool) -> None:
+        # overwrite backup policy if volume does not require backup
+        for x in _VOLUMES_TO_NEVER_BACKUP:
+            if f"_{x}_" in volume_name:
+                requires_backup = False
+                break
+
         # NOTE: to avoid race conditions only one volume can be removed
         # also avoids issues with accessing the docker API in parallel
         async with self.removal_lock:
@@ -100,18 +111,14 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
         with log_context(_logger, logging.DEBUG, "volume cleanup"):
             volumes_to_remove: set[str] = set()
             for volume_name, inactive_since in self._unused_volumes.items():
-                volume_inactive_sicne = (
-                    arrow.utcnow().datetime - inactive_since
-                ).total_seconds()
-                if volume_inactive_sicne > self.remove_volumes_inactive_for:
+                volume_inactive_since = (arrow.utcnow().datetime - inactive_since).total_seconds()
+                if volume_inactive_since > self.remove_volumes_inactive_for:
                     volumes_to_remove.add(volume_name)
 
             for volume in volumes_to_remove:
                 await self._remove_volume_safe(volume_name=volume, requires_backup=True)
 
-    async def _wait_for_service_volumes_to_become_unused(
-        self, node_id: NodeID
-    ) -> set[str]:
+    async def _wait_for_service_volumes_to_become_unused(self, node_id: NodeID) -> set[str]:
         # NOTE: it usually takes a few seconds for volumes to become unused,
         # if agent does not wait for this operation to finish,
         # volumes will be removed and backed up by the background task
@@ -123,16 +130,10 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         ):
             with attempt:
-                current_unused_volumes = await get_unused_dynamc_sidecar_volumes(
-                    self.docker
-                )
+                current_unused_volumes = await get_unused_dynamic_sidecar_volumes(self.docker)
 
-                service_volumes = {
-                    v for v in current_unused_volumes if f"{node_id}" in v
-                }
-                _logger.debug(
-                    "service %s found volumes to remove: %s", node_id, service_volumes
-                )
+                service_volumes = {v for v in current_unused_volumes if f"{node_id}" in v}
+                _logger.debug("service %s found volumes to remove: %s", node_id, service_volumes)
                 if len(service_volumes) == 0:
                     raise NoServiceVolumesFoundRPCError(
                         period=_WAIT_FOR_UNUSED_SERVICE_VOLUMES.total_seconds(),
@@ -142,6 +143,10 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
         return service_volumes
 
     async def remove_service_volumes(self, node_id: NodeID) -> None:
+        """
+        Cleanup after each sidecar was shut down removing all volumes it created with
+        a backup since it already did that
+        """
         # bookkept volumes might not be up to date
         service_volumes = await self._wait_for_service_volumes_to_become_unused(node_id)
         _logger.debug(
@@ -152,13 +157,15 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
 
         for volume_name in service_volumes:
             # volumes already saved to S3 by the sidecar and no longer require backup
-            await self._remove_volume_safe(
-                volume_name=volume_name, requires_backup=False
-            )
+            await self._remove_volume_safe(volume_name=volume_name, requires_backup=False)
 
     async def remove_all_volumes(self) -> None:
+        """
+        Should be called by autoscaling to ensure no data is lost
+        If a volume is found it's data has to be backed up
+        """
         # bookkept volumes might not be up to date
-        current_unused_volumes = await get_unused_dynamc_sidecar_volumes(self.docker)
+        current_unused_volumes = await get_unused_dynamic_sidecar_volumes(self.docker)
 
         with log_context(_logger, logging.INFO, "remove all volumes"):
             for volume in current_unused_volumes:

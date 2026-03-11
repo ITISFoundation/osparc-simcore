@@ -24,16 +24,15 @@ from servicelib.fastapi.http_client import (
     BaseHTTPApi,
     HealthMixinMixin,
 )
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.tracing import setup_httpx_client_tracing
 
 from ..core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
 
-class ResourceUsageTrackerApi(
-    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
-):
+class ResourceUsageTrackerApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
     app_state_name: str = "source_usage_tracker_api"
 
     async def create_credit_transaction(

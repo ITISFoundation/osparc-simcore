@@ -18,9 +18,9 @@ from .projects import ProjectID
 from .projects_nodes_io import NodeID
 from .users import UserID
 
-DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[DockerLabelKey] = (
-    TypeAdapter(DockerLabelKey).validate_python("ec2-instance-type")
-)
+DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[DockerLabelKey] = TypeAdapter(
+    DockerLabelKey
+).validate_python("ec2-instance-type")
 
 _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX: Final[str] = "io.simcore.runtime."
 _BACKWARDS_COMPATIBILITY_SIMCORE_RUNTIME_DOCKER_LABELS_MAP: Final[dict[str, str]] = {
@@ -39,9 +39,7 @@ _UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
-    return DockerLabelKey(
-        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key.replace('_', '-').lower()}"
-    )
+    return DockerLabelKey(f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key.replace('_', '-').lower()}")
 
 
 class SimcoreContainerLabels(BaseModel):
@@ -117,10 +115,7 @@ class SimcoreContainerLabels(BaseModel):
 
     def to_simcore_runtime_docker_labels(self) -> dict[DockerLabelKey, str]:
         """returns a dictionary of strings as required by docker"""
-        return {
-            to_simcore_runtime_docker_label_key(k): f"{v}"
-            for k, v in sorted(self.model_dump().items())
-        }
+        return {to_simcore_runtime_docker_label_key(k): f"{v}" for k, v in sorted(self.model_dump().items())}
 
     @classmethod
     def from_docker_task(cls, docker_task: Task) -> "SimcoreContainerLabels":

@@ -27,12 +27,8 @@ def upgrade():
             server_default=sa.text("true"),
             nullable=False,
         ),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["group_id"],
             ["groups.gid"],

@@ -2,9 +2,7 @@ class DatcoreAdapterError(Exception):
     """basic exception for errors raised in datcore-adapter"""
 
     def __init__(self, msg: str | None = None) -> None:
-        super().__init__(
-            msg or "Unexpected error occured in datcore-adapter subpackage"
-        )
+        super().__init__(msg or "Unexpected error occurred in datcore-adapter subpackage")
 
 
 class DatcoreAdapterClientError(DatcoreAdapterError):
@@ -41,9 +39,7 @@ class DatcoreAdapterResponseError(DatcoreAdapterError):
     def __init__(self, status: int, reason: str) -> None:
         self.status = status
         self.reason = reason
-        super().__init__(
-            msg=f"forwarded call failed with status {status}, reason {reason}"
-        )
+        super().__init__(msg=f"forwarded call failed with status {status}, reason {reason}")
 
 
 class DatcoreAdapterFileNotFoundError(DatcoreAdapterError):

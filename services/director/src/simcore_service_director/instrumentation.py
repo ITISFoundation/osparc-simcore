@@ -63,9 +63,7 @@ def setup(app: FastAPI) -> None:
 
     async def on_startup() -> None:
         metrics_subsystem = ""
-        app.state.instrumentation = DirectorV0Instrumentation(
-            registry=registry, subsystem=metrics_subsystem
-        )
+        app.state.instrumentation = DirectorV0Instrumentation(registry=registry, subsystem=metrics_subsystem)
 
     async def on_shutdown() -> None: ...
 
@@ -75,9 +73,7 @@ def setup(app: FastAPI) -> None:
 
 def get_instrumentation(app: FastAPI) -> DirectorV0Instrumentation:
     if not app.state.instrumentation:
-        raise ConfigurationError(
-            msg="Instrumentation not setup. Please check the configuration."
-        )
+        raise ConfigurationError(msg="Instrumentation not setup. Please check the configuration.")
     return cast(DirectorV0Instrumentation, app.state.instrumentation)
 
 

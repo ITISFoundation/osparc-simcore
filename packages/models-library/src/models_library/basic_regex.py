@@ -1,4 +1,4 @@
-"""Regular expressions patterns to build pydantic contrained strings
+"""Regular expressions patterns to build pydantic constrained strings
 
 - Variants of the patterns with 'Named Groups' captured are suffixed with NG_RE
 
@@ -6,7 +6,7 @@ SEE tests_basic_regex.py for examples
 """
 
 # TODO: for every pattern we should have a formatter function
-# NOTE: some sites to manualy check ideas
+# NOTE: some sites to manually check ideas
 #   https://regex101.com/
 #   https://pythex.org/
 #
@@ -15,9 +15,7 @@ SEE tests_basic_regex.py for examples
 import re
 from typing import Final
 
-UUID_RE_BASE = (
-    r"[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
-)
+UUID_RE_BASE = r"[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
 UUID_RE = rf"^{UUID_RE_BASE}$"
 
 # Formatted timestamps with date and time
@@ -41,9 +39,7 @@ SEMANTIC_VERSION_RE_W_NAMED_GROUPS = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]
 # https://docs.python.org/3/reference/lexical_analysis.html#identifiers
 PUBLIC_VARIABLE_NAME_RE = r"^[^_\W0-9]\w*$"
 
-MIME_TYPE_RE = (
-    r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
-)
+MIME_TYPE_RE = r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
 
 # Storage basic file ID
 SIMCORE_S3_FILE_ID_RE = rf"^(exports\/\d+\/{UUID_RE_BASE}\.zip)|((api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$)"
@@ -52,9 +48,7 @@ SIMCORE_S3_FILE_ID_RE = rf"^(exports\/\d+\/{UUID_RE_BASE}\.zip)|((api|({UUID_RE_
 SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
 
 # S3 - AWS bucket names [https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html]
-S3_BUCKET_NAME_RE = re.compile(
-    r"^(?!xn--)[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$(?<!-s3alias)"
-)
+S3_BUCKET_NAME_RE = re.compile(r"^(?!xn--)[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$(?<!-s3alias)")
 
 # Datcore file ID
 DATCORE_FILE_ID_RE = rf"^N:package:{UUID_RE_BASE}$"
@@ -82,4 +76,6 @@ DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
     r"(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
 )
 
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
+PROPERTY_KEY_RE = (
+    r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
+)

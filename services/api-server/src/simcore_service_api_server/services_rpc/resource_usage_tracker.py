@@ -18,9 +18,7 @@ from ..exceptions.backend_errors import LicensedItemCheckoutNotFoundError
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.model_adapter import LicensedItemCheckoutGet
 
-_exception_mapper = partial(
-    service_exception_mapper, service_name="ResourceUsageTracker"
-)
+_exception_mapper = partial(service_exception_mapper, service_name="ResourceUsageTracker")
 
 
 @dataclass
@@ -28,11 +26,7 @@ class ResourceUsageTrackerClient(SingletonInAppStateMixin):
     app_state_name = "resource_usage_tracker_rpc_client"
     _client: RabbitMQRPCClient
 
-    @_exception_mapper(
-        rpc_exception_map={
-            _LicensedItemCheckoutNotFoundError: LicensedItemCheckoutNotFoundError
-        }
-    )
+    @_exception_mapper(rpc_exception_map={_LicensedItemCheckoutNotFoundError: LicensedItemCheckoutNotFoundError})
     async def get_licensed_item_checkout(
         self, *, product_name: str, licensed_item_checkout_id: LicensedItemCheckoutID
     ) -> LicensedItemCheckoutGet:
@@ -56,7 +50,5 @@ class ResourceUsageTrackerClient(SingletonInAppStateMixin):
 
 
 def setup(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
-    resource_usage_tracker_rpc_client = ResourceUsageTrackerClient(
-        _client=rabbitmq_rpc_client
-    )
+    resource_usage_tracker_rpc_client = ResourceUsageTrackerClient(_client=rabbitmq_rpc_client)
     resource_usage_tracker_rpc_client.set_to_app_state(app=app)

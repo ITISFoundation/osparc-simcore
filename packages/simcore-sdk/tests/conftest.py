@@ -33,6 +33,7 @@ pytest_plugins = [
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.r_clone",
     "pytest_simcore.repository_paths",
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
     "pytest_simcore.simcore_services",
@@ -67,9 +68,7 @@ def empty_configuration_file() -> Path:
 
 
 @pytest.fixture
-def node_ports_config(
-    postgres_host_config: PostgresTestConfig, minio_s3_settings_envs: EnvVarsDict
-) -> None: ...
+def node_ports_config(postgres_host_config: PostgresTestConfig, minio_s3_settings_envs: EnvVarsDict) -> None: ...
 
 
 @pytest.fixture

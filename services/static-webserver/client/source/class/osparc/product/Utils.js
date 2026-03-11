@@ -260,7 +260,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     // oSPARC only
-    showExportCMis: function() {
+    showExportCMIS: function() {
       const product = this.getProductName();
       return product === "osparc";
     },

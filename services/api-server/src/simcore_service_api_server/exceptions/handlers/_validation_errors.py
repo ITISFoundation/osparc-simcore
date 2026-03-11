@@ -15,9 +15,7 @@ async def http422_error_handler(
     assert request  # nosec
     assert isinstance(exc, RequestValidationError | ValidationError)
 
-    return create_error_json_response(
-        *exc.errors(), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-    )
+    return create_error_json_response(*exc.errors(), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 validation_error_response_definition["properties"] = {

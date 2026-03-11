@@ -24,12 +24,8 @@ from simcore_service_catalog.models.services_db import ServiceDBFilters
     "model_cls, example_name, example_data",
     walk_model_examples_in_package(simcore_service_catalog.models),
 )
-def test_catalog_service_model_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-):
-    assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_catalog_service_model_examples(model_cls: type[BaseModel], example_name: str, example_data: Any):
+    assert_validation_model(model_cls, example_name=example_name, example_data=example_data)
 
 
 @pytest.mark.parametrize(
@@ -60,5 +56,4 @@ def test_catalog_service_model_examples(
 def test_adapter_to_domain_model(
     filters: ServiceListFilters | None,
 ):
-
     TypeAdapter(ServiceDBFilters | None).validate_python(filters, from_attributes=True)

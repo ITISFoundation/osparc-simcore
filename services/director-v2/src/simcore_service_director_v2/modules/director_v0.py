@@ -13,8 +13,9 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_decorator
+from servicelib.tracing import setup_httpx_client_tracing
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.tracing import TracingSettings
 
@@ -48,9 +49,7 @@ def setup(
             app,
             client=client,
         )
-        logger.debug(
-            "created client for director-v0: %s", director_v0_settings.endpoint
-        )
+        logger.debug("created client for director-v0: %s", director_v0_settings.endpoint)
 
     async def on_shutdown() -> None:
         client = DirectorV0Client.instance(app).client
@@ -82,16 +81,10 @@ class DirectorV0Client:
         return await self.client.request(method, tail_path, **kwargs)
 
     @log_decorator(logger=logger)
-    async def get_running_service_details(
-        self, service_uuid: NodeID
-    ) -> RunningDynamicServiceDetails:
-        resp = await self._request(
-            "GET", f"running_interactive_services/{service_uuid}"
-        )
+    async def get_running_service_details(self, service_uuid: NodeID) -> RunningDynamicServiceDetails:
+        resp = await self._request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
-            return RunningDynamicServiceDetails.model_validate(
-                unenvelope_or_raise_error(resp)
-            )
+            return RunningDynamicServiceDetails.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
@@ -110,7 +103,6 @@ class DirectorV0Client:
 
         if resp.status_code == status.HTTP_200_OK:
             return [
-                RunningDynamicServiceDetails(**x)
-                for x in cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
+                RunningDynamicServiceDetails(**x) for x in cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

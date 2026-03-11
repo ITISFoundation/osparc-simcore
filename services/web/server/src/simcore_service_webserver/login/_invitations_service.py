@@ -66,9 +66,7 @@ class ConfirmedInvitationData(BaseModel):
         None,
         description="Who has issued this invitation? (e.g. an email or a uid)",
     )
-    guest: str | None = Field(
-        None, description="Reference tag for this invitation", deprecated=True
-    )
+    guest: str | None = Field(None, description="Reference tag for this invitation", deprecated=True)
     trial_account_days: PositiveInt | None = Field(
         None,
         description="If set, this invitation will activate a trial account."
@@ -117,9 +115,7 @@ async def check_other_registrations(
         user_status = UserStatus(user["status"])
         match user_status:
             case UserStatus.ACTIVE:
-                await _raise_if_registered_in_product(
-                    app, user_email=user["email"], product=current_product
-                )
+                await _raise_if_registered_in_product(app, user_email=user["email"], product=current_product)
 
             case UserStatus.CONFIRMATION_PENDING:
                 # An account already registered with this email
@@ -135,23 +131,19 @@ async def check_other_registrations(
                         "action": ConfirmationAction.REGISTRATION.value,
                     }
                 )
-                drop_previous_registration = (
-                    not _confirmation
-                    or confirmation_service.is_confirmation_expired(_confirmation)
+                drop_previous_registration = not _confirmation or confirmation_service.is_confirmation_expired(
+                    _confirmation
                 )
                 if drop_previous_registration:
                     if not _confirmation:
-                        await users_service.delete_user_without_projects(
-                            app, user_id=user["id"], clean_cache=False
-                        )
+                        await users_service.delete_user_without_projects(app, user_id=user["id"], clean_cache=False)
                     else:
                         await confirmation_service.delete_confirmation_and_user(
                             user_id=user["id"], confirmation=_confirmation
                         )
 
                     _logger.warning(
-                        "Re-registration of %s with expired %s"
-                        "Deleting user and proceeding to a new registration",
+                        "Re-registration of %s with expired %sDeleting user and proceeding to a new registration",
                         f"{user=}",
                         f"{_confirmation=}",
                     )
@@ -163,9 +155,7 @@ async def check_other_registrations(
                     UserStatus.DELETED,
                 )
                 raise web.HTTPConflict(
-                    text=MSG_USER_DISABLED.format(
-                        support_email=current_product.support_email
-                    ),
+                    text=MSG_USER_DISABLED.format(support_email=current_product.support_email),
                     content_type=MIMETYPE_APPLICATION_JSON,
                 )
 
@@ -217,9 +207,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
     """
     try:
         url = get_invitation_url(
-            confirmation=BaseConfirmationTokenDict(
-                code=invitation_code, action=ConfirmationAction.INVITATION.name
-            ),
+            confirmation=BaseConfirmationTokenDict(code=invitation_code, action=ConfirmationAction.INVITATION.name),
             origin=URL("https://dummyhost.com:8000"),
         )
 
@@ -308,9 +296,7 @@ async def check_and_consume_invitation(
 
     # database-type invitations
     confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
-    if confirmation := await confirmation_service.validate_confirmation_code(
-        invitation_code
-    ):
+    if confirmation := await confirmation_service.validate_confirmation_code(invitation_code):
         try:
             confirmation_token_dict = {
                 "code": confirmation.code,
@@ -319,9 +305,7 @@ async def check_and_consume_invitation(
                 "data": confirmation.data,
                 "created_at": confirmation.created_at,
             }
-            invitation_data: ConfirmedInvitationData = (
-                _InvitationValidator.model_validate(confirmation_token_dict).data
-            )
+            invitation_data: ConfirmedInvitationData = _InvitationValidator.model_validate(confirmation_token_dict).data
             return invitation_data
 
         except ValidationError as err:
@@ -339,16 +323,13 @@ async def check_and_consume_invitation(
     raise web.HTTPForbidden(
         text=(
             "Invalid invitation code."
-            "Your invitation was already used or might have expired."
-            + MSG_INVITATIONS_CONTACT_SUFFIX
+            "Your invitation was already used or might have expired." + MSG_INVITATIONS_CONTACT_SUFFIX
         ),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
 
-def get_invitation_url(
-    confirmation: BaseConfirmationTokenDict, origin: URL | None = None
-) -> URL:
+def get_invitation_url(confirmation: BaseConfirmationTokenDict, origin: URL | None = None) -> URL:
     """Creates a URL to invite a user for registration
 
     This URL is sent to the user via email

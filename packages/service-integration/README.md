@@ -8,7 +8,7 @@ SEE how is it used in Makefiles in https://github.com/ITISFoundation/cookiecutte
 
 
 #### What is the .osparc folder and its content?
-'osparc config' is a set of stardard file forms (yaml) that the user fills provides in order to describe how her service works and integrates with osparc. It may contain:
+'osparc config' is a set of standard file forms (yaml) that the user fills provides in order to describe how her service works and integrates with osparc. It may contain:
   - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github, .vscode, etc)
   - configs are parsed and validated into pydantic models
   - models can be serialized/deserialized into label annotations on images. This way, the config is attached to the service during it's entire lifetime.

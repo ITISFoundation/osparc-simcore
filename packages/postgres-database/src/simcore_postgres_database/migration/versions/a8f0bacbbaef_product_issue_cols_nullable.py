@@ -23,9 +23,7 @@ def upgrade():
         "issues_login_url",
         existing_type=sa.VARCHAR(),
         nullable=True,
-        existing_server_default=sa.text(
-            "'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"
-        ),
+        existing_server_default=sa.text("'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"),
     )
     op.alter_column(
         "products",
@@ -55,8 +53,6 @@ def downgrade():
         "issues_login_url",
         existing_type=sa.VARCHAR(),
         nullable=False,
-        existing_server_default=sa.text(
-            "'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"
-        ),
+        existing_server_default=sa.text("'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"),
     )
     # ### end Alembic commands ###

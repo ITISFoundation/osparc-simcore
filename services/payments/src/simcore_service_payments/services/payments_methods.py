@@ -1,5 +1,5 @@
 """This service just keeps a reference of the payment method `payment_method_id`
-and all the details are stored externaly.
+and all the details are stored externally.
 
 The creation of this resource can use any of these two workflows:
 1. init-prompt-ack workflow
@@ -113,18 +113,12 @@ async def acknowledge_creation_of_payment_method(
 ) -> PaymentsMethodsDB:
     return await repo.update_ack_payment_method(
         payment_method_id=payment_method_id,
-        completion_state=(
-            InitPromptAckFlowState.SUCCESS
-            if ack.success
-            else InitPromptAckFlowState.FAILED
-        ),
+        completion_state=(InitPromptAckFlowState.SUCCESS if ack.success else InitPromptAckFlowState.FAILED),
         state_message=ack.message,
     )
 
 
-async def on_payment_method_completed(
-    payment_method: PaymentsMethodsDB, notifier: NotifierService
-):
+async def on_payment_method_completed(payment_method: PaymentsMethodsDB, notifier: NotifierService):
     assert payment_method.completed_at is not None  # nosec
     assert payment_method.initiated_at < payment_method.completed_at  # nosec
 
@@ -151,11 +145,7 @@ async def insert_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
-        completion_state=(
-            InitPromptAckFlowState.SUCCESS
-            if ack.success
-            else InitPromptAckFlowState.FAILED
-        ),
+        completion_state=(InitPromptAckFlowState.SUCCESS if ack.success else InitPromptAckFlowState.FAILED),
         state_message=ack.message,
     )
 
@@ -167,19 +157,14 @@ async def list_payment_methods(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> list[PaymentMethodGet]:
-    acked_many = await repo.list_user_payment_methods(
-        user_id=user_id, wallet_id=wallet_id
-    )
+    acked_many = await repo.list_user_payment_methods(user_id=user_id, wallet_id=wallet_id)
     assert not any(acked.completed_at is None for acked in acked_many)  # nosec
 
     got_many: list[GetPaymentMethod] = await gateway.get_many_payment_methods(
         [acked.payment_method_id for acked in acked_many]
     )
 
-    return [
-        merge_models(got, acked)
-        for acked, got in zip(acked_many, got_many, strict=True)
-    ]
+    return [merge_models(got, acked) for acked, got in zip(acked_many, got_many, strict=True)]
 
 
 async def get_payment_method(
@@ -190,9 +175,7 @@ async def get_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> PaymentMethodGet:
-    acked = await repo.get_payment_method(
-        payment_method_id, user_id=user_id, wallet_id=wallet_id
-    )
+    acked = await repo.get_payment_method(payment_method_id, user_id=user_id, wallet_id=wallet_id)
     assert acked.state == InitPromptAckFlowState.SUCCESS  # nosec
 
     got: GetPaymentMethod = await gateway.get_payment_method(acked.payment_method_id)
@@ -207,12 +190,8 @@ async def delete_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ):
-    acked = await repo.get_payment_method(
-        payment_method_id, user_id=user_id, wallet_id=wallet_id
-    )
+    acked = await repo.get_payment_method(payment_method_id, user_id=user_id, wallet_id=wallet_id)
 
     await gateway.delete_payment_method(acked.payment_method_id)
 
-    await repo.delete_payment_method(
-        acked.payment_method_id, user_id=acked.user_id, wallet_id=acked.wallet_id
-    )
+    await repo.delete_payment_method(acked.payment_method_id, user_id=acked.user_id, wallet_id=acked.wallet_id)

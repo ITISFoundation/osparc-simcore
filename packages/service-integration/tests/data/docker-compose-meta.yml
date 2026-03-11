@@ -13,10 +13,10 @@ services:
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.version: '{"version": "2.0.2"}'
         org.label-schema.build-date: ${BUILD_DATE}
-        org.label-schema.schema-version: '1.0'
+        org.label-schema.schema-version: "1.0"
         org.label-schema.vcs-ref: ${VCS_REF}
         org.label-schema.vcs-url: ${VCS_URL}
-        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports", "type": "int", "value": 8080}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports", "type": "int", "value": 8080}, {"name": "constraints", "type": "string", "value": ["node.platform.os==linux"]}]'
   dy-static-file-server-dynamic-sidecar:
     build:
       labels:
@@ -31,11 +31,11 @@ services:
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.version: '{"version": "2.0.2"}'
         org.label-schema.build-date: ${BUILD_DATE}
-        org.label-schema.schema-version: '1.0'
+        org.label-schema.schema-version: "1.0"
         org.label-schema.vcs-ref: ${VCS_REF}
         org.label-schema.vcs-url: ${VCS_URL}
         simcore.service.paths-mapping: '{"outputs_path": "/www/outputs", "inputs_path": "/www/inputs", "state_paths": ["/workdir/generated-data"]}'
-        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports", "type": "int", "value": 8080}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports", "type": "int", "value": 8080}, {"name": "constraints", "type": "string", "value": ["node.platform.os==linux"]}]'
   dy-static-file-server-dynamic-sidecar-compose-spec:
     build:
       labels:
@@ -50,14 +50,14 @@ services:
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.version: '{"version": "2.0.2"}'
         org.label-schema.build-date: ${BUILD_DATE}
-        org.label-schema.schema-version: '1.0'
+        org.label-schema.schema-version: "1.0"
         org.label-schema.vcs-ref: ${VCS_REF}
         org.label-schema.vcs-url: ${VCS_URL}
         simcore.service.compose-spec: '{"services":{"dy-static-file-server-dynamic-sidecar-compose-spec":{"environment":["MOCK_VALUE=TheMockedValue"],"image":"$${SIMCORE_REGISTRY}/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar-compose-spec:$${SERVICE_VERSION}","init":true},"some-side-service":{"command":"top","image":"busybox:latest","init":true}},"version":"3.7"}'
         simcore.service.container-http-entrypoint: dy-static-file-server-dynamic-sidecar-compose-spec
         simcore.service.paths-mapping: '{"outputs_path": "/www/outputs", "inputs_path": "/www/inputs", "state_paths": ["/workdir/generated-data"]}'
         simcore.service.restart-policy: on-inputs-downloaded
-        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports", "type": "int", "value": 8080}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports", "type": "int", "value": 8080}, {"name": "constraints", "type": "string", "value": ["node.platform.os==linux"]}]'
   rocket:
     build:
       labels:
@@ -72,9 +72,9 @@ services:
         io.simcore.thumbnail: '{"thumbnail": "https://i.imgur.com/bRxlzhp.png"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.version: '{"version": "2.0.87"}'
-        maintainer: some mantainer label
+        maintainer: some maintainer label
         org.label-schema.build-date: ${BUILD_DATE}
-        org.label-schema.schema-version: '1.0'
+        org.label-schema.schema-version: "1.0"
         org.label-schema.vcs-ref: ${VCS_REF}
         org.label-schema.vcs-url: ${VCS_URL}
         osparc-rocket.vcs-ref: ${VCS_REF}
@@ -86,4 +86,4 @@ services:
         simcore.service.paths-mapping: '{"outputs_path": "/home/smu/work/outputs", "inputs_path": "/home/smu/work/inputs", "state_paths": ["/home/smu/work/workspace"], "volume_size_limits": {"/home/smu/work/workspace": "5G", "/home/smu/work/outputs": "10m", "/home/smu/work/inputs": "10M"}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 80}, {"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000}, "Reservations": {"NanoCPUs": 1000000000}}}, {"name": "env", "type": "string", "value": ["rocket_CORE_HOSTNAME=%%container_name.rocket-core%%"]}]'
 
-version: '3.7'
+version: "3.7"

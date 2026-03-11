@@ -119,9 +119,7 @@ class PaymentTransaction(OutputSchema):
     created_at: datetime
     completed_at: datetime | None
     # SEE PaymentTransactionState enum
-    state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(
-        ..., alias="completedStatus"
-    )
+    state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(..., alias="completedStatus")
     state_message: str | None = Field(default=None)
     invoice_url: HttpUrl | None = Field(default=None)
 
@@ -225,12 +223,11 @@ class GetWalletAutoRecharge(OutputSchema):
     )
     top_up_amount_in_usd: NonNegativeDecimal = Field(
         ...,
-        description="Amount in USD payed when auto-recharge condition is satisfied",
+        description="Amount in USD paid when auto-recharge condition is satisfied",
     )
     monthly_limit_in_usd: NonNegativeDecimal | None = Field(
         ...,
-        description="Maximum amount in USD charged within a natural month."
-        "None indicates no limit.",
+        description="Maximum amount in USD charged within a natural month.None indicates no limit.",
     )
 
 

@@ -5,9 +5,7 @@ from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-SemanticVersionStr: TypeAlias = Annotated[
-    str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-]
+SemanticVersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
 
 
 def bump_version_string(current_version: str, bump: str) -> str:
@@ -24,11 +22,11 @@ def bump_version_string(current_version: str, bump: str) -> str:
 
     major, minor, patch = version.major, version.minor, version.micro
     if bump == "major":
-        new_version = f"{major+1}.0.0"
+        new_version = f"{major + 1}.0.0"
     elif bump == "minor":
-        new_version = f"{major}.{minor+1}.0"
+        new_version = f"{major}.{minor + 1}.0"
     else:
-        new_version = f"{major}.{minor}.{patch+1}"
+        new_version = f"{major}.{minor}.{patch + 1}"
     return new_version
 
 
@@ -66,9 +64,7 @@ class ExecutableVersionInfo(BaseModel):
 
 class ServiceVersionInfo(BaseModel):
     version: SemanticVersionStr
-    integration_version: SemanticVersionStr = Field(
-        ..., description="osparc internal integration version"
-    )
+    integration_version: SemanticVersionStr = Field(..., description="osparc internal integration version")
     released: datetime = Field(..., description="Publication/release date")
 
     model_config = ConfigDict(

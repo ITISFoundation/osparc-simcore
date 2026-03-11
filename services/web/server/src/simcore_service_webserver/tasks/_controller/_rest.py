@@ -114,9 +114,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _task_id = f"{task_status.job_id}"
     return create_data_response(
         TaskStatus(
-            task_progress=TaskProgress(
-                task_id=_task_id, percent=task_status.progress.percent_value
-            ),
+            task_progress=TaskProgress(task_id=_task_id, percent=task_status.progress.percent_value),
             done=task_status.done,
             started=None,
         ),
@@ -155,7 +153,6 @@ async def cancel_async_job(request: web.Request) -> web.Response:
 @login_required
 @handle_rest_requests_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
@@ -183,12 +180,9 @@ async def get_async_job_result(request: web.Request) -> web.Response:
 @login_required
 @handle_rest_requests_exceptions
 async def get_async_job_stream(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
-    _query_params: TaskStreamQueryParams = parse_request_query_parameters_as(
-        TaskStreamQueryParams, request
-    )
+    _query_params: TaskStreamQueryParams = parse_request_query_parameters_as(TaskStreamQueryParams, request)
 
     task_result, end = await _tasks_service.pull_task_stream_items(
         get_task_manager(request.app),

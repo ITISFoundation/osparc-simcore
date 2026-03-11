@@ -17,9 +17,7 @@ FilterT = TypeVar("FilterT", bound=Filters)
 
 
 class FiltersQueryParameters(BaseModel, Generic[FilterT]):
-    filters: Annotated[FilterT | None, BeforeValidator(parse_json_pre_validator)] = (
-        Field(  # pylint: disable=unsubscriptable-object
-            default=None,
-            description="Custom filter query parameter encoded as JSON",
-        )
+    filters: Annotated[FilterT | None, BeforeValidator(parse_json_pre_validator)] = Field(  # pylint: disable=unsubscriptable-object
+        default=None,
+        description="Custom filter query parameter encoded as JSON",
     )

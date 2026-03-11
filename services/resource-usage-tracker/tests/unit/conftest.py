@@ -81,18 +81,14 @@ def app_environment(
 
 
 @pytest.fixture
-def disabled_prometheus(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def disabled_prometheus(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("PROMETHEUS_URL")
     monkeypatch.delenv("PROMETHEUS_USERNAME")
     monkeypatch.delenv("PROMETHEUS_PASSWORD")
 
 
 @pytest.fixture
-def disabled_database(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def disabled_database(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("POSTGRES_HOST")
     monkeypatch.delenv("POSTGRES_USER")
     monkeypatch.delenv("POSTGRES_PASSWORD")
@@ -108,16 +104,12 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 
 @pytest.fixture
-def enabled_rabbitmq(
-    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
-) -> RabbitSettings:
+def enabled_rabbitmq(app_environment: EnvVarsDict, rabbit_service: RabbitSettings) -> RabbitSettings:
     return rabbit_service
 
 
 @pytest.fixture
-def app_settings(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> ApplicationSettings:
+def app_settings(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> ApplicationSettings:
     return ApplicationSettings.create_from_envs()
 
 
@@ -130,18 +122,14 @@ def tracing_config(app_settings: ApplicationSettings) -> TracingConfig:
 
 
 @pytest.fixture
-async def initialized_app(
-    app_settings: ApplicationSettings, tracing_config: TracingConfig
-) -> AsyncIterator[FastAPI]:
+async def initialized_app(app_settings: ApplicationSettings, tracing_config: TracingConfig) -> AsyncIterator[FastAPI]:
     app = create_app(app_settings, tracing_config=tracing_config)
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
-def client(
-    app_settings: ApplicationSettings, tracing_config: TracingConfig
-) -> Iterator[TestClient]:
+def client(app_settings: ApplicationSettings, tracing_config: TracingConfig) -> Iterator[TestClient]:
     app = create_app(app_settings, tracing_config=tracing_config)
     with TestClient(app, base_url="http://testserver.test") as client:
         yield client
@@ -158,9 +146,7 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
 
 
 @pytest.fixture
-def mocked_prometheus(
-    requests_mock: requests_mock.Mocker, app_settings: ApplicationSettings
-) -> requests_mock.Mocker:
+def mocked_prometheus(requests_mock: requests_mock.Mocker, app_settings: ApplicationSettings) -> requests_mock.Mocker:
     assert app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
     requests_mock.get(f"{app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url}/")
     return requests_mock
@@ -182,11 +168,7 @@ def get_metric_response(faker: Faker) -> Callable[..., dict[str, Any]]:
                                         "name": "Resources",
                                         "type": "Resources",
                                         "resources": faker.pystr(),
-                                        "value": {
-                                            "Limits": {
-                                                "NanoCPUs": faker.pyint(min_value=1000)
-                                            }
-                                        },
+                                        "value": {"Limits": {"NanoCPUs": faker.pyint(min_value=1000)}},
                                     }
                                 ]
                             ),
@@ -209,9 +191,7 @@ def mocked_prometheus_with_query(
 ) -> requests_mock.Mocker:
     """overrides with needed calls here"""
     assert app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
-    pattern = re.compile(
-        rf"^{re.escape(app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url)}/api/v1/query\?.*$"
-    )
+    pattern = re.compile(rf"^{re.escape(app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url)}/api/v1/query\?.*$")
     mocked_prometheus.get(pattern, json=get_metric_response)
     return mocked_prometheus
 

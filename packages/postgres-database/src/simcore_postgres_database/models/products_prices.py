@@ -64,9 +64,7 @@ products_prices = sa.Table(
         nullable=False,
         doc="Stripe tax rate ID associated to this product. Currently created manually in Stripe",
     ),
-    sa.CheckConstraint(
-        "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
-    ),
+    sa.CheckConstraint("usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"),
 )
 
 

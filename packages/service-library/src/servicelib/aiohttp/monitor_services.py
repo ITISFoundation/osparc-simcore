@@ -40,9 +40,7 @@ MONITOR_SERVICE_STOPPED_LABELS: list[str] = [
 ]
 
 
-def add_instrumentation(
-    app: web.Application, reg: CollectorRegistry, app_name: str
-) -> None:
+def add_instrumentation(app: web.Application, reg: CollectorRegistry, app_name: str) -> None:
     app[MONITOR_SERVICE_STARTED_APPKEY] = Counter(
         name="services_started_total",
         documentation="Counts the services started",

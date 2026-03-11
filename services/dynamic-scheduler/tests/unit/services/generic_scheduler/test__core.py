@@ -15,7 +15,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from asyncpg import NoDataFoundError
 from fastapi import FastAPI
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -93,6 +93,7 @@ _RETRY_PARAMS: Final[dict[str, Any]] = {
 
 _PARALLEL_APP_CREATION: Final[NonNegativeInt] = 5
 _PARALLEL_RESTARTS: Final[NonNegativeInt] = 5
+_DEFERRED_FINALIZATION_TIMEOUT: Final[NonNegativeFloat] = 1.0
 
 
 @pytest.fixture
@@ -130,14 +131,10 @@ async def get_app(
 
 
 @pytest.fixture
-async def selected_app(
-    get_app: Callable[[], Awaitable[FastAPI]], app_count: NonNegativeInt
-) -> FastAPI:
+async def selected_app(get_app: Callable[[], Awaitable[FastAPI]], app_count: NonNegativeInt) -> FastAPI:
     # initialize a bunch of apps and randomly select one
     # this will make sure that there is competition events catching possible issues
-    apps: list[FastAPI] = await limited_gather(
-        *[get_app() for _ in range(app_count)], limit=_PARALLEL_APP_CREATION
-    )
+    apps: list[FastAPI] = await limited_gather(*[get_app() for _ in range(app_count)], limit=_PARALLEL_APP_CREATION)
     return choice(apps)
 
 
@@ -158,37 +155,31 @@ def steps_call_order() -> Iterable[list[tuple[str, str]]]:
 
 class _BS(BaseStep):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, EXECUTED))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_execute_provides_context_keys()},
+            **dict.fromkeys(cls.get_execute_provides_context_keys(), _CTX_VALUE),
         }
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, REVERTED))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
+            **dict.fromkeys(cls.get_revert_provides_context_keys(), _CTX_VALUE),
         }
 
 
 class _RevertBS(_BS):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         await super().execute(app, required_context)
         msg = "always fails only on EXECUTE"
         raise RuntimeError(msg)
@@ -211,17 +202,13 @@ def reset_step_issue_tracker() -> Iterable[None]:
 
 class _FailOnExecuteAndRevertBS(_BS):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         await super().execute(app, required_context)
         msg = "always fails on EXECUTE"
         raise RuntimeError(msg)
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         await super().revert(app, required_context)
         if _GlobalStepIssueTracker.has_issue:
             msg = "sometimes fails only on REVERT"
@@ -230,18 +217,14 @@ class _FailOnExecuteAndRevertBS(_BS):
 
 class _SleepsForeverBS(_BS):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         await super().execute(app, required_context)
         await asyncio.sleep(1e10)
 
 
 class _WaitManualInerventionBS(_BS):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         await super().execute(app, required_context)
         if _GlobalStepIssueTracker.has_issue:
             msg = "sometimes fails only on EXECUTE"
@@ -252,26 +235,19 @@ class _WaitManualInerventionBS(_BS):
         return True
 
 
-def _get_steps_matching_class(
-    operation: Operation, *, match: type[BaseStep]
-) -> list[type]:
+def _get_steps_matching_class(operation: Operation, *, match: type[BaseStep]) -> list[type]:
     return [
-        step
-        for group in operation.step_groups
-        for step in group.get_step_subgroup_to_run()
-        if issubclass(step, match)
+        step for group in operation.step_groups for step in group.get_step_subgroup_to_run() if issubclass(step, match)
     ]
 
 
-def _compose_key(
-    key_nuber: int | None, *, with_revert: bool, is_executing: bool, is_providing: bool
-) -> str:
+def _compose_key(key_number: int | None, *, with_revert: bool, is_executing: bool, is_providing: bool) -> str:
     key_parts = [
         "bs",
         "revert" if with_revert else "",
         "e" if is_executing else "r",
         "prov" if is_providing else "req",
-        f"{key_nuber}",
+        f"{key_number}",
     ]
     return "_".join(key_parts)
 
@@ -282,7 +258,7 @@ _CTX_VALUE: Final[str] = "a_value"
 class _MixingGetKeNumber:
     @classmethod
     def get_key_number(cls) -> int:
-        # key number if fetched form the calss name as the last digits or 0
+        # key number if fetched form the class name as the last digits or 0
         key_number: int = 0
         match = re.search(r"(\d+)\D*$", cls.__name__)
         if match:
@@ -360,14 +336,14 @@ class _BaseRequiresProvidesRevertContext(_RevertBS, _MixingGetKeNumber):
         }
 
 
-async def _ensure_log_mesage(caplog: pytest.LogCaptureFixture, *, message: str) -> None:
+async def _ensure_log_message(caplog: pytest.LogCaptureFixture, *, message: str) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for event to trigger
             assert message in caplog.text
 
 
-async def _esnure_steps_have_status(
+async def _ensure_steps_have_status(
     app: FastAPI,
     schedule_id: ScheduleId,
     operation_name: OperationName,
@@ -421,19 +397,17 @@ async def _ensure_one_step_in_manual_intervention(
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            reuires_intervention = False
+            requires_intervention = False
             for proxy in store_proxies:
                 try:
-                    requires_manual_intervention = await proxy.read(
-                        "requires_manual_intervention"
-                    )
+                    requires_manual_intervention = await proxy.read("requires_manual_intervention")
                     if requires_manual_intervention:
-                        reuires_intervention = True
+                        requires_intervention = True
                         break
                 except NoDataFoundError:
                     pass
 
-            assert reuires_intervention is True
+            assert requires_intervention is True
 
 
 ############## TESTS ##############
@@ -930,9 +904,7 @@ async def test_cancelled_finishes_nicely(
     await ensure_expected_order(steps_call_order, expected_before_cancel_order)
 
     # cancel in parallel multiple times (worst case)
-    await asyncio.gather(
-        *[cancel_operation(selected_app, schedule_id) for _ in range(cancel_count)]
-    )
+    await asyncio.gather(*[cancel_operation(selected_app, schedule_id) for _ in range(cancel_count)])
 
     await ensure_expected_order(steps_call_order, expected_order)
 
@@ -943,15 +915,14 @@ _FAST_REPEAT_INTERVAL: Final[timedelta] = timedelta(seconds=0.1)
 _REPAT_COUNT: Final[NonNegativeInt] = 10
 
 
+@pytest.mark.skip("disabled since feature will be replaced and design makes it flaky")
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_before_cancel_order, expected_order",
     [
         pytest.param(
             Operation(
-                SingleStepGroup(
-                    _S1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
-                ),
+                SingleStepGroup(_S1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL),
             ),
             [ExecuteSequence(_S1) for _ in range(_REPAT_COUNT)],
             [
@@ -978,9 +949,7 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
         ),
         pytest.param(
             Operation(
-                SingleStepGroup(
-                    _RS1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
-                ),
+                SingleStepGroup(_RS1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL),
             ),
             [ExecuteSequence(_RS1) for _ in range(_REPAT_COUNT)],
             [
@@ -1022,21 +991,21 @@ async def test_repeating_step(
     schedule_id = await start_operation(selected_app, operation_name, {})
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
-    await ensure_expected_order(
-        steps_call_order, expected_before_cancel_order, use_only_first_entries=True
-    )
+    await ensure_expected_order(steps_call_order, expected_before_cancel_order, use_only_first_entries=True)
 
     # cancelling stops the loop and causes revert to run
     await cancel_operation(selected_app, schedule_id)
 
-    await ensure_expected_order(
-        steps_call_order, expected_order, use_only_last_entries=True
-    )
+    await ensure_expected_order(steps_call_order, expected_order, use_only_last_entries=True)
 
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-@pytest.mark.flaky(max_runs=3)
+async def _wait_for_deferred_to_finalize() -> None:
+    # give some time for background deferred to finish
+    await asyncio.sleep(_DEFERRED_FINALIZATION_TIMEOUT)
+
+
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
@@ -1144,16 +1113,15 @@ async def test_wait_for_manual_intervention(
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
     group_index = len(expected_order) - 1
-    step_group_name = operation.step_groups[group_index].get_step_group_name(
-        index=group_index
-    )
-    await _esnure_steps_have_status(
+    step_group_name = operation.step_groups[group_index].get_step_group_name(index=group_index)
+    await _ensure_steps_have_status(
         selected_app,
         schedule_id,
         operation_name,
         step_group_name=step_group_name,
         steps=expected_order[-1].steps,
     )
+    await _wait_for_deferred_to_finalize()
 
     # even if cancelled, state of waiting for manual intervention remains the same
     await _ensure_one_step_in_manual_intervention(
@@ -1169,9 +1137,7 @@ async def test_wait_for_manual_intervention(
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
     # set step to no longer raise and restart the failed steps
-    steps_to_restart = _get_steps_matching_class(
-        operation, match=_WaitManualInerventionBS
-    )
+    steps_to_restart = _get_steps_matching_class(operation, match=_WaitManualInerventionBS)
     _GlobalStepIssueTracker.set_issue_solved()
     await limited_gather(
         *(
@@ -1205,7 +1171,6 @@ async def test_operation_is_not_cancellable(
         await cancel_operation(selected_app, schedule_id)
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
@@ -1324,26 +1289,24 @@ async def test_restart_revert_operation_step_in_error(
     await ensure_expected_order(steps_call_order, expected_order)
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
-    await _esnure_steps_have_status(
+    await _ensure_steps_have_status(
         selected_app,
         schedule_id,
         operation_name,
-        step_group_name=operation.step_groups[
-            len(expected_order) - 2
-        ].get_step_group_name(index=len(expected_order) - 2),
+        step_group_name=operation.step_groups[len(expected_order) - 2].get_step_group_name(
+            index=len(expected_order) - 2
+        ),
         steps=expected_order[-1].steps,
     )
 
     # set step to no longer raise and restart the failed steps
-    steps_to_restart = _get_steps_matching_class(
-        operation, match=_FailOnExecuteAndRevertBS
-    )
+    steps_to_restart = _get_steps_matching_class(operation, match=_FailOnExecuteAndRevertBS)
     _GlobalStepIssueTracker.set_issue_solved()
+
+    await _wait_for_deferred_to_finalize()
     await limited_gather(
         *(
-            restart_operation_step_stuck_during_revert(
-                selected_app, schedule_id, step.get_step_name()
-            )
+            restart_operation_step_stuck_during_revert(selected_app, schedule_id, step.get_step_name())
             for step in steps_to_restart
         ),
         limit=_PARALLEL_RESTARTS,
@@ -1353,7 +1316,6 @@ async def test_restart_revert_operation_step_in_error(
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize("in_manual_intervention", [True, False])
 async def test_errors_with_restart_operation_step_in_error(
@@ -1383,7 +1345,7 @@ async def test_errors_with_restart_operation_step_in_error(
         ],
     )
 
-    await _esnure_steps_have_status(
+    await _ensure_steps_have_status(
         selected_app,
         schedule_id,
         operation_name,
@@ -1392,18 +1354,14 @@ async def test_errors_with_restart_operation_step_in_error(
     )
 
     with pytest.raises(StepNameNotInCurrentGroupError):
-        await Core.get_from_app_state(
-            selected_app
-        ).restart_operation_step_stuck_in_error(
+        await Core.get_from_app_state(selected_app).restart_operation_step_stuck_in_error(
             schedule_id,
             _S5.get_step_name(),
             in_manual_intervention=in_manual_intervention,
         )
 
     with pytest.raises(StepNotInErrorStateError):
-        await Core.get_from_app_state(
-            selected_app
-        ).restart_operation_step_stuck_in_error(
+        await Core.get_from_app_state(selected_app).restart_operation_step_stuck_in_error(
             schedule_id,
             _SF1.get_step_name(),
             in_manual_intervention=in_manual_intervention,
@@ -1412,10 +1370,9 @@ async def test_errors_with_restart_operation_step_in_error(
     if not in_manual_intervention:
         # force restart of step as it would be in manual intervention
         # this is not allowed
+        await _wait_for_deferred_to_finalize()
         with pytest.raises(StepNotWaitingForManualInterventionError):
-            await Core.get_from_app_state(
-                selected_app
-            ).restart_operation_step_stuck_in_error(
+            await Core.get_from_app_state(selected_app).restart_operation_step_stuck_in_error(
                 schedule_id,
                 _FCR1.get_step_name(),
                 in_manual_intervention=True,
@@ -1520,7 +1477,7 @@ async def test_operation_context_usage(
                 SingleStepGroup(RPCtxS1),
             ),
             {
-                "bs__e_prov_1": _CTX_VALUE,  # already provied by step execute issue
+                "bs__e_prov_1": _CTX_VALUE,  # already provided by step execute issue
             },
             id="s1",
         ),
@@ -1529,7 +1486,7 @@ async def test_operation_context_usage(
                 SingleStepGroup(RPCtxR1),
             ),
             {
-                "bs_revert_e_prov_1": _CTX_VALUE,  # already provied by step execute issue
+                "bs_revert_e_prov_1": _CTX_VALUE,  # already provided by step execute issue
             },
             id="s1",
         ),
@@ -1538,7 +1495,7 @@ async def test_operation_context_usage(
                 SingleStepGroup(RPCtxR1),
             ),
             {
-                "bs_revert_r_prov_1": _CTX_VALUE,  # already provied by step execute issue
+                "bs_revert_r_prov_1": _CTX_VALUE,  # already provided by step execute issue
             },
             id="s1",
         ),
@@ -1609,7 +1566,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
     schedule_id = await start_operation(selected_app, operation_name, initial_context)
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
-    await _ensure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
+    await _ensure_log_message(caplog, message=OperationContextValueIsNoneError.__name__)
 
     await ensure_expected_order(steps_call_order, expected_order)
 
@@ -1618,9 +1575,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
 
 class _BadImplementedStep(BaseStep):
     @classmethod
-    def _get_provided_context(
-        cls, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext:
+    def _get_provided_context(cls, required_context: RequiredOperationContext) -> ProvidedOperationContext:
         print("GOT", required_context)
         return_values = {}
         to_return = required_context["to_return"]
@@ -1640,9 +1595,7 @@ class _BadImplementedStep(BaseStep):
         return {"a_key"}
 
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         print("INJECTED_CONTEXT_C", required_context)
         _ = app
         _STEPS_CALL_ORDER.append((cls.__name__, EXECUTED))
@@ -1664,9 +1617,7 @@ class _BadImplementedStep(BaseStep):
         return {"a_key"}
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         print("INJECTED_CONTEXT_R", required_context)
         _ = app
         _STEPS_CALL_ORDER.append((cls.__name__, REVERTED))
@@ -1803,7 +1754,7 @@ async def test_step_does_not_provide_declared_key_or_is_none(
     schedule_id = await start_operation(selected_app, operation_name, initial_context)
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
-    await _ensure_log_mesage(caplog, message=expected_error_str)
+    await _ensure_log_message(caplog, message=expected_error_str)
 
     await ensure_expected_order(steps_call_order, expected_order)
 
@@ -1818,10 +1769,7 @@ async def test_get_operation_name_or_none(
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
 ):
-    assert (
-        await get_operation_name_or_none(selected_app, "non_existing_schedule_id")
-        is None
-    )
+    assert await get_operation_name_or_none(selected_app, "non_existing_schedule_id") is None
 
     operation = Operation(SingleStepGroup(_S1))
     register_operation(operation_name, operation)

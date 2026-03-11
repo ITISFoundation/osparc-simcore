@@ -31,18 +31,10 @@ async def list_service_ports(
 
     if service.inputs:
         for name, input_port in service.inputs.items():
-            ports.append(
-                ServicePortGet.from_domain_model(
-                    kind="input", key=name, port=input_port
-                )
-            )
+            ports.append(ServicePortGet.from_domain_model(kind="input", key=name, port=input_port))
 
     if service.outputs:
         for name, output_port in service.outputs.items():
-            ports.append(
-                ServicePortGet.from_domain_model(
-                    kind="output", key=name, port=output_port
-                )
-            )
+            ports.append(ServicePortGet.from_domain_model(kind="output", key=name, port=output_port))
 
     return ports

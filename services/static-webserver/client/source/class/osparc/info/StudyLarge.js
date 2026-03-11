@@ -138,7 +138,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         "TITLE": {
           view: osparc.info.StudyUtils.createTitle(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit title")),
             callback: canIWrite ? this.__openTitleEditor : null,
             ctx: this
           }
@@ -146,7 +146,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         "THUMBNAIL": {
           view: this.__createThumbnail(),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit thumbnail")),
             callback: canIWrite ? this.__openThumbnailEditor : null,
             ctx: this
           }
@@ -154,7 +154,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         "DESCRIPTION": {
           view: osparc.info.StudyUtils.createDescription(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit description")),
             callback: canIWrite ? this.__openDescriptionEditor : null,
             ctx: this
           }
@@ -168,7 +168,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Access"),
           view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getLinkButton(canIWrite),
+            button: osparc.utils.Utils.getLinkButton(canIWrite, this.tr("Go to Sharing")),
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this
           }
@@ -187,7 +187,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Tags"),
           view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getLinkButton(canIWrite),
+            button: osparc.utils.Utils.getLinkButton(canIWrite, this.tr("Go to Tags")),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
             ctx: this
           }
@@ -203,7 +203,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Quality"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getLinkButton(),
+            button: osparc.utils.Utils.getLinkButton(true, this.tr("Go to Quality")),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
@@ -215,7 +215,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Classifiers"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || canIWrite) ? {
-            button: osparc.utils.Utils.getLinkButton(),
+            button: osparc.utils.Utils.getLinkButton(true, this.tr("Go to Classifiers")),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           } : null
@@ -304,10 +304,11 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize());
-      const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
+      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize()).set({
+        liveUpdate: true,
+      });
+      osparc.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
-        win.close();
         const updatedData = e.getData();
         this.getStudy().setTags(updatedData["tags"]);
         this.fireDataEvent("updateStudy", updatedData);

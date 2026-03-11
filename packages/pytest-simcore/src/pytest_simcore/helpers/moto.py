@@ -26,16 +26,12 @@ def _patch_send_command(self, operation_name, api_params) -> Any:
     )
 
     assert "Targets" in api_params, "Targets is missing in the API call"
-    assert (
-        len(api_params["Targets"]) == 1
-    ), "Targets for patched SendCommand should have only one item"
+    assert len(api_params["Targets"]) == 1, "Targets for patched SendCommand should have only one item"
     target_data = api_params["Targets"][0]
     assert "Key" in target_data
     assert "Values" in target_data
     target_key = target_data["Key"]
-    assert (
-        target_key == "InstanceIds"
-    ), "Targets for patched SendCommand should have InstanceIds as key"
+    assert target_key == "InstanceIds", "Targets for patched SendCommand should have InstanceIds as key"
     instance_ids = target_data["Values"]
     new_api_params = deepcopy(api_params)
     new_api_params.pop("Targets")
@@ -43,9 +39,7 @@ def _patch_send_command(self, operation_name, api_params) -> Any:
     return orig(self, operation_name, new_api_params)
 
 
-def _patch_describe_instance_information(
-    self, operation_name, api_params
-) -> dict[str, Any]:
+def _patch_describe_instance_information(self, operation_name, api_params) -> dict[str, Any]:
     warnings.warn(
         "moto is missing the describe_instance_information function, therefore it is manually mocked."
         "TIP: periodically check if it gets updated https://docs.getmoto.org/en/latest/docs/services/ssm.html#ssm",

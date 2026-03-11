@@ -9,9 +9,7 @@ import pytest
 
 
 def pytest_addoption(parser: pytest.Parser):
-    parser.addoption(
-        "--service-under-test-dir", help="Root directory of the service under test"
-    )
+    parser.addoption("--service-under-test-dir", help="Root directory of the service under test")
 
 
 @pytest.fixture

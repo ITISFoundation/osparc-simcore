@@ -26,18 +26,10 @@ def mock_parametrized_project(fake_data_dir):
 
 
 def test_substitutions(mock_parametrized_project):
-
     template_id = mock_parametrized_project["uuid"]
-    url = URL(f"https://myplatform/study/{template_id}").with_query(
-        my_Na="33", my_BCL="54.0"
-    )
+    url = URL(f"https://myplatform/study/{template_id}").with_query(my_Na="33", my_BCL="54.0")
 
     prj = substitute_parameterized_inputs(mock_parametrized_project, dict(url.query))
     assert prj
-    assert (
-        prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Na"] == 33
-    )
-    assert (
-        prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["BCL"]
-        == 54.0
-    )
+    assert prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Na"] == 33
+    assert prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["BCL"] == 54.0

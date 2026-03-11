@@ -55,11 +55,7 @@ def resource_tracker_service_run_id(
     with postgres_db.connect() as con:
         result = con.execute(
             resource_tracker_service_runs.insert()
-            .values(
-                **random_resource_tracker_service_run(
-                    user_id=_USER_ID_1, wallet_id=_WALLET_ID
-                )
-            )
+            .values(**random_resource_tracker_service_run(user_id=_USER_ID_1, wallet_id=_WALLET_ID))
             .returning(resource_tracker_service_runs.c.service_run_id)
         )
         row = result.first()
@@ -105,9 +101,7 @@ async def test_rpc_licensed_items_checkouts_workflow(
         user_email="test@test.com",
         purchased_at=datetime.now(tz=UTC),
     )
-    created_item = await licensed_items_purchases.create_licensed_item_purchase(
-        rpc_client, data=_create_data
-    )
+    created_item = await licensed_items_purchases.create_licensed_item_purchase(rpc_client, data=_create_data)
 
     # Checkout with num of seats
     checkout = await licensed_items_checkouts.checkout_licensed_item(
@@ -183,9 +177,7 @@ async def test_rpc_licensed_items_checkouts_can_checkout_older_version(
         user_email="test@test.com",
         purchased_at=datetime.now(tz=UTC),
     )
-    created_item = await licensed_items_purchases.create_licensed_item_purchase(
-        rpc_client, data=_create_data
-    )
+    created_item = await licensed_items_purchases.create_licensed_item_purchase(rpc_client, data=_create_data)
 
     # Checkout with num of seats
     checkout = await licensed_items_checkouts.checkout_licensed_item(
@@ -261,9 +253,7 @@ async def test_rpc_licensed_items_checkouts_can_not_checkout_newer_version(
         user_email="test@test.com",
         purchased_at=datetime.now(tz=UTC),
     )
-    created_item = await licensed_items_purchases.create_licensed_item_purchase(
-        rpc_client, data=_create_data
-    )
+    created_item = await licensed_items_purchases.create_licensed_item_purchase(rpc_client, data=_create_data)
 
     # Checkout with num of seats
     with pytest.raises(NotEnoughAvailableSeatsError):

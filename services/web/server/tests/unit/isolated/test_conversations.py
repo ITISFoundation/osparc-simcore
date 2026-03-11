@@ -8,9 +8,7 @@ from simcore_postgres_database.models.conversations import (
 
 
 async def _test_conversation_enums():
-    assert [member.value for member in ConversationType] == [
-        member.value for member in PostgresConversationType
-    ]
+    assert [member.value for member in ConversationType] == [member.value for member in PostgresConversationType]
     assert [member.value for member in ConversationMessageType] == [
         member.value for member in PostgresConversationMessageType
     ]

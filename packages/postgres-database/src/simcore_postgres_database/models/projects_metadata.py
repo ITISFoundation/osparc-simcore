@@ -1,5 +1,5 @@
 """
-These tables were designed to be controled by projects-plugin in
+These tables were designed to be controlled by projects-plugin in
 the webserver's service
 """
 
@@ -101,9 +101,7 @@ projects_metadata = sa.Table(
         name="fk_projects_metadata_root_parent_node_id",
     ),
     #######
-    sa.Index(
-        "idx_projects_metadata_root_parent_project_uuid", "root_parent_project_uuid"
-    ),
+    sa.Index("idx_projects_metadata_root_parent_project_uuid", "root_parent_project_uuid"),
 )
 
 

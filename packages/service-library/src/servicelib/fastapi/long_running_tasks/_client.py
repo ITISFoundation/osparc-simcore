@@ -114,7 +114,7 @@ class HttpClient:
 
     def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: str):
         """
-        `app`: used byt the `Client` to recover the `ClientConfiguration`
+        `app`: used byte the `Client` to recover the `ClientConfiguration`
         `async_client`: an AsyncClient instance used by `Client`
         `base_url`: base endpoint where the server is listening on
         """
@@ -134,7 +134,10 @@ class HttpClient:
 
     @retry_on_http_errors
     async def get_task_status(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
+        self,
+        task_id: TaskId,
+        *,
+        timeout: PositiveFloat | None = None,  # noqa: ASYNC109
     ) -> TaskStatus:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
@@ -153,7 +156,10 @@ class HttpClient:
 
     @retry_on_http_errors
     async def get_task_result(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
+        self,
+        task_id: TaskId,
+        *,
+        timeout: PositiveFloat | None = None,  # noqa: ASYNC109
     ) -> Any | None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
@@ -172,7 +178,10 @@ class HttpClient:
 
     @retry_on_http_errors
     async def remove_task(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
+        self,
+        task_id: TaskId,
+        *,
+        timeout: PositiveFloat | None = None,  # noqa: ASYNC109
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(

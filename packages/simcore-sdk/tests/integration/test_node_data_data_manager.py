@@ -71,10 +71,7 @@ def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     if path_to_hash.is_file():
         return {(_relative_path(path_to_hash, path_to_hash), _hash_path(path_to_hash))}
 
-    return {
-        (_relative_path(path_to_hash, path), _hash_path(path))
-        for path in path_to_hash.rglob("*")
-    }
+    return {(_relative_path(path_to_hash, path), _hash_path(path)) for path in path_to_hash.rglob("*")}
 
 
 def _make_file_with_content(file_path: Path) -> Path:
@@ -161,7 +158,7 @@ async def test_valid_upload_download(
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             source_path=content_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
@@ -176,7 +173,7 @@ async def test_valid_upload_download(
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             destination_path=content_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
@@ -204,7 +201,7 @@ async def test_valid_upload_download_saved_to(
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             source_path=content_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
@@ -222,7 +219,7 @@ async def test_valid_upload_download_saved_to(
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             destination_path=content_path,
             save_to=new_destination,
             io_log_redirect_cb=mock_io_log_redirect_cb,
@@ -274,7 +271,7 @@ async def test_delete_legacy_archive(
             await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
                 project_id=project_id,
-                node_uuid=node_uuid,
+                node_id=node_uuid,
                 path=content_path,
                 is_archive=True,
             )
@@ -283,7 +280,7 @@ async def test_delete_legacy_archive(
 
         await data_manager._delete_legacy_archive(  # noqa: SLF001
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             path=content_path,
             application_name=faker.pystr(),
         )
@@ -292,7 +289,7 @@ async def test_delete_legacy_archive(
             await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
                 project_id=project_id,
-                node_uuid=node_uuid,
+                node_id=node_uuid,
                 path=content_path,
                 is_archive=True,
             )

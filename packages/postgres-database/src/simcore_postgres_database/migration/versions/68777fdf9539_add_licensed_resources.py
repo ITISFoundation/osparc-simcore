@@ -18,9 +18,7 @@ depends_on = None
 
 
 # Reuse the existing Enum type
-licensed_resource_type = postgresql.ENUM(
-    "VIP_MODEL", name="licensedresourcetype", create_type=False
-)
+licensed_resource_type = postgresql.ENUM("VIP_MODEL", name="licensedresourcetype", create_type=False)
 
 
 def upgrade():

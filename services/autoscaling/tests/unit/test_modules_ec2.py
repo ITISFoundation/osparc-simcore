@@ -43,9 +43,7 @@ def create_ec2_instance_config(
 ) -> Callable[[InstanceTypeType], EC2InstanceConfig]:
     def _(instance_type: InstanceTypeType) -> EC2InstanceConfig:
         return EC2InstanceConfig(
-            type=EC2InstanceType(
-                name=instance_type, resources=Resources.create_as_empty()
-            ),
+            type=EC2InstanceType(name=instance_type, resources=Resources.create_as_empty()),
             tags=faker.pydict(allowed_types=(str,)),
             startup_script=faker.pystr(),
             ami_id=aws_ami_id,

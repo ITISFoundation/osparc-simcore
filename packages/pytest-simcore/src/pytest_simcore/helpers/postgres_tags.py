@@ -19,9 +19,7 @@ async def create_tag_access(
     delete,
 ) -> int:
     await conn.execute(
-        tags_access_rights.insert().values(
-            tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete
-        )
+        tags_access_rights.insert().values(tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete)
     )
     return tag_id
 
@@ -39,14 +37,10 @@ async def create_tag(
 ) -> int:
     """helper to create a tab by inserting rows in two different tables"""
     tag_id = await conn.scalar(
-        tags.insert()
-        .values(name=name, description=description, color=color)
-        .returning(tags.c.id)
+        tags.insert().values(name=name, description=description, color=color).returning(tags.c.id)
     )
     assert tag_id
-    await create_tag_access(
-        conn, tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete
-    )
+    await create_tag_access(conn, tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete)
     return tag_id
 
 

@@ -14,13 +14,9 @@ def write_xlsx_files(
     code_description_params: CodeDescriptionParams,
 ) -> None:
     dataset_description_xlsx = DatasetDescriptionXLSXDocument()
-    dataset_description_xlsx.save_document(
-        base_path=base_path, template_data=dataset_description_params
-    )
+    dataset_description_xlsx.save_document(base_path=base_path, template_data=dataset_description_params)
 
     code_description_xlsx = CodeDescriptionXLSXDocument()
-    code_description_xlsx.save_document(
-        base_path=base_path, template_data=code_description_params
-    )
+    code_description_xlsx.save_document(base_path=base_path, template_data=code_description_params)
     manifest_xlsx = ManifestXLSXDocument()
     manifest_xlsx.save_document(base_path=base_path, template_data=None)

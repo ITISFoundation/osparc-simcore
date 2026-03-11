@@ -156,9 +156,7 @@ async def test_get_all_tasks_log_files(
     user_id: UserID,
     project_id: ProjectID,
 ):
-    resp = await client.get(
-        f"/v2/computations/{project_id}/tasks/-/logfile", params={"user_id": user_id}
-    )
+    resp = await client.get(f"/v2/computations/{project_id}/tasks/-/logfile", params={"user_id": user_id})
 
     # calls storage
     mocked_nodeports_storage_client["list_storage_locations"].assert_not_called()
@@ -188,9 +186,7 @@ async def test_get_task_logs_file(
     assert log_file.download_link
 
 
-async def test_get_tasks_outputs(
-    project_id: ProjectID, node_id: NodeID, client: httpx.AsyncClient
-):
+async def test_get_tasks_outputs(project_id: ProjectID, node_id: NodeID, client: httpx.AsyncClient):
     selection = {
         node_id,
     }

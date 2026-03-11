@@ -48,9 +48,7 @@ _DUMMY_API_SERVER_OPENAPI = CURRENT_DIR / "dummy_api_server_openapi.json"
 
 def _check_regex_pattern(pattern: str, match: str, non_match: str):
     assert re.match(pattern=pattern, string=match), f"{match=} did not match {pattern=}"
-    assert not re.match(
-        pattern=pattern, string=non_match
-    ), f"{non_match=} matched {pattern=}"
+    assert not re.match(pattern=pattern, string=non_match), f"{non_match=} matched {pattern=}"
 
 
 @pytest.fixture
@@ -76,9 +74,7 @@ mock_folder_path.exists()
     not OPENAPI_CORE_INSTALLED,
     reason="openapi-core is very restritive with jsonschema version and limits requirements/_base.txt",
 )
-@pytest.mark.parametrize(
-    "mock_capture_path", mock_folder_path.glob("*.json"), ids=lambda p: p.name
-)
+@pytest.mark.parametrize("mock_capture_path", mock_folder_path.glob("*.json"), ids=lambda p: p.name)
 def test_openapion_capture_mock(
     mock_capture_path: Path,
     openapi_specs: dict[str, Spec],
@@ -86,9 +82,9 @@ def test_openapion_capture_mock(
     assert mock_capture_path.exists()
     assert mock_capture_path.name.endswith(".json")
 
-    captures = TypeAdapter(
-        list[HttpApiCallCaptureModel] | HttpApiCallCaptureModel
-    ).validate_json(mock_capture_path.read_text())
+    captures = TypeAdapter(list[HttpApiCallCaptureModel] | HttpApiCallCaptureModel).validate_json(
+        mock_capture_path.read_text()
+    )
 
     if not isinstance(captures, list):
         captures = [
@@ -220,13 +216,9 @@ def test_param_regex_pattern(params: tuple[str, str, str, str]):
     pattern = param.schema_.regex_pattern
     pattern = "^" + pattern + "$"
     if match is not None:
-        assert re.match(
-            pattern=pattern, string=match
-        ), f"{match=} did not match {pattern=}"
+        assert re.match(pattern=pattern, string=match), f"{match=} did not match {pattern=}"
     if non_match is not None:
-        assert not re.match(
-            pattern=pattern, string=non_match
-        ), f"{non_match=} matched {pattern=}"
+        assert not re.match(pattern=pattern, string=non_match), f"{non_match=} matched {pattern=}"
 
 
 _API_SERVER_PATHS: list[tuple[str, Path, str]] = [
@@ -255,9 +247,7 @@ def test_capture_respx_api_server(params: tuple[str, Path, str]):
     _, openapi_path, example = params
     assert _DUMMY_API_SERVER_OPENAPI.is_file()
     openapi_spec: dict[str, Any] = jsonref.loads(_DUMMY_API_SERVER_OPENAPI.read_text())
-    url_path: PathDescription = _determine_path(
-        openapi_spec=openapi_spec, response_path=openapi_path
-    )
+    url_path: PathDescription = _determine_path(openapi_spec=openapi_spec, response_path=openapi_path)
     path_pattern = str(openapi_path)
     for p in url_path.path_parameters:
         path_pattern = path_pattern.replace("{" + p.name + "}", p.respx_lookup)
@@ -265,9 +255,7 @@ def test_capture_respx_api_server(params: tuple[str, Path, str]):
     def side_effect(request, **kwargs):
         return httpx.Response(status_code=200, json=kwargs)
 
-    my_route = respx.get(url__regex="https://example.org" + path_pattern).mock(
-        side_effect=side_effect
-    )
+    my_route = respx.get(url__regex="https://example.org" + path_pattern).mock(side_effect=side_effect)
     response = httpx.get("https://example.org" + example)
     assert my_route.called
     assert response.status_code == 200

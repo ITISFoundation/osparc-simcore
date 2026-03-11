@@ -78,7 +78,7 @@ async def test_preserves_fragments(client, test_path):
     assert resp.real_url.fragment == "this/is/a/fragment"
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 @pytest.mark.parametrize(
     "test_path,expected_redirected_path",
     [

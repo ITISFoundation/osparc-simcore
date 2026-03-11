@@ -22,5 +22,5 @@ def get_settings(
 def get_rabbitmq_client(
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> RabbitMQRPCClient:
-    assert isinstance(app.state.rabbitmq_rpc_server, RabbitMQRPCClient)  # nosec
-    return app.state.rabbitmq_rpc_server
+    assert isinstance(app.state.rabbitmq_rpc_client, RabbitMQRPCClient)  # nosec
+    return app.state.rabbitmq_rpc_client

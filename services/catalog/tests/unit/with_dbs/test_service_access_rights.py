@@ -39,9 +39,7 @@ def new_service_metadata_published(user: dict[str, Any]) -> ServiceMetaDataPubli
         ServiceMetaDataPublished.model_json_schema()["examples"][MOST_UPDATED_EXAMPLE]
     )
     metadata.contact = user["email"]
-    metadata.authors = [
-        Author(name=user["name"], email=user["email"], affiliation=None)
-    ]
+    metadata.authors = [Author(name=user["name"], email=user["email"], affiliation=None)]
     metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
     # Set all inheritable fields to None initially
     metadata.icon = None
@@ -68,9 +66,7 @@ def app_with_repo(
 class CreateLatetReleaseCallable(Protocol):
     """Callable to create a latest release with specified metadata fields."""
 
-    async def __call__(
-        self, metadata_fields: dict[str, Any], product: ProductName
-    ) -> dict[str, Any]: ...
+    async def __call__(self, metadata_fields: dict[str, Any], product: ProductName) -> dict[str, Any]: ...
 
 
 @pytest.fixture
@@ -93,17 +89,13 @@ def create_latest_release(
 
     new_version = Version(new_service_metadata_published.version)
 
-    async def _create(
-        metadata_fields: dict[str, Any], product: ProductName
-    ) -> dict[str, Any]:
-        latest_release_service, *latest_release_service_access_rights = (
-            create_fake_service_data(
-                new_service_metadata_published.key,
-                f"{new_version.major}.{new_version.minor}.{new_version.micro-1}",
-                team_access="x",
-                everyone_access=None,
-                product=product,
-            )
+    async def _create(metadata_fields: dict[str, Any], product: ProductName) -> dict[str, Any]:
+        latest_release_service, *latest_release_service_access_rights = create_fake_service_data(
+            new_service_metadata_published.key,
+            f"{new_version.major}.{new_version.minor}.{new_version.micro - 1}",
+            team_access="x",
+            everyone_access=None,
+            product=product,
         )
 
         # Update with provided metadata fields
@@ -150,7 +142,7 @@ def test_reduce_access_rights():
         "write_access": True,
     }
 
-    # two gids with the different falgs
+    # two gids with the different flags
     reduced = reduce_access_rights(
         [
             sample.model_copy(deep=True),
@@ -192,9 +184,7 @@ async def test_metadata_inheritance_variations(
 
     # Case 1: All fields missing in new service - only icon and thumbnail should be inherited
     new_service = new_service_metadata_published.model_copy(deep=True)
-    inherited_data = await inherit_from_latest_compatible_release(
-        services_repo, service_metadata=new_service
-    )
+    inherited_data = await inherit_from_latest_compatible_release(services_repo, service_metadata=new_service)
 
     assert inherited_data["metadata_updates"] == {
         "icon": latest_release_service["icon"],
@@ -210,9 +200,7 @@ async def test_metadata_inheritance_variations(
         },
     )
 
-    inherited_data = await inherit_from_latest_compatible_release(
-        services_repo, service_metadata=new_service
-    )
+    inherited_data = await inherit_from_latest_compatible_release(services_repo, service_metadata=new_service)
 
     # Only thumbnail should be inherited
     assert "icon" not in inherited_data["metadata_updates"]
@@ -229,9 +217,7 @@ async def test_metadata_inheritance_variations(
         },
     )
 
-    inherited_data = await inherit_from_latest_compatible_release(
-        services_repo, service_metadata=new_service
-    )
+    inherited_data = await inherit_from_latest_compatible_release(services_repo, service_metadata=new_service)
 
     # No metadata should be inherited
     assert inherited_data["metadata_updates"] == {}
@@ -256,9 +242,7 @@ async def test_metadata_inheritance_with_incomplete_previous_release(
     )
 
     new_service = new_service_metadata_published.model_copy(deep=True)
-    inherited_data = await inherit_from_latest_compatible_release(
-        services_repo, service_metadata=new_service
-    )
+    inherited_data = await inherit_from_latest_compatible_release(services_repo, service_metadata=new_service)
 
     # Only icon and thumbnail should be inherited
     assert inherited_data["metadata_updates"] == {
@@ -298,10 +282,8 @@ async def test_service_upgrade_metadata_inheritance_old_service(
     )
 
     # DEFAULT policies for old service
-    owner_gid, service_access_rights = (
-        await evaluate_default_service_ownership_and_rights(
-            app, service=new_service_metadata_published, product_name=target_product
-        )
+    owner_gid, service_access_rights = await evaluate_default_service_ownership_and_rights(
+        app, service=new_service_metadata_published, product_name=target_product
     )
 
     # For old services, everyone should have access
@@ -366,9 +348,7 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
     }
 
     # Create in target product
-    latest_release_service = await create_latest_release(
-        metadata_fields, target_product
-    )
+    latest_release_service = await create_latest_release(metadata_fields, target_product)
 
     # Create in other product
     await create_latest_release(metadata_fields, other_product)
@@ -394,10 +374,8 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
     )
 
     # DEFAULT policies
-    owner_gid, service_access_rights = (
-        await evaluate_default_service_ownership_and_rights(
-            app, service=new_service_metadata_published, product_name=target_product
-        )
+    owner_gid, service_access_rights = await evaluate_default_service_ownership_and_rights(
+        app, service=new_service_metadata_published, product_name=target_product
     )
     assert owner_gid == user_gid
     assert len(service_access_rights) == 1  # Only owner for new service

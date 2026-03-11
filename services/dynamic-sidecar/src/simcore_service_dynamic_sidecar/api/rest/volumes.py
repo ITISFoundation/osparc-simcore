@@ -1,8 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi import Path as PathParam
-from fastapi import status
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import BaseModel
 
@@ -23,6 +22,4 @@ async def put_volume_state(
     volume_category: Annotated[VolumeCategory, PathParam(..., alias="id")],
 ) -> None:
     """Updates the state of the volume"""
-    await volumes.update_volume_status(
-        app, status=item.status, category=volume_category
-    )
+    await volumes.update_volume_status(app, status=item.status, category=volume_category)

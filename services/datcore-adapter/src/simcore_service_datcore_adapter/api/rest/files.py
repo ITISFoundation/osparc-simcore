@@ -35,14 +35,10 @@ async def download_file(
         api_secret=x_datcore_api_secret,
         package_id=file_id,
     )
-    return FileDownloadOut(
-        link=TypeAdapter(AnyUrl).validate_python(f"{presigned_download_link}")
-    )
+    return FileDownloadOut(link=TypeAdapter(AnyUrl).validate_python(f"{presigned_download_link}"))
 
 
-@router.delete(
-    "/files/{file_id}", summary="deletes a file", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/files/{file_id}", summary="deletes a file", status_code=status.HTTP_204_NO_CONTENT)
 @cancel_on_disconnect
 async def delete_file(
     request: Request,

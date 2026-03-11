@@ -22,11 +22,7 @@ def _as_dict(model_instance: ServiceMetaDataPublished) -> dict[str, Any]:
 
 def get_function_service(key, version) -> ServiceMetaDataPublished:
     try:
-        return next(
-            sc
-            for sc in iter_service_docker_data()
-            if sc.key == key and sc.version == version
-        )
+        return next(sc for sc in iter_service_docker_data() if sc.key == key and sc.version == version)
     except StopIteration as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -35,9 +31,7 @@ def get_function_service(key, version) -> ServiceMetaDataPublished:
 
 
 async def function_services_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.frontend_services_catalog = [
-        _as_dict(metadata) for metadata in iter_service_docker_data()
-    ]
+    app.state.frontend_services_catalog = [_as_dict(metadata) for metadata in iter_service_docker_data()]
 
     try:
         yield {}
@@ -46,7 +40,7 @@ async def function_services_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 __all__: tuple[str, ...] = (
+    "function_services_lifespan",
     "get_function_service",
     "is_function_service",
-    "function_services_lifespan",
 )

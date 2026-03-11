@@ -18,9 +18,7 @@ pytest_simcore_ops_services_selection = [
 async def test_redis_client_sdks_manager(
     redis_service: RedisSettings,
 ):
-    all_redis_configs: set[RedisManagerDBConfig] = {
-        RedisManagerDBConfig(database=db) for db in RedisDatabase
-    }
+    all_redis_configs: set[RedisManagerDBConfig] = {RedisManagerDBConfig(database=db) for db in RedisDatabase}
     manager = RedisClientsManager(
         databases_configs=all_redis_configs,
         settings=redis_service,

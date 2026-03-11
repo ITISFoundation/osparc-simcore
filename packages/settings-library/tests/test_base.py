@@ -243,8 +243,8 @@ def test_auto_default_to_none_logs_a_warning(
     assert logger_warn.call_count == 1
     assert (
         _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-            field_name="VALUE_NULLABLE_DEFAULT_ENV"
-        )
+            field_name="VALUE_NULLABLE_DEFAULT_ENV", err="pytest"
+        ).split("pytest")[0]
         in logger_warn.call_args[0][0]
     )
 
@@ -336,7 +336,6 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_fixed_issubclass_type_error_with_pydantic_models():
-
     assert not issubclass(dict, BaseSettings)
     assert not issubclass(
         # FIXED with

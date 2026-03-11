@@ -18,16 +18,8 @@ depends_on = None
 
 def upgrade():
     op.execute(sa.DDL("ALTER TYPE credittransactionstatus ADD VALUE 'IN_DEBT'"))
-    op.execute(
-        sa.DDL(
-            "ALTER TYPE credittransactionclassification ADD VALUE 'ADD_WALLET_EXCHANGE'"
-        )
-    )
-    op.execute(
-        sa.DDL(
-            "ALTER TYPE credittransactionclassification ADD VALUE 'DEDUCT_WALLET_EXCHANGE'"
-        )
-    )
+    op.execute(sa.DDL("ALTER TYPE credittransactionclassification ADD VALUE 'ADD_WALLET_EXCHANGE'"))
+    op.execute(sa.DDL("ALTER TYPE credittransactionclassification ADD VALUE 'DEDUCT_WALLET_EXCHANGE'"))
 
 
 def downgrade():

@@ -102,10 +102,7 @@ async def test_job_service_get_job_success(
         "webserver",
         "get_project_marked_as_job",
     )
-    assert (
-        mocked_rabbit_rpc_client.request.call_args.kwargs["job_parent_resource_name"]
-        == job_parent_resource_name
-    )
+    assert mocked_rabbit_rpc_client.request.call_args.kwargs["job_parent_resource_name"] == job_parent_resource_name
     assert mocked_rabbit_rpc_client.request.call_args.kwargs["project_uuid"] == job_id
 
 

@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Annotated, Self
 
-from models_library.string_types import DisplaySafeStr
 from pydantic import ConfigDict, Field, field_validator
+
+from models_library.string_types import DisplaySafeStr
 
 from ..access_rights import AccessRights
 from ..folders import FolderDB, FolderID
@@ -20,9 +21,7 @@ class FolderGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     trashed_at: datetime | None
-    trashed_by: Annotated[
-        GroupID | None, Field(description="The primary gid of the user who trashed")
-    ]
+    trashed_by: Annotated[GroupID | None, Field(description="The primary gid of the user who trashed")]
     owner: GroupID
     workspace_id: WorkspaceID | None
     my_access_rights: AccessRights
@@ -58,13 +57,13 @@ class FolderCreateBodyParams(InputSchema):
     workspace_id: WorkspaceID | None = None
     model_config = ConfigDict(extra="forbid")
 
-    _null_or_none_str_to_none_validator = field_validator(
-        "parent_folder_id", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("parent_folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
-    _null_or_none_str_to_none_validator2 = field_validator(
-        "workspace_id", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator2 = field_validator("workspace_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
 
 class FolderReplaceBodyParams(InputSchema):
@@ -72,6 +71,6 @@ class FolderReplaceBodyParams(InputSchema):
     parent_folder_id: FolderID | None = None
     model_config = ConfigDict(extra="forbid")
 
-    _null_or_none_str_to_none_validator = field_validator(
-        "parent_folder_id", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("parent_folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )

@@ -36,19 +36,13 @@ def docker_client() -> docker.DockerClient:
 @pytest.fixture
 def docker_image_key(docker_client: docker.DockerClient, project_name: str) -> str:
     image_key = f"{project_name}:"
-    docker_images = [
-        image
-        for image in docker_client.images.list()
-        if any(image_key in tag for tag in image.tags)
-    ]
+    docker_images = [image for image in docker_client.images.list() if any(image_key in tag for tag in image.tags)]
     tag: str = docker_images[0].tags[0]
     return tag
 
 
 @pytest.fixture
-def docker_image(
-    docker_client: docker.DockerClient, docker_image_key: str
-) -> docker.models.images.Image:
+def docker_image(docker_client: docker.DockerClient, docker_image_key: str) -> docker.models.images.Image:
     docker_image = docker_client.images.get(docker_image_key)
     assert docker_image
     return docker_image
@@ -121,10 +115,7 @@ def host_folders(temporary_path: Path) -> dict:
 @pytest.fixture
 def container_variables() -> dict:
     # of type INPUT_FOLDER=/home/scu/data/input
-    return {
-        f"{str(folder).upper()}_FOLDER": (_CONTAINER_FOLDER / folder).as_posix()
-        for folder in _FOLDER_NAMES
-    }
+    return {f"{str(folder).upper()}_FOLDER": (_CONTAINER_FOLDER / folder).as_posix() for folder in _FOLDER_NAMES}
 
 
 @pytest.fixture
@@ -148,9 +139,7 @@ def docker_container(
     container: Container | None = None
     try:
         volumes: dict[str, Any] = {
-            host_folders[folder]: {
-                "bind": container_variables[f"{str(folder).upper()}_FOLDER"]
-            }
+            host_folders[folder]: {"bind": container_variables[f"{str(folder).upper()}_FOLDER"]}
             for folder in _FOLDER_NAMES
         }
         container = docker_client.containers.run(
@@ -175,7 +164,6 @@ def docker_container(
                 )
             )
         else:
-
             yield container
 
     except docker.errors.ContainerError as exc:
@@ -186,9 +174,7 @@ def docker_container(
                 exc.command,
                 (
                     pformat(
-                        (
-                            container.logs(timestamps=True, tail=1000).decode("UTF-8")
-                        ).split("\n"),
+                        (container.logs(timestamps=True, tail=1000).decode("UTF-8")).split("\n"),
                         width=200,
                     )
                     if container
@@ -224,15 +210,11 @@ def assert_container_runs(
 ):
     for folder in _FOLDER_NAMES:
         # test if the files that should be there are actually there and correct
-        list_of_files = [
-            x.name
-            for x in validation_folders[folder].iterdir()
-            if ".gitkeep" not in x.name
-        ]
+        list_of_files = [x.name for x in validation_folders[folder].iterdir() if ".gitkeep" not in x.name]
         for file_name in list_of_files:
-            assert Path(
-                host_folders[folder] / file_name
-            ).exists(), f"{file_name} is missing from {host_folders[folder]}"
+            assert Path(host_folders[folder] / file_name).exists(), (
+                f"{file_name} is missing from {host_folders[folder]}"
+            )
 
         # we look for missing files only. contents is the responsibility of the service creator
         _, _, errors = filecmp.cmpfiles(
@@ -246,13 +228,11 @@ def assert_container_runs(
         if folder == "input":
             continue
         # test if the generated files are the ones expected
-        list_of_files = [
-            x.name for x in host_folders[folder].iterdir() if ".gitkeep" not in x.name
-        ]
+        list_of_files = [x.name for x in host_folders[folder].iterdir() if ".gitkeep" not in x.name]
         for file_name in list_of_files:
-            assert Path(
-                validation_folders[folder] / file_name
-            ).exists(), f"{file_name} is not present in {validation_folders[folder]}"
+            assert Path(validation_folders[folder] / file_name).exists(), (
+                f"{file_name} is not present in {validation_folders[folder]}"
+            )
         _, _, errors = filecmp.cmpfiles(
             host_folders[folder],
             validation_folders[folder],
@@ -290,9 +270,7 @@ def assert_container_runs(
             assert (host_folders["output"] / filename_to_look_for).exists()
 
 
-def assert_docker_io_simcore_labels_against_files(
-    docker_image: docker.models.images.Image, metadata_labels: dict
-):
+def assert_docker_io_simcore_labels_against_files(docker_image: docker.models.images.Image, metadata_labels: dict):
     image_labels = docker_image.labels
     io_simcore_labels = convert_to_simcore_labels(image_labels)
     # check files are identical

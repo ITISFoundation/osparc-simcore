@@ -52,9 +52,7 @@ async def _assert_keys(store: Store, expected_keys: set[str]) -> None:
     assert keys == expected_keys
 
 
-async def _assert_keys_in_hash(
-    store: Store, hash_key: str, expected_keys: set[str]
-) -> None:
+async def _assert_keys_in_hash(store: Store, hash_key: str, expected_keys: set[str]) -> None:
     keys = set(await handle_redis_returns_union_types(store.redis.hkeys(hash_key)))
     assert keys == expected_keys
 
@@ -121,9 +119,7 @@ async def test_store_workflow(store: Store):
     )
 
     # delete a few keys form hash
-    await store.delete_key_from_hash(
-        "hash2", "key1", "key3", "missing1", "missing2", "missing3"
-    )
+    await store.delete_key_from_hash("hash2", "key1", "key3", "missing1", "missing2", "missing3")
     await _assert_keys(store, {"hash2"})
     await _assert_keys_in_hash(store, "hash2", {"key2"})
     assert await store.get_keys_from_hash("hash2", "key1", "key2", "key3") == (
@@ -176,9 +172,7 @@ async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
     await proxy.create_or_update("group_index", 1)
     await proxy.create_or_update("is_executing", value=True)
     await _assert_keys(store, {hash_key})
-    await _assert_keys_in_hash(
-        store, hash_key, {"operation_name", "group_index", "is_executing"}
-    )
+    await _assert_keys_in_hash(store, hash_key, {"operation_name", "group_index", "is_executing"})
 
     # get
     assert await proxy.read("operation_name") == "op1"
@@ -225,9 +219,7 @@ async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
 
 @pytest.mark.parametrize("is_executing", [True, False])
 @pytest.mark.parametrize("use_remove", [True, False])
-async def test_steps_store_proxy(
-    store: Store, schedule_id: ScheduleId, is_executing: bool, use_remove: bool
-):
+async def test_steps_store_proxy(store: Store, schedule_id: ScheduleId, is_executing: bool, use_remove: bool):
     proxy = StepStoreProxy(
         store=store,
         schedule_id=schedule_id,
@@ -306,7 +298,8 @@ async def test_step_group_proxy(
 
     async def _get_steps_count() -> int | None:
         (response,) = await store.get_keys_from_hash(
-            step_group_proxy._get_hash_key(), "done_steps"  # noqa: SLF001
+            step_group_proxy._get_hash_key(),
+            "done_steps",
         )
         return response
 
@@ -340,9 +333,7 @@ async def test_step_group_proxy(
 async def test_operation_context_proxy(
     store: Store, schedule_id: ScheduleId, provided_context: ProvidedOperationContext
 ):
-    proxy = OperationContextProxy(
-        store=store, schedule_id=schedule_id, operation_name="op1"
-    )
+    proxy = OperationContextProxy(store=store, schedule_id=schedule_id, operation_name="op1")
     hash_key = f"SCH:{schedule_id}:OP_CTX:op1"
 
     await _assert_keys(store, set())
@@ -397,9 +388,7 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
     )
     await proxy.increment_and_get_done_steps_count()
 
-    proxy = OperationContextProxy(
-        store=store, schedule_id=schedule_id, operation_name="op1"
-    )
+    proxy = OperationContextProxy(store=store, schedule_id=schedule_id, operation_name="op1")
     await proxy.create_or_update({"k1": "v1", "k2": 2})
 
     await _assert_keys(
@@ -432,9 +421,7 @@ async def test_operation_events_proxy(store: Store, schedule_id: ScheduleId):
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
 
-    await proxy.create_or_update_multiple(
-        {"operation_name": operation_name, "initial_context": initial_context}
-    )
+    await proxy.create_or_update_multiple({"operation_name": operation_name, "initial_context": initial_context})
     assert await proxy.exists() is True
 
     await _assert_keys(store, {hash_key})

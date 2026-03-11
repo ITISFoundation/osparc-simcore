@@ -21,12 +21,8 @@ def setup_rabbitmq(app: FastAPI) -> None:
     async def _on_startup() -> None:
         await wait_till_rabbitmq_responsive(settings.dsn)
 
-        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-            client_name="api_server", settings=settings
-        )
-        app.state.rabbitmq_client = RabbitMQClient(
-            client_name="api_server", settings=settings
-        )
+        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(client_name="api_server", settings=settings)
+        app.state.rabbitmq_client = RabbitMQClient(client_name="api_server", settings=settings)
         app.state.log_distributor = LogDistributor(app.state.rabbitmq_client)
         await app.state.log_distributor.setup()
         app.state.health_checker = ApiServerHealthChecker(
@@ -35,9 +31,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
             timeout_seconds=app.state.settings.API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS,
             allowed_health_check_failures=app.state.settings.API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES,
         )
-        await app.state.health_checker.setup(
-            app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS
-        )
+        await app.state.health_checker.setup(app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS)
         # setup rpc clients
         resource_usage_tracker.setup(app, get_rabbitmq_rpc_client(app))
         wb_api_server.setup(app, get_rabbitmq_rpc_client(app))

@@ -44,15 +44,11 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message(
-            "You do not have permission to access this workspace.", _version=1
-        ),
+        user_message("You do not have permission to access this workspace.", _version=1),
     ),
     WorkspaceFolderInconsistencyError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message(
-            "This folder is not available in the selected workspace.", _version=1
-        ),
+        user_message("This folder is not available in the selected workspace.", _version=1),
     ),
     FolderValueNotPermittedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
@@ -87,7 +83,5 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+handle_plugin_requests_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
 # this is one decorator with a single exception handler

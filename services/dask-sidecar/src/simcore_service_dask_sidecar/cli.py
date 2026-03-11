@@ -15,6 +15,4 @@ main = typer.Typer(name=PROJECT_NAME)
 # COMMANDS
 #
 main.callback()(create_version_callback(__version__))
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))

@@ -21,14 +21,10 @@ _logger = logging.getLogger(__name__)
 _TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 
 
-async def run_before_shutdown_actions(
-    shared_store: SharedStore, before_shutdown: list[UserServiceCommand]
-) -> None:
+async def run_before_shutdown_actions(shared_store: SharedStore, before_shutdown: list[UserServiceCommand]) -> None:
     for user_service_command in before_shutdown:
         container_name = user_service_command.service
-        with log_context(
-            _logger, logging.INFO, f"running before_shutdown {user_service_command}"
-        ):
+        with log_context(_logger, logging.INFO, f"running before_shutdown {user_service_command}"):
             try:
                 await run_command_in_container(
                     shared_store.original_to_container_names[container_name],

@@ -18,17 +18,13 @@ from yarl import URL
 
 
 @pytest.fixture
-async def socketio_server_factory() -> (
-    Callable[[RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]]
-):
+async def socketio_server_factory() -> Callable[[RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]]:
     @asynccontextmanager
     async def _(rabbit_settings: RabbitSettings) -> AsyncIterator[AsyncServer]:
         # Same configuration as simcore_service_webserver/socketio/server.py
         server_manager = AsyncAioPikaManager(url=rabbit_settings.dsn)
 
-        server = AsyncServer(
-            async_mode="aiohttp", engineio_logger=True, client_manager=server_manager
-        )
+        server = AsyncServer(async_mode="aiohttp", engineio_logger=True, client_manager=server_manager)
 
         yield server
 
@@ -44,9 +40,7 @@ async def socketio_server() -> AsyncIterable[AsyncServer]:
 
 
 @pytest.fixture
-async def web_server(
-    socketio_server: AsyncServer, unused_tcp_port_factory: Callable[[], int]
-) -> AsyncIterator[URL]:
+async def web_server(socketio_server: AsyncServer, unused_tcp_port_factory: Callable[[], int]) -> AsyncIterator[URL]:
     """
     this emulates the webserver setup: socketio server with
     an aiopika manager that attaches an aiohttp web app

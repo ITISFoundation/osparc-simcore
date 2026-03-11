@@ -17,19 +17,11 @@ meta_router.include_router(meta.router, prefix="/meta")
 
 # Latest API
 v2_router = APIRouter()
-v2_router.include_router(
-    computations.router, tags=["computations"], prefix="/computations"
-)
-v2_router.include_router(
-    computations_tasks.router, tags=["computations"], prefix="/computations"
-)
-v2_router.include_router(
-    dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services"
-)
+v2_router.include_router(computations.router, tags=["computations"], prefix="/computations")
+v2_router.include_router(computations_tasks.router, tags=["computations"], prefix="/computations")
+v2_router.include_router(dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services")
 
-v2_router.include_router(
-    dynamic_scheduler.router, tags=["dynamic scheduler"], prefix="/dynamic_scheduler"
-)
+v2_router.include_router(dynamic_scheduler.router, tags=["dynamic scheduler"], prefix="/dynamic_scheduler")
 
 
 # root

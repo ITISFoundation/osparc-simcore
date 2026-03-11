@@ -46,23 +46,18 @@ async def list_licensed_items(request: web.Request):
         LicensedItemsListQueryParams, request
     )
 
-    licensed_item_page: LicensedItemPage = (
-        await _licensed_items_service.list_licensed_items(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            include_hidden_items_on_market=False,
-            offset=query_params.offset,
-            limit=query_params.limit,
-            order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
-        )
+    licensed_item_page: LicensedItemPage = await _licensed_items_service.list_licensed_items(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        include_hidden_items_on_market=False,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[LicensedItemRestGet].model_validate(
         paginate_data(
-            chunk=[
-                LicensedItemRestGet.from_domain_model(licensed_item)
-                for licensed_item in licensed_item_page.items
-            ],
+            chunk=[LicensedItemRestGet.from_domain_model(licensed_item) for licensed_item in licensed_item_page.items],
             total=licensed_item_page.total,
             limit=query_params.limit,
             offset=query_params.offset,

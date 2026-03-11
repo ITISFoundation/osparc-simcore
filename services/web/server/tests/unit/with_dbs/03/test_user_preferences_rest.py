@@ -24,13 +24,9 @@ from simcore_service_webserver.user_preferences._models import (
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC
-    return app_environment | setenvs_from_dict(
-        monkeypatch, {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
-    )
+    return app_environment | setenvs_from_dict(monkeypatch, {"WEBSERVER_GARBAGE_COLLECTOR": "null"})
 
 
 @pytest.fixture
@@ -112,8 +108,6 @@ async def test_set_frontend_preference_not_found(
     user_role: UserRole,
     drop_all_preferences: None,
 ):
-    resp = await _request_set_frontend_preference(
-        client, "__undefined_preference_identifier__", None
-    )
+    resp = await _request_set_frontend_preference(client, "__undefined_preference_identifier__", None)
     _, error = await assert_status(resp, status.HTTP_404_NOT_FOUND)
     assert "not found" in error["message"]

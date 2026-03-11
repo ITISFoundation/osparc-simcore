@@ -73,9 +73,7 @@ def with_disabled_scheduler_publisher(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def with_short_max_wait_for_cluster(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
-) -> datetime.timedelta:
+def with_short_max_wait_for_cluster(monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> datetime.timedelta:
     short_time = datetime.timedelta(seconds=2)
     setenvs_from_dict(
         monkeypatch,

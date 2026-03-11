@@ -51,9 +51,7 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
     "exception, status_code",
     [
         (
-            InvalidFileIdentifierError(
-                identifier="pytest file identifier", details="pytest details"
-            ),
+            InvalidFileIdentifierError(identifier="pytest file identifier", details="pytest details"),
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
         (
@@ -69,15 +67,11 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
             status.HTTP_404_NOT_FOUND,
         ),
         (
-            FileAccessRightError(
-                access_right="pytest access rights", file_id="pytest file ID"
-            ),
+            FileAccessRightError(access_right="pytest access rights", file_id="pytest file ID"),
             status.HTTP_403_FORBIDDEN,
         ),
         (
-            ProjectAccessRightError(
-                access_right="pytest access rights", project_id="pytest project ID"
-            ),
+            ProjectAccessRightError(access_right="pytest access rights", project_id="pytest project ID"),
             status.HTTP_403_FORBIDDEN,
         ),
         (
@@ -122,9 +116,7 @@ async def test_exception_handlers(
     assert_status(response, status_code, None, expected_msg=f"{exception}")
 
 
-async def test_generic_http_exception_handler(
-    initialized_app: FastAPI, client: AsyncClient
-):
+async def test_generic_http_exception_handler(initialized_app: FastAPI, client: AsyncClient):
     @initialized_app.get("/test")
     async def test_endpoint():
         raise HTTPException(status_code=status.HTTP_410_GONE)
@@ -133,9 +125,7 @@ async def test_generic_http_exception_handler(
     assert_status(response, status.HTTP_410_GONE, None, expected_msg="Gone")
 
 
-async def test_request_validation_error_handler(
-    initialized_app: FastAPI, client: AsyncClient
-):
+async def test_request_validation_error_handler(initialized_app: FastAPI, client: AsyncClient):
     _error_msg = "pytest request validation error"
 
     @initialized_app.get("/test")

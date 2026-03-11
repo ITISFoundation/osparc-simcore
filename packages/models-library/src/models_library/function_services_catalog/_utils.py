@@ -102,9 +102,7 @@ class FunctionServices:
             assert kv == (f.meta.key, f.meta.version)  # nosec
             yield kv
 
-    def get_implementation(
-        self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> Callable | None:
+    def get_implementation(self, service_key: ServiceKey, service_version: ServiceVersion) -> Callable | None:
         """raises ServiceNotFound"""
         try:
             func = self._functions[(service_key, service_version)]
@@ -113,9 +111,7 @@ class FunctionServices:
             raise ServiceNotFound(msg) from err
         return func.implementation
 
-    def get_metadata(
-        self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> ServiceMetaDataPublished:
+    def get_metadata(self, service_key: ServiceKey, service_version: ServiceVersion) -> ServiceMetaDataPublished:
         """raises ServiceNotFound"""
         try:
             func = self._functions[(service_key, service_version)]

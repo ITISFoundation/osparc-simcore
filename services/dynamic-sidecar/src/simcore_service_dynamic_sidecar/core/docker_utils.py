@@ -33,16 +33,12 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker]:
         yield docker
     except aiodocker.exceptions.DockerError as error:
         _logger.debug("An unexpected Docker error occurred", exc_info=True)
-        raise UnexpectedDockerError(
-            message=error.message, status_code=error.status
-        ) from error
+        raise UnexpectedDockerError(message=error.message, status_code=error.status) from error
     finally:
         await docker.close()
 
 
-async def get_volume_by_label(
-    label: str, service_run_id: ServiceRunID
-) -> dict[str, Any]:
+async def get_volume_by_label(label: str, service_run_id: ServiceRunID) -> dict[str, Any]:
     async with docker_client() as docker:
         filters = {"label": [f"source={label}", f"run_id={service_run_id}"]}
         params = {"filters": clean_filters(filters)}
@@ -63,9 +59,7 @@ async def get_volume_by_label(
         return volume_details
 
 
-async def _get_container(
-    docker: aiodocker.Docker, container_name: str
-) -> DockerContainer | None:
+async def _get_container(docker: aiodocker.Docker, container_name: str) -> DockerContainer | None:
     try:
         return await docker.containers.get(container_name)
     except aiodocker.DockerError as e:
@@ -81,16 +75,11 @@ async def _get_containers_inspect_from_names(
     if len(container_names) == 0:
         return {}
 
-    containers_inspect: dict[str, DockerContainer | None] = {
-        x: None for x in container_names
-    }
+    containers_inspect: dict[str, DockerContainer | None] = dict.fromkeys(container_names)
 
     async with docker_client() as docker:
         docker_containers: list[DockerContainer | None] = await logged_gather(
-            *(
-                _get_container(docker, container_name)
-                for container_name in container_names
-            )
+            *(_get_container(docker, container_name) for container_name in container_names)
         )
         for docker_container in docker_containers:
             if docker_container is None:
@@ -108,18 +97,13 @@ async def get_container_states(
 ) -> dict[str, ContainerState | None]:
     """if a container is not found it's status is None"""
     containers_inspect = await _get_containers_inspect_from_names(container_names)
-    return {
-        k: None if v is None else ContainerState(**v["State"])
-        for k, v in containers_inspect.items()
-    }
+    return {k: None if v is None else ContainerState(**v["State"]) for k, v in containers_inspect.items()}
 
 
 def are_all_containers_in_expected_states(
     states: Iterable[ContainerState | None],
 ) -> bool:
-    return all(
-        s is not None and s.status in _ACCEPTED_CONTAINER_STATUSES for s in states
-    )
+    return all(s is not None and s.status in _ACCEPTED_CONTAINER_STATUSES for s in states)
 
 
 async def get_containers_count_from_names(
@@ -131,7 +115,4 @@ async def get_containers_count_from_names(
 
 def get_docker_service_images(compose_spec_yaml: str) -> set[DockerGenericTag]:
     docker_compose_spec = yaml.safe_load(compose_spec_yaml)
-    return {
-        DockerGenericTag(service_data["image"])
-        for service_data in docker_compose_spec["services"].values()
-    }
+    return {DockerGenericTag(service_data["image"]) for service_data in docker_compose_spec["services"].values()}

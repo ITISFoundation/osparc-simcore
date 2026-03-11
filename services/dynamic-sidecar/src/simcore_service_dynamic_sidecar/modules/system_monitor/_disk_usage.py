@@ -36,9 +36,7 @@ _SUPPORTED_ITEMS: Final[set[str]] = {
 
 
 async def get_usage(path: Path) -> DiskUsage:
-    usage = await asyncio.get_event_loop().run_in_executor(
-        None, psutil.disk_usage, f"{path}"
-    )
+    usage = await asyncio.get_event_loop().run_in_executor(None, psutil.disk_usage, f"{path}")
     return DiskUsage.from_ps_util_disk_usage(usage)
 
 
@@ -90,33 +88,20 @@ class DiskUsageMonitor:
         by the dynamic-sidecar. These are also used by the efs-guardian.
         """
         return {
-            k: {
-                _get_normalized_folder_name(
-                    get_relative_path(p, self.dy_volumes_mount_dir)
-                )
-                for p in paths
-            }
+            k: {_get_normalized_folder_name(get_relative_path(p, self.dy_volumes_mount_dir)) for p in paths}
             for k, paths in self.monitored_paths.items()
         }
 
     async def _get_measured_disk_usage(self) -> list[DiskUsage]:
-        return await logged_gather(
-            *[get_usage(monitored_path) for monitored_path in self._monitored_paths_set]
-        )
+        return await logged_gather(*[get_usage(monitored_path) for monitored_path in self._monitored_paths_set])
 
-    def _get_local_disk_usage(
-        self, measured_disk_usage: list[DiskUsage]
-    ) -> dict[str, DiskUsage]:
+    def _get_local_disk_usage(self, measured_disk_usage: list[DiskUsage]) -> dict[str, DiskUsage]:
         return {
-            _get_normalized_folder_name(
-                get_relative_path(p, self.dy_volumes_mount_dir)
-            ): u
+            _get_normalized_folder_name(get_relative_path(p, self.dy_volumes_mount_dir)): u
             for p, u in zip(self._monitored_paths_set, measured_disk_usage, strict=True)
         }
 
-    def _replace_incoming_usage(
-        self, normalized_disk_usage: dict[str, DiskUsage]
-    ) -> None:
+    def _replace_incoming_usage(self, normalized_disk_usage: dict[str, DiskUsage]) -> None:
         """overwrites local disk usage with incoming usage from egs-guardian"""
         for key, overwrite_usage in self._usage_overwrite.items():
             normalized_disk_usage[key] = overwrite_usage  # noqa: PERF403
@@ -135,9 +120,7 @@ class DiskUsageMonitor:
         return usage_to_folder_names
 
     async def _publish_disk_usage(self, usage: dict[MountPathCategory, DiskUsage]):
-        await publish_disk_usage(
-            self.app, user_id=self.user_id, node_id=self.node_id, usage=usage
-        )
+        await publish_disk_usage(self.app, user_id=self.user_id, node_id=self.node_id, usage=usage)
 
     async def get_disk_usage(self) -> dict[MountPathCategory, DiskUsage]:
         measured_disk_usage = await self._get_measured_disk_usage()
@@ -146,9 +129,7 @@ class DiskUsageMonitor:
 
         self._replace_incoming_usage(local_disk_usage)
 
-        usage_to_folder_names = self._get_grouped_usage_to_folder_names(
-            local_disk_usage
-        )
+        usage_to_folder_names = self._get_grouped_usage_to_folder_names(local_disk_usage)
 
         # compute new version of DiskUsage for FE, only 1 label for each unique disk usage entry
         usage: dict[MountPathCategory, DiskUsage] = {}
@@ -179,9 +160,7 @@ class DiskUsageMonitor:
             self._last_usage = disk_usage
 
     async def setup(self) -> None:
-        self._monitor_task = create_periodic_task(
-            self._monitor, interval=self.interval, task_name="monitor_disk_usage"
-        )
+        self._monitor_task = create_periodic_task(self._monitor, interval=self.interval, task_name="monitor_disk_usage")
 
     async def shutdown(self) -> None:
         if self._monitor_task:

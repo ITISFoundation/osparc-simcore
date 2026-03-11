@@ -26,13 +26,9 @@ class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
 
         settings: ApplicationSettings = app.state.settings
 
-        self._broker: RabbitBroker = RabbitBroker(
-            settings.DYNAMIC_SCHEDULER_RABBITMQ.dsn, log_level=logging.DEBUG
-        )
+        self._broker: RabbitBroker = RabbitBroker(settings.DYNAMIC_SCHEDULER_RABBITMQ.dsn, log_level=logging.DEBUG)
         self._router: RabbitRouter = RabbitRouter()
-        self._exchange = RabbitExchange(
-            EXCHANGE_NAME, durable=True, type=ExchangeType.DIRECT
-        )
+        self._exchange = RabbitExchange(EXCHANGE_NAME, durable=True, type=ExchangeType.DIRECT)
 
         self._queues: dict[str, BaseEventQueue] = {
             queue_class.get_queue_name(): queue_class(app, self._router, self._exchange)
@@ -43,9 +39,7 @@ class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
             )
         }
 
-    async def enqueue_message_for(
-        self, queue_class: type[BaseEventQueue], message: AioPikaSendableMessage
-    ) -> None:
+    async def enqueue_message_for(self, queue_class: type[BaseEventQueue], message: AioPikaSendableMessage) -> None:
         await self._broker.publish(
             message,
             queue=self._queues[queue_class.get_queue_name()].queue,

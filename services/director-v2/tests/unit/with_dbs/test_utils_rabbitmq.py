@@ -72,10 +72,7 @@ async def _assert_message_received(
             print(
                 f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
-    return [
-        message_parser(mocked_message_parser.call_args_list[c].args[0])
-        for c in range(expected_call_count)
-    ]
+    return [message_parser(mocked_message_parser.call_args_list[c].args[0]) for c in range(expected_call_count)]
 
 
 @pytest.fixture
@@ -120,18 +117,14 @@ async def test_publish_service_started_metrics(
     consumer = create_rabbitmq_client("consumer")
     publisher = create_rabbitmq_client("publisher")
 
-    await consumer.subscribe(
-        InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
-    )
+    await consumer.subscribe(InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser)
     await publish_service_started_metrics(
         publisher,
         user_id=user["id"],
         simcore_user_agent=simcore_user_agent,
         task=random.choice(tasks),  # noqa: S311
     )
-    await _assert_message_received(
-        mocked_message_parser, 1, InstrumentationRabbitMessage.model_validate_json
-    )
+    await _assert_message_received(mocked_message_parser, 1, InstrumentationRabbitMessage.model_validate_json)
 
 
 async def test_publish_service_stopped_metrics(
@@ -144,9 +137,7 @@ async def test_publish_service_stopped_metrics(
     consumer = create_rabbitmq_client("consumer")
     publisher = create_rabbitmq_client("publisher")
 
-    await consumer.subscribe(
-        InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
-    )
+    await consumer.subscribe(InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser)
     await publish_service_stopped_metrics(
         publisher,
         user_id=user["id"],
@@ -154,9 +145,7 @@ async def test_publish_service_stopped_metrics(
         task=random.choice(tasks),  # noqa: S311
         task_final_state=random.choice(list(RunningState)),  # noqa: S311
     )
-    await _assert_message_received(
-        mocked_message_parser, 1, InstrumentationRabbitMessage.model_validate_json
-    )
+    await _assert_message_received(mocked_message_parser, 1, InstrumentationRabbitMessage.model_validate_json)
 
 
 async def test_publish_service_resource_tracking_started(
@@ -174,9 +163,7 @@ async def test_publish_service_resource_tracking_started(
 
     random_task = random.choice(tasks)  # noqa: S311
 
-    await consumer.subscribe(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
-    )
+    await consumer.subscribe(RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser)
     random_service_run_id = faker.pystr()
     before_publication_time = datetime.datetime.now(datetime.UTC)
     await publish_service_resource_tracking_started(
@@ -215,11 +202,7 @@ async def test_publish_service_resource_tracking_started(
     assert isinstance(received_messages[0], RabbitResourceTrackingStartedMessage)
     assert received_messages[0].service_run_id == random_service_run_id
     assert received_messages[0].created_at
-    assert (
-        before_publication_time
-        < received_messages[0].created_at
-        < after_publication_time
-    )
+    assert before_publication_time < received_messages[0].created_at < after_publication_time
 
 
 async def test_publish_service_resource_tracking_stopped(
@@ -230,9 +213,7 @@ async def test_publish_service_resource_tracking_stopped(
     consumer = create_rabbitmq_client("consumer")
     publisher = create_rabbitmq_client("publisher")
 
-    await consumer.subscribe(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
-    )
+    await consumer.subscribe(RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser)
     random_service_run_id = faker.pystr()
     before_publication_time = datetime.datetime.now(datetime.UTC)
     await publish_service_resource_tracking_stopped(
@@ -251,11 +232,7 @@ async def test_publish_service_resource_tracking_stopped(
     assert isinstance(received_messages[0], RabbitResourceTrackingStoppedMessage)
     assert received_messages[0].service_run_id == random_service_run_id
     assert received_messages[0].created_at
-    assert (
-        before_publication_time
-        < received_messages[0].created_at
-        < after_publication_time
-    )
+    assert before_publication_time < received_messages[0].created_at < after_publication_time
 
 
 async def test_publish_service_resource_tracking_heartbeat(
@@ -266,9 +243,7 @@ async def test_publish_service_resource_tracking_heartbeat(
     consumer = create_rabbitmq_client("consumer")
     publisher = create_rabbitmq_client("publisher")
 
-    await consumer.subscribe(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
-    )
+    await consumer.subscribe(RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser)
     random_service_run_id = faker.pystr()
     before_publication_time = datetime.datetime.now(datetime.UTC)
     await publish_service_resource_tracking_heartbeat(
@@ -284,8 +259,4 @@ async def test_publish_service_resource_tracking_heartbeat(
     assert isinstance(received_messages[0], RabbitResourceTrackingHeartbeatMessage)
     assert received_messages[0].service_run_id == random_service_run_id
     assert received_messages[0].created_at
-    assert (
-        before_publication_time
-        < received_messages[0].created_at
-        < after_publication_time
-    )
+    assert before_publication_time < received_messages[0].created_at < after_publication_time

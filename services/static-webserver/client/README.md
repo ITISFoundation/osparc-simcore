@@ -9,7 +9,7 @@ This application is written using [qooxdoo] and the [source](source) needs to be
 
 All [qooxdoo] tools used to compile this source code are pre-installed in the [itisfoundation/qooxdoo-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/qooxdoo-kit) docker image. This toolkit is configured for this project in [tools](services/static-webserver/client/tools).
 
-A **makefile** provides recipies to easily compile and *statically* serve the client application. The latter is mostly for development purposes.
+A **makefile** provides recipes to easily compile and *statically* serve the client application. The latter is mostly for development purposes.
 
     $ make help
 
@@ -55,7 +55,7 @@ For demo purposes, the user/pass to login when the fake server is active is ```b
 
 ---
 
-### Limitiations running in a Windows host
+### Limitations running in a Windows host
 
 **Development version of image doesn't work on a windows host**. Modified files in the mounted volume don't trigger container operating  system notifications, so watchers don't react to changes. This is a known limitation of docker on windows. A [workaround](http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html) is possible. Open terminal in windows host and type:
 

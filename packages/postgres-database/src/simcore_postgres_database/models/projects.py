@@ -25,9 +25,7 @@ class ProjectTemplateType(str, enum.Enum):
 projects = sa.Table(
     "projects",
     metadata,
-    sa.Column(
-        "id", sa.BigInteger, nullable=False, primary_key=True, doc="Identifier index"
-    ),
+    sa.Column("id", sa.BigInteger, nullable=False, primary_key=True, doc="Identifier index"),
     sa.Column(
         "type",
         sa.Enum(ProjectType),
@@ -123,7 +121,7 @@ projects = sa.Table(
         sa.Boolean,
         nullable=False,
         default=False,
-        doc="If true, the project is publicaly accessible via the studies dispatcher (i.e. no registration required)",
+        doc="If true, the project is publicly accessible via the studies dispatcher (i.e. no registration required)",
     ),
     sa.Column(
         "hidden",
@@ -173,7 +171,7 @@ projects = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON with quality assesment based on TSR",
+        doc="Free JSON with quality assessment based on TSR",
     ),
     # DEPRECATED ----------------------------
     sa.Column(
@@ -182,6 +180,18 @@ projects = sa.Table(
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
         doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
+    ),
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_projects_to_product_name",
+        ),
+        nullable=False,
+        doc="Product to which this project belongs",
     ),
     ### INDEXES ----------------------------
     sa.Index(
@@ -233,9 +243,7 @@ END; $$ LANGUAGE 'plpgsql';
     """
 )
 
-sa.event.listen(
-    projects, "after_create", assign_project_access_rights_to_owner_group_procedure
-)
+sa.event.listen(projects, "after_create", assign_project_access_rights_to_owner_group_procedure)
 sa.event.listen(
     projects,
     "after_create",

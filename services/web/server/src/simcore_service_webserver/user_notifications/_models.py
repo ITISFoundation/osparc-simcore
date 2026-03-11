@@ -35,7 +35,7 @@ class BaseUserNotification(BaseModel):
     date: datetime
     product: Literal["UNDEFINED"] | ProductName = "UNDEFINED"
     resource_id: Literal[""] | str = ""
-    user_from_id: Literal[None] | UserID = None
+    user_from_id: None | UserID = None
 
     @field_validator("category", mode="before")
     @classmethod
@@ -58,12 +58,8 @@ class UserNotification(BaseUserNotification):
     read: bool
 
     @classmethod
-    def create_from_request_data(
-        cls, request_data: UserNotificationCreate
-    ) -> "UserNotification":
-        return cls.model_construct(
-            id=f"{uuid4()}", read=False, **request_data.model_dump()
-        )
+    def create_from_request_data(cls, request_data: UserNotificationCreate) -> "UserNotification":
+        return cls.model_construct(id=f"{uuid4()}", read=False, **request_data.model_dump())
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

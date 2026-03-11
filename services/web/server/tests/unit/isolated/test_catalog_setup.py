@@ -25,16 +25,12 @@ async def client(
 
 
 def test_url_translation():
-    front_url = URL(
-        f"https://osparc.io/{api_version_prefix}/catalog/dags/123?page_size=6"
-    )
+    front_url = URL(f"https://osparc.io/{api_version_prefix}/catalog/dags/123?page_size=6")
 
     rel_url = front_url.relative()
     assert rel_url.path.startswith(f"/{api_version_prefix}/catalog")
 
     api_target_origin = URL("http://catalog:8000")
-    api_target_url = catalog_service.to_backend_service(
-        rel_url, api_target_origin, "v5"
-    )
+    api_target_url = catalog_service.to_backend_service(rel_url, api_target_origin, "v5")
 
     assert str(api_target_url) == "http://catalog:8000/v5/dags/123?page_size=6"

@@ -10,5 +10,4 @@ _logger = logging.getLogger(__name__)
 
 @ensure_single_setup(__name__, logger=_logger)
 def setup_user_notification_feature(app: web.Application):
-
     app.router.add_routes(user_notification_rest.routes)

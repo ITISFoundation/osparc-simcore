@@ -25,12 +25,8 @@ def upgrade():
         sa.Column("image", sa.String(), nullable=False),
         sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column("product_name", sa.String(), nullable=False),
-        sa.Column(
-            "service_settings_reservation_nano_cpus", sa.BigInteger(), nullable=True
-        ),
-        sa.Column(
-            "service_settings_reservation_memory_bytes", sa.BigInteger(), nullable=True
-        ),
+        sa.Column("service_settings_reservation_nano_cpus", sa.BigInteger(), nullable=True),
+        sa.Column("service_settings_reservation_memory_bytes", sa.BigInteger(), nullable=True),
         sa.Column(
             "service_settings_reservation_additional_info",
             postgresql.JSONB(astext_type=sa.Text()),
@@ -38,9 +34,7 @@ def upgrade():
         ),
         sa.Column("container_cpu_usage_seconds_total", sa.Float(), nullable=False),
         sa.Column("prometheus_created", sa.DateTime(timezone=True), nullable=False),
-        sa.Column(
-            "prometheus_last_scraped", sa.DateTime(timezone=True), nullable=False
-        ),
+        sa.Column("prometheus_last_scraped", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "modified",
             sa.DateTime(timezone=True),

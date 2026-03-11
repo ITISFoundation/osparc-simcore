@@ -45,9 +45,7 @@ def mock_rut_sum_total_available_credits_in_the_wallet(
     return mocker.patch(
         "simcore_service_webserver.wallets._api.get_wallet_total_available_credits",
         autospec=True,
-        return_value=WalletTotalCredits(
-            wallet_id=1, available_osparc_credits=Decimal(10.2)
-        ),
+        return_value=WalletTotalCredits(wallet_id=1, available_osparc_credits=Decimal(10.2)),
     )
 
 
@@ -70,9 +68,7 @@ async def test_wallets_full_workflow(
 
     # create a new wallet
     url = client.app.router["create_wallet"].url_for()
-    resp = await client.post(
-        url.path, json={"name": "My first wallet", "description": "Custom description"}
-    )
+    resp = await client.post(url.path, json={"name": "My first wallet", "description": "Custom description"})
     added_wallet, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # list user wallets
@@ -91,17 +87,13 @@ async def test_wallets_full_workflow(
     store_modified_field = arrow.get(data[0]["modified"])
 
     # get concrete user wallet
-    url = client.app.router["get_wallet"].url_for(
-        wallet_id=f"{added_wallet['walletId']}"
-    )
+    url = client.app.router["get_wallet"].url_for(wallet_id=f"{added_wallet['walletId']}")
     resp = await client.get(url.path)
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["walletId"] == added_wallet["walletId"]
 
     # update user wallet
-    url = client.app.router["update_wallet"].url_for(
-        wallet_id=f"{added_wallet['walletId']}"
-    )
+    url = client.app.router["update_wallet"].url_for(wallet_id=f"{added_wallet['walletId']}")
     resp = await client.put(
         url.path,
         json={
@@ -154,13 +146,11 @@ async def test_wallets_full_workflow(
     # Now we will log as a different user
     async with LoggedUser(client):
         # User who does not have access will try to access the wallet
-        url = client.app.router["update_wallet"].url_for(
-            wallet_id=f"{added_wallet['walletId']}"
-        )
+        url = client.app.router["update_wallet"].url_for(wallet_id=f"{added_wallet['walletId']}")
         resp = await client.put(
             url.path,
             json={
-                "name": "I dont have permisions to change this wallet",
+                "name": "I dont have permissions to change this wallet",
                 "description": "-",
                 "thumbnail": "-",
                 "status": "ACTIVE",
@@ -211,9 +201,7 @@ async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     assert len(data) == 1
     wallet = WalletGet(**data[0])
 
-    user = UserDisplayAndIdNamesTuple(
-        **{k: logged_user[k] for k in UserDisplayAndIdNamesTuple._fields}
-    )
+    user = UserDisplayAndIdNamesTuple(**{k: logged_user[k] for k in UserDisplayAndIdNamesTuple._fields})
     assert wallet.name == _WALLET_NAME_TEMPLATE.format(user.full_name)
     assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user.full_name)
     assert mock_rut_sum_total_available_credits_in_the_wallet.called
@@ -241,12 +229,8 @@ async def test_get_default_wallet_not_found(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role < UserRole.USER]
-)
-async def test_get_default_wallet_access_rights(
-    client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
-):
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role < UserRole.USER])
+async def test_get_default_wallet_access_rights(client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture):
     url = client.app.router["get_default_wallet"].url_for()
     response = await client.get(url.path)
 
@@ -284,9 +268,7 @@ async def test_update_wallet_without_thumbnail(
     assert created_wallet["thumbnail"] == "Initial thumbnail"
 
     # Update the wallet without a thumbnail in the request body
-    url = client.app.router["update_wallet"].url_for(
-        wallet_id=f"{created_wallet['walletId']}"
-    )
+    url = client.app.router["update_wallet"].url_for(wallet_id=f"{created_wallet['walletId']}")
     resp = await client.put(
         url.path,
         json={
@@ -301,18 +283,12 @@ async def test_update_wallet_without_thumbnail(
     assert updated_wallet["walletId"] == created_wallet["walletId"]
     assert updated_wallet["name"] == "Updated wallet name"
     assert updated_wallet["description"] == "Updated description"
-    assert (
-        updated_wallet["thumbnail"] is None
-    )  # Thumbnail should be None when not provided
+    assert updated_wallet["thumbnail"] is None  # Thumbnail should be None when not provided
     assert updated_wallet["status"] == "ACTIVE"
 
     # Get the wallet to verify the changes persisted
-    url = client.app.router["get_wallet"].url_for(
-        wallet_id=f"{created_wallet['walletId']}"
-    )
+    url = client.app.router["get_wallet"].url_for(wallet_id=f"{created_wallet['walletId']}")
     resp = await client.get(url.path)
     fetched_wallet, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    assert (
-        fetched_wallet["thumbnail"] is None
-    )  # Confirm thumbnail is None in the database
+    assert fetched_wallet["thumbnail"] is None  # Confirm thumbnail is None in the database

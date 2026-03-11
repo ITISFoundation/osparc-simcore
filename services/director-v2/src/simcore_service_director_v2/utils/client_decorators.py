@@ -44,7 +44,7 @@ def _format_headers(headers: Headers) -> str:
 
 def handle_errors(service_name: str, logger: logging.Logger):
     """
-    Handles different types of errors and transform them into error reponses
+    Handles different types of errors and transform them into error responses
 
     - httpx errors -> logged + respond with HTTP_503_SERVICE_UNAVAILABLE
     - response client error -> forward response
@@ -59,9 +59,7 @@ def handle_errors(service_name: str, logger: logging.Logger):
                 resp: httpx.Response = await request_func(*args, **kwargs)
 
             except httpx.RequestError as err:
-                logger.error(
-                    "Failed request %s(%s, %s)", request_func.__name__, args, kwargs
-                )
+                logger.error("Failed request %s(%s, %s)", request_func.__name__, args, kwargs)
                 raise HTTPException(
                     status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail=f"{service_name} is not responsive",

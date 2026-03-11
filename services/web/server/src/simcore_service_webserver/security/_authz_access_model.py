@@ -8,7 +8,7 @@ References:
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import TypeAlias, TypedDict
+from typing import TypedDict
 
 from common_library.async_tools import maybe_await
 from models_library.products import ProductName
@@ -24,12 +24,11 @@ class AuthContextDict(TypedDict, total=False):
     product_name: ProductName
 
 
-OptionalContext: TypeAlias = AuthContextDict | dict | None
+type OptionalContext = AuthContextDict | dict | None
 
-CheckFunction: TypeAlias = (
+type CheckFunction = (
     # Type for check functions that can be either sync or async
-    Callable[[OptionalContext], bool]
-    | Callable[[OptionalContext], Awaitable[bool]]
+    Callable[[OptionalContext], bool] | Callable[[OptionalContext], Awaitable[bool]]
 )
 
 
@@ -37,20 +36,14 @@ CheckFunction: TypeAlias = (
 class _RolePermissions:
     role: UserRole
 
-    allowed: list[str] = field(
-        default_factory=list, metadata={"description": "list of allowed operations"}
-    )
+    allowed: list[str] = field(default_factory=list, metadata={"description": "list of allowed operations"})
     check: dict[str, CheckFunction] = field(
         default_factory=dict,
-        metadata={
-            "description": "checked permissions: dict of operations with conditions"
-        },
+        metadata={"description": "checked permissions: dict of operations with conditions"},
     )
     inherits: list[UserRole] = field(
         default_factory=list,
-        metadata={
-            "description": "list of parent roles that inherit permissions from this role"
-        },
+        metadata={"description": "list of parent roles that inherit permissions from this role"},
     )
 
     @classmethod
@@ -90,9 +83,7 @@ class RoleBasedAccessModel:
     def __init__(self, roles: list[_RolePermissions]):
         self.roles: dict[UserRole, _RolePermissions] = {r.role: r for r in roles}
 
-    async def can(
-        self, role: UserRole, operation: str, context: OptionalContext = None
-    ) -> bool:
+    async def can(self, role: UserRole, operation: str, context: OptionalContext = None) -> bool:
         # pylint: disable=too-many-return-statements
 
         # undefined operation
@@ -103,7 +94,7 @@ class RoleBasedAccessModel:
         # undefined role
         role_access = self.roles.get(role, None)
         if not role_access:
-            _logger.debug("Role %s has no permissions defined in acces model", role)
+            _logger.debug("Role %s has no permissions defined in access model", role)
             return False
 
         # check named operations
@@ -117,9 +108,7 @@ class RoleBasedAccessModel:
                 return await maybe_await(check(context))
 
             except Exception:  # pylint: disable=broad-except
-                _logger.debug(
-                    "Check operation '%s', shall not raise [%s]", operation, check
-                )
+                _logger.debug("Check operation '%s', shall not raise [%s]", operation, check)
                 return False
 
         # check if any parents
@@ -136,9 +125,7 @@ class RoleBasedAccessModel:
 
     @classmethod
     def from_rawdata(cls, raw: dict):
-        roles = [
-            _RolePermissions.from_rawdata(role, value) for role, value in raw.items()
-        ]
+        roles = [_RolePermissions.from_rawdata(role, value) for role, value in raw.items()]
         return RoleBasedAccessModel(roles)
 
 

@@ -52,9 +52,7 @@ def create_image_spec(
         "build": build_spec,
     }
     if docker_compose_overwrite_cfg.services[service_name].depends_on:
-        service_kwargs["depends_on"] = docker_compose_overwrite_cfg.services[
-            service_name
-        ].depends_on
+        service_kwargs["depends_on"] = docker_compose_overwrite_cfg.services[service_name].depends_on
 
     return ComposeSpecification(
         services={service_name: Service(**service_kwargs)},

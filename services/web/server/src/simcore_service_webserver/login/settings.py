@@ -40,9 +40,7 @@ class LoginSettings(BaseCustomSettings):
         description="Twilio service settings. Used to send SMS for 2FA",
     )
 
-    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
-        default=120, description="Expiration time for code [sec]"
-    )
+    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(default=120, description="Expiration time for code [sec]")
 
     LOGIN_2FA_REQUIRED: Annotated[
         bool,
@@ -104,9 +102,7 @@ class LoginSettingsForProduct(LoginSettings):
 
         if "two_factor_enabled" in composed_settings:
             # legacy safe
-            composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop(
-                "two_factor_enabled"
-            )
+            composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop("two_factor_enabled")
         return cls(**composed_settings)
 
 
@@ -147,9 +143,7 @@ LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final = web.AppKey(
 )
 
 
-def get_plugin_settings(
-    app: web.Application, product_name: str
-) -> LoginSettingsForProduct:
+def get_plugin_settings(app: web.Application, product_name: str) -> LoginSettingsForProduct:
     """login plugin's settings are customized per product"""
     settings = app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY][product_name]
     assert settings, "setup_settings not called?"  # nosec

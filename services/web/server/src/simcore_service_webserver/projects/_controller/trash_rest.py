@@ -35,15 +35,11 @@ _TRASH_ERRORS: ExceptionToHttpErrorMap = {
     ),
     ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message(
-            "Something went wrong while stopping services before trashing. Aborting trash."
-        ),
+        user_message("Something went wrong while stopping services before trashing. Aborting trash."),
     ),
 }
 
-_handle_local_request_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TRASH_ERRORS)
-)
+_handle_local_request_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TRASH_ERRORS))
 
 
 routes = web.RouteTableDef()
@@ -58,9 +54,7 @@ async def trash_project(request: web.Request):
     user_id = get_user_id(request)
     product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params: RemoveQueryParams = parse_request_query_parameters_as(
-        RemoveQueryParams, request
-    )
+    query_params: RemoveQueryParams = parse_request_query_parameters_as(RemoveQueryParams, request)
 
     await _trash_service.trash_project(
         request.app,

@@ -4,6 +4,7 @@ from typing import Any, Final
 
 import distributed
 import rich
+from distributed.objects import SchedulerInfo
 from mypy_boto3_ec2.service_resource import Instance
 from pydantic import AnyUrl
 
@@ -21,9 +22,7 @@ def _wrap_dask_async_call(called_fct) -> Awaitable[Any]:
 
 
 @contextlib.asynccontextmanager
-async def dask_client(
-    state: AppState, instance: Instance
-) -> AsyncGenerator[distributed.Client]:
+async def dask_client(state: AppState, instance: Instance) -> AsyncGenerator[distributed.Client]:
     security = distributed.Security()
     assert state.deploy_config
     dask_certificates = state.deploy_config / "assets" / "dask-certificates"
@@ -40,9 +39,7 @@ async def dask_client(
             if instance.public_ip_address is not None:
                 url = AnyUrl(f"tls://{instance.public_ip_address}:{_SCHEDULER_PORT}")
             else:
-                bastion_instance = await get_bastion_instance_from_remote_instance(
-                    state, instance
-                )
+                bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
                 assert state.ssh_key_path  # nosec
                 assert state.environment  # nosec
                 tunnel = stack.enter_context(
@@ -58,9 +55,7 @@ async def dask_client(
                 host, port = tunnel.local_bind_address
                 url = AnyUrl(f"tls://{host}:{port}")
             client = await stack.enter_async_context(
-                distributed.Client(
-                    f"{url}", security=security, timeout="5", asynchronous=True
-                )
+                distributed.Client(f"{url}", security=security, timeout="5", asynchronous=True)
             )
             yield client
 
@@ -115,8 +110,11 @@ async def _list_all_tasks(
     try:
         list_of_tasks = await client.run_on_scheduler(_list_tasks)  # type: ignore
     except TypeError:
+        rich.print("ERROR while recoverring unrunnable tasks . Defaulting to empty list of tasks!!")
+    except Exception as e:
         rich.print(
-            "ERROR while recoverring unrunnable tasks . Defaulting to empty list of tasks!!"
+            f"Unexpected error while recovering unrunnable tasks: {e} when communicating with {client.scheduler}"
+            ". Defaulting to empty list of tasks!!"
         )
     return list_of_tasks
 
@@ -128,14 +126,15 @@ async def get_scheduler_details(state: AppState, instance: Instance):
     all_tasks = {}
     try:
         async with dask_client(state, instance) as client:
-            scheduler_info = client.scheduler_info()
+            assert client.scheduler  # nosec
+            # NOTE: client.scheduler_info() is cached and limited to 5 workers for async clients.
+            # Use the direct RPC call instead, which returns all workers live.
+            scheduler_info = SchedulerInfo(await client.scheduler.identity(n_workers=-1))  # type: ignore
             datasets_on_cluster = await _wrap_dask_async_call(client.list_datasets())
             processing_jobs = await _wrap_dask_async_call(client.processing())
             all_tasks = await _list_all_tasks(client)
     except (TimeoutError, OSError, TypeError):
-        rich.print(
-            "ERROR while recoverring scheduler details !! no scheduler info found!!"
-        )
+        rich.print("ERROR while recoverring scheduler details !! no scheduler info found!!")
 
     return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks
 

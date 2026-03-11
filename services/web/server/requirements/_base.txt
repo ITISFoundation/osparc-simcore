@@ -89,9 +89,9 @@ aiohttp==3.12.12
     #   aiohttp-jinja2
     #   aiohttp-security
     #   aiohttp-session
-aiohttp-jinja2==1.5
+aiohttp-jinja2==1.6
     # via -r requirements/_base.in
-aiohttp-security==0.4.0
+aiohttp-security==0.5.0
     # via -r requirements/_base.in
 aiohttp-session==2.11.0
     # via -r requirements/_base.in
@@ -151,7 +151,7 @@ billiard==4.2.1
     # via celery
 captcha==0.5.0
     # via -r requirements/_base.in
-celery==5.5.3
+celery==5.6.0
     # via -r requirements/../../../../packages/celery-library/requirements/_base.in
 certifi==2023.7.22
     # via
@@ -283,6 +283,8 @@ email-validator==2.2.0
     # via pydantic
 et-xmlfile==1.1.0
     # via openpyxl
+exceptiongroup==1.3.1
+    # via celery
 faker==19.6.1
     # via -r requirements/_base.in
 fast-depends==2.4.12
@@ -315,6 +317,10 @@ h11==0.16.0
     # via
     #   httpcore
     #   wsproto
+h2==4.3.0
+    # via httpx
+hpack==4.1.0
+    # via h2
 httpcore==1.0.9
     # via httpx
 httpx==0.28.1
@@ -367,8 +373,13 @@ httpx==0.28.1
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
+hyperframe==6.1.0
+    # via h2
 idna==3.3
     # via
     #   anyio
@@ -456,7 +467,7 @@ jsonschema==4.25.1
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
-kombu==5.5.4
+kombu==5.6.1
     # via celery
 mako==1.3.10
     # via
@@ -539,6 +550,7 @@ opentelemetry-api==1.34.1
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -565,6 +577,7 @@ opentelemetry-instrumentation==0.55b1
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -588,6 +601,11 @@ opentelemetry-instrumentation-asyncpg==0.55b1
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-dbapi==0.55b1
     # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-httpx==0.55b1
+    # via
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-logging==0.55b1
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -622,6 +640,7 @@ opentelemetry-semantic-conventions==0.55b1
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -629,6 +648,7 @@ opentelemetry-util-http==0.55b1
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
 orderly-set==5.2.3
     # via deepdiff
@@ -745,8 +765,56 @@ propcache==0.3.1
     # via
     #   aiohttp
     #   yarl
-protobuf==5.29.5
+protobuf==5.29.6
     # via
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/celery-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/notifications-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../requirements/constraints.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
 psutil==6.0.0
@@ -1231,7 +1299,7 @@ sqlalchemy==1.4.54
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   aiopg
     #   alembic
-stream-zip==0.0.83
+stream-zip==0.0.84
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -1292,7 +1360,9 @@ typing-inspection==0.4.1
     # via pydantic
 tzdata==2025.2
     # via kombu
-urllib3==2.5.0
+tzlocal==5.3.1
+    # via celery
+urllib3==2.6.3
     # via
     #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -1362,6 +1432,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 wsproto==1.2.0
     # via simple-websocket

@@ -70,9 +70,7 @@ from pytest_simcore.helpers.parametrizations import byte_size_ids
     ],
     ids=byte_size_ids,
 )
-def test_compute_num_file_chunks(
-    file_size: ByteSize, expected_num_chunks: int, expected_chunk_size: ByteSize
-):
+def test_compute_num_file_chunks(file_size: ByteSize, expected_num_chunks: int, expected_chunk_size: ByteSize):
     num_chunks, chunk_size = compute_num_file_chunks(file_size)
     assert num_chunks == expected_num_chunks
     assert chunk_size == expected_chunk_size
@@ -80,11 +78,7 @@ def test_compute_num_file_chunks(
 
 def test_enormous_file_size_raises_value_error():
     enormous_file_size = TypeAdapter(ByteSize).validate_python(
-        (
-            max(_MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE)
-            * _MULTIPART_MAX_NUMBER_OF_PARTS
-            + 1
-        ),
+        (max(_MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE) * _MULTIPART_MAX_NUMBER_OF_PARTS + 1),
     )
     with pytest.raises(ValueError):
         compute_num_file_chunks(enormous_file_size)

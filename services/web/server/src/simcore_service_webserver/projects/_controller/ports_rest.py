@@ -7,7 +7,6 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
     ProjectOutputGet,
 )
-from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
@@ -73,9 +72,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         {
-            node_id: ProjectInputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectInputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in inputs.items()
         }
     )
@@ -106,10 +103,8 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         if node_id not in current_inputs:
             raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
 
-        workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
-        partial_workbench_data[node_id] = workbench[node_id].model_dump(
-            include={"outputs"}, exclude_unset=True
-        )
+        workbench[node_id].outputs = {"out_1": input_update.value}
+        partial_workbench_data[node_id] = workbench[node_id].model_dump(include={"outputs"}, exclude_unset=True)
 
     # patch workbench
     await check_user_project_permission(
@@ -124,21 +119,16 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     updated_project, _ = await db.update_project_multiple_node_data(
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
-        product_name=req_ctx.product_name,
         partial_workbench_data=jsonable_encoder(partial_workbench_data),
         client_session_id=header_params.client_session_id,
     )
 
-    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(
-        updated_project["workbench"]
-    )
+    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(updated_project["workbench"])
     inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
     return envelope_json_response(
         {
-            node_id: ProjectInputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectInputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in inputs.items()
         }
     )
@@ -168,9 +158,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         {
-            node_id: ProjectOutputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectOutputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in outputs.items()
         }
     )
@@ -184,7 +172,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 class ProjectMetadataPortGet(BaseModel):
     key: NodeID = Field(
         ...,
-        description="Project port's unique identifer. Same as the UUID of the associated port node",
+        description="Project port's unique identifier. Same as the UUID of the associated port node",
     )
     kind: Literal["input", "output"]
     content_schema: JsonSchemaDict | None = Field(

@@ -23,9 +23,7 @@ def get_dynamic_service_start() -> Callable[[NodeID], DynamicServiceStart]:
 @pytest.fixture
 def get_dynamic_service_stop() -> Callable[[NodeID], DynamicServiceStop]:
     def _(node_id: NodeID) -> DynamicServiceStop:
-        dict_data = deepcopy(
-            DynamicServiceStop.model_config["json_schema_extra"]["example"]
-        )
+        dict_data = deepcopy(DynamicServiceStop.model_config["json_schema_extra"]["example"])
         dict_data["node_id"] = f"{node_id}"
         return TypeAdapter(DynamicServiceStop).validate_python(dict_data)
 

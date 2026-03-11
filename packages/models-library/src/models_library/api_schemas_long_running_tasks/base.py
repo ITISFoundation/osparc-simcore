@@ -43,9 +43,7 @@ class TaskProgress(BaseModel):
     # used to propagate progress updates internally
     _update_callback: Callable[["TaskProgress"], Awaitable[None]] | None = None
 
-    def set_update_callback(
-        self, callback: Callable[["TaskProgress"], Awaitable[None]]
-    ) -> None:
+    def set_update_callback(self, callback: Callable[["TaskProgress"], Awaitable[None]]) -> None:
         self._update_callback = callback
 
     @validate_call

@@ -31,16 +31,12 @@ def _assert_services(
     assert len(expected) == len(got)
 
     expected_key_version_tuples = [
-        (s["service_description"]["key"], s["service_description"]["version"])
-        for s in expected
+        (s["service_description"]["key"], s["service_description"]["version"]) for s in expected
     ]
 
     for data in got:
         service = ServiceDataGet.model_validate(data)
-        assert (
-            expected_key_version_tuples.count((f"{service.key}", f"{service.version}"))
-            == 1
-        )
+        assert expected_key_version_tuples.count((f"{service.key}", f"{service.version}")) == 1
 
 
 async def test_list_services_with_empty_registry(
@@ -107,9 +103,7 @@ async def test_list_services_by_service_type(
     assert docker_registry, "docker-registry is not ready?"
     assert len(created_services) == 5
 
-    resp = await client.get(
-        f"/{api_version_prefix}/services?service_type=computational"
-    )
+    resp = await client.get(f"/{api_version_prefix}/services?service_type=computational")
     assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
     services, error = _assert_response_and_unwrap_envelope(resp)
@@ -134,14 +128,10 @@ async def test_get_services_by_key_and_version_with_empty_registry(
     resp = await client.get(f"/{api_version_prefix}/services/whatever/someversion")
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
 
-    resp = await client.get(
-        f"/{api_version_prefix}/simcore/services/dynamic/something/someversion"
-    )
+    resp = await client.get(f"/{api_version_prefix}/simcore/services/dynamic/something/someversion")
     assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"
 
-    resp = await client.get(
-        f"/{api_version_prefix}/simcore/services/dynamic/something/1.5.2"
-    )
+    resp = await client.get(f"/{api_version_prefix}/simcore/services/dynamic/something/1.5.2")
     assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"
 
 
@@ -157,9 +147,7 @@ async def test_get_services_by_key_and_version(
     for created_service in created_services:
         service_description = created_service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = (
-            quote(service_description[key], safe="") for key in ("key", "version")
-        )
+        key, version = (quote(service_description[key], safe="") for key in ("key", "version"))
         url = f"/{api_version_prefix}/services/{key}/{version}"
         resp = await client.get(url)
 
@@ -186,9 +174,7 @@ async def test_get_service_labels(
     for service in created_services:
         service_description = service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = (
-            quote(service_description[key], safe="") for key in ("key", "version")
-        )
+        key, version = (quote(service_description[key], safe="") for key in ("key", "version"))
         url = f"/{api_version_prefix}/services/{key}/{version}/labels"
         resp = await client.get(url)
         assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"

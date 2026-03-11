@@ -97,9 +97,7 @@ def outputs_push():
     async def _async_outputs_push() -> None:
         async with _initialized_app() as app:
             outputs_manager: OutputsManager = app.state.outputs_manager
-            await push_user_services_output_ports(
-                TaskProgress.create(), app=app, outputs_manager=outputs_manager
-            )
+            await push_user_services_output_ports(TaskProgress.create(), app=app, outputs_manager=outputs_manager)
 
     asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")

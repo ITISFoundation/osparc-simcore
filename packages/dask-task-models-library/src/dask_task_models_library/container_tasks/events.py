@@ -36,9 +36,7 @@ class TaskProgressEvent(BaseTaskEvent):
         return "task_progress"
 
     @classmethod
-    def from_dask_worker(
-        cls, progress: float, *, task_owner: TaskOwner
-    ) -> "TaskProgressEvent":
+    def from_dask_worker(cls, progress: float, *, task_owner: TaskOwner) -> "TaskProgressEvent":
         worker = get_worker()
         job_id = worker.get_current_task()
 

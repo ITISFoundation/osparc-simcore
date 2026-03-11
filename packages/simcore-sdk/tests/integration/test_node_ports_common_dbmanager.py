@@ -24,9 +24,7 @@ async def test_db_manager_read_config(
     mock_app_name: str,
 ):
     db_manager = DBManager(application_name=mock_app_name)
-    ports_configuration_str = await db_manager.get_ports_configuration_from_node_uuid(
-        project_id, node_uuid
-    )
+    ports_configuration_str = await db_manager.get_ports_configuration_from_node_uuid(project_id, node_uuid)
 
     loaded_config_specs = json.loads(ports_configuration_str)
     assert loaded_config_specs == default_configuration
@@ -46,11 +44,7 @@ async def test_db_manager_write_config(
     json_configuration = default_configuration_file.read_text()
     # write the default config to the database
     db_manager = DBManager(application_name=mock_app_name)
-    await db_manager.write_ports_configuration(
-        json_configuration, project_id, node_uuid
-    )
+    await db_manager.write_ports_configuration(json_configuration, project_id, node_uuid)
 
-    ports_configuration_str = await db_manager.get_ports_configuration_from_node_uuid(
-        project_id, node_uuid
-    )
+    ports_configuration_str = await db_manager.get_ports_configuration_from_node_uuid(project_id, node_uuid)
     assert json.loads(ports_configuration_str) == json.loads(json_configuration)

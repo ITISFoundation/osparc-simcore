@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.scicrunch._repository import ScicrunchResourcesRepository
 

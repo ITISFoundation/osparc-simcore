@@ -24,9 +24,7 @@ from simcore_service_webserver.db.models import UserRole
 
 
 @pytest.fixture
-def mock_catalog_service_api_responses(
-    client: TestClient, aioresponses_mocker: AioResponsesMock
-) -> AioResponsesMock:
+def mock_catalog_service_api_responses(client: TestClient, aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:
     assert client.app
     settings: CatalogSettings = get_plugin_settings(client.app)
 
@@ -35,9 +33,7 @@ def mock_catalog_service_api_responses(
     service_resources = TypeAdapter(ServiceResourcesDict).validate_python(
         ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
-    jsonable_service_resources = ServiceResourcesDictHelpers.create_jsonable(
-        service_resources
-    )
+    jsonable_service_resources = ServiceResourcesDictHelpers.create_jsonable(service_resources)
 
     aioresponses_mocker.get(url_pattern, payload=jsonable_service_resources)
     aioresponses_mocker.post(url_pattern, payload=jsonable_service_resources)

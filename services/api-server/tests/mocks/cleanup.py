@@ -32,9 +32,7 @@ def anonymize_values(json_key, json_data):
 def main():
     parser = argparse.ArgumentParser(description="Anonymizes mocks/*.json files")
 
-    parser.add_argument(
-        "file", nargs="?", type=str, help="The file that will be sanitized"
-    )
+    parser.add_argument("file", nargs="?", type=str, help="The file that will be sanitized")
     args = parser.parse_args()
 
     if args.file:

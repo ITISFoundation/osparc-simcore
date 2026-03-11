@@ -38,9 +38,7 @@ class Group(BaseModel):
         ),
     ] = DEFAULT_FACTORY
 
-    _from_equivalent_enums = field_validator("group_type", mode="before")(
-        create_enums_pre_validator(GroupType)
-    )
+    _from_equivalent_enums = field_validator("group_type", mode="before")(create_enums_pre_validator(GroupType))
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -101,9 +99,7 @@ class Group(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        populate_by_name=True, json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(populate_by_name=True, json_schema_extra=_update_json_schema_extra)
 
 
 class AccessRightsDict(TypedDict):

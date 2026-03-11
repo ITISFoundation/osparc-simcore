@@ -41,17 +41,14 @@ def parse_generic_resource(generic_resources: list[Any]) -> ResourcesDict:
 def merge_service_resources_with_user_specs(
     service_resources: ResourcesDict, user_specific_spec: ServiceSpec
 ) -> ResourcesDict:
-    if (
-        not user_specific_spec.task_template
-        or not user_specific_spec.task_template.resources
-    ):
+    if not user_specific_spec.task_template or not user_specific_spec.task_template.resources:
         return service_resources
 
     assert "task_template" in user_specific_spec.model_fields  # nosec
 
-    user_specific_resources = user_specific_spec.model_dump(
-        include={"task_template": {"resources"}}, by_alias=True
-    )["TaskTemplate"]["Resources"]
+    user_specific_resources = user_specific_spec.model_dump(include={"task_template": {"resources"}}, by_alias=True)[
+        "TaskTemplate"
+    ]["Resources"]
 
     merged_resources = deepcopy(service_resources)
     for docker_res_type, osparc_res_attr in _DOCKER_TO_OSPARC_RESOURCE_ATTR.items():
@@ -75,7 +72,7 @@ def merge_service_resources_with_user_specs(
             if key in merged_resources:
                 # updates.
                 # NOTE: do not use assignment!
-                # SEE test_reservation_is_cap_by_limit_on_assigment_pydantic_2_bug
+                # SEE test_reservation_is_cap_by_limit_on_assignment_pydantic_2_bug
                 data = merged_resources[key].model_dump()
                 data[osparc_res_attr] = res_value * scale
                 merged_resources[key] = ResourceValue(**data)

@@ -116,14 +116,8 @@ async def update_service_run_last_heartbeat(
             )
             .where(
                 (resource_tracker_service_runs.c.service_run_id == data.service_run_id)
-                & (
-                    resource_tracker_service_runs.c.service_run_status
-                    == ServiceRunStatus.RUNNING
-                )
-                & (
-                    resource_tracker_service_runs.c.last_heartbeat_at
-                    <= data.last_heartbeat_at
-                )
+                & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
+                & (resource_tracker_service_runs.c.last_heartbeat_at <= data.last_heartbeat_at)
             )
             .returning(sa.literal_column("*"))
         )
@@ -151,10 +145,7 @@ async def update_service_run_stopped_at(
             )
             .where(
                 (resource_tracker_service_runs.c.service_run_id == data.service_run_id)
-                & (
-                    resource_tracker_service_runs.c.service_run_status
-                    == ServiceRunStatus.RUNNING
-                )
+                & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
             )
             .returning(sa.literal_column("*"))
         )
@@ -274,35 +265,24 @@ async def list_service_runs_by_product_and_user_and_wallet(
         )
 
         if user_id:
-            base_query = base_query.where(
-                resource_tracker_service_runs.c.user_id == user_id
-            )
+            base_query = base_query.where(resource_tracker_service_runs.c.user_id == user_id)
         if wallet_id:
-            base_query = base_query.where(
-                resource_tracker_service_runs.c.wallet_id == wallet_id
-            )
+            base_query = base_query.where(resource_tracker_service_runs.c.wallet_id == wallet_id)
         if service_run_status:
-            base_query = base_query.where(
-                resource_tracker_service_runs.c.service_run_status == service_run_status
-            )
+            base_query = base_query.where(resource_tracker_service_runs.c.service_run_status == service_run_status)
         if started_from:
             base_query = base_query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                >= started_from.date()
+                sa.func.DATE(resource_tracker_service_runs.c.started_at) >= started_from.date()
             )
         if started_until:
             base_query = base_query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                <= started_until.date()
+                sa.func.DATE(resource_tracker_service_runs.c.started_at) <= started_until.date()
             )
         if project_id:
-            base_query = base_query.where(
-                resource_tracker_service_runs.c.project_id == f"{project_id}"
-            )
+            base_query = base_query.where(resource_tracker_service_runs.c.project_id == f"{project_id}")
         if transaction_status:
             base_query = base_query.where(
-                resource_tracker_credit_transactions.c.transaction_status
-                == transaction_status
+                resource_tracker_credit_transactions.c.transaction_status == transaction_status
             )
 
         # Select total count from base_query
@@ -316,18 +296,14 @@ async def list_service_runs_by_product_and_user_and_wallet(
                 list_query = base_query.order_by(sa.desc(order_by.field))
         else:
             # Default ordering
-            list_query = base_query.order_by(
-                resource_tracker_service_runs.c.started_at.desc()
-            )
+            list_query = base_query.order_by(resource_tracker_service_runs.c.started_at.desc())
 
         total_count = await conn.scalar(count_query)
         if total_count is None:
             total_count = 0
 
         result = await conn.stream(list_query.offset(offset).limit(limit))
-        items: list[ServiceRunWithCreditsDB] = [
-            ServiceRunWithCreditsDB.model_validate(row) async for row in result
-        ]
+        items: list[ServiceRunWithCreditsDB] = [ServiceRunWithCreditsDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -348,9 +324,7 @@ async def get_osparc_credits_aggregated_by_service(
         base_query = (
             sa.select(
                 resource_tracker_service_runs.c.service_key,
-                sa.func.SUM(
-                    resource_tracker_credit_transactions.c.osparc_credits
-                ).label("osparc_credits"),
+                sa.func.SUM(resource_tracker_credit_transactions.c.osparc_credits).label("osparc_credits"),
                 sa.func.SUM(
                     sa.func.round(
                         (
@@ -402,18 +376,14 @@ async def get_osparc_credits_aggregated_by_service(
         )
 
         if user_id:
-            base_query = base_query.where(
-                resource_tracker_service_runs.c.user_id == user_id
-            )
+            base_query = base_query.where(resource_tracker_service_runs.c.user_id == user_id)
         if started_from:
             base_query = base_query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                >= started_from.date()
+                sa.func.DATE(resource_tracker_service_runs.c.started_at) >= started_from.date()
             )
         if started_until:
             base_query = base_query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                <= started_until.date()
+                sa.func.DATE(resource_tracker_service_runs.c.started_at) <= started_until.date()
             )
 
         subquery = base_query.subquery()
@@ -423,19 +393,12 @@ async def get_osparc_credits_aggregated_by_service(
             count_result = 0
 
         # Default ordering and pagination
-        list_query = (
-            base_query.order_by(resource_tracker_service_runs.c.service_key.asc())
-            .offset(offset)
-            .limit(limit)
-        )
+        list_query = base_query.order_by(resource_tracker_service_runs.c.service_key.asc()).offset(offset).limit(limit)
         list_result = await conn.execute(list_query)
 
     return (
         cast(int, count_result),
-        [
-            OsparcCreditsAggregatedByServiceKeyDB.model_validate(row)
-            for row in list_result.fetchall()
-        ],
+        [OsparcCreditsAggregatedByServiceKeyDB.model_validate(row) for row in list_result.fetchall()],
     )
 
 
@@ -479,10 +442,7 @@ async def sum_project_wallet_total_credits(
         )
 
         if transaction_status:
-            sum_stmt = sum_stmt.where(
-                resource_tracker_credit_transactions.c.transaction_status
-                == transaction_status
-            )
+            sum_stmt = sum_stmt.where(resource_tracker_credit_transactions.c.transaction_status == transaction_status)
         else:
             sum_stmt = sum_stmt.where(
                 resource_tracker_credit_transactions.c.transaction_status.in_(
@@ -497,9 +457,7 @@ async def sum_project_wallet_total_credits(
         result = await conn.execute(sum_stmt)
         row = result.first()
         if row is None or row[0] is None:
-            return WalletTotalCredits(
-                wallet_id=wallet_id, available_osparc_credits=Decimal(0)
-            )
+            return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=Decimal(0))
         return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
 
@@ -524,9 +482,7 @@ async def export_service_runs_table_to_s3(
                 resource_tracker_service_runs.c.service_run_id,
                 resource_tracker_service_runs.c.wallet_name,
                 resource_tracker_service_runs.c.user_email,
-                resource_tracker_service_runs.c.root_parent_project_name.label(
-                    "project_name"
-                ),
+                resource_tracker_service_runs.c.root_parent_project_name.label("project_name"),
                 resource_tracker_service_runs.c.node_name,
                 resource_tracker_service_runs.c.service_key,
                 resource_tracker_service_runs.c.service_version,
@@ -558,15 +514,9 @@ async def export_service_runs_table_to_s3(
         if wallet_id:
             query = query.where(resource_tracker_service_runs.c.wallet_id == wallet_id)
         if started_from:
-            query = query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                >= started_from.date()
-            )
+            query = query.where(sa.func.DATE(resource_tracker_service_runs.c.started_at) >= started_from.date())
         if started_until:
-            query = query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                <= started_until.date()
-            )
+            query = query.where(sa.func.DATE(resource_tracker_service_runs.c.started_at) <= started_until.date())
 
         if order_by:
             if order_by.direction == OrderDirection.ASC:
@@ -577,11 +527,7 @@ async def export_service_runs_table_to_s3(
             # Default ordering
             query = query.order_by(resource_tracker_service_runs.c.started_at.desc())
 
-        compiled_query = (
-            str(query.compile(compile_kwargs={"literal_binds": True}))
-            .replace("\n", "")
-            .replace("'", "''")
-        )
+        compiled_query = str(query.compile(compile_kwargs={"literal_binds": True})).replace("\n", "").replace("'", "''")
 
         result = await conn.execute(
             sa.DDL(
@@ -624,19 +570,11 @@ async def total_service_runs_by_product_and_user_and_wallet(
         if wallet_id:
             query = query.where(resource_tracker_service_runs.c.wallet_id == wallet_id)
         if started_from:
-            query = query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                >= started_from.date()
-            )
+            query = query.where(sa.func.DATE(resource_tracker_service_runs.c.started_at) >= started_from.date())
         if started_until:
-            query = query.where(
-                sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                <= started_until.date()
-            )
+            query = query.where(sa.func.DATE(resource_tracker_service_runs.c.started_at) <= started_until.date())
         if service_run_status:
-            query = query.where(
-                resource_tracker_service_runs.c.service_run_status == service_run_status
-            )
+            query = query.where(resource_tracker_service_runs.c.service_run_status == service_run_status)
 
         result = await conn.execute(query)
     row = result.first()
@@ -661,10 +599,7 @@ async def list_service_runs_with_running_status_across_all_products(
                 resource_tracker_service_runs.c.missed_heartbeat_counter,
                 resource_tracker_service_runs.c.modified,
             )
-            .where(
-                resource_tracker_service_runs.c.service_run_status
-                == ServiceRunStatus.RUNNING
-            )
+            .where(resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
             .order_by(resource_tracker_service_runs.c.started_at.desc())  # NOTE:
             .offset(offset)
             .limit(limit)
@@ -681,10 +616,7 @@ async def total_service_runs_with_running_status_across_all_products(
         query = (
             sa.select(sa.func.count())
             .select_from(resource_tracker_service_runs)
-            .where(
-                resource_tracker_service_runs.c.service_run_status
-                == ServiceRunStatus.RUNNING
-            )
+            .where(resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
         )
         result = await conn.execute(query)
     row = result.first()
@@ -708,14 +640,8 @@ async def update_service_missed_heartbeat_counter(
             )
             .where(
                 (resource_tracker_service_runs.c.service_run_id == service_run_id)
-                & (
-                    resource_tracker_service_runs.c.service_run_status
-                    == ServiceRunStatus.RUNNING
-                )
-                & (
-                    resource_tracker_service_runs.c.last_heartbeat_at
-                    == last_heartbeat_at
-                )
+                & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
+                & (resource_tracker_service_runs.c.last_heartbeat_at == last_heartbeat_at)
             )
             .returning(sa.literal_column("*"))
         )

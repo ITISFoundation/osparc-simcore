@@ -3,17 +3,21 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import asyncio
 import urllib.parse
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import ProgressMessage
-from servicelib.long_running_tasks import lrt_api
+from pytest_mock import MockerFixture
+from servicelib.long_running_tasks import lrt_api, task
+from servicelib.long_running_tasks._redis_store import (
+    _MARKED_FOR_REMOVAL_AT_FIELD,
+    _to_redis_hash_mapping,
+)
 from servicelib.long_running_tasks._serialization import (
     loads,
 )
@@ -33,6 +37,7 @@ from servicelib.long_running_tasks.models import (
     TaskContext,
     TaskProgress,
     TaskStatus,
+    TaskUniqueness,
 )
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -64,10 +69,10 @@ class _TetingError(Exception):
 async def a_background_task(
     progress: TaskProgress,
     raise_when_finished: bool,
-    total_sleep: int,
+    total_sleep: float,
 ) -> int:
     """sleeps and raises an error or returns 42"""
-    for i in range(total_sleep):
+    for i in range(int(total_sleep)):
         await asyncio.sleep(1)
         await progress.update(percent=(i + 1) / total_sleep)
     if raise_when_finished:
@@ -118,9 +123,7 @@ async def long_running_manager(
         Awaitable[LongRunningManager],
     ],
 ) -> LongRunningManager:
-    return await get_long_running_manager(
-        use_in_memory_redis, rabbit_service, "rabbit-namespace"
-    )
+    return await get_long_running_manager(use_in_memory_redis, rabbit_service, "rabbit-namespace")
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
@@ -140,9 +143,7 @@ async def test_task_is_auto_removed(
 
     if check_task_presence_before:
         # immediately after starting the task is still there
-        task_status = await long_running_manager.tasks_manager.get_task_status(
-            task_id, with_task_context=empty_context
-        )
+        task_status = await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
         assert task_status
 
     # wait for task to be automatically removed
@@ -159,13 +160,9 @@ async def test_task_is_auto_removed(
                 raise TryAgain(msg)
 
     with pytest.raises(TaskNotFoundError):
-        await long_running_manager.tasks_manager.get_task_status(
-            task_id, with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
     with pytest.raises(TaskNotFoundError):
-        await long_running_manager.tasks_manager.get_task_result(
-            task_id, with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
 
 
 @pytest.mark.parametrize("wait_multiplier", [1, 2, 3, 4, 5, 6])
@@ -184,13 +181,9 @@ async def test_checked_task_is_not_auto_removed(
     )
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            status = await long_running_manager.tasks_manager.get_task_status(
-                task_id, with_task_context=empty_context
-            )
+            status = await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
             assert status.done, f"task {task_id} not complete"
-    result = await long_running_manager.tasks_manager.get_task_result(
-        task_id, with_task_context=empty_context
-    )
+    result = await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
     assert result
 
 
@@ -214,29 +207,21 @@ async def test_fire_and_forget_task_is_not_auto_removed_while_running(
 
     await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
     # the task shall still be present even if we did not check the status before
-    status = await long_running_manager.tasks_manager.get_task_status(
-        task_id, with_task_context=empty_context
-    )
+    status = await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
     assert not status.done, "task was removed although it is fire and forget"
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             try:
-                await long_running_manager.tasks_manager.get_task_status(
-                    task_id, with_task_context=empty_context
-                )
+                await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
                 raise TryAgain
             except TaskNotFoundError:
                 pass
 
     with pytest.raises(TaskNotFoundError):
-        await long_running_manager.tasks_manager.get_task_status(
-            task_id, with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
     with pytest.raises(TaskNotFoundError):
-        await long_running_manager.tasks_manager.get_task_result(
-            task_id, with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
 
 
 async def test_get_result_of_unfinished_task_raises(
@@ -251,14 +236,10 @@ async def test_get_result_of_unfinished_task_raises(
         task_context=empty_context,
     )
     with pytest.raises(TaskNotCompletedError):
-        await long_running_manager.tasks_manager.get_task_result(
-            task_id, with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
 
 
-async def test_unique_task_already_running(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_unique_task_already_running(long_running_manager: LongRunningManager, empty_context: TaskContext):
     async def unique_task(progress: TaskProgress):
         _ = progress
         await asyncio.sleep(1)
@@ -269,7 +250,7 @@ async def test_unique_task_already_running(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
         unique_task.__name__,
-        unique=True,
+        uniqueness=TaskUniqueness.BY_NAME,
         task_context=empty_context,
     )
 
@@ -279,7 +260,7 @@ async def test_unique_task_already_running(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             unique_task.__name__,
-            unique=True,
+            uniqueness=TaskUniqueness.BY_NAME,
             task_context=empty_context,
         )
     assert "must be unique, found: " in f"{exec_info.value}"
@@ -287,9 +268,61 @@ async def test_unique_task_already_running(
     TaskRegistry.unregister(unique_task)
 
 
-async def test_start_multiple_not_unique_tasks(
+async def test_unique_task_with_different_unique_args_can_run(
     long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
+    async def unique_task(progress: TaskProgress, arg: int):
+        _ = progress
+        await asyncio.sleep(1)
+
+    TaskRegistry.register(unique_task)
+
+    for i in range(5):
+        await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            unique_task.__name__,
+            uniqueness=TaskUniqueness.BY_NAME_AND_ARGS,
+            task_context=empty_context,
+            arg=i,
+        )
+
+    TaskRegistry.unregister(unique_task)
+
+
+async def test_unique_task_with_same_unique_args_cannot_run(
+    long_running_manager: LongRunningManager, empty_context: TaskContext
+):
+    async def unique_task(progress: TaskProgress, arg: int):
+        _ = progress
+        await asyncio.sleep(1)
+
+    TaskRegistry.register(unique_task)
+
+    await lrt_api.start_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        unique_task.__name__,
+        uniqueness=TaskUniqueness.BY_NAME_AND_ARGS,
+        task_context=empty_context,
+        arg=1,
+    )
+
+    with pytest.raises(TaskAlreadyRunningError) as exec_info:
+        await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            unique_task.__name__,
+            uniqueness=TaskUniqueness.BY_NAME_AND_ARGS,
+            task_context=empty_context,
+            arg=1,
+        )
+    assert "must be unique, found: " in f"{exec_info.value}"
+
+    TaskRegistry.unregister(unique_task)
+
+
+async def test_start_multiple_not_unique_tasks(long_running_manager: LongRunningManager, empty_context: TaskContext):
     async def not_unique_task(progress: TaskProgress):
         await asyncio.sleep(1)
 
@@ -306,22 +339,17 @@ async def test_start_multiple_not_unique_tasks(
     TaskRegistry.unregister(not_unique_task)
 
 
-@pytest.mark.parametrize("is_unique", [True, False])
-async def test_get_task_id(
-    long_running_manager: LongRunningManager, faker: Faker, is_unique: bool
-):
+async def test_get_task_id(long_running_manager: LongRunningManager, faker: Faker):
     obj1 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
-        faker.word(), is_unique=is_unique
+        faker.word(), uniqueness=TaskUniqueness.NONE
     )
     obj2 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
-        faker.word(), is_unique=is_unique
+        faker.word(), uniqueness=TaskUniqueness.NONE
     )
     assert obj1 != obj2
 
 
-async def test_get_status(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_get_status(long_running_manager: LongRunningManager, empty_context: TaskContext):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
@@ -330,9 +358,7 @@ async def test_get_status(
         total_sleep=10,
         task_context=empty_context,
     )
-    task_status = await long_running_manager.tasks_manager.get_task_status(
-        task_id, with_task_context=empty_context
-    )
+    task_status = await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
     assert isinstance(task_status, TaskStatus)
     assert isinstance(task_status.task_progress.message, ProgressMessage)
     assert task_status.task_progress.percent == 0.0
@@ -340,19 +366,13 @@ async def test_get_status(
     assert isinstance(task_status.started, datetime)
 
 
-async def test_get_status_missing(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_get_status_missing(long_running_manager: LongRunningManager, empty_context: TaskContext):
     with pytest.raises(TaskNotFoundError) as exec_info:
-        await long_running_manager.tasks_manager.get_task_status(
-            "missing_task_id", with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_status("missing_task_id", with_task_context=empty_context)
     assert f"{exec_info.value}" == "No task with missing_task_id found"
 
 
-async def test_get_result(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_get_result(long_running_manager: LongRunningManager, empty_context: TaskContext):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
@@ -362,30 +382,20 @@ async def test_get_result(
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            status = await long_running_manager.tasks_manager.get_task_status(
-                task_id, with_task_context=empty_context
-            )
+            status = await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
             assert status.done is True
 
-    result = await long_running_manager.tasks_manager.get_task_result(
-        task_id, with_task_context=empty_context
-    )
+    result = await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
     assert _get_resutlt(result) == 42
 
 
-async def test_get_result_missing(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_get_result_missing(long_running_manager: LongRunningManager, empty_context: TaskContext):
     with pytest.raises(TaskNotFoundError) as exec_info:
-        await long_running_manager.tasks_manager.get_task_result(
-            "missing_task_id", with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_result("missing_task_id", with_task_context=empty_context)
     assert f"{exec_info.value}" == "No task with missing_task_id found"
 
 
-async def test_get_result_finished_with_error(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_get_result_finished_with_error(long_running_manager: LongRunningManager, empty_context: TaskContext):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
@@ -396,14 +406,10 @@ async def test_get_result_finished_with_error(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             assert (
-                await long_running_manager.tasks_manager.get_task_status(
-                    task_id, with_task_context=empty_context
-                )
+                await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
             ).done
 
-    result = await long_running_manager.tasks_manager.get_task_result(
-        task_id, with_task_context=empty_context
-    )
+    result = await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
     assert result.str_error is not None  # nosec
     with pytest.raises(_TetingError, match="failing asap"):
         loads(result.str_error)
@@ -422,14 +428,10 @@ async def test_get_result_finished_with_unpicklable_error(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             assert (
-                await long_running_manager.tasks_manager.get_task_status(
-                    task_id, with_task_context=empty_context
-                )
+                await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
             ).done
 
-    result = await long_running_manager.tasks_manager.get_task_result(
-        task_id, with_task_context=empty_context
-    )
+    result = await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
     assert result.str_error is not None  # nosec
     with pytest.raises(TaskRaisedUnserializableError, match="cannot pickle"):
         loads(result.str_error)
@@ -444,15 +446,9 @@ async def test_cancel_task_from_different_manager(
     ],
     empty_context: TaskContext,
 ):
-    manager_1 = await get_long_running_manager(
-        use_in_memory_redis, rabbit_service, "test-namespace"
-    )
-    manager_2 = await get_long_running_manager(
-        use_in_memory_redis, rabbit_service, "test-namespace"
-    )
-    manager_3 = await get_long_running_manager(
-        use_in_memory_redis, rabbit_service, "test-namespace"
-    )
+    manager_1 = await get_long_running_manager(use_in_memory_redis, rabbit_service, "test-namespace")
+    manager_2 = await get_long_running_manager(use_in_memory_redis, rabbit_service, "test-namespace")
+    manager_3 = await get_long_running_manager(use_in_memory_redis, rabbit_service, "test-namespace")
 
     task_id = await lrt_api.start_task(
         manager_1.rpc_client,
@@ -471,22 +467,16 @@ async def test_cancel_task_from_different_manager(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             for manager in (manager_1, manager_2, manager_3):
-                status = await manager.tasks_manager.get_task_status(
-                    task_id, empty_context
-                )
+                status = await manager.tasks_manager.get_task_status(task_id, empty_context)
                 assert status.done is True
 
     # check all provide the same result
     for manager in (manager_1, manager_2, manager_3):
-        task_result = await manager.tasks_manager.get_task_result(
-            task_id, empty_context
-        )
+        task_result = await manager.tasks_manager.get_task_result(task_id, empty_context)
         assert _get_resutlt(task_result) == 42
 
 
-async def test_remove_task(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_remove_task(long_running_manager: LongRunningManager, empty_context: TaskContext):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
@@ -495,25 +485,17 @@ async def test_remove_task(
         total_sleep=10,
         task_context=empty_context,
     )
-    await long_running_manager.tasks_manager.get_task_status(
-        task_id, with_task_context=empty_context
-    )
+    await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
     await long_running_manager.tasks_manager.remove_task(
         task_id, with_task_context=empty_context, wait_for_removal=True
     )
     with pytest.raises(TaskNotFoundError):
-        await long_running_manager.tasks_manager.get_task_status(
-            task_id, with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
     with pytest.raises(TaskNotFoundError):
-        await long_running_manager.tasks_manager.get_task_result(
-            task_id, with_task_context=empty_context
-        )
+        await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=empty_context)
 
 
-async def test_remove_task_with_task_context(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_remove_task_with_task_context(long_running_manager: LongRunningManager, empty_context: TaskContext):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
@@ -524,12 +506,8 @@ async def test_remove_task_with_task_context(
     )
     # getting status fails if wrong task context given
     with pytest.raises(TaskNotFoundError):
-        await long_running_manager.tasks_manager.get_task_status(
-            task_id, with_task_context={"wrong_task_context": 12}
-        )
-    await long_running_manager.tasks_manager.get_task_status(
-        task_id, with_task_context=empty_context
-    )
+        await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context={"wrong_task_context": 12})
+    await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
 
     # removing task fails if wrong task context given
     with pytest.raises(TaskNotFoundError):
@@ -541,9 +519,7 @@ async def test_remove_task_with_task_context(
     )
 
 
-async def test_remove_unknown_task(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_remove_unknown_task(long_running_manager: LongRunningManager, empty_context: TaskContext):
     with pytest.raises(TaskNotFoundError):
         await long_running_manager.tasks_manager.remove_task(
             "invalid_id", with_task_context=empty_context, wait_for_removal=True
@@ -568,12 +544,7 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:  # noqa: SIM117
             with pytest.raises(TaskNotFoundError):
-                assert (
-                    await long_running_manager.tasks_manager.get_task_status(
-                        task_id, empty_context
-                    )
-                    is None
-                )
+                assert await long_running_manager.tasks_manager.get_task_status(task_id, empty_context) is None
 
 
 async def test_list_tasks(
@@ -581,12 +552,7 @@ async def test_list_tasks(
     long_running_manager: LongRunningManager,
     empty_context: TaskContext,
 ):
-    assert (
-        await long_running_manager.tasks_manager.list_tasks(
-            with_task_context=empty_context
-        )
-        == []
-    )
+    assert await long_running_manager.tasks_manager.list_tasks(with_task_context=empty_context) == []
     # start a bunch of tasks
     NUM_TASKS = 10
     task_ids = []
@@ -601,28 +567,17 @@ async def test_list_tasks(
                 task_context=empty_context,
             )
         )
-    assert (
-        len(
-            await long_running_manager.tasks_manager.list_tasks(
-                with_task_context=empty_context
-            )
-        )
-        == NUM_TASKS
-    )
+    assert len(await long_running_manager.tasks_manager.list_tasks(with_task_context=empty_context)) == NUM_TASKS
     for task_index, task_id in enumerate(task_ids):
         await long_running_manager.tasks_manager.remove_task(
             task_id, with_task_context=empty_context, wait_for_removal=True
         )
         assert len(
-            await long_running_manager.tasks_manager.list_tasks(
-                with_task_context=empty_context
-            )
+            await long_running_manager.tasks_manager.list_tasks(with_task_context=empty_context)
         ) == NUM_TASKS - (task_index + 1)
 
 
-async def test_list_tasks_filtering(
-    long_running_manager: LongRunningManager, empty_context: TaskContext
-):
+async def test_list_tasks_filtering(long_running_manager: LongRunningManager, empty_context: TaskContext):
     await lrt_api.start_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
@@ -647,35 +602,17 @@ async def test_list_tasks_filtering(
         total_sleep=10,
         task_context={"user_id": 213, "product": "osparc"},
     )
+    assert len(await long_running_manager.tasks_manager.list_tasks(with_task_context=empty_context)) == 3
+    assert len(await long_running_manager.tasks_manager.list_tasks(with_task_context={"user_id": 213})) == 1
     assert (
         len(
-            await long_running_manager.tasks_manager.list_tasks(
-                with_task_context=empty_context
-            )
-        )
-        == 3
-    )
-    assert (
-        len(
-            await long_running_manager.tasks_manager.list_tasks(
-                with_task_context={"user_id": 213}
-            )
+            await long_running_manager.tasks_manager.list_tasks(with_task_context={"user_id": 213, "product": "osparc"})
         )
         == 1
     )
     assert (
         len(
-            await long_running_manager.tasks_manager.list_tasks(
-                with_task_context={"user_id": 213, "product": "osparc"}
-            )
-        )
-        == 1
-    )
-    assert (
-        len(
-            await long_running_manager.tasks_manager.list_tasks(
-                with_task_context={"user_id": 120, "product": "osparc"}
-            )
+            await long_running_manager.tasks_manager.list_tasks(with_task_context={"user_id": 120, "product": "osparc"})
         )
         == 0
     )
@@ -704,3 +641,68 @@ async def test_start_not_registered_task(
             long_running_manager.lrt_namespace,
             "not_registered_task",
         )
+
+
+@pytest.fixture
+def disable_all_task_manager_background_tasks(mocker: MockerFixture) -> None:
+    class_in_module = "servicelib.long_running_tasks.task.TasksManager"
+
+    mocker.patch(f"{class_in_module}._stale_tasks_monitor")
+    mocker.patch(f"{class_in_module}._cancelled_tasks_removal")
+    mocker.patch(f"{class_in_module}._tasks_monitor")
+
+    original_init = task.TasksManager.__init__
+
+    def _mocked_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        # Custom code to run after __init__
+        self._started_event_task_stale_tasks_monitor.set()
+        self._started_event_task_cancelled_tasks_removal.set()
+        self._started_event_task_tasks_monitor.set()
+
+    mocker.patch.object(task.TasksManager, "__init__", _mocked_init)
+
+
+async def test_removes_from_tracking_without_task(
+    disable_all_task_manager_background_tasks: None,
+    long_running_manager: LongRunningManager,
+    faker: Faker,
+):
+    task_name = faker.name()
+    task_id = await lrt_api.start_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        a_background_task.__name__,
+        raise_when_finished=False,
+        total_sleep=1e10,
+        task_name=task_name,
+    )
+
+    # pylint:disable=protected-access
+    tasks_manager = long_running_manager.tasks_manager
+
+    # NOTE: emulating situation where task is Redis but no asyncio task is present for over X minutes
+    del tasks_manager._created_tasks[task_id]  # noqa: SLF001
+    await tasks_manager._tasks_data.mark_for_removal(task_id)  # noqa: SLF001
+    # changing the timeout so this could go faster
+    await tasks_manager._tasks_data._redis.hset(  # noqa: SLF001
+        tasks_manager._tasks_data._get_redis_task_data_key(task_id),  # noqa: SLF001
+        mapping=_to_redis_hash_mapping(
+            {
+                _MARKED_FOR_REMOVAL_AT_FIELD: (datetime.fromtimestamp(0, tz=UTC)),
+            }
+        ),
+    )  # type: ignore
+
+    # Redis entry exists
+    assert (
+        await tasks_manager._tasks_data.get_task_data(task_id)  # noqa: SLF001
+        is not None
+    )
+
+    await tasks_manager._attempt_to_remove_local_task(task_id)  # noqa: SLF001
+
+    # Redis entry no exists
+    assert (
+        await tasks_manager._tasks_data.get_task_data(task_id) is None  # noqa: SLF001
+    )

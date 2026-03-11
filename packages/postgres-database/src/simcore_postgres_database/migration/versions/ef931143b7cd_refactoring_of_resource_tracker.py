@@ -18,9 +18,7 @@ depends_on = None
 
 
 def upgrade():
-    container_classification_enum = postgresql.ENUM(
-        "DYNAMIC_SIDECAR", "USER_SERVICE", name="containerclassification"
-    )
+    container_classification_enum = postgresql.ENUM("DYNAMIC_SIDECAR", "USER_SERVICE", name="containerclassification")
     container_classification_enum.create(op.get_bind())
 
     op.execute("DELETE FROM resource_tracker_container;")
@@ -42,14 +40,10 @@ def upgrade():
             nullable=True,
         ),
     )
-    op.drop_column(
-        "resource_tracker_container", "service_settings_reservation_nano_cpus"
-    )
+    op.drop_column("resource_tracker_container", "service_settings_reservation_nano_cpus")
     op.drop_column("resource_tracker_container", "service_settings_limit_nano_cpus")
     op.drop_column("resource_tracker_container", "service_settings_limit_memory_bytes")
-    op.drop_column(
-        "resource_tracker_container", "service_settings_reservation_memory_bytes"
-    )
+    op.drop_column("resource_tracker_container", "service_settings_reservation_memory_bytes")
     # ### end Alembic commands ###
 
 

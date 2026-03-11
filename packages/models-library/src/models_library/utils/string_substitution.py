@@ -67,11 +67,7 @@ class TextTemplate(Template):
             for mo in self.pattern.finditer(self.template):
                 if mo.group("invalid") is not None:
                     return False
-                if (
-                    mo.group("named") is None
-                    and mo.group("braced") is None
-                    and mo.group("escaped") is None
-                ):
+                if mo.group("named") is None and mo.group("braced") is None and mo.group("escaped") is None:
                     # If all the groups are None, there must be
                     # another group we're not expecting
                     msg = "Unrecognized named group in pattern"
@@ -85,11 +81,7 @@ class TextTemplate(Template):
                 if named is not None and named not in ids:
                     # add a named group only the first time it appears
                     ids.append(named)
-                elif (
-                    named is None
-                    and mo.group("invalid") is None
-                    and mo.group("escaped") is None
-                ):
+                elif named is None and mo.group("invalid") is None and mo.group("escaped") is None:
                     # If all the groups are None, there must be
                     # another group we're not expecting
                     msg = "Unrecognized named group in pattern"
@@ -98,7 +90,7 @@ class TextTemplate(Template):
 
 
 class SubstitutionsDict(UserDict):
-    """Map of keys to be substituded in Template"""
+    """Map of keys to be substituted in Template"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

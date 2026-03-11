@@ -29,9 +29,7 @@ from simcore_service_webserver.db.plugin import get_database_engine_legacy
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -114,9 +112,7 @@ async def test_create_token(
     resp = await client.post(url.path, json=token)
     data, error = await assert_status(resp, expected)
     if not error:
-        db_token = await get_token_from_db(
-            get_database_engine_legacy(client.app), token_data=token
-        )
+        db_token = await get_token_from_db(get_database_engine_legacy(client.app), token_data=token)
         assert db_token
         assert db_token["token_data"] == token
         assert db_token["user_id"] == logged_user["id"]
@@ -190,8 +186,4 @@ async def test_delete_token(
     _, error = await assert_status(resp, expected)
 
     if not error:
-        assert not (
-            await get_token_from_db(
-                get_database_engine_legacy(client.app), token_service=sid
-            )
-        )
+        assert not (await get_token_from_db(get_database_engine_legacy(client.app), token_service=sid))

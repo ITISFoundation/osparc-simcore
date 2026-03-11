@@ -107,10 +107,7 @@ async def test_change_and_confirm(
         txt = await response.text()
 
         assert response.url.path == index_url.path
-        assert (
-            "This is a result of disable_static_webserver fixture for product OSPARC"
-            in txt
-        )
+        assert "This is a result of disable_static_webserver fixture for product OSPARC" in txt
 
         response = await client.post(
             f"{login_url}",

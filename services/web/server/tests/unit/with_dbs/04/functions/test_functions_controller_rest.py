@@ -148,9 +148,7 @@ async def test_function_workflow(
     await assert_status(response, expected_status_code=expected_register)
 
     # Get the registered function
-    url = client.app.router["get_function"].url_for(
-        function_id=f"{returned_function_uid}"
-    )
+    url = client.app.router["get_function"].url_for(function_id=f"{returned_function_uid}")
     response = await client.get(url)
     data, error = await assert_status(response, expected_get)
     if not error:
@@ -227,47 +225,31 @@ async def test_function_workflow(
         assert data is None
 
     # Check that original user no longer has access
-    url = client.app.router["get_function"].url_for(
-        function_id=f"{returned_function_uid}"
-    )
+    url = client.app.router["get_function"].url_for(function_id=f"{returned_function_uid}")
     response = await client.get(url)
     data, error = await assert_status(response, expected_get)
     if not error:
-        retrieved_function = (
-            TypeAdapter(RegisteredFunctionGet).validate_python(data).model_dump()
-        )
-        assert retrieved_function["access_rights"] == {
-            new_group_id: new_group_access_rights
-        }
+        retrieved_function = TypeAdapter(RegisteredFunctionGet).validate_python(data).model_dump()
+        assert retrieved_function["access_rights"] == {new_group_id: new_group_access_rights}
 
     # Update existing function
     new_title = "Test Function (edited)"
     new_description = "A test function (edited)"
-    url = client.app.router["update_function"].url_for(
-        function_id=f"{returned_function_uid}"
-    )
-    response = await client.patch(
-        url, json={"title": new_title, "description": new_description}
-    )
+    url = client.app.router["update_function"].url_for(function_id=f"{returned_function_uid}")
+    response = await client.patch(url, json={"title": new_title, "description": new_description})
     data, error = await assert_status(response, expected_update)
     if not error:
-        updated_group_access_rights = TypeAdapter(
-            RegisteredFunctionGet
-        ).validate_python(data)
+        updated_group_access_rights = TypeAdapter(RegisteredFunctionGet).validate_python(data)
         assert updated_group_access_rights.title == new_title
         assert updated_group_access_rights.description == new_description
 
     # Delete existing function
-    url = client.app.router["delete_function"].url_for(
-        function_id=f"{returned_function_uid}"
-    )
+    url = client.app.router["delete_function"].url_for(function_id=f"{returned_function_uid}")
     response = await client.delete(url)
     data, error = await assert_status(response, expected_delete)
 
     # Check if the function was effectively deleted
-    url = client.app.router["get_function"].url_for(
-        function_id=f"{returned_function_uid}"
-    )
+    url = client.app.router["get_function"].url_for(function_id=f"{returned_function_uid}")
     response = await client.get(url)
     data, error = await assert_status(response, expected_get2)
 
@@ -289,14 +271,8 @@ async def test_list_user_functions_permissions(
     expected_write_functions: bool,
     logged_user_function_api_access_rights: dict[str, Any],
 ):
-    assert (
-        logged_user_function_api_access_rights["read_functions"]
-        == expected_read_functions
-    )
-    assert (
-        logged_user_function_api_access_rights["write_functions"]
-        == expected_write_functions
-    )
+    assert logged_user_function_api_access_rights["read_functions"] == expected_read_functions
+    assert logged_user_function_api_access_rights["write_functions"] == expected_write_functions
 
     url = client.app.router["list_user_functions_permissions"].url_for()
     response = await client.get(url)

@@ -1,5 +1,7 @@
 import sqlalchemy as sa
 
+from simcore_postgres_database.models._common import RefActions
+
 from .base import metadata
 
 file_meta_data = sa.Table(
@@ -9,9 +11,31 @@ file_meta_data = sa.Table(
     sa.Column("location", sa.String()),
     sa.Column("bucket_name", sa.String()),
     sa.Column("object_name", sa.String()),
-    sa.Column("project_id", sa.String(), index=True),
+    sa.Column(
+        "project_id",
+        sa.String(),
+        sa.ForeignKey(
+            "projects.uuid",
+            name="fk_file_meta_data_project_id_projects",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        index=True,
+    ),
     sa.Column("node_id", sa.String()),
-    sa.Column("user_id", sa.String(), index=True),
+    sa.Column(
+        "user_id",
+        sa.BigInteger(),
+        sa.ForeignKey(
+            "users.id",
+            name="fk_file_meta_data_user_id_users",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        index=True,
+        doc="The user id with which the run entry is associated",
+    ),
     sa.Column("file_id", sa.String(), primary_key=True),
     sa.Column("created_at", sa.String()),
     sa.Column("last_modified", sa.String()),
@@ -28,8 +52,7 @@ file_meta_data = sa.Table(
         sa.Boolean(),
         nullable=False,
         server_default=sa.text("false"),
-        doc="If true, this file is a soft link."
-        "i.e. is another entry with the same object_name",
+        doc="If true, this file is a soft link. i.e. is another entry with the same object_name",
     ),
     sa.Column(
         "upload_id",
@@ -37,9 +60,7 @@ file_meta_data = sa.Table(
         nullable=True,
         doc="if filled, contains the uploadId for S3 multipart file upload",
     ),
-    sa.Column(
-        "upload_expires_at", sa.DateTime(), nullable=True, doc="Timestamp of expiration"
-    ),
+    sa.Column("upload_expires_at", sa.DateTime(), nullable=True, doc="Timestamp of expiration"),
     sa.Column(
         "is_directory",
         sa.Boolean(),

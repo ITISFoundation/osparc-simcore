@@ -67,9 +67,7 @@ def fake_osparc_invitation(
     Emulates an invitation for osparc product
     """
     oas = deepcopy(invitations_service_openapi_specs)
-    content = ApiInvitationContent.model_validate(
-        oas["components"]["schemas"]["ApiInvitationContent"]["example"]
-    )
+    content = ApiInvitationContent.model_validate(oas["components"]["schemas"]["ApiInvitationContent"]["example"])
     content.product = "osparc"
     return content
 
@@ -118,9 +116,7 @@ def mock_invitations_service_http_api(
     assert "/v1/invitations:extract" in oas["paths"]
 
     def _extract_cbk(url, **kwargs):
-        fake_code = URL(URL(f'{kwargs["json"]["invitation_url"]}').fragment).query[
-            "invitation"
-        ]
+        fake_code = URL(URL(f"{kwargs['json']['invitation_url']}").fragment).query["invitation"]
         # if nothing is encoded in fake_code, just return fake_osparc_invitation
         body = fake_osparc_invitation.model_dump()
         with suppress(Exception):
@@ -202,11 +198,7 @@ def app_environment(
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_WALLETS": "0",
             # set INVITATIONS_* variables using those in .env-devel
-            **{
-                key: value
-                for key, value in env_devel_dict.items()
-                if key.startswith("INVITATIONS_")
-            },
+            **{key: value for key, value in env_devel_dict.items() if key.startswith("INVITATIONS_")},
         },
     )
 

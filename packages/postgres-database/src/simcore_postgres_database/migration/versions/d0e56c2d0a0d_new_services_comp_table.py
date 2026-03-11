@@ -22,9 +22,7 @@ depends_on = None
 # TRIGGERS ------------------------
 _TABLE_NAME: Final[str] = "services_compatibility"
 _TRIGGER_NAME: Final[str] = "trigger_auto_update"  # NOTE: scoped on table
-_PROCEDURE_NAME: Final[str] = (
-    f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
-)
+_PROCEDURE_NAME: Final[str] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
 modified_timestamp_trigger = sa.DDL(
     f"""
 DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};
@@ -54,9 +52,7 @@ def upgrade():
         "services_compatibility",
         sa.Column("key", sa.String(), nullable=False),
         sa.Column("version", sa.String(), nullable=False),
-        sa.Column(
-            "custom_policy", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("custom_policy", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -76,9 +72,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.ForeignKeyConstraint(
-            ["modified_by"], ["users.id"], onupdate="CASCADE", ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["modified_by"], ["users.id"], onupdate="CASCADE", ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("key", "version", name="services_compatibility_pk"),
     )
     # ### end Alembic commands ###

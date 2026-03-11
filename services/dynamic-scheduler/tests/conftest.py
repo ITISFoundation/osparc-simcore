@@ -127,9 +127,7 @@ def disable_generic_scheduler_lifespan(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def disable_postgres_lifespan(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def disable_postgres_lifespan(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     setenvs_from_dict(
         monkeypatch,
         {
@@ -148,9 +146,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN: Final[float] = 10
 
 
 @pytest.fixture
-async def app(
-    app_environment: EnvVarsDict, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
+async def app(app_environment: EnvVarsDict, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     # forces rebuild of middleware stack on next test
     nicegui.app.user_middleware.clear()
     nicegui.app.middleware_stack = None
@@ -170,6 +166,4 @@ async def remove_redis_data(redis_service: RedisSettings) -> None:
         redis_service,
         client_name="pytest",
     ) as manager:
-        await logged_gather(
-            *[manager.client(d).redis.flushall() for d in RedisDatabase]
-        )
+        await logged_gather(*[manager.client(d).redis.flushall() for d in RedisDatabase])

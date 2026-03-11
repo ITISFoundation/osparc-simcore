@@ -24,7 +24,7 @@ async def assert_status(
     # raises ValueError if cannot be converted
     expected_status_code = HTTPStatus(expected_status_code)
 
-    # reponse
+    # response
     json_response = await response.json()
     data, error = unwrap_envelope(json_response)
 
@@ -36,9 +36,7 @@ async def assert_status(
     )
 
     if is_error(expected_status_code):
-        _do_assert_error(
-            data, error, expected_status_code, expected_msg, expected_error_code
-        )
+        _do_assert_error(data, error, expected_status_code, expected_msg, expected_error_code)
 
     elif expected_status_code == status.HTTP_204_NO_CONTENT:
         assert not data, pformat(data)
@@ -108,6 +106,4 @@ def assert_equal_ignoring_none(expected: dict, actual: dict):
         if isinstance(exp_value, dict) and isinstance(act_value, dict):
             assert_equal_ignoring_none(exp_value, act_value)
         else:
-            assert (
-                act_value == exp_value
-            ), f"Mismatch in {key}: {act_value} != {exp_value}"
+            assert act_value == exp_value, f"Mismatch in {key}: {act_value} != {exp_value}"

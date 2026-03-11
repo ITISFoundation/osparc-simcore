@@ -9,9 +9,7 @@ from ._tracker import Tracker
 
 
 async def service_tracker_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.service_tracker = Tracker(
-        get_redis_client(app, RedisDatabase.DYNAMIC_SERVICES)
-    )
+    app.state.service_tracker = Tracker(get_redis_client(app, RedisDatabase.DYNAMIC_SERVICES))
     yield {}
 
 

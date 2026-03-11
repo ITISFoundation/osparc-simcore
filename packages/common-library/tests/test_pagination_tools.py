@@ -27,10 +27,7 @@ async def get_page(all_items: list[int]) -> Callable:
 
 @pytest.mark.parametrize("limit", [2, 3, 5])
 @pytest.mark.parametrize("offset", [0, 1, 5])
-async def test_iter_pages_args(
-    limit: int, offset: int, get_page: Callable, all_items: list[int]
-):
-
+async def test_iter_pages_args(limit: int, offset: int, get_page: Callable, all_items: list[int]):
     last_page = [None] * limit
 
     num_items = len(all_items) - offset
@@ -38,13 +35,8 @@ async def test_iter_pages_args(
 
     num_pages = 0
     page_args = None
-    for page_index, page_args in enumerate(
-        iter_pagination_params(offset=offset, limit=limit)
-    ):
-
-        page_items, page_args.total_number_of_items = await get_page(
-            page_args.offset_current, page_args.limit
-        )
+    for page_index, page_args in enumerate(iter_pagination_params(offset=offset, limit=limit)):
+        page_items, page_args.total_number_of_items = await get_page(page_args.offset_current, page_args.limit)
 
         assert set(last_page) != set(page_items)
         last_page = list(page_items)
@@ -65,14 +57,13 @@ async def test_iter_pages_args(
 @pytest.mark.parametrize("limit", [-1, 0])
 @pytest.mark.parametrize("offset", [-1])
 def test_iter_pages_args_invalid(limit: int, offset: int):
-
-    with pytest.raises(ValidationError):  # noqa: PT012
+    with pytest.raises(ValidationError):
         for _ in iter_pagination_params(offset=offset, limit=limit):
             pass
 
 
 def test_fails_if_total_number_of_items_not_set():
-    with pytest.raises(  # noqa: PT012
+    with pytest.raises(
         RuntimeError,
         match="page_args.total_number_of_items = total_count",
     ):
@@ -85,8 +76,6 @@ def test_fails_if_total_number_of_items_changes():
         RuntimeError,
         match="total_number_of_items cannot change on every iteration",
     ):
-        for page_params in iter_pagination_params(
-            offset=0, limit=2, total_number_of_items=4
-        ):
+        for page_params in iter_pagination_params(offset=0, limit=2, total_number_of_items=4):
             assert page_params.total_number_of_items == 4
             page_params.total_number_of_items += 1

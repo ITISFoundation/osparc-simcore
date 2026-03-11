@@ -208,9 +208,7 @@ def create_application_auth() -> web.Application:
     app = create_safe_application()
 
     settings = setup_settings(app)
-    tracing_config = TracingConfig.create(
-        settings.WEBSERVER_TRACING, service_name=APP_NAME
-    )
+    tracing_config = TracingConfig.create(settings.WEBSERVER_TRACING, service_name=APP_NAME)
     app[TRACING_CONFIG_KEY] = tracing_config
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
 
@@ -245,6 +243,6 @@ def run_service(app: web.Application, config: dict[str, Any]):
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        # this gets overriden by the gunicorn config in /docker/boot.sh
+        # this gets overridden by the gunicorn config in /docker/boot.sh
         access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )

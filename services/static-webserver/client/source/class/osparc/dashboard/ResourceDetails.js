@@ -407,6 +407,17 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __addPages: function() {
+      const studyStore = osparc.store.Study.getInstance();
+      studyStore.addListener("studyStateChanged", e => {
+        const {
+          studyId,
+          state,
+        } = e.getData();
+        if ("uuid" in this.__resourceData && studyId === this.__resourceData["uuid"]) {
+          this.__studyStateChanged(state);
+        }
+      });
+
       const tabsView = this.getChildControl("tabs-view");
 
       // keep selected page
@@ -554,7 +565,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
           this.self().disableIfInUse(resourceData, billingSettings);
-          billingSettings.addListener("debtPayed", () => {
+          billingSettings.addListener("debtPaid", () => {
             page.payDebtButton.set({
               visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
             });
@@ -661,26 +672,32 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
         let collaboratorsView = null;
-        if (osparc.utils.Resources.isService(resourceData)) {
-          collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
-        } else if (osparc.utils.Resources.isFunction(resourceData)) {
-          collaboratorsView = new osparc.share.CollaboratorsFunction(resourceData);
-        } else if (osparc.utils.Resources.isStudy(resourceData)) {
-          collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
-          collaboratorsView.getChildControl("study-link").show();
-        } else if (
-          osparc.utils.Resources.isTemplate(resourceData) ||
-          osparc.utils.Resources.isTutorial(resourceData)
-        ) {
-          collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
-          collaboratorsView.getChildControl("template-link").show();
+        switch (resourceData["resourceType"]) {
+          case "study":
+            collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
+            collaboratorsView.getChildControl("study-link").show();
+            break;
+          case "template":
+          case "tutorial":
+          case "hypertool":
+            collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
+            collaboratorsView.getChildControl("template-link").show();
+            break;
+          case "function":
+            collaboratorsView = new osparc.share.CollaboratorsFunction(resourceData);
+            break;
+          case "service":
+            collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
+            break;
         }
-        collaboratorsView.addListener("updateAccessRights", e => {
-          const updatedData = e.getData();
-          this.__fireUpdateEvent(resourceData, updatedData);
-        }, this);
-        page.addToContent(collaboratorsView);
-        this.__widgets.push(collaboratorsView);
+        if (collaboratorsView) {
+          collaboratorsView.addListener("updateAccessRights", e => {
+            const updatedData = e.getData();
+            this.__fireUpdateEvent(resourceData, updatedData);
+          }, this);
+          page.addToContent(collaboratorsView);
+          this.__widgets.push(collaboratorsView);
+        }
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
@@ -771,6 +788,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const tagManager = new osparc.form.tag.TagManager(resourceData);
+        tagManager.setLiveUpdate(true);
         tagManager.addListener("updateTags", e => {
           const updatedData = e.getData();
           tagManager.setStudyData(updatedData);
@@ -1022,6 +1040,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         dataAccess.addListener("tap", () => osparc.jobs.ActivityOverview.popUpInWindow(resourceData));
         this.addWidgetToTabs(dataAccess);
       }
+    },
+
+    __studyStateChanged: function(state) {
+      this.__resourceData.state = osparc.utils.Utils.deepCloneObject(state);
+      this.getChildControl("tabs-view").getChildren().forEach(page => {
+        if (page.openButton) {
+          const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(this.__resourceData);
+          page.openButton.setLabel(openText);
+        }
+      });
     },
 
     // overridden

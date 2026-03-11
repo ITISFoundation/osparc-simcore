@@ -15,9 +15,7 @@ depends_on = None
 
 def upgrade():
     """Alembic left this function empty"""
-    pass
 
 
 def downgrade():
     """Alembic left this function empty"""
-    pass

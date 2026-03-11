@@ -26,10 +26,7 @@ def update_configuration(
     with postgres_engine.connect() as conn:
         conn.execute(
             comp_tasks.update()  # pylint: disable=no-value-for-parameter
-            .where(
-                (comp_tasks.c.project_id == project_id)
-                & (comp_tasks.c.node_id == node_uuid)
-            )
+            .where((comp_tasks.c.project_id == project_id) & (comp_tasks.c.node_id == node_uuid))
             .values(
                 schema=new_configuration["schema"],
                 inputs=new_configuration["inputs"],

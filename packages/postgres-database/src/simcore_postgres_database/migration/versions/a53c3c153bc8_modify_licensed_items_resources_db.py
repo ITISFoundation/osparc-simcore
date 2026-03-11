@@ -22,9 +22,7 @@ def upgrade():
     op.create_table(
         "licensed_item_to_resource",
         sa.Column("licensed_item_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column(
-            "licensed_resource_id", postgresql.UUID(as_uuid=True), nullable=False
-        ),
+        sa.Column("licensed_resource_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -54,15 +52,9 @@ def upgrade():
     )
     op.add_column("licensed_items", sa.Column("key", sa.String(), nullable=False))
     op.add_column("licensed_items", sa.Column("version", sa.String(), nullable=False))
-    op.alter_column(
-        "licensed_items", "pricing_plan_id", existing_type=sa.BIGINT(), nullable=False
-    )
-    op.alter_column(
-        "licensed_items", "product_name", existing_type=sa.VARCHAR(), nullable=False
-    )
-    op.drop_constraint(
-        "uq_licensed_resource_name_type", "licensed_items", type_="unique"
-    )
+    op.alter_column("licensed_items", "pricing_plan_id", existing_type=sa.BIGINT(), nullable=False)
+    op.alter_column("licensed_items", "product_name", existing_type=sa.VARCHAR(), nullable=False)
+    op.drop_constraint("uq_licensed_resource_name_type", "licensed_items", type_="unique")
     op.create_index(
         "idx_licensed_items_key_version",
         "licensed_items",
@@ -119,9 +111,7 @@ def downgrade():
     op.drop_column("resource_tracker_licensed_items_checkouts", "key")
     op.add_column(
         "licensed_items",
-        sa.Column(
-            "licensed_resource_name", sa.VARCHAR(), autoincrement=False, nullable=False
-        ),
+        sa.Column("licensed_resource_name", sa.VARCHAR(), autoincrement=False, nullable=False),
     )
     op.add_column(
         "licensed_items",
@@ -148,12 +138,8 @@ def downgrade():
         "licensed_items",
         ["licensed_resource_name", "licensed_resource_type"],
     )
-    op.alter_column(
-        "licensed_items", "product_name", existing_type=sa.VARCHAR(), nullable=True
-    )
-    op.alter_column(
-        "licensed_items", "pricing_plan_id", existing_type=sa.BIGINT(), nullable=True
-    )
+    op.alter_column("licensed_items", "product_name", existing_type=sa.VARCHAR(), nullable=True)
+    op.alter_column("licensed_items", "pricing_plan_id", existing_type=sa.BIGINT(), nullable=True)
     op.drop_column("licensed_items", "version")
     op.drop_column("licensed_items", "key")
     op.drop_table("licensed_item_to_resource")

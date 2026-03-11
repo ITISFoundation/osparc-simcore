@@ -37,9 +37,7 @@ class _PortRange(BaseModel):
         upper = v
         lower: PortInt | OsparcVariableIdentifier | None = info.data.get("lower")
 
-        if lower and isinstance(
-            lower, get_types_from_annotated_union(OsparcVariableIdentifier)
-        ):
+        if lower and isinstance(lower, get_types_from_annotated_union(OsparcVariableIdentifier)):
             return v  # type: ignore # bypass validation if unresolved
 
         if lower is None or lower >= upper:
@@ -75,9 +73,7 @@ class NATRule(BaseModel):
     hostname: OsparcVariableIdentifier | str
     tcp_ports: list[PortInt | OsparcVariableIdentifier | _PortRange]
     dns_resolver: DNSResolver = Field(
-        default_factory=lambda: DNSResolver(
-            address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
-        ),
+        default_factory=lambda: DNSResolver(address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT),
         description="specify a DNS resolver address and port",
     )
 

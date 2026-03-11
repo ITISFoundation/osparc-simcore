@@ -27,9 +27,7 @@ def with_project_locked(
     status: ProjectStatus,
     owner: Owner | None,
     notification_cb: Callable[[], Awaitable[None]] | None,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
+) -> Callable[[Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]]:
     """creates a distributed auto sustained Redis lock for project with project_uuid, keeping its status and owner in the lock data
 
     Arguments:
@@ -82,24 +80,18 @@ def with_project_locked(
     return _decorator
 
 
-async def is_project_locked(
-    redis_client: RedisClientSDK, project_uuid: str | ProjectID
-) -> bool:
+async def is_project_locked(redis_client: RedisClientSDK, project_uuid: str | ProjectID) -> bool:
     redis_lock = redis_client.create_lock(_PROJECT_REDIS_LOCK_KEY.format(project_uuid))
     return await redis_lock.locked()
 
 
-async def get_project_locked_state(
-    redis_client: RedisClientSDK, project_uuid: str | ProjectID
-) -> ProjectLocked | None:
+async def get_project_locked_state(redis_client: RedisClientSDK, project_uuid: str | ProjectID) -> ProjectLocked | None:
     """
     Returns:
         ProjectLocked object if the project project_uuid is locked or None otherwise
     """
     if await is_project_locked(redis_client, project_uuid=project_uuid) and (
-        lock_value := await redis_client.redis.get(
-            _PROJECT_REDIS_LOCK_KEY.format(project_uuid)
-        )
+        lock_value := await redis_client.redis.get(_PROJECT_REDIS_LOCK_KEY.format(project_uuid))
     ):
         return ProjectLocked.model_validate_json(lock_value)
     return None

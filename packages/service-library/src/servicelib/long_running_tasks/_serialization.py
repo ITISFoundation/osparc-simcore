@@ -7,7 +7,6 @@ T = TypeVar("T")
 
 
 class BaseObjectSerializer(ABC, Generic[T]):
-
     @classmethod
     @abstractmethod
     def get_init_kwargs_from_object(cls, obj: T) -> dict:
@@ -22,9 +21,7 @@ class BaseObjectSerializer(ABC, Generic[T]):
 _SERIALIZERS: Final[dict[type, type[BaseObjectSerializer]]] = {}
 
 
-def register_custom_serialization(
-    object_type: type, object_serializer: type[BaseObjectSerializer]
-) -> None:
+def register_custom_serialization(object_type: type, object_serializer: type[BaseObjectSerializer]) -> None:
     """Register a custom serializer for a specific object type.
 
     Arguments:
@@ -71,9 +68,7 @@ def loads(obj_str: str) -> Any:
                     data.pop(_TYPE_FIELD)
                     data.pop(_MODULE_FIELD)
 
-                    raise exception_class(
-                        **object_serializer.prepare_object_init_kwargs(data)
-                    )
+                    raise exception_class(**object_serializer.prepare_object_init_kwargs(data))
         except (ImportError, AttributeError, TypeError) as e:
             msg = f"Could not reconstruct object from data: {data}"
             raise ValueError(msg) from e

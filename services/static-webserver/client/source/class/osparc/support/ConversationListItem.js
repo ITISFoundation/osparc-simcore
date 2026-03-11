@@ -80,16 +80,6 @@ qx.Class.define("osparc.support.ConversationListItem", {
             flex: 1
           });
           break;
-        case "resolved-badge":
-          control = new osparc.ui.basic.Chip().set({
-            font: "text-12",
-            allowGrowY: false,
-            alignX: "right",
-          });
-          this.getChildControl("third-column-layout").addAt(control, 1, {
-            flex: 1
-          });
-          break;
       }
       return control || this.base(arguments, id);
     },
@@ -105,7 +95,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
       conversation.bind("lastMessageCreatedAt", this, "role", {
         converter: val => {
-          return osparc.utils.Utils.formatDateAndTime(val);
+          return val ? osparc.utils.Utils.formatDateAndTime(val) : "";
         },
       });
 
@@ -114,33 +104,6 @@ qx.Class.define("osparc.support.ConversationListItem", {
       conversation.bind(propName, unreadBadge, "visibility", {
         converter: val => val === false ? "visible" : "excluded"
       });
-
-      /*
-      const resolvedBadge = this.getChildControl("resolved-badge");
-      resolvedBadge.set({
-        visibility: osparc.store.Groups.getInstance().amIASupportUser() ? "visible" : "excluded",
-      });
-      conversation.bind("resolved", resolvedBadge, "label", {
-        converter: val => {
-          if (val === true) {
-            return this.tr("Resolved");
-          } else if (val === false) {
-            return this.tr("Open");
-          }
-          return "";
-        }
-      });
-      conversation.bind("resolved", resolvedBadge, "statusColor", {
-        converter: val => {
-          if (val === true) {
-            return "success";
-          } else if (val === false) {
-            return "warning";
-          }
-          return null;
-        }
-      });
-      */
     },
 
     __lastMessageChanged: function() {

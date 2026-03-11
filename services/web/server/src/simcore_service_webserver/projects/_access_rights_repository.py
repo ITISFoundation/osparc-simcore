@@ -21,9 +21,7 @@ from .exceptions import ProjectNotFoundError
 
 async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
     async with engine.acquire() as connection:
-        stmt = sa.select(projects.c.prj_owner).where(
-            projects.c.uuid == f"{project_uuid}"
-        )
+        stmt = sa.select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}")
 
         owner_id = await connection.scalar(stmt)
         if owner_id is None:
@@ -52,9 +50,7 @@ async def batch_get_project_access_rights(
     *,
     projects_uuids_with_workspace_id: list[tuple[ProjectID, WorkspaceID | None]],
 ) -> dict[ProjectIDStr, dict[GroupID, dict[str, bool]]]:
-    private_project_ids, workspace_to_project_ids = _split_private_and_shared_projects(
-        projects_uuids_with_workspace_id
-    )
+    private_project_ids, workspace_to_project_ids = _split_private_and_shared_projects(projects_uuids_with_workspace_id)
     shared_workspace_ids = set(workspace_to_project_ids.keys())
     results = {}
 
@@ -76,11 +72,7 @@ async def batch_get_project_access_rights(
                         ),
                     ).label("access_rights"),
                 )
-                .where(
-                    project_to_groups.c.project_uuid.in_(
-                        [f"{uuid}" for uuid in private_project_ids]
-                    )
-                )
+                .where(project_to_groups.c.project_uuid.in_([f"{uuid}" for uuid in private_project_ids]))
                 .group_by(project_to_groups.c.project_uuid)
             )
             private_result = await conn.stream(private_query)
@@ -104,9 +96,7 @@ async def batch_get_project_access_rights(
                         ),
                     ).label("access_rights"),
                 )
-                .where(
-                    workspaces_access_rights.c.workspace_id.in_(shared_workspace_ids)
-                )
+                .where(workspaces_access_rights.c.workspace_id.in_(shared_workspace_ids))
                 .group_by(workspaces_access_rights.c.workspace_id)
             )
             shared_result = await conn.stream(shared_query)

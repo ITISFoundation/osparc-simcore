@@ -26,9 +26,7 @@ from ._base import InputSchema, OutputSchema
 # Frontend API
 
 
-class ServiceRunGet(
-    BaseModel
-):  # NOTE: this is already in use so I didnt modify inheritance from OutputSchema
+class ServiceRunGet(BaseModel):  # NOTE: this is already in use so I didnt modify inheritance from OutputSchema
     service_run_id: ServiceRunID
     wallet_id: WalletID | None
     wallet_name: str | None

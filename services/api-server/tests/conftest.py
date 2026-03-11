@@ -17,6 +17,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
+    "pytest_simcore.celery_library_mocks",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",

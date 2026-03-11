@@ -22,9 +22,7 @@ _logger = logging.getLogger(__name__)
 
 async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> bool:
     assert app  # nosec
-    rabbit_message: DynamicServiceRunningMessage = (
-        DynamicServiceRunningMessage.model_validate_json(data)
-    )
+    rabbit_message: DynamicServiceRunningMessage = DynamicServiceRunningMessage.model_validate_json(data)
     _logger.debug(
         "Process dynamic service running msg, project ID: %s node ID: %s, current user: %s",
         rabbit_message.project_id,
@@ -47,9 +45,7 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
         )
         return True
 
-    size = await efs_manager.get_project_node_data_size(
-        rabbit_message.project_id, node_id=rabbit_message.node_id
-    )
+    size = await efs_manager.get_project_node_data_size(rabbit_message.project_id, node_id=rabbit_message.node_id)
     _logger.debug(
         "Current directory size: %s, project ID: %s node ID: %s, current user: %s",
         size,
@@ -65,9 +61,7 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
     _used = min(size, settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
     usage: dict[str, DiskUsage] = {}
     for name in project_node_state_names:
-        usage[name] = DiskUsage.from_efs_guardian(
-            used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES
-        )
+        usage[name] = DiskUsage.from_efs_guardian(used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
 
     fire_and_forget_task(
         update_disk_usage(rpc_client, node_id=rabbit_message.node_id, usage=usage),

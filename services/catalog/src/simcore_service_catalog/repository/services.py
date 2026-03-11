@@ -57,10 +57,7 @@ def _is_newer(
     old: ServiceSpecificationsAtDB | None,
     new: ServiceSpecificationsAtDB,
 ) -> bool:
-    return old is None or (
-        packaging.version.parse(old.service_version)
-        < packaging.version.parse(new.service_version)
-    )
+    return old is None or (packaging.version.parse(old.service_version) < packaging.version.parse(new.service_version))
 
 
 def _merge_specs(
@@ -89,7 +86,6 @@ class ServicesRepository(BaseRepository):
         combine_access_with_and: bool | None = True,
         product_name: str | None = None,
     ) -> list[ServiceMetaDataDBGet]:
-
         async with self.db_engine.connect() as conn:
             return [
                 ServiceMetaDataDBGet.model_validate(row)
@@ -125,27 +121,20 @@ class ServicesRepository(BaseRepository):
         if major is not None:
             if minor is not None:
                 # All patches
-                search_condition &= services_meta_data.c.version.like(
-                    f"{major}.{minor}.%"
-                )
+                search_condition &= services_meta_data.c.version.like(f"{major}.{minor}.%")
             else:
                 # All minor and patches
                 search_condition &= services_meta_data.c.version.like(f"{major}.%")
 
         query = (
-            sa.select(*SERVICES_META_DATA_COLS)
-            .where(search_condition)
-            .order_by(sa.desc(services_meta_data.c.version))
+            sa.select(*SERVICES_META_DATA_COLS).where(search_condition).order_by(sa.desc(services_meta_data.c.version))
         )
 
         if limit_count and limit_count > 0:
             query = query.limit(limit_count)
 
         async with self.db_engine.connect() as conn:
-            releases = [
-                ServiceMetaDataDBGet.model_validate(row)
-                async for row in await conn.stream(query)
-            ]
+            releases = [ServiceMetaDataDBGet.model_validate(row) async for row in await conn.stream(query)]
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
         def _by_version(x: ServiceMetaDataDBGet) -> packaging.version.Version:
@@ -185,7 +174,6 @@ class ServicesRepository(BaseRepository):
         write_access: bool | None = None,
         product_name: str | None = None,
     ) -> ServiceMetaDataDBGet | None:
-
         query = sa.select(*SERVICES_META_DATA_COLS)
 
         if gids or execute_access or write_access:
@@ -194,9 +182,7 @@ class ServicesRepository(BaseRepository):
                 services_meta_data.c.version == version,
             ]
             if gids:
-                conditions.append(
-                    sql.or_(*[services_access_rights.c.gid == gid for gid in gids])
-                )
+                conditions.append(sql.or_(*[services_access_rights.c.gid == gid for gid in gids]))
             if execute_access is not None:
                 conditions.append(services_access_rights.c.execute_access)
             if write_access is not None:
@@ -204,14 +190,9 @@ class ServicesRepository(BaseRepository):
             if product_name:
                 conditions.append(services_access_rights.c.product_name == product_name)
 
-            query = query.select_from(
-                services_meta_data.join(services_access_rights)
-            ).where(sql.and_(*conditions))
+            query = query.select_from(services_meta_data.join(services_access_rights)).where(sql.and_(*conditions))
         else:
-            query = query.where(
-                (services_meta_data.c.key == key)
-                & (services_meta_data.c.version == version)
-            )
+            query = query.where((services_meta_data.c.key == key) & (services_meta_data.c.version == version))
 
         async with self.db_engine.connect() as conn:
             result = await conn.execute(query)
@@ -226,10 +207,7 @@ class ServicesRepository(BaseRepository):
         new_service_access_rights: list[ServiceAccessRightsDB],
     ) -> ServiceMetaDataDBGet:
         for access_rights in new_service_access_rights:
-            if (
-                access_rights.key != new_service.key
-                or access_rights.version != new_service.version
-            ):
+            if access_rights.key != new_service.key or access_rights.version != new_service.version:
                 msg = f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 raise ValueError(msg)
 
@@ -246,9 +224,7 @@ class ServicesRepository(BaseRepository):
             created_service = ServiceMetaDataDBGet.model_validate(row)
 
             for access_rights in new_service_access_rights:
-                insert_stmt = pg_insert(services_access_rights).values(
-                    **jsonable_encoder(access_rights, by_alias=True)
-                )
+                insert_stmt = pg_insert(services_access_rights).values(**jsonable_encoder(access_rights, by_alias=True))
                 await conn.execute(insert_stmt)
         return created_service
 
@@ -258,13 +234,9 @@ class ServicesRepository(BaseRepository):
         service_version: ServiceVersion,
         patched_service: ServiceMetaDataDBPatch,
     ) -> None:
-
         stmt_update = (
             services_meta_data.update()
-            .where(
-                (services_meta_data.c.key == service_key)
-                & (services_meta_data.c.version == service_version)
-            )
+            .where((services_meta_data.c.key == service_key) & (services_meta_data.c.version == service_version))
             .values(
                 **patched_service.model_dump(
                     by_alias=True,
@@ -328,7 +300,6 @@ class ServicesRepository(BaseRepository):
         key: ServiceKey,
         version: ServiceVersion,
     ) -> ServiceWithHistoryDBGet | None:
-
         stmt_get = _services_sql.get_service_stmt(
             product_name=product_name,
             user_id=user_id,
@@ -394,9 +365,7 @@ class ServicesRepository(BaseRepository):
                 services_meta_data.join(
                     services_access_rights,
                     (services_meta_data.c.key == services_access_rights.c.key)
-                    & (
-                        services_meta_data.c.version == services_access_rights.c.version
-                    ),
+                    & (services_meta_data.c.version == services_access_rights.c.version),
                 ).join(
                     user_to_groups,
                     (user_to_groups.c.gid == services_access_rights.c.gid),
@@ -425,8 +394,7 @@ class ServicesRepository(BaseRepository):
             .select_from(
                 subquery.join(
                     services_meta_data,
-                    (subquery.c.key == services_meta_data.c.key)
-                    & (subquery.c.version == services_meta_data.c.version),
+                    (subquery.c.key == services_meta_data.c.key) & (subquery.c.version == services_meta_data.c.version),
                 )
             )
             .order_by(
@@ -446,10 +414,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(stmt_total)
             total_count = result.scalar() or 0
 
-            items_page = [
-                ServiceMetaDataDBGet.model_validate(row)
-                async for row in await conn.stream(stmt_page)
-            ]
+            items_page = [ServiceMetaDataDBGet.model_validate(row) async for row in await conn.stream(stmt_page)]
 
         return (total_count, items_page)
 
@@ -464,7 +429,6 @@ class ServicesRepository(BaseRepository):
         pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
-
         # get page
         stmt_total = _services_sql.latest_services_total_count_stmt(
             product_name=product_name,
@@ -539,9 +503,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(stmt_history)
             row = result.one_or_none()
 
-        return (
-            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history) if row else []
-        )
+        return TypeAdapter(list[ReleaseDBGet]).validate_python(row.history) if row else []
 
     async def get_service_history_page(
         self,
@@ -556,7 +518,6 @@ class ServicesRepository(BaseRepository):
         pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
-
         base_stmt = (
             # Search on service (key, *) for (product_name, user_id w/ access)
             sql.select(
@@ -567,9 +528,7 @@ class ServicesRepository(BaseRepository):
                 services_meta_data.join(
                     services_access_rights,
                     (services_meta_data.c.key == services_access_rights.c.key)
-                    & (
-                        services_meta_data.c.version == services_access_rights.c.version
-                    ),
+                    & (services_meta_data.c.version == services_access_rights.c.version),
                 ).join(
                     user_to_groups,
                     (user_to_groups.c.gid == services_access_rights.c.gid),
@@ -611,9 +570,7 @@ class ServicesRepository(BaseRepository):
                 ).outerjoin(
                     services_compatibility,
                     (services_meta_data.c.key == services_compatibility.c.key)
-                    & (
-                        services_meta_data.c.version == services_compatibility.c.version
-                    ),
+                    & (services_meta_data.c.version == services_compatibility.c.version),
                 )
             )
             .order_by(sql.desc(_services_sql.by_version(services_meta_data.c.version)))
@@ -625,10 +582,7 @@ class ServicesRepository(BaseRepository):
             total_count: PositiveInt = await conn.scalar(count_query) or 0
 
             result = await conn.stream(page_query)
-            items: list[ReleaseDBGet] = [
-                ReleaseDBGet.model_validate(row, from_attributes=True)
-                async for row in result
-            ]
+            items: list[ReleaseDBGet] = [ReleaseDBGet.model_validate(row, from_attributes=True) async for row in result]
 
         return total_count, items
 
@@ -641,21 +595,16 @@ class ServicesRepository(BaseRepository):
         product_name: str | None = None,
     ) -> list[ServiceAccessRightsDB]:
         """
-        - If product_name is not specificed, then all are considered in the query
+        - If product_name is not specified, then all are considered in the query
         """
-        search_expression = (services_access_rights.c.key == key) & (
-            services_access_rights.c.version == version
-        )
+        search_expression = (services_access_rights.c.key == key) & (services_access_rights.c.version == version)
         if product_name:
             search_expression &= services_access_rights.c.product_name == product_name
 
         query = sa.select(services_access_rights).where(search_expression)
 
         async with self.db_engine.connect() as conn:
-            return [
-                ServiceAccessRightsDB.model_validate(row)
-                async for row in await conn.stream(query)
-            ]
+            return [ServiceAccessRightsDB.model_validate(row) async for row in await conn.stream(query)]
 
     async def batch_get_services_access_rights_or_none(
         self,
@@ -670,9 +619,7 @@ class ServicesRepository(BaseRepository):
             sa.select(services_access_rights)
             .select_from(services_access_rights)
             .where(
-                sql.tuple_(
-                    services_access_rights.c.key, services_access_rights.c.version
-                ).in_(key_versions)
+                sql.tuple_(services_access_rights.c.key, services_access_rights.c.version).in_(key_versions)
                 & (services_access_rights.c.product_name == product_name)
                 if product_name
                 else True
@@ -680,19 +627,13 @@ class ServicesRepository(BaseRepository):
         )
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                service_to_access_rights[(row.key, row.version)].append(
-                    ServiceAccessRightsDB.model_validate(row)
-                )
+                service_to_access_rights[(row.key, row.version)].append(ServiceAccessRightsDB.model_validate(row))
         return service_to_access_rights or None
 
-    async def upsert_service_access_rights(
-        self, new_access_rights: list[ServiceAccessRightsDB]
-    ) -> None:
+    async def upsert_service_access_rights(self, new_access_rights: list[ServiceAccessRightsDB]) -> None:
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
-            insert_stmt = pg_insert(services_access_rights).values(
-                **rights.model_dump(by_alias=True)
-            )
+            insert_stmt = pg_insert(services_access_rights).values(**rights.model_dump(by_alias=True))
             on_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=[
                     services_access_rights.c.key,
@@ -717,9 +658,7 @@ class ServicesRepository(BaseRepository):
                     rights.version,
                 )
 
-    async def delete_service_access_rights(
-        self, delete_access_rights: list[ServiceAccessRightsDB]
-    ) -> None:
+    async def delete_service_access_rights(self, delete_access_rights: list[ServiceAccessRightsDB]) -> None:
         async with self.db_engine.begin() as conn:
             for rights in delete_access_rights:
                 await conn.execute(
@@ -746,9 +685,7 @@ class ServicesRepository(BaseRepository):
 
         :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned, defaults to False
         """
-        _logger.debug(
-            "getting specifications from db for %s", f"{key}:{version} for {groups=}"
-        )
+        _logger.debug("getting specifications from db for %s", f"{key}:{version} for {groups=}")
         gid_to_group_map = {group.gid: group for group in groups}
 
         everyone_specs = None
@@ -773,12 +710,8 @@ class ServicesRepository(BaseRepository):
                     _logger.debug("found following %s", f"{row=}")
                     # validate the specs first
                     db_service_spec = ServiceSpecificationsAtDB.model_validate(row)
-                    db_spec_version = packaging.version.parse(
-                        db_service_spec.service_version
-                    )
-                    if allow_use_latest_service_version and (
-                        db_spec_version > queried_version
-                    ):
+                    db_spec_version = packaging.version.parse(db_service_spec.service_version)
+                    if allow_use_latest_service_version and (db_spec_version > queried_version):
                         # NOTE: in this case we look for the latest version only (e.g <=queried_version)
                         # and we skip them if they are above
                         continue
@@ -789,13 +722,9 @@ class ServicesRepository(BaseRepository):
                         db_service_spec,
                     ):
                         teams_specs[db_service_spec.gid] = db_service_spec
-                    elif (group.group_type == GroupType.EVERYONE) and _is_newer(
-                        everyone_specs, db_service_spec
-                    ):
+                    elif (group.group_type == GroupType.EVERYONE) and _is_newer(everyone_specs, db_service_spec):
                         everyone_specs = db_service_spec
-                    elif (group.group_type == GroupType.PRIMARY) and _is_newer(
-                        primary_specs, db_service_spec
-                    ):
+                    elif (group.group_type == GroupType.PRIMARY) and _is_newer(primary_specs, db_service_spec):
                         primary_specs = db_service_spec
 
                 except ValidationError as exc:
@@ -805,8 +734,6 @@ class ServicesRepository(BaseRepository):
                         f"{exc}",
                     )
 
-        if merged_specifications := _merge_specs(
-            everyone_specs, teams_specs, primary_specs
-        ):
+        if merged_specifications := _merge_specs(everyone_specs, teams_specs, primary_specs):
             return ServiceSpecifications.model_validate(merged_specifications)
         return None  # mypy

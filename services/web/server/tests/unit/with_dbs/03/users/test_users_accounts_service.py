@@ -65,9 +65,7 @@ async def pre_registered_user_created(
     # Clean up after test
     async with asyncpg_engine.connect() as conn:
         await conn.execute(
-            sa.delete(users_pre_registration_details).where(
-                users_pre_registration_details.c.id == pre_registration_id
-            )
+            sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.id == pre_registration_id)
         )
         await conn.commit()
 
@@ -94,9 +92,7 @@ async def test_search_users_as_admin_real_user(
     found_user = found_users[0]
     assert found_user.email == user_email
     assert found_user.registered is True
-    assert (
-        found_user.products is None
-    )  # This test user does not have a product associated with it
+    assert found_user.products is None  # This test user does not have a product associated with it
 
     # Verify the UserForAdminGet model is populated correctly
     assert isinstance(found_user, UserAccountGet)
@@ -122,19 +118,10 @@ async def test_search_users_as_admin_pre_registered_user(
     assert len(found_users) == 1
     pre_registered_user_found = found_users[0]
     assert pre_registered_user_found.email == pre_registered_email
-    assert (
-        pre_registered_user_found.registered is False
-    )  # Pre-registered users are not yet registered
-    assert (
-        pre_registered_user_found.institution == pre_registration_details["institution"]
-    )
-    assert (
-        pre_registered_user_found.first_name
-        == pre_registration_details["pre_first_name"]
-    )
-    assert (
-        pre_registered_user_found.last_name == pre_registration_details["pre_last_name"]
-    )
+    assert pre_registered_user_found.registered is False  # Pre-registered users are not yet registered
+    assert pre_registered_user_found.institution == pre_registration_details["institution"]
+    assert pre_registered_user_found.first_name == pre_registration_details["pre_first_name"]
+    assert pre_registered_user_found.last_name == pre_registration_details["pre_last_name"]
     assert pre_registered_user_found.address == pre_registration_details["address"]
 
     # Verify the invited_by field is populated (should be the name of the product owner)

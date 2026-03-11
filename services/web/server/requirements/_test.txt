@@ -378,7 +378,7 @@ typing-inspection==0.4.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt

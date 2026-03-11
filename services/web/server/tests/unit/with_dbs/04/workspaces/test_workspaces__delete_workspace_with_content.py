@@ -86,11 +86,7 @@ async def test_workspaces_full_workflow_deletion(
     )
 
     # List project in workspace
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"workspace_id": f"{added_workspace.workspace_id}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"workspace_id": f"{added_workspace.workspace_id}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 3
@@ -139,9 +135,7 @@ async def test_workspaces_full_workflow_deletion(
     # ---------------------
 
     # Delete workspace
-    url = client.app.router["delete_workspace"].url_for(
-        workspace_id=f"{added_workspace.workspace_id}"
-    )
+    url = client.app.router["delete_workspace"].url_for(workspace_id=f"{added_workspace.workspace_id}")
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 

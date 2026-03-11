@@ -62,13 +62,9 @@ async def requires_dynamic_sidecar(
     if service_type != "dynamic":
         return False
 
-    service_key_version = ServiceKeyVersion.model_validate(
-        {"key": decoded_service_key, "version": service_version}
-    )
-    simcore_service_labels: SimcoreServiceLabels = (
-        await catalog_client.get_service_labels(
-            service_key_version.key, service_key_version.version
-        )
+    service_key_version = ServiceKeyVersion.model_validate({"key": decoded_service_key, "version": service_version})
+    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
+        service_key_version.key, service_key_version.version
     )
     requires_dynamic_sidecar_: bool = simcore_service_labels.needs_dynamic_sidecar
     return requires_dynamic_sidecar_
@@ -106,7 +102,8 @@ async def _send_network_configuration_to_dynamic_sidecar(
     # if alias is different remove the network
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
         existing_node_ids_and_aliases = existing_networks_with_aliases.get(
-            new_network_name, {}  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
+            new_network_name,
+            {},  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
         )
         for node_id, alias in node_ids_and_aliases.items():
             # node does not exist
@@ -119,9 +116,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
                     )
                 )
             else:
-                existing_alias = existing_networks_with_aliases[new_network_name][
-                    node_id
-                ]
+                existing_alias = existing_networks_with_aliases[new_network_name][node_id]
                 # alias is different
                 if existing_alias != alias:
                     to_remove_items.add(
@@ -147,7 +142,8 @@ async def _send_network_configuration_to_dynamic_sidecar(
     # all aliases which are different or missing should be added
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
         existing_node_ids_and_aliases = existing_networks_with_aliases.get(
-            new_network_name, {}  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
+            new_network_name,
+            {},  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
         )
         for node_id, alias in node_ids_and_aliases.items():
             existing_alias = existing_node_ids_and_aliases.get(node_id)
@@ -185,9 +181,7 @@ async def _get_networks_with_aliases_for_default_network(
     be on the same network.
     Return an updated version of the projects_networks
     """
-    new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.model_validate(
-        {}
-    )
+    new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.model_validate({})
 
     default_network = _network_name(project_id, "default")
     new_networks_with_aliases[default_network] = ContainerAliases.model_validate({})
@@ -203,9 +197,7 @@ async def _get_networks_with_aliases_for_default_network(
 
         # only add if network label is valid, otherwise it will be skipped
         try:
-            network_alias = TypeAdapter(DockerNetworkAlias).validate_python(
-                node_content.label
-            )
+            network_alias = TypeAdapter(DockerNetworkAlias).validate_python(node_content.label)
         except ValidationError:
             message = LoggerRabbitMessage(
                 user_id=user_id,
@@ -227,9 +219,7 @@ async def _get_networks_with_aliases_for_default_network(
             await rabbitmq_client.publish(message.channel_name, message)
             continue
 
-        new_networks_with_aliases[default_network][
-            NodeIDStr(f"{node_uuid}")
-        ] = network_alias
+        new_networks_with_aliases[default_network][NodeIDStr(f"{node_uuid}")] = network_alias
 
     return new_networks_with_aliases
 
@@ -247,11 +237,7 @@ async def update_from_workbench(
     """
 
     try:
-        existing_projects_networks = (
-            await projects_networks_repository.get_projects_networks(
-                project_id=project_id
-            )
-        )
+        existing_projects_networks = await projects_networks_repository.get_projects_networks(project_id=project_id)
     except ProjectNetworkNotFoundError:
         existing_projects_networks = ProjectsNetworks.model_validate(
             {"project_uuid": project_id, "networks_with_aliases": {}}

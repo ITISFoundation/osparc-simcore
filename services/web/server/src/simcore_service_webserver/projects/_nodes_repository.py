@@ -19,9 +19,7 @@ async def get_project_nodes_services(
     return list(dict.fromkeys((node.key, node.version) for node in nodes))
 
 
-async def get_project_nodes(
-    app: web.Application, *, project_uuid: ProjectID
-) -> list[ProjectNode]:
+async def get_project_nodes(app: web.Application, *, project_uuid: ProjectID) -> list[ProjectNode]:
     repo = ProjectNodesRepo(project_uuid=project_uuid)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:

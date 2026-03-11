@@ -58,17 +58,9 @@ def mock_fogbugz_api(fake_api_base_url: str) -> Iterator[respx.MockRouter]:
         # 3. resolve_case response
         {"data": {}},
         # 4. get_case_status response (after resolve)
-        {
-            "data": {
-                "cases": [{"ixBug": _IXBUG_DUMMY, "sStatus": "Resolved (Completed)"}]
-            }
-        },
+        {"data": {"cases": [{"ixBug": _IXBUG_DUMMY, "sStatus": "Resolved (Completed)"}]}},
         # 5. reopen_case response (inside you need to get the status ones)
-        {
-            "data": {
-                "cases": [{"ixBug": _IXBUG_DUMMY, "sStatus": "Resolved (Completed)"}]
-            }
-        },
+        {"data": {"cases": [{"ixBug": _IXBUG_DUMMY, "sStatus": "Resolved (Completed)"}]}},
         {"data": {}},
         # 6. get_case_status response (after reopen)
         {"data": {"cases": [{"ixBug": _IXBUG_DUMMY, "sStatus": "Active"}]}},

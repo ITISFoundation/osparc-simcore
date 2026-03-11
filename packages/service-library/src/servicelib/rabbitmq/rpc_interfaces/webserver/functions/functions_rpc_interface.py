@@ -67,9 +67,7 @@ async def register_function(
         product_name=product_name,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(RegisteredFunction).validate_python(
-        result
-    )  # Validates the result as a RegisteredFunction
+    return TypeAdapter(RegisteredFunction).validate_python(result)  # Validates the result as a RegisteredFunction
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -162,24 +160,20 @@ async def list_functions(
     search_by_function_title: str | None = None,
     search_by_multi_columns: str | None = None,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
-    result: tuple[list[RegisteredFunction], PageMetaInfoLimitOffset] = (
-        await rabbitmq_rpc_client.request(
-            DEFAULT_WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("list_functions"),
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-            user_id=user_id,
-            product_name=product_name,
-            order_by=order_by,
-            filter_by_function_class=filter_by_function_class,
-            search_by_function_title=search_by_function_title,
-            search_by_multi_columns=search_by_multi_columns,
-            timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
-        )
+    result: tuple[list[RegisteredFunction], PageMetaInfoLimitOffset] = await rabbitmq_rpc_client.request(
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_functions"),
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
+        user_id=user_id,
+        product_name=product_name,
+        order_by=order_by,
+        filter_by_function_class=filter_by_function_class,
+        search_by_function_title=search_by_function_title,
+        search_by_multi_columns=search_by_multi_columns,
+        timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(
-        tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]
-    ).validate_python(result)
+    return TypeAdapter(tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -194,23 +188,19 @@ async def list_function_jobs(
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-    result: tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset] = (
-        await rabbitmq_rpc_client.request(
-            DEFAULT_WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
-            user_id=user_id,
-            product_name=product_name,
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-            timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
-        )
+    result: tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset] = await rabbitmq_rpc_client.request(
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
+        user_id=user_id,
+        product_name=product_name,
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(
-        tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]
-    ).validate_python(result)
+    return TypeAdapter(tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -268,9 +258,7 @@ async def list_function_job_collections(
         product_name=product_name,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(
-        tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]
-    ).validate_python(result)
+    return TypeAdapter(tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -333,9 +321,7 @@ async def run_function(
         product_name=product_name,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(RegisteredFunctionJob).validate_python(
-        result
-    )  # Validates the result as a RegisteredFunctionJob
+    return TypeAdapter(RegisteredFunctionJob).validate_python(result)  # Validates the result as a RegisteredFunctionJob
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -354,9 +340,7 @@ async def register_function_job(
         product_name=product_name,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(RegisteredFunctionJob).validate_python(
-        result
-    )  # Validates the result as a RegisteredFunctionJob
+    return TypeAdapter(RegisteredFunctionJob).validate_python(result)  # Validates the result as a RegisteredFunctionJob
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -590,9 +574,7 @@ async def get_functions_user_api_access_rights(
 ) -> FunctionUserApiAccessRights:
     result = await rabbitmq_rpc_client.request(
         DEFAULT_WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python(
-            "get_functions_user_api_access_rights"
-        ),
+        TypeAdapter(RPCMethodName).validate_python("get_functions_user_api_access_rights"),
         user_id=user_id,
         product_name=product_name,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
@@ -612,11 +594,7 @@ async def set_group_permissions(
     read: bool | None = None,
     write: bool | None = None,
     execute: bool | None = None,
-) -> list[
-    tuple[
-        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
-    ]
-]:
+) -> list[tuple[FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights]]:
     result = await rabbitmq_rpc_client.request(
         DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("set_group_permissions"),
@@ -630,6 +608,4 @@ async def set_group_permissions(
         execute=execute,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(
-        list[tuple[FunctionID | FunctionJobID, FunctionGroupAccessRights]]
-    ).validate_python(result)
+    return TypeAdapter(list[tuple[FunctionID | FunctionJobID, FunctionGroupAccessRights]]).validate_python(result)

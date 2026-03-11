@@ -109,10 +109,7 @@ async def test_services_tracer_workflow(
 ):
     # ensure more than one service can be tracked
     await limited_gather(
-        *[
-            set_request_as_stopped(app, get_dynamic_service_stop(uuid4()))
-            for _ in range(item_count)
-        ],
+        *[set_request_as_stopped(app, get_dynamic_service_stop(uuid4())) for _ in range(item_count)],
         limit=100,
     )
     assert len(await get_all_tracked_services(app)) == item_count
@@ -121,18 +118,9 @@ async def test_services_tracer_workflow(
 @pytest.mark.parametrize(
     "status",
     [
-        *[
-            NodeGet.model_validate(o)
-            for o in NodeGet.model_config["json_schema_extra"]["examples"]
-        ],
-        *[
-            DynamicServiceGet.model_validate(o)
-            for o in DynamicServiceGet.model_json_schema()["examples"]
-        ],
-        *[
-            NodeGetIdle.model_validate(o)
-            for o in NodeGetIdle.model_json_schema()["examples"]
-        ],
+        *[NodeGet.model_validate(o) for o in NodeGet.model_config["json_schema_extra"]["examples"]],
+        *[DynamicServiceGet.model_validate(o) for o in DynamicServiceGet.model_json_schema()["examples"]],
+        *[NodeGetIdle.model_validate(o) for o in NodeGetIdle.model_json_schema()["examples"]],
     ],
 )
 async def test_set_if_status_changed(
@@ -174,9 +162,7 @@ async def test_set_service_status_task_uid(
     "status, expected_poll_interval",
     [
         (
-            TypeAdapter(NodeGet).validate_python(
-                NodeGet.model_config["json_schema_extra"]["examples"][1]
-            ),
+            TypeAdapter(NodeGet).validate_python(NodeGet.model_config["json_schema_extra"]["examples"][1]),
             _LOW_RATE_POLL_INTERVAL,
         ),
         *[
@@ -195,9 +181,7 @@ async def test_set_service_status_task_uid(
         ],
     ],
 )
-def test__get_poll_interval(
-    status: NodeGet | DynamicServiceGet | NodeGetIdle, expected_poll_interval: timedelta
-):
+def test__get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle, expected_poll_interval: timedelta):
     assert _get_poll_interval(status) == expected_poll_interval
 
 
@@ -218,9 +202,7 @@ def _get_dynamic_service_get_from(
 
 
 def _get_node_get_idle() -> NodeGetIdle:
-    return TypeAdapter(NodeGetIdle).validate_python(
-        NodeGetIdle.model_json_schema()["examples"][0]
-    )
+    return TypeAdapter(NodeGetIdle).validate_python(NodeGetIdle.model_json_schema()["examples"][0])
 
 
 def __get_flat_list(nested_list: list[list[Any]]) -> list[Any]:
@@ -323,15 +305,10 @@ _EXPECTED_TEST_CASES: list[list[ServiceStatusToSchedulerState]] = [
         _get_dynamic_service_get_from,
     )
 ]
-_FLAT_EXPECTED_TEST_CASES: list[ServiceStatusToSchedulerState] = __get_flat_list(
-    _EXPECTED_TEST_CASES
-)
+_FLAT_EXPECTED_TEST_CASES: list[ServiceStatusToSchedulerState] = __get_flat_list(_EXPECTED_TEST_CASES)
 # ensure enum changes do not break above rules
 _NODE_STATUS_FORMATS_COUNT: Final[int] = 2
-assert (
-    len(_FLAT_EXPECTED_TEST_CASES)
-    == len(ServiceState) * len(UserRequestedState) * _NODE_STATUS_FORMATS_COUNT
-)
+assert len(_FLAT_EXPECTED_TEST_CASES) == len(ServiceState) * len(UserRequestedState) * _NODE_STATUS_FORMATS_COUNT
 
 
 @pytest.mark.parametrize("service_status_to_scheduler_state", _FLAT_EXPECTED_TEST_CASES)

@@ -14,9 +14,7 @@ _logger = logging.getLogger(__name__)
 # - By default the HTTPException class is used to manage any handled exceptions.
 
 
-async def http_exception_as_json_response(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def http_exception_as_json_response(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, HTTPException)  # nosec
     assert request  # nosec
 
@@ -27,9 +25,7 @@ async def http_exception_as_json_response(
         # starlette.exceptions.HTTPException default to similar detail
         error.detail = exc.detail
 
-    return JSONResponse(
-        jsonable_encoder(error, exclude_none=True), status_code=exc.status_code
-    )
+    return JSONResponse(jsonable_encoder(error, exclude_none=True), status_code=exc.status_code)
 
 
 async def handle_errors_as_500(request: Request, exc: Exception) -> JSONResponse:
@@ -37,7 +33,7 @@ async def handle_errors_as_500(request: Request, exc: Exception) -> JSONResponse
     assert isinstance(exc, Exception)  # nosec
 
     error = DefaultApiError.from_status_code(status.HTTP_500_INTERNAL_SERVER_ERROR)
-    _logger.exception("Unhandled exeption responded as %s", error)
+    _logger.exception("Unhandled exception responded as %s", error)
     return JSONResponse(
         jsonable_encoder(error, exclude_none=True),
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

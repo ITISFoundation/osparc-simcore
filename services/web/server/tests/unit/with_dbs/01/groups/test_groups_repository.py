@@ -42,9 +42,7 @@ async def create_test_group(
 
     # Cleanup all created groups
     for group in created_groups:
-        await _groups_repository.delete_standard_group(
-            app=client.app, user_id=logged_user["id"], group_id=group.gid
-        )
+        await _groups_repository.delete_standard_group(app=client.app, user_id=logged_user["id"], group_id=group.gid)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -64,9 +62,7 @@ async def test_list_users_in_group_owner_only(
     )
 
     # List users in the group - should only contain the owner
-    users_in_group = await _groups_repository.list_users_in_group(
-        app=client.app, group_id=group.gid
-    )
+    users_in_group = await _groups_repository.list_users_in_group(app=client.app, group_id=group.gid)
 
     # Should contain exactly one user (the owner)
     assert len(users_in_group) == 1

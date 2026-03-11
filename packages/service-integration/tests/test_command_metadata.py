@@ -12,10 +12,7 @@ from service_integration.cli._metadata import TargetVersionChoices
 
 
 @pytest.fixture
-def current_metadata(
-    metadata_file_path: Path, target_version: str, current_version: str
-) -> dict:
-
+def current_metadata(metadata_file_path: Path, target_version: str, current_version: str) -> dict:
     metadata = yaml.safe_load(metadata_file_path.read_text())
     metadata[target_version] = current_version
 
@@ -31,9 +28,7 @@ BUMP_PARAMS = [
 ]
 
 
-CMD_PARAMS = [
-    (t.value, b, c, n) for t in TargetVersionChoices for b, c, n in BUMP_PARAMS
-]
+CMD_PARAMS = [(t.value, b, c, n) for t in TargetVersionChoices for b, c, n in BUMP_PARAMS]
 
 
 @pytest.mark.parametrize("target_version,bump,current_version,new_version", CMD_PARAMS)
@@ -49,7 +44,7 @@ def test_make_version(
     """
     As Makefile recipe:
 
-        version-service-patch version-service-minor version-service-major: $(metatada) ## kernel/service versioning as patch
+        version-service-patch version-service-minor version-service-major: $(metadata) ## kernel/service versioning as patch
                 simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
     """
     # ensures current_metadata fixture worked as expected
@@ -107,10 +102,7 @@ def test_get_version_from_metadata(
     assert result.output == expected_output
 
 
-def test_changes_in_metadata_keeps_keys_order(
-    metadata_file_path, run_program_with_args
-):
-
+def test_changes_in_metadata_keeps_keys_order(metadata_file_path, run_program_with_args):
     before = yaml.safe_load(metadata_file_path.read_text())
     print(before)
 

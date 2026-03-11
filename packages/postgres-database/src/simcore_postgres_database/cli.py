@@ -3,7 +3,7 @@
 # pylint: disable=wildcard-import
 # pylint: disable=unused-wildcard-import
 
-# nopycln: file
+# nopycln: file  # noqa: ERA001
 
 import json
 import json.decoder
@@ -15,7 +15,11 @@ from pathlib import Path
 import alembic.command
 import click
 from alembic import __version__ as __alembic_version__
-from simcore_postgres_database.models import *
+from tenacity import Retrying
+from tenacity.after import after_log
+from tenacity.wait import wait_fixed
+
+from simcore_postgres_database.models import *  # noqa: F403
 from simcore_postgres_database.utils import (
     build_url,
     hide_dict_pass,
@@ -30,9 +34,6 @@ from simcore_postgres_database.utils_cli import (
     reset_cache,
 )
 from simcore_postgres_database.utils_migration import DEFAULT_INI
-from tenacity import Retrying
-from tenacity.after import after_log
-from tenacity.wait import wait_fixed
 
 ALEMBIC_VERSION = tuple(int(v) for v in __alembic_version__.split(".")[0:3])
 DEFAULT_HOST = "postgres"
@@ -50,7 +51,8 @@ class PostgresNotFoundError(RuntimeError):
 class DiscoverConfigMissingError(ValueError):
     def __init__(self, extra="") -> None:
         super().__init__(
-            f"Missing discovery config file {extra}. Check for errors in discovery logs to find more details"
+            f"Missing discovery config file {extra}. Check for errors in discovery logs to find more details. "
+            "Try the following: 'sc-pg discover -u test -p test -d test --host 127.0.0.1 --port 5432'"
         )
 
 
@@ -68,7 +70,6 @@ def main():
 def discover(**cli_inputs) -> dict | None:
     """Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
-    # TODO: if multiple candidates online, then query user to select
 
     click.echo("Discovering database ...")
     cli_cfg = {key: value for key, value in cli_inputs.items() if value is not None}
@@ -125,7 +126,7 @@ def discover(**cli_inputs) -> dict | None:
 
             return cfg
 
-        except Exception as err:  # pylint: disable=broad-except  # noqa: PERF203
+        except Exception as err:  # pylint: disable=broad-except
             inline_msg = str(err).replace("\n", ". ")
             click.echo(f"<- {test.__name__} failed : {inline_msg}")
 
@@ -182,7 +183,7 @@ def upgrade_and_close():
 @main.command()
 @click.option("-m", "message")
 def review(message):
-    """Auto-generates a new revison. Equivalent to `alembic revision --autogenerate -m "first tables"`"""
+    """Auto-generates a new revision. Equivalent to `alembic revision --autogenerate -m "first tables"`"""
     click.echo("Auto-generates revision based on changes ")
 
     config = get_alembic_config_from_cache()

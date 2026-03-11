@@ -60,7 +60,7 @@ def _create_task_name_from_request(request: web.Request) -> str:
 async def start_long_running_task(
     # NOTE: positional argument are suffixed with "_" to avoid name conflicts with "task_kwargs" keys
     request_: web.Request,
-    registerd_task_name: RegisteredTaskName,
+    registered_task_name: RegisteredTaskName,
     *,
     fire_and_forget: bool = False,
     task_context: TaskContext,
@@ -73,7 +73,7 @@ async def start_long_running_task(
         task_id = await lrt_api.start_task(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
-            registerd_task_name,
+            registered_task_name,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
             task_name=task_name,
@@ -127,9 +127,7 @@ def _wrap_and_add_routes(
         app.router.add_route(
             method=route.method,
             path=f"{router_prefix}{route.path}",
-            handler=handler_check_decorator(
-                task_request_context_decorator(route.handler)
-            ),
+            handler=handler_check_decorator(task_request_context_decorator(route.handler)),
             **route.kwargs,
         )
 
@@ -181,14 +179,12 @@ def setup(
         app.middlewares.append(base_long_running_error_handler)
 
         # add components to state
-        app[LONG_RUNNING_MANAGER_APPKEY] = long_running_manager = (
-            AiohttpLongRunningManager(
-                stale_task_check_interval=stale_task_check_interval,
-                stale_task_detect_timeout=stale_task_detect_timeout,
-                redis_settings=redis_settings,
-                rabbit_settings=rabbit_settings,
-                lrt_namespace=lrt_namespace,
-            )
+        app[LONG_RUNNING_MANAGER_APPKEY] = long_running_manager = AiohttpLongRunningManager(
+            stale_task_check_interval=stale_task_check_interval,
+            stale_task_detect_timeout=stale_task_detect_timeout,
+            redis_settings=redis_settings,
+            rabbit_settings=rabbit_settings,
+            lrt_namespace=lrt_namespace,
         )
 
         await long_running_manager.setup()

@@ -97,9 +97,7 @@ def test_create_and_decrypt_invitation(
 
 
 @pytest.fixture
-def invitation_code(
-    invitation_data: InvitationInputs, secret_key: str, default_product: ProductName
-) -> str:
+def invitation_code(invitation_data: InvitationInputs, secret_key: str, default_product: ProductName) -> str:
     content = InvitationContent.create_from_inputs(invitation_data, default_product)
     code = _create_invitation_code(content, secret_key.encode())
     return code.decode()
@@ -176,9 +174,7 @@ def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
         foo: int = 123
 
     secret = secret_key.encode()
-    other_code = _fernet_encrypt_as_urlsafe_code(
-        data=OtherModel().model_dump_json().encode(), secret_key=secret
-    )
+    other_code = _fernet_encrypt_as_urlsafe_code(data=OtherModel().model_dump_json().encode(), secret_key=secret)
 
     with pytest.raises(ValidationError):
         decrypt_invitation(
@@ -198,9 +194,7 @@ def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
 def test_aliases_uniqueness():
     assert not [
         item
-        for item, count in Counter(
-            [field.alias for field in _ContentWithShortNames.model_fields.values()]
-        ).items()
+        for item, count in Counter([field.alias for field in _ContentWithShortNames.model_fields.values()]).items()
         if count > 1
     ]  # nosec
 
@@ -237,9 +231,7 @@ def test_consecutive_invitation_codes_are_different_due_to_timestamps(
     )
 
     # Content should be the same except for timestamps
-    assert invitation1.model_dump(exclude={"created"}) == invitation2.model_dump(
-        exclude={"created"}
-    )
+    assert invitation1.model_dump(exclude={"created"}) == invitation2.model_dump(exclude={"created"})
 
     # Timestamps should be different
     assert invitation1.created != invitation2.created

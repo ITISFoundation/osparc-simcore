@@ -53,7 +53,7 @@ class MyPhoneConfirm(InputSchema):
 
 
 #
-# USER-ACCCOUNT
+# USER-ACCOUNT
 #
 
 
@@ -63,12 +63,8 @@ class UserAccountRestPreRegister(InputSchema):
     first_name: str
     last_name: str
     email: LowerCaseEmailStr
-    institution: Annotated[
-        str | None, Field(description="company, university, ...")
-    ] = None
-    phone: Annotated[
-        PhoneNumberStr | None, BeforeValidator(empty_str_to_none_pre_validator)
-    ]
+    institution: Annotated[str | None, Field(description="company, university, ...")] = None
+    phone: Annotated[PhoneNumberStr | None, BeforeValidator(empty_str_to_none_pre_validator)]
 
     # billing details
     address: str
@@ -92,7 +88,6 @@ class UserAccountRestPreRegister(InputSchema):
         # multiple aliases for "institution"
         alias_by_priority = ("companyName", "company", "university", "universityName")
         if "institution" not in values:
-
             for alias in alias_by_priority:
                 if alias in values:
                     values["institution"] = values.pop(alias)

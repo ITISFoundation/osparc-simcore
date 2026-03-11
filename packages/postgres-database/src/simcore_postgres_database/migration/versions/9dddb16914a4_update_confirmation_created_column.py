@@ -29,9 +29,7 @@ def upgrade():
     )
 
     # Step 2: Copy data from created_at to created, assuming UTC timezone for existing data
-    op.execute(
-        "UPDATE confirmations SET created = created_at AT TIME ZONE 'UTC' WHERE created_at IS NOT NULL"
-    )
+    op.execute("UPDATE confirmations SET created = created_at AT TIME ZONE 'UTC' WHERE created_at IS NOT NULL")
 
     # Step 3: Make the column non-nullable with default
     op.alter_column(
@@ -49,15 +47,11 @@ def downgrade():
     # Step 1: Add back the old column
     op.add_column(
         "confirmations",
-        sa.Column(
-            "created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True
-        ),
+        sa.Column("created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
     )
 
     # Step 2: Copy data back, converting timezone-aware to naive timestamp
-    op.execute(
-        "UPDATE confirmations SET created_at = created AT TIME ZONE 'UTC' WHERE created IS NOT NULL"
-    )
+    op.execute("UPDATE confirmations SET created_at = created AT TIME ZONE 'UTC' WHERE created IS NOT NULL")
 
     # Step 3: Make the column non-nullable
     op.alter_column(

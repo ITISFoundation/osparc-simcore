@@ -68,9 +68,7 @@ def builtin_value(faker: Faker, builtin_type: type) -> Any:
     }[builtin_type.__name__]
 
 
-@pytest.mark.parametrize(
-    "builtin_type", [str, float, int, bool, tuple, set], ids=lambda x: x.__name__
-)
+@pytest.mark.parametrize("builtin_type", [str, float, int, bool, tuple, set], ids=lambda x: x.__name__)
 def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
     # constructors
     envelope = Envelope[builtin_type](data=builtin_value)
@@ -78,9 +76,7 @@ def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
     assert envelope == Envelope[builtin_type].from_data(builtin_value)
 
     # exports
-    assert envelope.model_dump(exclude_unset=True, exclude_none=True) == {
-        "data": builtin_value
-    }
+    assert envelope.model_dump(exclude_unset=True, exclude_none=True) == {"data": builtin_value}
     assert envelope.model_dump() == {"data": builtin_value, "error": None}
 
 
@@ -92,9 +88,7 @@ def test_enveloped_data_model():
     enveloped = Envelope[User](data={"idr": 3})
 
     assert isinstance(enveloped.data, User)
-    assert enveloped.model_dump(exclude_unset=True, exclude_none=True) == {
-        "data": {"idr": 3}
-    }
+    assert enveloped.model_dump(exclude_unset=True, exclude_none=True) == {"data": {"idr": 3}}
 
 
 def test_enveloped_data_dict():

@@ -46,9 +46,7 @@ async def list_computations_latest_iteration_page(
 ) -> ComputationRunRpcGetPage:
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python(
-            "list_computations_latest_iteration_page"
-        ),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_computations_latest_iteration_page"),
         product_name=product_name,
         user_id=user_id,
         filter_only_running=filter_only_running,
@@ -104,9 +102,7 @@ async def list_computations_latest_iteration_tasks_page(
 ) -> ComputationTaskRpcGetPage:
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python(
-            "list_computations_latest_iteration_tasks_page"
-        ),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_computations_latest_iteration_tasks_page"),
         product_name=product_name,
         user_id=user_id,
         project_ids=project_ids,
@@ -133,9 +129,7 @@ async def list_computation_collection_runs_page(
 ) -> ComputationCollectionRunRpcGetPage:
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python(
-            "list_computation_collection_runs_page"
-        ),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_computation_collection_runs_page"),
         product_name=product_name,
         user_id=user_id,
         project_ids=project_ids,
@@ -163,9 +157,7 @@ async def list_computation_collection_run_tasks_page(
 ) -> ComputationCollectionRunTaskRpcGetPage:
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python(
-            "list_computation_collection_run_tasks_page"
-        ),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_computation_collection_run_tasks_page"),
         product_name=product_name,
         user_id=user_id,
         collection_run_id=collection_run_id,

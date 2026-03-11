@@ -42,7 +42,6 @@ async def notify_service_status_change(
 
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-
     assert app.state.external_socketio  # nosec
 
     notifier = Notifier(

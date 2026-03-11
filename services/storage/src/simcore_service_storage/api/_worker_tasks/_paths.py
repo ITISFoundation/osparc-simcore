@@ -3,6 +3,7 @@ from pathlib import Path
 
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.worker.app_server import get_app_server
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -17,7 +18,12 @@ _logger = logging.getLogger(__name__)
 
 
 async def compute_path_size(
-    task: Task, task_key: TaskKey, user_id: UserID, location_id: LocationID, path: Path
+    task: Task,
+    task_key: TaskKey,
+    user_id: UserID,
+    product_name: ProductName,
+    location_id: LocationID,
+    path: Path,
 ) -> ByteSize:
     assert task_key  # nosec
     with log_context(
@@ -26,7 +32,7 @@ async def compute_path_size(
         msg=f"computing path size {user_id=}, {location_id=}, {path=}",
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
-        return await dsm.compute_path_size(user_id, path=Path(path))
+        return await dsm.compute_path_size(user_id, product_name, path=Path(path))
 
 
 async def delete_paths(
@@ -43,9 +49,7 @@ async def delete_paths(
         msg=f"delete {paths=} in {location_id=} for {user_id=}",
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
-        files_ids: set[StorageFileID] = {
-            TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths
-        }
+        files_ids: set[StorageFileID] = {TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths}
         await limited_gather(
             *[dsm.delete_file(user_id, file_id) for file_id in files_ids],
             limit=MAX_CONCURRENT_S3_TASKS,

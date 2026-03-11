@@ -15,8 +15,9 @@ from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import NonNegativeInt, TypeAdapter
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import setup_httpx_client_tracing
 from starlette import status
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -43,11 +44,7 @@ _RESOURCES_ENTRY_NAME = "Resources".lower()
 
 
 def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
-    for element in (
-        entry_to_validate.get("value", {})
-        .get("Reservations", {})
-        .get("GenericResources", [])
-    ):
+    for element in entry_to_validate.get("value", {}).get("Reservations", {}).get("GenericResources", []):
         if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
             return True
     return False
@@ -82,9 +79,7 @@ def _return_data_or_raise_error(
         """
         body = resp.json()
 
-        assert (
-            "data" in body or "error" in body
-        ), f"here is the failing {body=}, {resp.request=}"  # nosec
+        assert "data" in body or "error" in body, f"here is the failing {body=}, {resp.request=}"  # nosec
         data = body.get("data")
         error = body.get("error")
 
@@ -107,12 +102,10 @@ def _return_data_or_raise_error(
         return data or {}
 
     @functools.wraps(request_func)
-    async def request_wrapper(
-        zelf: "DirectorClient", path: str, *args, **kwargs
-    ) -> list[Any] | dict[str, Any]:
+    async def request_wrapper(zelf: "DirectorClient", path: str, *args, **kwargs) -> list[Any] | dict[str, Any]:
         normalized_path = path.lstrip("/")
         try:
-            resp = await request_func(zelf, path=normalized_path, *args, **kwargs)
+            resp = await request_func(zelf, path=normalized_path, *args, **kwargs)  # noqa: B026
         except Exception as err:
             _logger.exception(
                 "Failed request %s to %s%s",
@@ -183,12 +176,8 @@ class DirectorClient:
         except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
             return False
 
-    async def get_service(
-        self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> ServiceMetaDataPublished:
-        data = await self.get(
-            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-        )
+    async def get_service(self, service_key: ServiceKey, service_version: ServiceVersion) -> ServiceMetaDataPublished:
+        data = await self.get(f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}")
         # NOTE: the fact that it returns a list of one element is a defect of the director API
         assert isinstance(data, list)  # nosec
         assert len(data) == 1  # nosec
@@ -199,13 +188,11 @@ class DirectorClient:
         service_key: ServiceKey,
         service_version: ServiceVersion,
     ) -> dict[str, Any]:
-        response = await self.get(
-            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
-        )
+        response = await self.get(f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels")
         assert isinstance(response, dict)  # nosec
         return response
 
-    async def get_service_extras(
+    async def get_service_extras(  # noqa: C901
         self,
         service_key: ServiceKey,
         service_version: ServiceVersion,
@@ -225,9 +212,7 @@ class DirectorClient:
         _logger.debug("Compiling service extras from labels %s", pformat(labels))
 
         if _SERVICE_RUNTIME_SETTINGS in labels:
-            service_settings: list[dict[str, Any]] = json_loads(
-                labels[_SERVICE_RUNTIME_SETTINGS]
-            )
+            service_settings: list[dict[str, Any]] = json_loads(labels[_SERVICE_RUNTIME_SETTINGS])
             for entry in service_settings:
                 entry_name = entry.get("name", "").lower()
                 entry_value = entry.get("value")
@@ -262,11 +247,7 @@ class DirectorClient:
                 elif entry_name == _CONTAINER_SPEC_ENTRY_NAME:
                     # NOTE: some minor validation
                     # expects {'name': 'ContainerSpec', 'type': 'ContainerSpec', 'value': {'Command': [...]}}
-                    if (
-                        entry_value
-                        and isinstance(entry_value, dict)
-                        and "Command" in entry_value
-                    ):
+                    if entry_value and isinstance(entry_value, dict) and "Command" in entry_value:
                         result["container_spec"] = entry_value
                     else:
                         invalid_with_msg = f"invalid container_spec [{entry_value}]"
@@ -281,11 +262,7 @@ class DirectorClient:
                     )
 
         # get org labels
-        if service_build_details := {
-            sl: labels[dl]
-            for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items()
-            if dl in labels
-        }:
+        if service_build_details := {sl: labels[dl] for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items() if dl in labels}:
             result.update({"service_build_details": service_build_details})
 
         return TypeAdapter(ServiceExtras).validate_python(result)
@@ -297,9 +274,7 @@ async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     assert isinstance(settings, DirectorSettings)  # nosec
 
-    with log_context(
-        _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
-    ):
+    with log_context(_logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"):
         async for attempt in AsyncRetrying(**_director_startup_retry_policy):
             with attempt:
                 client = DirectorClient(base_url=settings.base_url, app=app)

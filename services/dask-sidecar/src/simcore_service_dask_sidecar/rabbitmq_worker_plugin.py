@@ -16,9 +16,7 @@ from .errors import ConfigurationError
 
 _logger = logging.getLogger(__name__)
 
-_RABBITMQ_CONFIGURATION_ERROR: Final[str] = (
-    "RabbitMQ client is not available. Please check the configuration."
-)
+_RABBITMQ_CONFIGURATION_ERROR: Final[str] = "RabbitMQ client is not available. Please check the configuration."
 
 
 class RabbitMQPlugin(distributed.WorkerPlugin):
@@ -53,15 +51,11 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
 
         async def _() -> None:
             if not self._settings:
-                _logger.warning(
-                    "RabbitMQ client is de-activated (no settings provided)"
-                )
+                _logger.warning("RabbitMQ client is de-activated (no settings provided)")
                 return
 
             if threading.current_thread() is not threading.main_thread():
-                _logger.warning(
-                    "RabbitMQ client plugin setup is not in the main thread! TIP: if in pytest it's ok."
-                )
+                _logger.warning("RabbitMQ client plugin setup is not in the main thread! TIP: if in pytest it's ok.")
 
             with log_context(
                 _logger,
@@ -70,14 +64,10 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
             ):
                 self._main_thread_loop = asyncio.get_event_loop()
                 await wait_till_rabbitmq_responsive(self._settings.dsn)
-                self._client = RabbitMQClient(
-                    client_name="dask-sidecar", settings=self._settings
-                )
+                self._client = RabbitMQClient(client_name="dask-sidecar", settings=self._settings)
 
                 self._message_queue = asyncio.Queue()
-                self._message_processor = asyncio.create_task(
-                    self._process_messages(), name="rabbit_message_processor"
-                )
+                self._message_processor = asyncio.create_task(self._process_messages(), name="rabbit_message_processor")
 
         return _()
 
@@ -93,13 +83,9 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 if not self._client:
                     return
                 if threading.current_thread() is threading.main_thread():
-                    _logger.info(
-                        "RabbitMQ client plugin setup is in the main thread! That is good."
-                    )
+                    _logger.info("RabbitMQ client plugin setup is in the main thread! That is good.")
                 else:
-                    _logger.warning(
-                        "RabbitMQ client plugin setup is not the main thread! TIP: if in pytest it's ok."
-                    )
+                    _logger.warning("RabbitMQ client plugin setup is not the main thread! TIP: if in pytest it's ok.")
 
                 # Cancel the message processor task
                 if self._message_processor:
@@ -125,9 +111,7 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
             raise ConfigurationError(msg=_RABBITMQ_CONFIGURATION_ERROR)
         return self._client
 
-    async def publish_message_from_any_thread(
-        self, exchange_name: str, message_data: RabbitMessage
-    ) -> None:
+    async def publish_message_from_any_thread(self, exchange_name: str, message_data: RabbitMessage) -> None:
         """Enqueue a message to be published to RabbitMQ from any thread"""
         assert self._message_queue  # nosec
 

@@ -24,9 +24,7 @@ def update_apps_metadata():
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
-            index_file_path = Path(dirname).joinpath(
-                "..", output_folder, application, "index.html"
-            )
+            index_file_path = Path(dirname).joinpath("..", output_folder, application, "index.html")
             if os.path.isfile(index_file_path):
                 print(f"Updating app metadata: {index_file_path.resolve()}")
                 replacements = i.get("replacements")
@@ -47,9 +45,7 @@ def _get_output_file_paths(filename):
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
-            output_file_path = Path(dirname).joinpath(
-                "..", output_folder, application, filename
-            )
+            output_file_path = Path(dirname).joinpath("..", output_folder, application, filename)
             if output_file_path.is_file():
                 output_file_paths.append(output_file_path)
     return output_file_paths

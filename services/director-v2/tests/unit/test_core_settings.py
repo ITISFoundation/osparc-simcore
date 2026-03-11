@@ -26,7 +26,7 @@ def _get_backend_type_options() -> set[str]:
 
 
 def test_supported_backends_did_not_change() -> None:
-    _EXPECTED = {"AWS", "CEPH", "MINIO"}
+    _EXPECTED = {"AWS", "CEPH", "MINIO", "AWS_MOTO"}
     assert _get_backend_type_options() == _EXPECTED, (
         "Backend configuration change, please code support for "
         "it in volumes_resolver -> _get_s3_volume_driver_config. "
@@ -56,9 +56,7 @@ def test_settings_with_repository_env_devel(
     mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
-    monkeypatch.setenv(
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}"
-    )  # defined in docker-compose
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}")  # defined in docker-compose
 
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.model_dump_json(indent=2))
@@ -101,9 +99,7 @@ def testing_environ_expected_success(
 
 def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None:
     settings = DynamicSidecarSettings.create_from_envs()
-    assert (
-        testing_environ_expected_success.lstrip("/") == settings.DYNAMIC_SIDECAR_IMAGE
-    )
+    assert testing_environ_expected_success.lstrip("/") == settings.DYNAMIC_SIDECAR_IMAGE
 
 
 @pytest.fixture(
@@ -150,10 +146,10 @@ def test_services_custom_constraints(
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints)
     settings = AppSettings.create_from_envs()
     custom_constraints = (
-        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
     )
     assert isinstance(custom_constraints, list)
     assert expected == custom_constraints
@@ -185,7 +181,7 @@ def test_services_custom_constraint_failures(
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints)
     with pytest.raises(DefaultFromEnvFactoryError):
         AppSettings.create_from_envs()
 
@@ -195,8 +191,8 @@ def test_services_custom_constraints_default_empty_list(
 ) -> None:
     settings = AppSettings.create_from_envs()
     assert (
-        []
-        == settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+        == []
     )
 
 
@@ -248,11 +244,6 @@ def test_envoy_log_level():
 def test_placement_settings(monkeypatch: pytest.MonkeyPatch):
     assert PlacementSettings()
 
-    monkeypatch.setenv(
-        "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
-    )
+    monkeypatch.setenv("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}")
     placement_settings = PlacementSettings()
-    assert (
-        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
-        == {}
-    )
+    assert placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS == {}

@@ -23,15 +23,11 @@ from . import status
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
 
-APP_JSON_SCHEMA_SPECS_KEY: Final = web.AppKey(
-    "APP_JSON_SCHEMA_SPECS_KEY", dict[str, object]
-)
+APP_JSON_SCHEMA_SPECS_KEY: Final = web.AppKey("APP_JSON_SCHEMA_SPECS_KEY", dict[str, object])
 
 
 @contextmanager
-def handle_validation_as_http_error(
-    *, error_msg_template: str, resource_name: str
-) -> Iterator[None]:
+def handle_validation_as_http_error(*, error_msg_template: str, resource_name: str) -> Iterator[None]:
     """Context manager to handle ValidationError and reraise them as HTTPUnprocessableEntity error
 
     Arguments:
@@ -70,9 +66,7 @@ def handle_validation_as_http_error(
         error_json_str = EnvelopedError.model_validate(
             {
                 "error": {
-                    "message": error_msg_template.format(
-                        failed=", ".join(e["field"] for e in errors_details)
-                    ),
+                    "message": error_msg_template.format(failed=", ".join(e["field"] for e in errors_details)),
                     "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
                     "errors": errors_details,
                 }
@@ -108,9 +102,7 @@ def parse_request_path_parameters_as(
     """
 
     with handle_validation_as_http_error(
-        error_msg_template=user_message(
-            "Invalid parameter/s '{failed}' in request path"
-        ),
+        error_msg_template=user_message("Invalid parameter/s '{failed}' in request path"),
         resource_name=request.rel_url.path,
     ):
         data = dict(request.match_info)
@@ -132,9 +124,7 @@ def parse_request_query_parameters_as(
     """
 
     with handle_validation_as_http_error(
-        error_msg_template=user_message(
-            "Invalid parameter/s '{failed}' in request query"
-        ),
+        error_msg_template=user_message("Invalid parameter/s '{failed}' in request query"),
         resource_name=request.rel_url.path,
     ):
         # NOTE: Currently, this does not take into consideration cases where there are multiple
@@ -152,9 +142,7 @@ def parse_request_headers_as(
     request: web.Request,
 ) -> ModelClass:
     with handle_validation_as_http_error(
-        error_msg_template=user_message(
-            "Invalid parameter/s '{failed}' in request headers"
-        ),
+        error_msg_template=user_message("Invalid parameter/s '{failed}' in request headers"),
         resource_name=request.rel_url.path,
     ):
         data = dict(request.headers)

@@ -69,9 +69,7 @@ async def create_project(request: web.Request):
     # - Create https://google.aip.dev/133
     #
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    query_params: ProjectCreateQueryParams = parse_request_query_parameters_as(
-        ProjectCreateQueryParams, request
-    )
+    query_params: ProjectCreateQueryParams = parse_request_query_parameters_as(ProjectCreateQueryParams, request)
     header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
         await security_web.check_user_permission(request, "project.template.create")
@@ -87,11 +85,9 @@ async def create_project(request: web.Request):
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})
-        project_create: ProjectCreateNew | ProjectCopyOverride | EmptyModel = (
-            await parse_request_body_as(
-                ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
-                request,
-            )
+        project_create: ProjectCreateNew | ProjectCopyOverride | EmptyModel = await parse_request_body_as(
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+            request,
         )
         predefined_project = project_create.to_domain_model() or None
 
@@ -132,9 +128,7 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    query_params: ProjectsListQueryParams = parse_request_query_parameters_as(
-        ProjectsListQueryParams, request
-    )
+    query_params: ProjectsListQueryParams = parse_request_query_parameters_as(ProjectsListQueryParams, request)
 
     if not query_params.filters:
         query_params.filters = ProjectFilters()
@@ -177,9 +171,7 @@ async def list_projects(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_projects_full_search(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(
-        ProjectsSearchQueryParams, request
-    )
+    query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(ProjectsSearchQueryParams, request)
     if not query_params.filters:
         query_params.filters = ProjectFilters()
 
@@ -226,14 +218,10 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPNotFound: If active project is not found
     """
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    query_params: ProjectActiveQueryParams = parse_request_query_parameters_as(
-        ProjectActiveQueryParams, request
-    )
+    query_params: ProjectActiveQueryParams = parse_request_query_parameters_as(ProjectActiveQueryParams, request)
 
     user_active_projects = []
-    with managed_resource(
-        req_ctx.user_id, query_params.client_session_id, request.app
-    ) as rt:
+    with managed_resource(req_ctx.user_id, query_params.client_session_id, request.app) as rt:
         # get user's projects
         user_active_projects = await rt.find(PROJECT_ID_KEY)
 
@@ -248,9 +236,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         )
 
         # updates project's permalink field
-        await update_or_pop_permalink_in_project(
-            request.app, request.url, dict(request.headers), project
-        )
+        await update_or_pop_permalink_in_project(request.app, request.url, dict(request.headers), project)
 
         data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
 
@@ -283,17 +269,13 @@ async def get_project(request: web.Request):
     )
 
     # Adds permalink
-    await update_or_pop_permalink_in_project(
-        request.app, request.url, dict(request.headers), project
-    )
+    await update_or_pop_permalink_in_project(request.app, request.url, dict(request.headers), project)
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
     return envelope_json_response(data)
 
 
-@routes.get(
-    f"/{VTAG}/projects/{{project_id}}/inactivity", name="get_project_inactivity"
-)
+@routes.get(f"/{VTAG}/projects/{{project_id}}/inactivity", name="get_project_inactivity")
 @login_required
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
@@ -348,7 +330,7 @@ async def delete_project(request: web.Request):
         web.HTTPForbidden: Not enough access rights to delete this project
         web.HTTPNotFound: This project was not found
         web.HTTPConflict: Somethine went wrong while deleting
-        web.HTTPNoContent: Sucess
+        web.HTTPNoContent: Success
     """
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -362,41 +344,33 @@ async def delete_project(request: web.Request):
     with managed_resource(req_ctx.user_id, None, request.app) as user_session:
         project_users = {
             s.user_id
-            for s in await user_session.find_users_of_resource(
-                request.app, PROJECT_ID_KEY, f"{path_params.project_id}"
-            )
+            for s in await user_session.find_users_of_resource(request.app, PROJECT_ID_KEY, f"{path_params.project_id}")
         }
     # that project is still in use
     if req_ctx.user_id in project_users:
         raise web.HTTPForbidden(
-            text="Project is still open in another tab/browser."
-            "It cannot be deleted until it is closed."
+            text="Project is still open in another tab/browser.It cannot be deleted until it is closed."
         )
     if project_users:
         other_user_names = {
-            f"{await users_service.get_user_fullname(request.app, user_id=uid)}"
-            for uid in project_users
+            f"{await users_service.get_user_fullname(request.app, user_id=uid)}" for uid in project_users
         }
         raise web.HTTPForbidden(
-            text=f"Project is open by {other_user_names}. "
-            "It cannot be deleted until the project is closed."
+            text=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
         )
 
     if project_locked_state := await get_project_locked_state(
         get_redis_lock_manager_client_sdk(request.app),
         project_uuid=path_params.project_id,
     ):
-        raise web.HTTPConflict(
-            text=f"Project {path_params.project_id} is locked: {project_locked_state=}"
-        )
+        raise web.HTTPConflict(text=f"Project {path_params.project_id} is locked: {project_locked_state=}")
 
     await _projects_service.submit_delete_project_task(
         request.app,
         project_uuid=path_params.project_id,
         user_id=req_ctx.user_id,
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-        ),
+        simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
+        product_name=req_ctx.product_name,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -433,9 +407,7 @@ async def clone_project(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-        ),
+        simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
         predefined_project=None,
         parent_project_uuid=None,
         parent_node_id=None,

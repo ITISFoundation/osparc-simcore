@@ -44,8 +44,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         assert app  # nose
         return (
-            scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
-            and not scheduler_data.dynamic_sidecar.is_healthy
+            scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started and not scheduler_data.dynamic_sidecar.is_healthy
         )
 
     @classmethod
@@ -65,9 +64,7 @@ class UpdateHealth(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        scheduler_data.dynamic_sidecar.is_ready = (
-            await get_dynamic_sidecar_service_health(app, scheduler_data)
-        )
+        scheduler_data.dynamic_sidecar.is_ready = await get_dynamic_sidecar_service_health(app, scheduler_data)
 
 
 class GetStatus(DynamicSchedulerEvent):
@@ -98,13 +95,9 @@ class GetStatus(DynamicSchedulerEvent):
         )
 
         try:
-            containers_inspect: dict[str, Any] = (
-                await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
-            )
+            containers_inspect: dict[str, Any] = await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
         except BaseHttpClientError as e:
-            were_service_containers_previously_present = (
-                len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
-            )
+            were_service_containers_previously_present = len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
             if were_service_containers_previously_present:
                 # Containers disappeared after they were started.
                 # for now just mark as error and remove the sidecar
@@ -119,9 +112,7 @@ class GetStatus(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
 
         # parse and store data from container
-        scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
-            containers_inspect
-        )
+        scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(containers_inspect)
 
         # NOTE: All containers are expected to be either created or running.
         # Extra containers (utilities like forward proxies) can also be present here,
@@ -134,9 +125,7 @@ class GetStatus(DynamicSchedulerEvent):
         ]
 
         if len(containers_with_error) > 0:
-            raise UnexpectedContainerStatusError(
-                containers_with_error=containers_with_error
-            )
+            raise UnexpectedContainerStatusError(containers_with_error=containers_with_error)
 
 
 class SendUserServicesSpec(DynamicSchedulerEvent):
@@ -219,9 +208,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
         return (
             scheduler_data.dynamic_sidecar.were_containers_created
             and not scheduler_data.dynamic_sidecar.is_project_network_attached
-            and are_all_user_services_containers_running(
-                scheduler_data.dynamic_sidecar.containers_inspect
-            )
+            and are_all_user_services_containers_running(scheduler_data.dynamic_sidecar.containers_inspect)
         )
 
     @classmethod
@@ -235,7 +222,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
     The state of the service will be stored. If dynamic-sidecar
         is not reachable a warning is logged.
-    The outputs of the service wil be pushed. If dynamic-sidecar
+    The outputs of the service will be pushed. If dynamic-sidecar
         is not reachable a warning is logged.
     The dynamic-sidecar together with spawned containers
     and dedicated network will be removed.

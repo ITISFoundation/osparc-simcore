@@ -33,9 +33,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> None:
-    _logger.debug(
-        "Getting docker compose spec for service %s", scheduler_data.service_name
-    )
+    _logger.debug("Getting docker compose spec for service %s", scheduler_data.service_name)
 
     sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
@@ -63,10 +61,8 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
     # fetching project form DB and fetching user settings
 
     catalog_client = CatalogClient.instance(app)
-    simcore_service_labels: SimcoreServiceLabels = (
-        await catalog_client.get_service_labels(
-            scheduler_data.key, scheduler_data.version
-        )
+    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
+        scheduler_data.key, scheduler_data.version
     )
 
     groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
@@ -102,9 +98,7 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
         service_run_id=scheduler_data.run_id,
-        wallet_id=(
-            scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else None
-        ),
+        wallet_id=(scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else None),
     )
 
     _logger.debug(
@@ -112,9 +106,7 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
         scheduler_data.service_name,
         compose_spec,
     )
-    await sidecars_client.submit_docker_compose_spec(
-        dynamic_sidecar_endpoint, compose_spec=compose_spec
-    )
+    await sidecars_client.submit_docker_compose_spec(dynamic_sidecar_endpoint, compose_spec=compose_spec)
     scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
 
 
@@ -133,16 +125,12 @@ async def create_user_services(  # pylint: disable=too-many-statements
 
     _logger.debug("Starting containers %s", scheduler_data.service_name)
 
-    async def progress_create_containers(
-        message: str, percent: ProgressPercent | None, task_id: TaskId
-    ) -> None:
+    async def progress_create_containers(message: str, percent: ProgressPercent | None, task_id: TaskId) -> None:
         _logger.debug("%s: %.2f %s", task_id, percent, message)
 
     # data from project
     projects_repository = get_repository(app, ProjectsRepository)
-    project: ProjectAtDB = await projects_repository.get_project(
-        project_id=scheduler_data.project_id
-    )
+    project: ProjectAtDB = await projects_repository.get_project(project_id=scheduler_data.project_id)
     project_name = project.name
     node_name = project.workbench[NodeIDStr(scheduler_data.node_uuid)].label
 
@@ -176,9 +164,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
         project_name=project_name,
         node_name=node_name,
         service_key=scheduler_data.key,
-        service_version=TypeAdapter(ServiceVersion).validate_python(
-            scheduler_data.version
-        ),
+        service_version=TypeAdapter(ServiceVersion).validate_python(scheduler_data.version),
         service_resources=scheduler_data.service_resources,
         service_additional_metadata={},
     )
@@ -200,9 +186,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
 
     try:
         async for attempt in AsyncRetrying(
-            stop=stop_after_delay(
-                dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
-            ),
+            stop=stop_after_delay(dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START),
             wait=wait_fixed(1),
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         ):
@@ -210,8 +194,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
                 if scheduler_data.dynamic_sidecar.service_removal_state.was_removed:
                     # the service was removed while waiting for the operation to finish
                     _logger.warning(
-                        "Stopping `get_entrypoint_container_name` operation. "
-                        "Will no try to start the service."
+                        "Stopping `get_entrypoint_container_name` operation. Will no try to start the service."
                     )
                     return
 
@@ -219,9 +202,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
                     dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
                 )
-                _logger.info(
-                    "Fetched container entrypoint name %s", entrypoint_container
-                )
+                _logger.info("Fetched container entrypoint name %s", entrypoint_container)
     except RetryError as err:
         raise EntrypointContainerNotFoundError from err
 
@@ -236,9 +217,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
     # NOTE: user services are already in running state, meaning it is safe to pull inputs
     await sidecars_client.pull_service_input_ports(dynamic_sidecar_endpoint)
 
-    start_duration = (
-        scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
-    )
+    start_duration = scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
     if start_duration is not None:
         get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
             **get_metrics_labels(scheduler_data)

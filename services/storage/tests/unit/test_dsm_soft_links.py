@@ -27,12 +27,8 @@ def create_resource_uuid(*resource_name_parts) -> uuid.UUID:
     return uuid.uuid5(uuid.NAMESPACE_DNS, revers_dns)
 
 
-async def test_create_soft_link(
-    simcore_s3_dsm: SimcoreS3DataManager, user_id: int, output_file: FileMetaData
-):
-    api_file_id = create_resource_uuid(
-        output_file.project_id, output_file.node_id, output_file.file_name
-    )
+async def test_create_soft_link(simcore_s3_dsm: SimcoreS3DataManager, user_id: int, output_file: FileMetaData):
+    api_file_id = create_resource_uuid(output_file.project_id, output_file.node_id, output_file.file_name)
     file_name = output_file.file_name
 
     link_file: FileMetaData = await simcore_s3_dsm.create_soft_link(
@@ -85,9 +81,7 @@ async def test_create_soft_link(
     assert files_list[0] == link_file
 
     # can get
-    got_file = await simcore_s3_dsm.get_file(
-        user_id, SimcoreS3FileID(f"api/{api_file_id}/{file_name}")
-    )
+    got_file = await simcore_s3_dsm.get_file(user_id, SimcoreS3FileID(f"api/{api_file_id}/{file_name}"))
 
     assert got_file == link_file
 

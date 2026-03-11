@@ -33,9 +33,7 @@ def _get_auth_or_none(storage_auth_settings: StorageAuthSettings) -> _AuthTuple 
 
 
 def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
-    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(
-        f"{storage_auth_settings.api_base_url}/"
-    )
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{storage_auth_settings.api_base_url}/")
     return f"{url}"
 
 
@@ -48,9 +46,7 @@ async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> 
         logging.DEBUG,
         msg=f"checking storage connection at {url=} {auth=}",
     ):
-        async with AsyncClient(
-            auth=auth, timeout=_LIVENESS_TIMEOUT.total_seconds()
-        ) as session:
+        async with AsyncClient(auth=auth, timeout=_LIVENESS_TIMEOUT.total_seconds()) as session:
             result = await session.get(url)
             if result.status_code == status.HTTP_200_OK:
                 _logger.debug("storage connection established")

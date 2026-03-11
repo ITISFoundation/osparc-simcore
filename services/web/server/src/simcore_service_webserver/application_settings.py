@@ -91,9 +91,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         AnyHttpUrl | None,
         Field(
             description="URL to release notes",
-            examples=[
-                "https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"
-            ],
+            examples=["https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"],
         ),
     ] = None
 
@@ -105,7 +103,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_APP_FACTORY_NAME: Annotated[
         Literal["WEBSERVER_FULL_APP_FACTORY", "WEBSERVER_AUTHZ_APP_FACTORY"],
         Field(
-            description="Application factory to be lauched by the gunicorn server",
+            description="Application factory to be launched by the gunicorn server",
         ),
     ] = "WEBSERVER_FULL_APP_FACTORY"
 
@@ -115,9 +113,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="Enables development features. WARNING: make sure it is disabled in production .env file!",
         ),
     ] = False
-    WEBSERVER_CREDIT_COMPUTATION_ENABLED: Annotated[
-        bool, Field(description="Enables credit computation features.")
-    ] = False
+    WEBSERVER_CREDIT_COMPUTATION_ENABLED: Annotated[bool, Field(description="Enables credit computation features.")] = (
+        False
+    )
 
     WEBSERVER_FUNCTIONS: Annotated[
         bool,
@@ -129,9 +127,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
             # NOTE: suffix '_LOGLEVEL' is used overall
         ),
     ] = LogLevel.WARNING
@@ -139,10 +135,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
-            validation_alias=AliasChoices(
-                "WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+            validation_alias=AliasChoices("WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
+            description=(
+                "Enables local development log format. WARNING: make sure it is "
+                "disabled if you want to have structured logs!"
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ] = False
 
@@ -150,35 +147,33 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "WEBSERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            validation_alias=AliasChoices("WEBSERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
             ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
     WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace | None,
         Field(
-            description="Namespace for the RPC server (if any) otherwise None"
-            "NOTE that some webserver variants do NOT expose an RPC server e.g. wg-gargage-collector, wg-auth, etc"
+            description="Namespace for the RPC client (if any) otherwise None"
+            "NOTE that some webserver variants do NOT expose an RPC client e.g. wg-garbage-collector, wg-auth, etc"
         ),
     ]
 
     WEBSERVER_SERVER_HOST: Annotated[
-        # TODO: find a better name!?
         str,
         Field(
             description="host name to serve within the container."
             "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
         ),
-    ] = "0.0.0.0"  # nosec
+    ] = "0.0.0.0"  # nosec  # noqa: S104
 
     WEBSERVER_HOST: Annotated[
         str | None,
-        Field(
-            None, validation_alias=AliasChoices("WEBSERVER_HOST", "HOST", "HOSTNAME")
-        ),
+        Field(None, validation_alias=AliasChoices("WEBSERVER_HOST", "HOST", "HOSTNAME")),
     ]
 
     WEBSERVER_PORT: PortInt = TypeAdapter(PortInt).validate_python(DEFAULT_AIOHTTP_PORT)
@@ -249,9 +244,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    WEBSERVER_EMAIL: Annotated[
-        SMTPSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    WEBSERVER_EMAIL: Annotated[SMTPSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
     WEBSERVER_EXPORTER: Annotated[
         ExporterSettings | None,
         Field(
@@ -330,9 +323,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    WEBSERVER_REDIS: Annotated[
-        RedisSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    WEBSERVER_REDIS: Annotated[RedisSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
     WEBSERVER_REST: Annotated[
         RestSettings | None,
@@ -403,9 +394,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    WEBSERVER_TRASH: Annotated[
-        TrashSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    WEBSERVER_TRASH: Annotated[TrashSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     WEBSERVER_RABBITMQ: Annotated[
         RabbitSettings | None,
@@ -451,13 +440,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def _build_vcs_release_url_if_unset(cls, values):
         release_url = values.get("SIMCORE_VCS_RELEASE_URL")
 
-        if release_url is None and (
-            vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
-        ):
+        if release_url is None and (vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")):
             if vsc_release_tag == "latest":
-                release_url = (
-                    "https://github.com/ITISFoundation/osparc-simcore/commits/master/"
-                )
+                release_url = "https://github.com/ITISFoundation/osparc-simcore/commits/master/"
             else:
                 release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
             values["SIMCORE_VCS_RELEASE_URL"] = release_url
@@ -469,9 +454,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def _disable_features_under_development_in_production(cls, data: Any) -> Any:
         """Force disables plugins marked '_X_FEATURE_UNDER_DEVELOPMENT' when WEBSERVER_DEV_FEATURES_ENABLED=False"""
 
-        dev_features_allowed = TypeAdapter(bool).validate_python(
-            data.get("WEBSERVER_DEV_FEATURES_ENABLED", False)
-        )
+        dev_features_allowed = TypeAdapter(bool).validate_python(data.get("WEBSERVER_DEV_FEATURES_ENABLED", False))
 
         if dev_features_allowed:
             return data
@@ -486,7 +469,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             if json_schema.get(_X_FEATURE_UNDER_DEVELOPMENT):
                 assert not dev_features_allowed  # nosec
                 _logger.warning(
-                    "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
+                    (
+                        "'%s' is still under development and will be forcibly disabled "
+                        "[WEBSERVER_DEV_FEATURES_ENABLED=%s]."
+                    ),
                     field_name,
                     dev_features_allowed,
                 )
@@ -574,7 +560,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return data
 
     def public_dict(self) -> dict[str, Any]:
-        """Config publicaly available"""
+        """Config publicly available"""
 
         config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT
         config.update(

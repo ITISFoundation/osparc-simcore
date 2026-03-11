@@ -13,9 +13,7 @@ _RESERVED_DISK_SPACE_NAME: Final[Path] = Path(
 _DEFAULT_CHUNK_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8k")
 
 
-def _write_random_binary_file(
-    file_path: Path, total_size: ByteSize, *, chunk_size: ByteSize = _DEFAULT_CHUNK_SIZE
-):
+def _write_random_binary_file(file_path: Path, total_size: ByteSize, *, chunk_size: ByteSize = _DEFAULT_CHUNK_SIZE):
     with Path.open(file_path, "wb") as file:
         bytes_written: int = 0
         while bytes_written < total_size:
@@ -35,6 +33,4 @@ def free_reserved_disk_space() -> None:
 def setup(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
 
-    _write_random_binary_file(
-        _RESERVED_DISK_SPACE_NAME, settings.DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE
-    )
+    _write_random_binary_file(_RESERVED_DISK_SPACE_NAME, settings.DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE)

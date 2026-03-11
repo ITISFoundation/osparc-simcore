@@ -12,10 +12,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.licenses.settings import LicensesSettings
 
 
-def test_itis_vip_syncer_settings(
-    mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
-
+def test_itis_vip_syncer_settings(mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     assert "LICENSES_ITIS_VIP_SYNCER_ENABLED" in mock_webserver_service_environment
     assert "LICENSES_ITIS_VIP_SYNCER_PERIODICITY" in mock_webserver_service_environment
 
@@ -27,6 +24,6 @@ def test_itis_vip_syncer_settings(
 
         settings: LicensesSettings = LicensesSettings.create_from_envs()
         assert settings
-        assert settings.LICENSES_ITIS_VIP_SYNCER_PERIODICITY == datetime.timedelta(
-            days=1, hours=2, minutes=3, seconds=4
+        assert (
+            datetime.timedelta(days=1, hours=2, minutes=3, seconds=4) == settings.LICENSES_ITIS_VIP_SYNCER_PERIODICITY
         )

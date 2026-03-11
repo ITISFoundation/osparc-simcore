@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 """
-We can validate actual .env files (also refered as `repo.config` files) by passing them via the CLI
+We can validate actual .env files (also referred as `repo.config` files) by passing them via the CLI
 
 $ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
 $ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
@@ -19,9 +19,7 @@ from simcore_service_invitations.core.settings import (
 )
 
 
-def test_valid_cli_application_settings(
-    monkeypatch: pytest.MonkeyPatch, secret_key: str
-):
+def test_valid_cli_application_settings(monkeypatch: pytest.MonkeyPatch, secret_key: str):
     setenvs_from_dict(
         monkeypatch,
         {

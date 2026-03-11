@@ -2,16 +2,12 @@ from typing import Final
 
 from common_library.user_messages import user_message
 
-MSG_2FA_CODE_SENT: Final[str] = user_message(
-    "A verification code has been sent via SMS to {phone_number}.", _version=1
-)
+MSG_2FA_CODE_SENT: Final[str] = user_message("A verification code has been sent via SMS to {phone_number}.", _version=1)
 MSG_2FA_UNAVAILABLE: Final[str] = user_message(
     "The two-factor authentication service is currently unavailable. Please try again in a few minutes.",
     _version=2,
 )
-MSG_ACTIVATED: Final[str] = user_message(
-    "Your account has been successfully activated.", _version=1
-)
+MSG_ACTIVATED: Final[str] = user_message("Your account has been successfully activated.", _version=1)
 MSG_ACTIVATION_REQUIRED: Final[str] = user_message(
     "Please activate your account using the activation link we sent to your email before logging in.",
     _version=1,
@@ -27,20 +23,14 @@ MSG_CHANGE_EMAIL_REQUESTED: Final[str] = user_message(
     "Please check your new email address and click the verification link we sent you.",
     _version=1,
 )
-MSG_EMAIL_CHANGED: Final[str] = user_message(
-    "Your email address has been successfully updated.", _version=1
-)
+MSG_EMAIL_CHANGED: Final[str] = user_message("Your email address has been successfully updated.", _version=1)
 MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
     "This email address is already associated with an account. Please sign in or use a different email address.",
     _version=1,
 )
-MSG_EMAIL_SENT: Final[str] = user_message(
-    "We've sent an email to {email} with further instructions.", _version=1
-)
+MSG_EMAIL_SENT: Final[str] = user_message("We've sent an email to {email} with further instructions.", _version=1)
 MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
-MSG_LOGGED_OUT: Final[str] = user_message(
-    "You have successfully signed out.", _version=1
-)
+MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
 MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
     "You've recently requested a password reset. Please check your email for the reset link or wait before requesting another one.",
     _version=1,
@@ -50,15 +40,11 @@ MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
     "Please try again, or contact support if the problem continues: {support_email}",
     _version=1,
 )
-MSG_PASSWORD_CHANGED: Final[str] = user_message(
-    "Your password has been updated.", _version=1
-)
+MSG_PASSWORD_CHANGED: Final[str] = user_message("Your password has been updated.", _version=1)
 MSG_PASSWORD_MISMATCH: Final[str] = user_message(
     "Password and confirmation do not match. Please try again.", _version=1
 )
-MSG_PHONE_MISSING: Final[str] = user_message(
-    "No phone number is associated with this account.", _version=1
-)
+MSG_PHONE_MISSING: Final[str] = user_message("No phone number is associated with this account.", _version=1)
 MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
     "You can no longer resend the verification code. Please restart the verification process.",
     _version=2,
@@ -75,9 +61,7 @@ MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[str] = user_message(
     "You can no longer submit a verification code. Please restart the confirmation process.",
     _version=2,
 )
-MSG_UNKNOWN_EMAIL: Final[str] = user_message(
-    "This email address is not registered.", _version=1
-)
+MSG_UNKNOWN_EMAIL: Final[str] = user_message("This email address is not registered.", _version=1)
 MSG_USER_DELETED: Final[str] = user_message(
     "This account is scheduled for deletion. To reactivate it or for more information, please contact support: {support_email}",
     _version=1,
@@ -102,9 +86,7 @@ MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = user_message(
     "The verification code has expired or is incorrect. Please request a new code and try again.",
     _version=4,
 )
-MSG_WRONG_CAPTCHA__INVALID: Final[str] = user_message(
-    "The CAPTCHA entered is incorrect. Please try again.", _version=1
-)
+MSG_WRONG_CAPTCHA__INVALID: Final[str] = user_message("The CAPTCHA entered is incorrect. Please try again.", _version=1)
 MSG_WRONG_PASSWORD: Final[str] = user_message(
     "The password does not match the one associated with this email address. Please try again.",
     _version=3,

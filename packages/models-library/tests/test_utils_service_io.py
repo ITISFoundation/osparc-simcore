@@ -19,12 +19,8 @@ from models_library.utils.json_schema import jsonschema_validate_schema
 from models_library.utils.services_io import get_service_io_json_schema
 from pydantic import TypeAdapter
 
-example_inputs_labels = [
-    e for e in ServiceInput.model_config["json_schema_extra"]["examples"] if e["label"]
-]
-example_outputs_labels = [
-    e for e in ServiceOutput.model_config["json_schema_extra"]["examples"] if e["label"]
-]
+example_inputs_labels = [e for e in ServiceInput.model_config["json_schema_extra"]["examples"] if e["label"]]
+example_outputs_labels = [e for e in ServiceOutput.model_config["json_schema_extra"]["examples"] if e["label"]]
 
 
 @pytest.fixture(params=example_inputs_labels + example_outputs_labels)
@@ -58,7 +54,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 TEST_DATA_FOLDER = CURRENT_DIR / "data"
 
 
-@pytest.mark.diagnostics()
+@pytest.mark.diagnostics
 @pytest.mark.parametrize(
     "metadata_path",
     TEST_DATA_FOLDER.rglob("metadata*.json"),
@@ -73,12 +69,8 @@ def test_against_service_metadata_configs(metadata_path: Path):
 
     meta = json.loads(metadata_path.read_text())
 
-    inputs = TypeAdapter(dict[ServicePortKey, ServiceInput]).validate_python(
-        meta["inputs"]
-    )
-    outputs = TypeAdapter(dict[ServicePortKey, ServiceOutput]).validate_python(
-        meta["outputs"]
-    )
+    inputs = TypeAdapter(dict[ServicePortKey, ServiceInput]).validate_python(meta["inputs"])
+    outputs = TypeAdapter(dict[ServicePortKey, ServiceOutput]).validate_python(meta["outputs"])
 
     for port in itertools.chain(inputs.values(), outputs.values()):
         schema = get_service_io_json_schema(port)
@@ -103,13 +95,11 @@ def _iter_main_services() -> Iterable[Path]:
     for p in TEST_DATA_FOLDER.rglob("metadata-*.json"):
         with suppress(Exception):
             meta = json.loads(p.read_text())
-            if (meta.get("type") == "computational") or meta.get(
-                "service.container-http-entrypoint"
-            ):
+            if (meta.get("type") == "computational") or meta.get("service.container-http-entrypoint"):
                 yield p
 
 
-@pytest.mark.diagnostics()
+@pytest.mark.diagnostics
 @pytest.mark.parametrize(
     "metadata_path",
     (p for p in _iter_main_services() if "latest" not in p.name),

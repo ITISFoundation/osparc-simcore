@@ -49,9 +49,7 @@ async def client(
     return await aiohttp_client(app, server_kwargs=server_kwargs)
 
 
-async def test_frontend_config(
-    client: TestClient, api_version_prefix: str, mocker: MockerFixture
-):
+async def test_frontend_config(client: TestClient, api_version_prefix: str, mocker: MockerFixture):
     assert client.app
     # avoids having to start database etc...
     mocker.patch(

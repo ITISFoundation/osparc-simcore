@@ -116,9 +116,7 @@ class HealthCheck:
         ), "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
 
         try:
-            await asyncio.wait_for(
-                self._on_healthcheck.send(app), timeout=self._timeout
-            )
+            await asyncio.wait_for(self._on_healthcheck.send(app), timeout=self._timeout)
             heath_report: HealthInfoDict = self.get_app_info(app)
             return heath_report
 

@@ -3,7 +3,7 @@
 This is a guideline for repo-wide upgrade of python. Here we assume we are moving from an *current* version ``py3.X`` to a newer version ``py3.Y``
 
 
-- [ ] Open an issue and paste the following steps (exemple https://github.com/ITISFoundation/osparc-issues/issues/877)
+- [ ] Open an issue and paste the following steps (example https://github.com/ITISFoundation/osparc-issues/issues/877)
 - [ ] Upgrade tests & tools requirements (in `py3.X`)
 - [ ] Upgrade primary libraries (e.g. fastapi, etc)  (in `py3.X`)
 - [ ] Upgrade ``pip`` (in `py3.X`)

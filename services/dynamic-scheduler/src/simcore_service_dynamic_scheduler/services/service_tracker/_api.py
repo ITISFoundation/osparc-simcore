@@ -47,9 +47,7 @@ async def set_request_as_running(
     )
 
 
-async def set_request_as_stopped(
-    app: FastAPI, dynamic_service_stop: DynamicServiceStop
-) -> None:
+async def set_request_as_stopped(app: FastAPI, dynamic_service_stop: DynamicServiceStop) -> None:
     """Stores intention to `stop` request"""
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(dynamic_service_stop.node_id)
@@ -157,18 +155,14 @@ async def set_if_status_changed_for_service(
     json_status = status.model_dump_json()
     if model.service_status != json_status:
         model.service_status = json_status
-        model.current_state = _get_current_scheduler_service_state(
-            model.requested_state, status
-        )
+        model.current_state = _get_current_scheduler_service_state(model.requested_state, status)
         await tracker.save(node_id, model)
         return True
 
     return False
 
 
-async def should_notify_frontend_for_service(
-    app: FastAPI, node_id: NodeID, *, status_changed: bool
-) -> bool:
+async def should_notify_frontend_for_service(app: FastAPI, node_id: NodeID, *, status_changed: bool) -> bool:
     """
     Checks if it's time to notify the frontend.
     The frontend will be notified at regular intervals and on changes
@@ -199,9 +193,7 @@ async def set_frontend_notified_for_service(app: FastAPI, node_id: NodeID) -> No
     await tracker.save(node_id, model)
 
 
-async def set_service_scheduled_to_run(
-    app: FastAPI, node_id: NodeID, delay_from_now: timedelta
-) -> None:
+async def set_service_scheduled_to_run(app: FastAPI, node_id: NodeID, delay_from_now: timedelta) -> None:
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
@@ -213,9 +205,7 @@ async def set_service_scheduled_to_run(
     await tracker.save(node_id, model)
 
 
-async def set_service_status_task_uid(
-    app: FastAPI, node_id: NodeID, task_uid: TaskUID
-) -> None:
+async def set_service_status_task_uid(app: FastAPI, node_id: NodeID, task_uid: TaskUID) -> None:
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
@@ -234,9 +224,7 @@ async def remove_tracked_service(app: FastAPI, node_id: NodeID) -> None:
     await get_tracker(app).delete(node_id)
 
 
-async def get_tracked_service(
-    app: FastAPI, node_id: NodeID
-) -> TrackedServiceModel | None:
+async def get_tracked_service(app: FastAPI, node_id: NodeID) -> TrackedServiceModel | None:
     """Returns information about the tracked service"""
     return await get_tracker(app).load(node_id)
 

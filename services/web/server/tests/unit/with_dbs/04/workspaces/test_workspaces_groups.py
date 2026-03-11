@@ -33,9 +33,7 @@ async def test_workspaces_groups_full_workflow(
     added_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # check the default workspace permissions
-    url = client.app.router["list_workspace_groups"].url_for(
-        workspace_id=f"{added_workspace['workspaceId']}"
-    )
+    url = client.app.router["list_workspace_groups"].url_for(workspace_id=f"{added_workspace['workspaceId']}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -52,15 +50,11 @@ async def test_workspaces_groups_full_workflow(
             workspace_id=f"{added_workspace['workspaceId']}",
             group_id=f"{new_user['primary_gid']}",
         )
-        resp = await client.post(
-            f"{url}", json={"read": True, "write": False, "delete": False}
-        )
+        resp = await client.post(f"{url}", json={"read": True, "write": False, "delete": False})
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
         # Check the workspace permissions of added user
-        url = client.app.router["list_workspace_groups"].url_for(
-            workspace_id=f"{added_workspace['workspaceId']}"
-        )
+        url = client.app.router["list_workspace_groups"].url_for(workspace_id=f"{added_workspace['workspaceId']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
@@ -74,9 +68,7 @@ async def test_workspaces_groups_full_workflow(
             workspace_id=f"{added_workspace['workspaceId']}",
             group_id=f"{new_user['primary_gid']}",
         )
-        resp = await client.put(
-            f"{url}", json={"read": True, "write": True, "delete": False}
-        )
+        resp = await client.put(f"{url}", json={"read": True, "write": True, "delete": False})
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["gid"] == new_user["primary_gid"]
         assert data["read"] is True
@@ -84,9 +76,7 @@ async def test_workspaces_groups_full_workflow(
         assert data["delete"] is False
 
         # List the workspace groups
-        url = client.app.router["list_workspace_groups"].url_for(
-            workspace_id=f"{added_workspace['workspaceId']}"
-        )
+        url = client.app.router["list_workspace_groups"].url_for(workspace_id=f"{added_workspace['workspaceId']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
@@ -104,9 +94,7 @@ async def test_workspaces_groups_full_workflow(
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # List the workspace groups
-        url = client.app.router["list_workspace_groups"].url_for(
-            workspace_id=f"{added_workspace['workspaceId']}"
-        )
+        url = client.app.router["list_workspace_groups"].url_for(workspace_id=f"{added_workspace['workspaceId']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1

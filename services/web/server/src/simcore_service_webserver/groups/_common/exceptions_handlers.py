@@ -24,9 +24,7 @@ _logger = logging.getLogger(__name__)
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     UserNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "The user with ID {uid} or email {email} could not be found.", _version=1
-        ),
+        user_message("The user with ID {uid} or email {email} could not be found.", _version=1),
     ),
     GroupNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -62,7 +60,5 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+handle_plugin_requests_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
 # this is one decorator with a single exception handler

@@ -4,6 +4,7 @@ from typing import Final
 
 from models_library.basic_types import VersionStr
 from packaging.version import Version
+from pydantic import TypeAdapter
 from servicelib.utils_meta import PackageInfo
 from settings_library.basic_types import VersionTag
 
@@ -15,7 +16,7 @@ PROJECT_NAME: Final[str] = info.project_name
 VERSION: Final[Version] = info.version
 API_VERSION: Final[VersionStr] = info.__version__
 APP_NAME: Final[str] = info.app_name
-API_VTAG: Final[VersionTag] = VersionTag(info.api_prefix_path_tag)
+API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(info.api_prefix_path_tag)
 SUMMARY: Final[str] = info.get_summary()
 
 
@@ -25,9 +26,7 @@ APP_STARTED_BANNER_MSG = r"""
          (..)               /|o  |
          /\/\  Invitations /o|  o|
         c\db/o............/o_|_o_|  {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 
 APP_FINISHED_BANNER_MSG = info.get_finished_banner()

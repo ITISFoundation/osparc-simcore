@@ -17,7 +17,6 @@ from pytest_simcore.examples.models_library import PAGE_EXAMPLES
     ],
 )
 def test_page_response_limit_offset_models(cls_model: BaseModel, examples: list[dict]):
-
     for index, example in enumerate(examples):
         print(f"{index:-^10}:\n", example)
 

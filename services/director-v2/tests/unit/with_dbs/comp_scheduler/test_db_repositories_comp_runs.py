@@ -61,9 +61,7 @@ async def test_get(
     with_product: dict[str, Any],
 ):
     with pytest.raises(ComputationalRunNotFoundError):
-        await CompRunsRepository(sqlalchemy_async_engine).get(
-            fake_user_id, fake_project_id
-        )
+        await CompRunsRepository(sqlalchemy_async_engine).get(fake_user_id, fake_project_id)
 
     published_project = await publish_project()
     assert published_project.project.prj_owner
@@ -81,9 +79,7 @@ async def test_get(
     comp_run_db = await CompRunsRepository(sqlalchemy_async_engine).get(
         published_project.project.prj_owner, published_project.project.uuid
     )
-    assert (
-        comp_run_db.dag_adjacency_list == published_project.pipeline.dag_adjacency_list
-    )
+    assert comp_run_db.dag_adjacency_list == published_project.pipeline.dag_adjacency_list
 
 
 async def test_list(
@@ -130,19 +126,10 @@ async def test_list(
     ) == sorted(created, key=lambda x: x.iteration)
 
     # test with filter of state
-    any_state_but_published = {
-        s for s in RunningState if s is not RunningState.PUBLISHED
-    }
-    assert (
-        await CompRunsRepository(sqlalchemy_async_engine).list_(
-            filter_by_state=any_state_but_published
-        )
-        == []
-    )
+    any_state_but_published = {s for s in RunningState if s is not RunningState.PUBLISHED}
+    assert await CompRunsRepository(sqlalchemy_async_engine).list_(filter_by_state=any_state_but_published) == []
     assert sorted(
-        await CompRunsRepository(sqlalchemy_async_engine).list_(
-            filter_by_state={RunningState.PUBLISHED}
-        ),
+        await CompRunsRepository(sqlalchemy_async_engine).list_(filter_by_state={RunningState.PUBLISHED}),
         key=lambda x: x.iteration,
     ) == sorted(created, key=lambda x: x.iteration)
 
@@ -183,9 +170,7 @@ async def test_list(
     )
     # filter them away
     comp_runs_marked_for_scheduling = [
-        r
-        for r in comp_runs_marked_for_scheduling
-        if r not in comp_runs_marked_as_processed
+        r for r in comp_runs_marked_for_scheduling if r not in comp_runs_marked_as_processed
     ]
     # since they were just marked as processed now, we will get nothing
     assert (
@@ -201,22 +186,20 @@ async def test_list(
     # these are correctly processed ones, so we should get them back
     fake_scheduled_time = arrow.utcnow().datetime - 2 * SCHEDULER_INTERVAL
     fake_processed_time = fake_scheduled_time + 0.5 * SCHEDULER_INTERVAL
-    comp_runs_marked_as_processed = (
-        cast(  # NOTE: the cast here is ok since gather will raise if there is an error
-            list[CompRunsAtDB],
-            await asyncio.gather(
-                *(
-                    CompRunsRepository(sqlalchemy_async_engine).update(
-                        user_id=comp_run.user_id,
-                        project_id=comp_run.project_uuid,
-                        iteration=comp_run.iteration,
-                        scheduled=fake_scheduled_time,
-                        processed=fake_processed_time,
-                    )
-                    for comp_run in comp_runs_marked_as_processed
+    comp_runs_marked_as_processed = cast(  # NOTE: the cast here is ok since gather will raise if there is an error
+        list[CompRunsAtDB],
+        await asyncio.gather(
+            *(
+                CompRunsRepository(sqlalchemy_async_engine).update(
+                    user_id=comp_run.user_id,
+                    project_id=comp_run.project_uuid,
+                    iteration=comp_run.iteration,
+                    scheduled=fake_scheduled_time,
+                    processed=fake_processed_time,
                 )
-            ),
-        )
+                for comp_run in comp_runs_marked_as_processed
+            )
+        ),
     )
     # now we should get them
     assert sorted(
@@ -227,13 +210,9 @@ async def test_list(
     ) == sorted(comp_runs_marked_as_processed, key=lambda x: x.iteration)
 
     # now some of them were never processed (e.g. processed time is either null or before schedule time)
-    comp_runs_waiting_for_processing_or_never_processed = random.sample(
-        comp_runs_marked_as_processed, k=6
-    )
+    comp_runs_waiting_for_processing_or_never_processed = random.sample(comp_runs_marked_as_processed, k=6)
     comp_runs_marked_as_processed = [
-        r
-        for r in comp_runs_marked_as_processed
-        if r not in comp_runs_waiting_for_processing_or_never_processed
+        r for r in comp_runs_marked_as_processed if r not in comp_runs_waiting_for_processing_or_never_processed
     ]
     # now we artificially change the processed time to be before the scheduled time
     comp_runs_waiting_for_processing_or_never_processed = cast(
@@ -264,9 +243,7 @@ async def test_list(
             never_scheduled=False, scheduled_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,
-    ) == sorted(
-        comp_runs_waiting_for_processing_or_never_processed, key=lambda x: x.iteration
-    )
+    ) == sorted(comp_runs_waiting_for_processing_or_never_processed, key=lambda x: x.iteration)
 
 
 async def test_create(
@@ -563,9 +540,7 @@ async def test_list_group_by_collection_run_id(
     """Test list_group_by_collection_run_id function with simple data insertion and retrieval."""
     # Create a few published projects
     published_project_1 = await publish_project()
-    published_project_2 = (
-        await publish_project()
-    )  # Create a shared collection run ID for grouping
+    published_project_2 = await publish_project()  # Create a shared collection run ID for grouping
     collection_run_id = fake_collection_run_id
 
     # Create computation runs with the same collection_run_id
@@ -591,9 +566,7 @@ async def test_list_group_by_collection_run_id(
     )
 
     # Test the list_group_by_collection_run_id function
-    total_count, items = await CompRunsRepository(
-        sqlalchemy_async_engine
-    ).list_group_by_collection_run_id(
+    total_count, items = await CompRunsRepository(sqlalchemy_async_engine).list_group_by_collection_run_id(
         product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         offset=0,
@@ -610,8 +583,7 @@ async def test_list_group_by_collection_run_id(
     assert str(published_project_1.project.uuid) in collection_item.project_ids
     assert str(published_project_2.project.uuid) in collection_item.project_ids
     assert (
-        collection_item.state
-        == RunningState.STARTED  # Initial state returned to activity overview
+        collection_item.state == RunningState.STARTED  # Initial state returned to activity overview
     )
     assert collection_item.info == _normalize_uuids(run_metadata)
     assert collection_item.submitted_at is not None
@@ -1301,9 +1273,7 @@ async def test_get_latest_run_by_project(
     assert comp_run_user1_iter3.iteration == 2
 
     # Test get with user_id=None should return the latest run (highest iteration)
-    latest_run = await CompRunsRepository(
-        sqlalchemy_async_engine
-    ).get_latest_run_by_project(
+    latest_run = await CompRunsRepository(sqlalchemy_async_engine).get_latest_run_by_project(
         project_id=published_project.project.uuid,
     )
     assert latest_run == comp_run_user1_iter3

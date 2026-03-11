@@ -39,7 +39,6 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups._groups_service import get_product_group_for_user
@@ -118,24 +117,16 @@ async def _list_and_assert_projects(
         exp_last_page = ceil(meta["total"] / meta["limit"] - 1)
         assert links is not None
         complete_url = client.make_url(f"{url}")
-        assert links["self"] == str(
-            URL(complete_url).update_query({"offset": exp_offset, "limit": exp_limit})
-        )
-        assert links["first"] == str(
-            URL(complete_url).update_query({"offset": 0, "limit": exp_limit})
-        )
+        assert links["self"] == str(URL(complete_url).update_query({"offset": exp_offset, "limit": exp_limit}))
+        assert links["first"] == str(URL(complete_url).update_query({"offset": 0, "limit": exp_limit}))
         assert links["last"] == str(
-            URL(complete_url).update_query(
-                {"offset": exp_last_page * exp_limit, "limit": exp_limit}
-            )
+            URL(complete_url).update_query({"offset": exp_last_page * exp_limit, "limit": exp_limit})
         )
         if exp_offset <= 0:
             assert links["prev"] is None
         else:
             assert links["prev"] == str(
-                URL(complete_url).update_query(
-                    {"offset": max(exp_offset - exp_limit, 0), "limit": exp_limit}
-                )
+                URL(complete_url).update_query({"offset": max(exp_offset - exp_limit, 0), "limit": exp_limit})
             )
         if exp_offset >= (exp_last_page * exp_limit):
             assert links["next"] is None
@@ -143,9 +134,7 @@ async def _list_and_assert_projects(
             assert links["next"] == str(
                 URL(complete_url).update_query(
                     {
-                        "offset": min(
-                            exp_offset + exp_limit, exp_last_page * exp_limit
-                        ),
+                        "offset": min(exp_offset + exp_limit, exp_last_page * exp_limit),
                         "limit": exp_limit,
                     }
                 )
@@ -178,9 +167,7 @@ async def _assert_get_same_project(
         project_permalink = data.pop("permalink", None)
         folder_id = data.pop("folderId", None)
 
-        assert not DeepDiff(
-            data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']"
-        )
+        assert not DeepDiff(data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']")
 
         if project_state:
             assert ProjectStateOutputSchema.model_validate(project_state)
@@ -227,9 +214,7 @@ async def test_list_projects(
             exclude_paths="root['lastChangeDate']",
         )
 
-        assert not ProjectStateOutputSchema(
-            **project_state
-        ).share_state.locked, "Templates are not locked"
+        assert not ProjectStateOutputSchema(**project_state).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
         # standard project
@@ -253,7 +238,7 @@ async def test_list_projects(
     if data:
         assert len(data) == 1
 
-        # standad project
+        # standard project
         got = data[0]
         project_state = got.pop("state")
         project_permalink = got.pop("permalink", None)
@@ -265,9 +250,7 @@ async def test_list_projects(
             exclude_paths="root['lastChangeDate']",
         )
 
-        assert not ProjectStateOutputSchema(
-            **project_state
-        ).share_state.locked, "Single user does not lock"
+        assert not ProjectStateOutputSchema(**project_state).share_state.locked, "Single user does not lock"
         assert project_permalink is None
 
     # GET /v0/projects?type=template
@@ -287,9 +270,7 @@ async def test_list_projects(
             {k: template_project[k] for k in got},
             exclude_paths="root['lastChangeDate']",
         )
-        assert not ProjectStateOutputSchema(
-            **project_state
-        ).share_state.locked, "Templates are not locked"
+        assert not ProjectStateOutputSchema(**project_state).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
 
@@ -299,9 +280,7 @@ def s4l_product_name() -> ProductName:
 
 
 @pytest.fixture
-def s4l_products_db_name(
-    postgres_db: sa.engine.Engine, s4l_product_name: ProductName
-) -> Iterator[str]:
+def s4l_products_db_name(postgres_db: sa.engine.Engine, s4l_product_name: ProductName) -> Iterator[str]:
     with postgres_db.connect() as conn:
         conn.execute(
             products.insert().values(
@@ -324,7 +303,7 @@ def s4l_product_headers(s4l_products_db_name: ProductName) -> dict[str, str]:
 
 
 @pytest.fixture
-async def logged_user_registed_in_two_products(
+async def logged_user_registered_in_two_products(
     client: TestClient, logged_user: UserInfoDict, s4l_products_db_name: ProductName
 ):
     assert client.app
@@ -345,14 +324,10 @@ async def logged_user_registed_in_two_products(
     assert s4l_product.group_id
 
     with pytest.raises(GroupNotFoundError):
-        await get_product_group_for_user(
-            client.app, user_id=logged_user["id"], product_gid=s4l_product.group_id
-        )
+        await get_product_group_for_user(client.app, user_id=logged_user["id"], product_gid=s4l_product.group_id)
 
     # register
-    await auto_add_user_to_product_group(
-        client.app, user_id=logged_user["id"], product_name=s4l_products_db_name
-    )
+    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=s4l_products_db_name)
 
     group, _ = await get_product_group_for_user(
         # should not raise
@@ -369,11 +344,11 @@ async def logged_user_registed_in_two_products(
         (UserRole.USER, status.HTTP_200_OK),
     ],
 )
-async def test_list_projects_with_innaccessible_services(
+async def test_list_projects_with_inaccessible_services(
     s4l_products_db_name: ProductName,
     client: TestClient,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
-    logged_user_registed_in_two_products: UserInfoDict,
+    logged_user_registered_in_two_products: UserInfoDict,
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: HTTPStatus,
@@ -387,35 +362,7 @@ async def test_list_projects_with_innaccessible_services(
     assert len(data) == 2
 
     # use-case 2: calling with another product name returns 0 projects
-    # because projects are linked to osparc product in projects_to_products table
-    data, *_ = await _list_and_assert_projects(
-        client, expected, headers=s4l_product_headers
-    )
-    assert len(data) == 0
-
-    # use-case 3: remove the links to products
-    # shall still return 0 because the user has no access to the services
-    with postgres_db.connect() as conn:
-        conn.execute(projects_to_products.delete())
-    data, *_ = await _list_and_assert_projects(
-        client, expected, headers=s4l_product_headers
-    )
-    assert len(data) == 0
-    data, *_ = await _list_and_assert_projects(client, expected)
-    assert len(data) == 0
-
-    # use-case 4: give user access to services
-    # shall return the projects for any product
-    data, *_ = await _list_and_assert_projects(
-        client, expected, headers=s4l_product_headers
-    )
-    # UPDATE (use-case 4): 11.11.2024 - This test was checking backwards compatibility for listing
-    # projects that were not in the projects_to_products table. After refactoring the project listing,
-    # we no longer support this. MD double-checked the last_modified_timestamp on projects
-    # that do not have any product assigned (all of them were before 01-11-2022 with the exception of two
-    # `4b001ad2-8450-11ec-b105-02420a0b02c7` and `d952cbf4-d838-11ec-af92-02420a0bdad4` which were added to osparc product).
-    assert len(data) == 0
-    data, *_ = await _list_and_assert_projects(client, expected)
+    data, *_ = await _list_and_assert_projects(client, expected, headers=s4l_product_headers)
     assert len(data) == 0
 
 
@@ -457,9 +404,7 @@ async def test_new_project(
     storage_subsystem_mock,
     project_db_cleaner,
 ):
-    await request_create_project(
-        client, expected.accepted, expected.created, logged_user, primary_group
-    )
+    await request_create_project(client, expected.accepted, expected.created, logged_user, primary_group)
 
 
 @pytest.mark.parametrize(
@@ -653,9 +598,7 @@ async def test_new_template_from_project(
     if new_template_prj:
         template_project = new_template_prj
 
-        templates, *_ = await _list_and_assert_projects(
-            client, status.HTTP_200_OK, {"type": "template"}
-        )
+        templates, *_ = await _list_and_assert_projects(client, status.HTTP_200_OK, {"type": "template"})
 
         assert len(templates) == 1
         assert_equal_ignoring_none(template_project, templates[0])
@@ -666,12 +609,8 @@ async def test_new_template_from_project(
         assert template_project["accessRights"] == user_project["accessRights"]
 
         # different timestamps
-        assert to_datetime(user_project["creationDate"]) < to_datetime(
-            template_project["creationDate"]
-        )
-        assert to_datetime(user_project["lastChangeDate"]) < to_datetime(
-            template_project["lastChangeDate"]
-        )
+        assert to_datetime(user_project["creationDate"]) < to_datetime(template_project["creationDate"])
+        assert to_datetime(user_project["lastChangeDate"]) < to_datetime(template_project["lastChangeDate"])
 
         # different uuids for project and nodes!?
         assert template_project["uuid"] != user_project["uuid"]
@@ -716,9 +655,7 @@ async def test_new_template_from_project(
         assert template_project["description"] == predefined["description"]
         assert template_project["prjOwner"] == logged_user["email"]
         # the logged in user access rights are added by default
-        predefined["accessRights"].update(
-            {str(primary_group["gid"]): {"read": True, "write": True, "delete": True}}
-        )
+        predefined["accessRights"].update({str(primary_group["gid"]): {"read": True, "write": True, "delete": True}})
         assert template_project["accessRights"] == predefined["accessRights"]
 
         # different ownership
@@ -726,12 +663,8 @@ async def test_new_template_from_project(
         assert template_project["prjOwner"] == user_project["prjOwner"]
 
         # different timestamps
-        assert to_datetime(user_project["creationDate"]) < to_datetime(
-            template_project["creationDate"]
-        )
-        assert to_datetime(user_project["lastChangeDate"]) < to_datetime(
-            template_project["lastChangeDate"]
-        )
+        assert to_datetime(user_project["creationDate"]) < to_datetime(template_project["creationDate"])
+        assert to_datetime(user_project["lastChangeDate"]) < to_datetime(template_project["lastChangeDate"])
 
         # different uuids for project and nodes!?
         assert template_project["uuid"] != user_project["uuid"]
@@ -770,9 +703,7 @@ async def test_get_project_inactivity(
     mock_project_id = faker.uuid4()
 
     assert client.app
-    url = client.app.router["get_project_inactivity"].url_for(
-        project_id=mock_project_id
-    )
+    url = client.app.router["get_project_inactivity"].url_for(project_id=mock_project_id)
     assert f"/v0/projects/{mock_project_id}/inactivity" == url.path
     response = await client.get(f"{url}")
     data, error = await assert_status(response, expected)

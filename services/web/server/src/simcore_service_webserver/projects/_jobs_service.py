@@ -29,12 +29,9 @@ async def set_project_as_job(
     product_name: ProductName,
     user_id: UserID,
     project_uuid: ProjectID,
-    job_parent_resource_name: Annotated[
-        str, AfterValidator(_validate_job_parent_resource_name)
-    ],
+    job_parent_resource_name: Annotated[str, AfterValidator(_validate_job_parent_resource_name)],
     storage_assets_deleted: bool,
 ) -> None:
-
     await check_user_project_permission(
         app,
         project_id=project_uuid,
@@ -91,9 +88,7 @@ async def get_project_marked_as_job(
     product_name: ProductName,
     user_id: UserID,
     project_uuid: ProjectID,
-    job_parent_resource_name: Annotated[
-        str, AfterValidator(_validate_job_parent_resource_name)
-    ],
+    job_parent_resource_name: Annotated[str, AfterValidator(_validate_job_parent_resource_name)],
 ) -> ProjectJobDBGet:
     """
     Retrieves the project associated with the given project_uuid and job_parent_resource_name.

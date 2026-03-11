@@ -31,9 +31,7 @@ class UserSettings(BaseSettings):
     OSPARC_API_KEY: str = Field(default=...)
     OSPARC_API_SECRET: str = Field(default=...)
 
-    TEMPLATE_UUID: UUID = Field(
-        default=..., examples=["2ed6b0a1-f1a8-4495-8d65-d516f58b7ae0"]
-    )
+    TEMPLATE_UUID: UUID = Field(default=..., examples=["2ed6b0a1-f1a8-4495-8d65-d516f58b7ae0"])
 
 
 class MetaModelingUser(HttpUser):
@@ -73,9 +71,7 @@ class MetaModelingUser(HttpUser):
 
     def on_stop(self) -> None:
         if self._input_json_uuid is not None:
-            response = self.client.delete(
-                f"/v0/files/{self._input_json_uuid}", name="/v0/files/[file_id]"
-            )
+            response = self.client.delete(f"/v0/files/{self._input_json_uuid}", name="/v0/files/[file_id]")
             response.raise_for_status()
         if self._job_uuid is not None:
             response = self.client.delete(
@@ -133,10 +129,8 @@ class MetaModelingUser(HttpUser):
                 )
                 response.raise_for_status()
                 state = response.json().get("state")
-                if not state in {"SUCCESS", "FAILED"}:
-                    raise RuntimeError(
-                        f"Computation not finished after attempt {attempt.retry_state.attempt_number}"
-                    )
+                if state not in {"SUCCESS", "FAILED"}:
+                    raise RuntimeError(f"Computation not finished after attempt {attempt.retry_state.attempt_number}")
 
         assert state == "SUCCESS"
 
@@ -157,9 +151,7 @@ class MetaModelingUser(HttpUser):
         assert file.is_file()
         with open(f"{file.resolve()}", "rb") as f:
             files = {"file": f}
-            response = self.client.put(
-                "/v0/files/content", files=files, auth=self._auth
-            )
+            response = self.client.put("/v0/files/content", files=files, auth=self._auth)
             response.raise_for_status()
             file_uuid = response.json().get("id")
         assert file_uuid is not None

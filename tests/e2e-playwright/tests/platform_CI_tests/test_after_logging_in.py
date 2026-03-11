@@ -17,11 +17,7 @@ def response_collector(page: Page) -> list[dict[str, Any]]:
     responses: list[dict[str, Any]] = []
 
     def handle_response(response: Response) -> None:
-        if (
-            response.ok
-            and "application/json" in response.headers.get("content-type", "")
-            and response.body()
-        ):
+        if response.ok and "application/json" in response.headers.get("content-type", "") and response.body():
             responses.append(
                 {
                     "url": response.url,
@@ -38,7 +34,7 @@ def test_all_endpoints_after_login(
     response_collector: list[dict[str, Any]],
     log_in_and_out: RobustWebSocket,
 ):
-    """This test mimicks what the old pupeteer tests were doing in tests/e2e/tests"""
+    """This test mimics what the old pupeteer tests were doing in tests/e2e/tests"""
     # Profile
     response = next((r for r in response_collector if "/me" in r["url"]), None)
     assert response is not None
@@ -46,9 +42,7 @@ def test_all_endpoints_after_login(
 
     assert "data" in response_dict, "Expected 'data' in profile response"
     assert "login" in response_dict["data"], "Expected 'login' in profile data"
-    assert (
-        response_dict["data"]["login"] == user_name
-    ), "Logged in username does not match"
+    assert response_dict["data"]["login"] == user_name, "Logged in username does not match"
 
     # Tags
     response = next((r for r in response_collector if "/tags" in r["url"]), None)
@@ -75,11 +69,7 @@ def test_all_endpoints_after_login(
     # Studies (user and template)
     for study_type in ["user", "template"]:
         response = next(
-            (
-                r
-                for r in response_collector
-                if f"/projects?type={study_type}" in r["url"]
-            ),
+            (r for r in response_collector if f"/projects?type={study_type}" in r["url"]),
             None,
         )
         assert response is not None

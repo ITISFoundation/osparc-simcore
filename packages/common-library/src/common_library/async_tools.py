@@ -3,7 +3,7 @@ import datetime
 import functools
 import logging
 import sys
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from concurrent.futures import Executor
 from functools import wraps
 from inspect import isawaitable
@@ -24,9 +24,7 @@ def make_async(
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
-                executor, functools.partial(func, *args, **kwargs)
-            )
+            return await loop.run_in_executor(executor, functools.partial(func, *args, **kwargs))
 
         return wrapper
 
@@ -72,9 +70,7 @@ async def maybe_await(
     return obj
 
 
-async def cancel_wait_task(
-    task: asyncio.Task, *, max_delay: float | None = None
-) -> None:
+async def cancel_wait_task(task: asyncio.Task, *, max_delay: float | None = None) -> None:
     """Cancels the given task and waits for it to complete
 
     Arguments:
@@ -159,9 +155,7 @@ async def cancel_wait_task(
             _logger.error(
                 **create_troubleshooting_log_kwargs(
                     f"Failed to cancel task {task.get_name()}",
-                    error=(
-                        current_exception if current_exception else Exception("Unknown")
-                    ),
+                    error=(current_exception if current_exception else Exception("Unknown")),
                     error_context={
                         "task_name": task.get_name(),
                         "max_delay": max_delay,
@@ -180,9 +174,7 @@ async def cancel_wait_task(
 
 def delayed_start(
     delay: datetime.timedelta,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
+) -> Callable[[Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]]:
     def _decorator(
         func: Callable[P, Coroutine[Any, Any, R]],
     ) -> Callable[P, Coroutine[Any, Any, R]]:
@@ -194,3 +186,23 @@ def delayed_start(
         return _wrapper
 
     return _decorator
+
+
+async def iter_with_timeout[T](
+    it: AsyncIterator[T],
+    *,
+    per_iteration_timeout: datetime.timedelta,
+) -> AsyncIterator[T]:
+    """Yields items from an async iterator with a timeout for each iteration."""
+    try:
+        while True:
+            try:
+                item = await asyncio.wait_for(anext(it), per_iteration_timeout.total_seconds())
+            except StopAsyncIteration:
+                break
+            else:
+                yield item
+    finally:
+        aclose = getattr(it, "aclose", None)  # NOTE: with async iterators, aclose might not be present
+        if aclose is not None:
+            await aclose()

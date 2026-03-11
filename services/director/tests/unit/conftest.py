@@ -60,9 +60,7 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture
-def configure_swarm_stack_name(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def configure_swarm_stack_name(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
@@ -162,11 +160,10 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 
 
 @pytest.fixture
-async def app(
-    app_settings: ApplicationSettings, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
+async def app(app_settings: ApplicationSettings, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
     async with LifespanManager(

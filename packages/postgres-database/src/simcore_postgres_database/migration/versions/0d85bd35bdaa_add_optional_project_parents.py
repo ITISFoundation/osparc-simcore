@@ -22,9 +22,7 @@ def upgrade():
         "projects_metadata",
         sa.Column("parent_project_uuid", sa.String(), nullable=True),
     )
-    op.add_column(
-        "projects_metadata", sa.Column("parent_node_id", sa.String(), nullable=True)
-    )
+    op.add_column("projects_metadata", sa.Column("parent_node_id", sa.String(), nullable=True))
     op.add_column(
         "projects_metadata",
         sa.Column("root_parent_project_uuid", sa.String(), nullable=True),
@@ -61,9 +59,7 @@ def downgrade():
         "projects_metadata",
         type_="foreignkey",
     )
-    op.drop_constraint(
-        "fk_projects_metadata_parent_node_id", "projects_metadata", type_="foreignkey"
-    )
+    op.drop_constraint("fk_projects_metadata_parent_node_id", "projects_metadata", type_="foreignkey")
     op.drop_column("projects_metadata", "root_parent_node_id")
     op.drop_column("projects_metadata", "root_parent_project_uuid")
     op.drop_column("projects_metadata", "parent_node_id")

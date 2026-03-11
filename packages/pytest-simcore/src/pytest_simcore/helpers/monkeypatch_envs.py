@@ -17,9 +17,7 @@ from .typing_env import EnvVarsDict, EnvVarsIterable
 #
 
 
-def setenvs_from_dict(
-    monkeypatch: pytest.MonkeyPatch, envs: Mapping[str, str | bool]
-) -> EnvVarsDict:
+def setenvs_from_dict(monkeypatch: pytest.MonkeyPatch, envs: Mapping[str, str | bool]) -> EnvVarsDict:
     env_vars = {}
 
     for key, value in envs.items():
@@ -75,9 +73,7 @@ def delenvs_from_dict(
 #
 
 
-def setenvs_from_envfile(
-    monkeypatch: pytest.MonkeyPatch, content_or_path: str | Path, **dotenv_kwags
-) -> EnvVarsDict:
+def setenvs_from_envfile(monkeypatch: pytest.MonkeyPatch, content_or_path: str | Path, **dotenv_kwags) -> EnvVarsDict:
     """Batch monkeypatch.setenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)
     setenvs_from_dict(monkeypatch, envs)

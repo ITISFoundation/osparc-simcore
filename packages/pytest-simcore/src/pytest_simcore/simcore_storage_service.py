@@ -22,16 +22,12 @@ from .helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture(scope="module")
-def storage_endpoint(
-    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
-) -> Iterable[URL]:
+def storage_endpoint(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict) -> Iterable[URL]:
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_storage" in docker_stack["services"]
 
     default_port = int(env_vars_for_docker_compose["STORAGE_ENDPOINT"].split(":")[1])
-    endpoint = (
-        f"{get_localhost_ip()}:{get_service_published_port('storage', default_port)}"
-    )
+    endpoint = f"{get_localhost_ip()}:{get_service_published_port('storage', default_port)}"
 
     # nodeports takes its configuration from env variables
     old_environ = deepcopy(os.environ)
@@ -44,9 +40,7 @@ def storage_endpoint(
 
 
 @pytest.fixture()
-async def storage_service(
-    mocker: MockerFixture, storage_endpoint: URL, docker_stack: dict
-) -> URL:
+async def storage_service(mocker: MockerFixture, storage_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing

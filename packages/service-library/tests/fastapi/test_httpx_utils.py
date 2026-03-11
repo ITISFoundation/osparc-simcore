@@ -39,16 +39,12 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 
 @pytest.fixture
-async def client(
-    mock_server_api: respx.MockRouter, base_url: str
-) -> AsyncIterator[AsyncClient]:
+async def client(mock_server_api: respx.MockRouter, base_url: str) -> AsyncIterator[AsyncClient]:
     async with httpx.AsyncClient(base_url=base_url) as client:
-
         yield client
 
 
 async def test_to_curl_command(client: AsyncClient):
-
     # with POST
     response = await client.post(
         "/foo",

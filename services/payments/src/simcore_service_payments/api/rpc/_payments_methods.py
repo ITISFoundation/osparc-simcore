@@ -38,9 +38,7 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose(
-    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
-)
+@router.expose(reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError))
 async def init_creation_of_payment_method(
     app: FastAPI,
     *,
@@ -68,9 +66,7 @@ async def init_creation_of_payment_method(
         )
 
 
-@router.expose(
-    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
-)
+@router.expose(reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError))
 async def cancel_creation_of_payment_method(
     app: FastAPI,
     *,
@@ -94,9 +90,7 @@ async def cancel_creation_of_payment_method(
         )
 
 
-@router.expose(
-    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
-)
+@router.expose(reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError))
 async def list_payment_methods(
     app: FastAPI,
     *,
@@ -111,9 +105,7 @@ async def list_payment_methods(
     )
 
 
-@router.expose(
-    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
-)
+@router.expose(reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError))
 async def get_payment_method(
     app: FastAPI,
     *,
@@ -130,9 +122,7 @@ async def get_payment_method(
     )
 
 
-@router.expose(
-    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
-)
+@router.expose(reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError))
 async def delete_payment_method(
     app: FastAPI,
     *,
@@ -175,7 +165,6 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     comment: str | None = None,
 ):
     try:
-
         with log_context(
             _logger,
             logging.INFO,

@@ -14,9 +14,9 @@ from ..._constants import RPC_REMOTE_METHOD_TIMEOUT_S
 
 _TTL_CACHE_ON_CLUSTERS_S: Final[int] = 5
 
-_GET_OR_CREATE_CLUSTER_METHOD_NAME: Final[RPCMethodName] = TypeAdapter(
-    RPCMethodName
-).validate_python("get_or_create_cluster")
+_GET_OR_CREATE_CLUSTER_METHOD_NAME: Final[RPCMethodName] = TypeAdapter(RPCMethodName).validate_python(
+    "get_or_create_cluster"
+)
 
 
 @run_sequentially_in_context(target_args=["user_id", "wallet_id"])

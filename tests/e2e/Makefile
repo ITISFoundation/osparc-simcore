@@ -19,7 +19,7 @@ echo DIRECTOR_DEFAULT_MAX_MEMORY=134217728 >> $(SIMCORE_DOT_ENV)
 echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
 echo NOTIFICATIONS_LOGLEVEL=INFO >> $(SIMCORE_DOT_ENV)
 echo NOTIFICATIONS_TRACING=null >> $(SIMCORE_DOT_ENV)
-$(MAKE_C) $(REPO_BASE_DIR) up-prod ops_ci=1
+$(MAKE_C) $(REPO_BASE_DIR) up-prod-phased ops_ci=1
 endef
 
 define _setup_test_environment
@@ -58,7 +58,7 @@ $(foreach var,$(NUMBERS),\
 endef
 
 
-# Below feels a bit like magic I am not sure why the thing awaits for the scirpts to finish
+# Below feels a bit like magic I am not sure why the thing awaits for the scripts to finish
 DEV_MACHINE_IP = "10.43.103.168"
 define _test-jupyters
 echo $(shell python -c 'import os ;\
@@ -82,7 +82,7 @@ install-ci-no-build:
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
 	@$(_setup_test_environment)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(REPO_BASE_DIR)/tests/utils/wait_for_services.py
 	@$(_transfer-images-to-registry)
 	@$(_inject-templates-in-db)
 
@@ -91,7 +91,7 @@ install-ci install-prod: ## install e2e testing framework and start simcore/regi
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
 	@$(_setup_test_environment)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(REPO_BASE_DIR)/tests/utils/wait_for_services.py
 	@$(_transfer-images-to-registry)
 	@$(_inject-templates-in-db)
 
@@ -118,7 +118,7 @@ dev-prepare-jupyters: ## pull images and create users
 	@$(_register-20-users)
 	@echo "NOTE: Below should be automated in the future"
 	@echo "- remember to give permission to the service"
-	@echo "- remmeber to import the JupyterLabs template in the deployment"
+	@echo "- remember to import the JupyterLabs template in the deployment"
 
 
 .PHONY: dev-test-jupyters

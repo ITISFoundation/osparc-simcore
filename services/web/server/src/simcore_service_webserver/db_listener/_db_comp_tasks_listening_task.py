@@ -32,9 +32,7 @@ _LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
 _logger = logging.getLogger(__name__)
 
 
-async def _get_project_owner(
-    conn: SAConnection, project_uuid: ProjectID
-) -> PositiveInt:
+async def _get_project_owner(conn: SAConnection, project_uuid: ProjectID) -> PositiveInt:
     the_project_owner: PositiveInt | None = await conn.scalar(
         select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}")
     )
@@ -60,19 +58,13 @@ async def _update_project_state(
         client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
     )
 
-    await _projects_service.notify_project_node_update(
-        app, project, node_uuid, node_errors
-    )
+    await _projects_service.notify_project_node_update(app, project, node_uuid, node_errors)
 
     await _projects_service.notify_project_state_update(app, project)
 
 
-async def _get_changed_comp_task_row(
-    conn: SAConnection, task_id: PositiveInt
-) -> RowProxy | None:
-    result = await conn.execute(
-        select(comp_tasks).where(comp_tasks.c.task_id == task_id)
-    )
+async def _get_changed_comp_task_row(conn: SAConnection, task_id: PositiveInt) -> RowProxy | None:
+    result = await conn.execute(select(comp_tasks).where(comp_tasks.c.task_id == task_id))
     return cast(RowProxy | None, await result.fetchone())
 
 
@@ -149,9 +141,7 @@ async def _listen(app: web.Application) -> NoReturn:
                 await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
                 continue
             notification = conn.connection.notifies.get_nowait()
-            payload = CompTaskNotificationPayload.model_validate_json(
-                notification.payload
-            )
+            payload = CompTaskNotificationPayload.model_validate_json(notification.payload)
             _logger.debug("received update from database: %s", f"{payload=}")
             await _handle_db_notification(app, payload, conn)
 

@@ -65,9 +65,7 @@ def is_legacy(node_data: Node) -> bool:
     return node_data.label == "LEGACY"
 
 
-async def ensure_volume_cleanup(
-    docker_client: aiodocker.Docker, node_uuid: str
-) -> None:
+async def ensure_volume_cleanup(docker_client: aiodocker.Docker, node_uuid: str) -> None:
     async def _get_volume_names() -> set[str]:
         volumes_list = await docker_client.volumes.list()
         volume_names: set[str] = {x["Name"] for x in volumes_list["Volumes"]}
@@ -89,9 +87,7 @@ async def ensure_volume_cleanup(
                         raise _VolumeNotExpectedError(volume_name)
 
 
-async def ensure_network_cleanup(
-    docker_client: aiodocker.Docker, project_id: str
-) -> None:
+async def ensure_network_cleanup(docker_client: aiodocker.Docker, project_id: str) -> None:
     async def _try_to_clean():
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -99,9 +95,7 @@ async def ensure_network_cleanup(
             wait=wait_fixed(5),
         ):
             with attempt:
-                for network_name in {
-                    x["Name"] for x in await docker_client.networks.list()
-                }:
+                for network_name in {x["Name"] for x in await docker_client.networks.list()}:
                     if project_id in network_name:
                         network = await docker_client.networks.get(network_name)
                         delete_result = await network.delete()
@@ -127,14 +121,10 @@ async def _wait_for_service(service_name: str) -> None:
                 print(
                     f"--> waiting for {service_name=} to be started... (attempt {attempt.retry_state.attempt_number})"
                 )
-                services = await docker_client.services.list(
-                    filters={"name": service_name}
-                )
-                assert (
-                    len(services) == 1
-                ), f"Docker service {service_name=} is missing, {services=}"
+                services = await docker_client.services.list(filters={"name": service_name})
+                assert len(services) == 1, f"Docker service {service_name=} is missing, {services=}"
                 print(
-                    f"<-- {service_name=} was started ({json.dumps( attempt.retry_state.retry_object.statistics, indent=2)})"
+                    f"<-- {service_name=} was started ({json.dumps(attempt.retry_state.retry_object.statistics, indent=2)})"
                 )
 
 
@@ -144,9 +134,9 @@ async def _get_service_published_port(service_name: str, target_port: int) -> Po
     async with aiodocker.Docker() as docker_client:
         print(f"--> getting {service_name=} published port for {target_port=}...")
         services = await docker_client.services.list(filters={"name": service_name})
-        assert (
-            len(services) == 1
-        ), f"Docker service '{service_name=}' was not found!, did you wait for the service to be up?"
+        assert len(services) == 1, (
+            f"Docker service '{service_name=}' was not found!, did you wait for the service to be up?"
+        )
         service = services[0]
         # SEE https://docs.docker.com/engine/api/v1.41/#tag/Service
         # Example:
@@ -185,11 +175,7 @@ async def _get_service_published_port(service_name: str, target_port: int) -> Po
 
         if target_port:
             try:
-                published_port = next(
-                    p["PublishedPort"]
-                    for p in ports
-                    if p.get("TargetPort") == target_port
-                )
+                published_port = next(p["PublishedPort"] for p in ports if p.get("TargetPort") == target_port)
             except StopIteration as e:
                 msg = f"Cannot find {target_port} in ports={ports!r} for service_name={service_name!r}"
                 raise RuntimeError(msg) from e
@@ -197,9 +183,7 @@ async def _get_service_published_port(service_name: str, target_port: int) -> Po
             assert len(ports) == 1, f"number of ports in {service_name=} is not 1!"
             published_port = ports[0]["PublishedPort"]
 
-        assert (
-            published_port is not None
-        ), f"published port of {service_name=} is not set!"
+        assert published_port is not None, f"published port of {service_name=} is not set!"
 
         print(f"--> found {service_name=} {published_port=}")
         return published_port
@@ -240,9 +224,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
         service_name
     ]
 
-    sidecar_settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
+    sidecar_settings: DynamicSidecarSettings = app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     dynamic_sidecar_proxy_settings: DynamicSidecarProxySettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
     )
@@ -263,9 +245,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
             proxy_service_name,
             target_port=dynamic_sidecar_proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
         )
-        assert (
-            proxy_published_port is not None
-        ), f"{sidecar_settings.model_dump_json(warnings='none')=}"
+        assert proxy_published_port is not None, f"{sidecar_settings.model_dump_json(warnings='none')=}"
 
         async with scheduler.scheduler._lock:  # noqa: SLF001
             localhost_ip = get_localhost_ip()
@@ -298,9 +278,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     return port
 
 
-async def _get_service_resources(
-    catalog_url: URL, service_key: str, service_version: str
-) -> ServiceResourcesDict:
+async def _get_service_resources(catalog_url: URL, service_key: str, service_version: str) -> ServiceResourcesDict:
     encoded_key = urllib.parse.quote_plus(service_key)
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
     async with httpx.AsyncClient() as client:
@@ -308,19 +286,13 @@ async def _get_service_resources(
         return TypeAdapter(ServiceResourcesDict).validate_python(response.json())
 
 
-async def _handle_redirection(
-    redirection_response: httpx.Response, *, method: str, **kwargs
-) -> httpx.Response:
+async def _handle_redirection(redirection_response: httpx.Response, *, method: str, **kwargs) -> httpx.Response:
     """since we are in a test environment with a test server, a real client must be used in order to get to an external server
     i.e. the async_client used with the director test server is unable to follow redirects
     """
-    assert (
-        redirection_response.next_request
-    ), f"no redirection set in {redirection_response}"
+    assert redirection_response.next_request, f"no redirection set in {redirection_response}"
     async with httpx.AsyncClient() as real_client:
-        response = await real_client.request(
-            method, f"{redirection_response.next_request.url}", **kwargs
-        )
+        response = await real_client.request(method, f"{redirection_response.next_request.url}", **kwargs)
         response.raise_for_status()
         return response
 
@@ -350,9 +322,7 @@ async def assert_start_service(
         "service_uuid": service_uuid,
         "can_save": True,
         "basepath": basepath,
-        "service_resources": ServiceResourcesDictHelpers.create_jsonable(
-            service_resources
-        ),
+        "service_resources": ServiceResourcesDictHelpers.create_jsonable(service_resources),
         "product_name": product_name,
         "product_api_base_url": product_api_base_url,
     }
@@ -371,9 +341,7 @@ async def assert_start_service(
     )
 
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
-        response = await _handle_redirection(
-            response, method="POST", json=data, headers=headers, timeout=30
-        )
+        response = await _handle_redirection(response, method="POST", json=data, headers=headers, timeout=30)
     response.raise_for_status()
 
     assert response.status_code == httpx.codes.CREATED, response.text
@@ -385,9 +353,7 @@ async def get_service_data(
     node_data: Node,
 ) -> dict[str, Any]:
     # result =
-    response = await director_v2_client.get(
-        f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
-    )
+    response = await director_v2_client.get(f"/v2/dynamic_services/{service_uuid}", follow_redirects=False)
 
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
         response = await _handle_redirection(response, method="GET")
@@ -433,9 +399,7 @@ async def assert_all_services_running(
             print("--> all services are up and running!")
 
 
-async def assert_retrieve_service(
-    director_v2_client: httpx.AsyncClient, service_uuid: str
-) -> None:
+async def assert_retrieve_service(director_v2_client: httpx.AsyncClient, service_uuid: str) -> None:
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
@@ -465,29 +429,21 @@ async def assert_retrieve_service(
     assert isinstance(size_bytes, int)
 
 
-async def assert_stop_service(
-    director_v2_client: httpx.AsyncClient, service_uuid: str
-) -> None:
-    response = await director_v2_client.delete(
-        f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
-    )
+async def assert_stop_service(director_v2_client: httpx.AsyncClient, service_uuid: str) -> None:
+    response = await director_v2_client.delete(f"/v2/dynamic_services/{service_uuid}", follow_redirects=False)
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
         response = await _handle_redirection(response, method="DELETE")
     assert response.status_code == httpx.codes.NO_CONTENT
     assert response.text == ""
 
 
-async def _inspect_service_and_print_logs(
-    tag: str, service_name: str, is_legacy: bool
-) -> None:
+async def _inspect_service_and_print_logs(tag: str, service_name: str, is_legacy: bool) -> None:
     """inspects proxy and prints logs from it"""
     if is_legacy:
         print(f"Skipping service logs and inspect for {service_name}")
         return
 
-    target_service = service_name.replace(
-        DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
-    )
+    target_service = service_name.replace(DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX)
 
     async with aiodocker.Docker() as docker_client:
         service_details = await docker_client.services.inspect(target_service)
@@ -505,9 +461,7 @@ async def _inspect_service_and_print_logs(
             print(f"Container inspect: {container_name}")
             print(f"{formatted_container_inspect}\n{SEPARATOR}")
 
-        logs = await docker_client.services.logs(
-            service_details["ID"], stderr=True, stdout=True, tail=50
-        )
+        logs = await docker_client.services.logs(service_details["ID"], stderr=True, stdout=True, tail=50)
         formatted_logs = "".join(logs)
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 
@@ -533,19 +487,11 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
     # Legacy services are started --endpoint-mode dnsrr, it needs to
     # be changed to vip otherwise the port forward will not work
     result = run_command(f"docker service update {service_name} --endpoint-mode=vip")
-    assert (
-        "verify: Service converged" in result
-        or f"verify: Service {service_name} converged" in result
-    )
+    assert "verify: Service converged" in result or f"verify: Service {service_name} converged" in result
 
     # Finally forward the port on a random assigned port.
-    result = run_command(
-        f"docker service update {service_name} --publish-add :{internal_port}"
-    )
-    assert (
-        "verify: Service converged" in result
-        or f"verify: Service {service_name} converged" in result
-    )
+    result = run_command(f"docker service update {service_name} --publish-add :{internal_port}")
+    assert "verify: Service converged" in result or f"verify: Service {service_name} converged" in result
 
     # inspect service and fetch the port
     async with aiodocker.Docker() as docker_client:
@@ -566,16 +512,12 @@ async def assert_service_is_ready(  # pylint: disable=redefined-outer-name
     )
     print(f"checking service @ {service_address}")
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1), stop=stop_after_attempt(60), reraise=True
-    ):
+    async for attempt in AsyncRetrying(wait=wait_fixed(1), stop=stop_after_attempt(60), reraise=True):
         with attempt:
             async with httpx.AsyncClient() as client:
                 response = await client.get(service_address)
                 print(f"{SEPARATOR}\nAttempt={attempt.retry_state.attempt_number}")
-                print(
-                    f"Body:\n{response.text}\nHeaders={response.headers}\n{SEPARATOR}"
-                )
+                print(f"Body:\n{response.text}\nHeaders={response.headers}\n{SEPARATOR}")
                 assert response.status_code == httpx.codes.OK, response.text
 
 

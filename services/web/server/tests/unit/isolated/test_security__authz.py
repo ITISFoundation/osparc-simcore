@@ -101,25 +101,17 @@ async def test_operation_in_role_check(access_model: RoleBasedAccessModel):
     candidate_data = {"workbench": {}}  # no changes
     context = {"current": current_data, "candidate": candidate_data}
 
-    assert await access_model.can(
-        R.ANONYMOUS, "study.pipeline.node.inputs.update", context=context
-    )
+    assert await access_model.can(R.ANONYMOUS, "study.pipeline.node.inputs.update", context=context)
 
     # Test with invalid context that would make the check function fail
     invalid_context = {"wrong_key": "value"}  # missing expected keys
-    assert not await access_model.can(
-        R.ANONYMOUS, "study.pipeline.node.inputs.update", context=invalid_context
-    )
+    assert not await access_model.can(R.ANONYMOUS, "study.pipeline.node.inputs.update", context=invalid_context)
 
     # Test with None context (should fail safely)
-    assert not await access_model.can(
-        R.ANONYMOUS, "study.pipeline.node.inputs.update", context=None
-    )
+    assert not await access_model.can(R.ANONYMOUS, "study.pipeline.node.inputs.update", context=None)
 
     # Test inheritance - USER role inherits ANONYMOUS role's check function
-    assert await access_model.can(
-        R.USER, "study.pipeline.node.inputs.update", context=context
-    )
+    assert await access_model.can(R.USER, "study.pipeline.node.inputs.update", context=context)
 
 
 def test_unique_permissions():
@@ -127,9 +119,7 @@ def test_unique_permissions():
     for role in ROLES_PERMISSIONS:
         can = ROLES_PERMISSIONS[role].get("can", [])
         for permission in can:
-            assert (
-                permission not in used
-            ), f"'{permission}' in {role} is repeated in security_roles.ROLES_PERMISSIONS"
+            assert permission not in used, f"'{permission}' in {role} is repeated in security_roles.ROLES_PERMISSIONS"
             used.append(permission)
 
 
@@ -143,7 +133,6 @@ def test_access_model_loads():
 
 
 async def test_named_permissions(access_model: RoleBasedAccessModel):
-
     R = UserRole  # alias
 
     # direct permission
@@ -185,26 +174,16 @@ async def test_permissions_inheritance(access_model: RoleBasedAccessModel):
     assert not await access_model.can(R.TESTER, OPERATION)
 
 
-async def test_checked_permissions(
-    access_model: RoleBasedAccessModel, tests_data_dir: Path
-):
+async def test_checked_permissions(access_model: RoleBasedAccessModel, tests_data_dir: Path):
     R = UserRole  # alias
 
-    current: ProjectDict = json.loads(
-        (tests_data_dir / "fake-template-projects.isan.ucdavis.json").read_text()
-    )
-    assert (
-        current["uuid"] == "de2578c5-431e-1234-a1a7-f7d4f3a8f26b"
-    ), "Did uuids of the fake changed"
+    current: ProjectDict = json.loads((tests_data_dir / "fake-template-projects.isan.ucdavis.json").read_text())
+    assert current["uuid"] == "de2578c5-431e-1234-a1a7-f7d4f3a8f26b", "Did uuids of the fake changed"
 
     # updates both allowed and not allowed fields
     candidate = copy.deepcopy(current)
-    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
-        "Kr"
-    ] = 66  # ReadOnly!
-    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
-        "Na"
-    ] = 66  # ReadWrite
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Kr"] = 66  # ReadOnly!
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Na"] = 66  # ReadWrite
 
     assert not await access_model.can(
         R.ANONYMOUS,
@@ -214,9 +193,7 @@ async def test_checked_permissions(
 
     # updates allowed fields
     candidate = copy.deepcopy(current)
-    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
-        "Na"
-    ] = 66  # ReadWrite
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Na"] = 66  # ReadWrite
 
     assert await access_model.can(
         R.ANONYMOUS,
@@ -224,7 +201,7 @@ async def test_checked_permissions(
         context={"current": current, "candidate": candidate},
     )
 
-    # udpates not permitted fields
+    # updates not permitted fields
     candidate = copy.deepcopy(current)
     candidate["description"] = "not allowed to write here"
     assert not await access_model.can(
@@ -244,13 +221,9 @@ async def test_async_checked_permissions(access_model: RoleBasedAccessModel):
     assert access_model.roles[R.TESTER]
     access_model.roles[R.TESTER].check["study.edge.edit"] = async_callback
 
-    assert not await access_model.can(
-        R.TESTER, "study.edge.edit", context={"response": False}
-    )
+    assert not await access_model.can(R.TESTER, "study.edge.edit", context={"response": False})
 
-    assert await access_model.can(
-        R.TESTER, "study.edge.edit", context={"response": True}
-    )
+    assert await access_model.can(R.TESTER, "study.edge.edit", context={"response": True})
 
 
 async def test_check_access_expressions(access_model: RoleBasedAccessModel):
@@ -261,7 +234,6 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
 
 @pytest.fixture
 def mock_db(mocker: MockerFixture) -> MagicMock:
-
     mocker.patch(
         "simcore_service_webserver.security._authz_policy.get_async_engine",
         autospec=True,
@@ -277,9 +249,7 @@ def mock_db(mocker: MockerFixture) -> MagicMock:
         assert engine == "FAKE-ENGINE"
 
         if "db-failure" in email:
-            raise DatabaseError(
-                statement="SELECT 1", params=None, orig=Exception("fake db error")
-            )
+            raise DatabaseError(statement="SELECT 1", params=None, orig=Exception("fake db error"))
 
         # inactive user or not found
         return copy.deepcopy(users_db.get(email))
@@ -295,7 +265,6 @@ def mock_db(mocker: MockerFixture) -> MagicMock:
 
 
 async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicMock):
-
     app = web.Application()
     authz_policy = AuthorizationPolicy(app, RoleBasedAccessModel([]))
 
@@ -366,39 +335,23 @@ async def test_operation_with_check_callbacks(access_model: RoleBasedAccessModel
     access_model.roles[R.USER].check["operation.failing.check"] = failing_check
 
     # Test synchronous check callback
-    assert await access_model.can(
-        R.USER, "operation.sync.check", context={"allowed": True}
-    )
-    assert not await access_model.can(
-        R.USER, "operation.sync.check", context={"allowed": False}
-    )
+    assert await access_model.can(R.USER, "operation.sync.check", context={"allowed": True})
+    assert not await access_model.can(R.USER, "operation.sync.check", context={"allowed": False})
     assert not await access_model.can(R.USER, "operation.sync.check", context=None)
 
     # Test asynchronous check callback
-    assert await access_model.can(
-        R.USER, "operation.async.check", context={"allowed": True}
-    )
-    assert not await access_model.can(
-        R.USER, "operation.async.check", context={"allowed": False}
-    )
+    assert await access_model.can(R.USER, "operation.async.check", context={"allowed": True})
+    assert not await access_model.can(R.USER, "operation.async.check", context={"allowed": False})
 
     # Test exception handling in check callback
-    assert not await access_model.can(
-        R.USER, "operation.failing.check", context={"allowed": True}
-    )
+    assert not await access_model.can(R.USER, "operation.failing.check", context={"allowed": True})
 
     # Test inheritance of checked operations
-    assert await access_model.can(
-        R.TESTER, "operation.sync.check", context={"allowed": True}
-    )
-    assert not await access_model.can(
-        R.ANONYMOUS, "operation.sync.check", context={"allowed": True}
-    )
+    assert await access_model.can(R.TESTER, "operation.sync.check", context={"allowed": True})
+    assert not await access_model.can(R.ANONYMOUS, "operation.sync.check", context={"allowed": True})
 
     # Test who_can with checked operations
-    who_can = await access_model.who_can(
-        "operation.sync.check", context={"allowed": True}
-    )
+    who_can = await access_model.who_can("operation.sync.check", context={"allowed": True})
     assert R.USER in who_can
     assert R.TESTER in who_can
     assert R.ANONYMOUS not in who_can

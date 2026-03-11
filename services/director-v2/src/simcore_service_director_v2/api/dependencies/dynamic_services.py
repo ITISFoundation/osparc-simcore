@@ -24,9 +24,7 @@ async def get_service_base_url(
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
 ) -> URL:
     # get the service details
-    service_details: RunningDynamicServiceDetails = (
-        await director_v0_client.get_running_service_details(node_uuid)
-    )
+    service_details: RunningDynamicServiceDetails = await director_v0_client.get_running_service_details(node_uuid)
     return URL(service_details.legacy_service_url)
 
 

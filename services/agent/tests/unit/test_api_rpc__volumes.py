@@ -27,16 +27,12 @@ async def rpc_client(
 
 @pytest.fixture
 def mocked_remove_service_volumes(mocker: pytest_mock.MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_agent.services.volumes_manager.VolumesManager.remove_service_volumes"
-    )
+    return mocker.patch("simcore_service_agent.services.volumes_manager.VolumesManager.remove_service_volumes")
 
 
 @pytest.fixture
 def mocked_remove_all_volumes(mocker: pytest_mock.MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_agent.services.volumes_manager.VolumesManager.remove_all_volumes"
-    )
+    return mocker.patch("simcore_service_agent.services.volumes_manager.VolumesManager.remove_all_volumes")
 
 
 async def test_backup_and_remove_volumes_for_all_services(

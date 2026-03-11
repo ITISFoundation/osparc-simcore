@@ -13,7 +13,7 @@ from service_integration.yaml_utils import yaml_safe_load
 
 #
 # NOTE: cannot create a yaml file because the pre-commit hooks fail
-# to recongnize '!include'  keyword when running YAML checkers
+# to recognize '!include'  keyword when running YAML checkers
 #
 YAML_BODY = """\
 compose-spec: !include {0}
@@ -34,7 +34,7 @@ settings:
   - name: constraints
     type: string
     value:
-      - node.platform.os == linux
+      - node.platform.os==linux
 """
 
 
@@ -52,14 +52,11 @@ def service_config_path(tmp_path: Path, compose_spec_path):
     dirpath.mkdir(parents=True, exist_ok=True)
 
     filepath = dirpath / "service-with-include.yml"
-    filepath.write_text(
-        YAML_BODY.format(os.path.relpath(compose_spec_path.resolve(), filepath.parent))
-    )
+    filepath.write_text(YAML_BODY.format(os.path.relpath(compose_spec_path.resolve(), filepath.parent)))
     return filepath
 
 
 def test_include_file_in_yaml(compose_spec_path: Path, service_config_path: Path):
-
     expected = yaml.safe_load(compose_spec_path.read_text())
 
     with open(service_config_path) as fh:

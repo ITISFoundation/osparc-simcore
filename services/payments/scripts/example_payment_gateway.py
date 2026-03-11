@@ -13,7 +13,6 @@
 - Also used as a fake payment-gateway for manual exploratory testing
 """
 
-
 import argparse
 import datetime
 import json
@@ -82,9 +81,7 @@ def _set_operation_id_as_handler_function_name(router: APIRouter):
 
 
 ERROR_RESPONSES: dict[str, Any] = {"4XX": {"model": ErrorModel}}
-ERROR_HTML_RESPONSES: dict[str, Any] = {
-    "4XX": {"content": {"text/html": {"schema": {"type": "string"}}}}
-}
+ERROR_HTML_RESPONSES: dict[str, Any] = {"4XX": {"content": {"text/html": {"schema": {"type": "string"}}}}}
 
 FORM_HTML = """
 <!DOCTYPE html>
@@ -179,9 +176,7 @@ async def ack_payment(id_: PaymentID, acked: AckPayment, settings: Settings):
         )
 
 
-async def ack_payment_method(
-    id_: PaymentMethodID, acked: AckPaymentMethod, settings: Settings
-):
+async def ack_payment_method(id_: PaymentMethodID, acked: AckPaymentMethod, settings: Settings):
     async with httpx.AsyncClient() as client:
         await client.post(
             f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments-methods/{id_}:ack",
@@ -204,9 +199,7 @@ def get_settings(request: Request) -> Settings:
 
 def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None) -> int:
     if x_init_api_secret is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="api secret missing"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="api secret missing")
     return 1
 
 
@@ -409,7 +402,7 @@ def create_payment_method_router():
             success=True,
             invoice_url="https://fakeimg.pl/300/",
             payment_id=f"{uuid4()}",
-            message=f"Payed with payment-method {id}",
+            message=f"Paid with payment-method {id}",
         )
 
     return router  # nosec
@@ -421,7 +414,9 @@ def create_app():
         version=PAYMENTS_GATEWAY_SPECS_VERSION,
         debug=True,
     )
-    app.openapi_version = "3.0.0"  # NOTE: small hack to allow current version of `42Crunch.vscode-openapi` to work with openapi
+    app.openapi_version = (
+        "3.0.0"  # NOTE: small hack to allow current version of `42Crunch.vscode-openapi` to work with openapi
+    )
     override_fastapi_openapi_method(app)
 
     app.state.settings = Settings.create_from_envs()

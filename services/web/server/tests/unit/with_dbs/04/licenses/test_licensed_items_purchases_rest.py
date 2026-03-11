@@ -20,27 +20,25 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 
-_LICENSED_ITEM_PURCHASE_GET = (
-    rut_licensed_items_purchases.LicensedItemPurchaseGet.model_validate(
-        {
-            "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
-            "product_name": "osparc",
-            "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
-            "key": "Duke",
-            "version": "1.0.0",
-            "wallet_id": 1,
-            "wallet_name": "My Wallet",
-            "pricing_unit_cost_id": 1,
-            "pricing_unit_cost": Decimal(10),
-            "start_at": "2023-01-11 13:11:47.293595",
-            "expire_at": "2023-01-11 13:11:47.293595",
-            "num_of_seats": 1,
-            "purchased_by_user": 1,
-            "user_email": "test@test.com",
-            "purchased_at": "2023-01-11 13:11:47.293595",
-            "modified": "2023-01-11 13:11:47.293595",
-        }
-    )
+_LICENSED_ITEM_PURCHASE_GET = rut_licensed_items_purchases.LicensedItemPurchaseGet.model_validate(
+    {
+        "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
+        "product_name": "osparc",
+        "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
+        "key": "Duke",
+        "version": "1.0.0",
+        "wallet_id": 1,
+        "wallet_name": "My Wallet",
+        "pricing_unit_cost_id": 1,
+        "pricing_unit_cost": Decimal(10),
+        "start_at": "2023-01-11 13:11:47.293595",
+        "expire_at": "2023-01-11 13:11:47.293595",
+        "num_of_seats": 1,
+        "purchased_by_user": 1,
+        "user_email": "test@test.com",
+        "purchased_at": "2023-01-11 13:11:47.293595",
+        "modified": "2023-01-11 13:11:47.293595",
+    }
 )
 
 _LICENSED_ITEM_PURCHASE_PAGE = rut_licensed_items_purchases.LicensedItemsPurchasesPage(
@@ -87,9 +85,7 @@ async def test_licensed_items_purchaches_handlers(
     assert client.app
 
     # list
-    url = client.app.router["list_wallet_licensed_items_purchases"].url_for(
-        wallet_id="1"
-    )
+    url = client.app.router["list_wallet_licensed_items_purchases"].url_for(wallet_id="1")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1

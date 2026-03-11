@@ -2,15 +2,13 @@ import os
 from pathlib import Path
 
 import s4l_v1
-import s4l_v1.analysis.viewers as viewers
-import s4l_v1.document as document
-import s4l_v1.model as model
 import s4l_v1.simulation.emfdtd as fdtd
-import s4l_v1.units as units
 from dotenv import load_dotenv
 from osparc_isolve_api import run_simulation
+from s4l_v1 import document, model, units
 from s4l_v1._api.application import get_app_safe, run_application
 from s4l_v1._api.simwrappers import ApiSimulation
+from s4l_v1.analysis import viewers
 from s4l_v1.model import Vec3
 
 load_dotenv()
@@ -22,9 +20,7 @@ SECRET = os.environ["OSPARC_API_SECRET"]
 
 
 def create_model():
-    wire = model.CreateWireBlock(
-        p0=Vec3(0, 0, 0), p1=Vec3(100, 100, 100), parametrized=True
-    )
+    wire = model.CreateWireBlock(p0=Vec3(0, 0, 0), p1=Vec3(100, 100, 100), parametrized=True)
     wire.Name = "Plane Wave Source"
 
 
@@ -82,15 +78,9 @@ def analyze_simulation(sim):
     # Create a slice viewer for the E field
     slice_field_viewer_efield = viewers.SliceFieldViewer()
     slice_field_viewer_efield.Inputs[0].Connect(overall_field_sensor["EM E(x,y,z,f0)"])
-    slice_field_viewer_efield.Data.Mode = (
-        slice_field_viewer_efield.Data.Mode.enum.QuantityRealPart
-    )
-    slice_field_viewer_efield.Data.Component = (
-        slice_field_viewer_efield.Data.Component.enum.Component0
-    )
-    slice_field_viewer_efield.Slice.Plane = (
-        slice_field_viewer_efield.Slice.Plane.enum.YZ
-    )
+    slice_field_viewer_efield.Data.Mode = slice_field_viewer_efield.Data.Mode.enum.QuantityRealPart
+    slice_field_viewer_efield.Data.Component = slice_field_viewer_efield.Data.Component.enum.Component0
+    slice_field_viewer_efield.Slice.Plane = slice_field_viewer_efield.Slice.Plane.enum.YZ
     slice_field_viewer_efield.Update(0)
     slice_field_viewer_efield.GotoMaxSlice()
     document.AllAlgorithms.Add(slice_field_viewer_efield)

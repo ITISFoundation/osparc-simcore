@@ -62,9 +62,7 @@ def app_environment(
 
 
 @pytest.fixture
-def mock_itis_vip_downloadables_api(
-    faker: Faker, fake_api_base_url: str
-) -> Iterator[respx.MockRouter]:
+def mock_itis_vip_downloadables_api(faker: Faker, fake_api_base_url: str) -> Iterator[respx.MockRouter]:
     response_data = {
         "msg": 0,
         "availableDownloads": [
@@ -78,9 +76,7 @@ def mock_itis_vip_downloadables_api(
     }
 
     with respx.mock(base_url=fake_api_base_url) as mock:
-        mock.post(path__regex=r"/getDownloadableItems/(?P<category>\w+)").respond(
-            status_code=200, json=response_data
-        )
+        mock.post(path__regex=r"/getDownloadableItems/(?P<category>\w+)").respond(status_code=200, json=response_data)
         yield mock
 
 
@@ -109,9 +105,7 @@ async def test_get_category_items(
     assert settings.LICENSES_ITIS_VIP_CATEGORIES
 
     async with AsyncClient() as client:
-        for url, category in zip(
-            settings.get_urls(), settings.LICENSES_ITIS_VIP_CATEGORIES, strict=True
-        ):
+        for url, category in zip(settings.get_urls(), settings.LICENSES_ITIS_VIP_CATEGORIES, strict=True):
             assert f"{url}".endswith(category)
 
             items = await _itis_vip_service.get_category_items(client, url)
@@ -131,18 +125,13 @@ async def test_sync_itis_vip_as_licensed_resources(
     assert settings.LICENSES_ITIS_VIP_CATEGORIES
 
     async with AsyncClient() as http_client:
-        for url, category in zip(
-            settings.get_urls(), settings.LICENSES_ITIS_VIP_CATEGORIES, strict=True
-        ):
+        for url, category in zip(settings.get_urls(), settings.LICENSES_ITIS_VIP_CATEGORIES, strict=True):
             assert f"{url}".endswith(category)
 
-            vip_resources: list[ItisVipData] = (
-                await _itis_vip_service.get_category_items(http_client, url)
-            )
+            vip_resources: list[ItisVipData] = await _itis_vip_service.get_category_items(http_client, url)
             assert vip_resources[0].features.get("functionality") == "Posable"
 
             for vip in vip_resources:
-
                 # register a NEW resource
                 (
                     licensed_resource1,

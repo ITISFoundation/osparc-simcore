@@ -12,9 +12,7 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-async def test_templates_consolidation(
-    tmp_path: Path, sqlalchemy_async_engine: AsyncEngine, products_names: list[str]
-):
+async def test_templates_consolidation(tmp_path: Path, sqlalchemy_async_engine: AsyncEngine, products_names: list[str]):
     new_templates_dir = tmp_path / "all-templates"
     new_templates_dir.mkdir()
 

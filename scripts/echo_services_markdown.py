@@ -16,9 +16,7 @@ from typing import Final, NamedTuple
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 
-_URL_PREFIX: Final[str] = (
-    "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master"
-)
+_URL_PREFIX: Final[str] = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master"
 
 _REDOC_URL_PREFIX: Final[str] = f"https://redocly.github.io/redoc/?url={_URL_PREFIX}"
 _SWAGGER_URL_PREFIX: Final[str] = f"https://petstore.swagger.io/?url={_URL_PREFIX}"
@@ -100,7 +98,6 @@ def generate_markdown_table(
 
 
 if __name__ == "__main__":
-
     repo_base_path = CURRENT_DIR.parent.resolve()
     services_path = repo_base_path / "services"
 
@@ -113,11 +110,7 @@ if __name__ == "__main__":
     def _is_hidden(file: Path) -> bool:
         return any(p.name.startswith(".") for p in file.parents)
 
-    dockerfiles_found = (
-        _to_tuple(file)
-        for file in services_path.rglob("Dockerfile")
-        if not _is_hidden(file)
-    )
+    dockerfiles_found = (_to_tuple(file) for file in services_path.rglob("Dockerfile") if not _is_hidden(file))
 
     openapi_files_found = (
         _to_tuple(file)

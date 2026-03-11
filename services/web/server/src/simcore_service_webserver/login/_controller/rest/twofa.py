@@ -37,9 +37,7 @@ routes = RouteTableDef()
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email"""
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
 
     user = await _auth_service.get_user_or_none(request.app, email=resend_2fa_.email)
@@ -47,14 +45,10 @@ async def resend_2fa_code(request: web.Request):
         raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)
 
     if not settings.LOGIN_2FA_REQUIRED:
-        raise web.HTTPServiceUnavailable(
-            text=user_message("2FA login is not available")
-        )
+        raise web.HTTPServiceUnavailable(text=user_message("2FA login is not available"))
 
     # Already a code?
-    previous_code = await _twofa_service.get_2fa_code(
-        request.app, user_email=resend_2fa_.email
-    )
+    previous_code = await _twofa_service.get_2fa_code(request.app, user_email=resend_2fa_.email)
     if previous_code is not None:
         await _twofa_service.delete_2fa_code(request.app, user_email=resend_2fa_.email)
 
@@ -74,9 +68,7 @@ async def resend_2fa_code(request: web.Request):
     if resend_2fa_.via == "SMS":
         user_phone_number = user.get("phone")
         if not user_phone_number:
-            raise web.HTTPBadRequest(
-                text=user_message("User does not have a phone number registered")
-            )
+            raise web.HTTPBadRequest(text=user_message("User does not have a phone number registered"))
 
         await _twofa_service.send_sms_code(
             phone_number=user_phone_number,

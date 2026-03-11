@@ -51,9 +51,7 @@ async def _notify_conversation_message_created(
     if project_id_or_none:
         await notify_via_socket_conversation_message_created(
             app,
-            recipients=await _conversation_service.get_recipients_from_project(
-                app, project_id_or_none
-            ),
+            recipients=await _conversation_service.get_recipients_from_project(app, project_id_or_none),
             project_id=project_id_or_none,
             conversation_message=conversation_message,
         )
@@ -64,10 +62,8 @@ async def _notify_conversation_message_created(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = (
-            await _conversation_service.get_recipients_from_product_support_group(
-                app, product_name=product_name
-            )
+        _product_group_users = await _conversation_service.get_recipients_from_product_support_group(
+            app, product_name=product_name
         )
         await notify_via_socket_conversation_message_created(
             app,
@@ -199,9 +195,7 @@ async def create_support_message(
 
     product = products_service.get_product(app, product_name=product_name)
     fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
-    _conversation_url = (
-        f"{product.base_url}#/conversation/{conversation.conversation_id}"
-    )
+    _conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
 
     if (
         product.support_standard_group_id is None
@@ -304,9 +298,7 @@ async def trigger_chatbot_processing(
         conversation_id=conversation.conversation_id,
         offset=0,
         limit=1,
-        order_by=OrderBy(
-            field=IDStr("created"), direction=OrderDirection.DESC
-        ),  # Latest message first
+        order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),  # Latest message first
     )
     if not messages or messages[0].message_id != message_id:
         _logger.warning(
@@ -330,9 +322,7 @@ async def get_message(
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> ConversationMessageGetDB:
-    return await _conversation_message_repository.get(
-        app, conversation_id=conversation_id, message_id=message_id
-    )
+    return await _conversation_message_repository.get(app, conversation_id=conversation_id, message_id=message_id)
 
 
 async def update_message(
@@ -355,23 +345,17 @@ async def update_message(
     if project_id:
         await notify_via_socket_conversation_message_updated(
             app,
-            recipients=await _conversation_service.get_recipients_from_project(
-                app, project_id
-            ),
+            recipients=await _conversation_service.get_recipients_from_project(app, project_id),
             project_id=project_id,
             conversation_message=updated_message,
         )
     else:
-        _conversation = await _conversation_service.get_conversation(
-            app, conversation_id=conversation_id
-        )
+        _conversation = await _conversation_service.get_conversation(app, conversation_id=conversation_id)
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = (
-            await _conversation_service.get_recipients_from_product_support_group(
-                app, product_name=product_name
-            )
+        _product_group_users = await _conversation_service.get_recipients_from_product_support_group(
+            app, product_name=product_name
         )
         await notify_via_socket_conversation_message_updated(
             app,
@@ -403,25 +387,19 @@ async def delete_message(
     if project_id:
         await notify_via_socket_conversation_message_deleted(
             app,
-            recipients=await _conversation_service.get_recipients_from_project(
-                app, project_id
-            ),
+            recipients=await _conversation_service.get_recipients_from_project(app, project_id),
             user_group_id=_user_group_id,
             project_id=project_id,
             conversation_id=conversation_id,
             message_id=message_id,
         )
     else:
-        _conversation = await _conversation_service.get_conversation(
-            app, conversation_id=conversation_id
-        )
+        _conversation = await _conversation_service.get_conversation(app, conversation_id=conversation_id)
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = (
-            await _conversation_service.get_recipients_from_product_support_group(
-                app, product_name=product_name
-            )
+        _product_group_users = await _conversation_service.get_recipients_from_product_support_group(
+            app, product_name=product_name
         )
         await notify_via_socket_conversation_message_deleted(
             app,

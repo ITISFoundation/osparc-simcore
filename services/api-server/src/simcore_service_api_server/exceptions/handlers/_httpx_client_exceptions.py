@@ -37,6 +37,4 @@ async def handle_httpx_client_exceptions(request: Request, exc: Exception):
     if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         _logger.exception("%s. host=%s. %s", detail, exc.request.url.host, f"{exc}")
 
-    return create_error_json_response(
-        f"{detail}", status_code=status_code, headers=headers
-    )
+    return create_error_json_response(f"{detail}", status_code=status_code, headers=headers)

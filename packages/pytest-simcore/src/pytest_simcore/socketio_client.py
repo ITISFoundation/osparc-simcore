@@ -9,9 +9,10 @@ from uuid import uuid4
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.aiohttp import status
 from yarl import URL
+
+from pytest_simcore.helpers.logging_tools import log_context
 
 from .helpers.assert_checks import assert_status
 
@@ -56,11 +57,7 @@ async def create_socketio_connection(
     socketio_url_factory: Callable[[TestClient | None], str],
     security_cookie_factory: Callable[[TestClient | None], Awaitable[str]],
     client_session_id_factory: Callable[[], str],
-) -> AsyncIterable[
-    Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ]
-]:
+) -> AsyncIterable[Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]]]:
     clients: list[socketio.AsyncClient] = []
 
     async def _connect(
@@ -71,11 +68,7 @@ async def create_socketio_connection(
 
         sio = socketio.AsyncClient(ssl_verify=False)
         assert client_session_id
-        url = str(
-            URL(socketio_url_factory(client)).with_query(
-                {"client_session_id": client_session_id}
-            )
-        )
+        url = str(URL(socketio_url_factory(client)).with_query({"client_session_id": client_session_id}))
         headers = {}
         cookie = await security_cookie_factory(client)
         if cookie:

@@ -17,10 +17,7 @@ class ApiInvitationInputs(InvitationInputs):
 
 
 class ApiInvitationContent(InvitationContent):
-
-    product: ProductName = Field(
-        ..., description="This invitations can only be used for this product."
-    )
+    product: ProductName = Field(..., description="This invitations can only be used for this product.")
 
     model_config = ConfigDict(
         json_schema_extra={

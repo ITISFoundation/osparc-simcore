@@ -71,9 +71,7 @@ def mock_env(
         "POSTGRES_USER": "",
         "POSTGRES_PASSWORD": "",
         "POSTGRES_DB": "",
-        "DIRECTOR_V2_RABBITMQ": json_dumps(
-            model_dump_with_secrets(rabbit_service, show_secrets=True)
-        ),
+        "DIRECTOR_V2_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
     }
 
     setenvs_from_dict(monkeypatch, disabled_services_envs)
@@ -87,9 +85,9 @@ def mock_env(
 
 @pytest.fixture
 def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> SchedulerData:
-    scheduler_data_from_http_request.dynamic_sidecar.docker_node_id = TypeAdapter(
-        DockerNodeID
-    ).validate_python("testdockernodeid")
+    scheduler_data_from_http_request.dynamic_sidecar.docker_node_id = TypeAdapter(DockerNodeID).validate_python(
+        "testdockernodeid"
+    )
     return scheduler_data_from_http_request
 
 
@@ -100,14 +98,10 @@ def mock_containers_docker_status(
     service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(
-            re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"
-            ),
+            re.compile(rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"),
             name="containers_docker_status",
         ).mock(httpx.Response(200, json={}))
-        mock.get(f"{service_endpoint}/health", name="is_healthy").respond(
-            json={"is_healthy": True}
-        )
+        mock.get(f"{service_endpoint}/health", name="is_healthy").respond(json={"is_healthy": True})
 
         yield mock
 
@@ -124,9 +118,7 @@ def mock_is_dynamic_sidecar_stack_missing(mocker: MockerFixture) -> None:
     async def _return_false(*args, **kwargs) -> bool:
         return False
 
-    mocker.patch.object(
-        _observer, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
-    )
+    mocker.patch.object(_observer, "is_dynamic_sidecar_stack_missing", side_effect=_return_false)
 
 
 @pytest.fixture
@@ -189,35 +181,27 @@ def use_case(request) -> UseCase:
 
 
 @pytest.fixture
-def mocked_dynamic_scheduler_events(
-    error_raised_by_saving_state: bool, use_case: UseCase
-) -> ACounter:
+def mocked_dynamic_scheduler_events(error_raised_by_saving_state: bool, use_case: UseCase) -> ACounter:
     counter = ACounter()
 
     class AlwaysTriggersDynamicSchedulerEvent(DynamicSchedulerEvent):
         @classmethod
-        async def will_trigger(
-            cls, app: FastAPI, scheduler_data: SchedulerData
-        ) -> bool:
+        async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:  # noqa: ARG003
             return True
 
         @classmethod
-        async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:  # noqa: ARG003
             counter.increment()
             if error_raised_by_saving_state:
                 # emulate the error was generated while saving the state
-                scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
-                    use_case.can_save
-                )
+                scheduler_data.dynamic_sidecar.service_removal_state.can_save = use_case.can_save
                 scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
                     use_case.wait_for_manual_intervention_after_error
                 )
             msg = "Failed as planned"
             raise RuntimeError(msg)
 
-    test_defined_scheduler_events: list[type[DynamicSchedulerEvent]] = [
-        AlwaysTriggersDynamicSchedulerEvent
-    ]
+    test_defined_scheduler_events: list[type[DynamicSchedulerEvent]] = [AlwaysTriggersDynamicSchedulerEvent]
 
     # replace REGISTERED EVENTS
     REGISTERED_EVENTS.clear()
@@ -245,9 +229,7 @@ def mock_projects_repository(mocker: MockerFixture, node_present_in_db: bool) ->
     mocked_obj.is_node_present_in_workbench(return_value=node_present_in_db)
 
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
-    mocker.patch(
-        f"{module_base}._core._events_utils.get_repository", return_value=mocked_obj
-    )
+    mocker.patch(f"{module_base}._core._events_utils.get_repository", return_value=mocked_obj)
 
 
 async def test_skip_observation_cycle_after_error(
@@ -262,13 +244,13 @@ async def test_skip_observation_cycle_after_error(
     use_case: UseCase,
     mock_rpc_calls: None,
 ):
-
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
+    scheduler_data.requires_data_mounting = False
     await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     # check it is being tracked
-    assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping
+    assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
 
     # ensure observation cycle triggers a lot
     await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS * 10)
@@ -279,15 +261,8 @@ async def test_skip_observation_cycle_after_error(
     # check if service was properly removed or is still kept for manual interventions
     if error_raised_by_saving_state:
         if use_case.outcome_service_removed:
-            assert (
-                scheduler_data.node_uuid
-                not in scheduler.scheduler._inverse_search_mapping
-            )
+            assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
         else:
-            assert (
-                scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping
-            )
+            assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
     else:
-        assert (
-            scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping
-        )
+        assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001

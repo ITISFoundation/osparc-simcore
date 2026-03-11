@@ -65,12 +65,8 @@ async def project_documents_setup(
         key = f"projects:{project_id}:version"
         test_keys.append(key)
         # Create document versions (calling twice to increment to version 2)
-        await increment_and_return_project_document_version(
-            redis_client=redis_document_client, project_uuid=project_id
-        )
-        await increment_and_return_project_document_version(
-            redis_client=redis_document_client, project_uuid=project_id
-        )
+        await increment_and_return_project_document_version(redis_client=redis_document_client, project_uuid=project_id)
+        await increment_and_return_project_document_version(redis_client=redis_document_client, project_uuid=project_id)
 
     # Verify keys exist before returning
     for key in test_keys:
@@ -153,27 +149,18 @@ async def test_remove_project_documents_as_admin_with_real_connections(
 
     # Verify results:
     # Projects 0 and 1 should still have their documents (users connected)
-    assert (
-        await redis_document_client.redis.exists(
-            f"projects:{sample_project_uuids[0]}:version"
-        )
-        == 1
-    ), "Project 0 should be preserved because it has active SocketIO connection"
+    assert await redis_document_client.redis.exists(f"projects:{sample_project_uuids[0]}:version") == 1, (
+        "Project 0 should be preserved because it has active SocketIO connection"
+    )
 
-    assert (
-        await redis_document_client.redis.exists(
-            f"projects:{sample_project_uuids[1]}:version"
-        )
-        == 1
-    ), "Project 1 should be preserved because it has active SocketIO connection"
+    assert await redis_document_client.redis.exists(f"projects:{sample_project_uuids[1]}:version") == 1, (
+        "Project 1 should be preserved because it has active SocketIO connection"
+    )
 
     # Project 2 should have its document removed (no users connected)
-    assert (
-        await redis_document_client.redis.exists(
-            f"projects:{sample_project_uuids[2]}:version"
-        )
-        == 0
-    ), "Project 2 should be removed because it has no active SocketIO connections"
+    assert await redis_document_client.redis.exists(f"projects:{sample_project_uuids[2]}:version") == 0, (
+        "Project 2 should be removed because it has no active SocketIO connections"
+    )
 
 
 @pytest.mark.parametrize(
@@ -207,26 +194,17 @@ async def test_remove_project_documents_as_admin_with_known_opened_projects(
     await _project_document_service.remove_project_documents_as_admin(client.app)
 
     # Verify results: Projects 0 and 1 should be preserved, Project 2 should be removed
-    assert (
-        await redis_document_client.redis.exists(
-            f"projects:{sample_project_uuids[0]}:version"
-        )
-        == 1
-    ), "Project 0 should be kept because it's in known opened projects"
+    assert await redis_document_client.redis.exists(f"projects:{sample_project_uuids[0]}:version") == 1, (
+        "Project 0 should be kept because it's in known opened projects"
+    )
 
-    assert (
-        await redis_document_client.redis.exists(
-            f"projects:{sample_project_uuids[1]}:version"
-        )
-        == 1
-    ), "Project 1 should be kept because it's in known opened projects"
+    assert await redis_document_client.redis.exists(f"projects:{sample_project_uuids[1]}:version") == 1, (
+        "Project 1 should be kept because it's in known opened projects"
+    )
 
-    assert (
-        await redis_document_client.redis.exists(
-            f"projects:{sample_project_uuids[2]}:version"
-        )
-        == 0
-    ), "Project 2 should be removed because it's not in known opened projects and has no socket connections"
+    assert await redis_document_client.redis.exists(f"projects:{sample_project_uuids[2]}:version") == 0, (
+        "Project 2 should be removed because it's not in known opened projects and has no socket connections"
+    )
 
 
 @pytest.mark.parametrize(
@@ -259,9 +237,9 @@ async def test_remove_project_documents_as_admin_mixed_state(
     await _project_document_service.remove_project_documents_as_admin(client.app)
 
     # Verify: First project document should be removed (no connections)
-    assert (
-        await redis_document_client.redis.exists(test_key) == 0
-    ), "Project 0 document should be removed (no active connections)"
+    assert await redis_document_client.redis.exists(test_key) == 0, (
+        "Project 0 document should be removed (no active connections)"
+    )
 
     # Cleanup
     await redis_document_client.redis.delete(test_key)

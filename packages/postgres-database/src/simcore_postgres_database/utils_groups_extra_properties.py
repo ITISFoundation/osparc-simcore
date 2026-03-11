@@ -30,7 +30,9 @@ class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class GroupExtraProperties(FromRowMixin):
+class GroupExtraProperties(  # pylint: disable=too-many-instance-attributes
+    FromRowMixin
+):
     group_id: int
     product_name: str
     internet_access: bool
@@ -40,6 +42,7 @@ class GroupExtraProperties(FromRowMixin):
     created: datetime.datetime
     modified: datetime.datetime
     enable_efs: bool
+    mount_data: bool
 
 
 def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: str):
@@ -66,10 +69,7 @@ def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: s
                 groups_extra_properties.c.group_id == groups.c.gid,
             )
         )
-        .where(
-            (groups_extra_properties.c.product_name == product_name)
-            & (user_to_groups.c.uid == user_id)
-        )
+        .where((groups_extra_properties.c.product_name == product_name) & (user_to_groups.c.uid == user_id))
         .alias()
     )
 
@@ -94,8 +94,7 @@ class GroupExtraPropertiesRepo:
     @staticmethod
     def _get_stmt(gid: int, product_name: str):
         return sa.select(groups_extra_properties).where(
-            (groups_extra_properties.c.group_id == gid)
-            & (groups_extra_properties.c.product_name == product_name)
+            (groups_extra_properties.c.group_id == gid) & (groups_extra_properties.c.product_name == product_name)
         )
 
     @staticmethod
@@ -116,9 +115,7 @@ class GroupExtraPropertiesRepo:
             raise GroupExtraPropertiesNotFoundError(msg)
 
     @staticmethod
-    def _aggregate(
-        rows, user_id, product_name, from_row: Callable
-    ) -> GroupExtraProperties:
+    def _aggregate(rows, user_id, product_name, from_row: Callable) -> GroupExtraProperties:
         merged_standard_extra_properties = None
         for row in rows:
             group_extra_properties: GroupExtraProperties = from_row(row)
@@ -128,20 +125,16 @@ class GroupExtraPropertiesRepo:
                     return group_extra_properties
                 case GroupType.STANDARD:
                     if merged_standard_extra_properties:
-                        merged_standard_extra_properties = (
-                            _merge_extra_properties_booleans(
-                                merged_standard_extra_properties,
-                                group_extra_properties,
-                            )
+                        merged_standard_extra_properties = _merge_extra_properties_booleans(
+                            merged_standard_extra_properties,
+                            group_extra_properties,
                         )
                     else:
                         merged_standard_extra_properties = group_extra_properties
                 case GroupType.EVERYONE:
                     # if there are standard properties, they take precedence
                     return (
-                        merged_standard_extra_properties
-                        if merged_standard_extra_properties
-                        else group_extra_properties
+                        merged_standard_extra_properties if merged_standard_extra_properties else group_extra_properties
                     )
                 case _:
                     _logger.warning(
@@ -169,18 +162,12 @@ class GroupExtraPropertiesRepo:
             stacklevel=1,
         )
 
-        list_stmt = _list_table_entries_ordered_by_group_type_stmt(
-            user_id=user_id, product_name=product_name
-        )
+        list_stmt = _list_table_entries_ordered_by_group_type_stmt(user_id=user_id, product_name=product_name)
 
-        result = await connection.execute(
-            sa.select(list_stmt).order_by(list_stmt.c.type_order)
-        )
+        result = await connection.execute(sa.select(list_stmt).order_by(list_stmt.c.type_order))
         assert result  # nosec
 
         rows = await maybe_await(result.fetchall())
         assert isinstance(rows, list)  # nosec
 
-        return GroupExtraPropertiesRepo._aggregate(
-            rows, user_id, product_name, GroupExtraProperties.from_row
-        )
+        return GroupExtraPropertiesRepo._aggregate(rows, user_id, product_name, GroupExtraProperties.from_row)

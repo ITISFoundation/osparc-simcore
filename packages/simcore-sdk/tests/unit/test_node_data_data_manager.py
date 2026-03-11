@@ -84,9 +84,7 @@ async def test_push_folder(
     assert test_folder.exists()
 
     # mocks
-    mock_filemanager = mocker.patch(
-        "simcore_sdk.node_data.data_manager.filemanager", spec=True
-    )
+    mock_filemanager = mocker.patch("simcore_sdk.node_data.data_manager.filemanager", spec=True)
     mock_filemanager.upload_path.return_value = ""
 
     files_number = 10
@@ -130,13 +128,9 @@ async def test_push_file(
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
-    mock_filemanager = mocker.patch(
-        "simcore_sdk.node_data.data_manager.filemanager", spec=True
-    )
+    mock_filemanager = mocker.patch("simcore_sdk.node_data.data_manager.filemanager", spec=True)
     mock_filemanager.upload_path.return_value = ""
-    mock_temporary_directory = mocker.patch(
-        "simcore_sdk.node_data.data_manager.TemporaryDirectory"
-    )
+    mock_temporary_directory = mocker.patch("simcore_sdk.node_data.data_manager.TemporaryDirectory")
 
     file_path = create_files(1, Path(tmpdir))[0]
     assert file_path.exists()
@@ -198,11 +192,7 @@ async def test_pull_legacy_archive(
     create_files(files_number, test_control_folder)
     compressed_file_name = test_compression_folder / test_folder.stem
     archive_file = make_archive(
-        (
-            f"{compressed_file_name}_legacy"
-            if create_legacy_archive
-            else f"{compressed_file_name}"
-        ),
+        (f"{compressed_file_name}_legacy" if create_legacy_archive else f"{compressed_file_name}"),
         "zip",
         root_dir=test_control_folder,
     )
@@ -214,16 +204,10 @@ async def test_pull_legacy_archive(
     fake_zipped_folder = test_download_folder / Path(archive_file).name
     copy(archive_file, fake_zipped_folder)
 
-    mock_filemanager = mocker.patch(
-        "simcore_sdk.node_data.data_manager.filemanager", spec=True
-    )
+    mock_filemanager = mocker.patch("simcore_sdk.node_data.data_manager.filemanager", spec=True)
     mock_filemanager.download_path_from_s3.return_value = fake_zipped_folder
-    mock_temporary_directory = mocker.patch(
-        "simcore_sdk.node_data.data_manager.TemporaryDirectory"
-    )
-    mock_temporary_directory.return_value.__enter__.return_value = (
-        test_compression_folder
-    )
+    mock_temporary_directory = mocker.patch("simcore_sdk.node_data.data_manager.TemporaryDirectory")
+    mock_temporary_directory.return_value.__enter__.return_value = test_compression_folder
 
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await data_manager._pull_legacy_archive(  # noqa: SLF001
@@ -233,9 +217,7 @@ async def test_pull_legacy_archive(
             test_folder,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
-            legacy_destination_path=(
-                Path(f"{test_folder}_legacy") if create_legacy_archive else None
-            ),
+            legacy_destination_path=(Path(f"{test_folder}_legacy") if create_legacy_archive else None),
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_temporary_directory.assert_called_once()
@@ -250,13 +232,13 @@ async def test_pull_legacy_archive(
         progress_bar=progress_bar._children[0],  # noqa: SLF001
     )
 
-    matchs, mismatchs, errors = cmpfiles(
+    matches, mismatches, errors = cmpfiles(
         test_folder,
         test_control_folder,
         [x.name for x in test_control_folder.glob("**/*")],
     )
-    assert len(matchs) == files_number
-    assert not mismatchs
+    assert len(matches) == files_number
+    assert not mismatches
     assert not errors
 
 
@@ -278,9 +260,7 @@ async def test_pull_directory(
     fake_download_folder = Path(tmpdir) / "download_folder"
     fake_download_folder.mkdir()
 
-    mock_filemanager = mocker.patch(
-        "simcore_sdk.node_data.data_manager.filemanager", spec=True
-    )
+    mock_filemanager = mocker.patch("simcore_sdk.node_data.data_manager.filemanager", spec=True)
     mock_filemanager.download_path_from_s3.return_value = fake_download_folder
 
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:

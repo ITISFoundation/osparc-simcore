@@ -7,7 +7,6 @@ from pytest_simcore.examples.models_library import RPC_PAGE_EXAMPLES
 
 @pytest.mark.parametrize("example", RPC_PAGE_EXAMPLES)
 def test_create_page_rpc(example: dict[str, Any]):
-
     expected = PageRpc.model_validate(example)
 
     assert PageRpc[str].create(

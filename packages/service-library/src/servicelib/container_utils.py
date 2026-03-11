@@ -23,10 +23,7 @@ class ContainerExecTimeoutError(BaseContainerUtilsError):
 
 
 class ContainerExecCommandFailedError(BaseContainerUtilsError):
-    msg_template = (
-        "Command '{command}' exited with code '{exit_code}'"
-        "and output: '{command_result}'"
-    )
+    msg_template = "Command '{command}' exited with code '{exit_code}'and output: '{command_result}'"
 
 
 _HTTP_404_NOT_FOUND: Final[int] = 404
@@ -39,9 +36,7 @@ async def _execute_command(container_name: str, command: str | Sequence[str]) ->
         container = await docker.containers.get(container_name)
 
         # Start the command inside the container
-        exec_instance: Exec = await container.exec(
-            cmd=command, stdout=True, stderr=True, tty=False
-        )
+        exec_instance: Exec = await container.exec(cmd=command, stdout=True, stderr=True, tty=False)
 
         # Start the execution
         stream: Stream = exec_instance.start(detach=False)
@@ -52,11 +47,9 @@ async def _execute_command(container_name: str, command: str | Sequence[str]) ->
                 command_result += stream_message.data.decode()
 
         inspect_result: dict[str, Any] = await exec_instance.inspect()
-        exit_code: int | None = inspect_result.get("ExitCode", None)
+        exit_code: int | None = inspect_result.get("ExitCode")
         if exit_code != 0:
-            raise ContainerExecCommandFailedError(
-                command=command, exit_code=exit_code, command_result=command_result
-            )
+            raise ContainerExecCommandFailedError(command=command, exit_code=exit_code, command_result=command_result)
 
     _logger.debug("Command result:\n$ '%s'\n%s", command, command_result)
     return command_result
@@ -89,14 +82,10 @@ async def run_command_in_container(
         stdout + stderr produced by the command is returned
     """
     try:
-        return await asyncio.wait_for(
-            _execute_command(container_name, command), timeout
-        )
+        return await asyncio.wait_for(_execute_command(container_name, command), timeout)
     except DockerError as e:
         if e.status == _HTTP_404_NOT_FOUND:
-            raise ContainerExecContainerNotFoundError(
-                container_name=container_name
-            ) from e
+            raise ContainerExecContainerNotFoundError(container_name=container_name) from e
         raise
     except TimeoutError as e:
         raise ContainerExecTimeoutError(timeout=timeout, command=command) from e

@@ -52,23 +52,17 @@ def mock_environment(
         monkeypatch,
         {
             **mock_environment,
-            "RABBIT_SETTINGS": json.dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
+            "RABBIT_SETTINGS": json.dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
         },
     )
 
 
 @pytest.fixture
-async def enable_prometheus_metrics(
-    monkeypatch: pytest.MonkeyPatch, mock_environment: EnvVarsDict
-) -> None:
+async def enable_prometheus_metrics(monkeypatch: pytest.MonkeyPatch, mock_environment: EnvVarsDict) -> None:
     setenvs_from_dict(
         monkeypatch,
         {
-            "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(
-                CallbacksMapping.model_json_schema()["examples"][2]
-            ),
+            "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(CallbacksMapping.model_json_schema()["examples"][2]),
         },
     )
 
@@ -82,7 +76,7 @@ async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://background.testserver.io")
 
 
 @pytest.fixture
@@ -101,12 +95,8 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-def http_client(
-    app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> HttpClient:
-    return HttpClient(
-        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
-    )
+def http_client(app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl) -> HttpClient:
+    return HttpClient(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
 
 
 @pytest.fixture
@@ -137,9 +127,7 @@ async def _get_task_id_create_service_containers(
         json=ctontainers_compose_spec.model_dump(),
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers", json=containers_create.model_dump()
-    )
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers", json=containers_create.model_dump())
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -173,9 +161,7 @@ async def test_metrics_enabled_containers_will_start(
 
     async with periodic_task_result(
         client=http_client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        task_id=await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
     ) as result:

@@ -16,9 +16,7 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=(NoServiceVolumesFoundRPCError,))
-async def remove_volumes_without_backup_for_service(
-    app: FastAPI, *, node_id: NodeID
-) -> None:
+async def remove_volumes_without_backup_for_service(app: FastAPI, *, node_id: NodeID) -> None:
     with log_context(_logger, logging.INFO, f"removing volumes for service: {node_id}"):
         await VolumesManager.get_from_app_state(app).remove_service_volumes(node_id)
 

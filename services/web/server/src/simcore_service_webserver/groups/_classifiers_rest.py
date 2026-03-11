@@ -28,14 +28,10 @@ routes = web.RouteTableDef()
 @handle_plugin_requests_exceptions
 async def get_group_classifiers(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
-    query_params: GroupsClassifiersQuery = parse_request_query_parameters_as(
-        GroupsClassifiersQuery, request
-    )
+    query_params: GroupsClassifiersQuery = parse_request_query_parameters_as(GroupsClassifiersQuery, request)
 
     service = GroupClassifiersService(request.app)
-    view = await service.get_group_classifiers(
-        path_params.gid, tree_view_mode=query_params.tree_view
-    )
+    view = await service.get_group_classifiers(path_params.gid, tree_view_mode=query_params.tree_view)
 
     return envelope_json_response(view)
 

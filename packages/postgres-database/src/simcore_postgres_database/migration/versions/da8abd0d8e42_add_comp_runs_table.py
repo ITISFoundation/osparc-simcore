@@ -47,12 +47,8 @@ def upgrade():
             server_default="NOT_STARTED",
             nullable=False,
         ),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("started", sa.DateTime(), nullable=True),
         sa.Column("ended", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(

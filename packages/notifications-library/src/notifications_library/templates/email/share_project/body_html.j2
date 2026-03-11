@@ -1,0 +1,29 @@
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/share_project/subject.j2' %} {% endblock %}
+{% block content %}
+<p>Dear {{ user.first_name or user.user_name }},</p>
+
+<p>Great news! {{ sharer.user_name }} has shared a project with you on {{ product.display_name }}.</p>
+
+<p>To view the project and accept the sharing, follow below:</p>
+
+<p>
+{% if sharer.message %}
+  <div style="border: 1px solid #ccc; padding: 16px; border-radius: 8px; background-color: #f9f9f9;">
+    <p style="margin-top: 0;">{{ sharer.message }}</p>
+    <button style="{{ strong_button_style }}">
+      <a href="{{ accept_link }}" style="{{ strong_button_link_style }}">Open</a>
+    </button>
+  </div>
+{% else %}
+  <button style="{{ strong_button_style }}">
+    <a href="{{ accept_link }}" style="{{ strong_button_link_style }}">Open</a>
+  </button>
+{% endif %}
+</p>
+
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
+{% endblock %}

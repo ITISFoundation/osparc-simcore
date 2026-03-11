@@ -34,9 +34,7 @@ assert len(UserStatus) == _EXPECTED_ENUMS  # nosec
 
 ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
 
-REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
-    ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL"
-)
+REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL")
 
 
 def validate_user_access(*, user_status: str, user_role: str, support_email: str):
@@ -86,9 +84,7 @@ async def notify_user_confirmation(
     )
 
 
-async def notify_user_logout(
-    app: web.Application, user_id: UserID, client_session_id: Any | None = None
-):
+async def notify_user_logout(app: web.Application, user_id: UserID, client_session_id: Any | None = None):
     """Broadcasts logout of 'user_id' in 'client_session_id'.
 
     If 'client_session_id' is None, then all sessions are considered

@@ -18,8 +18,7 @@ from ..models.auth import SessionData
 def authenticate_user(username: str, password: str, settings: ApplicationSettings):
     return are_secrets_equal(
         username + password,
-        expected=settings.PAYMENTS_USERNAME
-        + settings.PAYMENTS_PASSWORD.get_secret_value(),
+        expected=settings.PAYMENTS_USERNAME + settings.PAYMENTS_PASSWORD.get_secret_value(),
     )
 
 
@@ -32,9 +31,7 @@ _ALGORITHM = "HS256"
 
 
 def encode_access_token(username: str, settings: ApplicationSettings) -> str:
-    expire = arrow.utcnow().datetime + timedelta(
-        minutes=settings.PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = arrow.utcnow().datetime + timedelta(minutes=settings.PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES)
     # SEE https://jwt.io/introduction/
     payload_claims = {
         # Registered claims

@@ -40,9 +40,7 @@ comp_pipeline = sa.Table(
         default=_new_uuid,
         doc="Project ID including this pipeline",
     ),
-    sa.Column(
-        "dag_adjacency_list", sa.JSON, doc="Adjancey list for the pipeline's graph"
-    ),
+    sa.Column("dag_adjacency_list", sa.JSON, doc="Adjacency list for the pipeline's graph"),
     sa.Column(
         "state",
         sa.Enum(StateType),

@@ -51,11 +51,7 @@ def client(
     assert client.app
     assert client.app.router
 
-    registered_routes = {
-        route.resource.canonical
-        for route in client.app.router.routes()
-        if route.resource
-    }
+    registered_routes = {route.resource.canonical for route in client.app.router.routes() if route.resource}
     assert f"/{API_VTAG}/test-helpers" in registered_routes
 
     return client
@@ -67,9 +63,7 @@ async def _test_helpers_handler(request: web.Request):
 
     assert current_product.name == product_name
 
-    credit_price_info = await products_web.get_current_product_credit_price_info(
-        request
-    )
+    credit_price_info = await products_web.get_current_product_credit_price_info(request)
     assert credit_price_info is None
 
     return web.json_response(
@@ -82,7 +76,6 @@ async def _test_helpers_handler(request: web.Request):
 
 
 async def test_request_helpers(client: TestClient, default_product_name: ProductName):
-
     resp = await client.get(
         f"/{API_VTAG}/test-helpers",
         headers={X_PRODUCT_NAME_HEADER: default_product_name},
@@ -101,18 +94,14 @@ async def _test_product_template_handler(request: web.Request):
 
     # if no template for product, it should return common
     # template/common/close_account.jinja2"
-    template_path = await products_web.get_product_template_path(
-        request, filename="close_account.jinja2"
-    )
+    template_path = await products_web.get_product_template_path(request, filename="close_account.jinja2")
     assert template_path.exists()
     assert template_path.name == "close_account.jinja2"
     assert "common/" in f"{template_path.resolve().absolute()}"
 
     # if specific template, it gets and caches in file
     # "templates/osparc/registration_email.jinja2"
-    template_path = await products_web.get_product_template_path(
-        request, filename="registration_email.jinja2"
-    )
+    template_path = await products_web.get_product_template_path(request, filename="registration_email.jinja2")
     assert template_path.exists()
     assert template_path.name == "registration_email.jinja2"
     assert f"{product_name}/" in f"{template_path.resolve().absolute()}"
@@ -120,23 +109,16 @@ async def _test_product_template_handler(request: web.Request):
     # get again and should use file
 
     for _ in range(2):
-        got = await products_web.get_product_template_path(
-            request, filename="registration_email.jinja2"
-        )
+        got = await products_web.get_product_template_path(request, filename="registration_email.jinja2")
         assert got == template_path
 
     with pytest.raises(ValueError, match="not part of the templates/common"):
-        await products_web.get_product_template_path(
-            request, filename="invalid-template-name.jinja"
-        )
+        await products_web.get_product_template_path(request, filename="invalid-template-name.jinja")
 
     return web.json_response()
 
 
-async def test_product_template_helpers(
-    client: TestClient, default_product_name: ProductName
-):
-
+async def test_product_template_helpers(client: TestClient, default_product_name: ProductName):
     resp = await client.get(
         f"/{API_VTAG}/test-product-template-helpers",
         headers={X_PRODUCT_NAME_HEADER: default_product_name},
@@ -149,9 +131,7 @@ async def test_get_product_template_path_without_product():
     fake_request = make_mocked_request("GET", "/fake", app=web.Application())
 
     # if no product, it should return common
-    template_path = await products_web.get_product_template_path(
-        fake_request, filename="close_account.jinja2"
-    )
+    template_path = await products_web.get_product_template_path(fake_request, filename="close_account.jinja2")
 
     assert template_path.exists()
     assert template_path.name == "close_account.jinja2"

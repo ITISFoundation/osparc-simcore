@@ -21,9 +21,7 @@ router = APIRouter()
 
 @router.get("/", response_class=PlainTextResponse)
 async def healthcheck(
-    rabbitmq_client: Annotated[
-        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
-    ],
+    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
 ) -> str:
     _logger.debug("Checking rabbit health check %s", rabbitmq_client.healthy)
     if not rabbitmq_client.healthy:

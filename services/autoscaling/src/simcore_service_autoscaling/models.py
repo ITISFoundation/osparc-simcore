@@ -5,6 +5,10 @@ from typing import Any, TypeAlias
 
 from aws_library.ec2 import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
+from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -12,40 +16,88 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _TaskAssignmentMixin:
     assigned_tasks: list = field(default_factory=list)
-    available_resources: Resources = field(default_factory=Resources.create_as_empty)
+    available_resources: Resources | None = None
+    # Track labels required by assigned tasks (will be applied during activation)
+    _pending_label_requirements: dict[DockerLabelKey, str] = field(default_factory=dict)
 
-    def assign_task(self, task, task_resources: Resources) -> None:
+    def __post_init__(self) -> None:
+        # Fallback 1: If used directly or by a child class without its own logic, default to empty
+        if self.available_resources is None:
+            object.__setattr__(self, "available_resources", Resources.create_as_empty())
+
+    def assign_task(
+        self,
+        task,
+        task_resources: Resources,
+        task_required_node_labels: dict[DockerLabelKey, str],
+    ) -> None:
         self.assigned_tasks.append(task)
-        object.__setattr__(
-            self, "available_resources", self.available_resources - task_resources
-        )
+        assert self.available_resources is not None  # nosec
+        object.__setattr__(self, "available_resources", self.available_resources - task_resources)
+        if task_required_node_labels:
+            object.__setattr__(
+                self,
+                "_pending_label_requirements",
+                self._pending_label_requirements | task_required_node_labels,
+            )
 
     def has_resources_for_task(self, task_resources: Resources) -> bool:
+        assert self.available_resources is not None  # nosec
         return bool(self.available_resources >= task_resources)
+
+    def tasks_required_pending_labels(self) -> dict[DockerLabelKey, str]:
+        return self._pending_label_requirements
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class AssignedTasksToInstanceType(_TaskAssignmentMixin):
     instance_type: EC2InstanceType
+    osparc_custom_node_labels: dict[DockerLabelKey, str]
+
+    def has_compatible_labels(self, task_labels: dict) -> bool:
+        """Check if task labels are compatible with instance's current labels.
+
+        Labels are compatible if they don't conflict - i.e., for any key that exists
+        in both dicts, the values must be the same.
+        """
+        for key, value in task_labels.items():
+            if key in self.osparc_custom_node_labels and self.osparc_custom_node_labels[key] != value:
+                return False
+        return True
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _BaseInstance(_TaskAssignmentMixin):
     ec2_instance: EC2InstanceData
+    _osparc_custom_node_labels: dict[DockerLabelKey, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.available_resources == Resources.create_as_empty():
+        if self.available_resources is None:
             object.__setattr__(self, "available_resources", self.ec2_instance.resources)
 
-    def has_assigned_tasks(self) -> bool:
+    def has_assigned_tasks_or_resources_in_use(self) -> bool:
         # NOTE: This function is needed because assigned_tasks can be empty while still have used resources (this is not nice and should be changed)
         # see https://github.com/ITISFoundation/osparc-simcore/issues/8559
-        return bool(self.available_resources < self.ec2_instance.resources)
+        assert self.available_resources is not None  # nosec
+        return bool(self.assigned_tasks) or bool(self.available_resources < self.ec2_instance.resources)
+
+    @property
+    def osparc_custom_node_labels(self) -> dict[DockerLabelKey, str]:
+        return self._osparc_custom_node_labels
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class AssociatedInstance(_BaseInstance):
     node: Node
+
+    @property
+    def osparc_custom_node_labels(self) -> dict[DockerLabelKey, str]:
+        assert self.node.spec  # nosec
+        custom_labels: dict[DockerLabelKey, str] = {}
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+            if self.node.spec.labels and label_key in self.node.spec.labels:
+                custom_labels[label_key] = self.node.spec.labels[label_key]
+        return custom_labels
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -60,14 +112,10 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         }
     )
     pending_nodes: list[AssociatedInstance] = field(
-        metadata={
-            "description": "This is a EC2-backed docker node which is active and NOT yet ready to receive tasks"
-        }
+        metadata={"description": "This is a EC2-backed docker node which is active and NOT yet ready to receive tasks"}
     )
     drained_nodes: list[AssociatedInstance] = field(
-        metadata={
-            "description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"
-        }
+        metadata={"description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"}
     )
     hot_buffer_drained_nodes: list[AssociatedInstance] = field(
         metadata={
@@ -75,9 +123,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         }
     )
     pending_ec2s: list[NonAssociatedInstance] = field(
-        metadata={
-            "description": "This is an EC2 instance that is not yet associated to a docker node"
-        }
+        metadata={"description": "This is an EC2 instance that is not yet associated to a docker node"}
     )
     broken_ec2s: list[NonAssociatedInstance] = field(
         metadata={
@@ -90,14 +136,10 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         }
     )
     disconnected_nodes: list[Node] = field(
-        metadata={
-            "description": "This is a docker node which is not backed by a running EC2 instance"
-        }
+        metadata={"description": "This is a docker node which is not backed by a running EC2 instance"}
     )
     terminating_nodes: list[AssociatedInstance] = field(
-        metadata={
-            "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
-        }
+        metadata={"description": "This is a EC2-backed docker node which is docker drained and waiting for termination"}
     )
     retired_nodes: list[AssociatedInstance] = field(
         metadata={
@@ -117,7 +159,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         )
 
     def total_number_of_machines(self) -> int:
-        """return the number of machines that are swtiched on"""
+        """return the number of machines that are switched on"""
         return (
             len(self.active_nodes)
             + len(self.pending_nodes)
@@ -180,9 +222,7 @@ class WarmBufferPool:
             f"broken-count={len(self.broken_instances)})"
         )
 
-    def _sort_by_readyness(
-        self, *, invert: bool = False
-    ) -> Generator[set[EC2InstanceData], Any, None]:
+    def _sort_by_readiness(self, *, invert: bool = False) -> Generator[set[EC2InstanceData], Any]:
         order = (
             self.ready_instances,
             self.stopping_instances,
@@ -203,11 +243,11 @@ class WarmBufferPool:
 
     def all_instances(self) -> set[EC2InstanceData]:
         """sorted by importance: READY (stopped) > STOPPING >"""
-        gen = self._sort_by_readyness()
+        gen = self._sort_by_readiness()
         return next(gen).union(*(_ for _ in gen))
 
     def remove_instance(self, instance: EC2InstanceData) -> None:
-        for instances in self._sort_by_readyness(invert=True):
+        for instances in self._sort_by_readiness(invert=True):
             if instance in instances:
                 instances.remove(instance)
                 break
@@ -215,9 +255,7 @@ class WarmBufferPool:
 
 @dataclass
 class WarmBufferPoolManager:
-    buffer_pools: dict[InstanceTypeType, WarmBufferPool] = field(
-        default_factory=lambda: defaultdict(WarmBufferPool)
-    )
+    buffer_pools: dict[InstanceTypeType, WarmBufferPool] = field(default_factory=lambda: defaultdict(WarmBufferPool))
 
     def __repr__(self) -> str:
         return f"WarmBufferPoolManager({dict(self.buffer_pools)})"
@@ -231,3 +269,17 @@ class WarmBufferPoolManager:
                 getattr(flat_pool, f.name).update(getattr(buffer_pool, f.name))
 
         return flat_pool
+
+
+@dataclass(frozen=True, kw_only=True)
+class InstanceToLaunch:
+    """Represents a single EC2 instance to launch with its specific labels.
+
+    Each instance gets ONLY the labels from its assigned tasks (exclusive labels).
+    """
+
+    instance_type: EC2InstanceType
+    node_labels: dict[DockerLabelKey, str]
+
+    def __hash__(self) -> int:
+        return hash((self.instance_type, frozenset(self.node_labels.items())))

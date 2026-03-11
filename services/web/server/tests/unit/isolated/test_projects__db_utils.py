@@ -100,9 +100,7 @@ def test_convert_to_schema_names(fake_project: dict[str, Any]):
     db_entries["creation_date"] = date
     schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     assert "creationDate" in schema_entries
-    assert schema_entries["creationDate"] == "{}Z".format(
-        date.isoformat(timespec="milliseconds")
-    )
+    assert schema_entries["creationDate"] == "{}Z".format(date.isoformat(timespec="milliseconds"))
 
 
 def test_convert_to_schema_names_camel_casing(fake_db_dict):
@@ -115,9 +113,7 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
     fake_db_dict["time_entry"] = date
     db_entries = convert_to_schema_names(fake_db_dict, fake_email)
     assert "timeEntry" in db_entries
-    assert db_entries["timeEntry"] == "{}Z".format(
-        date.isoformat(timespec="milliseconds")
-    )
+    assert db_entries["timeEntry"] == "{}Z".format(date.isoformat(timespec="milliseconds"))
     # test conversion of prj owner int to string
     fake_db_dict["prj_owner"] = 1
     db_entries = convert_to_schema_names(fake_db_dict, fake_email)
@@ -131,9 +127,7 @@ def group_id(faker: Faker) -> GroupID:
 
 
 @pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
-def test_project_access_rights_creation(
-    group_id: int, project_access_rights: ProjectAccessRights
-):
+def test_project_access_rights_creation(group_id: int, project_access_rights: ProjectAccessRights):
     git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
     assert str(group_id) in git_to_access_rights
     assert git_to_access_rights[str(group_id)] == project_access_rights.value
@@ -165,10 +159,7 @@ def test_update_workbench(faker: Faker):
     old_project = {"workbench": {node_id: faker.pydict()}}
     new_project = {"workbench": {node_id: faker.pydict()}}
     expected_updated_project = {
-        "workbench": {
-            node_id: old_project["workbench"][node_id]
-            | new_project["workbench"][node_id]
-        }
+        "workbench": {node_id: old_project["workbench"][node_id] | new_project["workbench"][node_id]}
     }
     received_project_with_updated_workbench = update_workbench(old_project, new_project)
     assert received_project_with_updated_workbench != old_project
@@ -198,9 +189,7 @@ def random_minimal_node(faker: Faker) -> Callable[[], Node]:
     return _creator
 
 
-def test_patch_workbench_add_node(
-    faker: Faker, random_minimal_node: Callable[[], Node]
-):
+def test_patch_workbench_add_node(faker: Faker, random_minimal_node: Callable[[], Node]):
     node_id = faker.uuid4()
     project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
     new_node_id = faker.uuid4()
@@ -221,9 +210,7 @@ def test_patch_workbench_add_node(
             allow_workbench_changes=True,
         )
     # now with a correct node that should work
-    valid_partial_workbench_data = {
-        new_node_id: jsonable_encoder(random_minimal_node())
-    }
+    valid_partial_workbench_data = {new_node_id: jsonable_encoder(random_minimal_node())}
     patched_project, changed_entries = patch_workbench(
         project,
         new_partial_workbench_data=valid_partial_workbench_data,
@@ -270,8 +257,7 @@ def test_patch_workbench_update_node(faker: Faker):
     )
     assert patched_project != project
     assert (
-        patched_project["workbench"][node_id]
-        == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
+        patched_project["workbench"][node_id] == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
     )
     assert node_id in changed_entries
     assert changed_entries == valid_partial_workbench_data
@@ -283,8 +269,7 @@ def test_patch_workbench_update_node(faker: Faker):
     )
     assert patched_project != project
     assert (
-        patched_project["workbench"][node_id]
-        == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
+        patched_project["workbench"][node_id] == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
     )
     assert node_id in changed_entries
     assert changed_entries == valid_partial_workbench_data

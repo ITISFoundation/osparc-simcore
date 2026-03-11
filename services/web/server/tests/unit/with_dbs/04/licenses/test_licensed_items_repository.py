@@ -155,14 +155,12 @@ async def test_licensed_items_domain_listing(
     example_duke1["license_version"] = "1.0.0"
     example_duke1["id"] = 1
 
-    got_licensed_resource_duke1 = (
-        await _licensed_resources_repository.create_if_not_exists(
-            client.app,
-            display_name="Duke 1",
-            licensed_resource_name="Duke 1",
-            licensed_resource_type=LicensedResourceType.VIP_MODEL,
-            licensed_resource_data=example_duke1,
-        )
+    got_licensed_resource_duke1 = await _licensed_resources_repository.create_if_not_exists(
+        client.app,
+        display_name="Duke 1",
+        licensed_resource_name="Duke 1",
+        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+        licensed_resource_data=example_duke1,
     )
 
     example_duke1_different_id = copy.deepcopy(VIP_DETAILS_EXAMPLE)
@@ -171,14 +169,12 @@ async def test_licensed_items_domain_listing(
     example_duke1_different_id["id"] = 2
 
     # Create Licensed Resource with the same licensed key and version (Duke V1) but different external ID
-    got_licensed_resource_duke1_different_id = (
-        await _licensed_resources_repository.create_if_not_exists(
-            client.app,
-            display_name="Duke 1 (different external ID)",
-            licensed_resource_name="Duke 1 different external ID",
-            licensed_resource_type=LicensedResourceType.VIP_MODEL,
-            licensed_resource_data=example_duke1_different_id,
-        )
+    got_licensed_resource_duke1_different_id = await _licensed_resources_repository.create_if_not_exists(
+        client.app,
+        display_name="Duke 1 (different external ID)",
+        licensed_resource_name="Duke 1 different external ID",
+        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+        licensed_resource_data=example_duke1_different_id,
     )
 
     example_duke2 = copy.deepcopy(VIP_DETAILS_EXAMPLE)
@@ -187,17 +183,15 @@ async def test_licensed_items_domain_listing(
     example_duke2["id"] = 3
 
     # Create Licensed Resource with the same licensed key but different version (Duke V2)
-    got_licensed_resource_duke2 = (
-        await _licensed_resources_repository.create_if_not_exists(
-            client.app,
-            display_name="Duke 2",
-            licensed_resource_name="Duke 2",
-            licensed_resource_type=LicensedResourceType.VIP_MODEL,
-            licensed_resource_data=example_duke2,
-        )
+    got_licensed_resource_duke2 = await _licensed_resources_repository.create_if_not_exists(
+        client.app,
+        display_name="Duke 2",
+        licensed_resource_name="Duke 2",
+        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+        licensed_resource_data=example_duke2,
     )
 
-    # Connect them via licensed_item_to_resorce DB table
+    # Connect them via licensed_item_to_resource DB table
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(
             licensed_item_to_resource.insert(),

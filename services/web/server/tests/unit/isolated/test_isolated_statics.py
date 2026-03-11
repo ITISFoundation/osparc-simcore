@@ -43,34 +43,25 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
     tests that names in FRONTEND_APP_DEFAULT and FRONTEND_APPS_AVAILABLE
     corresponds to actual front-end apps produced by static-webserver/client
     """
-    frontend_apps_in_repo = {
-        feapp["name"] for feapp in client_compile_cfg["applications"]
-    }
+    frontend_apps_in_repo = {feapp["name"] for feapp in client_compile_cfg["applications"]}
 
-    product_names = {
-        feapp["environment"]["product.name"]
-        for feapp in client_compile_cfg["applications"]
-    }
+    product_names = {feapp["environment"]["product.name"] for feapp in client_compile_cfg["applications"]}
     assert product_names
 
     # test FRONTEND_APPS_AVAILABLE
-    assert (
-        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    assert frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    )
 
-    assert (
-        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    assert frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    )
 
     # test FRONTEND_APP_DEFAULT
-    default_frontend_app = next(
-        feapp["name"]
-        for feapp in client_compile_cfg["applications"]
-        if feapp["default"]
+    default_frontend_app = next(feapp["name"] for feapp in client_compile_cfg["applications"] if feapp["default"])
+    assert default_frontend_app == FRONTEND_APP_DEFAULT, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
     )
-    assert (
-        default_frontend_app == FRONTEND_APP_DEFAULT
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
 
@@ -80,14 +71,10 @@ def test_expected_frontend_apps_metadata(client_compile_cfg: dict, metadata_file
     tests that names in FRONTEND_APP_DEFAULT and metadata provided in app_metadata.json
     corresponds to actual front-end apps produced by static-webserver/client
     """
-    frontend_apps_in_repo = {
-        feapp["name"] for feapp in client_compile_cfg["applications"]
-    }
+    frontend_apps_in_repo = {feapp["name"] for feapp in client_compile_cfg["applications"]}
 
-    frontend_apps_in_metadata = {
-        feapp["application"] for feapp in metadata_file["applications"]
-    }
+    frontend_apps_in_metadata = {feapp["application"] for feapp in metadata_file["applications"]}
 
-    assert (
-        frontend_apps_in_repo == frontend_apps_in_metadata
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {metadata_filepath}"
+    assert frontend_apps_in_repo == frontend_apps_in_metadata, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {metadata_filepath}"
+    )

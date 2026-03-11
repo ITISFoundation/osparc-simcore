@@ -6,10 +6,10 @@ PACKAGES_NAMES_LIST=(
   "docker-compose-plugin"
 )
 
-# update apt cahce
+# update apt cache
 apt-get update
 
-# dispaly verson for each package
+# display version for each package
 for pckage_name in "${PACKAGES_NAMES_LIST[@]}"; do
   echo -e "\nListing versions for pckage: '${pckage_name}'\n"
   apt-cache madison "${pckage_name}" | awk '{ print $3 }'

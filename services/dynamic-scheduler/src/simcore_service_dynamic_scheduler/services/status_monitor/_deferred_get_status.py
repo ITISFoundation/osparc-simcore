@@ -40,38 +40,26 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         await service_tracker.set_service_status_task_uid(app, node_id, task_uid)
 
     @classmethod
-    async def run(
-        cls, context: DeferredContext
-    ) -> NodeGet | DynamicServiceGet | NodeGetIdle:
+    async def run(cls, context: DeferredContext) -> NodeGet | DynamicServiceGet | NodeGetIdle:
         app: FastAPI = context["app"]
         node_id: NodeID = context["node_id"]
 
-        service_status: NodeGet | RunningDynamicServiceDetails | NodeGetIdle = (
-            await common_interface.get_service_status(app, node_id=node_id)
-        )
-        _logger.debug(
-            "Service status type=%s, %s", type(service_status), service_status
-        )
+        service_status: (
+            NodeGet | RunningDynamicServiceDetails | NodeGetIdle
+        ) = await common_interface.get_service_status(app, node_id=node_id)
+        _logger.debug("Service status type=%s, %s", type(service_status), service_status)
         return service_status
 
     @classmethod
-    async def on_result(
-        cls, result: NodeGet | DynamicServiceGet | NodeGetIdle, context: DeferredContext
-    ) -> None:
+    async def on_result(cls, result: NodeGet | DynamicServiceGet | NodeGetIdle, context: DeferredContext) -> None:
         app: FastAPI = context["app"]
         node_id: NodeID = context["node_id"]
 
         _logger.debug("Received status for service '%s': '%s'", node_id, result)
 
-        status_changed: bool = await service_tracker.set_if_status_changed_for_service(
-            app, node_id, result
-        )
-        if await service_tracker.should_notify_frontend_for_service(
-            app, node_id, status_changed=status_changed
-        ):
-            project_id: ProjectID | None = (
-                await service_tracker.get_project_id_for_service(app, node_id)
-            )
+        status_changed: bool = await service_tracker.set_if_status_changed_for_service(app, node_id, result)
+        if await service_tracker.should_notify_frontend_for_service(app, node_id, status_changed=status_changed):
+            project_id: ProjectID | None = await service_tracker.get_project_id_for_service(app, node_id)
             if project_id:
                 await notify_service_status_change(app, project_id, result)
                 await service_tracker.set_frontend_notified_for_service(app, node_id)

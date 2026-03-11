@@ -31,9 +31,7 @@ class DataResourcesFacade:
         WARNING: existence of file is not guaranteed
         WARNING: resource files are supposed to be used as read-only!
         """
-        package_dir = importlib.resources.files(
-            self.distribution_name.replace("-", "_")
-        )
+        package_dir = importlib.resources.files(self.distribution_name.replace("-", "_"))
         return Path(f"{package_dir}") / resource_name.lstrip("/")
 
 

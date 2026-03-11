@@ -20,9 +20,7 @@ from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 _logger = logging.getLogger(__name__)
 
@@ -107,9 +105,7 @@ class Context:
     in_memory_lists: InMemoryLists | None = None
 
 
-async def _commands_handler(
-    context: Context, command: str, payload: dict[str, Any], port: int
-) -> Any:
+async def _commands_handler(context: Context, command: str, payload: dict[str, Any], port: int) -> Any:
     """Handles all commands send by remote party"""
     if command == "init-context":
         context.redis_settings = RedisSettings.model_validate_json(payload["redis"])
@@ -145,9 +141,7 @@ async def _commands_handler(
 
 
 class AsyncTCPServer:
-    def __init__(
-        self, port: int, host: str = "127.0.0.1", read_chunk_size: int = 10000
-    ) -> None:
+    def __init__(self, port: int, host: str = "127.0.0.1", read_chunk_size: int = 10000) -> None:
         self.host = host
         self.port = port
         self.read_chunk_size = read_chunk_size
@@ -160,9 +154,7 @@ class AsyncTCPServer:
     async def _handle_request(self, command: Any) -> Any:
         unique_request_id = uuid4()
         _logger.info("[%s] request:  %s", unique_request_id, command)
-        response = await _commands_handler(
-            self._context, command["command"], command["payload"], self.port
-        )
+        response = await _commands_handler(self._context, command["command"], command["payload"], self.port)
         _logger.info("[%s] response: %s", unique_request_id, response)
         return response
 
@@ -179,9 +171,7 @@ class AsyncTCPServer:
         writer.close()
 
     async def run(self):
-        tcp_server = await asyncio.start_server(
-            self._handle_client, self.host, self.port
-        )
+        tcp_server = await asyncio.start_server(self._handle_client, self.host, self.port)
         addr = tcp_server.sockets[0].getsockname()
         _logger.info("Serving on %s", addr)
 

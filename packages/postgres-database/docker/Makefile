@@ -11,7 +11,7 @@ TRACKING_BRANCH = $(shell git config branch.$(LOCAL_BRANCH).merge)
 TRACKING_REMOTE = $(shell git config branch.$(LOCAL_BRANCH).remote)
 REMOTE_URL = $(shell git config remote.$(TRACKING_REMOTE).url)
 
-# these variable may be overriden
+# these variable may be overridden
 GIT_REPOSITORY ?= $(subst git@github.com:,https://github.com/,$(REMOTE_URL))
 GIT_BRANCH ?= $(LOCAL_BRANCH)
 

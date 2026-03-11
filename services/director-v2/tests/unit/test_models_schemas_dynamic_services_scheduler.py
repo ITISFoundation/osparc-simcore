@@ -35,6 +35,4 @@ def test_ensure_legacy_format_compatibility(legacy_scheduler_data_format: Path):
 
     # PRs applying changes to the legacy format:
     # - https://github.com/ITISFoundation/osparc-simcore/pull/3610
-    assert TypeAdapter(list[SchedulerData]).validate_json(
-        legacy_scheduler_data_format.read_text()
-    )
+    assert TypeAdapter(list[SchedulerData]).validate_json(legacy_scheduler_data_format.read_text())

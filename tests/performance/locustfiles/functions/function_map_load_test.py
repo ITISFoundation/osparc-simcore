@@ -62,18 +62,13 @@ class WebApiUser(OsparcWebUserBase):
 
     @task
     def map_function(self) -> None:
-
         function_uuid = self.environment.parsed_options.function_uuid
         if function_uuid is None:
             raise ValueError("function-uuid argument is required")
         if self.environment.parsed_options.function_input_json_schema is None:
             raise ValueError("function-input-json-schema argument is required")
-        job_input_schema = json.loads(
-            self.environment.parsed_options.function_input_json_schema
-        )
-        max_poll_time = timedelta(
-            seconds=self.environment.parsed_options.max_poll_time_seconds
-        )
+        job_input_schema = json.loads(self.environment.parsed_options.function_input_json_schema)
+        max_poll_time = timedelta(seconds=self.environment.parsed_options.max_poll_time_seconds)
         n_jobs = (
             int(self.environment.parsed_options.n_jobs)
             if self.environment.parsed_options.n_jobs is not None
@@ -95,9 +90,7 @@ class WebApiUser(OsparcWebUserBase):
         job_collection_uuid = response.json().get("uid")
 
         # wait for the job to complete
-        query_params = dict(
-            include_status=True, function_job_collection_id=job_collection_uuid
-        )
+        query_params = dict(include_status=True, function_job_collection_id=job_collection_uuid)
         for attempt in Retrying(
             stop=stop_after_delay(max_delay=max_poll_time),
             wait=wait_exponential(multiplier=1, min=1, max=10),
@@ -116,18 +109,16 @@ class WebApiUser(OsparcWebUserBase):
                     response.raise_for_status()
                     items = response.json().get("items", [])
                     statuses = [item.get("status", {}) for item in items]
-                    all_job_statuses.extend(
-                        [status.get("status", None) for status in statuses if status]
+                    all_job_statuses.extend([status.get("status", None) for status in statuses if status])
+                    assert not any(status is None for status in all_job_statuses), (
+                        f"Test misconfiguration: Function job collection ({job_collection_uuid=}) listed {statuses=} with missing status"
                     )
-                    assert not any(
-                        status is None for status in all_job_statuses
-                    ), f"Test misconfiguration: Function job collection ({job_collection_uuid=}) listed {statuses=} with missing status"
                     links = response.json().get("links", {})
                     assert isinstance(links, dict)
                     next_page_url = links.get("next", None)
-                assert (
-                    len(all_job_statuses) == n_jobs
-                ), f"Expected {n_jobs} jobs, got {len(all_job_statuses)} for {job_collection_uuid=}"
+                assert len(all_job_statuses) == n_jobs, (
+                    f"Expected {n_jobs} jobs, got {len(all_job_statuses)} for {job_collection_uuid=}"
+                )
 
                 if any(status != "SUCCESS" for status in all_job_statuses):
                     raise ValueError(

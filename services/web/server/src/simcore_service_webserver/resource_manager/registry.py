@@ -75,9 +75,7 @@ class RedisResourceRegistry:
     async def set_resource(self, key: UserSession, resource: tuple[str, str]) -> None:
         hash_key = f"{key.to_redis_hash_key()}:{RESOURCE_SUFFIX}"
         field, value = resource
-        await handle_redis_returns_union_types(
-            self.client.hset(hash_key, mapping={field: value})
-        )
+        await handle_redis_returns_union_types(self.client.hset(hash_key, mapping={field: value}))
 
     async def get_resources(self, key: UserSession) -> ResourcesDict:
         hash_key = f"{key.to_redis_hash_key()}:{RESOURCE_SUFFIX}"
@@ -86,21 +84,15 @@ class RedisResourceRegistry:
 
     async def remove_resource(self, key: UserSession, resource_name: str) -> None:
         hash_key = f"{key.to_redis_hash_key()}:{RESOURCE_SUFFIX}"
-        await handle_redis_returns_union_types(
-            self.client.hdel(hash_key, resource_name)
-        )
+        await handle_redis_returns_union_types(self.client.hdel(hash_key, resource_name))
 
     async def find_resources(self, key: UserSession, resource_name: str) -> list[str]:
         resources: list[str] = []
-        # the key might only be partialy complete
+        # the key might only be partially complete
         partial_hash_key = f"{key.to_redis_hash_key()}:{RESOURCE_SUFFIX}"
         async for scanned_key in self.client.scan_iter(match=partial_hash_key):
-            if await handle_redis_returns_union_types(
-                self.client.hexists(scanned_key, resource_name)
-            ):
-                key_value = await handle_redis_returns_union_types(
-                    self.client.hget(scanned_key, resource_name)
-                )
+            if await handle_redis_returns_union_types(self.client.hexists(scanned_key, resource_name)):
+                key_value = await handle_redis_returns_union_types(self.client.hget(scanned_key, resource_name))
                 if key_value is not None:
                     resources.append(key_value)
         return resources
@@ -110,8 +102,7 @@ class RedisResourceRegistry:
         return [
             self._decode_hash_key(hash_key)
             async for hash_key in self.client.scan_iter(match=f"*:{RESOURCE_SUFFIX}")
-            if value
-            == await handle_redis_returns_union_types(self.client.hget(hash_key, field))
+            if value == await handle_redis_returns_union_types(self.client.hget(hash_key, field))
         ]
 
     async def set_key_alive(self, key: UserSession, *, expiration_time: int) -> None:
@@ -132,8 +123,7 @@ class RedisResourceRegistry:
 
     async def get_all_resource_keys(self) -> tuple[AliveSessions, DeadSessions]:
         alive_keys = [
-            self._decode_hash_key(hash_key)
-            async for hash_key in self.client.scan_iter(match=f"*:{ALIVE_SUFFIX}")
+            self._decode_hash_key(hash_key) async for hash_key in self.client.scan_iter(match=f"*:{ALIVE_SUFFIX}")
         ]
         dead_keys = [
             self._decode_hash_key(hash_key)
@@ -144,9 +134,7 @@ class RedisResourceRegistry:
         return (alive_keys, dead_keys)
 
 
-CLIENT_SOCKET_REGISTRY_APPKEY: Final = web.AppKey(
-    "CLIENT_SOCKET_REGISTRY", RedisResourceRegistry
-)
+CLIENT_SOCKET_REGISTRY_APPKEY: Final = web.AppKey("CLIENT_SOCKET_REGISTRY", RedisResourceRegistry)
 
 
 def get_registry(app: web.Application) -> RedisResourceRegistry:

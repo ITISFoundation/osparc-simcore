@@ -23,9 +23,7 @@ from simcore_service_webserver.resource_usage.settings import get_plugin_setting
 
 
 @pytest.fixture
-def mock_rut_api_responses(
-    client: TestClient, aioresponses_mocker: AioResponsesMock
-) -> AioResponsesMock:
+def mock_rut_api_responses(client: TestClient, aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 

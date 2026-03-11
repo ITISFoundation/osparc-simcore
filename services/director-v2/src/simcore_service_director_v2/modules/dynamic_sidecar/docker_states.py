@@ -32,7 +32,7 @@ TASK_STATES_ALL: set[str] = (
 
 
 # mapping container states into 4 categories
-# For all avaliable containerstates SEE
+# For all available containerstates SEE
 # https://github.com/moby/moby/blob/master/container/state.go#L140
 CONTAINER_STATUSES_UNEXPECTED: set[str] = {
     "restarting",
@@ -92,10 +92,7 @@ def extract_containers_minimum_statuses(
     """
     _logger.debug("containers_inspect=%s", containers_inspect)
     remapped_service_statuses = {
-        index: _extract_container_status(value.container_state)
-        for index, value in enumerate(containers_inspect)
+        index: _extract_container_status(value.container_state) for index, value in enumerate(containers_inspect)
     }
-    result: tuple[ServiceState, str] = min(
-        remapped_service_statuses.values(), key=lambda x: x
-    )
+    result: tuple[ServiceState, str] = min(remapped_service_statuses.values(), key=lambda x: x)
     return result

@@ -273,9 +273,7 @@ def downgrade():
             autoincrement=False,
             nullable=False,
         ),
-        sa.PrimaryKeyConstraint(
-            "transaction_id", name="resource_tracker_wallets_credit_transactions_pkey"
-        ),
+        sa.PrimaryKeyConstraint("transaction_id", name="resource_tracker_wallets_credit_transactions_pkey"),
     )
     op.create_index(
         "ix_resource_tracker_wallets_credit_transactions_wallet_name",
@@ -338,9 +336,7 @@ def downgrade():
     op.drop_table("resource_tracker_credit_transactions")
 
     sa.Enum(name="credittransactionstatus").drop(op.get_bind(), checkfirst=False)
-    sa.Enum(name="credittransactionclassification").drop(
-        op.get_bind(), checkfirst=False
-    )
+    sa.Enum(name="credittransactionclassification").drop(op.get_bind(), checkfirst=False)
 
     # Resource tracker service runs
     op.drop_column("resource_tracker_service_runs", "pricing_detail_cost_per_unit")

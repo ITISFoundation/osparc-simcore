@@ -59,11 +59,7 @@ def handle_client_exception(
             if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
                 msg = f"Invalid call to storage: {err.message}"
                 raise exceptions.StorageInvalidCall(msg) from err
-            if (
-                status.HTTP_500_INTERNAL_SERVER_ERROR
-                > err.status
-                >= status.HTTP_400_BAD_REQUEST
-            ):
+            if status.HTTP_500_INTERNAL_SERVER_ERROR > err.status >= status.HTTP_400_BAD_REQUEST:
                 raise exceptions.StorageInvalidCall(err.message) from err
             if err.status > status.HTTP_500_INTERNAL_SERVER_ERROR:
                 raise exceptions.StorageServerIssue(err.message) from err
@@ -93,9 +89,7 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
     return log_it
 
 
-def _session_method(
-    session: ClientSession, method: str, url: str, **kwargs
-) -> RequestContextManager:
+def _session_method(session: ClientSession, method: str, url: str, **kwargs) -> RequestContextManager:
     return session.request(method, url, auth=get_basic_auth(), **kwargs)
 
 
@@ -135,9 +129,7 @@ async def retry_request(
 
 
 @handle_client_exception
-async def list_storage_locations(
-    *, session: ClientSession, user_id: UserID
-) -> FileLocationArray:
+async def list_storage_locations(*, session: ClientSession, user_id: UserID) -> FileLocationArray:
     async with retry_request(
         session,
         "GET",
@@ -145,9 +137,7 @@ async def list_storage_locations(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
-        locations_enveloped = Envelope[FileLocationArray].model_validate(
-            await response.json()
-        )
+        locations_enveloped = Envelope[FileLocationArray].model_validate(await response.json())
         if locations_enveloped.data is None:
             msg = "Storage server is not responding"
             raise exceptions.StorageServerIssue(msg)
@@ -174,9 +164,7 @@ async def get_download_file_link(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
-        presigned_link_enveloped = Envelope[PresignedLink].model_validate(
-            await response.json()
-        )
+        presigned_link_enveloped = Envelope[PresignedLink].model_validate(await response.json())
         if not presigned_link_enveloped.data or not presigned_link_enveloped.data.link:
             msg = f"file {location_id}@{file_id} not found"
             raise exceptions.S3InvalidPathError(msg)
@@ -216,9 +204,7 @@ async def get_upload_file_links(
         expected_status=status.HTTP_200_OK,
         params=query_params,
     ) as response:
-        file_upload_links_enveloped = Envelope[FileUploadSchema].model_validate(
-            await response.json()
-        )
+        file_upload_links_enveloped = Envelope[FileUploadSchema].model_validate(await response.json())
     if file_upload_links_enveloped.data is None:
         msg = "Storage server is not responding"
         raise exceptions.StorageServerIssue(msg)

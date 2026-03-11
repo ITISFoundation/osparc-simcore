@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'simcore-sdk'
+# Shortcut to install all packages for the contiguous integration (CI) of 'simcore-sdk'
 #
 # - As ci.txt but w/ tests
 #

@@ -56,25 +56,19 @@ async def mock_project_subsystem(mocker: MockerFixture) -> dict[str, mock.Mock]:
         return_value="",
     )
 
-    mocked_project_calls["_update_project_state.update_project_node_state"] = (
-        mocker.patch(
-            "simcore_service_webserver.projects._projects_service.update_project_node_state",
-            autospec=True,
-        )
+    mocked_project_calls["_update_project_state.update_project_node_state"] = mocker.patch(
+        "simcore_service_webserver.projects._projects_service.update_project_node_state",
+        autospec=True,
     )
 
-    mocked_project_calls["_update_project_state.notify_project_node_update"] = (
-        mocker.patch(
-            "simcore_service_webserver.projects._projects_service.notify_project_node_update",
-            autospec=True,
-        )
+    mocked_project_calls["_update_project_state.notify_project_node_update"] = mocker.patch(
+        "simcore_service_webserver.projects._projects_service.notify_project_node_update",
+        autospec=True,
     )
 
-    mocked_project_calls["_update_project_state.notify_project_state_update"] = (
-        mocker.patch(
-            "simcore_service_webserver.projects._projects_service.notify_project_state_update",
-            autospec=True,
-        )
+    mocked_project_calls["_update_project_state.notify_project_state_update"] = mocker.patch(
+        "simcore_service_webserver.projects._projects_service.notify_project_state_update",
+        autospec=True,
     )
 
     return mocked_project_calls
@@ -104,9 +98,7 @@ class _CompTaskChangeParams:
     expected_calls: list[str]
 
 
-async def _assert_listener_triggers(
-    mock_project_subsystem: dict[str, mock.Mock], expected_calls: list[str]
-) -> None:
+async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock], expected_calls: list[str]) -> None:
     for call_name, mocked_call in mock_project_subsystem.items():
         if call_name in expected_calls:
             async for attempt in AsyncRetrying(
@@ -123,9 +115,7 @@ async def _assert_listener_triggers(
             mocked_call.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND]
-)
+@pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND])
 @pytest.mark.parametrize(
     "params",
     [
@@ -202,18 +192,15 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
 
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
-            comp_tasks.update()
-            .values(**params.update_values)
-            .where(comp_tasks.c.task_id == updated_task_id)
+            comp_tasks.update().values(**params.update_values).where(comp_tasks.c.task_id == updated_task_id)
         )
     await _assert_listener_triggers(mock_project_subsystem, params.expected_calls)
 
     # Assert the spy was called with the correct task_id
     if params.expected_calls:
-        assert any(
-            call.args[1] == updated_task_id
-            for call in spied_get_changed_comp_task_row.call_args_list
-        ), f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
+        assert any(call.args[1] == updated_task_id for call in spied_get_changed_comp_task_row.call_args_list), (
+            f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
+        )
     else:
         spied_get_changed_comp_task_row.assert_not_called()
 
@@ -241,9 +228,7 @@ async def mock_dynamic_service_rpc(
     )
 
 
-async def _check_for_stability(
-    function: Callable[..., Awaitable[None]], *args, **kwargs
-) -> None:
+async def _check_for_stability(function: Callable[..., Awaitable[None]], *args, **kwargs) -> None:
     async for attempt in AsyncRetrying(
         stop=stop_after_attempt(5),
         wait=wait_fixed(1),
@@ -256,9 +241,7 @@ async def _check_for_stability(
                 msg=f"check stability of {function.__name__} {attempt.retry_state.retry_object.statistics}",
             ) as log_ctx:
                 await function(*args, **kwargs)
-                log_ctx.logger.info(
-                    "stable for %s...", attempt.retry_state.seconds_since_start
-                )
+                log_ctx.logger.info("stable for %s...", attempt.retry_state.seconds_since_start)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -276,9 +259,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
     spied_get_changed_comp_task_row: MockType,
     faker: Faker,
 ):
-    some_project = await create_project(
-        logged_user, workbench=fake_2connected_jupyterlabs_workbench
-    )
+    some_project = await create_project(logged_user, workbench=fake_2connected_jupyterlabs_workbench)
 
     # create the corresponding comp_task entries for the project workbench
     await create_pipeline(project_id=f"{some_project.uuid}")
@@ -287,11 +268,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
             project_id=f"{some_project.uuid}",
             node_id=node_id,
             outputs=node_data.get("outputs", {}),
-            node_class=(
-                NodeClass.INTERACTIVE
-                if "dynamic" in node_data["key"]
-                else NodeClass.COMPUTATIONAL
-            ),
+            node_class=(NodeClass.INTERACTIVE if "dynamic" in node_data["key"] else NodeClass.COMPUTATIONAL),
             inputs=node_data.get("inputs", InputsDict()),
         )
         for node_id, node_data in fake_2connected_jupyterlabs_workbench.items()
@@ -299,15 +276,11 @@ async def test_db_listener_upgrades_projects_row_correctly(
     assert len(tasks) == 2, "Expected two tasks for the two JupyterLab nodes"
     first_jupyter_task = tasks[0]
     second_jupyter_task = tasks[1]
-    assert (
-        len(second_jupyter_task["inputs"]) > 0
-    ), "Expected inputs for the second JupyterLab task"
+    assert len(second_jupyter_task["inputs"]) > 0, "Expected inputs for the second JupyterLab task"
     number_of_inputs_linked = len(second_jupyter_task["inputs"])
 
     # simulate a concurrent change in all the outputs of first jupyterlab
-    async def _update_first_jupyter_task_output(
-        port_index: int, data: dict[str, Any]
-    ) -> None:
+    async def _update_first_jupyter_task_output(port_index: int, data: dict[str, Any]) -> None:
         with log_context(logging.INFO, msg=f"Updating output {port_index + 1}"):
             async with sqlalchemy_async_engine.begin() as conn:
                 result = await conn.execute(
@@ -362,9 +335,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
                             mock_dynamic_service_rpc.call_args_list,
                         )
                     # Assert that the dynamic service RPC was called
-                    assert (
-                        mock_dynamic_service_rpc.call_count > 0
-                    ), "Dynamic service retrieve RPC was not called"
+                    assert mock_dynamic_service_rpc.call_count > 0, "Dynamic service retrieve RPC was not called"
                     # now get we check which ports were retrieved, we expect all of them
                     all_ports = set()
                     for call in mock_dynamic_service_rpc.call_args_list:
@@ -374,9 +345,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
                         f"Expected {expected_ports_retrieved} ports to be retrieved, "
                         f"but got {len(all_ports)}: {all_ports}"
                     )
-                    log_ctx.logger.info(
-                        "Dynamic service retrieve RPC was called with all expected ports!"
-                    )
+                    log_ctx.logger.info("Dynamic service retrieve RPC was called with all expected ports!")
 
     await _check_for_stability(_check_retrieve_rpc_called, number_of_inputs_linked)
     await asyncio.wait_for(sequential_task, timeout=60)

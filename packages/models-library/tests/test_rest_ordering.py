@@ -53,9 +53,7 @@ class ReferenceOrderQueryParamsClass(BaseModel):
     )
 
 
-@pytest.mark.xfail(
-    reason="create_ordering_query_model_class.<locals>._OrderBy is still not pickable"
-)
+@pytest.mark.xfail(reason="create_ordering_query_model_class.<locals>._OrderBy is still not pickable")
 def test_pickle_ordering_query_model_class():
     OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"name", "description"},
@@ -92,9 +90,7 @@ def test_conversion_order_by_from_query_to_domain_model():
     assert isinstance(query_model.order_by, OrderBy)
 
     # NOTE: This does NOT convert to OrderBy but has correct data
-    order_by = TypeAdapter(OrderBy).validate_python(
-        query_model.order_by, from_attributes=True
-    )
+    order_by = TypeAdapter(OrderBy).validate_python(query_model.order_by, from_attributes=True)
     assert type(order_by) is not OrderBy
     assert order_by.model_dump(mode="json") == expected_data
 
@@ -145,7 +141,6 @@ def test_ordering_query_model_class_factory():
 
 
 def test_ordering_query_model_class__fails_with_invalid_fields():
-
     OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
@@ -169,9 +164,7 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
     )
 
     with pytest.raises(ValidationError) as err_info:
-        OrderQueryParamsModel.model_validate(
-            {"order_by": {"field": "modified", "direction": "INVALID"}}
-        )
+        OrderQueryParamsModel.model_validate({"order_by": {"field": "modified", "direction": "INVALID"}})
 
     error = err_info.value.errors()[0]
 
@@ -180,7 +173,6 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
 
 
 def test_ordering_query_model_class__defaults():
-
     OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
@@ -223,7 +215,6 @@ def test_ordering_query_model_with_map():
 
 
 def test_ordering_query_parse_json_pre_validator():
-
     OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
@@ -271,9 +262,7 @@ def test_ordering_query_params_validation_error_with_invalid_fields():
 
     # Test with invalid field should raise ValidationError
     with pytest.raises(ValidationError) as err_info:
-        TestOrderingParams.model_validate(
-            {"order_by": "-created_at,invalid_field,name"}
-        )
+        TestOrderingParams.model_validate({"order_by": "-created_at,invalid_field,name"})
 
     # Verify the validation error details
     exc = err_info.value

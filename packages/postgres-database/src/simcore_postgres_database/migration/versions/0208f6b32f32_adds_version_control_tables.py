@@ -35,12 +35,8 @@ def upgrade():
         sa.Column("id", sa.BigInteger(), nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column("project_checksum", sa.String(), nullable=True),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["project_uuid"],
             ["projects.uuid"],
@@ -56,9 +52,7 @@ def upgrade():
         sa.Column("parent_commit_id", sa.BigInteger(), nullable=True),
         sa.Column("snapshot_checksum", sa.String(), nullable=False),
         sa.Column("message", sa.String(), nullable=True),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["parent_commit_id"],
             ["projects_vc_commits.id"],
@@ -85,12 +79,8 @@ def upgrade():
         sa.Column("repo_id", sa.BigInteger(), nullable=False),
         sa.Column("head_commit_id", sa.BigInteger(), nullable=True),
         sa.Column("name", sa.String(), nullable=True),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["head_commit_id"],
             ["projects_vc_commits.id"],
@@ -114,12 +104,8 @@ def upgrade():
         sa.Column("name", sa.String(), nullable=True),
         sa.Column("message", sa.String(), nullable=True),
         sa.Column("hidden", sa.Boolean(), nullable=True),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["commit_id"],
             ["projects_vc_commits.id"],
@@ -139,9 +125,7 @@ def upgrade():
         "projects_vc_heads",
         sa.Column("repo_id", sa.BigInteger(), nullable=False),
         sa.Column("head_branch_id", sa.BigInteger(), nullable=True),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["head_branch_id"],
             ["projects_vc_branches.id"],

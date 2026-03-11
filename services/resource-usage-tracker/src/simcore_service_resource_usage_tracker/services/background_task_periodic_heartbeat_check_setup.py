@@ -15,7 +15,7 @@ from .modules.redis import get_redis_lock_client
 _logger = logging.getLogger(__name__)
 
 
-_TASK_NAME_PERIODICALY_CHECK_RUNNING_SERVICES = "periodic_check_of_running_services"
+_TASK_NAME_PERIODICALLY_CHECK_RUNNING_SERVICES = "periodic_check_of_running_services"
 
 
 class RutBackgroundTask(TypedDict):
@@ -45,11 +45,9 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             async def _periodic_check_running_services() -> None:
                 await check_running_services(app)
 
-            app.state.rut_background_task__periodic_check_of_running_services = (
-                asyncio.create_task(
-                    _periodic_check_running_services(),
-                    name=_TASK_NAME_PERIODICALY_CHECK_RUNNING_SERVICES,
-                )
+            app.state.rut_background_task__periodic_check_of_running_services = asyncio.create_task(
+                _periodic_check_running_services(),
+                name=_TASK_NAME_PERIODICALLY_CHECK_RUNNING_SERVICES,
             )
 
     return _startup
@@ -69,9 +67,7 @@ def _on_app_shutdown(
         ):
             assert _app  # nosec
             if _app.state.rut_background_task__periodic_check_of_running_services:
-                await cancel_wait_task(
-                    _app.state.rut_background_task__periodic_check_of_running_services
-                )
+                await cancel_wait_task(_app.state.rut_background_task__periodic_check_of_running_services)
 
     return _stop
 

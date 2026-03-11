@@ -21,9 +21,7 @@ def app_config_schema():
 
 
 @pytest.fixture(scope="session")
-def service_webserver_environ(
-    services_docker_compose_file, env_devel_dict, osparc_simcore_root_dir
-):
+def service_webserver_environ(services_docker_compose_file, env_devel_dict, osparc_simcore_root_dir):
     """Creates a dict with the environment variables
     inside of a webserver container
     """
@@ -52,9 +50,7 @@ def app_submodules_with_setup_funs(package_dir: Path) -> set[ModuleType]:
     EXCLUDE = ("data", "templates")
 
     def validate(path: Path) -> bool:
-        return not path.name.startswith((".", "__")) and (
-            all(name not in str(path) for name in EXCLUDE)
-        )
+        return not path.name.startswith((".", "__")) and (all(name not in str(path) for name in EXCLUDE))
 
     modules = set()
     for path in package_dir.rglob("*.py"):
@@ -82,12 +78,10 @@ def app_modules_metadata(
 
     for module in app_submodules_with_setup_funs:
         # SEE packages/service-library/src/servicelib/aiohttp/application_setup.py
-        setup_members: list[NameFuncPair] = inspect.getmembers(
-            module, is_setup_function
+        setup_members: list[NameFuncPair] = inspect.getmembers(module, is_setup_function)
+        assert setup_members, (
+            f"None of {[s[0] for s in setup_members]} found in {module.__name__} are valid setup functions for"
         )
-        assert (
-            setup_members
-        ), f"None of {[s[0] for s in setup_members]} found in {module.__name__} are valid setup functions for"
 
         assert len(setup_members), "One setup per module"
 
@@ -101,9 +95,7 @@ def app_modules_metadata(
                 setup_funcs_metadata.append(metadata)
             register.add(setup_fun_name)
 
-    assert len(app_submodules_with_setup_funs) == len(
-        setup_funcs_metadata
-    ), "One setup func per module setup"
+    assert len(app_submodules_with_setup_funs) == len(setup_funcs_metadata), "One setup func per module setup"
 
     return list(setup_funcs_metadata)
 
@@ -111,9 +103,7 @@ def app_modules_metadata(
 def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
     for module in app_submodules_with_setup_funs:
         setup_members = inspect.getmembers(module, is_setup_function)
-        assert (
-            setup_members
-        ), f"None of {setup_members} are setup funs for {module.__name__}"
+        assert setup_members, f"None of {setup_members} are setup funs for {module.__name__}"
 
 
 @pytest.mark.skip(reason="DEPRECATED")
@@ -123,9 +113,7 @@ def test_schema_sections(app_config_schema, app_modules_metadata: list[dict]):
         Every section in the config-file (except for 'version' and 'main')
         is named after an application's subsystem
     """
-    expected_sections = [
-        metadata["config_section"] for metadata in app_modules_metadata
-    ] + [
+    expected_sections = [metadata["config_section"] for metadata in app_modules_metadata] + [
         "version",
         "main",
     ]

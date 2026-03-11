@@ -14,7 +14,5 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
     app.add_exception_handler(
         Exception,
-        make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
-        ),
+        make_http_error_handler_for_exception(status.HTTP_500_INTERNAL_SERVER_ERROR, Exception),
     )

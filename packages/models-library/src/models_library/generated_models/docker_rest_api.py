@@ -38,12 +38,8 @@ class Port(BaseModel):
             description="Host IP address that the container's port is mapped to",
         ),
     ] = None
-    private_port: Annotated[
-        int, Field(alias="PrivatePort", description="Port on the container")
-    ]
-    public_port: Annotated[
-        int | None, Field(alias="PublicPort", description="Port exposed on the host")
-    ] = None
+    private_port: Annotated[int, Field(alias="PrivatePort", description="Port on the container")]
+    public_port: Annotated[int | None, Field(alias="PublicPort", description="Port exposed on the host")] = None
     type: Annotated[Type, Field(alias="Type")]
 
 
@@ -281,9 +277,7 @@ class DriverConfig(BaseModel):
     )
     name: Annotated[
         str | None,
-        Field(
-            alias="Name", description="Name of the driver to use to create the volume."
-        ),
+        Field(alias="Name", description="Name of the driver to use to create the volume."),
     ] = None
     options: Annotated[
         dict[str, str] | None,
@@ -338,9 +332,7 @@ class Mount(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    target: Annotated[
-        str | None, Field(alias="Target", description="Container path.")
-    ] = None
+    target: Annotated[str | None, Field(alias="Target", description="Container path.")] = None
     source: Annotated[
         str | None,
         Field(
@@ -447,9 +439,7 @@ class Ulimit(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    name: Annotated[str | None, Field(alias="Name", description="Name of ulimit")] = (
-        None
-    )
+    name: Annotated[str | None, Field(alias="Name", description="Name of ulimit")] = None
     soft: Annotated[int | None, Field(alias="Soft", description="Soft limit")] = None
     hard: Annotated[int | None, Field(alias="Hard", description="Hard limit")] = None
 
@@ -469,9 +459,7 @@ class Resources(BaseModel):
             description="An integer value representing this container's relative CPU weight\nversus other containers.\n",
         ),
     ] = None
-    memory: Annotated[
-        int | None, Field(alias="Memory", description="Memory limit in bytes.")
-    ] = 0
+    memory: Annotated[int | None, Field(alias="Memory", description="Memory limit in bytes.")] = 0
     cgroup_parent: Annotated[
         str | None,
         Field(
@@ -525,9 +513,7 @@ class Resources(BaseModel):
     ] = None
     cpu_period: Annotated[
         int | None,
-        Field(
-            alias="CpuPeriod", description="The length of a CPU period in microseconds."
-        ),
+        Field(alias="CpuPeriod", description="The length of a CPU period in microseconds."),
     ] = None
     cpu_quota: Annotated[
         int | None,
@@ -567,9 +553,7 @@ class Resources(BaseModel):
     ] = None
     devices: Annotated[
         list[DeviceMapping] | None,
-        Field(
-            alias="Devices", description="A list of devices to add to the container."
-        ),
+        Field(alias="Devices", description="A list of devices to add to the container."),
     ] = None
     device_cgroup_rules: Annotated[
         list[str] | None,
@@ -614,15 +598,11 @@ class Resources(BaseModel):
     ] = None
     nano_cpus: Annotated[
         int | None,
-        Field(
-            alias="NanoCpus", description="CPU quota in units of 10<sup>-9</sup> CPUs."
-        ),
+        Field(alias="NanoCpus", description="CPU quota in units of 10<sup>-9</sup> CPUs."),
     ] = None
     oom_kill_disable: Annotated[
         bool | None,
-        Field(
-            alias="OomKillDisable", description="Disable OOM Killer for the container."
-        ),
+        Field(alias="OomKillDisable", description="Disable OOM Killer for the container."),
     ] = None
     init: Annotated[
         bool | None,
@@ -684,12 +664,8 @@ class Limit(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    nano_cp_us: Annotated[
-        int | None, Field(alias="NanoCPUs", examples=[4000000000])
-    ] = None
-    memory_bytes: Annotated[
-        int | None, Field(alias="MemoryBytes", examples=[8272408576])
-    ] = None
+    nano_cp_us: Annotated[int | None, Field(alias="NanoCPUs", examples=[4000000000])] = None
+    memory_bytes: Annotated[int | None, Field(alias="MemoryBytes", examples=[8272408576])] = None
     pids: Annotated[
         int | None,
         Field(
@@ -720,12 +696,8 @@ class GenericResource(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    named_resource_spec: Annotated[
-        NamedResourceSpec | None, Field(alias="NamedResourceSpec")
-    ] = None
-    discrete_resource_spec: Annotated[
-        DiscreteResourceSpec | None, Field(alias="DiscreteResourceSpec")
-    ] = None
+    named_resource_spec: Annotated[NamedResourceSpec | None, Field(alias="NamedResourceSpec")] = None
+    discrete_resource_spec: Annotated[DiscreteResourceSpec | None, Field(alias="DiscreteResourceSpec")] = None
 
 
 class GenericResources(RootModel[list[GenericResource]]):
@@ -855,9 +827,7 @@ class HealthcheckResult(BaseModel):
             examples=[0],
         ),
     ] = None
-    output: Annotated[
-        str | None, Field(alias="Output", description="Output from last check")
-    ] = None
+    output: Annotated[str | None, Field(alias="Output", description="Output from last check")] = None
 
 
 class Type3(str, Enum):
@@ -984,9 +954,7 @@ class ContainerConfig(BaseModel):
             description="Attach standard streams to a TTY, including `stdin` if it is not closed.\n",
         ),
     ] = False
-    open_stdin: Annotated[
-        bool | None, Field(alias="OpenStdin", description="Open `stdin`")
-    ] = False
+    open_stdin: Annotated[bool | None, Field(alias="OpenStdin", description="Open `stdin`")] = False
     stdin_once: Annotated[
         bool | None,
         Field(
@@ -999,9 +967,7 @@ class ContainerConfig(BaseModel):
         Field(
             alias="Env",
             description='A list of environment variables to set inside the container in the\nform `["VAR=value", ...]`. A variable without `=` is removed from the\nenvironment, rather than to have an empty value.\n',
-            examples=[
-                ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"]
-            ],
+            examples=[["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"]],
         ),
     ] = None
     cmd: Annotated[
@@ -1054,9 +1020,7 @@ class ContainerConfig(BaseModel):
     ] = None
     network_disabled: Annotated[
         bool | None,
-        Field(
-            alias="NetworkDisabled", description="Disable networking for the container."
-        ),
+        Field(alias="NetworkDisabled", description="Disable networking for the container."),
     ] = None
     mac_address: Annotated[
         str | None,
@@ -1096,9 +1060,7 @@ class ContainerConfig(BaseModel):
     ] = None
     stop_timeout: Annotated[
         int | None,
-        Field(
-            alias="StopTimeout", description="Timeout to stop a container in seconds."
-        ),
+        Field(alias="StopTimeout", description="Timeout to stop a container in seconds."),
     ] = 10
     shell: Annotated[
         list[str] | None,
@@ -1205,9 +1167,7 @@ class ImageConfig(BaseModel):
         Field(
             alias="Env",
             description='A list of environment variables to set inside the container in the\nform `["VAR=value", ...]`. A variable without `=` is removed from the\nenvironment, rather than to have an empty value.\n',
-            examples=[
-                ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"]
-            ],
+            examples=[["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"]],
         ),
     ] = None
     cmd: Annotated[
@@ -1473,9 +1433,7 @@ class ImageInspect(BaseModel):
         Field(
             alias="Id",
             description="ID is the content-addressable ID of an image.\n\nThis identifier is a content-addressable digest calculated from the\nimage's configuration (which includes the digests of layers used by\nthe image).\n\nNote that this digest differs from the `RepoDigests` below, which\nholds digests of image manifests that reference the image.\n",
-            examples=[
-                "sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710"
-            ],
+            examples=["sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710"],
         ),
     ] = None
     repo_tags: Annotated[
@@ -1535,9 +1493,7 @@ class ImageInspect(BaseModel):
         Field(
             alias="Container",
             description="The ID of the container that was used to create the image.\n\nDepending on how the image was created, this field may be empty.\n\n**Deprecated**: this field is kept for backward compatibility, but\nwill be removed in API v1.45.\n",
-            examples=[
-                "65974bc86f1770ae4bff79f651ebdbce166ae9aada632ee3fa9af3a264911735"
-            ],
+            examples=["65974bc86f1770ae4bff79f651ebdbce166ae9aada632ee3fa9af3a264911735"],
         ),
     ] = None
     container_config: Annotated[
@@ -1630,9 +1586,7 @@ class ImageSummary(BaseModel):
         Field(
             alias="Id",
             description="ID is the content-addressable ID of an image.\n\nThis identifier is a content-addressable digest calculated from the\nimage's configuration (which includes the digests of layers used by\nthe image).\n\nNote that this digest differs from the `RepoDigests` below, which\nholds digests of image manifests that reference the image.\n",
-            examples=[
-                "sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710"
-            ],
+            examples=["sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710"],
         ),
     ]
     parent_id: Annotated[
@@ -1805,18 +1759,10 @@ class IPAMConfig(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    subnet: Annotated[str | None, Field(alias="Subnet", examples=["172.20.0.0/16"])] = (
-        None
-    )
-    ip_range: Annotated[
-        str | None, Field(alias="IPRange", examples=["172.20.10.0/24"])
-    ] = None
-    gateway: Annotated[
-        str | None, Field(alias="Gateway", examples=["172.20.10.11"])
-    ] = None
-    auxiliary_addresses: Annotated[
-        dict[str, str] | None, Field(alias="AuxiliaryAddresses")
-    ] = None
+    subnet: Annotated[str | None, Field(alias="Subnet", examples=["172.20.0.0/16"])] = None
+    ip_range: Annotated[str | None, Field(alias="IPRange", examples=["172.20.10.0/24"])] = None
+    gateway: Annotated[str | None, Field(alias="Gateway", examples=["172.20.10.11"])] = None
+    auxiliary_addresses: Annotated[dict[str, str] | None, Field(alias="AuxiliaryAddresses")] = None
 
 
 class NetworkContainer(BaseModel):
@@ -1828,20 +1774,12 @@ class NetworkContainer(BaseModel):
         str | None,
         Field(
             alias="EndpointID",
-            examples=[
-                "628cadb8bcb92de107b2a1e516cbffe463e321f548feb37697cce00ad694f21a"
-            ],
+            examples=["628cadb8bcb92de107b2a1e516cbffe463e321f548feb37697cce00ad694f21a"],
         ),
     ] = None
-    mac_address: Annotated[
-        str | None, Field(alias="MacAddress", examples=["02:42:ac:13:00:02"])
-    ] = None
-    i_pv4_address: Annotated[
-        str | None, Field(alias="IPv4Address", examples=["172.19.0.2/16"])
-    ] = None
-    i_pv6_address: Annotated[str | None, Field(alias="IPv6Address", examples=[""])] = (
-        None
-    )
+    mac_address: Annotated[str | None, Field(alias="MacAddress", examples=["02:42:ac:13:00:02"])] = None
+    i_pv4_address: Annotated[str | None, Field(alias="IPv4Address", examples=["172.19.0.2/16"])] = None
+    i_pv6_address: Annotated[str | None, Field(alias="IPv6Address", examples=[""])] = None
 
 
 class PeerInfo(BaseModel):
@@ -2013,9 +1951,7 @@ class IdResponse(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    id: Annotated[
-        str, Field(alias="Id", description="The id of the newly created object.")
-    ]
+    id: Annotated[str, Field(alias="Id", description="The id of the newly created object.")]
 
 
 class EndpointIPAMConfig(BaseModel):
@@ -2027,12 +1963,8 @@ class EndpointIPAMConfig(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    i_pv4_address: Annotated[
-        str | None, Field(alias="IPv4Address", examples=["172.20.30.33"])
-    ] = None
-    i_pv6_address: Annotated[
-        str | None, Field(alias="IPv6Address", examples=["2001:db8:abcd::3033"])
-    ] = None
+    i_pv4_address: Annotated[str | None, Field(alias="IPv4Address", examples=["172.20.30.33"])] = None
+    i_pv6_address: Annotated[str | None, Field(alias="IPv6Address", examples=["2001:db8:abcd::3033"])] = None
     link_local_i_ps: Annotated[
         list[str] | None,
         Field(alias="LinkLocalIPs", examples=[["169.254.34.68", "fe80::3468"]]),
@@ -2046,9 +1978,7 @@ class PluginMount(BaseModel):
     name: Annotated[str, Field(alias="Name", examples=["some-mount"])]
     description: Annotated[
         str,
-        Field(
-            alias="Description", examples=["This is a mount that's used by the plugin."]
-        ),
+        Field(alias="Description", examples=["This is a mount that's used by the plugin."]),
     ]
     settable: Annotated[list[str], Field(alias="Settable")]
     source: Annotated[str, Field(alias="Source", examples=["/var/lib/docker/plugins/"])]
@@ -2179,9 +2109,7 @@ class Args(BaseModel):
         populate_by_name=True,
     )
     name: Annotated[str, Field(alias="Name", examples=["args"])]
-    description: Annotated[
-        str, Field(alias="Description", examples=["command line arguments"])
-    ]
+    description: Annotated[str, Field(alias="Description", examples=["command line arguments"])]
     settable: Annotated[list[str], Field(alias="Settable")]
     value: Annotated[list[str], Field(alias="Value")]
 
@@ -2220,9 +2148,7 @@ class Config(BaseModel):
             examples=["17.06.0-ce"],
         ),
     ] = None
-    description: Annotated[
-        str, Field(alias="Description", examples=["A sample volume plugin for Docker"])
-    ]
+    description: Annotated[str, Field(alias="Description", examples=["A sample volume plugin for Docker"])]
     documentation: Annotated[
         str,
         Field(
@@ -2232,23 +2158,17 @@ class Config(BaseModel):
     ]
     interface: Annotated[
         Interface,
-        Field(
-            alias="Interface", description="The interface between Docker and the plugin"
-        ),
+        Field(alias="Interface", description="The interface between Docker and the plugin"),
     ]
     entrypoint: Annotated[
         list[str],
-        Field(
-            alias="Entrypoint", examples=[["/usr/bin/sample-volume-plugin", "/data"]]
-        ),
+        Field(alias="Entrypoint", examples=[["/usr/bin/sample-volume-plugin", "/data"]]),
     ]
     work_dir: Annotated[str, Field(alias="WorkDir", examples=["/bin/"])]
     user: Annotated[User | None, Field(alias="User")] = None
     network: Annotated[Network1, Field(alias="Network")]
     linux: Annotated[Linux, Field(alias="Linux")]
-    propagated_mount: Annotated[
-        str, Field(alias="PropagatedMount", examples=["/mnt/volumes"])
-    ]
+    propagated_mount: Annotated[str, Field(alias="PropagatedMount", examples=["/mnt/volumes"])]
     ipc_host: Annotated[bool, Field(alias="IpcHost", examples=[False])]
     pid_host: Annotated[bool, Field(alias="PidHost", examples=[False])]
     mounts: Annotated[list[PluginMount], Field(alias="Mounts")]
@@ -2284,14 +2204,10 @@ class Plugin(BaseModel):
         str | None,
         Field(
             alias="Id",
-            examples=[
-                "5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078"
-            ],
+            examples=["5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078"],
         ),
     ] = None
-    name: Annotated[
-        str, Field(alias="Name", examples=["tiborvass/sample-volume-plugin"])
-    ]
+    name: Annotated[str, Field(alias="Name", examples=["tiborvass/sample-volume-plugin"])]
     enabled: Annotated[
         bool,
         Field(
@@ -2312,9 +2228,7 @@ class Plugin(BaseModel):
             examples=["localhost:5000/tiborvass/sample-volume-plugin:latest"],
         ),
     ] = None
-    config: Annotated[
-        Config, Field(alias="Config", description="The config of a plugin.")
-    ]
+    config: Annotated[Config, Field(alias="Config", description="The config of a plugin.")]
 
 
 class ObjectVersion(BaseModel):
@@ -2426,12 +2340,8 @@ class EngineDescription(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    engine_version: Annotated[
-        str | None, Field(alias="EngineVersion", examples=["17.06.0"])
-    ] = None
-    labels: Annotated[
-        dict[str, str] | None, Field(alias="Labels", examples=[{"foo": "bar"}])
-    ] = None
+    engine_version: Annotated[str | None, Field(alias="EngineVersion", examples=["17.06.0"])] = None
+    labels: Annotated[dict[str, str] | None, Field(alias="Labels", examples=[{"foo": "bar"}])] = None
     plugins: Annotated[
         list[Plugin1] | None,
         Field(
@@ -2785,16 +2695,12 @@ class SwarmSpec(BaseModel):
         Orchestration | None,
         Field(alias="Orchestration", description="Orchestration configuration."),
     ] = None
-    raft: Annotated[
-        Raft | None, Field(alias="Raft", description="Raft configuration.")
-    ] = None
+    raft: Annotated[Raft | None, Field(alias="Raft", description="Raft configuration.")] = None
     dispatcher: Annotated[
         Dispatcher | None,
         Field(alias="Dispatcher", description="Dispatcher configuration."),
     ] = None
-    ca_config: Annotated[
-        CaConfig | None, Field(alias="CAConfig", description="CA configuration.")
-    ] = None
+    ca_config: Annotated[CaConfig | None, Field(alias="CAConfig", description="CA configuration.")] = None
     encryption_config: Annotated[
         EncryptionConfig | None,
         Field(
@@ -2896,9 +2802,7 @@ class JoinTokens(BaseModel):
         Field(
             alias="Worker",
             description="The token workers can use to join the swarm.\n",
-            examples=[
-                "SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-1awxwuwd3z9j1z3puu7rcgdbx"
-            ],
+            examples=["SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-1awxwuwd3z9j1z3puu7rcgdbx"],
         ),
     ] = None
     manager: Annotated[
@@ -2906,9 +2810,7 @@ class JoinTokens(BaseModel):
         Field(
             alias="Manager",
             description="The token managers can use to join the swarm.\n",
-            examples=[
-                "SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-7p73s1dx5in4tatdymyhg9hu2"
-            ],
+            examples=["SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-7p73s1dx5in4tatdymyhg9hu2"],
         ),
     ] = None
 
@@ -2948,9 +2850,7 @@ class PluginSpec(BaseModel):
         bool | None,
         Field(alias="Disabled", description="Disable the plugin once scheduled."),
     ] = None
-    plugin_privilege: Annotated[
-        list[PluginPrivilege] | None, Field(alias="PluginPrivilege")
-    ] = None
+    plugin_privilege: Annotated[list[PluginPrivilege] | None, Field(alias="PluginPrivilege")] = None
 
 
 class CredentialSpec(BaseModel):
@@ -2994,21 +2894,11 @@ class SeLinuxContext(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    disable: Annotated[
-        bool | None, Field(alias="Disable", description="Disable SELinux")
-    ] = None
-    user: Annotated[
-        str | None, Field(alias="User", description="SELinux user label")
-    ] = None
-    role: Annotated[
-        str | None, Field(alias="Role", description="SELinux role label")
-    ] = None
-    type: Annotated[
-        str | None, Field(alias="Type", description="SELinux type label")
-    ] = None
-    level: Annotated[
-        str | None, Field(alias="Level", description="SELinux level label")
-    ] = None
+    disable: Annotated[bool | None, Field(alias="Disable", description="Disable SELinux")] = None
+    user: Annotated[str | None, Field(alias="User", description="SELinux user label")] = None
+    role: Annotated[str | None, Field(alias="Role", description="SELinux role label")] = None
+    type: Annotated[str | None, Field(alias="Type", description="SELinux type label")] = None
+    level: Annotated[str | None, Field(alias="Level", description="SELinux level label")] = None
 
 
 class Mode(str, Enum):
@@ -3028,9 +2918,7 @@ class Seccomp(BaseModel):
     mode: Annotated[Mode | None, Field(alias="Mode")] = None
     profile: Annotated[
         str | None,
-        Field(
-            alias="Profile", description="The custom seccomp profile as a json object"
-        ),
+        Field(alias="Profile", description="The custom seccomp profile as a json object"),
     ] = None
 
 
@@ -3135,12 +3023,8 @@ class File(BaseModel):
             description="Name represents the final filename in the filesystem.\n",
         ),
     ] = None
-    uid: Annotated[
-        str | None, Field(alias="UID", description="UID represents the file UID.")
-    ] = None
-    gid: Annotated[
-        str | None, Field(alias="GID", description="GID represents the file GID.")
-    ] = None
+    uid: Annotated[str | None, Field(alias="UID", description="UID represents the file UID.")] = None
+    gid: Annotated[str | None, Field(alias="GID", description="GID represents the file GID.")] = None
     mode: Annotated[
         int | None,
         Field(alias="Mode", description="Mode represents the FileMode of the file."),
@@ -3194,12 +3078,8 @@ class File1(BaseModel):
             description="Name represents the final filename in the filesystem.\n",
         ),
     ] = None
-    uid: Annotated[
-        str | None, Field(alias="UID", description="UID represents the file UID.")
-    ] = None
-    gid: Annotated[
-        str | None, Field(alias="GID", description="GID represents the file GID.")
-    ] = None
+    uid: Annotated[str | None, Field(alias="UID", description="UID represents the file UID.")] = None
+    gid: Annotated[str | None, Field(alias="GID", description="GID represents the file GID.")] = None
     mode: Annotated[
         int | None,
         Field(alias="Mode", description="Mode represents the FileMode of the file."),
@@ -3281,9 +3161,7 @@ class ContainerSpec(BaseModel):
         list[str] | None,
         Field(alias="Command", description="The command to be run in the image."),
     ] = None
-    args: Annotated[
-        list[str] | None, Field(alias="Args", description="Arguments to the command.")
-    ] = None
+    args: Annotated[list[str] | None, Field(alias="Args", description="Arguments to the command.")] = None
     hostname: Annotated[
         str | None,
         Field(
@@ -3302,9 +3180,7 @@ class ContainerSpec(BaseModel):
         str | None,
         Field(alias="Dir", description="The working directory for commands to run in."),
     ] = None
-    user: Annotated[
-        str | None, Field(alias="User", description="The user inside the container.")
-    ] = None
+    user: Annotated[str | None, Field(alias="User", description="The user inside the container.")] = None
     groups: Annotated[
         list[str] | None,
         Field(
@@ -3320,9 +3196,7 @@ class ContainerSpec(BaseModel):
         bool | None,
         Field(alias="TTY", description="Whether a pseudo-TTY should be allocated."),
     ] = None
-    open_stdin: Annotated[
-        bool | None, Field(alias="OpenStdin", description="Open `stdin`")
-    ] = None
+    open_stdin: Annotated[bool | None, Field(alias="OpenStdin", description="Open `stdin`")] = None
     read_only: Annotated[
         bool | None,
         Field(
@@ -3469,12 +3343,8 @@ class RestartPolicy1(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    condition: Annotated[
-        Condition | None, Field(alias="Condition", description="Condition for restart.")
-    ] = None
-    delay: Annotated[
-        int | None, Field(alias="Delay", description="Delay between restart attempts.")
-    ] = None
+    condition: Annotated[Condition | None, Field(alias="Condition", description="Condition for restart.")] = None
+    delay: Annotated[int | None, Field(alias="Delay", description="Delay between restart attempts.")] = None
     max_attempts: Annotated[
         int | None,
         Field(
@@ -3706,9 +3576,7 @@ class UpdateConfig(BaseModel):
     ] = None
     delay: Annotated[
         int | None,
-        Field(
-            alias="Delay", description="Amount of time between updates, in nanoseconds."
-        ),
+        Field(alias="Delay", description="Amount of time between updates, in nanoseconds."),
     ] = None
     failure_action: Annotated[
         FailureAction | None,
@@ -3997,9 +3865,7 @@ class ImageDeleteResponseItem(BaseModel):
     )
     untagged: Annotated[
         str | None,
-        Field(
-            alias="Untagged", description="The image ID of an image that was untagged"
-        ),
+        Field(alias="Untagged", description="The image ID of an image that was untagged"),
     ] = None
     deleted: Annotated[
         str | None,
@@ -4031,9 +3897,7 @@ class ServiceCreateResponse(BaseModel):
             alias="Warnings",
             description='Optional warning message.\n\nFIXME(thaJeztah): this should have "omitempty" in the generated type.\n',
             examples=[
-                [
-                    "unable to pin image doesnotexist:latest to digest: image library/doesnotexist:latest not found"
-                ]
+                ["unable to pin image doesnotexist:latest to digest: image library/doesnotexist:latest not found"]
             ],
         ),
     ] = None
@@ -4066,9 +3930,7 @@ class Driver(BaseModel):
     )
     name: Annotated[
         str,
-        Field(
-            alias="Name", description="Name of the driver.", examples=["some-driver"]
-        ),
+        Field(alias="Name", description="Name of the driver.", examples=["some-driver"]),
     ]
     options: Annotated[
         dict[str, str] | None,
@@ -4089,9 +3951,7 @@ class SecretSpec(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    name: Annotated[
-        str | None, Field(alias="Name", description="User-defined name of the secret.")
-    ] = None
+    name: Annotated[str | None, Field(alias="Name", description="User-defined name of the secret.")] = None
     labels: Annotated[
         dict[str, str] | None,
         Field(
@@ -4133,9 +3993,7 @@ class Secret1(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    id: Annotated[
-        str | None, Field(alias="ID", examples=["blt1owaxmitz71s9v5zh81zun"])
-    ] = None
+    id: Annotated[str | None, Field(alias="ID", examples=["blt1owaxmitz71s9v5zh81zun"])] = None
     version: Annotated[ObjectVersion | None, Field(alias="Version")] = None
     created_at: Annotated[
         str | None,
@@ -4152,9 +4010,7 @@ class ConfigSpec(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    name: Annotated[
-        str | None, Field(alias="Name", description="User-defined name of the config.")
-    ] = None
+    name: Annotated[str | None, Field(alias="Name", description="User-defined name of the config.")] = None
     labels: Annotated[
         dict[str, str] | None,
         Field(alias="Labels", description="User-defined key/value metadata."),
@@ -4215,9 +4071,7 @@ class ContainerCreateResponse(BaseModel):
         Field(
             alias="Id",
             description="The ID of the created container",
-            examples=[
-                "ede54ee1afda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c743"
-            ],
+            examples=["ede54ee1afda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c743"],
         ),
     ]
     warnings: Annotated[
@@ -4238,9 +4092,7 @@ class ContainerWaitExitError(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    message: Annotated[
-        str | None, Field(alias="Message", description="Details of an error")
-    ] = None
+    message: Annotated[str | None, Field(alias="Message", description="Details of an error")] = None
 
 
 class Platform1(BaseModel):
@@ -4691,9 +4543,7 @@ class EventActor(BaseModel):
         Field(
             alias="ID",
             description="The ID of the object emitting the event",
-            examples=[
-                "ede54ee1afda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c743"
-            ],
+            examples=["ede54ee1afda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c743"],
         ),
     ] = None
     attributes: Annotated[
@@ -4769,9 +4619,7 @@ class SystemEventsResponse(BaseModel):
             description="Scope of the event. Engine events are `local` scope. Cluster (Swarm)\nevents are `swarm` scope.\n"
         ),
     ] = None
-    time: Annotated[
-        int | None, Field(description="Timestamp of event", examples=[1629574695])
-    ] = None
+    time: Annotated[int | None, Field(description="Timestamp of event", examples=[1629574695])] = None
     time_nano: Annotated[
         int | None,
         Field(
@@ -4804,9 +4652,7 @@ class OCIDescriptor(BaseModel):
         str | None,
         Field(
             description="The digest of the targeted content.\n",
-            examples=[
-                "sha256:c0537ff6a5218ef531ece93d4984efc99bbf3f7497c0a7726c88e2bb7584dc96"
-            ],
+            examples=["sha256:c0537ff6a5218ef531ece93d4984efc99bbf3f7497c0a7726c88e2bb7584dc96"],
         ),
     ] = None
     size: Annotated[
@@ -5046,15 +4892,9 @@ class ResourceObject(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    nano_cp_us: Annotated[
-        int | None, Field(alias="NanoCPUs", examples=[4000000000])
-    ] = None
-    memory_bytes: Annotated[
-        int | None, Field(alias="MemoryBytes", examples=[8272408576])
-    ] = None
-    generic_resources: Annotated[
-        GenericResources | None, Field(alias="GenericResources")
-    ] = None
+    nano_cp_us: Annotated[int | None, Field(alias="NanoCPUs", examples=[4000000000])] = None
+    memory_bytes: Annotated[int | None, Field(alias="MemoryBytes", examples=[8272408576])] = None
+    generic_resources: Annotated[GenericResources | None, Field(alias="GenericResources")] = None
 
 
 class Health(BaseModel):
@@ -5119,9 +4959,7 @@ class FilesystemChange(BaseModel):
     )
     path: Annotated[
         str,
-        Field(
-            alias="Path", description="Path to file or directory that has changed.\n"
-        ),
+        Field(alias="Path", description="Path to file or directory that has changed.\n"),
     ]
     kind: Annotated[ChangeType, Field(alias="Kind")]
 
@@ -5165,9 +5003,7 @@ class BuildInfo(BaseModel):
     error_detail: Annotated[ErrorDetail | None, Field(alias="errorDetail")] = None
     status: str | None = None
     progress: str | None = None
-    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = (
-        None
-    )
+    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = None
     aux: ImageID | None = None
 
 
@@ -5180,9 +5016,7 @@ class CreateImageInfo(BaseModel):
     error_detail: Annotated[ErrorDetail | None, Field(alias="errorDetail")] = None
     status: str | None = None
     progress: str | None = None
-    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = (
-        None
-    )
+    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = None
 
 
 class PushImageInfo(BaseModel):
@@ -5192,9 +5026,7 @@ class PushImageInfo(BaseModel):
     error: str | None = None
     status: str | None = None
     progress: str | None = None
-    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = (
-        None
-    )
+    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = None
 
 
 class EndpointSettings(BaseModel):
@@ -5218,17 +5050,13 @@ class EndpointSettings(BaseModel):
             examples=["02:42:ac:11:00:04"],
         ),
     ] = None
-    aliases: Annotated[
-        list[str] | None, Field(alias="Aliases", examples=[["server_x", "server_y"]])
-    ] = None
+    aliases: Annotated[list[str] | None, Field(alias="Aliases", examples=[["server_x", "server_y"]])] = None
     network_id: Annotated[
         str | None,
         Field(
             alias="NetworkID",
             description="Unique ID of the network.\n",
-            examples=[
-                "08754567f1f40222263eab4102e1c733ae697e8e354aa9cd6e18d7402835292a"
-            ],
+            examples=["08754567f1f40222263eab4102e1c733ae697e8e354aa9cd6e18d7402835292a"],
         ),
     ] = None
     endpoint_id: Annotated[
@@ -5236,9 +5064,7 @@ class EndpointSettings(BaseModel):
         Field(
             alias="EndpointID",
             description="Unique ID for the service endpoint in a Sandbox.\n",
-            examples=[
-                "b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b"
-            ],
+            examples=["b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b"],
         ),
     ] = None
     gateway: Annotated[
@@ -5251,9 +5077,7 @@ class EndpointSettings(BaseModel):
     ] = None
     ip_address: Annotated[
         str | None,
-        Field(
-            alias="IPAddress", description="IPv4 address.\n", examples=["172.17.0.4"]
-        ),
+        Field(alias="IPAddress", description="IPv4 address.\n", examples=["172.17.0.4"]),
     ] = None
     ip_prefix_len: Annotated[
         int | None,
@@ -5320,9 +5144,7 @@ class NodeDescription(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    hostname: Annotated[
-        str | None, Field(alias="Hostname", examples=["bf3067039e47"])
-    ] = None
+    hostname: Annotated[str | None, Field(alias="Hostname", examples=["bf3067039e47"])] = None
     platform: Annotated[Platform | None, Field(alias="Platform")] = None
     resources: Annotated[ResourceObject | None, Field(alias="Resources")] = None
     engine: Annotated[EngineDescription | None, Field(alias="Engine")] = None
@@ -5344,9 +5166,7 @@ class NodeStatus(BaseModel):
     message: Annotated[str | None, Field(alias="Message", examples=[""])] = None
     addr: Annotated[
         str | None,
-        Field(
-            alias="Addr", description="IP address of the node.", examples=["172.17.0.2"]
-        ),
+        Field(alias="Addr", description="IP address of the node.", examples=["172.17.0.2"]),
     ] = None
 
 
@@ -5384,9 +5204,7 @@ class Resources1(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    limits: Annotated[
-        Limit | None, Field(alias="Limits", description="Define resources limits.")
-    ] = None
+    limits: Annotated[Limit | None, Field(alias="Limits", description="Define resources limits.")] = None
     reservations: Annotated[
         ResourceObject | None,
         Field(alias="Reservations", description="Define resources reservation."),
@@ -5490,9 +5308,7 @@ class TaskStatus(BaseModel):
     state: Annotated[TaskState | None, Field(alias="State")] = None
     message: Annotated[str | None, Field(alias="Message")] = None
     err: Annotated[str | None, Field(alias="Err")] = None
-    container_status: Annotated[
-        ContainerStatus | None, Field(alias="ContainerStatus")
-    ] = None
+    container_status: Annotated[ContainerStatus | None, Field(alias="ContainerStatus")] = None
     port_status: Annotated[PortStatus | None, Field(alias="PortStatus")] = None
 
 
@@ -5500,15 +5316,11 @@ class Task(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    id: Annotated[str | None, Field(alias="ID", description="The ID of the task.")] = (
-        None
-    )
+    id: Annotated[str | None, Field(alias="ID", description="The ID of the task.")] = None
     version: Annotated[ObjectVersion | None, Field(alias="Version")] = None
     created_at: Annotated[str | None, Field(alias="CreatedAt")] = None
     updated_at: Annotated[str | None, Field(alias="UpdatedAt")] = None
-    name: Annotated[
-        str | None, Field(alias="Name", description="Name of the task.")
-    ] = None
+    name: Annotated[str | None, Field(alias="Name", description="Name of the task.")] = None
     labels: Annotated[
         dict[str, str] | None,
         Field(alias="Labels", description="User-defined key/value metadata."),
@@ -5516,18 +5328,14 @@ class Task(BaseModel):
     spec: Annotated[TaskSpec | None, Field(alias="Spec")] = None
     service_id: Annotated[
         str | None,
-        Field(
-            alias="ServiceID", description="The ID of the service this task is part of."
-        ),
+        Field(alias="ServiceID", description="The ID of the service this task is part of."),
     ] = None
     slot: Annotated[int | None, Field(alias="Slot")] = None
     node_id: Annotated[
         str | None,
         Field(alias="NodeID", description="The ID of the node that this task is on."),
     ] = None
-    assigned_generic_resources: Annotated[
-        GenericResources | None, Field(alias="AssignedGenericResources")
-    ] = None
+    assigned_generic_resources: Annotated[GenericResources | None, Field(alias="AssignedGenericResources")] = None
     status: Annotated[TaskStatus | None, Field(alias="Status")] = None
     desired_state: Annotated[TaskState | None, Field(alias="DesiredState")] = None
     job_iteration: Annotated[
@@ -5547,9 +5355,7 @@ class ServiceSpec(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    name: Annotated[
-        str | None, Field(alias="Name", description="Name of the service.")
-    ] = None
+    name: Annotated[str | None, Field(alias="Name", description="Name of the service.")] = None
     labels: Annotated[
         dict[str, str] | None,
         Field(alias="Labels", description="User-defined key/value metadata."),
@@ -5621,23 +5427,17 @@ class NetworkSettings1(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    networks: Annotated[dict[str, EndpointSettings] | None, Field(alias="Networks")] = (
-        None
-    )
+    networks: Annotated[dict[str, EndpointSettings] | None, Field(alias="Networks")] = None
 
 
 class ContainerSummary(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    id: Annotated[
-        str | None, Field(alias="Id", description="The ID of this container")
-    ] = None
+    id: Annotated[str | None, Field(alias="Id", description="The ID of this container")] = None
     names: Annotated[
         list[str] | None,
-        Field(
-            alias="Names", description="The names that this container has been given"
-        ),
+        Field(alias="Names", description="The names that this container has been given"),
     ] = None
     image: Annotated[
         str | None,
@@ -5655,13 +5455,9 @@ class ContainerSummary(BaseModel):
     ] = None
     command: Annotated[
         str | None,
-        Field(
-            alias="Command", description="Command to run when starting the container"
-        ),
+        Field(alias="Command", description="Command to run when starting the container"),
     ] = None
-    created: Annotated[
-        int | None, Field(alias="Created", description="When the container was created")
-    ] = None
+    created: Annotated[int | None, Field(alias="Created", description="When the container was created")] = None
     ports: Annotated[
         list[Port] | None,
         Field(alias="Ports", description="The ports exposed by this container"),
@@ -5759,9 +5555,7 @@ class ContainerState(BaseModel):
     dead: Annotated[bool | None, Field(alias="Dead", examples=[False])] = None
     pid: Annotated[
         int | None,
-        Field(
-            alias="Pid", description="The process ID of this container", examples=[1234]
-        ),
+        Field(alias="Pid", description="The process ID of this container", examples=[1234]),
     ] = None
     exit_code: Annotated[
         int | None,
@@ -5799,9 +5593,7 @@ class ContainerWaitResponse(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    status_code: Annotated[
-        int, Field(alias="StatusCode", description="Exit code of the container")
-    ]
+    status_code: Annotated[int, Field(alias="StatusCode", description="Exit code of the container")]
     error: Annotated[ContainerWaitExitError | None, Field(alias="Error")] = None
 
 
@@ -5912,12 +5704,8 @@ class SwarmInfo(BaseModel):
             examples=["10.0.0.46"],
         ),
     ] = ""
-    local_node_state: Annotated[
-        LocalNodeState | None, Field(alias="LocalNodeState")
-    ] = LocalNodeState.field_
-    control_available: Annotated[
-        bool | None, Field(alias="ControlAvailable", examples=[True])
-    ] = False
+    local_node_state: Annotated[LocalNodeState | None, Field(alias="LocalNodeState")] = LocalNodeState.field_
+    control_available: Annotated[bool | None, Field(alias="ControlAvailable", examples=[True])] = False
     error: Annotated[str | None, Field(alias="Error")] = ""
     remote_managers: Annotated[
         list[PeerNode] | None,
@@ -6096,9 +5884,7 @@ class ClusterVolumeSpec(BaseModel):
     ] = None
     access_mode: Annotated[
         AccessMode | None,
-        Field(
-            alias="AccessMode", description="Defines how the volume is used by tasks.\n"
-        ),
+        Field(alias="AccessMode", description="Defines how the volume is used by tasks.\n"),
     ] = None
 
 
@@ -6207,9 +5993,7 @@ class HostConfig(Resources):
     ] = None
     dns: Annotated[
         list[str] | None,
-        Field(
-            alias="Dns", description="A list of DNS servers for the container to use."
-        ),
+        Field(alias="Dns", description="A list of DNS servers for the container to use."),
     ] = None
     dns_options: Annotated[
         list[str] | None,
@@ -6403,9 +6187,7 @@ class NetworkSettings(BaseModel):
         Field(
             alias="SandboxID",
             description="SandboxID uniquely represents a container's network stack.",
-            examples=[
-                "9d12daf2c33f5959c8bf90aa513e4f65b561738661003029ec84830cd503a0c3"
-            ],
+            examples=["9d12daf2c33f5959c8bf90aa513e4f65b561738661003029ec84830cd503a0c3"],
         ),
     ] = None
     hairpin_mode: Annotated[
@@ -6460,9 +6242,7 @@ class NetworkSettings(BaseModel):
         Field(
             alias="EndpointID",
             description='EndpointID uniquely represents a service endpoint in a Sandbox.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-            examples=[
-                "b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b"
-            ],
+            examples=["b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b"],
         ),
     ] = None
     gateway: Annotated[
@@ -6575,9 +6355,7 @@ class VolumeConfig(BaseModel):
             ],
         ),
     ] = None
-    cluster_volume_spec: Annotated[
-        ClusterVolumeSpec | None, Field(alias="ClusterVolumeSpec")
-    ] = None
+    cluster_volume_spec: Annotated[ClusterVolumeSpec | None, Field(alias="ClusterVolumeSpec")] = None
 
 
 class Network(BaseModel):
@@ -6586,18 +6364,14 @@ class Network(BaseModel):
     )
     name: Annotated[
         str | None,
-        Field(
-            alias="Name", description="Name of the network.\n", examples=["my_network"]
-        ),
+        Field(alias="Name", description="Name of the network.\n", examples=["my_network"]),
     ] = None
     id: Annotated[
         str | None,
         Field(
             alias="Id",
             description="ID that uniquely identifies a network on a single machine.\n",
-            examples=[
-                "7d86d31b1478e7cca9ebed7e73aa0fdeec46c5ca29497431d3007d2d9e15ed99"
-            ],
+            examples=["7d86d31b1478e7cca9ebed7e73aa0fdeec46c5ca29497431d3007d2d9e15ed99"],
         ),
     ] = None
     created: Annotated[
@@ -6995,7 +6769,7 @@ class SystemInfo(BaseModel):
         str | None,
         Field(
             alias="KernelVersion",
-            description='Kernel version of the host.\n\nOn Linux, this information obtained from `uname`. On Windows this\ninformation is queried from the <kbd>HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\</kbd>\nregistry value, for example _"10.0 14393 (14393.1198.amd64fre.rs1_release_sec.170427-1353)"_.\n',
+            description='Kernel version of the host.\n\nOn Linux, this information obtained from `uname`. On Windows this\ninformation is queried from the <kbd>HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\</kbd>\nregistry value, for example _"10.0 14393 (14393.1198.amd64free.rs1_release_sec.170427-1353)"_.\n',
             examples=["4.9.38-moby"],
         ),
     ] = None
@@ -7055,12 +6829,8 @@ class SystemInfo(BaseModel):
             examples=["https://index.docker.io/v1/"],
         ),
     ] = "https://index.docker.io/v1/"
-    registry_config: Annotated[
-        RegistryServiceConfig | None, Field(alias="RegistryConfig")
-    ] = None
-    generic_resources: Annotated[
-        GenericResources | None, Field(alias="GenericResources")
-    ] = None
+    registry_config: Annotated[RegistryServiceConfig | None, Field(alias="RegistryConfig")] = None
+    generic_resources: Annotated[GenericResources | None, Field(alias="GenericResources")] = None
     http_proxy: Annotated[
         str | None,
         Field(
@@ -7259,9 +7029,7 @@ class Volume(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    name: Annotated[
-        str, Field(alias="Name", description="Name of the volume.", examples=["tardis"])
-    ]
+    name: Annotated[str, Field(alias="Name", description="Name of the volume.", examples=["tardis"])]
     driver: Annotated[
         str,
         Field(
@@ -7341,9 +7109,7 @@ class VolumeListResponse(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    volumes: Annotated[
-        list[Volume] | None, Field(alias="Volumes", description="List of volumes")
-    ] = None
+    volumes: Annotated[list[Volume] | None, Field(alias="Volumes", description="List of volumes")] = None
     warnings: Annotated[
         list[str] | None,
         Field(

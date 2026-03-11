@@ -6,17 +6,18 @@ from celery_library.errors import TaskNotFoundError
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from models_library.api_schemas_async_jobs.async_jobs import (
+    AsyncJobId,
+)
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
     TaskStatus,
 )
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobId,
-)
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
 
@@ -84,13 +85,9 @@ async def list_tasks(
         TaskGet(
             task_id=f"{task.uuid}",
             task_name=task.metadata.name,
-            status_href=app_router.url_path_for(
-                "get_task_status", task_uuid=f"{task.uuid}"
-            ),
+            status_href=app_router.url_path_for("get_task_status", task_uuid=f"{task.uuid}"),
             abort_href=app_router.url_path_for("cancel_task", task_uuid=f"{task.uuid}"),
-            result_href=app_router.url_path_for(
-                "get_task_result", task_uuid=f"{task.uuid}"
-            ),
+            result_href=app_router.url_path_for("get_task_result", task_uuid=f"{task.uuid}"),
         )
         for task in tasks
     ]
@@ -123,7 +120,7 @@ async def get_task_status(
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_task_status(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
     return TaskStatus(
@@ -162,7 +159,7 @@ async def cancel_task(
     with _exception_mapper(task_uuid=task_uuid):
         await task_manager.cancel_task(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
 
@@ -199,7 +196,7 @@ async def get_task_result(
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_task_status(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
         if not task_status.is_done:
@@ -210,7 +207,7 @@ async def get_task_result(
 
         task_result = await task_manager.get_task_result(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
         if task_status.task_state == TaskState.FAILURE:

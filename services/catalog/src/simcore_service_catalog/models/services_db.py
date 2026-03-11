@@ -65,20 +65,14 @@ class ServiceMetaDataDBGet(BaseModel):
                     "classifiers": ["foo", "bar"],
                     "quality": {
                         "enabled": True,
-                        "tsr_target": {
-                            f"r{n:02d}": {"level": 4, "references": ""}
-                            for n in range(1, 11)
-                        },
+                        "tsr_target": {f"r{n:02d}": {"level": 4, "references": ""} for n in range(1, 11)},
                         "annotations": {
                             "vandv": "",
                             "limitations": "",
                             "certificationLink": "",
                             "certificationStatus": "Uncertified",
                         },
-                        "tsr_current": {
-                            f"r{n:02d}": {"level": 0, "references": ""}
-                            for n in range(1, 11)
-                        },
+                        "tsr_current": {f"r{n:02d}": {"level": 0, "references": ""} for n in range(1, 11)},
                     },
                     "created": "2021-01-18 12:46:57.7315",
                     "modified": "2021-01-19 12:45:00",
@@ -87,9 +81,7 @@ class ServiceMetaDataDBGet(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        from_attributes=True, json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(from_attributes=True, json_schema_extra=_update_json_schema_extra)
 
 
 def _httpurl_to_str(value: HttpUrl | str | None) -> str | None:
@@ -243,9 +235,7 @@ class ServiceAccessRightsDB(ServiceKeyVersion, ServiceGroupAccessRights):
             }
         )
 
-    model_config = ConfigDict(
-        from_attributes=True, json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(from_attributes=True, json_schema_extra=_update_json_schema_extra)
 
 
 class ServiceDBFilters(Filters):

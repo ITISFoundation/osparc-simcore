@@ -10,8 +10,7 @@ from ..application_keys import APP_SETTINGS_APPKEY
 class ProjectsSettings(BaseCustomSettings):
     PROJECTS_MAX_COPY_SIZE_BYTES: ByteSize = Field(
         default=TypeAdapter(ByteSize).validate_python("30Gib"),
-        description="defines the maximum authorized project data size"
-        " when copying a project (disable with 0)",
+        description="defines the maximum authorized project data size when copying a project (disable with 0)",
     )
     PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES: NonNegativeInt = Field(
         default=5,

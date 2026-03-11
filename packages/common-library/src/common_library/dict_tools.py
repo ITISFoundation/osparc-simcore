@@ -26,9 +26,7 @@ def copy_from_dict_ex(data: dict[str, Any], exclude: set[str]) -> dict[str, Any]
     return {k: v for k, v in data.items() if k not in exclude}
 
 
-def copy_from_dict(
-    data: dict[str, Any], *, include: set | dict | None = None, deep: bool = False
-):
+def copy_from_dict(data: dict[str, Any], *, include: set | dict | None = None, deep: bool = False):
     #
     # Analogous to advanced includes from pydantic exports
     #   https://pydantic-docs.helpmanual.io/usage/exporting_models/#advanced-include-and-exclude
@@ -45,15 +43,10 @@ def copy_from_dict(
 
     assert isinstance(include, dict)  # nosec
 
-    return {
-        key: copy_from_dict(data[key], include=include[key], deep=deep)
-        for key in include
-    }
+    return {key: copy_from_dict(data[key], include=include[key], deep=deep) for key in include}
 
 
 def update_dict(obj: dict, **updates):
     for key, update_value in updates.items():
-        obj.update(
-            {key: update_value(obj[key]) if callable(update_value) else update_value}
-        )
+        obj.update({key: update_value(obj[key]) if callable(update_value) else update_value})
     return obj

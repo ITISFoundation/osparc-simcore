@@ -45,9 +45,7 @@ async def service_metadata_in_db(asyncpg_engine: AsyncEngine) -> AsyncIterator[d
 
 
 @pytest.fixture
-async def consume_filetypes_in_db(
-    asyncpg_engine: AsyncEngine, service_metadata_in_db: dict
-):
+async def consume_filetypes_in_db(asyncpg_engine: AsyncEngine, service_metadata_in_db: dict):
     """Pre-populate services consume filetypes table with test data."""
     consume_data = random_service_consume_filetype(
         service_key=service_metadata_in_db["key"],
@@ -71,9 +69,7 @@ async def consume_filetypes_in_db(
 
 
 @pytest.fixture
-async def service_access_rights_in_db(
-    asyncpg_engine: AsyncEngine, service_metadata_in_db: dict
-):
+async def service_access_rights_in_db(asyncpg_engine: AsyncEngine, service_metadata_in_db: dict):
     """Pre-populate services access rights table with test data."""
     access_data = random_service_access_rights(
         key=service_metadata_in_db["key"],

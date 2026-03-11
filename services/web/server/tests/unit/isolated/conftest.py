@@ -40,9 +40,7 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
             file_count=random.randint(1, max_file_count),  # noqa: S311
         )
 
-    def make_subdirectories_with_content(
-        subdir_name: Path, max_subdirectories_count: int, max_file_count: int
-    ) -> None:
+    def make_subdirectories_with_content(subdir_name: Path, max_subdirectories_count: int, max_file_count: int) -> None:
         subdirectories_count = random.randint(1, max_subdirectories_count)  # noqa: S311
         for _ in range(subdirectories_count):
             make_subdirectory_with_content(
@@ -55,16 +53,12 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
     temp_dir_path = Path(tmpdir)
     data_container = ensure_dir(temp_dir_path / "study_data")
 
-    make_subdirectories_with_content(
-        subdir_name=data_container, max_subdirectories_count=5, max_file_count=5
-    )
+    make_subdirectories_with_content(subdir_name=data_container, max_subdirectories_count=5, max_file_count=5)
     make_files_in_dir(dir_path=data_container, file_count=5)
 
     # creates a good amount of files
     for _ in range(4):
-        for subdirectory_path in (
-            path for path in data_container.glob("*") if path.is_dir()
-        ):
+        for subdirectory_path in (path for path in data_container.glob("*") if path.is_dir()):
             make_subdirectories_with_content(
                 subdir_name=subdirectory_path,
                 max_subdirectories_count=3,
@@ -76,9 +70,7 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
 
 @pytest.fixture
 def app_config_for_production_legacy(test_data_dir: Path) -> AppConfigDict:
-    app_config = json.loads(
-        (test_data_dir / "server_docker_prod_app_config-unit.json").read_text()
-    )
+    app_config = json.loads((test_data_dir / "server_docker_prod_app_config-unit.json").read_text())
 
     print("app config (legacy) used in production:\n", json.dumps(app_config, indent=1))
     return app_config
@@ -243,9 +235,7 @@ def mock_webserver_service_environment(
         | mock_envs_docker_compose_environment
     )
 
-    logging.getLogger().info(
-        "%s service environment:\n%s", service_name, json.dumps(envs, indent=1)
-    )
+    logging.getLogger().info("%s service environment:\n%s", service_name, json.dumps(envs, indent=1))
     return envs
 
 

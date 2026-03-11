@@ -26,9 +26,7 @@ class CreditTransactionStatus(str, enum.Enum):
 
 class CreditTransactionClassification(str, enum.Enum):
     ADD_WALLET_TOP_UP = "ADD_WALLET_TOP_UP"  # user top up credits
-    DEDUCT_SERVICE_RUN = (
-        "DEDUCT_SERVICE_RUN"  # computational/dynamic service run costs)
-    )
+    DEDUCT_SERVICE_RUN = "DEDUCT_SERVICE_RUN"  # computational/dynamic service run costs)
     DEDUCT_LICENSE_PURCHASE = "DEDUCT_LICENSE_PURCHASE"
     ADD_WALLET_EXCHANGE = "ADD_WALLET_EXCHANGE"
     DEDUCT_WALLET_EXCHANGE = "DEDUCT_WALLET_EXCHANGE"

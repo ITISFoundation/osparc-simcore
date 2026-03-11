@@ -18,7 +18,6 @@ pytest \
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-return-statements
 
-
 import functools
 import json
 from dataclasses import asdict
@@ -68,14 +67,12 @@ def ipinfo(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def request_form(faker: Faker) -> dict[str, Any]:
-    return AccountRequestInfo.model_validate(
-        AccountRequestInfo.model_json_schema()["example"]
-    ).model_dump()
+    return AccountRequestInfo.model_validate(AccountRequestInfo.model_json_schema()["example"]).model_dump()
 
 
 @pytest.fixture
-def event_extra_data(  # noqa: PLR0911
-    event_name: str,
+def template_extra_data(  # noqa: C901, PLR0911
+    template_name: str,
     faker: Faker,
     product_name: ProductName,
     payment_data: PaymentData,
@@ -83,12 +80,11 @@ def event_extra_data(  # noqa: PLR0911
     request_form: dict[str, Any],
     ipinfo: dict[str, Any],
 ) -> dict[str, Any]:
-
     code = faker.pystr_format(string_format="######", letters="")
     host_url = f"https://{product_name}.io"
 
-    match event_name:
-        case "on_account_requested":
+    match template_name:
+        case "account_requested":
             return {
                 "host": host_url,
                 "name": "support-team",
@@ -106,46 +102,46 @@ def event_extra_data(  # noqa: PLR0911
                 "ipinfo": ipinfo,
                 "dumps": functools.partial(_safe_json_dumps, indent=1),
             }
-        case "on_account_rejected":
+        case "account_rejected":
             return {
                 "host": host_url,
             }
-        case "on_account_approved":
+        case "account_approved":
             return {
                 "host": host_url,
                 "link": f"{host_url}?invitation={code}",
             }
-        case "on_change_email":
+        case "change_email":
             return {
                 "host": host_url,
                 "link": f"{host_url}?change-email={code}",
             }
-        case "on_new_code":
+        case "new_code":
             return {
                 "host": host_url,
                 "code": code,
             }
-        case "on_new_invitation":
+        case "new_invitation":
             return {
                 "link": f"{host_url}?invitation={code}",
             }
-        case "on_payed":
+        case "paid":
             return {
                 "payment": payment_data,
             }
-        case "on_registered":
+        case "registered":
             return {
                 "host": host_url,
                 "link": f"{host_url}?registration={code}",
             }
-        case "on_reset_password":
+        case "reset_password":
             return {
                 "host": host_url,
                 "success": faker.pybool(),
                 "reason": faker.sentence(),
                 "link": f"{host_url}?reset-password={code}",
             }
-        case "on_share_project":
+        case "share_project":
             return {
                 "host": host_url,
                 "resource_alias": "Project",
@@ -155,7 +151,7 @@ def event_extra_data(  # noqa: PLR0911
                 ),
                 "accept_link": f"{host_url}?code={code}",
             }
-        case "on_unregister":
+        case "unregister":
             return {
                 "host": host_url,
                 "retention_days": 30,
@@ -166,12 +162,15 @@ def event_extra_data(  # noqa: PLR0911
 
 
 @pytest.fixture
-def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
+def template_attachments(
+    template_name: str,
+    faker: Faker,
+) -> list[tuple[bytes, str]]:
     attachments = []
-    match event_name:
-        case "on_payed":
+    match template_name:
+        case "paid":
             # Create a fake PDF-like byte content and its filename
-            file_name = "test-payed-invoice.pdf"
+            file_name = "test-paid-invoice.pdf"
             # Simulate generating PDF data.
             fake_pdf_content = faker.text().encode("utf-8")
             attachments.append((fake_pdf_content, file_name))
@@ -180,48 +179,47 @@ def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
 
 
 @pytest.mark.parametrize(
-    "event_name",
+    "template_name",
     [
-        "on_account_approved",
-        "on_account_requested",
-        "on_account_rejected",
-        "on_change_email",
-        "on_new_code",
-        "on_new_invitation",
-        "on_payed",
-        "on_registered",
-        "on_reset_password",
-        "on_share_project",
-        "on_unregister",
+        "account_approved",
+        "account_requested",
+        "account_rejected",
+        "change_email",
+        "new_code",
+        "new_invitation",
+        "paid",
+        "registered",
+        "reset_password",
+        "share_project",
+        "unregister",
     ],
 )
 async def test_email_event(
     app_environment: EnvVarsDict,
+    with_smtp_extra_headers: dict[str, str],
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
     sharer_data: SharerData | None,
     product_data: ProductData,
     product_name: ProductName,
-    event_name: str,
-    event_extra_data: dict[str, Any],
-    event_attachments: list[tuple[bytes, str]],
+    template_name: str,
+    template_extra_data: dict[str, Any],
+    template_attachments: list[tuple[bytes, str]],
     tmp_path: Path,
 ):
     assert user_data.email == user_email
     assert product_data.product_name == product_name
 
-    event_extra_data = event_extra_data | (asdict(sharer_data) if sharer_data else {})
+    template_extra_data |= asdict(sharer_data) if sharer_data else {}
 
     parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(
-            undefined=StrictUndefined
-        ),
-        event_name=event_name,
+        env=create_render_environment_from_notifications_library(undefined=StrictUndefined),
+        template_name=template_name,
         user=user_data,
         product=product_data,
         # extras
-        **event_extra_data,
+        **template_extra_data,
     )
 
     from_ = get_support_address(product_data)
@@ -230,18 +228,30 @@ async def test_email_event(
     assert from_.addr_spec == product_data.support_email
     assert to.addr_spec == user_email
 
+    settings = SMTPSettings.create_from_envs()
+
+    # Check that settings contain extra headers
+    assert with_smtp_extra_headers == settings.SMTP_EXTRA_HEADERS
+
     msg = compose_email(
         from_,
         to,
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
+        extra_headers=settings.SMTP_EXTRA_HEADERS,
     )
-    if event_attachments:
-        add_attachments(msg, event_attachments)
+
+    # Check that headers were injected into the message
+    assert any(header in msg for header in with_smtp_extra_headers)
+    for header, value in with_smtp_extra_headers.items():
+        assert msg[header] == value
+
+    if template_attachments:
+        add_attachments(msg, template_attachments)
 
     # keep copy for comparison
-    dump_path = tmp_path / event_name
+    dump_path = tmp_path / template_name
     if parts.html_content:
         p = dump_path.with_suffix(".html")
         p.write_text(parts.html_content)
@@ -249,7 +259,7 @@ async def test_email_event(
         p = dump_path.with_suffix(".txt")
         p.write_text(parts.text_content)
 
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+    async with create_email_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
@@ -259,38 +269,42 @@ async def test_email_event(
         assert smtp.login.called
         assert smtp.send_message.called
 
+        # Verify the message sent contains the extra headers
+        sent_message = smtp.send_message.call_args[0][0]
+        for header, value in with_smtp_extra_headers.items():
+            assert header in sent_message
+            assert sent_message[header] == value
+
 
 @pytest.mark.parametrize(
-    "event_name",
+    "template_name",
     [
-        "on_account_requested",
+        "account_requested",
     ],
 )
 async def test_email_with_reply_to(
     app_environment: EnvVarsDict,
+    with_smtp_extra_headers: dict[str, str],
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
     support_email: EmailStr,
     product_data: ProductData,
-    event_name: str,
-    event_extra_data: dict[str, Any],
+    template_name: str,
+    template_extra_data: dict[str, Any],
 ):
     if smtp_mock_or_none is None:
         pytest.skip(
-            reason="Skipping to avoid spamming issue-tracker system."
-            "Remove this only for manual exploratory testing."
+            reason="Skipping to avoid spamming issue-tracker system.Remove this only for manual exploratory testing."
         )
 
     parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(
-            undefined=StrictUndefined
-        ),
-        event_name=event_name,
+        env=create_render_environment_from_notifications_library(undefined=StrictUndefined),
+        template_name=template_name,
         user=user_data,
         product=product_data,
         # extras
-        **event_extra_data,
+        **template_extra_data,
     )
 
     from_ = get_support_address(product_data)
@@ -301,6 +315,11 @@ async def test_email_with_reply_to(
     assert from_.addr_spec == to.addr_spec
     assert to.addr_spec == support_email
 
+    settings = SMTPSettings.create_from_envs()
+
+    # Check that settings contain extra headers from conftest
+    assert with_smtp_extra_headers == settings.SMTP_EXTRA_HEADERS
+
     msg = compose_email(
         from_,
         to,
@@ -308,9 +327,15 @@ async def test_email_with_reply_to(
         content_text=parts.text_content,
         content_html=parts.html_content,
         reply_to=reply_to,
+        extra_headers=settings.SMTP_EXTRA_HEADERS,
     )
 
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+    # Check that headers were injected into the message
+    assert any(header in msg for header in with_smtp_extra_headers)
+    for header, value in with_smtp_extra_headers.items():
+        assert msg[header] == value
+
+    async with create_email_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
@@ -319,3 +344,8 @@ async def test_email_with_reply_to(
         assert isinstance(smtp, AsyncMock)
         assert smtp.login.called
         assert smtp.send_message.called
+        # Verify the message sent contains the extra headers
+        sent_message = smtp.send_message.call_args[0][0]
+        for header, value in with_smtp_extra_headers.items():
+            assert header in sent_message
+            assert sent_message[header] == value

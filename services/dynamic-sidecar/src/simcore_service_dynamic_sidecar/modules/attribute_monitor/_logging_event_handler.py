@@ -27,11 +27,7 @@ class _LoggingEventHandler(SafeFileSystemEventHandler):
     def event_handler(self, event: FileSystemEvent) -> None:
         # NOTE: runs in the created process
 
-        file_path = Path(
-            event.src_path.decode()
-            if isinstance(event.src_path, bytes)
-            else event.src_path
-        )
+        file_path = Path(event.src_path.decode() if isinstance(event.src_path, bytes) else event.src_path)
         with suppress(FileNotFoundError):
             file_stat = file_path.stat()
             logger.info(
@@ -69,9 +65,7 @@ class _LoggingEventHandlerProcess:
             logging.DEBUG,
             f"{_LoggingEventHandlerProcess.__name__} start_process",
         ):
-            self._process = aioprocessing.AioProcess(
-                target=self._process_worker, daemon=True
-            )
+            self._process = aioprocessing.AioProcess(target=self._process_worker, daemon=True)
             self._process.start()  # pylint:disable=no-member
 
     def _stop_process(self) -> None:
@@ -92,9 +86,7 @@ class _LoggingEventHandlerProcess:
             self._file_system_event_handler = None
 
     def shutdown(self) -> None:
-        with log_context(
-            logger, logging.DEBUG, f"{_LoggingEventHandlerProcess.__name__} shutdown"
-        ):
+        with log_context(logger, logging.DEBUG, f"{_LoggingEventHandlerProcess.__name__} shutdown"):
             self._stop_process()
 
             # signal queue observers to finish
@@ -125,9 +117,7 @@ class _LoggingEventHandlerProcess:
             logger.exception("Unexpected error")
         finally:
             if watch:
-                observer.remove_handler_for_watch(
-                    self._file_system_event_handler, watch
-                )
+                observer.remove_handler_for_watch(self._file_system_event_handler, watch)
             observer.stop()
 
             logger.warning("%s exited", _LoggingEventHandlerProcess.__name__)
@@ -148,9 +138,7 @@ class LoggingEventHandlerObserver:
     ) -> None:
         self.path_to_observe: Path = path_to_observe
         self._heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
-        self.max_heart_beat_wait_interval_s: PositiveFloat = (
-            max_heart_beat_wait_interval_s
-        )
+        self.max_heart_beat_wait_interval_s: PositiveFloat = max_heart_beat_wait_interval_s
 
         self._health_check_queue = aioprocessing.AioQueue()
         self._logging_event_handler_process = _LoggingEventHandlerProcess(
@@ -163,9 +151,7 @@ class LoggingEventHandlerObserver:
 
     @property
     def heart_beat_interval_s(self) -> PositiveFloat:
-        return min(
-            self._heart_beat_interval_s * 100, self.max_heart_beat_wait_interval_s
-        )
+        return min(self._heart_beat_interval_s * 100, self.max_heart_beat_wait_interval_s)
 
     async def _health_worker(self) -> None:
         wait_for = self.heart_beat_interval_s
@@ -193,19 +179,13 @@ class LoggingEventHandlerObserver:
         self._logging_event_handler_process.shutdown()
 
     async def start(self) -> None:
-        with log_context(
-            logger, logging.INFO, f"{LoggingEventHandlerObserver.__name__} start"
-        ):
+        with log_context(logger, logging.INFO, f"{LoggingEventHandlerObserver.__name__} start"):
             self._keep_running = True
-            self._task_health_worker = create_task(
-                self._health_worker(), name="observer_monitor_health_worker"
-            )
+            self._task_health_worker = create_task(self._health_worker(), name="observer_monitor_health_worker")
             self._start_observer_process()
 
     async def stop(self) -> None:
-        with log_context(
-            logger, logging.INFO, f"{LoggingEventHandlerObserver.__name__} stop"
-        ):
+        with log_context(logger, logging.INFO, f"{LoggingEventHandlerObserver.__name__} stop"):
             self._stop_observer_process()
             self._keep_running = False
             if self._task_health_worker is not None:

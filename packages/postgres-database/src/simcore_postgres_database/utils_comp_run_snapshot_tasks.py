@@ -49,10 +49,7 @@ async def update_for_run_id_and_node_id(
                 **data,
                 modified=sa.func.now(),
             )
-            .where(
-                (comp_run_snapshot_tasks.c.run_id == run_id)
-                & (comp_run_snapshot_tasks.c.node_id == node_id)
-            )
+            .where((comp_run_snapshot_tasks.c.run_id == run_id) & (comp_run_snapshot_tasks.c.node_id == node_id))
             .returning(*COMP_RUN_SNAPSHOT_TASKS_DB_COLS)
         )
         row = result.one_or_none()

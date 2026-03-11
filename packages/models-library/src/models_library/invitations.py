@@ -43,7 +43,7 @@ class InvitationInputs(BaseModel):
     extra_credits_in_usd: Annotated[
         PositiveInt | None,
         Field(
-            description="If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
+            description="If set, the account's primary wallet will add extra credits corresponding to this amount in USD",
         ),
     ] = None
     product: Annotated[
@@ -68,15 +68,12 @@ class InvitationContent(InvitationInputs):
     created: Annotated[datetime, Field(description="Timestamp for creation")]
 
     def as_invitation_inputs(self) -> InvitationInputs:
-        return self.model_validate(
-            self.model_dump(exclude={"created"})
-        )  # copy excluding "created"
+        return self.model_validate(self.model_dump(exclude={"created"}))  # copy excluding "created"
 
     @classmethod
     def create_from_inputs(
         cls, invitation_inputs: InvitationInputs, default_product: ProductName
     ) -> "InvitationContent":
-
         kwargs = invitation_inputs.model_dump(exclude_none=True)
         kwargs.setdefault("product", default_product)
         return cls(

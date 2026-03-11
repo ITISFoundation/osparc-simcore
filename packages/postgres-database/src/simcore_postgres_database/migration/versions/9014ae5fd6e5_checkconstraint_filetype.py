@@ -25,6 +25,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_constraint(
-        "ck_filetype_is_upper", "services_consume_filetypes", type_="check"
-    )
+    op.drop_constraint("ck_filetype_is_upper", "services_consume_filetypes", type_="check")

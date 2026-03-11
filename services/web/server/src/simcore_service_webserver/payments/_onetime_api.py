@@ -42,7 +42,7 @@ MSG_WALLET_NO_ACCESS_ERROR = user_message(
     _version=1,
 )
 
-_FAKE_PAYMENT_TRANSACTION_ID_PREFIX = "fpt"
+_FAKE_PAYMENT_TRANSACTION_ID_PREFIX = "ftp"
 
 
 def _to_api_model(
@@ -84,11 +84,7 @@ async def _fake_init_payment(
     payment_id = f"{_FAKE_PAYMENT_TRANSACTION_ID_PREFIX}_{uuid4()}"
     # get_form_payment_url
     settings: PaymentsSettings = get_plugin_settings(app)
-    external_form_link = (
-        URL(f"{settings.PAYMENTS_FAKE_GATEWAY_URL}")
-        .with_path("/pay")
-        .with_query(id=payment_id)
-    )
+    external_form_link = URL(f"{settings.PAYMENTS_FAKE_GATEWAY_URL}").with_path("/pay").with_query(id=payment_id)
     # (2) Annotate INIT transaction
     async with get_asyncpg_engine(app).begin() as conn:
         await insert_init_payment_transaction(
@@ -104,7 +100,8 @@ async def _fake_init_payment(
             initiated_at=arrow.utcnow().datetime,
         )
     return WalletPaymentInitiated(
-        payment_id=IDStr(payment_id), payment_form_url=f"{external_form_link}"  # type: ignore[arg-type]
+        payment_id=IDStr(payment_id),
+        payment_form_url=f"{external_form_link}",  # type: ignore[arg-type]
     )
 
 
@@ -138,9 +135,7 @@ async def _ack_creation_of_wallet_payment(
 
     # notifying front-end via web-sockets
     if notify_enabled:
-        await notify_payment_completed(
-            app, user_id=transaction.user_id, payment=payment
-        )
+        await notify_payment_completed(app, user_id=transaction.user_id, payment=payment)
 
     if completion_state == PaymentTransactionState.SUCCESS:
         # notifying RUT
@@ -186,7 +181,6 @@ async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-ma
     payment_method_id: PaymentMethodID,
     comment,
 ) -> PaymentTransaction:
-
     assert user_name  # nosec
     assert wallet_name  # nosec
 
@@ -217,13 +211,10 @@ async def _fake_get_payments_page(
     limit: int,
     offset: int,
 ):
-
     (
         total_number_of_items,
         transactions,
-    ) = await _onetime_db.list_user_payment_transactions(
-        app, user_id=user_id, offset=offset, limit=limit
-    )
+    ) = await _onetime_db.list_user_payment_transactions(app, user_id=user_id, offset=offset, limit=limit)
 
     return total_number_of_items, [_to_api_model(t) for t in transactions]
 
@@ -239,9 +230,7 @@ async def _fake_get_payment_invoice_url(
     assert user_id  # nosec
     assert wallet_id  # nosec
 
-    return TypeAdapter(HttpUrl).validate_python(
-        f"https://fake-invoice.com/?id={payment_id}"
-    )
+    return TypeAdapter(HttpUrl).validate_python(f"https://fake-invoice.com/?id={payment_id}")
 
 
 async def raise_for_wallet_payments_permissions(
@@ -262,9 +251,7 @@ async def raise_for_wallet_payments_permissions(
     )
     if not permissions.read or not permissions.write:
         raise WalletAccessForbiddenError(
-            details=MSG_WALLET_NO_ACCESS_ERROR.format(
-                user_id=user_id, wallet_id=wallet_id
-            )
+            details=MSG_WALLET_NO_ACCESS_ERROR.format(user_id=user_id, wallet_id=wallet_id)
         )
 
 
@@ -287,24 +274,16 @@ async def init_creation_of_wallet_payment(
     """
 
     # wallet: check permissions
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
-    user_wallet = await get_wallet_by_user(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
+    await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
+    user_wallet = await get_wallet_by_user(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # user info
     user = await users_service.get_user_display_and_id_names(app, user_id=user_id)
-    user_invoice_address = await users_service.get_user_invoice_address(
-        app, user_id=user_id, product_name=product_name
-    )
+    user_invoice_address = await users_service.get_user_invoice_address(app, user_id=user_id, product_name=product_name)
 
     # stripe info
-    product_stripe_info = await products_service.get_product_stripe_info(
-        app, product_name=product_name
-    )
+    product_stripe_info = await products_service.get_product_stripe_info(app, product_name=product_name)
 
     settings: PaymentsSettings = get_plugin_settings(app)
     payment_inited: WalletPaymentInitiated
@@ -349,9 +328,7 @@ async def cancel_payment_to_wallet(
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> None:
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
+    await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
@@ -359,9 +336,7 @@ async def cancel_payment_to_wallet(
 
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
-        await _rpc.cancel_payment(
-            app, payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
-        )
+        await _rpc.cancel_payment(app, payment_id=payment_id, user_id=user_id, wallet_id=wallet_id)
 
 
 async def pay_with_payment_method(
@@ -376,24 +351,16 @@ async def pay_with_payment_method(
     comment: str | None,
 ) -> PaymentTransaction:
     # wallet: check permissions
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
-    user_wallet = await get_wallet_by_user(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
+    await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
+    user_wallet = await get_wallet_by_user(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # stripe info
-    product_stripe_info = await products_service.get_product_stripe_info(
-        app, product_name=product_name
-    )
+    product_stripe_info = await products_service.get_product_stripe_info(app, product_name=product_name)
 
     # user info
     user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
-    user_invoice_address = await users_service.get_user_invoice_address(
-        app, user_id=user_id, product_name=product_name
-    )
+    user_invoice_address = await users_service.get_user_invoice_address(app, user_id=user_id, product_name=product_name)
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:

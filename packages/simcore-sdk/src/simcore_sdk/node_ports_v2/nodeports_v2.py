@@ -56,7 +56,7 @@ class OutputsCallbacks(ABC):
         pass
 
     @abstractmethod
-    async def finished_succesfully(self, key: ServicePortKey) -> None:
+    async def finished_successfully(self, key: ServicePortKey) -> None:
         pass
 
     @abstractmethod
@@ -111,20 +111,14 @@ class Nodeports(BaseModel):
             await self._auto_update_from_db()
         return self.internal_outputs
 
-    async def get_value_link(
-        self, item_key: ServicePortKey, *, file_link_type: LinkType
-    ) -> ItemValue | None:
+    async def get_value_link(self, item_key: ServicePortKey, *, file_link_type: LinkType) -> ItemValue | None:
         try:
-            return await (await self.inputs)[item_key].get_value(
-                file_link_type=file_link_type
-            )
+            return await (await self.inputs)[item_key].get_value(file_link_type=file_link_type)
         except UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return await (await self.outputs)[item_key].get_value(
-            file_link_type=file_link_type
-        )
+        return await (await self.outputs)[item_key].get_value(file_link_type=file_link_type)
 
     async def get(
         self, item_key: ServicePortKey, progress_bar: ProgressBarData | None = None
@@ -137,9 +131,7 @@ class Nodeports(BaseModel):
         # if this fails it will raise an exception
         return await (await self.outputs)[item_key].get(progress_bar)
 
-    async def set(
-        self, item_key: ServicePortKey, item_value: ItemConcreteValue
-    ) -> None:
+    async def set(self, item_key: ServicePortKey, item_value: ItemConcreteValue) -> None:
         # first try to set the inputs.
         try:
             the_updated_inputs = await self.inputs
@@ -161,9 +153,7 @@ class Nodeports(BaseModel):
         raise PortNotFound(msg=f"output port for item {item_value} not found")
 
     async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type["Nodeports"]:
-        return await self.node_port_creator_cb(
-            self.db_manager, self.user_id, self.project_id, node_uuid
-        )
+        return await self.node_port_creator_cb(self.db_manager, self.user_id, self.project_id, node_uuid)
 
     async def _auto_update_from_db(self) -> None:
         # get the newest from the DB
@@ -180,9 +170,7 @@ class Nodeports(BaseModel):
 
     async def set_multiple(
         self,
-        port_values: dict[
-            ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]
-        ],
+        port_values: dict[ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]],
         *,
         progress_bar: ProgressBarData,
         outputs_callbacks: OutputsCallbacks | None,
@@ -207,7 +195,7 @@ class Nodeports(BaseModel):
                     value, set_kwargs=set_kwargs, progress_bar=sub_progress
                 )
                 if outputs_callbacks:
-                    await outputs_callbacks.finished_succesfully(port_key)
+                    await outputs_callbacks.finished_successfully(port_key)
             except UnboundPortError:
                 # not available try inputs
                 # if this fails it will raise another exception
@@ -229,9 +217,7 @@ class Nodeports(BaseModel):
             steps=len(port_values.items()), description="set multiple"
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
-                tasks.append(
-                    _set_with_notifications(port_key, value, set_kwargs, sub_progress)
-                )
+                tasks.append(_set_with_notifications(port_key, value, set_kwargs, sub_progress))
 
             results = await logged_gather(*tasks)
             await self.save_to_db_cb(self)
@@ -242,6 +228,4 @@ class Nodeports(BaseModel):
             for port_key, r in zip(port_values.keys(), results, strict=False)
             if r is not None
         ]:
-            raise ValidationError.from_exception_data(
-                title="Multiple port_key errors", line_errors=error_details
-            )
+            raise ValidationError.from_exception_data(title="Multiple port_key errors", line_errors=error_details)

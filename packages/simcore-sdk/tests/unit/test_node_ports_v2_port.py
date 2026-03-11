@@ -295,9 +295,7 @@ class PortParams(NamedTuple):
         ),
         pytest.param(
             *PortParams(
-                port_cfg=create_valid_port_config(
-                    "boolean", defaultValue=True, value=False
-                ),
+                port_cfg=create_valid_port_config("boolean", defaultValue=True, value=False),
                 exp_value_type=(bool),
                 exp_value_converter=bool,
                 exp_value=False,
@@ -321,9 +319,7 @@ class PortParams(NamedTuple):
                     path=f"{project_id()}/{node_uuid()}/no_file/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
-                exp_new_get_value=download_file_folder_name()
-                / "no_file"
-                / this_node_file_name().name,
+                exp_new_get_value=download_file_folder_name() / "no_file" / this_node_file_name().name,
             ),
             id="file type with no payload",
         ),
@@ -344,9 +340,7 @@ class PortParams(NamedTuple):
                     path=f"{project_id()}/{node_uuid()}/no_file_with_default/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
-                exp_new_get_value=download_file_folder_name()
-                / "no_file_with_default"
-                / this_node_file_name().name,
+                exp_new_get_value=download_file_folder_name() / "no_file_with_default" / this_node_file_name().name,
             ),
             id="file link with no payload and default value",
         ),
@@ -366,9 +360,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_get_value=download_file_folder_name()
-                / "some_file"
-                / this_node_file_name().name,
+                exp_get_value=download_file_folder_name() / "some_file" / this_node_file_name().name,
                 new_value=None,
                 exp_new_value=None,
                 exp_new_get_value=None,
@@ -380,9 +372,7 @@ class PortParams(NamedTuple):
                 port_cfg=create_valid_port_config(
                     "data:*/*",
                     key="some_file_with_file_to_key_map",
-                    fileToKeyMap={
-                        "a_new_fancy_name.csv": "some_file_with_file_to_key_map"
-                    },
+                    fileToKeyMap={"a_new_fancy_name.csv": "some_file_with_file_to_key_map"},
                     value={
                         "store": simcore_store_id(),
                         "path": f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
@@ -394,9 +384,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_get_value=download_file_folder_name()
-                / "some_file_with_file_to_key_map"
-                / "a_new_fancy_name.csv",
+                exp_get_value=download_file_folder_name() / "some_file_with_file_to_key_map" / "a_new_fancy_name.csv",
                 new_value=None,
                 exp_new_value=None,
                 exp_new_get_value=None,
@@ -423,18 +411,14 @@ class PortParams(NamedTuple):
                     dataset="some blahblah",
                     label="some blahblah",
                 ),
-                exp_get_value=download_file_folder_name()
-                / "some_file_on_datcore"
-                / this_node_file_name().name,
+                exp_get_value=download_file_folder_name() / "some_file_on_datcore" / this_node_file_name().name,
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/some_file_on_datcore/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
-                exp_new_get_value=download_file_folder_name()
-                / "some_file_on_datcore"
-                / this_node_file_name().name,
+                exp_new_get_value=download_file_folder_name() / "some_file_on_datcore" / this_node_file_name().name,
             ),
             id="file link with payload on store 1",
         ),
@@ -452,18 +436,14 @@ class PortParams(NamedTuple):
                 exp_value=DownloadLink(
                     downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
                 ),
-                exp_get_value=download_file_folder_name()
-                / "download_link"
-                / this_node_file_name().name,
+                exp_get_value=download_file_folder_name() / "download_link" / this_node_file_name().name,
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/download_link/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
-                exp_new_get_value=download_file_folder_name()
-                / "download_link"
-                / this_node_file_name().name,
+                exp_new_get_value=download_file_folder_name() / "download_link" / this_node_file_name().name,
             ),
             id="download link file type gets set back on store",
         ),
@@ -472,9 +452,7 @@ class PortParams(NamedTuple):
                 port_cfg=create_valid_port_config(
                     "data:*/*",
                     key="download_link_with_file_to_key",
-                    fileToKeyMap={
-                        "a_cool_file_type.zip": "download_link_with_file_to_key"
-                    },
+                    fileToKeyMap={"a_cool_file_type.zip": "download_link_with_file_to_key"},
                     value={
                         "downloadLink": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
                     },
@@ -484,9 +462,7 @@ class PortParams(NamedTuple):
                 exp_value=DownloadLink(
                     downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
                 ),
-                exp_get_value=download_file_folder_name()
-                / "download_link_with_file_to_key"
-                / "a_cool_file_type.zip",
+                exp_get_value=download_file_folder_name() / "download_link_with_file_to_key" / "a_cool_file_type.zip",
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
@@ -515,18 +491,14 @@ class PortParams(NamedTuple):
                     nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
                     output="the_output_of_that_node",
                 ),
-                exp_get_value=download_file_folder_name()
-                / "file_port_link"
-                / another_node_file_name().name,
+                exp_get_value=download_file_folder_name() / "file_port_link" / another_node_file_name().name,
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/file_port_link/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
-                exp_new_get_value=download_file_folder_name()
-                / "file_port_link"
-                / this_node_file_name().name,
+                exp_new_get_value=download_file_folder_name() / "file_port_link" / this_node_file_name().name,
             ),
             id="file node link type gets set back on store",
         ),
@@ -535,9 +507,7 @@ class PortParams(NamedTuple):
                 port_cfg=create_valid_port_config(
                     "data:*/*",
                     key="file_port_link_with_file_to_key_map",
-                    fileToKeyMap={
-                        "a_cool_file_type.zip": "file_port_link_with_file_to_key_map"
-                    },
+                    fileToKeyMap={"a_cool_file_type.zip": "file_port_link_with_file_to_key_map"},
                     value={
                         "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
                         "output": "the_output_of_that_node",
@@ -597,11 +567,11 @@ async def test_valid_port(
     port_cfg: dict[str, Any],
     exp_value_type: type[int | float | bool | str | Path],
     exp_value_converter: type[int | float | bool | str | Path],
-    exp_value: int | float | bool | str | Path | FileLink | DownloadLink | PortLink,
-    exp_get_value: int | float | bool | str | Path,
-    new_value: int | float | bool | str | Path,
-    exp_new_value: int | float | bool | str | Path | FileLink,
-    exp_new_get_value: int | float | bool | str | Path,
+    exp_value: float | bool | str | Path | FileLink | DownloadLink | PortLink,
+    exp_get_value: float | bool | str | Path,
+    new_value: float | bool | str | Path,
+    exp_new_value: float | bool | str | Path | FileLink,
+    exp_new_get_value: float | bool | str | Path,
     another_node_file: Path,
 ):
     async def _io_log_redirect_cb(logs: str) -> None:
@@ -618,11 +588,7 @@ async def test_valid_port(
         @staticmethod
         async def get(key: str, progress_bar: ProgressBarData | None = None):
             # this gets called when a node links to another node we return the get value but for files it needs to be a real one
-            return (
-                another_node_file
-                if port_cfg["type"].startswith("data:")
-                else exp_get_value
-            )
+            return another_node_file if port_cfg["type"].startswith("data:") else exp_get_value
 
         @classmethod
         async def _node_ports_creator_cb(cls, node_uuid: str) -> "FakeNodePorts":
@@ -726,9 +692,7 @@ def test_invalid_port(common_fixtures: None, port_cfg: dict[str, Any]):
         Port(**port_cfg)
 
 
-@pytest.mark.parametrize(
-    "port_cfg", [create_valid_port_config("data:*/*", key="set_some_inexisting_file")]
-)
+@pytest.mark.parametrize("port_cfg", [create_valid_port_config("data:*/*", key="set_some_inexisting_file")])
 async def test_invalid_file_type_setter(
     common_fixtures: None, project_id: str, node_uuid: str, port_cfg: dict[str, Any]
 ):

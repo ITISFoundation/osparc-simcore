@@ -6,6 +6,7 @@ from typing import Any, Final
 import aio_pika
 import psutil
 from aiormq.exceptions import ChannelPreconditionFailed
+from common_library.network import redact_url
 from pydantic import NonNegativeInt
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -40,7 +41,9 @@ class RabbitMQRetryPolicyUponInitialization:
 async def is_rabbitmq_responsive(url: str) -> bool:
     """True if responsive or raises an error"""
     with log_context(
-        _logger, logging.INFO, msg=f"checking RabbitMQ connection at {url=}"
+        _logger,
+        logging.INFO,
+        msg=f"checking RabbitMQ connection at url={redact_url(url)}",
     ):
         async with await aio_pika.connect(url):
             _logger.info("rabbitmq connection established")
@@ -101,7 +104,5 @@ async def declare_queue(
     try:
         return await channel.declare_queue(**queue_parameters)
     except ChannelPreconditionFailed:
-        _logger.exception(
-            "Most likely the rabbit queue parameters have changed. See notes above to fix!"
-        )
+        _logger.exception("Most likely the rabbit queue parameters have changed. See notes above to fix!")
         raise

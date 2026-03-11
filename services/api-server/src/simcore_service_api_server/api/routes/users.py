@@ -34,9 +34,7 @@ async def get_my_profile(
 @router.put("", response_model=Profile, responses=_USER_STATUS_CODES)
 async def update_my_profile(
     profile_update: ProfileUpdate,
-    webserver_session: Annotated[
-        AuthSession, Security(get_webserver_session, scopes=["write"])
-    ],
+    webserver_session: Annotated[AuthSession, Security(get_webserver_session, scopes=["write"])],
 ) -> Profile:
     profile: Profile = await webserver_session.update_me(profile_update=profile_update)
     return profile

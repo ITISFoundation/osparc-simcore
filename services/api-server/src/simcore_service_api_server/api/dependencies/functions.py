@@ -10,6 +10,7 @@ from models_library.functions import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
     get_product_name,
@@ -26,7 +27,6 @@ async def get_stored_job_outputs(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> FunctionOutputs:
-
     return await wb_api_rpc.get_function_job_outputs(
         function_job_id=function_job_id, user_id=user_id, product_name=product_name
     )

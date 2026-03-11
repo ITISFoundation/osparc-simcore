@@ -42,9 +42,7 @@ routes = web.RouteTableDef()
 @handle_plugin_requests_exceptions
 async def get_licensed_item_purchase(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        LicensedItemsPurchasesPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(LicensedItemsPurchasesPathParams, request)
 
     licensed_item_purchase_get: LicensedItemPurchaseGet = (
         await _licensed_items_purchases_service.get_licensed_item_purchase(
@@ -68,10 +66,8 @@ async def get_licensed_item_purchase(request: web.Request):
 async def list_wallet_licensed_items_purchases(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
-    query_params: LicensedItemsPurchasesListQueryParams = (
-        parse_request_query_parameters_as(
-            LicensedItemsPurchasesListQueryParams, request
-        )
+    query_params: LicensedItemsPurchasesListQueryParams = parse_request_query_parameters_as(
+        LicensedItemsPurchasesListQueryParams, request
     )
 
     licensed_item_purchase_get_page: LicensedItemPurchaseGetPage = (

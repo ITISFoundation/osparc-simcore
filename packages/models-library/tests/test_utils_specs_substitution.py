@@ -125,9 +125,7 @@ def test_substitutions_in_compose_spec(
 
     new_service_spec_text = yaml.safe_dump(new_service_spec)
 
-    assert (
-        "$" not in new_service_spec_text
-    ), f"All should be replaced in '{service_name}': {substitutions.used}"
+    assert "$" not in new_service_spec_text, f"All should be replaced in '{service_name}': {substitutions.used}"
 
     assert new_service_spec == expected_service_spec
 
@@ -169,9 +167,7 @@ def test_specs_substitutions_resolver_various_cases(var_template: str, value: st
     text_template = SpecsSubstitutionsResolver(input_dict, upgrade=True)
 
     replace_with: dict[str, Any] = (
-        {}
-        if env_includes_default_value
-        else {i: value for i in text_template.get_identifiers()}
+        {} if env_includes_default_value else dict.fromkeys(text_template.get_identifiers(), value)
     )
 
     text_template.set_substitutions(replace_with)
@@ -197,9 +193,7 @@ def test_safe_unsafe_substitution():
     assert replaced_dict == {"key": "$VAR"}
 
     # when var is not replace with safe=False an error will be raised
-    with pytest.raises(
-        IdentifierSubstitutionError, match="Was not able to substitute identifier"
-    ):
+    with pytest.raises(IdentifierSubstitutionError, match="Was not able to substitute identifier"):
         text_template.run(safe=False)
 
 

@@ -46,9 +46,7 @@ def s3_presigned_link_storage_kwargs(s3_settings: S3Settings) -> dict[str, Any]:
 
 @pytest.fixture
 def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
-    return TypeAdapter(AnyUrl).validate_python(
-        f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"
-    )
+    return TypeAdapter(AnyUrl).validate_python(f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}")
 
 
 @pytest.fixture
@@ -68,9 +66,7 @@ async def s3_presigned_link_remote_file_url(
 
 @pytest.fixture
 def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> AnyUrl:
-    return TypeAdapter(AnyUrl).validate_python(
-        f"s3://{s3_settings.S3_BUCKET_NAME}{faker.file_path()}"
-    )
+    return TypeAdapter(AnyUrl).validate_python(f"s3://{s3_settings.S3_BUCKET_NAME}{faker.file_path()}")
 
 
 @dataclass(frozen=True)
@@ -88,9 +84,7 @@ def remote_parameters(
 ) -> StorageParameters:
     return {
         "ftp": StorageParameters(s3_settings=None, remote_file_url=ftp_remote_file_url),
-        "s3": StorageParameters(
-            s3_settings=s3_settings, remote_file_url=s3_remote_file_url
-        ),
+        "s3": StorageParameters(s3_settings=s3_settings, remote_file_url=s3_remote_file_url),
     }[
         request.param  # type: ignore
     ]
@@ -173,9 +167,7 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
-    destination_url = TypeAdapter(AnyUrl).validate_python(
-        f"{remote_parameters.remote_file_url}.zip"
-    )
+    destination_url = TypeAdapter(AnyUrl).validate_python(f"{remote_parameters.remote_file_url}.zip")
     src_path = tmp_path / faker.file_name()
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
@@ -348,9 +340,7 @@ async def test_pull_compressed_zip_file_from_remote(
     # put some zip file on the remote
     local_zip_file_path = tmp_path / f"{faker.file_name()}.zip"
     file_names_within_zip_file = set()
-    with zipfile.ZipFile(
-        local_zip_file_path, compression=zipfile.ZIP_DEFLATED, mode="w"
-    ) as zfp:
+    with zipfile.ZipFile(local_zip_file_path, compression=zipfile.ZIP_DEFLATED, mode="w") as zfp:
         for file_number in range(5):
             local_test_file = tmp_path / f"{file_number}_{faker.file_name()}"
             local_test_file.write_text(faker.text())
@@ -358,9 +348,7 @@ async def test_pull_compressed_zip_file_from_remote(
             zfp.write(local_test_file, local_test_file.name)
             file_names_within_zip_file.add(local_test_file.name)
 
-    destination_url = TypeAdapter(AnyUrl).validate_python(
-        f"{remote_parameters.remote_file_url}.zip"
-    )
+    destination_url = TypeAdapter(AnyUrl).validate_python(f"{remote_parameters.remote_file_url}.zip")
     storage_kwargs = {}
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
@@ -421,9 +409,7 @@ async def test_pull_compressed_zip_file_from_remote(
     download_folder.mkdir(parents=True, exist_ok=True)
     assert download_folder.exists()
     dst_path = download_folder / f"{faker.file_name()}.zip"
-    mime_type, _ = mimetypes.guess_type(
-        faker.file_name()
-    )  # let's have a standard mime type
+    mime_type, _ = mimetypes.guess_type(faker.file_name())  # let's have a standard mime type
     await pull_file_from_remote(
         src_url=src_url,
         target_mime_type=mime_type,
@@ -455,12 +441,8 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
-    destination_url1 = TypeAdapter(AnyUrl).validate_python(
-        f"{remote_parameters.remote_file_url}1.zip"
-    )
-    destination_url2 = TypeAdapter(AnyUrl).validate_python(
-        f"{remote_parameters.remote_file_url}2.zip"
-    )
+    destination_url1 = TypeAdapter(AnyUrl).validate_python(f"{remote_parameters.remote_file_url}1.zip")
+    destination_url2 = TypeAdapter(AnyUrl).validate_python(f"{remote_parameters.remote_file_url}2.zip")
     src_path = tmp_path / faker.file_name()
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)

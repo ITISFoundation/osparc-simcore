@@ -67,9 +67,7 @@ class _7ZipArchiveInfoParser:  # noqa: N801
 
 
 class _7ZipProgressParser:  # noqa: N801
-    def __init__(
-        self, progress_handler: Callable[[NonNegativeInt], Awaitable[None]]
-    ) -> None:
+    def __init__(self, progress_handler: Callable[[NonNegativeInt], Awaitable[None]]) -> None:
         self.progress_handler = progress_handler
         self.total_bytes: NonNegativeInt | None = None
 
@@ -110,7 +108,6 @@ class _7ZipProgressParser:  # noqa: N801
 
         # if finished emit the remaining diff
         if self.total_bytes and self.finished and not self.finished_emitted:
-
             await self.progress_handler(self.total_bytes - self.emitted_total)
             self.finished_emitted = True
 
@@ -177,9 +174,7 @@ async def _run_cli_command(
     assert process.stdout  # nosec
 
     command_output, _ = await asyncio.gather(
-        asyncio.create_task(
-            _stream_output_reader(process.stdout, output_handler=output_handler)
-        ),
+        asyncio.create_task(_stream_output_reader(process.stdout, output_handler=output_handler)),
         process.wait(),
     )
 
@@ -197,9 +192,7 @@ async def archive_dir(
     progress_bar: ProgressBarData | None = None,
 ) -> None:
     if progress_bar is None:
-        progress_bar = ProgressBarData(
-            num_steps=1, description=f"compressing {dir_to_compress.name}"
-        )
+        progress_bar = ProgressBarData(num_steps=1, description=f"compressing {dir_to_compress.name}")
 
     options = " ".join(
         [
@@ -216,9 +209,7 @@ async def archive_dir(
     )
     command = f"{_7ZIP_EXECUTABLE} {options} {shlex.quote(f'{destination}')} {shlex.quote(f'{dir_to_compress}')}/*"
 
-    folder_size_bytes = sum(
-        file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
-    )
+    folder_size_bytes = sum(file.stat().st_size for file in iter_files_to_compress(dir_to_compress))
 
     async with AsyncExitStack() as exit_stack:
         sub_progress = await exit_stack.enter_async_context(
@@ -229,10 +220,7 @@ async def archive_dir(
             tqdm_logging_redirect(
                 desc=f"compressing {dir_to_compress} -> {destination}\n",
                 total=folder_size_bytes,
-                **(
-                    TQDM_FILE_OPTIONS
-                    | {"miniters": compute_tqdm_miniters(folder_size_bytes)}
-                ),
+                **(TQDM_FILE_OPTIONS | {"miniters": compute_tqdm_miniters(folder_size_bytes)}),
             )
         )
 
@@ -240,9 +228,7 @@ async def archive_dir(
             tqdm_progress.update(byte_progress)
             await sub_progress.update(byte_progress)
 
-        await _run_cli_command(
-            command, output_handler=_7ZipProgressParser(_compressed_bytes).parse_chunk
-        )
+        await _run_cli_command(command, output_handler=_7ZipProgressParser(_compressed_bytes).parse_chunk)
 
         # 7zip automatically adds .zip extension if it's missing form the archive name
         if not destination.exists():
@@ -273,9 +259,7 @@ def _extract_file_names_from_archive(command_output: str) -> set[str]:
     file_lines: list[str] = [line for line in entries_lines if not _is_folder(line)]
 
     if file_lines and file_name_start is None:
-        raise TableHeaderNotFoundError(
-            file_lines=file_lines, command_output=command_output
-        )
+        raise TableHeaderNotFoundError(file_lines=file_lines, command_output=command_output)
 
     return {line[file_name_start:] for line in file_lines}
 
@@ -288,9 +272,7 @@ async def unarchive_dir(
     log_cb: Callable[[str], Awaitable[None]] | None = None,
 ) -> set[Path]:
     if progress_bar is None:
-        progress_bar = ProgressBarData(
-            num_steps=1, description=f"extracting {archive_to_extract.name}"
-        )
+        progress_bar = ProgressBarData(num_steps=1, description=f"extracting {archive_to_extract.name}")
 
     # get archive information
     archive_info_parser = _7ZipArchiveInfoParser()
@@ -302,9 +284,7 @@ async def unarchive_dir(
     total_bytes, file_count = archive_info_parser.get_parsed_values()
 
     async with AsyncExitStack() as exit_stack:
-        sub_prog = await exit_stack.enter_async_context(
-            progress_bar.sub_progress(steps=total_bytes, description="...")
-        )
+        sub_prog = await exit_stack.enter_async_context(progress_bar.sub_progress(steps=total_bytes, description="..."))
 
         tqdm_progress = exit_stack.enter_context(
             tqdm.tqdm(

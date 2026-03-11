@@ -56,7 +56,5 @@ def test_failing_validation():
     assert "input_value=-10" in f"{exc.value}"
 
     with pytest.raises(ValidationError) as exc:
-        DiskUsage(
-            used=ByteSize(10), free=ByteSize(10), total=ByteSize(21), used_percent=0
-        )
+        DiskUsage(used=ByteSize(10), free=ByteSize(10), total=ByteSize(21), used_percent=0)
     assert "is different than the sum of" in f"{exc.value}"

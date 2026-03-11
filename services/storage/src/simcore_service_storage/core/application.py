@@ -34,13 +34,11 @@ from .._meta import (
     APP_WORKER_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_rest_api_routes
-from ..api.rpc.routes import setup_rpc_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
 from ..modules.celery import setup_task_manager
 from ..modules.db import setup_db
-from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from .settings import ApplicationSettings
@@ -48,12 +46,9 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(
-    settings: ApplicationSettings, tracing_config: TracingConfig
-) -> FastAPI:  # noqa: C901
+def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:  # noqa: C901
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE
-        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+        debug=settings.SC_BOOT_MODE in {BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL},
         title=APP_NAME,
         description="Service that manages osparc storage backend",
         version=API_VERSION,
@@ -81,10 +76,6 @@ def create_app(
     if settings.STORAGE_CELERY:
         setup_task_manager(app, settings=settings.STORAGE_CELERY)
 
-    if not settings.STORAGE_WORKER_MODE:
-        setup_rabbitmq(app)
-        setup_rpc_routes(app)
-
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
 
@@ -99,9 +90,7 @@ def create_app(
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)
-        app.add_middleware(
-            BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
-        )
+        app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
 
     app.add_middleware(GZipMiddleware)
 

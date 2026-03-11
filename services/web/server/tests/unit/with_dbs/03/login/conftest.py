@@ -26,9 +26,7 @@ from simcore_service_webserver.login.settings import LoginOptions, get_plugin_op
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
-):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker):
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
@@ -79,9 +77,7 @@ def app_environment(
 
 @pytest.fixture
 def fake_weak_password(faker: Faker) -> str:
-    return faker.password(
-        length=8, special_chars=True, digits=True, upper_case=True, lower_case=True
-    )
+    return faker.password(length=8, special_chars=True, digits=True, upper_case=True, lower_case=True)
 
 
 @pytest.fixture

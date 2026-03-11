@@ -43,6 +43,10 @@ qx.Class.define("osparc.store.StaticInfo", {
       return platformName;
     },
 
+    isLocalEnv: function() {
+      return ["9081"].includes(window.location.port);
+    },
+
     getDisplayName: function() {
       const staticKey = "displayName";
       return this.getValue(staticKey);

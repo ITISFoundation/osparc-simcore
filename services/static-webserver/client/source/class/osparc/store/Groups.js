@@ -391,6 +391,10 @@ qx.Class.define("osparc.store.Groups", {
       return null;
     },
 
+    isChatbotEnabled: function() {
+      return Boolean(this.getChatbot());
+    },
+
     // CRUD GROUP
     postOrganization: function(name, description, thumbnail) {
       const newGroupData = {

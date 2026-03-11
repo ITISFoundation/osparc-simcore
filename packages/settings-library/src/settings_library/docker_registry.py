@@ -28,7 +28,7 @@ class RegistrySettings(BaseCustomSettings):
     REGISTRY_URL: Annotated[
         str,
         Field(
-            # NOTE: name is missleading, http or https protocol are not included
+            # NOTE: name is misleading, http or https protocol are not included
             description="hostname of docker registry (without protocol but with port if available)",
             min_length=1,
         ),
@@ -54,9 +54,7 @@ class RegistrySettings(BaseCustomSettings):
 
     @model_validator(mode="after")
     def _check_registry_authentication(self: Self) -> Self:
-        if self.REGISTRY_AUTH and any(
-            not v for v in (self.REGISTRY_USER, self.REGISTRY_PW)
-        ):
+        if self.REGISTRY_AUTH and any(not v for v in (self.REGISTRY_USER, self.REGISTRY_PW)):
             msg = "If REGISTRY_AUTH is True, both REGISTRY_USER and REGISTRY_PW must be provided"
             raise ValueError(msg)
         return self

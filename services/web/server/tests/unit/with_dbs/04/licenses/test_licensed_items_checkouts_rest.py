@@ -68,9 +68,7 @@ async def test_licensed_items_checkouts_handlers(
     assert client.app
 
     # list
-    url = client.app.router["list_licensed_item_checkouts_for_wallet"].url_for(
-        wallet_id="1"
-    )
+    url = client.app.router["list_licensed_item_checkouts_for_wallet"].url_for(wallet_id="1")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1

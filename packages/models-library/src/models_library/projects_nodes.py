@@ -65,12 +65,8 @@ InputID: TypeAlias = KeyIDStr
 OutputID: TypeAlias = KeyIDStr
 
 # union_mode="smart" by default for Pydantic>=2: https://docs.pydantic.dev/latest/concepts/unions/#union-modes
-InputsDict: TypeAlias = dict[
-    InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]
-]
-OutputsDict: TypeAlias = dict[
-    OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]
-]
+InputsDict: TypeAlias = dict[InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]]
+OutputsDict: TypeAlias = dict[OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]]
 
 UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
 
@@ -91,9 +87,7 @@ class NodeShareState(BaseModel):
 
     current_user_groupids: Annotated[
         list[GroupID] | None,
-        Field(
-            description="Group(s) that currently have access to the node (or locked it)"
-        ),
+        Field(description="Group(s) that currently have access to the node (or locked it)"),
     ] = None
 
     status: Annotated[
@@ -133,9 +127,7 @@ class NodeShareState(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        extra="forbid", json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)
 
 
 class NodeState(BaseModel):
@@ -171,9 +163,7 @@ class NodeState(BaseModel):
         ),
     ] = 0
 
-    lock_state: Annotated[
-        NodeShareState | None, Field(description="the node's lock state")
-    ] = None
+    lock_state: Annotated[NodeShareState | None, Field(description="the node's lock state")] = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -442,9 +432,7 @@ class Node(BaseModel):
                                 "dataset": "N:dataset:123",
                                 "path": "path/to/file.txt",
                             },
-                            "download_link": {
-                                "downloadLink": "https://example.com/downloadable/file.txt"
-                            },
+                            "download_link": {"downloadLink": "https://example.com/downloadable/file.txt"},
                             "array_input": [1, 2, 3, 4, 5],
                             "object_input": {"name": "test", "value": 42},
                         },
@@ -463,9 +451,7 @@ class Node(BaseModel):
                                 "dataset": "N:dataset:456",
                                 "path": "results/output.txt",
                             },
-                            "download_link_output": {
-                                "downloadLink": "https://example.com/results/download.txt"
-                            },
+                            "download_link_output": {"downloadLink": "https://example.com/results/download.txt"},
                             "array_output": ["a", "b", "c", "d"],
                             "object_output": {"status": "complete", "count": 42},
                         },

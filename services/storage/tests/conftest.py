@@ -24,6 +24,9 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
+from celery_library import CeleryTaskManager
+from celery_library.backends import RedisTaskStore
+from celery_library.types import register_celery_types
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -39,6 +42,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
@@ -62,11 +66,14 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.redis._client import RedisClientSDK
 from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
+from settings_library.celery import CelerySettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.api._worker_tasks.tasks import register_worker_tasks
@@ -91,10 +98,12 @@ pytest_plugins = [
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
+    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.disk_usage_monitoring",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_products_data",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.logging",
@@ -102,6 +111,7 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_storage_data_models",
     "pytest_simcore.simcore_storage_datcore_adapter",
@@ -200,9 +210,7 @@ def enable_tracing(
 
 
 @pytest.fixture
-def enabled_rabbitmq(
-    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
-) -> RabbitSettings:
+def enabled_rabbitmq(app_environment: EnvVarsDict, rabbit_service: RabbitSettings) -> RabbitSettings:
     return rabbit_service
 
 
@@ -242,9 +250,7 @@ async def initialized_app(
     )
     app = create_app(app_settings, tracing_config=tracing_config)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
-    async with LifespanManager(
-        app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
-    ):
+    async with LifespanManager(app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT):
         yield app
 
 
@@ -261,9 +267,7 @@ async def client(
 
 
 @pytest.fixture
-async def node_id(
-    project_id: ProjectID, create_project_node: Callable[[ProjectID], Awaitable[NodeID]]
-) -> NodeID:
+async def node_id(project_id: ProjectID, create_project_node: Callable[[ProjectID], Awaitable[NodeID]]) -> NodeID:
     return await create_project_node(project_id)
 
 
@@ -312,9 +316,7 @@ async def get_file_meta_data(
         ).with_query(user_id=user_id)
 
         response = await client.get(f"{url}")
-        received_fmd, error = assert_status(
-            response, status.HTTP_200_OK, FileMetaDataGet
-        )
+        received_fmd, error = assert_status(response, status.HTTP_200_OK, FileMetaDataGet)
         assert not error
         assert received_fmd
         return received_fmd
@@ -331,9 +333,7 @@ async def create_upload_file_link_v2(
 ) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
 
-    async def _link_creator(
-        file_id: SimcoreS3FileID, **query_kwargs
-    ) -> FileUploadSchema:
+    async def _link_creator(file_id: SimcoreS3FileID, **query_kwargs) -> FileUploadSchema:
         url = url_from_operation_id(
             client,
             initialized_app,
@@ -341,13 +341,9 @@ async def create_upload_file_link_v2(
             location_id=f"{location_id}",
             file_id=file_id,
         ).with_query(**query_kwargs, user_id=user_id)
-        assert (
-            "file_size" in url.query
-        ), "V2 call to upload file must contain file_size field!"
+        assert "file_size" in url.query, "V2 call to upload file must contain file_size field!"
         response = await client.put(f"{url}")
-        received_file_upload, error = assert_status(
-            response, status.HTTP_200_OK, FileUploadSchema
-        )
+        received_file_upload, error = assert_status(response, status.HTTP_200_OK, FileUploadSchema)
         assert not error
         assert received_file_upload
         file_params.append((user_id, location_id, file_id))
@@ -381,9 +377,7 @@ def upload_file(
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     with_storage_celery_worker: TestWorkController,
-) -> Callable[
-    [ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]
-]:
+) -> Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]]:
     async def _uploader(
         file_size: ByteSize,
         file_name: str,
@@ -407,9 +401,7 @@ def upload_file(
         )
 
         # upload the file
-        part_to_etag: list[UploadedPart] = await upload_file_to_presigned_link(
-            file, file_upload_link
-        )
+        part_to_etag: list[UploadedPart] = await upload_file_to_presigned_link(file, file_upload_link)
         # complete the upload
         complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
         with log_context(logging.INFO, f"completing upload of {file=}"):
@@ -441,9 +433,7 @@ def upload_file(
                 ):
                     response = await client.post(f"{state_url}")
                     response.raise_for_status()
-                    future, error = assert_status(
-                        response, status.HTTP_200_OK, FileUploadCompleteFutureResponse
-                    )
+                    future, error = assert_status(response, status.HTTP_200_OK, FileUploadCompleteFutureResponse)
                     assert not error
                     assert future
                     if future.state == FileUploadCompleteState.NOK:
@@ -454,7 +444,8 @@ def upload_file(
                     completion_etag = future.e_tag
                     ctx.logger.info(
                         "%s",
-                        f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
+                        f"--> done waiting, data is completely uploaded "
+                        f"[{attempt.retry_state.retry_object.statistics}]",
                     )
 
         # check the entry in db now has the correct file size, and the upload id is gone
@@ -468,9 +459,7 @@ def upload_file(
             expected_sha256_checksum=sha256_checksum,
         )
         # check the file is in S3 for real
-        s3_metadata = await storage_s3_client.get_object_metadata(
-            bucket=storage_s3_bucket, object_key=file_id
-        )
+        s3_metadata = await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
         assert s3_metadata.size == file_size
         assert s3_metadata.last_modified
         assert s3_metadata.e_tag == completion_etag
@@ -497,9 +486,7 @@ async def create_empty_directory(
     client: httpx.AsyncClient,
     with_storage_celery_worker: TestWorkController,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
-    async def _directory_creator(
-        dir_name: str, project_id: ProjectID, node_id: NodeID
-    ) -> SimcoreS3FileID:
+    async def _directory_creator(dir_name: str, project_id: ProjectID, node_id: NodeID) -> SimcoreS3FileID:
         # creating an empty directory goes through the same procedure as uploading a multipart file
         # done by using 3 calls:
         # 1. create the link as a directory
@@ -543,9 +530,7 @@ async def create_empty_directory(
                 ) as ctx,
             ):
                 response = await client.post(f"{state_url}")
-                future, error = assert_status(
-                    response, status.HTTP_200_OK, FileUploadCompleteFutureResponse
-                )
+                future, error = assert_status(response, status.HTTP_200_OK, FileUploadCompleteFutureResponse)
                 assert not error
                 assert future
                 assert future.state == FileUploadCompleteState.OK
@@ -572,7 +557,7 @@ async def _upload_file_to_s3(
         bucket=s3_bucket,
         file=local_file,
         object_key=file_id,
-        bytes_transfered_cb=None,
+        bytes_transferred_cb=None,
     )
     return {file_id: FileIDDict(path=local_file, sha256_checksum=f"{faker.sha256()}")}
 
@@ -603,15 +588,14 @@ async def populate_directory(
         # Create subdirectories
         s3_base_path = Path(f"{project_id}") / f"{node_id}" / dir_name
         # NOTE: add a space in the sub directory
-        s3_subdirs = [
-            s3_base_path / f"sub-dir_ect ory-{i}" for i in range(subdir_count)
-        ]
+        s3_subdirs = [s3_base_path / f"sub-dir_etc ory-{i}" for i in range(subdir_count)]
         # Randomly distribute files across subdirectories
         selected_subdirs = random.choices(s3_subdirs, k=file_count)  # noqa: S311
         # Upload to S3
+        total_size = ByteSize(file_count * file_size_in_dir).human_readable()
         with log_context(
             logging.INFO,
-            msg=f"Uploading {file_count} files to S3 (each {file_size_in_dir.human_readable()}, total: {ByteSize(file_count * file_size_in_dir).human_readable()})",
+            msg=(f"Uploading {file_count} files to S3 (each {file_size_in_dir.human_readable()}, total: {total_size})"),
         ):
             # we ensure the file name contain a space
             def _file_name_with_space():
@@ -655,6 +639,7 @@ async def delete_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> Callable[[StorageFileID], Awaitable[None]]:
     async def _dir_remover(directory_s3: StorageFileID) -> None:
@@ -673,7 +658,7 @@ async def delete_directory(
         # even if one file is left this will detect it
         list_files_metadata_url = url_from_operation_id(
             client, initialized_app, "list_files_metadata", location_id=f"{location_id}"
-        ).with_query(user_id=user_id, uuid_filter=directory_s3)
+        ).with_query(user_id=user_id, product_name=product_name, uuid_filter=directory_s3)
         response = await client.get(f"{list_files_metadata_url}")
         data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
         assert error is None
@@ -684,9 +669,7 @@ async def delete_directory(
 
 @pytest.fixture
 async def create_directory_with_files(
-    create_empty_directory: Callable[
-        [str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]
-    ],
+    create_empty_directory: Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]],
     populate_directory: Callable[
         [ByteSize, str, ProjectID, NodeID, int, int],
         Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
@@ -695,9 +678,7 @@ async def create_directory_with_files(
 ) -> AsyncIterator[
     Callable[
         [str, ByteSize, int, int, ProjectID, NodeID],
-        Awaitable[
-            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ]
 ]:
     uploaded_directories = []
@@ -749,20 +730,14 @@ async def _upload_one_file_task(
     assert uploaded_file_id == file_id
     return (
         node_id,
-        {
-            uploaded_file_id: FileIDDict(
-                path=uploaded_file, sha256_checksum=selected_checksum
-            )
-        },
+        {uploaded_file_id: FileIDDict(path=uploaded_file, sha256_checksum=selected_checksum)},
     )
 
 
 async def _upload_folder_task(
     create_directory_with_files: Callable[
         ...,
-        Awaitable[
-            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     allowed_file_sizes: tuple[ByteSize, ...],
     *,
@@ -788,15 +763,11 @@ async def random_project_with_files(
     sqlalchemy_async_engine: AsyncEngine,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     create_project_node: Callable[..., Awaitable[NodeID]],
-    create_simcore_file_id: Callable[
-        [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
-    ],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str, Path | None], SimcoreS3FileID],
     faker: Faker,
     create_directory_with_files: Callable[
         ...,
-        Awaitable[
-            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
 ) -> Callable[
@@ -805,11 +776,13 @@ async def random_project_with_files(
 ]:
     async def _creator(
         project_params: ProjectWithFilesParams,
+        product_name: ProductName | None = None,
     ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
-        assert len(project_params.allowed_file_sizes) == len(
-            project_params.allowed_file_checksums
-        )
-        project = await create_project(name="random-project")
+        assert len(project_params.allowed_file_sizes) == len(project_params.allowed_file_checksums)
+        project_kwargs = {"name": "random-project"}
+        if product_name is not None:
+            project_kwargs["product_name"] = product_name
+        project = await create_project(**project_kwargs)
         node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
         upload_tasks = []
         for _ in range(project_params.num_nodes):
@@ -818,9 +791,7 @@ async def random_project_with_files(
             node_id = cast(NodeID, faker.uuid4(cast_to=None))
             node_to_files_mapping[node_id] = {}
             output3_file_name = faker.file_name()
-            output3_file_id = create_simcore_file_id(
-                project_id, node_id, output3_file_name, Path("outputs/output_3")
-            )
+            output3_file_id = create_simcore_file_id(project_id, node_id, output3_file_name, Path("outputs/output_3"))
             created_node_id = await create_project_node(
                 ProjectID(project["uuid"]),
                 node_id,
@@ -859,9 +830,7 @@ async def random_project_with_files(
             # add a few random files in the node root space for good measure
             for _ in range(random.randint(1, 3)):  # noqa: S311
                 root_file_name = faker.file_name()
-                root_file_id = create_simcore_file_id(
-                    project_id, node_id, root_file_name, None
-                )
+                root_file_id = create_simcore_file_id(project_id, node_id, root_file_name, None)
                 upload_tasks.append(
                     _upload_one_file_task(
                         upload_file,
@@ -890,9 +859,7 @@ async def random_project_with_files(
 async def with_random_project_with_files(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ) -> tuple[
@@ -916,9 +883,7 @@ async def output_file(
         bucket=TypeAdapter(S3BucketName).validate_python("master-simcore"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
-        sha256_checksum=TypeAdapter(SHA256Str).validate_python(
-            faker.sha256(raw_output=False)
-        ),
+        sha256_checksum=TypeAdapter(SHA256Str).validate_python(faker.sha256(raw_output=False)),
     )
     file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
     file.file_size = ByteSize(12)
@@ -936,9 +901,7 @@ async def output_file(
     yield file
 
     async with sqlalchemy_async_engine.begin() as conn:
-        result = await conn.execute(
-            file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
-        )
+        result = await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id))
 
 
 @pytest.fixture
@@ -967,9 +930,7 @@ async def fake_datcore_tokens(
     yield token_key, token_secret
 
     async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            tokens.delete().where(tokens.c.token_id.in_(created_token_ids))
-        )
+        await conn.execute(tokens.delete().where(tokens.c.token_id.in_(created_token_ids)))
 
 
 @pytest.fixture(scope="session")
@@ -986,6 +947,13 @@ def celery_config() -> dict[str, Any]:
         "task_track_started": True,
         "worker_send_task_events": True,
     }
+
+
+@pytest.fixture
+def celery_settings(
+    app_environment: EnvVarsDict,
+) -> CelerySettings:
+    return CelerySettings.create_from_envs()
 
 
 @pytest.fixture
@@ -1011,24 +979,18 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 def worker_app_settings(
     app_settings: ApplicationSettings,
 ) -> ApplicationSettings:
-    worker_test_app_settings = app_settings.model_copy(
-        update={"STORAGE_WORKER_MODE": True}, deep=True
-    )
+    worker_test_app_settings = app_settings.model_copy(update={"STORAGE_WORKER_MODE": True}, deep=True)
     print(f"{worker_test_app_settings.model_dump_json(indent=2)=}")
     return worker_test_app_settings
-
-
-_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
 async def with_storage_celery_worker(
     celery_app: Celery,
     worker_app_settings: ApplicationSettings,
-    monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-    # Signals must be explicitily connected
+    # Signals must be explicitly connected
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
@@ -1059,17 +1021,27 @@ async def with_storage_celery_worker(
 
 
 @pytest.fixture
-async def storage_rabbitmq_rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    rpc_client = await rabbitmq_rpc_client("pytest_storage_rpc_client")
-    assert rpc_client
-    return rpc_client
+async def task_manager(
+    mock_celery_app: Celery,
+    celery_settings: CelerySettings,
+    redis_service: RedisSettings,
+) -> AsyncIterator[TaskManager]:
+    register_celery_types()
 
+    try:
+        redis_client_sdk = RedisClientSDK(
+            redis_service.build_redis_dsn(RedisDatabase.CELERY_TASKS),
+            client_name="pytest_celery_tasks",
+        )
+        await redis_client_sdk.setup()
 
-@pytest.fixture
-def product_name(faker: Faker) -> str:
-    return faker.name()
+        yield CeleryTaskManager(
+            mock_celery_app,
+            celery_settings,
+            RedisTaskStore(redis_client_sdk),
+        )
+    finally:
+        await redis_client_sdk.shutdown()
 
 
 @pytest.fixture

@@ -61,9 +61,7 @@ def test_dask_clients_pool_missing_raises_configuration_error(
             DaskClientsPool.instance(app)
 
 
-def test_dask_clients_pool_properly_setup_and_deleted(
-    minimal_dask_config: None, mocker: MockerFixture
-):
+def test_dask_clients_pool_properly_setup_and_deleted(minimal_dask_config: None, mocker: MockerFixture):
     mocked_dask_clients_pool = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClientsPool",
         autospec=True,
@@ -196,24 +194,17 @@ async def test_acquiring_wrong_cluster_raises_exception(
 
     non_existing_cluster = fake_clusters(1)[0]
     with pytest.raises(DaskClientAcquisisitonError):
-        async with clients_pool.acquire(
-            non_existing_cluster, ref="test-non-existing-ref"
-        ):
+        async with clients_pool.acquire(non_existing_cluster, ref="test-non-existing-ref"):
             ...
 
 
-def test_default_cluster_correctly_initialized(
-    minimal_dask_config: None, default_scheduler: None, client: TestClient
-):
+def test_default_cluster_correctly_initialized(minimal_dask_config: None, default_scheduler: None, client: TestClient):
     assert client.app
     the_app = cast(FastAPI, client.app)
     dask_scheduler_settings = the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
-    assert (
-        default_cluster.endpoint
-        == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL
-    )
+    assert default_cluster.endpoint == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL
 
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
 
@@ -241,9 +232,7 @@ async def test_acquire_default_cluster(
     dask_scheduler_settings = the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
-    async with dask_clients_pool.acquire(
-        default_cluster, ref="test-default-cluster-ref"
-    ) as dask_client:
+    async with dask_clients_pool.acquire(default_cluster, ref="test-default-cluster-ref") as dask_client:
 
         def just_a_quick_fct(x, y):
             return x + y

@@ -25,9 +25,7 @@ router = APIRouter(
         "tags",
         "groups",
     ],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 
@@ -44,9 +42,7 @@ async def list_tag_groups(_path_params: Annotated[TagPathParams, Depends()]):
     response_model=Envelope[TagGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_tag_group(
-    _path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate
-):
+async def create_tag_group(_path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate):
     """Shares tag `tag_id` with an organization or user with `group_id` providing access-rights to it"""
 
 
@@ -54,9 +50,7 @@ async def create_tag_group(
     "/tags/{tag_id}/groups/{group_id}",
     response_model=Envelope[list[TagGroupGet]],
 )
-async def replace_tag_group(
-    _path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate
-):
+async def replace_tag_group(_path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate):
     """Replace access rights on tag for associated organization or user with `group_id`"""
 
 

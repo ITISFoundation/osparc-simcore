@@ -23,12 +23,8 @@ def upgrade():
         "group_classifiers",
         sa.Column("id", sa.BigInteger(), nullable=False),
         sa.Column("bundle", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("gid", sa.BigInteger(), nullable=True),
         sa.ForeignKeyConstraint(
             ["gid"],

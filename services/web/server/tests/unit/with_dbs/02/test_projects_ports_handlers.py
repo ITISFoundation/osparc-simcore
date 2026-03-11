@@ -35,9 +35,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def fake_project(
-    fake_project: ProjectDict, workbench_db_column: dict[str, Any]
-) -> ProjectDict:
+def fake_project(fake_project: ProjectDict, workbench_db_column: dict[str, Any]) -> ProjectDict:
     # OVERRIDES user_project
     project = deepcopy(fake_project)
     project["workbench"] = workbench_db_column
@@ -101,9 +99,7 @@ async def test_io_workflow(
     project_id = user_project["uuid"]
 
     # list_project_metadata_ports
-    expected_url = client.app.router["list_project_metadata_ports"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["list_project_metadata_ports"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/metadata/ports") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/metadata/ports")
@@ -163,14 +159,10 @@ async def test_io_workflow(
         )
 
         assert not diff
-        assert not DeepDiff(
-            ports_meta, PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA, ignore_order=True
-        )
+        assert not DeepDiff(ports_meta, PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA, ignore_order=True)
 
     # get_project_inputs
-    expected_url = client.app.router["get_project_inputs"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_inputs"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/inputs") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/inputs")
@@ -196,9 +188,7 @@ async def test_io_workflow(
         }
 
     # update_project_inputs
-    expected_url = client.app.router["update_project_inputs"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["update_project_inputs"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/inputs") == expected_url
 
     resp = await client.patch(
@@ -227,9 +217,7 @@ async def test_io_workflow(
         }
 
     # get_project_outputs (actual data)
-    expected_url = client.app.router["get_project_outputs"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_outputs"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/outputs") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/outputs")
@@ -289,22 +277,18 @@ async def test_clone_project_and_set_inputs(
 
     assert parent_project_id != cloned_project.uuid
     assert user_project["description"] == cloned_project.description
-    assert TypeAdapter(datetime).validate_python(
-        user_project["creationDate"]
-    ) < TypeAdapter(datetime).validate_python(cloned_project.creation_date)
+    assert TypeAdapter(datetime).validate_python(user_project["creationDate"]) < TypeAdapter(datetime).validate_python(
+        cloned_project.creation_date
+    )
 
     # - set_inputs project_clone_id ----------------------------------------------
     job_inputs_values = {"X": 42}  # like JobInputs.values
 
-    url = client.app.router["get_project_inputs"].url_for(
-        project_id=f"{cloned_project.uuid}"
-    )
+    url = client.app.router["get_project_inputs"].url_for(project_id=f"{cloned_project.uuid}")
     assert f"/v0/projects/{cloned_project.uuid}/inputs" == url.path
 
     response = await client.get(url.path)
-    project_inputs, _ = await assert_status(
-        response, expected_status_code=status.HTTP_200_OK
-    )
+    project_inputs, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
 
     # Emulates transformation between JobInputs.values and body format which relies on keys
     update_inputs = []
@@ -314,17 +298,7 @@ async def test_clone_project_and_set_inputs(
         if found_input["value"] != value:  # only patch if value changed
             update_inputs.append({"key": found_input["key"], "value": value})
 
-    assert (
-        client.app.router["update_project_inputs"].url_for(
-            project_id=f"{cloned_project.uuid}"
-        )
-        == url
-    )
+    assert client.app.router["update_project_inputs"].url_for(project_id=f"{cloned_project.uuid}") == url
     response = await client.patch(url.path, json=update_inputs)
-    project_inputs, _ = await assert_status(
-        response, expected_status_code=status.HTTP_200_OK
-    )
-    assert (
-        next(p for p in project_inputs.values() if p["label"] == "X")["value"]
-        == job_inputs_values["X"]
-    )
+    project_inputs, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
+    assert next(p for p in project_inputs.values() if p["label"] == "X")["value"] == job_inputs_values["X"]

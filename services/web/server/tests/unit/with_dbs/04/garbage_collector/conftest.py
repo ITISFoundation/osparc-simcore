@@ -92,9 +92,7 @@ async def client(
     setup_users(app)
     setup_socketio(app)
 
-    assert (
-        settings.WEBSERVER_PROJECTS is not None
-    ), "WEBSERVER_PROJECTS must be enabled for close_project fixture"
+    assert settings.WEBSERVER_PROJECTS is not None, "WEBSERVER_PROJECTS must be enabled for close_project fixture"
     assert setup_projects(app)
 
     setup_director_v2(app)
@@ -116,9 +114,7 @@ async def client(
 async def close_project() -> Callable[[TestClient, ProjectID, str], Awaitable[None]]:
     """Closes a project by sending a request to the close_project endpoint."""
 
-    async def _close_project(
-        client: TestClient, project_uuid: ProjectID, client_session_id: str
-    ) -> None:
+    async def _close_project(client: TestClient, project_uuid: ProjectID, client_session_id: str) -> None:
         url = client.app.router["close_project"].url_for(project_id=f"{project_uuid}")
         resp = await client.post(url, json=client_session_id)
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -132,9 +128,7 @@ async def open_project(
 ) -> AsyncIterator[Callable[[TestClient, ProjectID, str], Awaitable[None]]]:
     _opened_projects: list[tuple[TestClient, ProjectID, str]] = []
 
-    async def _open_project(
-        client: TestClient, project_uuid: ProjectID, client_session_id: str
-    ) -> None:
+    async def _open_project(client: TestClient, project_uuid: ProjectID, client_session_id: str) -> None:
         url = client.app.router["open_project"].url_for(project_id=f"{project_uuid}")
         resp = await client.post(url, json=client_session_id)
         await assert_status(resp, status.HTTP_200_OK)

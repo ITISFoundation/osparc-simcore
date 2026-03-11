@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # MODELS --
 #
-# NOTE: These models are a trucated version of the data payload for a scicrunch response.#
+# NOTE: These models are a truncated version of the data payload for a scicrunch response.#
 # NOTE: Examples of complete responses can be found in test_scicrunch.py::mock_scicrunch_service_api
 #
 
@@ -92,9 +92,7 @@ async def get_all_versions(
         return output
 
 
-async def get_resource_fields(
-    rrid: str, client: ClientSession, settings: SciCrunchSettings
-) -> ResourceView:
+async def get_resource_fields(rrid: str, client: ClientSession, settings: SciCrunchSettings) -> ResourceView:
     async with client.get(
         f"{settings.SCICRUNCH_API_BASE_URL}/resource/fields/view/{rrid}",
         params={"key": settings.SCICRUNCH_API_KEY.get_secret_value()},

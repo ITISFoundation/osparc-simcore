@@ -87,9 +87,7 @@ async def operation_name() -> OperationName:
 
 
 @pytest.fixture
-async def registed_operation(
-    operation_name: OperationName, operation: Operation
-) -> AsyncIterable[None]:
+async def registered_operation(operation_name: OperationName, operation: Operation) -> AsyncIterable[None]:
     OperationRegistry.register(operation_name, operation)
     yield
     OperationRegistry.unregister(operation_name)
@@ -105,9 +103,7 @@ def mock_enqueue_event(mocker: MockerFixture) -> AsyncMock:
     return mock
 
 
-async def _assert_finshed_with_status(
-    step_proxy: StepStoreProxy, expected_status: StepStatus
-) -> None:
+async def _assert_finished_with_status(step_proxy: StepStoreProxy, expected_status: StepStatus) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(10),
@@ -134,31 +130,25 @@ class _StepResultStore:
         cls._STORE.clear()
 
 
-class _StepFinisheWithSuccess(BaseStep):
+class _StepFinishedWithSuccess(BaseStep):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "executed")
         return {}
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "destroyed")
         return {}
 
 
-class _StepFinisheError(BaseStep):
+class _StepFinishedError(BaseStep):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "executed")
@@ -166,21 +156,17 @@ class _StepFinisheError(BaseStep):
         raise RuntimeError(msg)
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "destroyed")
-        msg = "I failed destorying"
+        msg = "I failed destroying"
         raise RuntimeError(msg)
 
 
 class _StepLongRunningToCancel(BaseStep):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "executed")
@@ -188,9 +174,7 @@ class _StepLongRunningToCancel(BaseStep):
         return {}
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "destroyed")
@@ -203,9 +187,7 @@ class _Action(str, Enum):
     CANCEL = "CANCEL"
 
 
-def _get_step_group(
-    operation_name: OperationName, group_index: NonNegativeInt
-) -> BaseStepGroup:
+def _get_step_group(operation_name: OperationName, group_index: NonNegativeInt) -> BaseStepGroup:
     assert operation_name in OperationRegistry._OPERATIONS  # noqa: SLF001
 
     operation = OperationRegistry._OPERATIONS[operation_name][  # noqa: SLF001
@@ -222,7 +204,7 @@ def _get_step_group(
     [
         (
             Operation(
-                SingleStepGroup(_StepFinisheWithSuccess),
+                SingleStepGroup(_StepFinishedWithSuccess),
             ),
             StepStatus.SUCCESS,
             _Action.DO_NOTHING,
@@ -230,7 +212,7 @@ def _get_step_group(
         ),
         (
             Operation(
-                SingleStepGroup(_StepFinisheError),
+                SingleStepGroup(_StepFinishedError),
             ),
             StepStatus.FAILED,
             _Action.DO_NOTHING,
@@ -249,7 +231,7 @@ def _get_step_group(
 @pytest.mark.parametrize("is_executing", [True, False])
 async def test_workflow(
     mock_enqueue_event: AsyncMock,
-    registed_operation: None,
+    registered_operation: None,
     app: FastAPI,
     store: Store,
     schedule_id: ScheduleId,
@@ -259,7 +241,6 @@ async def test_workflow(
     action: _Action,
     expected_steps_count: NonNegativeInt,
 ) -> None:
-
     # setup
     schedule_data_proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
     await schedule_data_proxy.create_or_update_multiple(
@@ -306,11 +287,9 @@ async def test_workflow(
         task_uid = await step_proxy.read("deferred_task_uid")
         await asyncio.create_task(DeferredRunner.cancel(task_uid))
 
-    await _assert_finshed_with_status(step_proxy, expected_step_status)
+    await _assert_finished_with_status(step_proxy, expected_step_status)
 
-    assert _StepResultStore.get_result(step.__name__) == (
-        "executed" if is_executing else "destroyed"
-    )
+    assert _StepResultStore.get_result(step.__name__) == ("executed" if is_executing else "destroyed")
 
     if expected_step_status == StepStatus.FAILED:
         error_traceback = await step_proxy.read("error_traceback")
@@ -318,8 +297,4 @@ async def test_workflow(
 
     # ensure called once with arguments
 
-    assert (
-        mock_enqueue_event.call_args_list == []
-        if action == _Action.CANCEL
-        else [((app, schedule_id),)]
-    )
+    assert mock_enqueue_event.call_args_list == [] if action == _Action.CANCEL else [((app, schedule_id),)]

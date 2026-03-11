@@ -86,9 +86,7 @@ async def create_project(
         project_nodes={
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
-                required_resources=ServiceResourcesDictHelpers.model_config[
-                    "json_schema_extra"
-                ]["examples"][0],
+                required_resources=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
                 key=node_info.get("key"),
                 version=node_info.get("version"),
                 label=node_info.get("label"),
@@ -97,12 +95,8 @@ async def create_project(
         },
     )
 
-    if params_override and (
-        params_override.get("access_rights") or params_override.get("accessRights")
-    ):
-        _access_rights = params_override.get("access_rights", {}) | params_override.get(
-            "accessRights", {}
-        )
+    if params_override and (params_override.get("access_rights") or params_override.get("accessRights")):
+        _access_rights = params_override.get("access_rights", {}) | params_override.get("accessRights", {})
         for group_id, permissions in _access_rights.items():
             await update_or_insert_project_group(
                 app,
@@ -132,7 +126,6 @@ async def create_project(
 
 
 async def delete_all_projects(app: web.Application):
-
     engine = get_asyncpg_engine(app)
     assert engine  # nosec
 

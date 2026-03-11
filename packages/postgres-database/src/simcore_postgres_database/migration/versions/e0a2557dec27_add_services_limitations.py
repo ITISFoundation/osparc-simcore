@@ -21,9 +21,7 @@ depends_on = None
 # TRIGGERS ------------------------
 _TABLE_NAME: Final[str] = "services_limitations"
 _TRIGGER_NAME: Final[str] = "trigger_auto_update"  # NOTE: scoped on table
-_PROCEDURE_NAME: Final[str] = (
-    f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
-)
+_PROCEDURE_NAME: Final[str] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
 modified_timestamp_trigger = sa.DDL(
     f"""
 DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};

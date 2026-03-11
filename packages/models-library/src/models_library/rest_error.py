@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.generics import Envelope
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
+
+from models_library.generics import Envelope
 
 from .basic_types import IDStr, LogLevel
 
@@ -15,9 +16,7 @@ class Log(BaseModel):
         ...,
         description="log message. If logger is USER, then it MUST be human readable",
     )
-    logger: str | None = Field(
-        None, description="name of the logger receiving this message"
-    )
+    logger: str | None = Field(None, description="name of the logger receiving this message")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -36,9 +35,7 @@ class ErrorItem(BaseModel):
         description="Typically the name of the exception that produced it otherwise some known error code",
     )
     message: str = Field(..., description="Error message specific to this item")
-    resource: str | None = Field(
-        None, description="API resource affected by this error"
-    )
+    resource: str | None = Field(None, description="API resource affected by this error")
     field: str | None = Field(None, description="Specific field within the resource")
 
 
@@ -60,9 +57,7 @@ class ErrorItemType:
 
     @classmethod
     def from_error(cls, err: BaseException):
-        return cls(
-            code=err.__class__.__name__, message=str(err), resource=None, field=None
-        )
+        return cls(code=err.__class__.__name__, message=str(err), resource=None, field=None)
 
 
 class ErrorGet(BaseModel):
@@ -81,14 +76,11 @@ class ErrorGet(BaseModel):
 
     status: Annotated[
         int,
-        Field(
-            description="Redundant HTTP status code of the error."
-            "Must be the same as in the HTTP response"
-        ),
+        Field(description="Redundant HTTP status code of the error.Must be the same as in the HTTP response"),
     ]
 
     # NOTE: The fields below are DEPRECATED.
-    #  Still here to keep compatibilty with front-end until updated
+    #  Still here to keep compatibility with front-end until updated
     errors: Annotated[
         list[ErrorItemType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
@@ -109,7 +101,7 @@ class ErrorGet(BaseModel):
                         "status": 401,
                     },
                     {
-                        "message": "Opps this error was unexpected. We are working on that!",
+                        "message": "Oops this error was unexpected. We are working on that!",
                         "supportId": "OEC:12346789",
                         "status": 500,
                     },

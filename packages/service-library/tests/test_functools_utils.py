@@ -9,9 +9,7 @@ from servicelib.functools_utils import copy_func
 
 def test_copy_functions():
     # fixture
-    def original_func(
-        x: int, y: bool, *, z: str | float | None = None
-    ) -> tuple[int, str | float | None]:
+    def original_func(x: int, y: bool, *, z: str | float | None = None) -> tuple[int, str | float | None]:
         """some doc"""
         return 2 * x, z if y else "Foo"
 

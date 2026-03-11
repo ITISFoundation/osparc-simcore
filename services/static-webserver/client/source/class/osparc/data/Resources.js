@@ -957,9 +957,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * NOTIFICATIONS
+       * BELL NOTIFICATIONS
        */
-      "notifications": {
+      "bellNotifications": {
         useCache: false,
         idField: "notification",
         endpoints: {
@@ -1147,9 +1147,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/user-accounts?review_status=REVIEWED"
           },
+          previewApproval: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:preview-approval"
+          },
           approveUser: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:approve"
+          },
+          previewRejection: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:preview-rejection"
           },
           rejectUser: {
             method: "POST",
@@ -1162,6 +1170,23 @@ qx.Class.define("osparc.data.Resources", {
           preRegister: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:pre-register"
+          }
+        }
+      },
+      "notificationTemplates": {
+        useCache: true,
+        endpoints: {
+          searchEmailTemplates: {
+            method: "GET",
+            url: statics.API + "/notifications/templates:search?channel=email"
+          },
+          previewTemplate: {
+            method: "POST",
+            url: statics.API + "/notifications/templates:preview"
+          },
+          sendMessage: {
+            method: "POST",
+            url: statics.API + "/notifications/messages:send"
           }
         }
       },
@@ -1551,6 +1576,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
           },
+          triggerChatbot: {
+            method: "POST",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}:trigger-chatbot",
+          },
         }
       },
     };
@@ -1691,7 +1720,7 @@ qx.Class.define("osparc.data.Resources", {
               .catch(err => {
                 if ("status" in err && err.status === 401) {
                   // Unauthorized again, the cookie might have expired.
-                  // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
+                  // We can assume that all calls after this will respond with 401, so bring the user of the login page.
                   qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You have been logged out. Your cookie might have expired."));
                 }
               });

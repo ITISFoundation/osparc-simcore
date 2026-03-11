@@ -16,7 +16,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
 
     const title = new qx.ui.basic.Label(this.tr("Buy Credits")).set({
       marginTop: 35,
-      font: "title-18"
+      font: "text-18"
     });
     this._add(title);
 

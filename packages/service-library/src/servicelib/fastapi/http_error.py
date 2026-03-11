@@ -44,14 +44,10 @@ def make_http_error_handler_for_exception(
 
     async def _http_error_handler(request: Request, exc: Exception) -> JSONResponse:
         assert isinstance(exc, exception_cls)  # nosec
-        error_content = {
-            "errors": error_extractor(exc) if error_extractor else [f"{exc}"]
-        }
+        error_content = {"errors": error_extractor(exc) if error_extractor else [f"{exc}"]}
 
         response = JSONResponse(
-            content=jsonable_encoder(
-                {"error": error_content} if envelope_error else error_content
-            ),
+            content=jsonable_encoder({"error": error_content} if envelope_error else error_content),
             status_code=status_code,
         )
 
@@ -62,9 +58,7 @@ def make_http_error_handler_for_exception(
                     error=exc,
                     error_context={
                         "request": request,
-                        "request.client_host": (
-                            request.client.host if request.client else "unknown"
-                        ),
+                        "request.client_host": (request.client.host if request.client else "unknown"),
                         "request.method": request.method,
                         "request.url_path": request.url.path,
                         "request.query_params": dict(request.query_params),
@@ -96,9 +90,7 @@ def _make_default_http_error_handler(
         error_content = {"errors": [exc.detail]}
 
         return JSONResponse(
-            content=jsonable_encoder(
-                {"error": error_content} if envelope_error else error_content
-            ),
+            content=jsonable_encoder({"error": error_content} if envelope_error else error_content),
             status_code=exc.status_code,
         )
 
@@ -106,9 +98,7 @@ def _make_default_http_error_handler(
 
 
 def set_app_default_http_error_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(
-        HTTPException, _make_default_http_error_handler(envelope_error=True)
-    )
+    app.add_exception_handler(HTTPException, _make_default_http_error_handler(envelope_error=True))
 
     app.add_exception_handler(
         RequestValidationError,
@@ -138,7 +128,5 @@ def set_app_default_http_error_handlers(app: FastAPI) -> None:
     )
     app.add_exception_handler(
         Exception,
-        make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception, envelope_error=True
-        ),
+        make_http_error_handler_for_exception(status.HTTP_500_INTERNAL_SERVER_ERROR, Exception, envelope_error=True),
     )

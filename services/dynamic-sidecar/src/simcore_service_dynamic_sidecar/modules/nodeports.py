@@ -56,7 +56,7 @@ def _get_size_of_value(value: tuple[ItemConcreteValue | None, SetKWargs | None])
     if isinstance(value, Path):
         # if symlink we need to fetch the pointer to the file
         # relative symlink need to know which their parent is
-        # in oder to properly resolve the path since the workdir
+        # in order to properly resolve the path since the workdir
         # does not equal to their parent dir
         path = value
         if value.is_symlink():
@@ -66,9 +66,7 @@ def _get_size_of_value(value: tuple[ItemConcreteValue | None, SetKWargs | None])
     return sys.getsizeof(value)
 
 
-_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
-    "TEST: test_nodeports_integration DO NOT REMOVE"
-)
+_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = "TEST: test_nodeports_integration DO NOT REMOVE"
 
 
 class OutputCallbacksWrapper(OutputsCallbacks):
@@ -78,7 +76,7 @@ class OutputCallbacksWrapper(OutputsCallbacks):
     async def aborted(self, key: ServicePortKey) -> None:
         await self.port_notifier.send_output_port_upload_was_aborted(key)
 
-    async def finished_succesfully(self, key: ServicePortKey) -> None:
+    async def finished_successfully(self, key: ServicePortKey) -> None:
         await self.port_notifier.send_output_port_upload_finished_successfully(key)
 
     async def finished_with_error(self, key: ServicePortKey) -> None:
@@ -98,43 +96,32 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
     start_time = time.perf_counter()
 
     settings: ApplicationSettings = get_settings()
-    db_manager = node_ports_v2.DBManager(
-        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}"
-    )
+    db_manager = node_ports_v2.DBManager(application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}")
     ports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
-        node_uuid=TypeAdapter(NodeIDStr).validate_python(
-            f"{settings.DY_SIDECAR_NODE_ID}"
-        ),
+        node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{settings.DY_SIDECAR_NODE_ID}"),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         db_manager=db_manager,
     )
 
     # let's gather the tasks
-    ports_values: dict[
-        ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]
-    ] = {}
+    ports_values: dict[ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
     ports_to_set: list[Port] = [
-        port_value
-        for port_value in (await ports.outputs).values()
-        if (not port_keys) or (port_value.key in port_keys)
+        port_value for port_value in (await ports.outputs).values() if (not port_keys) or (port_value.key in port_keys)
     ]
 
     await limited_gather(
-        *(port_notifier.send_output_port_upload_sarted(p.key) for p in ports_to_set),
+        *(port_notifier.send_output_port_upload_started(p.key) for p in ports_to_set),
         limit=4,
     )
 
     async with AsyncExitStack() as stack:
         sub_progress = await stack.enter_async_context(
             progress_bar.sub_progress(
-                steps=sum(
-                    2 if is_file_type(port.property_type) else 1
-                    for port in ports_to_set
-                ),
+                steps=sum(2 if is_file_type(port.property_type) else 1 for port in ports_to_set),
                 description="uploading outputs",
             )
         )
@@ -149,25 +136,18 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
                     continue
 
                 if len(files_and_folders_list) == 1 and (
-                    files_and_folders_list[0].is_file()
-                    or files_and_folders_list[0].is_symlink()
+                    files_and_folders_list[0].is_file() or files_and_folders_list[0].is_symlink()
                 ):
                     # special case, direct upload
                     ports_values[port.key] = (
                         files_and_folders_list[0],
-                        SetKWargs(
-                            file_base_path=(
-                                src_folder.parent.relative_to(outputs_path.parent)
-                            )
-                        ),
+                        SetKWargs(file_base_path=(src_folder.parent.relative_to(outputs_path.parent))),
                     )
                     continue
 
                 # generic case let's create an archive
                 # only the filtered out files will be zipped
-                tmp_folder = Path(
-                    await stack.enter_async_context(AioTemporaryDirectory())
-                )
+                tmp_folder = Path(await stack.enter_async_context(AioTemporaryDirectory()))
                 tmp_file = tmp_folder / f"{src_folder.stem}.zip"
 
                 # when having multiple directories it is important to
@@ -175,7 +155,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
                 async def _archive_dir_notified(
                     dir_to_compress: Path, destination: Path, port_key: ServicePortKey
                 ) -> None:
-                    # Errors and cancellation can also be triggered from archving as well
+                    # Errors and cancellation can also be triggered from archiving as well
                     try:
                         await archive_dir(
                             dir_to_compress=dir_to_compress,
@@ -184,14 +164,10 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
                             progress_bar=sub_progress,
                         )
                     except CancelledError:
-                        await port_notifier.send_output_port_upload_was_aborted(
-                            port_key
-                        )
+                        await port_notifier.send_output_port_upload_was_aborted(port_key)
                         raise
                     except Exception:
-                        await port_notifier.send_output_port_upload_finished_with_error(
-                            port_key
-                        )
+                        await port_notifier.send_output_port_upload_finished_with_error(port_key)
                         raise
 
                 archiving_tasks.append(
@@ -203,11 +179,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
                 )
                 ports_values[port.key] = (
                     tmp_file,
-                    SetKWargs(
-                        file_base_path=(
-                            src_folder.parent.relative_to(outputs_path.parent)
-                        )
-                    ),
+                    SetKWargs(file_base_path=(src_folder.parent.relative_to(outputs_path.parent))),
                 )
             else:
                 data_file = outputs_path / _KEY_VALUE_FILE_NAME
@@ -261,12 +233,8 @@ async def _get_data_from_port(
             if not downloaded_file or not downloaded_file.exists():
                 # the link may be empty
                 # remove files all files from disk when disconnecting port
-                with log_context(
-                    _logger, logging.DEBUG, f"removing contents of dir '{final_path}'"
-                ):
-                    await remove_directory(
-                        final_path, only_children=True, ignore_errors=True
-                    )
+                with log_context(_logger, logging.DEBUG, f"removing contents of dir '{final_path}'"):
+                    await remove_directory(final_path, only_children=True, ignore_errors=True)
                 return port, None, ByteSize(0)
 
             transferred_bytes = downloaded_file.stat().st_size
@@ -291,18 +259,14 @@ async def _get_data_from_port(
                         progress_bar=sub_progress,
                     )
 
-                with log_context(
-                    _logger, logging.DEBUG, f"archive removal '{downloaded_file}'"
-                ):
+                with log_context(_logger, logging.DEBUG, f"archive removal '{downloaded_file}'"):
                     await remove(downloaded_file)
             else:
                 # move archive to directory as is
                 final_path = final_path / downloaded_file.name
                 prunable_folder = PrunableFolder(final_path.parent)
 
-                with log_context(
-                    _logger, logging.DEBUG, f"moving {downloaded_file} to {final_path}"
-                ):
+                with log_context(_logger, logging.DEBUG, f"moving {downloaded_file} to {final_path}"):
                     final_path.parent.mkdir(exist_ok=True, parents=True)
                     await shutil_move(downloaded_file, final_path)
 
@@ -330,15 +294,11 @@ async def download_target_ports(
     start_time = time.perf_counter()
 
     settings: ApplicationSettings = get_settings()
-    db_manager = node_ports_v2.DBManager(
-        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}"
-    )
+    db_manager = node_ports_v2.DBManager(application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}")
     ports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
-        node_uuid=TypeAdapter(NodeIDStr).validate_python(
-            f"{settings.DY_SIDECAR_NODE_ID}"
-        ),
+        node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{settings.DY_SIDECAR_NODE_ID}"),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         db_manager=db_manager,
@@ -357,10 +317,8 @@ async def download_target_ports(
         assert port_notifier is not None
         await port_notifier.send_input_port_download_started(port.key)
         try:
-            result = await _get_data_from_port(
-                port, target_dir=target_dir, progress_bar=progress_bar
-            )
-            await port_notifier.send_input_port_download_finished_succesfully(port.key)
+            result = await _get_data_from_port(port, target_dir=target_dir, progress_bar=progress_bar)
+            await port_notifier.send_input_port_download_finished_successfully(port.key)
             return result
 
         except CancelledError:
@@ -370,15 +328,11 @@ async def download_target_ports(
             await port_notifier.send_input_port_download_finished_with_error(port.key)
             raise
 
-    async with progress_bar.sub_progress(
-        steps=len(ports_to_get), description="downloading"
-    ) as sub_progress:
+    async with progress_bar.sub_progress(steps=len(ports_to_get), description="downloading") as sub_progress:
         results = await limited_gather(
             *[
                 (
-                    _get_data_from_port(
-                        port, target_dir=target_dir, progress_bar=sub_progress
-                    )
+                    _get_data_from_port(port, target_dir=target_dir, progress_bar=sub_progress)
                     if port_type_name == PortTypeName.OUTPUTS
                     else _get_date_from_port_notified(port, progress_bar=sub_progress)
                 )
@@ -387,13 +341,8 @@ async def download_target_ports(
             limit=2,
         )
     # parse results
-    data = {
-        port.key: {"key": port.key, "value": port_data}
-        for (port, port_data, _) in results
-    }
-    total_transfered_bytes = ByteSize(
-        sum(port_transferred_bytes for *_, port_transferred_bytes in results)
-    )
+    data = {port.key: {"key": port.key, "value": port_data} for (port, port_data, _) in results}
+    total_transferred_bytes = ByteSize(sum(port_transferred_bytes for *_, port_transferred_bytes in results))
 
     # create/update the json file with the new values
     if data:
@@ -407,7 +356,7 @@ async def download_target_ports(
     elapsed_time = time.perf_counter() - start_time
     _logger.info(
         "Downloaded %s in %s seconds",
-        total_transfered_bytes.human_readable(decimal=True),
+        total_transferred_bytes.human_readable(decimal=True),
         elapsed_time,
     )
-    return total_transfered_bytes
+    return total_transferred_bytes

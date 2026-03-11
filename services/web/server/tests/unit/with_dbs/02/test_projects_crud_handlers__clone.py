@@ -28,9 +28,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def fake_project(
-    fake_project: ProjectDict, workbench_db_column: dict[str, Any]
-) -> ProjectDict:
+def fake_project(fake_project: ProjectDict, workbench_db_column: dict[str, Any]) -> ProjectDict:
     # OVERRIDES user_project
     project = deepcopy(fake_project)
     project["workbench"] = workbench_db_column
@@ -107,14 +105,12 @@ async def test_clone_project(
     # check whether it's a clone
     assert ProjectID(project["uuid"]) != cloned_project.uuid
     assert project["description"] == cloned_project.description
-    assert TypeAdapter(datetime).validate_python(project["creationDate"]) < TypeAdapter(
-        datetime
-    ).validate_python(cloned_project.creation_date)
+    assert TypeAdapter(datetime).validate_python(project["creationDate"]) < TypeAdapter(datetime).validate_python(
+        cloned_project.creation_date
+    )
 
     assert len(project["workbench"]) == len(cloned_project.workbench)
-    assert set(project["workbench"].keys()) != set(
-        cloned_project.workbench.keys()
-    ), "clone does NOT preserve node ids"
+    assert set(project["workbench"].keys()) != set(cloned_project.workbench.keys()), "clone does NOT preserve node ids"
 
 
 @pytest.mark.parametrize(

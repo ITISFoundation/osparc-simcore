@@ -58,9 +58,7 @@ def make_table() -> Callable:
 
 
 @pytest.fixture
-async def connection(
-    aiopg_engine: sa.engine.Engine, connection: SAConnection, make_table: Callable
-):
+async def connection(aiopg_engine: sa.engine.Engine, connection: SAConnection, make_table: Callable):
     assert aiopg_engine
     # NOTE: do not remove th pg_engine, or the test will fail as pytest
     # cannot set the parameters in the fixture
@@ -116,10 +114,7 @@ async def test_get_supported_filetypes(connection: SAConnection):
         sa.select(
             services_consume_filetypes.c.filetype,
         )
-        .where(
-            services_consume_filetypes.c.service_key
-            == "simcore/services/dynamic/sim4life"
-        )
+        .where(services_consume_filetypes.c.service_key == "simcore/services/dynamic/sim4life")
         .order_by(services_consume_filetypes.c.filetype)
         .distinct()
     )
@@ -147,20 +142,16 @@ async def test_list_supported_filetypes(connection: SAConnection):
     assert [v for row in rows for v in row.values()] == list_supported_filetypes()
 
 
-async def test_contraints(connection: SAConnection):
-    # test foreign key contraints with service metadata table
+async def test_constraints(connection: SAConnection):
+    # test foreign key constraints with service metadata table
 
     await connection.execute(
-        services_meta_data.delete().where(
-            services_meta_data.c.key == "simcore/services/dynamic/sim4life"
-        )
+        services_meta_data.delete().where(services_meta_data.c.key == "simcore/services/dynamic/sim4life")
     )
 
     stmt = (
         sa.select(
-            sa.func.count(services_consume_filetypes.c.service_key).label(
-                "num_services"
-            ),
+            sa.func.count(services_consume_filetypes.c.service_key).label("num_services"),
         )
         .where(services_consume_filetypes.c.filetype == "DCM")
         .scalar_subquery()

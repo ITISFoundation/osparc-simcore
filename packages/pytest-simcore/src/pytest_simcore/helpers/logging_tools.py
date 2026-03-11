@@ -105,9 +105,7 @@ class ContextMessages:
 
     def __post_init__(self):
         if not self.raised:
-            self.raised = (
-                lambda: f"{self.done if isinstance(self.done, str) else self.done()} [with raised error]"
-            )
+            self.raised = lambda: f"{self.done if isinstance(self.done, str) else self.done()} [with raised error]"
 
 
 LogLevelInt: TypeAlias = int
@@ -118,22 +116,14 @@ LogMessageStr: TypeAlias = str
 def _increased_logger_indent(logger: logging.Logger) -> Iterator[None]:
     try:
         if formatter := next(
-            (
-                h.formatter
-                for h in logger.handlers
-                if isinstance(h.formatter, DynamicIndentFormatter)
-            ),
+            (h.formatter for h in logger.handlers if isinstance(h.formatter, DynamicIndentFormatter)),
             None,
         ):
             formatter.increase_indent()
         yield
     finally:
         if formatter := next(
-            (
-                h.formatter
-                for h in logger.handlers
-                if isinstance(h.formatter, DynamicIndentFormatter)
-            ),
+            (h.formatter for h in logger.handlers if isinstance(h.formatter, DynamicIndentFormatter)),
             None,
         ):
             formatter.decrease_indent()

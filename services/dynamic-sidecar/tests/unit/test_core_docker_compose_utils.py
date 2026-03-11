@@ -127,9 +127,7 @@ async def test_burst_calls_to_docker_compose_config(
     exceptions = [r for r in results if isinstance(r, Exception)]
     assert not exceptions, "docker_compose* does NOT raise exceptions"
 
-    assert all(
-        isinstance(r, CommandResult) for r in results
-    ), "docker_compose* does NOT raise exceptions"
+    assert all(isinstance(r, CommandResult) for r in results), "docker_compose* does NOT raise exceptions"
 
     success = [r for r in results if r.success]
     failed = [r for r in results if not r.success]

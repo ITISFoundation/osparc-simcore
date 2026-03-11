@@ -90,9 +90,7 @@ def amount_dollars(request: pytest.FixtureRequest) -> float:
     return request.param
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/pull/4715")
 async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
@@ -118,16 +116,11 @@ async def test_one_time_payment_workflow(
     )
 
     # form url
-    submission_link = payment_gateway_api.get_form_payment_url(
-        payment_initiated.payment_id
-    )
+    submission_link = payment_gateway_api.get_form_payment_url(payment_initiated.payment_id)
 
     app_settings: ApplicationSettings = app.state.settings
     assert isinstance(submission_link, HttpxURL)
-    assert (
-        URL(f"{submission_link}").host
-        == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
-    )
+    assert URL(f"{submission_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # cancel
     payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
@@ -139,16 +132,14 @@ async def test_one_time_payment_workflow(
         assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
 
 
-@pytest.mark.can_run_against_external()
+@pytest.mark.can_run_against_external
 async def test_payment_methods_workflow(
     app: FastAPI,
     faker: Faker,
     mock_payments_gateway_service_or_none: MockRouter | None,
     amount_dollars: float,
 ):
-    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
-        app
-    )
+    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
     assert payments_gateway_api
 
     # init payment-method
@@ -161,9 +152,7 @@ async def test_payment_methods_workflow(
     )
 
     # from url
-    form_link = payments_gateway_api.get_form_payment_method_url(
-        initiated.payment_method_id
-    )
+    form_link = payments_gateway_api.get_form_payment_method_url(initiated.payment_method_id)
 
     app_settings: ApplicationSettings = app.state.settings
     assert isinstance(form_link, HttpxURL)
@@ -173,9 +162,7 @@ async def test_payment_methods_workflow(
     payment_method_id = initiated.payment_method_id
 
     # get payment-method
-    got_payment_method = await payments_gateway_api.get_payment_method(
-        payment_method_id
-    )
+    got_payment_method = await payments_gateway_api.get_payment_method(payment_method_id)
     assert got_payment_method.id == payment_method_id
     print(got_payment_method.model_dump_json(indent=2))
 
@@ -243,9 +230,7 @@ async def test_payments_gateway_get_batch_with_no_items(
     app: FastAPI,
     mock_payments_gateway_service_or_none: MockRouter | None,
 ):
-    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
-        app
-    )
+    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
     assert payments_gateway_api
 
     # tests issue found in https://github.com/ITISFoundation/appmotion-exchange/issues/16

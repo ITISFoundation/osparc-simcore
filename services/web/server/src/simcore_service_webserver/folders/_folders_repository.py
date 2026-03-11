@@ -57,9 +57,9 @@ async def create(
     user_id: UserID | None,
     workspace_id: WorkspaceID | None,
 ) -> FolderDB:
-    assert not (
-        user_id is not None and workspace_id is not None
-    ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    assert not (user_id is not None and workspace_id is not None), (
+        "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -103,10 +103,7 @@ def _create_private_workspace_query(
                 ).label("my_access_rights"),
             )
             .select_from(folders_v2)
-            .where(
-                (folders_v2.c.product_name == product_name)
-                & (folders_v2.c.user_id == user_id)
-            )
+            .where((folders_v2.c.product_name == product_name) & (folders_v2.c.user_id == user_id))
         )
     return None
 
@@ -123,9 +120,7 @@ def _create_shared_workspace_query(
             WorkspaceScope.ALL,
         )
 
-        workspace_access_rights_subquery = create_my_workspace_access_rights_subquery(
-            user_id=user_id
-        )
+        workspace_access_rights_subquery = create_my_workspace_access_rights_subquery(user_id=user_id)
 
         shared_workspace_query = (
             sql.select(
@@ -135,20 +130,14 @@ def _create_shared_workspace_query(
             .select_from(
                 folders_v2.join(
                     workspace_access_rights_subquery,
-                    folders_v2.c.workspace_id
-                    == workspace_access_rights_subquery.c.workspace_id,
+                    folders_v2.c.workspace_id == workspace_access_rights_subquery.c.workspace_id,
                 )
             )
-            .where(
-                (folders_v2.c.product_name == product_name)
-                & (folders_v2.c.user_id.is_(None))
-            )
+            .where((folders_v2.c.product_name == product_name) & (folders_v2.c.user_id.is_(None)))
         )
 
         if workspace_scope == WorkspaceScope.SHARED:
-            shared_workspace_query = shared_workspace_query.where(
-                folders_v2.c.workspace_id == workspace_id
-            )
+            shared_workspace_query = shared_workspace_query.where(folders_v2.c.workspace_id == workspace_id)
 
     else:
         shared_workspace_query = None
@@ -203,18 +192,13 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
 
     if filter_trashed is not None:
         attributes_filters.append(
-            (
-                (folders_v2.c.trashed.is_not(None))
-                & (folders_v2.c.trashed_explicitly.is_(True))
-            )
+            ((folders_v2.c.trashed.is_not(None)) & (folders_v2.c.trashed_explicitly.is_(True)))
             if filter_trashed
             else folders_v2.c.trashed.is_(None)
         )
     if folder_query.folder_scope is not FolderScope.ALL:
         if folder_query.folder_scope == FolderScope.SPECIFIC:
-            attributes_filters.append(
-                folders_v2.c.parent_folder_id == folder_query.folder_id
-            )
+            attributes_filters.append(folders_v2.c.parent_folder_id == folder_query.folder_id)
         else:
             assert folder_query.folder_scope == FolderScope.ROOT  # nosec
             attributes_filters.append(folders_v2.c.parent_folder_id.is_(None))
@@ -244,19 +228,13 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     count_query = sql.select(sql.func.count()).select_from(combined_query.subquery())
 
     # Ordering and pagination
-    list_query = (
-        combined_query.order_by(_to_expression(order_by), folders_v2.c.folder_id)
-        .offset(offset)
-        .limit(limit)
-    )
+    list_query = combined_query.order_by(_to_expression(order_by), folders_v2.c.folder_id).offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        folders: list[UserFolder] = [
-            UserFolder.model_validate(row) async for row in result
-        ]
+        folders: list[UserFolder] = [UserFolder.model_validate(row) async for row in result]
         return cast(int, total_count), folders
 
 
@@ -282,16 +260,12 @@ async def list_folders_db_as_admin(
     if is_set(trashed_explicitly):
         assert isinstance(trashed_explicitly, bool)  # nosec
         base_query = base_query.where(
-            (folders_v2.c.trashed_explicitly.is_(trashed_explicitly))
-            & (folders_v2.c.trashed.is_not(None))
+            (folders_v2.c.trashed_explicitly.is_(trashed_explicitly)) & (folders_v2.c.trashed.is_not(None))
         )
 
     if is_set(trashed_before):
         assert isinstance(trashed_before, datetime)  # nosec
-        base_query = base_query.where(
-            (folders_v2.c.trashed < trashed_before)
-            & (folders_v2.c.trashed.is_not(None))
-        )
+        base_query = base_query.where((folders_v2.c.trashed < trashed_before) & (folders_v2.c.trashed.is_not(None)))
 
     if is_set(shared_workspace_id):
         assert isinstance(shared_workspace_id, int)  # nosec
@@ -301,11 +275,7 @@ async def list_folders_db_as_admin(
     count_query = sql.select(sql.func.count()).select_from(base_query.subquery())
 
     # Ordering and pagination
-    list_query = (
-        base_query.order_by(_to_expression(order_by), folders_v2.c.folder_id)
-        .offset(offset)
-        .limit(limit)
-    )
+    list_query = base_query.order_by(_to_expression(order_by), folders_v2.c.folder_id).offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
@@ -318,10 +288,7 @@ async def list_folders_db_as_admin(
 def _create_base_select_query(folder_id: FolderID, product_name: ProductName) -> Select:
     return sql.select(
         *_FOLDER_DB_MODEL_COLS,
-    ).where(
-        (folders_v2.c.product_name == product_name)
-        & (folders_v2.c.folder_id == folder_id)
-    )
+    ).where((folders_v2.c.product_name == product_name) & (folders_v2.c.folder_id == folder_id))
 
 
 async def get(
@@ -352,9 +319,9 @@ async def get_for_user_or_workspace(
     user_id: UserID | None,  # owned
     workspace_id: WorkspaceID | None,
 ) -> FolderDB:
-    assert not (
-        user_id is not None and workspace_id is not None
-    ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    assert not (user_id is not None and workspace_id is not None), (
+        "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    )
 
     query = _create_base_select_query(folder_id=folder_id, product_name=product_name)
 
@@ -434,9 +401,7 @@ async def delete_recursively(
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # Step 1: Define the base case for the recursive CTE
-        base_query = sql.select(
-            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
-        ).where(
+        base_query = sql.select(folders_v2.c.folder_id, folders_v2.c.parent_folder_id).where(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
@@ -444,9 +409,7 @@ async def delete_recursively(
 
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
-        recursive_query = sql.select(
-            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
-        ).select_from(
+        recursive_query = sql.select(folder_alias.c.folder_id, folder_alias.c.parent_folder_id).select_from(
             folder_alias.join(
                 folder_hierarchy_cte,
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
@@ -463,13 +426,9 @@ async def delete_recursively(
         rows = [row async for row in result]
 
         # Sort folders so that child folders come first
-        sorted_folders = sorted(
-            rows, key=lambda x: (x[1] is not None, x[1]), reverse=True
-        )
+        sorted_folders = sorted(rows, key=lambda x: (x[1] is not None, x[1]), reverse=True)
         folder_ids = [item[0] for item in sorted_folders]
-        await conn.execute(
-            folders_v2.delete().where(folders_v2.c.folder_id.in_(folder_ids))
-        )
+        await conn.execute(folders_v2.delete().where(folders_v2.c.folder_id.in_(folder_ids)))
 
 
 async def get_projects_recursively_only_if_user_is_owner(
@@ -490,11 +449,8 @@ async def get_projects_recursively_only_if_user_is_owner(
     """
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-
         # Step 1: Define the base case for the recursive CTE
-        base_query = sql.select(
-            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
-        ).where(
+        base_query = sql.select(folders_v2.c.folder_id, folders_v2.c.parent_folder_id).where(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
@@ -502,9 +458,7 @@ async def get_projects_recursively_only_if_user_is_owner(
 
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
-        recursive_query = sql.select(
-            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
-        ).select_from(
+        recursive_query = sql.select(folder_alias.c.folder_id, folder_alias.c.parent_folder_id).select_from(
             folder_alias.join(
                 folder_hierarchy_cte,
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
@@ -548,11 +502,8 @@ async def get_all_folders_and_projects_ids_recursively(
     """
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-
         # Step 1: Define the base case for the recursive CTE
-        base_query = sql.select(
-            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
-        ).where(
+        base_query = sql.select(folders_v2.c.folder_id, folders_v2.c.parent_folder_id).where(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
@@ -560,9 +511,7 @@ async def get_all_folders_and_projects_ids_recursively(
 
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
-        recursive_query = sql.select(
-            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
-        ).select_from(
+        recursive_query = sql.select(folder_alias.c.folder_id, folder_alias.c.parent_folder_id).select_from(
             folder_alias.join(
                 folder_hierarchy_cte,
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
@@ -597,11 +546,8 @@ async def get_folders_recursively(
     product_name: ProductName,
 ) -> list[FolderID]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-
         # Step 1: Define the base case for the recursive CTE
-        base_query = sql.select(
-            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
-        ).where(
+        base_query = sql.select(folders_v2.c.folder_id, folders_v2.c.parent_folder_id).where(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
@@ -609,9 +555,7 @@ async def get_folders_recursively(
 
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
-        recursive_query = sql.select(
-            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
-        ).select_from(
+        recursive_query = sql.select(folder_alias.c.folder_id, folder_alias.c.parent_folder_id).select_from(
             folder_alias.join(
                 folder_hierarchy_cte,
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
@@ -642,9 +586,7 @@ async def get_trashed_by_primary_gid(
     *,
     folder_id: FolderID,
 ) -> GroupID | None:
-    query = _select_trashed_by_primary_gid_query().where(
-        folders_v2.c.folder_id == folder_id
-    )
+    query = _select_trashed_by_primary_gid_query().where(folders_v2.c.folder_id == folder_id)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(query)
@@ -661,11 +603,7 @@ async def batch_get_trashed_by_primary_gid(
     if not folders_ids:
         return []
 
-    query = (
-        _select_trashed_by_primary_gid_query().where(
-            folders_v2.c.folder_id.in_(folders_ids)
-        )
-    ).order_by(
+    query = (_select_trashed_by_primary_gid_query().where(folders_v2.c.folder_id.in_(folders_ids))).order_by(
         # Preserves the order of folders_ids
         # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
         sa.case(

@@ -92,13 +92,9 @@ def mocked_get_invoice_pdf_response(
 
 
 @pytest.fixture
-def transaction(
-    faker: Faker, successful_transaction: dict[str, Any]
-) -> PaymentsTransactionsDB:
+def transaction(faker: Faker, successful_transaction: dict[str, Any]) -> PaymentsTransactionsDB:
     kwargs = {
-        k: successful_transaction[k]
-        for k in PaymentsTransactionsDB.model_fields.keys()
-        if k in successful_transaction
+        k: successful_transaction[k] for k in PaymentsTransactionsDB.model_fields.keys() if k in successful_transaction
     }
     return PaymentsTransactionsDB(**kwargs)
 
@@ -136,7 +132,7 @@ async def test_send_email_workflow(
     product_data = _ProductData(  # type: ignore
         product_name=product_name,
         display_name=product["display_name"],
-        vendor_display_inline=f"{vendor.get('name','')}, {vendor.get('address','')}",
+        vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
         support_email=product["support_email"],
     )
 

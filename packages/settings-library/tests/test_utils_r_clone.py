@@ -5,15 +5,13 @@ from faker import Faker
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.utils_r_clone import (
     _COMMON_SETTINGS_OPTIONS,
-    get_r_clone_config,
+    get_s3_r_clone_config,
     resolve_provider,
 )
 
 
 @pytest.fixture(params=list(S3Provider))
-def r_clone_settings(
-    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, faker: Faker
-) -> RCloneSettings:
+def r_clone_settings(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, faker: Faker) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", request.param)
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
@@ -24,7 +22,7 @@ def r_clone_settings(
 
 
 def test_r_clone_config_template_replacement(r_clone_settings: RCloneSettings) -> None:
-    r_clone_config = get_r_clone_config(r_clone_settings, s3_config_key="target-s3")
+    r_clone_config = get_s3_r_clone_config(r_clone_settings, s3_config_key="target-s3")
     print(r_clone_config)
 
     assert "{endpoint}" not in r_clone_config

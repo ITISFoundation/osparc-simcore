@@ -44,7 +44,6 @@ class _ConversationMessagePathParams(ConversationPathParams):
 
 
 class _ListConversationMessageQueryParams(PageQueryParameters):
-
     model_config = ConfigDict(extra="forbid")
 
 
@@ -64,9 +63,7 @@ async def create_conversation_message(request: web.Request):
     """Create a new message in a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
-    body_params = await parse_request_body_as(
-        _ConversationMessageCreateBodyParams, request
-    )
+    body_params = await parse_request_body_as(_ConversationMessageCreateBodyParams, request)
 
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
@@ -75,13 +72,11 @@ async def create_conversation_message(request: web.Request):
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
-    _, conversation_user_type = (
-        await _conversation_service.get_support_conversation_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            conversation_id=path_params.conversation_id,
-        )
+    _, conversation_user_type = await _conversation_service.get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
     )
 
     message = await _conversation_message_service.create_support_message(
@@ -108,9 +103,7 @@ async def list_conversation_messages(request: web.Request):
     """List messages in a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
-    query_params = parse_request_query_parameters_as(
-        _ListConversationMessageQueryParams, request
-    )
+    query_params = parse_request_query_parameters_as(_ListConversationMessageQueryParams, request)
 
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
@@ -126,21 +119,16 @@ async def list_conversation_messages(request: web.Request):
         conversation_id=path_params.conversation_id,
     )
 
-    total, messages = (
-        await _conversation_message_service.list_messages_for_conversation(
-            app=request.app,
-            conversation_id=path_params.conversation_id,
-            offset=query_params.offset,
-            limit=query_params.limit,
-        )
+    total, messages = await _conversation_message_service.list_messages_for_conversation(
+        app=request.app,
+        conversation_id=path_params.conversation_id,
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
 
     page = Page[ConversationMessageRestGet].model_validate(
         paginate_data(
-            chunk=[
-                ConversationMessageRestGet.from_domain_model(message)
-                for message in messages
-            ],
+            chunk=[ConversationMessageRestGet.from_domain_model(message) for message in messages],
             request_url=request.url,
             total=total,
             limit=query_params.limit,
@@ -162,9 +150,7 @@ async def list_conversation_messages(request: web.Request):
 async def get_conversation_message(request: web.Request):
     """Get a specific message in a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ConversationMessagePathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
 
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
@@ -199,9 +185,7 @@ async def get_conversation_message(request: web.Request):
 async def update_conversation_message(request: web.Request):
     """Update a message in a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ConversationMessagePathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
     body_params = await parse_request_body_as(ConversationMessagePatch, request)
 
     _conversation = await _conversation_service.get_conversation(
@@ -240,9 +224,7 @@ async def update_conversation_message(request: web.Request):
 async def delete_conversation_message(request: web.Request):
     """Delete a message in a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ConversationMessagePathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
 
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
@@ -278,9 +260,7 @@ async def delete_conversation_message(request: web.Request):
 @_handle_exceptions
 async def trigger_chatbot_processing(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ConversationMessagePathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
 
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
@@ -289,13 +269,11 @@ async def trigger_chatbot_processing(request: web.Request):
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
-    conversation_db, conversation_user_type = (
-        await _conversation_service.get_support_conversation_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            conversation_id=path_params.conversation_id,
-        )
+    conversation_db, conversation_user_type = await _conversation_service.get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
     )
 
     await _conversation_message_service.trigger_chatbot_processing(

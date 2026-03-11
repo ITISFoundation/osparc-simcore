@@ -19,9 +19,7 @@ def tmp_compose_spec(tests_data_dir: Path, tmp_path: Path):
     return dst
 
 
-def test_create_new_osparc_config(
-    run_program_with_args: Callable, tmp_compose_spec: Path
-):
+def test_create_new_osparc_config(run_program_with_args: Callable, tmp_compose_spec: Path):
     osparc_dir = tmp_compose_spec.parent / OSPARC_CONFIG_DIRNAME
     assert not osparc_dir.exists()
 

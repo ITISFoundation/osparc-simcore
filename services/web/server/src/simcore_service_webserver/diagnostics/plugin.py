@@ -44,9 +44,7 @@ def setup_diagnostics(app: web.Application):
     incidents_registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
     app[HEALTH_INCIDENTS_REGISTRY_APPKEY] = incidents_registry
 
-    monitor_slow_callbacks.enable(
-        settings.DIAGNOSTICS_SLOW_DURATION_SECS, incidents_registry
-    )
+    monitor_slow_callbacks.enable(settings.DIAGNOSTICS_SLOW_DURATION_SECS, incidents_registry)
 
     # adds middleware and /metrics
     setup_monitoring(app)

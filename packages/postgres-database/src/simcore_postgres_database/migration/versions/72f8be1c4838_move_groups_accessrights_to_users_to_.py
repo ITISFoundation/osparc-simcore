@@ -25,9 +25,7 @@ def upgrade():
         sa.Column(
             "access_rights",
             postgresql.JSONB(astext_type=sa.Text()),
-            server_default=sa.text(
-                '\'{"read": true, "write": false, "delete": false}\'::jsonb'
-            ),
+            server_default=sa.text('\'{"read": true, "write": false, "delete": false}\'::jsonb'),
             nullable=False,
         ),
     )

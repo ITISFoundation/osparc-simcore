@@ -51,20 +51,12 @@ def create_permalink_for_study(
 
     # check: criterias/conditions on a project to have a permalink
     if project_type != ProjectType.TEMPLATE:
-        msg = (
-            "Can only create permalink from a template project. "
-            f"Got {project_uuid=} with {project_type=}"
-        )
+        msg = f"Can only create permalink from a template project. Got {project_uuid=} with {project_type=}"
         raise PermalinkNotAllowedError(msg)
 
-    project_access_rights_group_1_or_empty: _GroupAccessRightsDict | dict = (
-        project_access_rights.get("1", {})
-    )
+    project_access_rights_group_1_or_empty: _GroupAccessRightsDict | dict = project_access_rights.get("1", {})
     if not project_access_rights_group_1_or_empty.get("read", False):
-        msg = (
-            "Cannot create permalink if not shared with everyone. "
-            f"Got {project_uuid=} with {project_access_rights=}"
-        )
+        msg = f"Cannot create permalink if not shared with everyone. Got {project_uuid=} with {project_access_rights=}"
         raise PermalinkNotAllowedError(msg)
 
     # create
@@ -137,8 +129,6 @@ async def permalink_factory(
     )
 
 
-def setup_projects_permalinks(
-    app: web.Application, settings: StudiesDispatcherSettings
-):
+def setup_projects_permalinks(app: web.Application, settings: StudiesDispatcherSettings):
     assert settings  # nosec
     register_permalink_factory(app, permalink_factory)

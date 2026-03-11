@@ -1,6 +1,6 @@
 #
-# Contraints in this file are NOT part of the *.in requirements
-# Include this file with --contraints
+# Constraints in this file are NOT part of the *.in requirements
+# Include this file with --constraints
 #
 
 # yarl version 1.8.2 is the first one shipping wheels for Python 3.13

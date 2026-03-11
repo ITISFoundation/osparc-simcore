@@ -35,9 +35,7 @@ def test_clone_project_document(
     test_data_file_name: str,
     tests_data_dir: Path,
 ):
-    original_project: ProjectDict = json.loads(
-        (tests_data_dir / test_data_file_name).read_text()
-    )
+    original_project: ProjectDict = json.loads((tests_data_dir / test_data_file_name).read_text())
 
     source_project: ProjectDict = deepcopy(original_project)
     clone, _ = clone_project_document(source_project)
@@ -54,10 +52,7 @@ def test_clone_project_document(
 
     # checks no conversation have been copied
     if "ui" in clone and "annotations" in clone["ui"]:
-        assert not any(
-            annotation["type"] == "conversation"
-            for annotation in clone["ui"]["annotations"].values()
-        )
+        assert not any(annotation["type"] == "conversation" for annotation in clone["ui"]["annotations"].values())
 
     # Here we do not use anymore jsonschema.validator since ...
     #
@@ -95,17 +90,11 @@ def test_any_node_inputs_changed(fake_project: ProjectDict):
 
     assert not any_node_inputs_changed(updated_project, current_project)
 
-    assert (
-        fake_project == current_project
-    ), "any_node_inputs_changed MUST NOT modify data "
-    assert (
-        fake_project == updated_project
-    ), "any_node_inputs_changed MUST NOT modify data"
+    assert fake_project == current_project, "any_node_inputs_changed MUST NOT modify data "
+    assert fake_project == updated_project, "any_node_inputs_changed MUST NOT modify data"
 
     # add new node w/ a link
-    fake_node = deepcopy(
-        fake_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]
-    )
+    fake_node = deepcopy(fake_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"])
     assert fake_node["inputs"] == {
         "Na": 0,
         "Kr": 0,

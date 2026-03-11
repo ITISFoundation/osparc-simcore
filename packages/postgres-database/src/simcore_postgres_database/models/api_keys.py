@@ -37,7 +37,12 @@ api_keys = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger(),
-        sa.ForeignKey(users.c.id, ondelete=RefActions.CASCADE),
+        sa.ForeignKey(
+            users.c.id,
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
+            name="fk_api_keys_to_user_id",
+        ),
         nullable=False,
         doc="Identified user",
     ),
@@ -71,8 +76,7 @@ api_keys = sa.Table(
         "expires_at",
         sa.DateTime(),  # WARNING: still not updated to correct utc
         nullable=True,
-        doc="Sets the expiration date for this api-key."
-        "If set to NULL then the key does not expire.",
+        doc="Sets the expiration date for this api-key.If set to NULL then the key does not expire.",
     ),
     sa.UniqueConstraint(
         "display_name",
@@ -85,7 +89,7 @@ api_keys = sa.Table(
 
 #
 # NOTE: Currently we scheduled a task that periodically prunes all rows that are expired
-# This task is deployed in the GC service but it could als be done with a trigger in the
+# This task is deployed in the GC service but it could also be done with a trigger in the
 # postgres db itself. SEE draft idea (it would require some changes) in
 # https://schinckel.net/2021/09/09/automatically-expire-rows-in-postgres/
 #

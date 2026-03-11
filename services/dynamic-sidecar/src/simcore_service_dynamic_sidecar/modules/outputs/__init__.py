@@ -17,10 +17,10 @@ def setup_outputs(app: FastAPI) -> None:
 
 
 __all__: tuple[str, ...] = (
+    "OutputsContext",
+    "OutputsManager",
     "disable_event_propagation",
     "enable_event_propagation",
     "event_propagation_disabled",
-    "OutputsContext",
-    "OutputsManager",
     "setup_outputs",
 )

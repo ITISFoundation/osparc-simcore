@@ -21,11 +21,8 @@ from .settings import StaticWebserverModuleSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-@app_setup_func(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=_logger
-)
+@app_setup_func(__name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=_logger)
 def setup_statics(app: web.Application) -> None:
-
     settings: StaticWebserverModuleSettings = get_plugin_settings(app)
     assert settings  # nosec
 
@@ -37,9 +34,7 @@ def setup_statics(app: web.Application) -> None:
 
     # statics.json is computed here and contains information used
     # by the frontend to properly render the client
-    app.router.add_get(
-        "/static-frontend-data.json", get_statics_json, name="static_frontend_data"
-    )
+    app.router.add_get("/static-frontend-data.json", get_statics_json, name="static_frontend_data")
 
     # compute statics.json content
     app.on_startup.append(create_and_cache_statics_json)

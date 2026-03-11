@@ -44,7 +44,6 @@ async def mark_project_as_job(
     job_parent_resource_name: str,
     storage_assets_deleted: bool,
 ) -> None:
-
     result = await rpc_client.request(
         DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("mark_project_as_job"),

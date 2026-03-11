@@ -75,9 +75,7 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 
 async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
-    class MyClientApi(
-        BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
-    ):
+    class MyClientApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
         app_state_name: str = "my_client_api"
 
     new_app = FastAPI()
@@ -92,7 +90,7 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
     api.set_to_app_state(new_app)
     assert MyClientApi.get_from_app_state(new_app) == api
 
-    # defin lifespan
+    # define lifespan
     api.attach_lifespan_to(new_app)
 
     async with LifespanManager(

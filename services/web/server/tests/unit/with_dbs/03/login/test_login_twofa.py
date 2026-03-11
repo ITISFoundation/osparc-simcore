@@ -12,7 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
-from models_library.authentification import TwoFactorAuthentificationMethod
+from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -68,9 +68,7 @@ def postgres_db(postgres_db: sa.engine.Engine):
         products.update()
         .values(
             twilio_messaging_sid="x" * 34,
-            login_settings=ProductLoginSettingsDict(
-                LOGIN_2FA_REQUIRED=True
-            ),  # <--- 2FA Enabled for product
+            login_settings=ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True),  # <--- 2FA Enabled for product
         )
         .where(products.c.name == "osparc")
     )
@@ -116,9 +114,7 @@ async def test_2fa_code_operations(client: TestClient):
 
     # expired
     email = "expired@bar.com"
-    code = await _do_create_2fa_code(
-        get_redis_validation_code_client(client.app), email, expiration_seconds=1
-    )
+    code = await _do_create_2fa_code(get_redis_validation_code_client(client.app), email, expiration_seconds=1)
     await asyncio.sleep(1.5)
     assert await get_2fa_code(client.app, email) is None
 
@@ -267,15 +263,13 @@ async def test_workflow_register_and_login_with_2fa(
 
     # login (via EMAIL) ---------------------------------------------------------
     # Change 2fa user preference
-    _preference_id = (
-        user_preferences_service.TwoFAFrontendUserPreference().preference_identifier
-    )
+    _preference_id = user_preferences_service.TwoFAFrontendUserPreference().preference_identifier
     await user_preferences_service.set_frontend_user_preference(
         client.app,
         user_id=user["id"],
         product_name="osparc",
         frontend_preference_identifier=_preference_id,
-        value=TwoFactorAuthentificationMethod.EMAIL,
+        value=TwoFactorAuthenticationMethod.EMAIL,
     )
 
     url = client.app.router["auth_login"].url_for()
@@ -304,7 +298,7 @@ async def test_workflow_register_and_login_with_2fa(
         user_id=user["id"],
         product_name="osparc",
         frontend_preference_identifier=_preference_id,
-        value=TwoFactorAuthentificationMethod.DISABLED,
+        value=TwoFactorAuthenticationMethod.DISABLED,
     )
 
     url = client.app.router["auth_login"].url_for()
@@ -335,9 +329,7 @@ async def test_can_register_same_phone_in_different_accounts(
 
     async with AsyncExitStack() as users_stack:
         # some user ALREADY registered with the same phone
-        await users_stack.enter_async_context(
-            NewUser(user_data={"phone": user_phone_number}, app=client.app)
-        )
+        await users_stack.enter_async_context(NewUser(user_data={"phone": user_phone_number}, app=client.app))
 
         # some registered user w/o phone
         await users_stack.enter_async_context(
@@ -468,9 +460,7 @@ async def test_2fa_sms_failure_during_login(
 
             # Expects failure:
             #    HTTPServiceUnavailable: Currently we cannot use 2FA, please try again later (OEC:140558738809344)
-            data, error = await assert_status(
-                response, status.HTTP_503_SERVICE_UNAVAILABLE
-            )
+            data, error = await assert_status(response, status.HTTP_503_SERVICE_UNAVAILABLE)
             assert not data
             assert error["message"].startswith(MSG_2FA_UNAVAILABLE[:10])
 

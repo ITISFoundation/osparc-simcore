@@ -33,17 +33,13 @@ async def connection(asyncpg_engine: AsyncEngine) -> AsyncIterator[AsyncConnecti
 @pytest.fixture
 async def fake_product(connection: AsyncConnection) -> Row:
     result = await connection.execute(
-        products.insert()
-        .values(random_product(name="tip", group_id=None))
-        .returning(sa.literal_column("*")),
+        products.insert().values(random_product(name="tip", group_id=None)).returning(sa.literal_column("*")),
     )
     await connection.commit()
 
     async with connection.begin():
         result = await connection.execute(
-            products.insert()
-            .values(random_product(name="s4l", group_id=None))
-            .returning(sa.literal_column("*")),
+            products.insert().values(random_product(name="s4l", group_id=None)).returning(sa.literal_column("*")),
         )
 
     return result.one()
@@ -71,10 +67,8 @@ async def test_creating_product_prices(
         got = result.one()
         assert got
 
-        # insert still NOT commited but can read from this connection
-        read_query = sa.select(products_prices).where(
-            products_prices.c.product_name == fake_product.name
-        )
+        # insert still NOT committed but can read from this connection
+        read_query = sa.select(products_prices).where(products_prices.c.product_name == fake_product.name)
         result = await connection.execute(read_query)
         assert result.one()._asdict() == got._asdict()
 
@@ -92,10 +86,7 @@ async def test_creating_product_prices(
         assert result.one()._asdict() == got._asdict()
 
 
-async def test_non_negative_price_not_allowed(
-    connection: AsyncConnection, fake_product: Row, faker: Faker
-):
-
+async def test_non_negative_price_not_allowed(connection: AsyncConnection, fake_product: Row, faker: Faker):
     assert not connection.in_transaction()
 
     # WRITE: negative price not allowed
@@ -148,9 +139,7 @@ async def test_non_negative_price_not_allowed(
         assert result.one()
 
 
-async def test_delete_price_constraints(
-    connection: AsyncConnection, fake_product: Row, faker: Faker
-):
+async def test_delete_price_constraints(connection: AsyncConnection, fake_product: Row, faker: Faker):
     # products_prices
     async with connection.begin():
         await connection.execute(
@@ -179,33 +168,19 @@ async def test_delete_price_constraints(
         await connection.execute(products.delete())
 
 
-async def test_get_product_latest_price_or_none(
-    connection: AsyncConnection, fake_product: Row, faker: Faker
-):
+async def test_get_product_latest_price_or_none(connection: AsyncConnection, fake_product: Row, faker: Faker):
     # undefined product
-    assert (
-        await get_product_latest_price_info_or_none(
-            connection, product_name="undefined"
-        )
-        is None
-    )
+    assert await get_product_latest_price_info_or_none(connection, product_name="undefined") is None
 
     assert await is_payment_enabled(connection, product_name="undefined") is False
 
     # defined product but undefined price
-    assert (
-        await get_product_latest_price_info_or_none(
-            connection, product_name=fake_product.name
-        )
-        is None
-    )
+    assert await get_product_latest_price_info_or_none(connection, product_name=fake_product.name) is None
 
     assert await is_payment_enabled(connection, product_name=fake_product.name) is False
 
 
-async def test_price_history_of_a_product(
-    connection: AsyncConnection, fake_product: Row, faker: Faker
-):
+async def test_price_history_of_a_product(connection: AsyncConnection, fake_product: Row, faker: Faker):
     # initial price
     async with connection.begin():
         await connection.execute(
@@ -231,16 +206,12 @@ async def test_price_history_of_a_product(
         )
 
     # latest is 2 USD!
-    assert await get_product_latest_price_info_or_none(
-        connection, product_name=fake_product.name
-    ) == (2, 10)
+    assert await get_product_latest_price_info_or_none(connection, product_name=fake_product.name) == (2, 10)
 
     assert await is_payment_enabled(connection, product_name=fake_product.name) is True
 
 
-async def test_get_product_latest_stripe_info(
-    connection: AsyncConnection, fake_product: Row, faker: Faker
-):
+async def test_get_product_latest_stripe_info(connection: AsyncConnection, fake_product: Row, faker: Faker):
     stripe_price_id_value = faker.word()
     stripe_tax_rate_id_value = faker.word()
 
@@ -257,15 +228,11 @@ async def test_get_product_latest_stripe_info(
         )
 
     # undefined product
-    undefined_product_stripe_info = await get_product_latest_stripe_info_or_none(
-        connection, product_name="undefined"
-    )
+    undefined_product_stripe_info = await get_product_latest_stripe_info_or_none(connection, product_name="undefined")
     assert undefined_product_stripe_info is None
 
     # defined product
-    product_stripe_info = await get_product_latest_stripe_info_or_none(
-        connection, product_name=fake_product.name
-    )
+    product_stripe_info = await get_product_latest_stripe_info_or_none(connection, product_name=fake_product.name)
     assert product_stripe_info
     assert product_stripe_info[0] == stripe_price_id_value
     assert product_stripe_info[1] == stripe_tax_rate_id_value

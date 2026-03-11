@@ -45,6 +45,13 @@ qx.Class.define("osparc.utils.Utils", {
         this.setLocalStorageItem("lastVcsRefUI", vcsRef);
       },
 
+      getLatestSim4LifeVersion: function() {
+        return this.getLocalStorageItem("sim4lifeVersion");
+      },
+      setLatestSim4LifeVersion: function(s4lVersion) {
+        this.setLocalStorageItem("sim4lifeVersion", s4lVersion);
+      },
+
       getDontShowAnnouncements: function() {
         return this.getLocalStorageItem("dontShowAnnouncements") ? JSON.parse(this.getLocalStorageItem("dontShowAnnouncements")) : [];
       },
@@ -90,6 +97,13 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     FLOATING_Z_INDEX: 1000001 + 1,
+
+    // Returns a number rounded to n decimal places
+    // avoids floating-point artifacts
+    safeToFixed: function(value, n) {
+      const factor = Math.pow(10, n);
+      return parseFloat((Math.round((value + Number.EPSILON) * factor) / factor).toFixed(n));
+    },
 
     toolTipTextOnDisabledWidget: function(widget, toolTipText) {
       if (widget && widget.getContentElement()) {
@@ -550,22 +564,24 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    getEditButton: function(isVisible = true) {
+    getEditButton: function(isVisible = true, toolTipText = qx.locale.Manager.tr("Edit")) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
-        appearance: "form-button-outlined",
+        appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
         maxWidth: 20,
+        toolTipText,
         visibility: isVisible ? "visible" : "excluded"
       });
     },
 
-    getLinkButton: function(isVisible = true) {
+    getLinkButton: function(isVisible = true, toolTipText = "") {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/link/12").set({
-        appearance: "form-button-outlined",
+        appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
         maxWidth: 20,
+        toolTipText,
         visibility: isVisible ? "visible" : "excluded"
       });
     },
@@ -841,23 +857,56 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
-    compareVersionNumbers: function(v1, v2) {
-      // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
-      // - a number < 0 if a < b
-      // - a number > 0 if a > b
-      // - 0 if a = b
-      const regExStrip0 = /(\.0+)+$/;
-      const segmentsA = v1.replace(regExStrip0, "").split(".");
-      const segmentsB = v2.replace(regExStrip0, "").split(".");
-      const l = Math.min(segmentsA.length, segmentsB.length);
-
-      for (let i = 0; i < l; i++) {
-        const diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
-        if (diff) {
-          return diff;
-        }
+    /**
+     * Parses a version string (e.g. "9.4.0" or "9.4.0-rc.5") into its components.
+     * @param {string} version - Version string in semver format
+     * @returns {{ major: number, minor: number, patch: number, preRelease: string|null } | null}
+     */
+    parseVersion: function(version) {
+      if (!version || typeof version !== "string") {
+        return null;
       }
-      return segmentsA.length - segmentsB.length;
+      const match = version.match(/^(\d+)\.(\d+)(?:\.(\d+))?(?:-(.+))?$/);
+      if (!match) {
+        return null;
+      }
+      return {
+        major: Number(match[1]),
+        minor: Number(match[2]),
+        patch: match[3] !== undefined ? Number(match[3]) : 0,
+        preRelease: match[4] || null,
+      };
+    },
+
+    /**
+     * Returns true if major or minor version differs between two version strings.
+     * @param {string} versionA
+     * @param {string} versionB
+     * @returns {boolean}
+     */
+    hasMinorOrMajorBump: function(versionA, versionB) {
+      const a = osparc.utils.Utils.parseVersion(versionA);
+      const b = osparc.utils.Utils.parseVersion(versionB);
+      if (!a || !b) {
+        return false;
+      }
+      return a.major !== b.major || a.minor !== b.minor;
+    },
+
+    /**
+     * Compares two version strings numerically (major.minor.patch).
+     * Pre-release suffixes (e.g. "-rc.5") are stripped before comparison.
+     * @param {string} v1
+     * @param {string} v2
+     * @returns {number} < 0 if v1 < v2, > 0 if v1 > v2, 0 if equal
+     */
+    compareVersionNumbers: function(v1, v2) {
+      const a = osparc.utils.Utils.parseVersion(v1);
+      const b = osparc.utils.Utils.parseVersion(v2);
+      if (!a || !b) {
+        return 0;
+      }
+      return (a.major - b.major) || (a.minor - b.minor) || (a.patch - b.patch);
     },
 
     // deep clone of nested objects
@@ -945,9 +994,8 @@ qx.Class.define("osparc.utils.Utils", {
       return new Promise((resolve, reject) => {
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
-        const download = true;
         const dataStore = osparc.store.Data.getInstance();
-        dataStore.getPresignedLink(download, locationId, fileId)
+        dataStore.getPresignedLink(true, locationId, fileId)
           .then(presignedLinkData => {
             if (presignedLinkData.resp) {
               const link = presignedLinkData.resp.link;
@@ -1079,7 +1127,7 @@ qx.Class.define("osparc.utils.Utils", {
       // Why is it here? To ensure:
       // 1. the element is able to have focus and selection.
       // 2. if element was to flash render it has minimal visual impact.
-      // 3. less flakyness with selection and copying which **might** occur if
+      // 3. less flakiness with selection and copying which **might** occur if
       //    the textarea element is not visible.
       //
       // The likelihood is the element won't even render, not even a
@@ -1367,6 +1415,38 @@ qx.Class.define("osparc.utils.Utils", {
       for (let i=nChildren-1; i>=0; i--) {
         container.remove(container.getChildren()[i]);
       }
+    },
+
+    /**
+     * Enables line break insertion when Enter key is pressed in a TextArea
+     * @param {qx.ui.form.TextArea} textArea - The TextArea widget to enhance
+     */
+    enableTextAreaLineBreaks: function(textArea) {
+      textArea.addListener("keypress", function(e) {
+        if (e.getKeyIdentifier() === "Enter" && !e.isShiftPressed() && !e.isCtrlPressed()) {
+          e.preventDefault();
+
+          const dom = textArea.getContentElement().getDomElement();
+          if (!dom) return;
+
+          const value = textArea.getValue() || "";
+          const start = dom.selectionStart != null ? dom.selectionStart : value.length;
+          const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
+
+          const newValue = value.substring(0, start) + "\n" + value.substring(end);
+          const newPos = start + 1;
+
+          textArea.setValue(newValue);
+          textArea.focus();
+
+          qx.event.Timer.once(function() {
+            const dom2 = textArea.getContentElement().getDomElement();
+            if (!dom2) return;
+            dom2.selectionStart = newPos;
+            dom2.selectionEnd = newPos;
+          }, this, 0);
+        }
+      }, textArea);
     }
   }
 });

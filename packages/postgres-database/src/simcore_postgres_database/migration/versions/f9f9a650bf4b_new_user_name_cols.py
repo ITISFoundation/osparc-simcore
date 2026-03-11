@@ -44,9 +44,7 @@ def upgrade():
         first_name = parts[0].capitalize()
         last_name = parts[1].capitalize() if len(parts) == 2 else None
 
-        query = sa.text(
-            "UPDATE users SET first_name=:first, last_name=:last, name=:uname WHERE id=:id"
-        )
+        query = sa.text("UPDATE users SET first_name=:first, last_name=:last, name=:uname WHERE id=:id")
         values = {
             "first": first_name,
             "last": last_name,

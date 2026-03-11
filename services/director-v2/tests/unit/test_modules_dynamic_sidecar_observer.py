@@ -10,6 +10,7 @@ from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from servicelib.tracing import TracingConfig
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
@@ -92,6 +93,7 @@ def mocked_app(mock_env: None) -> FastAPI:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
     app.state.rabbitmq_client = AsyncMock()
+    app.state.tracing_config = TracingConfig.create(None, service_name="test_service")
     return app
 
 
@@ -113,8 +115,7 @@ def _is_observation_task_present(
     scheduler_data_from_http_request,
 ) -> bool:
     return (
-        scheduler_data_from_http_request.service_name
-        in dynamic_sidecar_scheduler.scheduler._service_observation_task  # noqa: SLF001
+        scheduler_data_from_http_request.service_name in dynamic_sidecar_scheduler.scheduler._service_observation_task  # noqa: SLF001
     )
 
 
@@ -128,42 +129,25 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     can_save: bool | None,
 ):
     # in this situation the scheduler would never end loops forever
-    await dynamic_sidecar_scheduler.scheduler.add_service_from_scheduler_data(
-        scheduler_data_from_http_request
-    )
+    await dynamic_sidecar_scheduler.scheduler.add_service_from_scheduler_data(scheduler_data_from_http_request)
 
     # simulate edge case
     scheduler_data_from_http_request.dynamic_sidecar.were_containers_created = True
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is False
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is False
 
     # NOTE: this will create the observation task as well!
     # Simulates user action like going back to the dashboard.
     await dynamic_sidecar_scheduler.mark_service_for_removal(
-        scheduler_data_from_http_request.node_uuid, can_save=can_save
+        scheduler_data_from_http_request.node_uuid,
+        can_save=can_save,
+        skip_observation_recreation=False,
     )
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is True
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is True
 
     # requires an extra pass to remove the service
     for _ in range(3):
-        await _apply_observation_cycle(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
+        await _apply_observation_cycle(dynamic_sidecar_scheduler, scheduler_data_from_http_request)
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is False
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is False

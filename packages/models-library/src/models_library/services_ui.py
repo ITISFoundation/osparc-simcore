@@ -10,9 +10,7 @@ class WidgetType(str, Enum):
 
 
 class TextArea(BaseModel):
-    min_height: PositiveInt = Field(
-        ..., alias="minHeight", description="minimum Height of the textarea"
-    )
+    min_height: PositiveInt = Field(..., alias="minHeight", description="minimum Height of the textarea")
 
     model_config = ConfigDict(extra="forbid")
 
@@ -31,9 +29,7 @@ class SelectBox(BaseModel):
 
 
 class Widget(BaseModel):
-    widget_type: WidgetType = Field(
-        ..., alias="type", description="type of the property"
-    )
+    widget_type: WidgetType = Field(..., alias="type", description="type of the property")
     details: TextArea | SelectBox
 
     model_config = ConfigDict(extra="forbid")

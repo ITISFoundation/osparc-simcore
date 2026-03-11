@@ -29,27 +29,21 @@ def test_run_id_get_resource_tracking_run_id(
     iteration: PositiveInt,
     expected_result: str,
 ):
-    resource_tracking_service_run_id = (
-        ServiceRunID.get_resource_tracking_run_id_for_computational(
-            user_id, project_id, node_id, iteration
-        )
+    resource_tracking_service_run_id = ServiceRunID.get_resource_tracking_run_id_for_computational(
+        user_id, project_id, node_id, iteration
     )
     assert isinstance(resource_tracking_service_run_id, ServiceRunID)
     assert resource_tracking_service_run_id == expected_result
 
 
 def test_get_resource_tracking_run_id_for_dynamic():
-    assert isinstance(
-        ServiceRunID.get_resource_tracking_run_id_for_dynamic(), ServiceRunID
-    )
+    assert isinstance(ServiceRunID.get_resource_tracking_run_id_for_dynamic(), ServiceRunID)
 
 
 @pytest.mark.parametrize(
     "service_key, service_version",
     [(random_service_key(), random_service_version()) for _ in range(10)],
 )
-def test_faker_factory_service_key_and_version_are_in_sync(
-    service_key: ServiceKey, service_version: ServiceVersion
-):
+def test_faker_factory_service_key_and_version_are_in_sync(service_key: ServiceKey, service_version: ServiceVersion):
     TypeAdapter(ServiceKey).validate_python(service_key)
     TypeAdapter(ServiceVersion).validate_python(service_version)

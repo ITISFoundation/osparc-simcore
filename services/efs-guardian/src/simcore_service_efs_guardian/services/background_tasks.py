@@ -43,9 +43,7 @@ async def removal_policy_task(app: FastAPI) -> None:
 
     base_start_timestamp = datetime.now(tz=UTC)
 
-    efs_project_ids: list[ProjectID] = (
-        await efs_manager.list_projects_across_whole_efs()
-    )
+    efs_project_ids: list[ProjectID] = await efs_manager.list_projects_across_whole_efs()
     _logger.info(
         "Number of projects that are currently in the EFS file system: %s",
         len(efs_project_ids),
@@ -54,20 +52,14 @@ async def removal_policy_task(app: FastAPI) -> None:
     projects_repo = ProjectsRepo(app.state.engine)
     for project_id in efs_project_ids:
         try:
-            _project_last_change_date = (
-                await projects_repo.get_project_last_change_date(project_id)
-            )
+            _project_last_change_date = await projects_repo.get_project_last_change_date(project_id)
         except DBProjectNotFoundError:
             _logger.info(
                 "Project %s not found. Removing EFS data for project {project_id} started",
                 project_id,
             )
             await efs_manager.remove_project_efs_data(project_id)
-        if (
-            _project_last_change_date
-            < base_start_timestamp
-            - app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA
-        ):
+        if _project_last_change_date < base_start_timestamp - app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA:
             with log_context(
                 _logger,
                 logging.INFO,

@@ -31,22 +31,21 @@ async def _subscribe_to_rabbitmq(app) -> str:
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="RUT setup process_message_running_service module.",
-        ), log_catch(_logger, reraise=False):
+        with (
+            log_context(
+                _logger,
+                logging.INFO,
+                msg="RUT setup process_message_running_service module.",
+            ),
+            log_catch(_logger, reraise=False),
+        ):
             app_settings: ApplicationSettings = app.state.settings
             app.state.resource_tracker_rabbitmq_consumer = None
-            settings: RabbitSettings | None = (
-                app_settings.RESOURCE_USAGE_TRACKER_RABBITMQ
-            )
+            settings: RabbitSettings | None = app_settings.RESOURCE_USAGE_TRACKER_RABBITMQ
             if not settings:
                 _logger.warning("RabbitMQ client is de-activated in the settings")
                 return
-            app.state.resource_tracker_rabbitmq_consumer = await _subscribe_to_rabbitmq(
-                app
-            )
+            app.state.resource_tracker_rabbitmq_consumer = await _subscribe_to_rabbitmq(app)
 
     return _startup
 

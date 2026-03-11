@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import sqlalchemy as sa
 from models_library.rabbitmq_messages import (
@@ -44,20 +44,20 @@ async def test_process_event_functions(
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
     assert output.stopped_at is None
     assert output.service_run_status == "RUNNING"
-    first_occurence_of_last_heartbeat_at = output.last_heartbeat_at
+    first_occurrence_of_last_heartbeat_at = output.last_heartbeat_at
 
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
+        service_run_id=msg.service_run_id, created_at=datetime.now(tz=UTC)
     )
     await _process_heartbeat_event(engine, heartbeat_msg, publisher)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
     assert output.stopped_at is None
     assert output.service_run_status == "RUNNING"
-    assert first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
+    assert first_occurrence_of_last_heartbeat_at < output.last_heartbeat_at
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
     await _process_stop_event(engine, stopped_msg, publisher)

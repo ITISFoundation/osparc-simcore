@@ -42,11 +42,7 @@ def standard_user_role() -> tuple[str, list[ParameterSet]]:
 
     return (
         parameters,
-        [
-            pytest.param(
-                standard_user, standard_user_expected_response, id="standard_user_role"
-            )
-        ],
+        [pytest.param(standard_user, standard_user_expected_response, id="standard_user_role")],
     )
 
 
@@ -197,17 +193,12 @@ async def test_list_projects_with_search_parameter(  # noqa: PLR0915
     data = await resp.json()
 
     assert resp.status == status.HTTP_200_OK
-    _assert_response_data(
-        data, 1, 0, 1, "/v0/projects?search=nAmE+5&offset=0&limit=20", 1
-    )
+    _assert_response_data(data, 1, 0, 1, "/v0/projects?search=nAmE+5&offset=0&limit=20", 1)
 
     # Now we will test specific project name search (used by the API server)
     query_parameters = {"filters": '{"search_by_project_name": "Yoda"}'}
     url = base_url.with_query(**query_parameters)
-    assert (
-        f"{url}"
-        == f"/{api_version_prefix}/projects?filters=%7B%22search_by_project_name%22:+%22Yoda%22%7D"
-    )
+    assert f"{url}" == f"/{api_version_prefix}/projects?filters=%7B%22search_by_project_name%22:+%22Yoda%22%7D"
 
     resp = await client.get(f"{url}")
     data = await resp.json()
@@ -231,9 +222,7 @@ async def test_list_projects_with_search_parameter(  # noqa: PLR0915
     data = await resp.json()
 
     assert resp.status == status.HTTP_200_OK
-    _assert_response_data(
-        data, 1, 0, 1, "/v0/projects?search=2-fe1b-11ed-b038-cdb1&offset=0&limit=20", 1
-    )
+    _assert_response_data(data, 1, 0, 1, "/v0/projects?search=2-fe1b-11ed-b038-cdb1&offset=0&limit=20", 1)
 
     # Now we will test part of prjOwner search
     user_name_ = logged_user["name"]
@@ -241,10 +230,7 @@ async def test_list_projects_with_search_parameter(  # noqa: PLR0915
     query_parameters = {"search": user_name_substring}
     url = base_url.with_query(**query_parameters)
     user_name_substring_query_parsed = user_name_substring.replace(" ", "+")
-    assert (
-        f"{url}"
-        == f"/{api_version_prefix}/projects?search={user_name_substring_query_parsed}"
-    )
+    assert f"{url}" == f"/{api_version_prefix}/projects?search={user_name_substring_query_parsed}"
 
     resp = await client.get(f"{url}")
     data = await resp.json()
@@ -279,9 +265,7 @@ async def test_list_projects_with_search_parameter(  # noqa: PLR0915
     data = await resp.json()
 
     assert resp.status == status.HTTP_200_OK
-    _assert_response_data(
-        data, 0, 0, 0, "/v0/projects?search=does+not+exists&offset=0&limit=20", 0
-    )
+    _assert_response_data(data, 0, 0, 0, "/v0/projects?search=does+not+exists&offset=0&limit=20", 0)
 
     # Now we will test search with offset parameters
     query_parameters = {"search": "oda", "offset": "0", "limit": "1"}
@@ -359,12 +343,9 @@ async def test_list_projects_with_order_by_parameter(
 
     # Order by uuid ascending
     base_url = client.app.router["list_projects"].url_for()
-    url = base_url.with_query(
-        order_by=json.dumps({"field": "uuid", "direction": "asc"})
-    )
+    url = base_url.with_query(order_by=json.dumps({"field": "uuid", "direction": "asc"}))
     assert (
-        f"{url}"
-        == f"/{api_version_prefix}/projects?order_by=%7B%22field%22:+%22uuid%22,+%22direction%22:+%22asc%22%7D"
+        f"{url}" == f"/{api_version_prefix}/projects?order_by=%7B%22field%22:+%22uuid%22,+%22direction%22:+%22asc%22%7D"
     )
     resp = await client.get(f"{url}")
     data = await resp.json()
@@ -373,21 +354,15 @@ async def test_list_projects_with_order_by_parameter(
 
     # Order by uuid descending
     base_url = client.app.router["list_projects"].url_for()
-    url = base_url.with_query(
-        order_by=json.dumps({"field": "uuid", "direction": "desc"})
-    )
+    url = base_url.with_query(order_by=json.dumps({"field": "uuid", "direction": "desc"}))
     resp = await client.get(f"{url}")
     data = await resp.json()
     assert resp.status == status.HTTP_200_OK
-    assert [item["uuid"][0] for item in data["data"]] == _alphabetically_ordered_list[
-        ::-1
-    ]
+    assert [item["uuid"][0] for item in data["data"]] == _alphabetically_ordered_list[::-1]
 
     # Order by name ascending
     base_url = client.app.router["list_projects"].url_for()
-    url = base_url.with_query(
-        order_by=json.dumps({"field": "name", "direction": "asc"})
-    )
+    url = base_url.with_query(order_by=json.dumps({"field": "name", "direction": "asc"}))
     resp = await client.get(f"{url}")
     data = await resp.json()
     assert resp.status == status.HTTP_200_OK
@@ -395,15 +370,11 @@ async def test_list_projects_with_order_by_parameter(
 
     # Order by description ascending
     base_url = client.app.router["list_projects"].url_for()
-    url = base_url.with_query(
-        order_by=json.dumps({"field": "description", "direction": "asc"})
-    )
+    url = base_url.with_query(order_by=json.dumps({"field": "description", "direction": "asc"}))
     resp = await client.get(f"{url}")
     data = await resp.json()
     assert resp.status == status.HTTP_200_OK
-    assert [
-        item["description"][0] for item in data["data"]
-    ] == _alphabetically_ordered_list
+    assert [item["description"][0] for item in data["data"]] == _alphabetically_ordered_list
 
 
 @pytest.fixture()
@@ -508,9 +479,7 @@ async def test_list_projects_for_specific_folder_id(
     data = await resp.json()
 
     assert resp.status == status.HTTP_200_OK
-    _assert_response_data(
-        data, 3, 0, 3, "/v0/projects?folder_id=null&offset=0&limit=20", 3
-    )
+    _assert_response_data(data, 3, 0, 3, "/v0/projects?folder_id=null&offset=0&limit=20", 3)
 
     # Now we will test listing for specific folder
     query_parameters = {"folder_id": f"{setup_folders_db}"}
@@ -521,9 +490,7 @@ async def test_list_projects_for_specific_folder_id(
     data = await resp.json()
 
     assert resp.status == status.HTTP_200_OK
-    _assert_response_data(
-        data, 1, 0, 1, f"/v0/projects?folder_id={setup_folders_db}&offset=0&limit=20", 1
-    )
+    _assert_response_data(data, 1, 0, 1, f"/v0/projects?folder_id={setup_folders_db}&offset=0&limit=20", 1)
 
 
 @pytest.mark.parametrize(*standard_and_tester_user_roles())
@@ -586,9 +553,7 @@ async def test_list_and_patch_projects_with_template_type(  # noqa: PLR0915
     data = await resp.json()
 
     assert resp.status == status.HTTP_200_OK
-    _assert_response_data(
-        data, 2, 0, 2, "/v0/projects?type=template&offset=0&limit=20", 2
-    )
+    _assert_response_data(data, 2, 0, 2, "/v0/projects?type=template&offset=0&limit=20", 2)
 
     # Now we will test listing with type=user and template_type=null
     query_parameters = {"type": "user", "template_type": "null"}
@@ -598,9 +563,7 @@ async def test_list_and_patch_projects_with_template_type(  # noqa: PLR0915
     data = await resp.json()
 
     assert resp.status == status.HTTP_200_OK
-    _assert_response_data(
-        data, 3, 0, 3, "/v0/projects?type=user&template_type=null&offset=0&limit=20", 3
-    )
+    _assert_response_data(data, 3, 0, 3, "/v0/projects?type=user&template_type=null&offset=0&limit=20", 3)
 
     # Now we will test listing with incompatible type and template_type
     query_parameters = {"type": "user", "template_type": "TEMPLATE"}

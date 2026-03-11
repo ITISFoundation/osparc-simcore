@@ -22,9 +22,7 @@ from pytest_simcore.helpers.playwright_sim4life import (
 
 def test_sim4life(
     page: Page,
-    create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None, str | None], dict[str, Any]
-    ],
+    create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     create_project_from_new_button: Callable[[str], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
     service_key: str,
@@ -38,14 +36,10 @@ def test_sim4life(
     if use_plus_button:
         project_data = create_project_from_new_button(service_key)
     else:
-        project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None, service_version
-        )
+        project_data = create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key, None, service_version)
 
     assert "workbench" in project_data, "Expected workbench to be in project data!"
-    assert isinstance(
-        project_data["workbench"], dict
-    ), "Expected workbench to be a dict!"
+    assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])
     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 

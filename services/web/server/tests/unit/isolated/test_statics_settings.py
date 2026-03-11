@@ -11,7 +11,9 @@ from simcore_service_webserver.statics.settings import (
     StaticWebserverModuleSettings,
 )
 
-FOGBUGZ_NEWCASE_URL_TEMPLATE = r"https://z43.manuscript.com/f/cases/new?command=new&pg=pgEditBug&ixProject={project}&ixArea={area}"
+FOGBUGZ_NEWCASE_URL_TEMPLATE = (
+    r"https://z43.manuscript.com/f/cases/new?command=new&pg=pgEditBug&ixProject={project}&ixArea={area}"
+)
 
 
 # NEW case url (see product overrides env_prefix = WEBSERVER_S4L_ ... )
@@ -30,7 +32,6 @@ def test_valid_osparc_dependencies():
 
 
 def test_frontend_app_settings(mock_env_devel_environment: dict[str, str]):
-
     settings = FrontEndAppSettings.create_from_envs()
     assert settings
 

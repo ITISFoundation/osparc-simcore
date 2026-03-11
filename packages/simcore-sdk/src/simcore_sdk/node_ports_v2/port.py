@@ -77,13 +77,9 @@ class SetKWargs:
 class Port(BaseServiceIOModel):
     key: ServicePortKey
     widget: dict[str, Any] | None = None
-    default_value: DataItemValue | None = Field(
-        None, alias="defaultValue", union_mode="left_to_right"
-    )
+    default_value: DataItemValue | None = Field(None, alias="defaultValue", union_mode="left_to_right")
 
-    value: DataItemValue | None = Field(
-        None, validate_default=True, union_mode="left_to_right"
-    )
+    value: DataItemValue | None = Field(None, validate_default=True, union_mode="left_to_right")
 
     # Different states of "value"
     #   - e.g. typically after resolving a port's link, a download link, ...
@@ -91,9 +87,7 @@ class Port(BaseServiceIOModel):
     #   - used to run validation & conversion of resolved PortContentTypes values
     #   - excluded from all model export
     value_item: ItemValue | None = Field(None, exclude=True, union_mode="left_to_right")
-    value_concrete: ItemConcreteValue | None = Field(
-        None, exclude=True, union_mode="left_to_right"
-    )
+    value_concrete: ItemConcreteValue | None = Field(None, exclude=True, union_mode="left_to_right")
 
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
@@ -108,11 +102,7 @@ class Port(BaseServiceIOModel):
     @field_validator("value")
     @classmethod
     def check_value(cls, v: DataItemValue, info: ValidationInfo) -> DataItemValue:
-        if (
-            v is not None
-            and (property_type := info.data.get("property_type"))
-            and not isinstance(v, PortLink)
-        ):
+        if v is not None and (property_type := info.data.get("property_type")) and not isinstance(v, PortLink):
             if port_utils.is_file_type(property_type):
                 if not isinstance(v, FileLink | DownloadLink):
                     msg = f"{property_type!r} value does not validate against any of FileLink, DownloadLink or PortLink schemas"
@@ -125,9 +115,7 @@ class Port(BaseServiceIOModel):
                     content_schema=info.data.get("content_schema", {}),
                 )
             elif isinstance(v, list | dict):
-                msg = (
-                    f"Containers as {v} currently only supported within content_schema."
-                )
+                msg = f"Containers as {v} currently only supported within content_schema."
                 raise TypeError(msg)
         return v
 
@@ -173,9 +161,7 @@ class Port(BaseServiceIOModel):
 
         assert self._py_value_converter  # nosec
 
-    async def get_value(
-        self, *, file_link_type: LinkType | None = None
-    ) -> ItemValue | None:
+    async def get_value(self, *, file_link_type: LinkType | None = None) -> ItemValue | None:
         """Resolves data links and returns resulted value
 
         Transforms DataItemValue value -> ItemValue
@@ -197,34 +183,28 @@ class Port(BaseServiceIOModel):
             # NOTE: review types returned by this function !!!
             if isinstance(self.value, PortLink):
                 # this is a link to another node's port
-                other_port_itemvalue: ItemValue | None = (
-                    await port_utils.get_value_link_from_port_link(
-                        self.value,
-                        # pylint: disable=protected-access
-                        self._node_ports._node_ports_creator_cb,
-                        file_link_type=file_link_type,
-                    )
+                other_port_itemvalue: ItemValue | None = await port_utils.get_value_link_from_port_link(
+                    self.value,
+                    # pylint: disable=protected-access
+                    self._node_ports._node_ports_creator_cb,
+                    file_link_type=file_link_type,
                 )
 
                 return other_port_itemvalue
 
             if isinstance(self.value, FileLink):
                 # let's get the download/upload link from storage
-                url_itemvalue: AnyUrl | None = (
-                    await port_utils.get_download_link_from_storage(
-                        # pylint: disable=protected-access
-                        user_id=self._node_ports.user_id,
-                        value=self.value,
-                        link_type=file_link_type,
-                    )
+                url_itemvalue: AnyUrl | None = await port_utils.get_download_link_from_storage(
+                    # pylint: disable=protected-access
+                    user_id=self._node_ports.user_id,
+                    value=self.value,
+                    link_type=file_link_type,
                 )
                 return url_itemvalue
 
             if isinstance(self.value, DownloadLink):
                 # generic download link for a file
-                url: AnyUrl = TypeAdapter(AnyUrl).validate_python(
-                    self.value.download_link
-                )
+                url: AnyUrl = TypeAdapter(AnyUrl).validate_python(self.value.download_link)
                 return url
 
             # otherwise, this is a BasicValueTypes
@@ -236,9 +216,7 @@ class Port(BaseServiceIOModel):
             self.value_item = v
         return v
 
-    async def get(
-        self, progress_bar: ProgressBarData | None = None
-    ) -> ItemConcreteValue | None:
+    async def get(self, progress_bar: ProgressBarData | None = None) -> ItemConcreteValue | None:
         """
         Transforms DataItemValue value -> ItemConcreteValue
 
@@ -257,15 +235,13 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | ItemConcreteValue = (
-                    await port_utils.get_value_from_link(
-                        # pylint: disable=protected-access
-                        key=self.key,
-                        value=self.value,
-                        file_to_key_map=self.file_to_key_map,
-                        node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
-                        progress_bar=progress_bar,
-                    )
+                other_port_concretevalue: None | ItemConcreteValue = await port_utils.get_value_from_link(
+                    # pylint: disable=protected-access
+                    key=self.key,
+                    value=self.value,
+                    file_to_key_map=self.file_to_key_map,
+                    node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
+                    progress_bar=progress_bar,
                 )
                 value = other_port_concretevalue
 
@@ -295,7 +271,7 @@ class Port(BaseServiceIOModel):
                 # otherwise, this is a BasicValueTypes
                 value = self.value
 
-            # don't atempt conversion of None it fails
+            # don't attempt conversion of None it fails
             if value is None:
                 return None
 
@@ -334,9 +310,7 @@ class Port(BaseServiceIOModel):
                     or not converted_value.exists()
                     or converted_value.is_dir()
                 ):
-                    raise InvalidItemTypeError(
-                        self.property_type, f"{new_concrete_value}"
-                    )
+                    raise InvalidItemTypeError(self.property_type, f"{new_concrete_value}")
 
                 _check_if_symlink_is_valid(converted_value)
 
@@ -381,8 +355,7 @@ class Port(BaseServiceIOModel):
         await self._set(
             new_concrete_value=new_value,
             **set_kwargs,
-            progress_bar=progress_bar
-            or ProgressBarData(num_steps=1, description="set"),
+            progress_bar=progress_bar or ProgressBarData(num_steps=1, description="set"),
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
 
@@ -392,9 +365,7 @@ class Port(BaseServiceIOModel):
         :raises InvalidItemTypeError
         :raises ValidationError
         """
-        log.debug(
-            "setting %s[%s] with value %s", self.key, self.property_type, new_item_value
-        )
+        log.debug("setting %s[%s] with value %s", self.key, self.property_type, new_item_value)
         if port_utils.is_file_type(self.property_type) and new_item_value is not None:
             if not isinstance(new_item_value, AnyUrl):
                 raise InvalidItemTypeError(self.property_type, f"{new_item_value}")
@@ -409,9 +380,7 @@ class Port(BaseServiceIOModel):
             self.value = new_filelink
 
         else:
-            new_concrete_value: ItemConcreteValue = self._py_value_converter(
-                new_item_value
-            )
+            new_concrete_value: ItemConcreteValue = self._py_value_converter(new_item_value)
             self.value_concrete = None
             self.value = new_concrete_value  # type: ignore[assignment]
 

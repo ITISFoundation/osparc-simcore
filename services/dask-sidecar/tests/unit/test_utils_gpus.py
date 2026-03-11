@@ -18,18 +18,14 @@ pytest_simcore_core_services_selection = [
 
 @pytest.fixture
 def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
-    return mocker.patch(
-        "simcore_service_dask_sidecar.utils.gpus.aiodocker.Docker", autospec=True
-    )
+    return mocker.patch("simcore_service_dask_sidecar.utils.gpus.aiodocker.Docker", autospec=True)
 
 
 def test_num_available_gpus_returns_0_when_container_not_created(
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
-    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value = (
-        None
-    )
+    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value = None
 
     assert num_available_gpus() == 0
 
@@ -38,10 +34,8 @@ def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
-    mock_aiodocker.return_value.__aenter__.return_value.containers.run.side_effect = (
-        aiodocker.exceptions.DockerError(
-            status="testing bad status", data={"message": "error when running"}
-        )
+    mock_aiodocker.return_value.__aenter__.return_value.containers.run.side_effect = aiodocker.exceptions.DockerError(
+        status="testing bad status", data={"message": "error when running"}
     )
     assert num_available_gpus() == 0
 
@@ -70,9 +64,7 @@ def test_num_available_gpus_returns_0_when_container_wait_timesout(
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
-    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.side_effect = (
-        TimeoutError()
-    )
+    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.side_effect = TimeoutError()
     assert num_available_gpus() == 0
 
 
@@ -93,9 +85,7 @@ def test_num_available_gpus(
     assert num_available_gpus() == 0
 
     # add the correct log
-    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.log.return_value = (
-        container_logs
-    )
+    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.log.return_value = container_logs
     # set the correct status code
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.return_value = {
         "StatusCode": 0

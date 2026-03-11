@@ -175,9 +175,7 @@ def test_construct(monkeypatch):
     settings_from_both = Settings(VALUE_NULLABLE_REQUIRED=3)  # type: ignore[call-arg]
     print(settings_from_both.model_dump_json(exclude_unset=True, indent=1))
 
-    assert settings_from_both == settings_from_init.model_copy(
-        update={"VALUE_NULLABLE_REQUIRED": 3}
-    )
+    assert settings_from_both == settings_from_init.model_copy(update={"VALUE_NULLABLE_REQUIRED": 3})
 
 
 class _TestSettings(BaseApplicationSettings):

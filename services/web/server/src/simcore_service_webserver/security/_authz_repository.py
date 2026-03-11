@@ -22,10 +22,8 @@ class ActiveUserIdAndRole(TypedDict, total=True):
     role: UserRole
 
 
-async def get_active_user_or_none(
-    engine: AsyncEngine, *, email: str
-) -> ActiveUserIdAndRole | None:
-    """Gets a user with email if ACTIVE othewise return None
+async def get_active_user_or_none(engine: AsyncEngine, *, email: str) -> ActiveUserIdAndRole | None:
+    """Gets a user with email if ACTIVE otherwise return None
 
     Raises:
         DatabaseError: unexpected errors found in
@@ -34,9 +32,7 @@ async def get_active_user_or_none(
     """
     async with engine.connect() as conn:
         result = await conn.execute(
-            sa.select(users.c.id, users.c.role).where(
-                (users.c.email == email) & (users.c.status == UserStatus.ACTIVE)
-            )
+            sa.select(users.c.id, users.c.role).where((users.c.email == email) & (users.c.status == UserStatus.ACTIVE))
         )
         row = result.one_or_none()
 
@@ -50,9 +46,7 @@ async def get_active_user_or_none(
         return ActiveUserIdAndRole(id=row.id, role=row.role) if row else None
 
 
-async def is_user_in_product_name(
-    engine: AsyncEngine, *, user_id: UserID, product_name: ProductName
-) -> bool:
+async def is_user_in_product_name(engine: AsyncEngine, *, user_id: UserID, product_name: ProductName) -> bool:
     async with engine.connect() as conn:
         return (
             await conn.scalar(

@@ -24,10 +24,7 @@ class CommandResult(NamedTuple):
     elapsed: float | None
 
     def as_log_message(self) -> str:
-        return (
-            f"'{self.command}' finished_ok='{self.success}' "
-            f"elapsed='{self.elapsed}'\n{self.message}"
-        )
+        return f"'{self.command}' finished_ok='{self.success}' elapsed='{self.elapsed}'\n{self.message}"
 
 
 def _close_transport(proc: Process):
@@ -81,7 +78,7 @@ async def async_command(
         # The SIGTERM signal is a generic signal used to cause program termination.
         # Unlike SIGKILL, this signal can be **blocked, handled, and ignored**.
         # It is the normal way to politely ask a program to terminate, i.e. giving
-        # the opportunity to the underying process to perform graceful shutdown
+        # the opportunity to the underlying process to perform graceful shutdown
         # (i.e. run shutdown events and cleanup tasks)
         #
         # SEE https://www.gnu.org/software/libc/manual/html_node/Termination-Signals.html

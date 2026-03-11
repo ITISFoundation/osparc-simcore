@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'services/resource-usage-tracker'
+# Shortcut to install all packages for the contiguous integration (CI) of 'services/resource-usage-tracker'
 #
 # - As ci.txt but w/ tests
 #

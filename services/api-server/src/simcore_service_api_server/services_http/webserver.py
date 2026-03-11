@@ -161,7 +161,6 @@ class AuthSession:
         user_id: UserID,
         product_name: ProductName,
     ) -> Self:
-
         # WARNING: this client lifespan is tied to the app
         app_http_webserver_client = WebserverApi.get_instance(app)
         assert app_http_webserver_client  # nosec
@@ -170,9 +169,7 @@ class AuthSession:
         # WARNING: this client lifespan is tied to the app
         app_http_lrt_webserver_client = LongRunningTasksClient.get_instance(app=app)
         assert app_http_lrt_webserver_client  # nosec
-        assert isinstance(
-            app_http_lrt_webserver_client, LongRunningTasksClient
-        )  # nosec
+        assert isinstance(app_http_lrt_webserver_client, LongRunningTasksClient)  # nosec
 
         return cls(
             _product_name=product_name,
@@ -222,9 +219,7 @@ class AuthSession:
 
         optional: dict[str, Any] = {}
         if search_by_project_name is not None:
-            optional["filters"] = json_dumps(
-                {"search_by_project_name": search_by_project_name}
-            )
+            optional["filters"] = json_dumps({"search_by_project_name": search_by_project_name})
 
         with service_exception_handler(
             service_name="Webserver",
@@ -267,9 +262,7 @@ class AuthSession:
                 get_response.raise_for_status(
                     # NOTE: stops retrying if the response in not 2xx
                 )
-                task_status = (
-                    Envelope[TaskStatus].model_validate_json(get_response.text).data
-                )
+                task_status = Envelope[TaskStatus].model_validate_json(get_response.text).data
                 assert task_status is not None  # nosec
                 if not task_status.done:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
@@ -294,9 +287,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-        got: WebProfileGet | None = (
-            Envelope[WebProfileGet].model_validate_json(response.text).data
-        )
+        got: WebProfileGet | None = Envelope[WebProfileGet].model_validate_json(response.text).data
         assert got is not None  # nosec
 
         return Profile(
@@ -311,7 +302,6 @@ class AuthSession:
 
     @_exception_mapper(http_status_map=_PROFILE_STATUS_MAP)
     async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
-
         update = WebProfileUpdate.model_construct(
             _fields_set=profile_update.model_fields_set,
             first_name=profile_update.first_name,
@@ -347,9 +337,7 @@ class AuthSession:
             params=query_params,
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
-            headers=self._get_session_headers(
-                parent_project_uuid=parent_project_uuid, parent_node_id=parent_node_id
-            ),
+            headers=self._get_session_headers(parent_project_uuid=parent_project_uuid, parent_node_id=parent_node_id),
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
@@ -371,9 +359,7 @@ class AuthSession:
             "/projects",
             cookies=self.session_cookies,
             params=query_params,
-            headers=self._get_session_headers(
-                parent_project_uuid=parent_project_uuid, parent_node_id=parent_node_id
-            ),
+            headers=self._get_session_headers(parent_project_uuid=parent_project_uuid, parent_node_id=parent_node_id),
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
@@ -419,12 +405,8 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: ProjectPortsNotFoundError}
-    )
-    async def get_project_metadata_ports(
-        self, *, project_id: ProjectID
-    ) -> list[StudyPort]:
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectPortsNotFoundError})
+    async def get_project_metadata_ports(self, *, project_id: ProjectID) -> list[StudyPort]:
         """
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
         and returns data
@@ -440,12 +422,8 @@ class AuthSession:
         assert isinstance(data, list)  # nosec
         return data
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError}
-    )
-    async def get_project_metadata(
-        self, *, project_id: ProjectID
-    ) -> ProjectMetadataGet:
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
+    async def get_project_metadata(self, *, project_id: ProjectID) -> ProjectMetadataGet:
         response = await self.client.get(
             f"/projects/{project_id}/metadata",
             cookies=self.session_cookies,
@@ -466,9 +444,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError}
-    )
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
     async def update_project_metadata(
         self, *, project_id: ProjectID, metadata: dict[str, MetaValueType]
     ) -> ProjectMetadataGet:
@@ -483,12 +459,8 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError}
-    )
-    async def get_project_node_pricing_unit(
-        self, *, project_id: UUID, node_id: UUID
-    ) -> PricingUnitGetLegacy:
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
+    async def get_project_node_pricing_unit(self, *, project_id: UUID, node_id: UUID) -> PricingUnitGetLegacy:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
             cookies=self.session_cookies,
@@ -500,9 +472,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError}
-    )
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def connect_pricing_unit_to_project_node(
         self,
         *,
@@ -557,17 +527,13 @@ class AuthSession:
         )
         response.raise_for_status()
         data: dict[NodeID, ProjectInputGet] | None = (
-            Envelope[dict[NodeID, ProjectInputGet]]
-            .model_validate_json(response.text)
-            .data
+            Envelope[dict[NodeID, ProjectInputGet]].model_validate_json(response.text).data
         )
         assert data is not None  # nosec
         return data
 
     @_exception_mapper(http_status_map={})
-    async def get_project_inputs(
-        self, *, project_id: ProjectID
-    ) -> dict[NodeID, ProjectInputGet]:
+    async def get_project_inputs(self, *, project_id: ProjectID) -> dict[NodeID, ProjectInputGet]:
         response = await self.client.get(
             f"/projects/{project_id}/inputs",
             cookies=self.session_cookies,
@@ -577,19 +543,13 @@ class AuthSession:
         response.raise_for_status()
 
         data: dict[NodeID, ProjectInputGet] | None = (
-            Envelope[dict[NodeID, ProjectInputGet]]
-            .model_validate_json(response.text)
-            .data
+            Envelope[dict[NodeID, ProjectInputGet]].model_validate_json(response.text).data
         )
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: SolverOutputNotFoundError}
-    )
-    async def get_project_outputs(
-        self, *, project_id: ProjectID
-    ) -> dict[NodeID, dict[str, Any]]:
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: SolverOutputNotFoundError})
+    async def get_project_outputs(self, *, project_id: ProjectID) -> dict[NodeID, dict[str, Any]]:
         response = await self.client.get(
             f"/projects/{project_id}/outputs",
             cookies=self.session_cookies,
@@ -599,17 +559,13 @@ class AuthSession:
         response.raise_for_status()
 
         data: dict[NodeID, dict[str, Any]] | None = (
-            Envelope[dict[NodeID, dict[str, Any]]]
-            .model_validate_json(response.text)
-            .data
+            Envelope[dict[NodeID, dict[str, Any]]].model_validate_json(response.text).data
         )
         assert data is not None  # nosec
         return data
 
     @_exception_mapper(http_status_map={})
-    async def update_node_outputs(
-        self, *, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs
-    ) -> None:
+    async def update_node_outputs(self, *, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs) -> None:
         response = await self.client.patch(
             f"/projects/{project_id}/nodes/{node_id}/outputs",
             cookies=self.session_cookies,
@@ -628,29 +584,19 @@ class AuthSession:
             headers=self._get_session_headers(),
         )
         response.raise_for_status()
-        data = (
-            Envelope[WalletGetWithAvailableCreditsLegacy]
-            .model_validate_json(response.text)
-            .data
-        )
+        data = Envelope[WalletGetWithAvailableCreditsLegacy].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
     @_exception_mapper(http_status_map=_WALLET_STATUS_MAP)
-    async def get_wallet(
-        self, *, wallet_id: int
-    ) -> WalletGetWithAvailableCreditsLegacy:
+    async def get_wallet(self, *, wallet_id: int) -> WalletGetWithAvailableCreditsLegacy:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
             cookies=self.session_cookies,
             headers=self._get_session_headers(),
         )
         response.raise_for_status()
-        data = (
-            Envelope[WalletGetWithAvailableCreditsLegacy]
-            .model_validate_json(response.text)
-            .data
-        )
+        data = Envelope[WalletGetWithAvailableCreditsLegacy].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -668,9 +614,7 @@ class AuthSession:
 
     # PRODUCTS -------------------------------------------------
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError}
-    )
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
     async def get_product_price(self) -> GetCreditPriceLegacy:
         response = await self.client.get(
             "/credits-price",
@@ -684,9 +628,7 @@ class AuthSession:
 
     # SERVICES -------------------------------------------------
 
-    @_exception_mapper(
-        http_status_map={status.HTTP_404_NOT_FOUND: PricingPlanNotFoundError}
-    )
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingPlanNotFoundError})
     async def get_service_pricing_plan(
         self, *, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:
@@ -698,9 +640,7 @@ class AuthSession:
             headers=self._get_session_headers(),
         )
         response.raise_for_status()
-        pricing_plan_get = (
-            Envelope[PricingPlanGet].model_validate_json(response.text).data
-        )
+        pricing_plan_get = Envelope[PricingPlanGet].model_validate_json(response.text).data
         if pricing_plan_get:
             return ServicePricingPlanGet.model_construct(
                 pricing_plan_id=pricing_plan_get.pricing_plan_id,
@@ -722,7 +662,6 @@ def setup(
     webserver_settings: WebServerSettings,
     tracing_settings: TracingSettings | None,
 ) -> None:
-
     setup_client_instance(
         app,
         WebserverApi,

@@ -17,9 +17,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 
 
-@pytest.fixture(
-    params=["simcore/service/comp/some/fake/service/key", "dockerhub-style/service_key"]
-)
+@pytest.fixture(params=["simcore/service/comp/some/fake/service/key", "dockerhub-style/service_key"])
 def service_key(request) -> ServiceKey:
     return request.param
 
@@ -51,9 +49,7 @@ def test_dask_job_id_serialization(
     project_id: ProjectID,
     node_id: NodeID,
 ):
-    dask_job_id = generate_dask_job_id(
-        service_key, service_version, user_id, project_id, node_id
-    )
+    dask_job_id = generate_dask_job_id(service_key, service_version, user_id, project_id, node_id)
     (
         parsed_service_key,
         parsed_service_version,

@@ -1,13 +1,12 @@
-import contextlib
 import datetime
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, Final
 
 import sh  # type: ignore[import-untyped]
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.docker import DockerGenericTag
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -25,7 +24,7 @@ from pydantic import (
 from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
-GenericResourceValueType: TypeAlias = StrictInt | StrictFloat | str
+type GenericResourceValueType = StrictInt | StrictFloat | str
 
 
 class Resources(BaseModel, frozen=True):
@@ -62,7 +61,7 @@ class Resources(BaseModel, frozen=True):
     def __gt__(self, other: "Resources") -> bool:
         """operator for > comparison
         if self has resources greater than other, returns True
-        This will return True only if all of the resources in self are greater than other
+        VERY IMPORTANT: This will return True only if all of the resources in self are greater than other
 
         Note that generic_resources are compared only if they are numeric
         Non-numeric generic resources must only be defined in self
@@ -89,10 +88,14 @@ class Resources(BaseModel, frozen=True):
                 assert isinstance(a, str)  # nosec
                 assert isinstance(b, int | float | str)  # nosec
                 # let's try to get a boolean out of the values to compare them
-                with contextlib.suppress(ValidationError):
+                try:
                     a_as_boolean = TypeAdapter(bool).validate_python(a)
                     b_as_boolean = TypeAdapter(bool).validate_python(b)
                     if not a_as_boolean and b_as_boolean:
+                        return False
+                except ValidationError:
+                    if a != b:
+                        # This is the case where we have non comparable strings
                         return False
 
         # here we have either everything greater or equal or non-comparable strings
@@ -150,9 +153,7 @@ class Resources(BaseModel, frozen=True):
     def __hash__(self) -> int:
         """Deterministic hash including cpus, ram (in bytes) and generic_resources."""
         # sort generic_resources items to ensure order-independent hashing
-        generic_items: tuple[tuple[str, GenericResourceValueType], ...] = tuple(
-            sorted(self.generic_resources.items())
-        )
+        generic_items: tuple[tuple[str, GenericResourceValueType], ...] = tuple(sorted(self.generic_resources.items()))
         return hash((self.cpus, self.ram, generic_items))
 
     def as_flat_dict(self) -> dict[str, int | float | str]:
@@ -172,9 +173,7 @@ class Resources(BaseModel, frozen=True):
         mapped_data = data
         if mapping:
             mapped_data = {mapping.get(k, k): v for k, v in data.items()}
-        generic_resources = {
-            k: v for k, v in mapped_data.items() if k not in {"cpus", "ram"}
-        }
+        generic_resources = {k: v for k, v in mapped_data.items() if k not in {"cpus", "ram"}}
 
         return cls(
             cpus=float(mapped_data.get("cpus", 0)),
@@ -194,12 +193,12 @@ class EC2InstanceType:
     resources: Resources
 
 
-InstancePrivateDNSName: TypeAlias = str
+type InstancePrivateDNSName = str
 
 
 AWS_TAG_KEY_MIN_LENGTH: Final[int] = 1
 AWS_TAG_KEY_MAX_LENGTH: Final[int] = 128
-AWSTagKey: TypeAlias = Annotated[
+type AWSTagKey = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     str,
     StringConstraints(
@@ -212,7 +211,7 @@ AWSTagKey: TypeAlias = Annotated[
 
 AWS_TAG_VALUE_MIN_LENGTH: Final[int] = 0
 AWS_TAG_VALUE_MAX_LENGTH: Final[int] = 256
-AWSTagValue: TypeAlias = Annotated[
+type AWSTagValue = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     # quotes []{} were added as it allows to json encode. it seems to be accepted as a value
     str,
@@ -224,7 +223,7 @@ AWSTagValue: TypeAlias = Annotated[
 ]
 
 
-EC2Tags: TypeAlias = dict[AWSTagKey, AWSTagValue]
+type EC2Tags = dict[AWSTagKey, AWSTagValue]
 
 
 @dataclass(frozen=True)
@@ -266,8 +265,8 @@ class EC2InstanceConfig:
     iam_instance_profile: str
 
 
-AMIIdStr: TypeAlias = str
-CommandStr: TypeAlias = str
+type AMIIdStr = str
+type CommandStr = str
 
 
 class EC2InstanceBootSpecific(BaseModel):
@@ -289,8 +288,30 @@ class EC2InstanceBootSpecific(BaseModel):
     ] = DEFAULT_FACTORY
     buffer_count: Annotated[
         NonNegativeInt,
-        Field(description="number of buffer EC2s to keep (defaults to 0)"),
+        Field(description="number of warm buffer EC2s to keep (defaults to 0)"),
     ] = 0
+    hot_buffer_count: Annotated[
+        NonNegativeInt,
+        Field(
+            description=(
+                "number of hot buffer EC2s to keep drained and ready (defaults to 0); evaluated per instance type"
+            ),
+        ),
+    ] = 0
+    hot_buffer_max_inactivity_time: Annotated[
+        datetime.timedelta | None,
+        Field(
+            description=(
+                "optional maximum inactivity duration for hot buffer nodes before they are terminated; "
+                "if null the node stays in the buffer indefinitely (24/7 mode)"
+            ),
+            default=None,
+        ),
+    ] = None
+    custom_node_labels: Annotated[
+        dict[DockerLabelKey, str],
+        Field(default_factory=dict, description="type specific docker node labels"),
+    ] = DEFAULT_FACTORY
 
     @field_validator("custom_boot_scripts")
     @classmethod
@@ -366,6 +387,28 @@ class EC2InstanceBootSpecific(BaseModel):
                             "asd",
                         ],
                         "buffer_count": 10,
+                    },
+                    {
+                        # AMI + pre-pull + buffer count + custom node labels
+                        "ami_id": "ami-123456789abcdef",
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                        "buffer_count": 10,
+                        "hot_buffer_count": 3,
+                        "custom_node_labels": {
+                            "io.simcore.project-id": "value1",
+                            "io.simcore.user-id": "value2",
+                        },
+                    },
+                    {
+                        # Hot buffer with inactivity timeout
+                        "ami_id": "ami-123456789abcdef",
+                        "hot_buffer_count": 2,
+                        "hot_buffer_max_inactivity_time": "00:30:00",
                     },
                 ]
             }

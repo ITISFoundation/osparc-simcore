@@ -36,9 +36,7 @@ def _validate_signature(handler: _HandlerWithRequestArg):
 _POLL_INTERVAL_S: float = 0.01
 
 
-async def _disconnect_poller(
-    request: Request, result: Any, cancel_event: asyncio.Event
-):
+async def _disconnect_poller(request: Request, result: Any, cancel_event: asyncio.Event):
     """
     Poll for a disconnect.
     If the request disconnects, stop polling and return.
@@ -72,9 +70,7 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
             name=f"cancel_on_disconnect/handler/{handler.__name__}/{id(sentinel)}",
         )
 
-        done, pending = await asyncio.wait(
-            [poller_task, handler_task], return_when=asyncio.FIRST_COMPLETED
-        )
+        done, pending = await asyncio.wait([poller_task, handler_task], return_when=asyncio.FIRST_COMPLETED)
 
         # One has completed, cancel the other
         for t in pending:

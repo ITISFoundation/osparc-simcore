@@ -46,13 +46,9 @@ async def test_service_details_no_status_present(
     not_initialized_app: FastAPI,
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
 ):
-    await set_request_as_running(
-        not_initialized_app, get_dynamic_service_start(node_id)
-    )
+    await set_request_as_running(not_initialized_app, get_dynamic_service_start(node_id))
 
-    await async_page.goto(
-        f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
-    )
+    await async_page.goto(f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}")
 
     # 1. one service is tracked
     await assert_contains_text(async_page, "Total tracked services:")
@@ -92,19 +88,11 @@ async def test_service_details(
     mock_remove_tracked_service: AsyncMock,
     service_status: NodeGet | DynamicServiceGet,
 ):
-    await set_request_as_running(
-        not_initialized_app, get_dynamic_service_start(node_id)
-    )
-    await set_request_as_running(
-        not_initialized_app, get_dynamic_service_start(node_id)
-    )
-    await set_if_status_changed_for_service(
-        not_initialized_app, node_id, service_status
-    )
+    await set_request_as_running(not_initialized_app, get_dynamic_service_start(node_id))
+    await set_request_as_running(not_initialized_app, get_dynamic_service_start(node_id))
+    await set_if_status_changed_for_service(not_initialized_app, node_id, service_status)
 
-    await async_page.goto(
-        f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
-    )
+    await async_page.goto(f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}")
 
     # 1. one service is tracked
     await assert_contains_text(async_page, "Total tracked services:")
@@ -123,8 +111,6 @@ async def test_service_details(
     await click_on_text(async_page, "Remove from tracking")
     await click_on_text(async_page, "Remove service")
     async with take_screenshot_on_error(async_page):
-        async for attempt in AsyncRetrying(
-            reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
-        ):
+        async for attempt in AsyncRetrying(reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)):
             with attempt:
                 mock_remove_tracked_service.assert_awaited_once()

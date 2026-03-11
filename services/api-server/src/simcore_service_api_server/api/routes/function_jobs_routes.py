@@ -110,32 +110,26 @@ for endpoint in ENDPOINTS:
 @function_job_router.get(
     "",
     response_model=PageRegisteredFunctionJobWithorWithoutStatus,
-    description=create_route_description(
-        base="List function jobs", changelog=CHANGE_LOGS["list_function_jobs"]
-    ),
+    description=create_route_description(base="List function jobs", changelog=CHANGE_LOGS["list_function_jobs"]),
 )
 async def list_function_jobs(
     page_params: Annotated[PaginationParams, Depends()],
     function_job_task_client_service: Annotated[
         FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
+    function_job_service: Annotated[FunctionJobService, Depends(get_function_job_service)],
     filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
     include_status: Annotated[  # noqa: FBT002
         bool, Query(description="Include job status in response")
     ] = False,
 ):
     if include_status:
-        function_jobs_list_ws, meta = (
-            await function_job_task_client_service.list_function_jobs_with_status(
-                pagination_offset=page_params.offset,
-                pagination_limit=page_params.limit,
-                filter_by_function_job_ids=filters.function_job_ids,
-                filter_by_function_job_collection_id=filters.function_job_collection_id,
-                filter_by_function_id=filters.function_id,
-            )
+        function_jobs_list_ws, meta = await function_job_task_client_service.list_function_jobs_with_status(
+            pagination_offset=page_params.offset,
+            pagination_limit=page_params.limit,
+            filter_by_function_job_ids=filters.function_job_ids,
+            filter_by_function_job_collection_id=filters.function_job_collection_id,
+            filter_by_function_id=filters.function_id,
         )
         return create_page(
             function_jobs_list_ws,
@@ -228,17 +222,13 @@ async def delete_function_job(
     ),
 )
 async def function_job_status(
-    function_job: Annotated[
-        RegisteredFunctionJob, Depends(get_function_job_dependency)
-    ],
+    function_job: Annotated[RegisteredFunctionJob, Depends(get_function_job_dependency)],
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
     function_job_task_client_service: Annotated[
         FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
 ) -> FunctionJobStatus:
-    return await function_job_task_client_service.inspect_function_job(
-        function=function, function_job=function_job
-    )
+    return await function_job_task_client_service.inspect_function_job(function=function, function_job=function_job)
 
 
 async def get_function_from_functionjobid(
@@ -273,9 +263,7 @@ async def get_function_from_functionjobid(
     ),
 )
 async def function_job_outputs(
-    function_job: Annotated[
-        RegisteredFunctionJob, Depends(get_function_job_dependency)
-    ],
+    function_job: Annotated[RegisteredFunctionJob, Depends(get_function_job_dependency)],
     function_job_task_client_service: Annotated[
         FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
@@ -318,10 +306,7 @@ async def get_function_job_logs_task(
     )
     app_router = app.router
 
-    if (
-        function.function_class == FunctionClass.PROJECT
-        and function_job.function_class == FunctionClass.PROJECT
-    ):
+    if function.function_class == FunctionClass.PROJECT and function_job.function_class == FunctionClass.PROJECT:
         if function_job.project_job_id is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -334,19 +319,12 @@ async def get_function_job_logs_task(
         return TaskGet(
             task_id=_task_uuid,
             task_name=async_job_get.job_name,
-            status_href=app_router.url_path_for(
-                "get_task_status", task_uuid=_task_uuid
-            ),
+            status_href=app_router.url_path_for("get_task_status", task_uuid=_task_uuid),
             abort_href=app_router.url_path_for("cancel_task", task_uuid=_task_uuid),
-            result_href=app_router.url_path_for(
-                "get_task_result", task_uuid=_task_uuid
-            ),
+            result_href=app_router.url_path_for("get_task_result", task_uuid=_task_uuid),
         )
 
-    if (
-        function.function_class == FunctionClass.SOLVER
-        and function_job.function_class == FunctionClass.SOLVER
-    ):
+    if function.function_class == FunctionClass.SOLVER and function_job.function_class == FunctionClass.SOLVER:
         if function_job.solver_job_id is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -359,12 +337,8 @@ async def get_function_job_logs_task(
         return TaskGet(
             task_id=_task_uuid,
             task_name=async_job_get.job_name,
-            status_href=app_router.url_path_for(
-                "get_task_status", task_uuid=_task_uuid
-            ),
+            status_href=app_router.url_path_for("get_task_status", task_uuid=_task_uuid),
             abort_href=app_router.url_path_for("cancel_task", task_uuid=_task_uuid),
-            result_href=app_router.url_path_for(
-                "get_task_result", task_uuid=_task_uuid
-            ),
+            result_href=app_router.url_path_for("get_task_result", task_uuid=_task_uuid),
         )
     raise UnsupportedFunctionClassError(function_class=function.function_class)

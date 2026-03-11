@@ -1,7 +1,7 @@
 # Python version
 
 In principle every service can use a different python version but in practice it is more
-suitable to keep the same python version througout the entire repository.
+suitable to keep the same python version throughout the entire repository.
 
 
 
@@ -27,7 +27,7 @@ Both python and pip version are specified:
 
 ## Tools to assist python upgrade?
 
-- CI ``.github/workflows/ci-testing-deploy.yml`` runs ``unit-test-python-linting`` job that monitor early incompatibilities fo the codebase with next python's version. See
+- CI ``.github/workflows/ci-testing-deploy.yml`` runs ``unit-test-python-linting`` job that monitor early incompatibilities for the codebase with next python's version. See
   ```yaml
   unit-test-python-linting:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests

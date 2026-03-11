@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 
-
 import logging
 from collections.abc import AsyncIterable, Awaitable, Callable
 from enum import Enum
@@ -12,6 +11,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_directorv2.services import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from models_library.projects_nodes_io import NodeID
@@ -57,7 +57,11 @@ async def create_container(
         container = await docker.containers.create(
             config={
                 "Image": "alpine",
-                "Cmd": ["sh", "-c", "while true; do sleep 1; done"],
+                "Cmd": [
+                    "sh",
+                    "-c",
+                    "trap 'exit 0' TERM; while true; do sleep 0.1; done",
+                ],
             },
             name=name,
         )
@@ -82,8 +86,19 @@ async def create_container(
                 raise
 
 
+async def _is_container_present(docker: Docker, *, container_name: str) -> bool:
+    try:
+        await docker.containers.get(container_name)
+        return True
+    except DockerError as exc:
+        if exc.status == status.HTTP_404_NOT_FOUND:
+            return False
+        raise
+
+
 async def test_force_container_cleanup(
     app: FastAPI,
+    docker: Docker,
     node_id: NodeID,
     create_container: Callable[[str, _ContainerMode], Awaitable[str]],
     faker: Faker,
@@ -95,12 +110,20 @@ async def test_force_container_cleanup(
     proxy_name = f"{DYNAMIC_PROXY_SERVICE_PREFIX}_{node_id}{faker.pystr()}"
     dynamic_sidecar_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}-{node_id}{faker.pystr()}"
     user_service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_id}{faker.pystr()}"
+    r_clone_container_name = f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{node_id}{faker.pystr()}"
 
     await create_container(proxy_name, _ContainerMode.CREATED)
     await create_container(dynamic_sidecar_name, _ContainerMode.RUNNING)
     await create_container(user_service_name, _ContainerMode.STOPPED)
+    await create_container(r_clone_container_name, _ContainerMode.RUNNING)
+
+    for container_name in (proxy_name, dynamic_sidecar_name, user_service_name, r_clone_container_name):
+        assert await _is_container_present(docker, container_name=container_name)
 
     await get_containers_manager(app).force_container_cleanup(node_id)
+
+    for container_name in (proxy_name, dynamic_sidecar_name, user_service_name, r_clone_container_name):
+        assert not await _is_container_present(docker, container_name=container_name)
 
     assert proxy_name in caplog.text
     assert dynamic_sidecar_name in caplog.text

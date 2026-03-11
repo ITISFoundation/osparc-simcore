@@ -19,9 +19,7 @@ from ._base import AiohttpExceptionHandler, ExceptionHandlersMap
 _logger = logging.getLogger(__name__)
 
 
-_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[web.HTTPError]] = (
-    get_all_aiohttp_http_exceptions(web.HTTPError)
-)
+_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[web.HTTPError]] = get_all_aiohttp_http_exceptions(web.HTTPError)
 
 
 class _DefaultDict(dict):
@@ -52,9 +50,7 @@ def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
 
     return web.json_response(
-        data={
-            "error": error.model_dump(exclude_unset=True, mode="json", by_alias=True)
-        },
+        data={"error": error.model_dump(exclude_unset=True, mode="json", by_alias=True)},
         dumps=json_dumps,
         reason=safe_status_message(get_code_display_name(status_code)),
         status=status_code,
@@ -91,9 +87,7 @@ def create_exception_handler_from_http_info(
         exception: BaseException,
     ) -> web.Response:
         # safe formatting, i.e. does not raise
-        user_msg = msg_template.format_map(
-            _DefaultDict(getattr(exception, "__dict__", {}))
-        )
+        user_msg = msg_template.format_map(_DefaultDict(getattr(exception, "__dict__", {})))
 
         error = ErrorGet.model_construct(message=user_msg, status=status_code)
 
@@ -114,9 +108,7 @@ def create_exception_handler_from_http_info(
                     error_context=error_context,
                 )
             )
-            error = ErrorGet.model_construct(
-                message=user_msg, support_id=oec, status=status_code
-            )
+            error = ErrorGet.model_construct(message=user_msg, support_id=oec, status=status_code)
 
         return create_error_response(error, status_code=status_code)
 
@@ -126,14 +118,12 @@ def create_exception_handler_from_http_info(
 def to_exceptions_handlers_map(
     exc_to_http_error_map: ExceptionToHttpErrorMap,
 ) -> ExceptionHandlersMap:
-    """Data adapter to convert ExceptionToHttpErrorMap ot ExceptionHandlersMap, i.e.
+    """Data adapter to convert ExceptionToHttpErrorMap or ExceptionHandlersMap, i.e.
     - from  { exc_type: (status, msg), ... }
     - to   { exc_type: callable, ... }
     """
     exc_handlers_map: ExceptionHandlersMap = {
-        exc_type: create_exception_handler_from_http_info(
-            status_code=info.status_code, msg_template=info.msg_template
-        )
+        exc_type: create_exception_handler_from_http_info(status_code=info.status_code, msg_template=info.msg_template)
         for exc_type, info in exc_to_http_error_map.items()
     }
 
@@ -145,9 +135,7 @@ def create_http_error_exception_handlers_map() -> ExceptionHandlersMap:
     Auto create handlers for **all** web.HTTPError
     """
     exc_handlers_map: ExceptionHandlersMap = {
-        exc_type: create_exception_handler_from_http_info(
-            status_code=code, msg_template="{text}"
-        )
+        exc_type: create_exception_handler_from_http_info(status_code=code, msg_template="{text}")
         for code, exc_type in _STATUS_CODE_TO_HTTP_ERRORS.items()
     }
     return exc_handlers_map

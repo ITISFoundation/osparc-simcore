@@ -27,9 +27,7 @@ async def get_project_custom_metadata_for_user(
     )
 
 
-async def get_project_custom_metadata_or_empty_dict(
-    app: web.Application, project_uuid: ProjectID
-) -> MetadataDict:
+async def get_project_custom_metadata_or_empty_dict(app: web.Application, project_uuid: ProjectID) -> MetadataDict:
     try:
         output = await _metadata_repository.get_project_custom_metadata(
             engine=get_database_engine_legacy(app), project_uuid=project_uuid
@@ -59,9 +57,7 @@ async def set_project_custom_metadata(
 _NIL_NODE_UUID: Final[NodeID] = NodeID(int=0)
 
 
-async def _project_has_ancestors(
-    app: web.Application, *, user_id: UserID, project_uuid: ProjectID
-) -> bool:
+async def _project_has_ancestors(app: web.Application, *, user_id: UserID, project_uuid: ProjectID) -> bool:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_repository.project_has_ancestors(

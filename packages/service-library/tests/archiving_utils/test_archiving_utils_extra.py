@@ -86,22 +86,18 @@ def test_override_and_prune_folder(state_dir: Path, new_state_dir: Path):
     expected_paths = {p.relative_to(new_state_dir) for p in new_state_dir.rglob("*")}
 
     # --------
-    # 1) evaluate leafs to prune in paths tree
+    # 1) evaluate leaves to prune in paths tree
 
     old_paths = {p for p in state_dir.rglob("*") if is_leaf_path(p)}
-    new_paths = {
-        state_dir / p.relative_to(new_state_dir)
-        for p in new_state_dir.rglob("*")
-        if is_leaf_path(p)
-    }
+    new_paths = {state_dir / p.relative_to(new_state_dir) for p in new_state_dir.rglob("*") if is_leaf_path(p)}
     to_delete = old_paths.difference(new_paths)
 
-    # 2) override leafs from new_state_dir -> state_dir
+    # 2) override leaves from new_state_dir -> state_dir
     for p in new_state_dir.rglob("*"):
         if is_leaf_path(p):
             shutil.move(str(p), str(state_dir / p.relative_to(new_state_dir)))
 
-    # 3) prune leafs that were not overriden
+    # 3) prune leaves that were not overridden
     for path in to_delete:
         if path.is_file():
             path.unlink()
@@ -135,22 +131,16 @@ async def test_override_and_prune_from_archive(
     download_file = tmp_path / "download.zip"
 
     # archive new_state_dir -> download.zip
-    await archive_dir(
-        dir_to_compress=new_state_dir, destination=download_file, compress=compress
-    )
+    await archive_dir(dir_to_compress=new_state_dir, destination=download_file, compress=compress)
 
     folder = PrunableFolder(state_dir)
 
     # unarchive download.zip into state_dir
-    unarchived = await unarchive_dir(
-        archive_to_extract=download_file, destination_folder=state_dir
-    )
+    unarchived = await unarchive_dir(archive_to_extract=download_file, destination_folder=state_dir)
 
     folder.prune(unarchived)
 
-    after_relpaths = {
-        p.relative_to(state_dir) for p in state_dir.rglob("*") if is_leaf_path(p)
-    }
+    after_relpaths = {p.relative_to(state_dir) for p in state_dir.rglob("*") if is_leaf_path(p)}
 
     assert after_relpaths != folder.before_relpaths
     assert after_relpaths == {p.relative_to(state_dir) for p in unarchived}

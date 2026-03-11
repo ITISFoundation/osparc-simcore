@@ -58,16 +58,12 @@ def global_rate_limit_route(
 
             # reset counter & first time initialization
             if utc_now_timestamp >= context.rate_limit_reset:
-                context.rate_limit_reset = datetime.timestamp(
-                    utc_now + timedelta(seconds=interval_seconds)
-                )
+                context.rate_limit_reset = datetime.timestamp(utc_now + timedelta(seconds=interval_seconds))
                 context.remaining = context.max_allowed
 
             if utc_now_timestamp <= context.rate_limit_reset and context.remaining <= 0:
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
-                retry_after_sec = int(
-                    ceil(context.rate_limit_reset - utc_now_timestamp)
-                )
+                retry_after_sec = int(ceil(context.rate_limit_reset - utc_now_timestamp))
                 raise HTTPTooManyRequests(
                     headers={
                         "Content-Type": "application/json",

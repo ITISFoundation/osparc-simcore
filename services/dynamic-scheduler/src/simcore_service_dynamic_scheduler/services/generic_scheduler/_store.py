@@ -56,15 +56,17 @@ def _get_step_hash_key(
     # - SCHEDULE_NAMESPACE: namespace prefix
     # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "STEPS"
-    # - OPERATION_NAME form the vairble's name during registration
+    # - OPERATION_NAME form the variable's name during registration
     # - GROUP_SHORT_NAME
-    #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
+    #   -> "{index}(S|P)[R]": S=single or P=parallel and optionally, "R" if steps should be repeated forever
     # - IS_EXECUTING: "E" (execute) or "R" (revert)
     # - STEP_NAME form it's class
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:C:BS1
     is_executing_str = _get_is_executing_str(is_executing=is_executing)
-    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_executing_str}:{step_name}"
+    return (
+        f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_executing_str}:{step_name}"
+    )
 
 
 def _get_group_hash_key(
@@ -80,7 +82,7 @@ def _get_group_hash_key(
     # - CONSTANT: the constant "GROUPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
-    #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
+    #   -> "{index}(S|P)[R]": S=single or P=parallel and optionally, "R" if steps should be repeated forever
     # - IS_EXECUTING: "E" (execute) or "R" (revert)
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:GROUPS:START_SERVICE:0S:C
@@ -88,9 +90,7 @@ def _get_group_hash_key(
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_GROUPS_KEY}:{operation_name}:{group_name}:{is_executing_str}"
 
 
-def _get_operation_context_hash_key(
-    *, schedule_id: ScheduleId, operation_name: OperationName
-) -> str:
+def _get_operation_context_hash_key(*, schedule_id: ScheduleId, operation_name: OperationName) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
     # - SCHEDULE_NAMESPACE: namespace prefix
     # - SCHEDULE_ID: the unique schedule_id assigned
@@ -98,14 +98,10 @@ def _get_operation_context_hash_key(
     # - OPERATION_NAME form the vairble's name during registration
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:OP_CTX:START_SERVICE
-    return (
-        f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_OPERATION_CONTEXT_KEY}:{operation_name}"
-    )
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_OPERATION_CONTEXT_KEY}:{operation_name}"
 
 
-def _get_schedule_events_hash_key(
-    *, schedule_id: ScheduleId, event_type: EventType
-) -> str:
+def _get_schedule_events_hash_key(*, schedule_id: ScheduleId, event_type: EventType) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
     # - SCHEDULE_NAMESPACE: namespace prefix
     # - SCHEDULE_ID: the unique schedule_id assigned
@@ -118,7 +114,7 @@ def _get_schedule_events_hash_key(
 
 class Store(SingletonInAppStateMixin, SupportsLifecycle):
     """
-    Interface to Redis, shuld not use directly but use the
+    Interface to Redis, should not use directly but use the
     proxies defined below.
     """
 
@@ -150,9 +146,7 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
     async def set_keys_in_hash(self, hash_key: str, updates: dict[str, Any]) -> None:
         """saves multiple key-value pairs in a hash"""
         await handle_redis_returns_union_types(
-            self.redis.hset(
-                hash_key, mapping={k: json_dumps(v) for k, v in updates.items()}
-            )
+            self.redis.hset(hash_key, mapping={k: json_dumps(v) for k, v in updates.items()})
         )
 
     async def set_key_in_hash(self, hash_key: str, key: str, value: Any) -> None:
@@ -161,30 +155,20 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
 
     async def get_keys_from_hash(self, hash_key: str, *keys: str) -> tuple[Any, ...]:
         """retrieves one or more keys from a hash"""
-        result: list[str | None] = await handle_redis_returns_union_types(
-            self.redis.hmget(hash_key, list(keys))
-        )
+        result: list[str | None] = await handle_redis_returns_union_types(self.redis.hmget(hash_key, list(keys)))
         return tuple(json_loads(x) if x else None for x in result)
 
     async def delete_key_from_hash(self, hash_key: str, *hash_keys: str) -> None:
         """removes keys form a redis hash"""
         await handle_redis_returns_union_types(self.redis.hdel(hash_key, *hash_keys))
 
-    async def increase_key_in_hash_and_get(
-        self, hash_key: str, key: str
-    ) -> NonNegativeInt:
+    async def increase_key_in_hash_and_get(self, hash_key: str, key: str) -> NonNegativeInt:
         """increasea a key in a hash by 1 and returns the new value"""
-        return await handle_redis_returns_union_types(
-            self.redis.hincrby(hash_key, key, amount=1)
-        )
+        return await handle_redis_returns_union_types(self.redis.hincrby(hash_key, key, amount=1))
 
-    async def decrease_key_in_hash_and_get(
-        self, hash_key: str, key: str
-    ) -> NonNegativeInt:
+    async def decrease_key_in_hash_and_get(self, hash_key: str, key: str) -> NonNegativeInt:
         """decrease a key in a hash by 1 and returns the new value"""
-        return await handle_redis_returns_union_types(
-            self.redis.hincrby(hash_key, key, amount=-1)
-        )
+        return await handle_redis_returns_union_types(self.redis.hincrby(hash_key, key, amount=-1))
 
     # GENERIC
 
@@ -193,9 +177,7 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         await handle_redis_returns_union_types(self.redis.delete(*keys))
 
     async def exists(self, hash_key: str) -> bool:
-        result: bool = (
-            await handle_redis_returns_union_types(self.redis.exists(hash_key)) == 1
-        )
+        result: bool = await handle_redis_returns_union_types(self.redis.exists(hash_key)) == 1
         return result
 
 
@@ -231,9 +213,7 @@ class ScheduleDataStoreProxy:
     @overload
     async def read(self, key: Literal["is_executing"]) -> bool: ...
     @overload
-    async def read(
-        self, key: Literal["operation_error_type"]
-    ) -> OperationErrorType: ...
+    async def read(self, key: Literal["operation_error_type"]) -> OperationErrorType: ...
     @overload
     async def read(self, key: Literal["operation_error_message"]) -> str: ...
     async def read(self, key: str) -> Any:
@@ -245,25 +225,15 @@ class ScheduleDataStoreProxy:
         return result
 
     @overload
-    async def create_or_update(
-        self, key: Literal["operation_name"], value: OperationName
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["operation_name"], value: OperationName) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["group_index"], value: NonNegativeInt
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["group_index"], value: NonNegativeInt) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["is_executing"], *, value: bool
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["is_executing"], *, value: bool) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["operation_error_type"], value: OperationErrorType
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["operation_error_type"], value: OperationErrorType) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["operation_error_message"], value: str
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["operation_error_message"], value: str) -> None: ...
     async def create_or_update(self, key: str, value: Any) -> None:
         await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 
@@ -299,14 +269,10 @@ class StepGroupProxy:
         )
 
     async def increment_and_get_done_steps_count(self) -> NonNegativeInt:
-        return await self._store.increase_key_in_hash_and_get(
-            self._get_hash_key(), "done_steps"
-        )
+        return await self._store.increase_key_in_hash_and_get(self._get_hash_key(), "done_steps")
 
     async def decrement_and_get_done_steps_count(self) -> NonNegativeInt:
-        return await self._store.decrease_key_in_hash_and_get(
-            self._get_hash_key(), "done_steps"
-        )
+        return await self._store.decrease_key_in_hash_and_get(self._get_hash_key(), "done_steps")
 
     async def delete(self) -> None:
         await self._store.delete(self._get_hash_key())
@@ -375,25 +341,15 @@ class StepStoreProxy:
         return result
 
     @overload
-    async def create_or_update(
-        self, key: Literal["status"], value: StepStatus
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["status"], value: StepStatus) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["deferred_task_uid"], value: TaskUID
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["deferred_task_uid"], value: TaskUID) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["error_traceback"], value: str
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["error_traceback"], value: str) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["requires_manual_intervention"], *, value: bool
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["requires_manual_intervention"], *, value: bool) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["deferred_created"], *, value: bool
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["deferred_created"], *, value: bool) -> None: ...
     async def create_or_update(self, key: str, value: Any) -> None:
         await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 
@@ -420,9 +376,7 @@ class OperationContextProxy:
         self.operation_name = operation_name
 
     def _get_hash_key(self) -> str:
-        return _get_operation_context_hash_key(
-            schedule_id=self.schedule_id, operation_name=self.operation_name
-        )
+        return _get_operation_context_hash_key(schedule_id=self.schedule_id, operation_name=self.operation_name)
 
     async def create_or_update(self, updates: ProvidedOperationContext | None) -> None:
         if not updates:
@@ -448,26 +402,18 @@ class _EventDict(TypedDict):
 
 
 class OperationEventsProxy:
-    def __init__(
-        self, store: Store, schedule_id: ScheduleId, event_type: EventType
-    ) -> None:
+    def __init__(self, store: Store, schedule_id: ScheduleId, event_type: EventType) -> None:
         self._store = store
         self.schedule_id = schedule_id
         self.event_type = event_type
 
     def _get_hash_key(self) -> str:
-        return _get_schedule_events_hash_key(
-            schedule_id=self.schedule_id, event_type=self.event_type
-        )
+        return _get_schedule_events_hash_key(schedule_id=self.schedule_id, event_type=self.event_type)
 
     @overload
-    async def create_or_update(
-        self, key: Literal["initial_context"], value: OperationContext
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["initial_context"], value: OperationContext) -> None: ...
     @overload
-    async def create_or_update(
-        self, key: Literal["operation_name"], value: OperationName
-    ) -> None: ...
+    async def create_or_update(self, key: Literal["operation_name"], value: OperationName) -> None: ...
     async def create_or_update(self, key: str, value: Any) -> None:
         await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 

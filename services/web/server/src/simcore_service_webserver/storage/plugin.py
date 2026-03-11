@@ -15,9 +15,7 @@ _logger = logging.getLogger(__name__)
 APP_STORAGE_CLIENT_KEY: Final = web.AppKey("APP_STORAGE_CLIENT_KEY", object)
 
 
-@app_setup_func(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=_logger
-)
+@app_setup_func(__name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=_logger)
 def setup_storage(app: web.Application):
     assert app[APP_SETTINGS_APPKEY].WEBSERVER_STORAGE  # nosec
 

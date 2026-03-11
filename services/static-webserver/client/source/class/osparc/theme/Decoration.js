@@ -112,7 +112,8 @@ qx.Theme.define("osparc.theme.Decoration", {
     "form-input-disabled": {
       include: "form-input",
       style: {
-        color: "text-disabled"
+        // this affects the border color
+        color: "transparent"
       }
     },
 
@@ -137,7 +138,8 @@ qx.Theme.define("osparc.theme.Decoration", {
     "service-tree": {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
-        width: 0
+        width: 0,
+        radius: 4
       }
     },
 
@@ -468,7 +470,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "form-button-outlined": {
       include: "form-button",
       style: {
-        color: "default-button",
+        color: "text-opa70",
         backgroundColor: "default-button-background"
       }
     },

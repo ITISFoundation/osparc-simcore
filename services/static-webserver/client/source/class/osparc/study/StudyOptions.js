@@ -46,6 +46,8 @@ qx.Class.define("osparc.study.StudyOptions", {
       apply: "__applyWallet",
     },
 
+    // indicates whether the study options will patch the study or
+    // just gather the information and patch later
     patchStudy: {
       check: "Boolean",
       init: true,
@@ -188,18 +190,18 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           this.getChildControl("advanced-layout").add(control);
           break;
-        case "tiers-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-            minHeight: 40,
-          });
-          const scroll = new qx.ui.container.Scroll();
-          this.getChildControl("tiers-checkbox").bind("value", scroll, "visibility", {
+        case "tiers-container":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("tiers-checkbox").bind("value", control, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
           });
-          scroll.add(control);
-          this.getChildControl("advanced-layout").add(scroll, {
+          this.getChildControl("advanced-layout").add(control, {
             flex: 1
           });
+          break;
+        case "tiers-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this.getChildControl("tiers-container").add(control);
           break;
         }
         case "loading-units-spinner":
@@ -215,14 +217,13 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "study-pricing-units": {
           control = new osparc.study.StudyPricingUnits();
           const loadingImage = this.getChildControl("loading-units-spinner");
-          const unitsBoxesLayout = this.getChildControl("tiers-layout");
           const unitsLoading = () => {
             loadingImage.show();
-            unitsBoxesLayout.exclude();
+            control.exclude();
           };
           const unitsReady = () => {
             loadingImage.exclude();
-            unitsBoxesLayout.show();
+            control.show();
             control.getNodePricingUnits().forEach(nodePricingUnits => {
               this.bind("patchStudy", nodePricingUnits, "patchNode");
             });
@@ -230,7 +231,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           unitsLoading();
           control.addListener("loadingUnits", () => unitsLoading());
           control.addListener("unitsReady", () => unitsReady());
-          unitsBoxesLayout.add(control);
+          this.getChildControl("tiers-layout").add(control);
           break;
         }
         case "buttons-layout":
@@ -359,12 +360,29 @@ qx.Class.define("osparc.study.StudyOptions", {
     __openTagsEditor: function() {
       const tagManager = new osparc.form.tag.TagManager(this.__studyData);
       const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
-      tagManager.addListener("updateTags", e => {
-        win.close();
-        const updatedData = e.getData();
-        this.__studyData["tags"] = updatedData["tags"];
-        this.__repopulateTags();
-      }, this);
+      if (this.isPatchStudy()) {
+        // this is used when the project was already created and we want to update the tags
+        tagManager.setLiveUpdate(true);
+        tagManager.addListener("updateTags", e => {
+          const updatedData = e.getData();
+          this.__studyData["tags"] = updatedData["tags"];
+          this.__repopulateTags();
+        }, this);
+      } else {
+        // this is used when creating a new project and we want to get the selected tags
+        tagManager.getChildControl("save-button").exclude();
+        tagManager.getChildControl("ok-button");
+        tagManager.addListener("selectedTags", e => {
+          win.close();
+          const updatedData = e.getData();
+          this.__studyData["tags"] = updatedData["tags"];
+          this.__repopulateTags();
+        }, this);
+      }
+    },
+
+    getSelectedTags: function() {
+      return this.__studyData["tags"] || [];
     },
 
     __addWalletSelector: function() {
@@ -397,6 +415,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __addTierSelector: function() {
+      this.getChildControl("tiers-checkbox");
       this.getChildControl("study-pricing-units");
     },
 

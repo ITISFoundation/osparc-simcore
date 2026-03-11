@@ -43,9 +43,7 @@ def create_app(
             json_dumps(settings, indent=2, sort_keys=True),
         )
     if tracing_config is None:
-        tracing_config = TracingConfig.create(
-            service_name=APP_NAME, tracing_settings=settings.AGENT_TRACING
-        )
+        tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.AGENT_TRACING)
 
     assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(

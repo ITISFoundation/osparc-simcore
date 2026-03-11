@@ -14,7 +14,7 @@ from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 #  - from yarl (aiohttp-style) and
 #  - from starlette (fastapi-style)
 #
-# Here define protocol to avoid including starlette  or yarl in this librarie's requirements
+# Here define protocol to avoid including starlette  or yarl in this library's requirements
 # and a helper function below that can handle both protocols at runtime
 #
 
@@ -71,23 +71,15 @@ def paginate_data(
     """
     last_page = ceil(total / limit) - 1
 
-    data = [
-        item.model_dump() if hasattr(item, "model_dump") else item for item in chunk
-    ]
+    data = [item.model_dump() if hasattr(item, "model_dump") else item for item in chunk]
 
     return PageDict(
-        _meta=PageMetaInfoLimitOffset(
-            total=total, count=len(data), limit=limit, offset=offset
-        ),
+        _meta=PageMetaInfoLimitOffset(total=total, count=len(data), limit=limit, offset=offset),
         _links=PageLinks(
             self=_replace_query(request_url, {"offset": offset, "limit": limit}),
             first=_replace_query(request_url, {"offset": 0, "limit": limit}),
             prev=(
-                _replace_query(
-                    request_url, {"offset": max(offset - limit, 0), "limit": limit}
-                )
-                if offset > 0
-                else None
+                _replace_query(request_url, {"offset": max(offset - limit, 0), "limit": limit}) if offset > 0 else None
             ),
             next=(
                 _replace_query(
@@ -97,9 +89,7 @@ def paginate_data(
                 if offset < (last_page * limit)
                 else None
             ),
-            last=_replace_query(
-                request_url, {"offset": last_page * limit, "limit": limit}
-            ),
+            last=_replace_query(request_url, {"offset": last_page * limit, "limit": limit}),
         ),
         data=data,
     )
@@ -112,9 +102,7 @@ def paginate_stream_chunk(
     cursor: int,
     has_more: bool,
 ) -> PageDict:
-    data = [
-        item.model_dump() if hasattr(item, "model_dump") else item for item in chunk
-    ]
+    data = [item.model_dump() if hasattr(item, "model_dump") else item for item in chunk]
 
     return PageDict(
         _meta={
@@ -124,11 +112,7 @@ def paginate_stream_chunk(
         },
         _links={
             "self": _replace_query(request_url, {"cursor": cursor}),
-            "next": (
-                _replace_query(request_url, {"cursor": cursor + len(chunk)})
-                if has_more
-                else None
-            ),
+            "next": (_replace_query(request_url, {"cursor": cursor + len(chunk)}) if has_more else None),
         },
         data=data,
     )

@@ -37,8 +37,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     UserNameDuplicateError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "The username '{user_name}' is already in use. "
-            "Please try '{alternative_user_name}' instead.",
+            "The username '{user_name}' is already in use. Please try '{alternative_user_name}' instead.",
             _version=1,
         ),
     ),
@@ -52,8 +51,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     MissingGroupExtraPropertiesForProductError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
-            "This product is currently being configured and is not yet ready for use. "
-            "Please try again later.",
+            "This product is currently being configured and is not yet ready for use. Please try again later.",
             _version=1,
         ),
     ),
@@ -80,6 +78,4 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
 }
 
-handle_rest_requests_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+handle_rest_requests_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))

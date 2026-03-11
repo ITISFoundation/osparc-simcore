@@ -21,7 +21,7 @@ qx.Class.define("osparc.po.POCenterWindow", {
   construct: function(openPage) {
     this.base(arguments, "po-center", this.tr("PO Center"));
 
-    const width = 1000;
+    const width = 1050;
     const height = 700;
     this.set({
       width,

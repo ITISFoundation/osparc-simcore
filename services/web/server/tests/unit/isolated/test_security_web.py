@@ -42,7 +42,7 @@ from simcore_service_webserver.session.settings import SessionSettings
 
 # Prototype concept -------------------------------------------------------
 #
-# - remember/forget are verbs that refers to statefull sessions
+# - remember/forget are verbs that refers to stateful sessions
 # - get borrowed from dict/maps
 #
 _SESSION_PRODUCT_NAME_KEY = "product_name"
@@ -71,9 +71,7 @@ async def _forget_product_name(request: web.Request) -> ProductName | None:
 
 
 @pytest.fixture
-def set_products_in_app_state() -> (
-    Callable[[web.Application, OrderedDict[str, Product]], None]
-):
+def set_products_in_app_state() -> Callable[[web.Application, OrderedDict[str, Product]], None]:
     """
     Add products in app's state to avoid setting up a full database in tests
 
@@ -98,9 +96,7 @@ def expected_product_name():
 
 @pytest.fixture
 def app_products(expected_product_name: ProductName) -> OrderedDict[str, Product]:
-    column_defaults: dict[str, Any] = {
-        c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default
-    }
+    column_defaults: dict[str, Any] = {c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default}
     column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
 
     pp: OrderedDict[str, Product] = OrderedDict()
@@ -212,9 +208,7 @@ async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     mocker: MockerFixture,
     app_products: OrderedDict[str, Product],
-    set_products_in_app_state: Callable[
-        [web.Application, OrderedDict[str, Product]], None
-    ],
+    set_products_in_app_state: Callable[[web.Application, OrderedDict[str, Product]], None],
     app_routes: RouteTableDef,
     mock_env_devel_environment: EnvVarsDict,
     mocked_db_setup_in_setup_security: MockType,
@@ -271,9 +265,7 @@ async def test_product_in_session(
 
 
 @pytest.fixture
-def get_active_user_or_none_dbmock(
-    basic_db_funs_mocked: None, mocker: MockerFixture
-) -> MagicMock:
+def get_active_user_or_none_dbmock(basic_db_funs_mocked: None, mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.security._authz_policy._authz_repository.get_active_user_or_none",
         autospec=True,
@@ -282,9 +274,7 @@ def get_active_user_or_none_dbmock(
 
 
 @pytest.fixture
-def is_user_in_product_name_dbmock(
-    basic_db_funs_mocked: None, mocker: MockerFixture
-) -> MagicMock:
+def is_user_in_product_name_dbmock(basic_db_funs_mocked: None, mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.security._authz_policy._authz_repository.is_user_in_product_name",
         autospec=True,

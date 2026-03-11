@@ -34,8 +34,7 @@ from .web_exceptions_extension import get_http_error_class_or_none
 
 DEFAULT_API_VERSION = "v0"
 _FMSG_INTERNAL_ERROR_USER_FRIENDLY = user_message(
-    "We apologize for the inconvenience. "
-    "The issue has been recorded, please report it if it persists.",
+    "We apologize for the inconvenience. The issue has been recorded, please report it if it persists.",
     _version=1,
 )
 
@@ -48,9 +47,7 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
-def _create_error_context(
-    request: web.BaseRequest, exception: Exception
-) -> tuple[ErrorCodeStr, dict[str, Any]]:
+def _create_error_context(request: web.BaseRequest, exception: Exception) -> tuple[ErrorCodeStr, dict[str, Any]]:
     """Create error code and context for logging purposes.
 
     Returns:
@@ -65,9 +62,7 @@ def _create_error_context(
     return error_code, error_context
 
 
-def _log_5xx_server_error(
-    request: web.BaseRequest, exception: Exception, user_error_msg: str
-) -> ErrorCodeStr:
+def _log_5xx_server_error(request: web.BaseRequest, exception: Exception, user_error_msg: str) -> ErrorCodeStr:
     """Log 5XX server errors with error code and context."""
     error_code, error_context = _create_error_context(request, exception)
 
@@ -82,9 +77,7 @@ def _log_5xx_server_error(
     return error_code
 
 
-def _handle_unexpected_exception_as_500(
-    request: web.BaseRequest, exception: Exception
-) -> web.HTTPInternalServerError:
+def _handle_unexpected_exception_as_500(request: web.BaseRequest, exception: Exception) -> web.HTTPInternalServerError:
     """Process unexpected exceptions and return them as HTTP errors with proper formatting.
 
     IMPORTANT: this function cannot throw exceptions, as it is called
@@ -104,9 +97,7 @@ def _handle_unexpected_exception_as_500(
     return http_error
 
 
-def handle_aiohttp_web_http_error(
-    request: web.BaseRequest, exception: web.HTTPError
-) -> web.HTTPError:
+def handle_aiohttp_web_http_error(request: web.BaseRequest, exception: web.HTTPError) -> web.HTTPError:
     """Handle standard HTTP errors by ensuring they're properly formatted.
 
     NOTE: this needs further refactoring to avoid code duplication
@@ -116,9 +107,7 @@ def handle_aiohttp_web_http_error(
 
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
-        exception.set_status(
-            exception.status, reason=safe_status_message(message=exception.reason)
-        )
+        exception.set_status(exception.status, reason=safe_status_message(message=exception.reason))
 
     if not exception.text or not is_enveloped_from_text(exception.text):
         # NOTE: aiohttp.HTTPException creates `text = f"{self.status}: {self.reason}"`
@@ -126,9 +115,7 @@ def handle_aiohttp_web_http_error(
 
         error_code: IDStr | None = None
         if is_5xx_server_error(exception.status):
-            error_code = IDStr(
-                _log_5xx_server_error(request, exception, user_error_msg)
-            )
+            error_code = IDStr(_log_5xx_server_error(request, exception, user_error_msg))
 
         error_model = ErrorGet(
             errors=[
@@ -147,25 +134,19 @@ def handle_aiohttp_web_http_error(
             support_id=error_code,
         )
         exception.text = json_dumps(
-            wrap_as_envelope(
-                error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
-            )
+            wrap_as_envelope(error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY))
         )
 
     return exception
 
 
-def _handle_aiohttp_web_http_successful(
-    request: web.Request, exception: web.HTTPSuccessful
-) -> web.HTTPSuccessful:
+def _handle_aiohttp_web_http_successful(request: web.Request, exception: web.HTTPSuccessful) -> web.HTTPSuccessful:
     """Handle successful HTTP responses, ensuring they're properly enveloped."""
     assert request  # nosec
 
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
-        exception.set_status(
-            exception.status, reason=safe_status_message(message=exception.reason)
-        )
+        exception.set_status(exception.status, reason=safe_status_message(message=exception.reason))
 
     if exception.text and not is_enveloped_from_text(exception.text):
         # Ensures that the response is enveloped
@@ -188,9 +169,7 @@ def _handle_exception_as_http_error(
 
     http_error_cls = get_http_error_class_or_none(status_code)
     if http_error_cls is None:
-        msg = (
-            f"No HTTP error class found for status code {status_code}, falling back to 500",
-        )
+        msg = (f"No HTTP error class found for status code {status_code}, falling back to 500",)
         raise ValueError(msg)
 
     user_error_msg = get_code_description(status_code)
@@ -224,14 +203,10 @@ def error_middleware_factory(api_version: str) -> Middleware:
                 result = exc
 
             except NotImplementedError as exc:
-                result = _handle_exception_as_http_error(
-                    request, exc, status.HTTP_501_NOT_IMPLEMENTED
-                )
+                result = _handle_exception_as_http_error(request, exc, status.HTTP_501_NOT_IMPLEMENTED)
 
             except TimeoutError as exc:
-                result = _handle_exception_as_http_error(
-                    request, exc, status.HTTP_504_GATEWAY_TIMEOUT
-                )
+                result = _handle_exception_as_http_error(request, exc, status.HTTP_504_GATEWAY_TIMEOUT)
 
         except Exception as exc:  # pylint: disable=broad-except
             #
@@ -260,9 +235,7 @@ def envelope_middleware_factory(
     # FIXME: This data conversion is very error-prone. Use decorators instead!
 
     @web.middleware
-    async def _middleware_handler(
-        request: web.Request, handler: HandlerFlexible
-    ) -> StreamResponse:
+    async def _middleware_handler(request: web.Request, handler: HandlerFlexible) -> StreamResponse:
         """
         Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         ONLY for API-requests
@@ -292,14 +265,10 @@ def envelope_middleware_factory(
     return _middleware_handler
 
 
-def append_rest_middlewares(
-    app: web.Application, api_version: str = DEFAULT_API_VERSION
-):
+def append_rest_middlewares(app: web.Application, api_version: str = DEFAULT_API_VERSION):
     """Helper that appends rest-middlewares in the correct order"""
     app.middlewares.append(error_middleware_factory(api_version))
     app.middlewares.append(envelope_middleware_factory(api_version))
 
 
-APP_JSONSCHEMA_SPECS_KEY: Final = web.AppKey(
-    "APP_JSONSCHEMA_SPECS_KEY", dict[str, object]
-)
+APP_JSONSCHEMA_SPECS_KEY: Final = web.AppKey("APP_JSONSCHEMA_SPECS_KEY", dict[str, object])

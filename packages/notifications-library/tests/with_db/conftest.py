@@ -28,9 +28,7 @@ from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 
-async def _insert_and_get_row(
-    conn, table: sa.Table, values: dict[str, Any], pk_col: sa.Column, pk_value: Any
-) -> Row:
+async def _insert_and_get_row(conn, table: sa.Table, values: dict[str, Any], pk_col: sa.Column, pk_value: Any) -> Row:
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
     row = result.first()
     assert getattr(row, pk_col.name) == pk_value
@@ -67,9 +65,7 @@ def user_primary_group_id(user: dict[str, Any]) -> GroupID:
 
 
 @pytest.fixture
-async def product(
-    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
-) -> AsyncIterator[dict[str, Any]]:
+async def product(sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]) -> AsyncIterator[dict[str, Any]]:
     """Overrides pytest_simcore.faker_products_data.product
     and injects product in db
 
@@ -91,9 +87,7 @@ async def product(
 
 
 @pytest.fixture
-async def products_names(
-    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
-) -> list[ProductName]:
+async def products_names(sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]) -> list[ProductName]:
     # overrides
     async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(sa.select(products.c.name))
@@ -112,9 +106,7 @@ async def successful_transaction(
     pk_args = payments_transactions.c.payment_id, successful_transaction["payment_id"]
 
     async with sqlalchemy_async_engine.begin() as conn:
-        row: Row = await _insert_and_get_row(
-            conn, payments_transactions, successful_transaction, *pk_args
-        )
+        row: Row = await _insert_and_get_row(conn, payments_transactions, successful_transaction, *pk_args)
 
     yield row._asdict()
 
@@ -133,8 +125,8 @@ async def email_templates(
 ) -> AsyncIterator[dict[str, Any]]:
     all_templates = {"other.html": f"Fake template {email_template_mark}"}
 
-    # only subjects are overriden in db
-    subject_templates = get_default_named_templates(media="email", part="subject")
+    # only subjects are overridden in db
+    subject_templates = get_default_named_templates(channel="email", part="subject")
     for name, path in subject_templates.items():
         assert "subject" in name
         all_templates[name] = f"{email_template_mark} {path.read_text()}"
@@ -159,17 +151,13 @@ async def email_templates(
 
 
 @pytest.fixture
-def set_template_to_product(
-    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
-):
+def set_template_to_product(sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]):
     # NOTE: needs all fixture products in db
     @validate_call
     async def _(template_name: IDStr, product_name: ProductName) -> None:
         async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(
-                products_to_templates.insert().values(
-                    product_name=product_name, template_name=template_name
-                )
+                products_to_templates.insert().values(product_name=product_name, template_name=template_name)
             )
 
     return _

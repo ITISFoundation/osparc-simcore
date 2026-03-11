@@ -23,9 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 async def _delete_project(connection: SAConnection, project_uuid: uuid.UUID) -> None:
-    result = await connection.execute(
-        sa.delete(projects).where(projects.c.uuid == f"{project_uuid}")
-    )
+    result = await connection.execute(sa.delete(projects).where(projects.c.uuid == f"{project_uuid}"))
     assert result.rowcount == 1
 
 
@@ -40,12 +38,22 @@ async def registered_user(
 
 
 @pytest.fixture
+async def registered_product(
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+) -> RowProxy:
+    product = await create_fake_product("test-product")
+    assert product
+    return product
+
+
+@pytest.fixture
 async def registered_project(
     connection: SAConnection,
     registered_user: RowProxy,
+    registered_product: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
 ) -> AsyncIterator[dict[str, Any]]:
-    project = await create_fake_project(connection, registered_user)
+    project = await create_fake_project(connection, registered_user, registered_product)
     assert project
 
     yield dict(project)
@@ -74,14 +82,10 @@ async def test_get_project_trashed_column_can_be_converted_to_datetime(
     assert trashed == expected
 
 
-async def test_get_project_last_change_date(
-    asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker
-):
+async def test_get_project_last_change_date(asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker):
     projects_repo = ProjectsRepo(asyncpg_engine)
 
-    project_last_change_date = await projects_repo.get_project_last_change_date(
-        project_uuid=registered_project["uuid"]
-    )
+    project_last_change_date = await projects_repo.get_project_last_change_date(project_uuid=registered_project["uuid"])
     assert isinstance(project_last_change_date, datetime)
 
     with pytest.raises(DBProjectNotFoundError):

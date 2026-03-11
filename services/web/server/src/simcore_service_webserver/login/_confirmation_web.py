@@ -2,11 +2,12 @@ import logging
 from urllib.parse import quote
 
 from aiohttp import web
+from yarl import URL
+
 from simcore_service_webserver.login._application_keys import (
     CONFIRMATION_SERVICE_APPKEY,
 )
 from simcore_service_webserver.login.settings import get_plugin_options
-from yarl import URL
 
 from ..application_setup import ensure_single_setup
 from ..db.plugin import get_asyncpg_engine

@@ -16,6 +16,7 @@ from ..._catalog import ValidService, validate_requested_service
 from ..._errors import (
     InvalidRedirectionParamsError,
 )
+from ..._guards import check_studies_dispatcher_enabled
 from ..._models import ServiceInfo, ViewerInfo
 from ..._projects import (
     get_or_create_project_with_file,
@@ -37,7 +38,6 @@ _logger = logging.getLogger(__name__)
 
 #
 # HELPERS
-#
 
 
 def _create_redirect_response_to_view_page(
@@ -84,10 +84,14 @@ async def get_redirection_to_viewer(request: web.Request):
     - create redirect response
     - create and set auth cookie
 
-    NOTE: Can be set as login_required programatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
+    NOTE: Can be set as login_required programmatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
+    # Check if studies dispatcher is enabled for this product
+    check_studies_dispatcher_enabled(request)
+
     query_params: RedirectionQueryParams = parse_request_query_parameters_as(
-        RedirectionQueryParams, request  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+        RedirectionQueryParams,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+        request,
     )
     _logger.debug("Requesting viewer %s [%s]", query_params, type(query_params))
 
@@ -105,9 +109,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Retrieve user or create a temporary guest
-        user = await get_or_create_guest_user(
-            request, allow_anonymous_or_guest_users=viewer.is_guest_allowed
-        )
+        user = await get_or_create_guest_user(request, allow_anonymous_or_guest_users=viewer.is_guest_allowed)
 
         # Generate one project per user + download_link + viewer
         project_id, viewer_id = await get_or_create_project_with_file_and_service(
@@ -118,9 +120,7 @@ async def get_redirection_to_viewer(request: web.Request):
             product_name=products_web.get_product_name(request),
             product_api_base_url=get_api_base_url(request),
         )
-        await dynamic_scheduler_service.update_projects_networks(
-            request.app, project_id=project_id
-        )
+        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=project_id)
 
         response = _create_redirect_response_to_view_page(
             request.app,
@@ -139,9 +139,7 @@ async def get_redirection_to_viewer(request: web.Request):
             service_version=service_params_.viewer_version,
         )
 
-        user = await get_or_create_guest_user(
-            request, allow_anonymous_or_guest_users=valid_service.is_public
-        )
+        user = await get_or_create_guest_user(request, allow_anonymous_or_guest_users=valid_service.is_public)
 
         project_id, viewer_id = await get_or_create_project_with_service(
             request.app,
@@ -150,9 +148,7 @@ async def get_redirection_to_viewer(request: web.Request):
             product_name=products_web.get_product_name(request),
             product_api_base_url=get_api_base_url(request),
         )
-        await dynamic_scheduler_service.update_projects_networks(
-            request.app, project_id=project_id
-        )
+        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=project_id)
 
         response = _create_redirect_response_to_view_page(
             request.app,
@@ -174,29 +170,23 @@ async def get_redirection_to_viewer(request: web.Request):
         # NOTE: file-only dispatch is reserved to registered users
         # - Anonymous user rights associated with services, not files
         # - Front-end viewer for anonymous users cannot render a single file-picker. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4342
-        # - Risk of anonymous users to polute platform with data
-        user = await get_or_create_guest_user(
-            request, allow_anonymous_or_guest_users=False
-        )
+        # - Risk of anonymous users to pollute platform with data
+        user = await get_or_create_guest_user(request, allow_anonymous_or_guest_users=False)
 
         project_id, file_picker_id = await get_or_create_project_with_file(
             request.app,
             user,
             file_params=file_params_,
-            project_thumbnail=get_plugin_settings(
-                app=request.app
-            ).STUDIES_DEFAULT_FILE_THUMBNAIL,
+            project_thumbnail=get_plugin_settings(app=request.app).STUDIES_DEFAULT_FILE_THUMBNAIL,
             product_name=products_web.get_product_name(request),
             product_api_base_url=get_api_base_url(request),
         )
-        await dynamic_scheduler_service.update_projects_networks(
-            request.app, project_id=project_id
-        )
+        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=project_id)
 
         response = _create_redirect_response_to_view_page(
             request.app,
             project_id=project_id,
-            viewer_node_id=file_picker_id,  # TODO: ask odei about this?
+            viewer_node_id=file_picker_id,
             file_name=file_params_.file_name,
             file_size=file_params_.file_size,
         )
@@ -215,6 +205,7 @@ async def get_redirection_to_viewer(request: web.Request):
     )
 
     # NOTE: Why raising the response?
-    #  SEE aiohttp/web_protocol.py: DeprecationWarning: returning HTTPException object is deprecated (#2415) and will be removed, please raise the exception instead
+    #  SEE aiohttp/web_protocol.py: DeprecationWarning: returning HTTPException object is deprecated (#2415)
+    #  and will be removed, please raise the exception instead
     assert isinstance(response, web.HTTPFound)  # nosec
     raise response

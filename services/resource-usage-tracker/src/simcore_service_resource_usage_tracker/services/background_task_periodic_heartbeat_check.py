@@ -39,29 +39,25 @@ async def _check_service_heartbeat(
 ):
     # Check for missed heartbeats
     if (
-        # Checks that in last 5 minutes we didn't get any heartbeat (ex. last heartbeat < current time - 5 minutes).
-        last_heartbeat_at
-        < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
-    ) and (  # Checks that last modified timestamp is older than some reasonable small threshold (this is here to prevent situation
-        # when RUT is restarting and in the beginning starts the `check_of_running_services_task`. If the task was already running in
-        # last 2 minutes it will not allow it to compute. )
-        modified_at
-        < base_start_timestamp - timedelta(minutes=2)
+        (
+            # Checks that in last 5 minutes we didn't get any heartbeat (ex. last heartbeat < current time - 5 minutes).
+            last_heartbeat_at < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
+        )
+        and (  # Checks that last modified timestamp is older than some reasonable small threshold (this is here to prevent situation
+            # when RUT is restarting and in the beginning starts the `check_of_running_services_task`. If the task was already running in
+            # last 2 minutes it will not allow it to compute. )
+            modified_at < base_start_timestamp - timedelta(minutes=2)
+        )
     ):
         missed_heartbeat_counter += 1
-        if (
-            missed_heartbeat_counter
-            > resource_usage_tracker_missed_heartbeat_counter_fail
-        ):
+        if missed_heartbeat_counter > resource_usage_tracker_missed_heartbeat_counter_fail:
             # Handle unhealthy service
             _logger.error(
                 "Service run id: %s is considered unhealthy and not billed. Counter %s",
                 service_run_id,
                 missed_heartbeat_counter,
             )
-            await _close_unhealthy_service(
-                db_engine, service_run_id, base_start_timestamp
-            )
+            await _close_unhealthy_service(db_engine, service_run_id, base_start_timestamp)
         else:
             _logger.warning(
                 "Service run id: %s missed heartbeat. Counter %s",
@@ -81,7 +77,6 @@ async def _close_unhealthy_service(
     service_run_id: ServiceRunID,
     base_start_timestamp: datetime,
 ):
-
     # 1. Close the service_run
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=service_run_id,
@@ -89,9 +84,7 @@ async def _close_unhealthy_service(
         service_run_status=ServiceRunStatus.ERROR,
         service_run_status_msg="Service missed more heartbeats. It's considered unhealthy.",
     )
-    running_service = await service_runs_db.update_service_run_stopped_at(
-        db_engine, data=update_service_run_stopped_at
-    )
+    running_service = await service_runs_db.update_service_run_stopped_at(db_engine, data=update_service_run_stopped_at)
 
     if running_service is None:
         _logger.error(
@@ -118,8 +111,7 @@ async def _close_unhealthy_service(
         # was caused by an issue on our side.
         _transaction_status = (
             CreditTransactionStatus.NOT_BILLED
-            if running_service.service_type
-            == ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
+            if running_service.service_type == ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
             else CreditTransactionStatus.BILLED
         )
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
@@ -149,9 +141,7 @@ async def _close_unhealthy_service(
                 )
 
     # 4. Release license seats in case some were checked out but not properly released.
-    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(
-        db_engine, service_run_id=service_run_id
-    )
+    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(db_engine, service_run_id=service_run_id)
 
 
 async def check_running_services(app: FastAPI) -> None:
@@ -164,10 +154,8 @@ async def check_running_services(app: FastAPI) -> None:
     base_start_timestamp = datetime.now(tz=UTC)
 
     # Get all current running services (across all products)
-    total_count: PositiveInt = (
-        await service_runs_db.total_service_runs_with_running_status_across_all_products(
-            _db_engine
-        )
+    total_count: PositiveInt = await service_runs_db.total_service_runs_with_running_status_across_all_products(
+        _db_engine
     )
 
     for offset in range(0, total_count, _BATCH_SIZE):

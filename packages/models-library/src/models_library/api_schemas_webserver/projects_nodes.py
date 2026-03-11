@@ -41,9 +41,7 @@ class NodePatch(InputSchemaWithoutCamelCase):
         Field(alias="version"),
     ] = None
     label: str | None = None
-    inputs: Annotated[
-        InputsDict, Field(default_factory=dict, json_schema_extra={"default": {}})
-    ]
+    inputs: Annotated[InputsDict, Field(default_factory=dict, json_schema_extra={"default": {}})]
     inputs_required: Annotated[
         list[InputID] | None,
         Field(alias="inputsRequired"),
@@ -61,9 +59,7 @@ class NodePatch(InputSchemaWithoutCamelCase):
         ),
     ] = None
     boot_options: Annotated[BootOptions | None, Field(alias="bootOptions")] = None
-    outputs: dict[str, Any] | None = (
-        None  # NOTE: it is used by frontend for File Picker
-    )
+    outputs: dict[str, Any] | None = None  # NOTE: it is used by frontend for File Picker
 
     def to_domain_model(self) -> PartialNode:
         data = self.model_dump(
@@ -98,16 +94,12 @@ class NodeGet(OutputSchema):
             "simcore/services/dynamic/3dviewer",
         ],
     )
-    service_version: ServiceVersion = Field(
-        ..., description="semantic version number", examples=["1.0.0", "0.0.1"]
-    )
+    service_version: ServiceVersion = Field(..., description="semantic version number", examples=["1.0.0", "0.0.1"])
     service_host: str = Field(
         ...,
         description="service host name within the network",
     )
-    service_port: PortInt = Field(
-        ..., description="port to access the service within the network"
-    )
+    service_port: PortInt = Field(..., description="port to access the service within the network")
     service_basepath: str | None = Field(
         "",
         description="different base path where current service is mounted otherwise defaults to root",
@@ -216,9 +208,7 @@ class NodeServiceGet(OutputSchema):
     release: ServiceRelease
     owner: Annotated[
         GroupID | None,
-        Field(
-            description="Service owner primary group id or None if ownership still not defined"
-        ),
+        Field(description="Service owner primary group id or None if ownership still not defined"),
     ]
     my_access_rights: ExecutableAccessRights
 
@@ -228,7 +218,5 @@ class ProjectNodeServicesGet(OutputSchema):
     services: list[NodeServiceGet]
     missing: Annotated[
         list[ServiceKeyVersion] | None,
-        Field(
-            description="List of services defined in the project but that were not found in the catalog"
-        ),
+        Field(description="List of services defined in the project but that were not found in the catalog"),
     ] = None

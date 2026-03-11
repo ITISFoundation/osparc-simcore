@@ -19,9 +19,7 @@ class LicensesSettings(BaseCustomSettings):
         ),
     ]
     LICENSES_ITIS_VIP_SYNCER_ENABLED: bool = False
-    LICENSES_ITIS_VIP_SYNCER_PERIODICITY: datetime.timedelta = datetime.timedelta(
-        days=1
-    )
+    LICENSES_ITIS_VIP_SYNCER_PERIODICITY: datetime.timedelta = datetime.timedelta(days=1)
 
     # SPEAG - PHANTOMS
     LICENSES_SPEAG_PHANTOMS: Annotated[

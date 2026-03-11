@@ -115,9 +115,7 @@ def node_id(faker: Faker) -> NodeID:
 def mock_get_node_state(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.cli._core._get_dy_service_state",
-        return_value=DynamicServiceGet.model_validate(
-            RunningDynamicServiceDetails.model_json_schema()["examples"][0]
-        ),
+        return_value=DynamicServiceGet.model_validate(RunningDynamicServiceDetails.model_json_schema()["examples"][0]),
     )
 
 
@@ -135,30 +133,28 @@ def mock_catalog_instance(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-async def mock_close_service_routes(
-    mocker: MockerFixture, task_id: str
-) -> AsyncIterable[None]:
+async def mock_close_service_routes(mocker: MockerFixture, task_id: str) -> AsyncIterable[None]:
     regex_base = r"/v2/dynamic_scheduler/services/([\w-]+)"
     with respx.mock(
         base_url=ThinDV2LocalhostClient.BASE_ADDRESS,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        respx_mock.patch(
-            re.compile(f"{regex_base}/observation"), name="toggle_service_observation"
-        ).respond(status_code=status.HTTP_204_NO_CONTENT)
-        respx_mock.delete(
-            re.compile(f"{regex_base}/containers"), name="delete_service_containers"
-        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
-        respx_mock.post(
-            re.compile(f"{regex_base}/state:save"), name="save_service_state"
-        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
-        respx_mock.get(
-            re.compile(f"{regex_base}/state"), name="service_internal_state"
-        ).respond(status_code=status.HTTP_200_OK)
-        respx_mock.post(
-            re.compile(f"{regex_base}/outputs:push"), name="push_service_outputs"
-        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.patch(re.compile(f"{regex_base}/observation"), name="toggle_service_observation").respond(
+            status_code=status.HTTP_204_NO_CONTENT
+        )
+        respx_mock.delete(re.compile(f"{regex_base}/containers"), name="delete_service_containers").respond(
+            status_code=status.HTTP_202_ACCEPTED, json=task_id
+        )
+        respx_mock.post(re.compile(f"{regex_base}/state:save"), name="save_service_state").respond(
+            status_code=status.HTTP_202_ACCEPTED, json=task_id
+        )
+        respx_mock.get(re.compile(f"{regex_base}/state"), name="service_internal_state").respond(
+            status_code=status.HTTP_200_OK
+        )
+        respx_mock.post(re.compile(f"{regex_base}/outputs:push"), name="push_service_outputs").respond(
+            status_code=status.HTTP_202_ACCEPTED, json=task_id
+        )
         respx_mock.delete(
             re.compile(f"{regex_base}/docker-resources"),
             name="delete_service_docker_resources",
@@ -206,19 +202,14 @@ def test_project_save_state_ok(
     with capsys.disabled() as _disabled:
         # NOTE: without this, the test does not pass see https://github.com/pallets/click/issues/824
         # also see this https://github.com/Stranger6667/pytest-click/issues/27 when using log-cli-level=DEBUG
-        result = cli_runner.invoke(
-            main, ["project-save-state", f"{project_at_db.uuid}"]
-        )
+        result = cli_runner.invoke(main, ["project-save-state", f"{project_at_db.uuid}"])
     print(result.stdout)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert result.stdout.endswith(f"Save complete for project {project_at_db.uuid}\n")
     for node_uuid, node_content in project_at_db.workbench.items():
         assert f"Saving state for {node_uuid} {node_content.label}" in result.stdout
 
-    assert (
-        f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'"
-        in result.stdout
-    )
+    assert f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'" in result.stdout
 
 
 def test_project_save_state_retry_3_times_and_fails(
@@ -232,50 +223,35 @@ def test_project_save_state_retry_3_times_and_fails(
     with capsys.disabled() as _disabled:
         # NOTE: without this, the test does not pass see https://github.com/pallets/click/issues/824
         # also see this https://github.com/Stranger6667/pytest-click/issues/27 when using log-cli-level=DEBUG
-        result = cli_runner.invoke(
-            main, ["project-save-state", f"{project_at_db.uuid}"]
-        )
+        result = cli_runner.invoke(main, ["project-save-state", f"{project_at_db.uuid}"])
     print(result.stdout)
     assert result.exit_code == 1, _format_cli_error(result)
     assert "The following nodes failed to save:" in result.stdout
     for node_uuid in project_at_db.workbench:
-        assert (
-            result.stdout.count(f"Attempting to save {node_uuid}")
-            == DEFAULT_NODE_SAVE_ATTEMPTS
-        )
+        assert result.stdout.count(f"Attempting to save {node_uuid}") == DEFAULT_NODE_SAVE_ATTEMPTS
         assert result.stdout.count(f"- {node_uuid}") == 1
     assert result.stdout.endswith("Please try to save them individually!\n")
 
 
-def test_project_state(
-    mock_get_node_state: None, project_at_db: ProjectAtDB, cli_runner: CliRunner
-):
-    result = cli_runner.invoke(
-        main, ["project-state", f"{project_at_db.uuid}", "--no-blocking"]
-    )
+def test_project_state(mock_get_node_state: None, project_at_db: ProjectAtDB, cli_runner: CliRunner):
+    result = cli_runner.invoke(main, ["project-state", f"{project_at_db.uuid}", "--no-blocking"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)
 
 
-def test_close_and_save_service(
-    mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
-):
+def test_close_and_save_service(mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID):
     result = cli_runner.invoke(main, ["close-and-save-service", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)
 
 
-def test_service_state(
-    mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
-):
+def test_service_state(mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID):
     result = cli_runner.invoke(main, ["service-state", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)
 
 
-def test_free_reserved_disk_space(
-    mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
-):
+def test_free_reserved_disk_space(mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID):
     result = cli_runner.invoke(main, ["free-reserved-disk-space", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)

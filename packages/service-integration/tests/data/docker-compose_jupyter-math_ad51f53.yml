@@ -30,5 +30,5 @@ services:
         io.simcore.boot-options: '{"boot-options":{"boot_mode":{"label":"Boot mode","description":"Select boot type for the service","default":"0","items":{"0":{"label":"JupyterLab","description":"Display the JupyterLab interface the default boot mode"},"1":{"label":"Voila","description":"To start as Voila save a notebook as \"voila.ipynb\" in the root folder"}}}}}'
         simcore.service.restart-policy: no-restart
         simcore.service.paths-mapping: '{"inputs_path":"/home/jovyan/work/inputs","outputs_path":"/home/jovyan/work/outputs","state_paths":["/home/jovyan/work/workspace"]}'
-        simcore.service.settings: '[{"name":"ports","type":"int","value":8888},{"name":"constraints","type":"string","value":["node.platform.os == linux"]},{"name":"Resources","type":"Resources","value":{"Limits":{"NanoCPUs":4000000000,"MemoryBytes":17179869184}}}]'
+        simcore.service.settings: '[{"name":"ports","type":"int","value":8888},{"name":"constraints","type":"string","value":["node.platform.os==linux"]},{"name":"Resources","type":"Resources","value":{"Limits":{"NanoCPUs":4000000000,"MemoryBytes":17179869184}}}]'
     image: simcore/services/dynamic/jupyter-math:2.0.8

@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
@@ -51,48 +51,48 @@ def resource_tracker_setup_db(
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_1,
                         service_run_id=_SERVICE_RUN_ID_1,
-                        started_at=datetime.now(tz=timezone.utc) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=timezone.utc),
+                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                        stopped_at=datetime.now(tz=UTC),
                         service_run_status="SUCCESS",
                         service_key="simcore/services/dynamic/jupyter-smash",
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_2,
                         service_run_id=_SERVICE_RUN_ID_2,
-                        started_at=datetime.now(tz=timezone.utc) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=timezone.utc),
+                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                        stopped_at=datetime.now(tz=UTC),
                         service_run_status="SUCCESS",
                         service_key="simcore/services/dynamic/jupyter-smash",
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_1,
                         service_run_id=_SERVICE_RUN_ID_3,
-                        started_at=datetime.now(tz=timezone.utc) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=timezone.utc),
+                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                        stopped_at=datetime.now(tz=UTC),
                         service_run_status="SUCCESS",
                         service_key="simcore/services/dynamic/jupyter-smash",
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_1,
                         service_run_id=_SERVICE_RUN_ID_4,
-                        started_at=datetime.now(tz=timezone.utc) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=timezone.utc),
+                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                        stopped_at=datetime.now(tz=UTC),
                         service_run_status="SUCCESS",
                         service_key="simcore/services/dynamic/jupyter-smash",
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_1,
                         service_run_id=_SERVICE_RUN_ID_5,
-                        started_at=datetime.now(tz=timezone.utc) - timedelta(days=3),
-                        stopped_at=datetime.now(tz=timezone.utc),
+                        started_at=datetime.now(tz=UTC) - timedelta(days=3),
+                        stopped_at=datetime.now(tz=UTC),
                         service_run_status="SUCCESS",
                         service_key="simcore/services/dynamic/jupyter-smash",
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_1,
                         service_run_id=_SERVICE_RUN_ID_6,
-                        started_at=datetime.now(tz=timezone.utc) - timedelta(days=10),
-                        stopped_at=datetime.now(tz=timezone.utc),
+                        started_at=datetime.now(tz=UTC) - timedelta(days=10),
+                        stopped_at=datetime.now(tz=UTC),
                         service_run_status="SUCCESS",
                         service_key="simcore/services/dynamic/sim4life",
                     ),

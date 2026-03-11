@@ -19,7 +19,8 @@ from servicelib.fastapi.http_client import (
     BaseHTTPApi,
     HealthMixinMixin,
 )
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.tracing import setup_httpx_client_tracing
 
 from ..core.errors import StripeRuntimeError
 from ..core.settings import ApplicationSettings
@@ -56,9 +57,7 @@ class _StripeBearerAuth(httpx.Auth):
         yield request
 
 
-class StripeApi(
-    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
-):
+class StripeApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
     """https://docs.stripe.com/api"""
 
     app_state_name: str = "stripe_api"
@@ -78,7 +77,6 @@ class StripeApi(
         self,
         stripe_invoice_id: StripeInvoiceID,
     ) -> InvoiceData:
-
         response = await self.client.get(f"/v1/invoices/{stripe_invoice_id}")
         response.raise_for_status()
 

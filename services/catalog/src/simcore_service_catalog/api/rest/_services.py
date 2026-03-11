@@ -87,12 +87,8 @@ async def list_services(
     *,
     user_id: PositiveInt,
     director_client: Annotated[DirectorClient, Depends(get_director_client)],
-    groups_repository: Annotated[
-        GroupsRepository, Depends(get_repository(GroupsRepository))
-    ],
-    services_repo: Annotated[
-        ServicesRepository, Depends(get_repository(ServicesRepository))
-    ],
+    groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
+    services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
     x_simcore_products_name: Annotated[str, Header(...)],
     details: bool = True,
 ):
@@ -102,7 +98,7 @@ async def list_services(
         # deny access
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have unsufficient rights to access the services",
+            detail="You have insufficient rights to access the services",
         )
 
     # now get the executable or writable services
@@ -128,11 +124,7 @@ async def list_services(
                 name="nodetails",
                 description="nodetails",
                 type=ServiceType.COMPUTATIONAL,
-                authors=[
-                    Author.model_construct(
-                        name="nodetails", email="nodetails@nodetails.com"
-                    )
-                ],
+                authors=[Author.model_construct(name="nodetails", email="nodetails@nodetails.com")],
                 contact="nodetails@nodetails.com",
                 inputs={},
                 outputs={},
@@ -158,9 +150,7 @@ async def list_services(
             key_versions=services_in_db,
             product_name=x_simcore_products_name,
         ),
-        groups_repository.list_user_emails_from_gids(
-            {s.owner for s in services_in_db.values() if s.owner}
-        ),
+        groups_repository.list_user_emails_from_gids({s.owner for s in services_in_db.values() if s.owner}),
     )
 
     services_access_rights = services_access_rights or {}
@@ -179,13 +169,9 @@ async def list_services(
                 s,
                 services_in_db[s["key"], s["version"]],
                 services_access_rights.get((s["key"], s["version"])) or [],
-                services_owner_emails.get(
-                    services_in_db[s["key"], s["version"]].owner or 0
-                ),
+                services_owner_emails.get(services_in_db[s["key"], s["version"]].owner or 0),
             )
-            for s in (
-                request.app.state.frontend_services_catalog + services_in_registry
-            )
+            for s in (request.app.state.frontend_services_catalog + services_in_registry)
             if (s.get("key"), s.get("version")) in services_in_db
         ]
     )
@@ -201,15 +187,9 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service_in_manifest: Annotated[
-        ServiceMetaDataPublished, Depends(get_service_from_manifest)
-    ],
-    groups_repository: Annotated[
-        GroupsRepository, Depends(get_repository(GroupsRepository))
-    ],
-    services_repo: Annotated[
-        ServicesRepository, Depends(get_repository(ServicesRepository))
-    ],
+    service_in_manifest: Annotated[ServiceMetaDataPublished, Depends(get_service_from_manifest)],
+    groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
+    services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
     x_simcore_products_name: str = Header(None),
 ):
     service_data: dict[str, Any] = {"owner": None}
@@ -220,7 +200,7 @@ async def get_service(
         # deny access
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have unsufficient rights to access the service",
+            detail="You have insufficient rights to access the service",
         )
     # check the user has access to this service and to which extent
     service_in_db = await services_repo.get_service(
@@ -232,16 +212,12 @@ async def get_service(
     )
     if service_in_db:
         # we have full access, let's add the access to the output
-        service_access_rights: list[ServiceAccessRightsDB] = (
-            await services_repo.get_service_access_rights(
-                service_in_manifest.key,
-                service_in_manifest.version,
-                product_name=x_simcore_products_name,
-            )
+        service_access_rights: list[ServiceAccessRightsDB] = await services_repo.get_service_access_rights(
+            service_in_manifest.key,
+            service_in_manifest.version,
+            product_name=x_simcore_products_name,
         )
-        service_data["access_rights"] = {
-            rights.gid: rights for rights in service_access_rights
-        }
+        service_data["access_rights"] = {rights.gid: rights for rights in service_access_rights}
     else:
         # check if we have executable rights
         service_in_db = await services_repo.get_service(
@@ -260,9 +236,7 @@ async def get_service(
 
     # the owner shall be converted to an email address
     if service_in_db.owner:
-        service_data["owner"] = await groups_repository.get_user_email_from_gid(
-            service_in_db.owner
-        )
+        service_data["owner"] = await groups_repository.get_user_email_from_gid(service_in_db.owner)
 
     # access is allowed, override some of the values with what is in the db
     service_data.update(

@@ -22,7 +22,7 @@ groups = sa.Table(
         sa.BigInteger,
         nullable=False,
         primary_key=True,
-        doc="Group unique IDentifier",
+        doc="Group unique IIdentifier",
     ),
     sa.Column("name", sa.String, nullable=False, doc="Group label"),
     sa.Column("description", sa.String, nullable=False, doc="Short description"),
@@ -78,7 +78,7 @@ user_to_groups = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
-        doc="User unique IDentifier",
+        doc="User unique IIdentifier",
     ),
     sa.Column(
         "gid",
@@ -89,15 +89,13 @@ user_to_groups = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
-        doc="Group unique IDentifier",
+        doc="Group unique IIdentifier",
     ),
     sa.Column(
         "access_rights",
         JSONB,
         nullable=False,
-        server_default=sa.text(
-            '\'{"read": true, "write": false, "delete": false}\'::jsonb'
-        ),
+        server_default=sa.text('\'{"read": true, "write": false, "delete": false}\'::jsonb'),
         doc="User's access rights to the group",
     ),
     sa.Column(

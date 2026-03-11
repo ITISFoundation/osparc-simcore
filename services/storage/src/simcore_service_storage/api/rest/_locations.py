@@ -20,9 +20,7 @@ router = APIRouter(
     status_code=status.HTTP_200_OK,
     response_model=Envelope[list[FileLocation]],
 )
-async def list_storage_locations(
-    query_params: Annotated[StorageQueryParamsBase, Depends()], request: Request
-):
+async def list_storage_locations(query_params: Annotated[StorageQueryParamsBase, Depends()], request: Request):
     dsm_provider = get_dsm_provider(request.app)
     location_ids = dsm_provider.locations()
     locs: list[FileLocation] = []

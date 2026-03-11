@@ -22,7 +22,7 @@ aiodocker
 aiofiles
 blosc # for compression
 dask[distributed, diagnostics]
-fsspec[http, s3] # sub types needed as we acces http and s3 here
+fsspec[http, s3] # sub types needed as we access http and s3 here
 lz4 # for compression
 pydantic
 prometheus_client

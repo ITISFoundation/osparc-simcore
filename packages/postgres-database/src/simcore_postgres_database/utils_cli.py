@@ -14,9 +14,7 @@ from alembic.config import Config as AlembicConfig
 from .utils import build_url
 from .utils_migration import create_basic_config
 
-DISCOVERED_CACHE: Final[str] = os.path.expanduser(
-    "~/.simcore_postgres_database_cache.json"
-)
+DISCOVERED_CACHE: Final[str] = os.path.expanduser("~/.simcore_postgres_database_cache.json")
 
 
 log = logging.getLogger("root")
@@ -53,20 +51,14 @@ def _safe(if_fails_return=False):
 @_safe(if_fails_return=None)
 def get_service_published_port(service_name: str) -> int:
     client = docker.client.from_env()
-    services = [
-        s for s in client.services.list() if service_name in getattr(s, "name", "")
-    ]
+    services = [s for s in client.services.list() if service_name in getattr(s, "name", "")]
     if not services:
-        raise RuntimeError(
-            "Cannot find published port for service '%s'. Probably services still not up"
-            % service_name
-        )
+        raise RuntimeError("Cannot find published port for service '%s'. Probably services still not up" % service_name)
     service_endpoint = services[0].attrs["Endpoint"]
 
     if "Ports" not in service_endpoint or not service_endpoint["Ports"]:
         raise RuntimeError(
-            "Cannot find published port for service '%s' in endpoint. Probably services still not up"
-            % service_name
+            "Cannot find published port for service '%s' in endpoint. Probably services still not up" % service_name
         )
 
     published_port = service_endpoint["Ports"][0]["PublishedPort"]
@@ -105,9 +97,7 @@ def get_alembic_config_from_cache(
 
         url = build_url(**cfg)
     except Exception:  # pylint: disable=broad-except
-        log.debug(
-            "Cannot open cache or cannot build URL", exc_info=True, stack_info=True
-        )
+        log.debug("Cannot open cache or cannot build URL", exc_info=True, stack_info=True)
         click.echo("Invalid database config, please run discover first", err=True)
         reset_cache()
         return None

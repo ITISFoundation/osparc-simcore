@@ -20,18 +20,14 @@ import pytest
 from playwright._impl._sync_base import EventContextManager
 from playwright.sync_api import (
     APIRequestContext,
-)
-from playwright.sync_api import Error as PlaywrightError
-from playwright.sync_api import (
     FrameLocator,
     Locator,
     Page,
     Request,
-)
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from playwright.sync_api import (
     WebSocket,
 )
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
 from tenacity import (
     before_sleep_log,
@@ -50,9 +46,7 @@ _logger = logging.getLogger(__name__)
 
 SECOND: Final[int] = 1000
 MINUTE: Final[int] = 60 * SECOND
-NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"/projects/[^/]+/nodes/[^:]+:start"
-)
+NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/projects/[^/]+/nodes/[^:]+:start")
 
 
 @unique
@@ -150,9 +144,7 @@ _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 class RobustWebSocket:
     page: Page
     ws: WebSocket
-    _registered_events: list[tuple[str, typing.Callable | None]] = field(
-        default_factory=list
-    )
+    _registered_events: list[tuple[str, typing.Callable | None]] = field(default_factory=list)
     _num_reconnections: int = 0
     auto_reconnect: bool = True
 
@@ -166,14 +158,10 @@ class RobustWebSocket:
         ) as ctx:
 
             def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug(
-                    "%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_PREFIX, payload
-                )
+                ctx.logger.debug("%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_PREFIX, payload)
 
             def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug(
-                    "%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_PREFIX, payload
-                )
+                ctx.logger.debug("%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_PREFIX, payload)
 
             def on_close(_: WebSocket) -> None:
                 if self.auto_reconnect:
@@ -186,9 +174,7 @@ class RobustWebSocket:
                     ctx.logger.info("%s WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX)
 
             def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error(
-                    "%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_PREFIX, error_msg
-                )
+                ctx.logger.error("%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_PREFIX, error_msg)
 
             # Attach core event listeners
             self.ws.on("framesent", on_framesent)
@@ -282,13 +268,8 @@ class SocketIOProjectClosedWaiter:
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if (
-                    (
-                        decoded_message.name
-                        == _OSparcMessages.PROJECT_STATE_UPDATED.value
-                    )
-                    and (
-                        decoded_message.obj["data"]["shareState"]["status"] == "CLOSED"
-                    )
+                    (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
+                    and (decoded_message.obj["data"]["shareState"]["status"] == "CLOSED")
                     and (decoded_message.obj["data"]["shareState"]["locked"] is False)
                 ):
                     ctx.logger.info("project successfully closed")
@@ -308,10 +289,7 @@ class SocketIOProjectStateUpdatedWaiter:
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
-                    return (
-                        retrieve_project_state_from_decoded_message(decoded_message)
-                        in self.expected_states
-                    )
+                    return retrieve_project_state_from_decoded_message(decoded_message) in self.expected_states
 
             return False
 
@@ -331,10 +309,7 @@ class SocketIOWaitNodeForOutputs:
                     if decoded_message.obj["node_id"] == self.node_id:
                         assert "outputs" in decoded_message.obj["data"]
 
-                        return (
-                            len(decoded_message.obj["data"]["outputs"])
-                            == self.expected_number_of_outputs
-                        )
+                        return len(decoded_message.obj["data"]["outputs"]) == self.expected_number_of_outputs
 
         return False
 
@@ -343,9 +318,7 @@ _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
 _SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[timedelta] = timedelta(seconds=30)
 
 
-def _get_service_url(
-    node_id: str, product_url: AnyUrl, *, is_legacy_service: bool
-) -> AnyUrl:
+def _get_service_url(node_id: str, product_url: AnyUrl, *, is_legacy_service: bool) -> AnyUrl:
     return TypeAdapter(AnyUrl).validate_python(
         f"{product_url.scheme}://{product_url.host}/x/{node_id}"
         if is_legacy_service
@@ -362,9 +335,7 @@ def _check_service_endpoint(
     is_legacy_service: bool,
 ) -> bool:
     # NOTE: we might have missed some websocket messages, and we check if the service is ready
-    service_url = _get_service_url(
-        node_id, product_url, is_legacy_service=is_legacy_service
-    )
+    service_url = _get_service_url(node_id, product_url, is_legacy_service=is_legacy_service)
 
     with log_context(
         logging.INFO,
@@ -400,25 +371,19 @@ def _check_service_endpoint(
 
             if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
-                logger.info(
-                    "✅ Service ready!! responded with %s ✅", f"{response.status=}"
-                )
+                logger.info("✅ Service ready!! responded with %s ✅", f"{response.status=}")
                 return True
     return False
 
 
-_SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(
-    seconds=60
-)
+_SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(seconds=60)
 
 
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
-    _current_progress: dict[NodeProgressType, float] = field(
-        default_factory=defaultdict
-    )
+    _current_progress: dict[NodeProgressType, float] = field(default_factory=defaultdict)
     _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
     _result: bool = False
@@ -433,10 +398,7 @@ class SocketIONodeProgressCompleteWaiter:
                 if (
                     (decoded_message.name == _OSparcMessages.SERVICE_STATUS.value)
                     and (decoded_message.obj["service_uuid"] == self.node_id)
-                    and (
-                        decoded_message.obj["service_state"]
-                        in _FAIL_FAST_DYNAMIC_SERVICE_STATES
-                    )
+                    and (decoded_message.obj["service_state"] in _FAIL_FAST_DYNAMIC_SERVICE_STATES)
                 ):
                     # NOTE: this is a fail fast for dynamic services that fail to start
                     ctx.logger.error(
@@ -447,31 +409,18 @@ class SocketIONodeProgressCompleteWaiter:
                     self._result = False
                     return True
                 if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
-                    node_progress_event = retrieve_node_progress_from_decoded_message(
-                        decoded_message
-                    )
+                    node_progress_event = retrieve_node_progress_from_decoded_message(decoded_message)
                     if node_progress_event.node_id == self.node_id:
-                        new_progress = (
-                            node_progress_event.current_progress
-                            / node_progress_event.total_progress
-                        )
+                        new_progress = node_progress_event.current_progress / node_progress_event.total_progress
                         self._last_progress_time = datetime.now(UTC)
-                        if (
-                            node_progress_event.progress_type
-                            not in self._current_progress
-                        ) or (
-                            new_progress
-                            != self._current_progress[node_progress_event.progress_type]
+                        if (node_progress_event.progress_type not in self._current_progress) or (
+                            new_progress != self._current_progress[node_progress_event.progress_type]
                         ):
-                            self._current_progress[
-                                node_progress_event.progress_type
-                            ] = new_progress
+                            self._current_progress[node_progress_event.progress_type] = new_progress
 
                             ctx.logger.info(
                                 "Current startup progress [expected %d types]: %s",
-                                len(
-                                    NodeProgressType.required_types_for_started_service()
-                                ),
+                                len(NodeProgressType.required_types_for_started_service()),
                                 f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                             )
 
@@ -498,9 +447,7 @@ class SocketIONodeProgressCompleteWaiter:
         return all(
             progress_type in self._current_progress
             for progress_type in NodeProgressType.required_types_for_started_service()
-        ) and all(
-            round(progress, 1) == 1.0 for progress in self._current_progress.values()
-        )
+        ) and all(round(progress, 1) == 1.0 for progress in self._current_progress.values())
 
     @property
     def success(self) -> bool:
@@ -534,9 +481,7 @@ def wait_for_service_endpoint_responding(
         )
         assert is_service_ready, "❌ the service failed starting! ❌"
 
-    with log_context(
-        logging.INFO, msg=f"wait for service endpoint to be ready ({timeout=})"
-    ) as ctx:
+    with log_context(logging.INFO, msg=f"wait for service endpoint to be ready ({timeout=})") as ctx:
         _retry_check_service_endpoint(ctx.logger)
 
 
@@ -566,27 +511,15 @@ def wait_for_pipeline_state(
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES
             )
-            with websocket.expect_event(
-                "framereceived", waiter, timeout=timeout_ms
-            ) as event:
-                current_state = retrieve_project_state_from_decoded_message(
-                    decode_socketio_42_message(event.value)
-                )
-            if (
-                current_state in _FAIL_FAST_COMPUTATIONAL_STATES
-                and current_state not in expected_states
-            ):
-                pytest.fail(
-                    f"❌ Pipeline failed fast with state {current_state}. Expected one of {expected_states} ❌"
-                )
+            with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
+                current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
+            if current_state in _FAIL_FAST_COMPUTATIONAL_STATES and current_state not in expected_states:
+                pytest.fail(f"❌ Pipeline failed fast with state {current_state}. Expected one of {expected_states} ❌")
     return current_state
 
 
 def _node_started_predicate(request: Request) -> bool:
-    return bool(
-        re.search(NODE_START_REQUEST_PATTERN, request.url)
-        and request.method.upper() == "POST"
-    )
+    return bool(re.search(NODE_START_REQUEST_PATTERN, request.url) and request.method.upper() == "POST")
 
 
 def _trigger_service_start(page: Page, node_id: str) -> None:
@@ -627,9 +560,7 @@ def expected_service_running(
 
         if is_service_legacy:
             waiter = None
-            ctx.logger.info(
-                "⚠️ Legacy service detected. We are skipping websocket messages in this case! ⚠️"
-            )
+            ctx.logger.info("⚠️ Legacy service detected. We are skipping websocket messages in this case! ⚠️")
         else:
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
@@ -638,9 +569,7 @@ def expected_service_running(
                     timedelta(seconds=timeout / 1000 - 10),
                 ),
             )
-            stack.enter_context(
-                websocket.expect_event("framereceived", waiter, timeout=timeout)
-            )
+            stack.enter_context(websocket.expect_event("framereceived", waiter, timeout=timeout))
         service_running = ServiceRunning(iframe_locator=None)
         if press_start_button:
             _trigger_service_start(page, node_id)
@@ -660,9 +589,7 @@ def expected_service_running(
             _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
         ),
     )
-    service_running.iframe_locator = page.frame_locator(
-        f'[osparc-test-id="iframe_{node_id}"]'
-    )
+    service_running.iframe_locator = page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 
 def wait_for_service_running(
@@ -688,9 +615,7 @@ def wait_for_service_running(
         )
         if is_service_legacy:
             waiter = None
-            ctx.logger.info(
-                "⚠️ Legacy service detected. We are skipping websocket messages in this case! ⚠️"
-            )
+            ctx.logger.info("⚠️ Legacy service detected. We are skipping websocket messages in this case! ⚠️")
         else:
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
@@ -699,9 +624,7 @@ def wait_for_service_running(
                     timedelta(seconds=timeout / 1000 - 10),
                 ),
             )
-            stack.enter_context(
-                websocket.expect_event("framereceived", waiter, timeout=timeout)
-            )
+            stack.enter_context(websocket.expect_event("framereceived", waiter, timeout=timeout))
         if press_start_button:
             _trigger_service_start(page, node_id)
     elapsed_time = arrow.utcnow() - started
@@ -730,9 +653,7 @@ def app_mode_trigger_next_app(page: Page) -> None:
         page.get_by_test_id("AppMode_NextBtn").click()
 
 
-def wait_for_label_text(
-    page: Page, locator: str, substring: str, timeout: int = 10000
-) -> Locator:
+def wait_for_label_text(page: Page, locator: str, substring: str, timeout: int = 10000) -> Locator:
     page.locator(locator).wait_for(state="visible", timeout=timeout)
 
     page.wait_for_function(

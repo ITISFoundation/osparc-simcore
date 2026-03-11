@@ -88,9 +88,7 @@ async def test_workflow(
             assert not error
             task_status = TaskStatus.model_validate(data)
             assert task_status
-            progress_updates.append(
-                (task_status.task_progress.message, task_status.task_progress.percent)
-            )
+            progress_updates.append((task_status.task_progress.message, task_status.task_progress.percent))
             print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
             assert task_status.done, "task incomplete"
             print(
@@ -130,9 +128,7 @@ async def test_workflow(
         ("DELETE", "remove_task"),
     ],
 )
-async def test_get_task_wrong_task_id_raises_not_found(
-    client: TestClient, method: str, route_name: str
-):
+async def test_get_task_wrong_task_id_raises_not_found(client: TestClient, method: str, route_name: str):
     assert client.app
     url = client.app.router[route_name].url_for(task_id="fake_task_id")
     result = await client.request(method, f"{url}")
@@ -226,9 +222,7 @@ async def test_list_tasks(
     assert client.app
     # now start a few tasks
     NUM_TASKS = 10
-    results = await asyncio.gather(
-        *(start_long_running_task(client) for _ in range(NUM_TASKS))
-    )
+    results = await asyncio.gather(*(start_long_running_task(client) for _ in range(NUM_TASKS)))
 
     # check we have the full list
     list_url = client.app.router["list_tasks"].url_for()
@@ -240,10 +234,7 @@ async def test_list_tasks(
 
     # the task name is properly formatted
     assert all(
-        task.task_name.startswith(
-            "POST /long_running_task:start?num_strings=10&sleep_time="
-        )
-        for task in list_of_tasks
+        task.task_name.startswith("POST /long_running_task:start?num_strings=10&sleep_time=") for task in list_of_tasks
     )
     # now wait for them to finish
     await asyncio.gather(*(wait_for_task(client, task_id, {}) for task_id in results))

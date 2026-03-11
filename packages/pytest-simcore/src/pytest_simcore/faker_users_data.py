@@ -22,10 +22,7 @@ from .helpers.faker_factories import (
     random_user_secrets,
 )
 
-_MESSAGE = (
-    "If set, it overrides the fake value of `{}` fixture."
-    " Can be handy when interacting with external/real APIs"
-)
+_MESSAGE = "If set, it overrides the fake value of `{}` fixture. Can be handy when interacting with external/real APIs"
 
 
 _FAKE_USER_EMAIL_OPTION = "--faker-user-email"
@@ -78,8 +75,7 @@ def is_external_user_email(request: pytest.FixtureRequest) -> bool:
 @pytest.fixture
 def user_email(faker: Faker, request: pytest.FixtureRequest) -> EmailStr:
     return TypeAdapter(EmailStr).validate_python(
-        request.config.getoption(_FAKE_USER_EMAIL_OPTION, default=None)
-        or faker.email(),
+        request.config.getoption(_FAKE_USER_EMAIL_OPTION, default=None) or faker.email(),
     )
 
 
@@ -105,18 +101,12 @@ def user_password(faker: Faker) -> str:
 
 @pytest.fixture
 def user_api_key(user_name: str, request: pytest.FixtureRequest) -> str:
-    return str(
-        request.config.getoption("--faker-user-api-key", default=None)
-        or f"api-key-{user_name}"
-    )
+    return str(request.config.getoption("--faker-user-api-key", default=None) or f"api-key-{user_name}")
 
 
 @pytest.fixture
 def user_api_secret(user_password: str, request: pytest.FixtureRequest) -> str:
-    return str(
-        request.config.getoption("--faker-user-api-secret", default=None)
-        or f"api-secret-{user_password}"
-    )
+    return str(request.config.getoption("--faker-user-api-secret", default=None) or f"api-secret-{user_password}")
 
 
 @pytest.fixture

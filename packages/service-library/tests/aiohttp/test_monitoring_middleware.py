@@ -19,9 +19,8 @@ def aiohttp_app_with_monitoring():
 
 @pytest.fixture
 async def client(aiohttp_app_with_monitoring):
-    async with TestServer(aiohttp_app_with_monitoring) as server:
-        async with TestClient(server) as client:
-            yield client
+    async with TestServer(aiohttp_app_with_monitoring) as server, TestClient(server) as client:
+        yield client
 
 
 async def test_metrics_endpoint(client):

@@ -1,7 +1,8 @@
 from typing import Annotated, Final, TypeAlias
 
-from models_library.basic_types import ConstrainedStr
 from pydantic import StringConstraints, TypeAdapter
+
+from models_library.basic_types import ConstrainedStr
 
 REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS: Final[str] = r"^[\w\-\.]*$"
 
@@ -23,7 +24,5 @@ class RPCNamespace(ConstrainedStr):
 
 RPCMethodName: TypeAlias = Annotated[
     str,
-    StringConstraints(
-        pattern=REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS, min_length=1, max_length=252
-    ),
+    StringConstraints(pattern=REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS, min_length=1, max_length=252),
 ]

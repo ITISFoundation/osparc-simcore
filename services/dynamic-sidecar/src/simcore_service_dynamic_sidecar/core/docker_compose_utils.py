@@ -67,15 +67,11 @@ async def _compose_cli_command(
         env_vars=env_vars,
     )
 
-    _logger.debug(
-        "Finished executing docker compose command %s", result.as_log_message()
-    )
+    _logger.debug("Finished executing docker compose command %s", result.as_log_message())
     return result
 
 
-async def docker_compose_config(
-    compose_spec_yaml: str, *, timeout: int = 60
-) -> CommandResult:
+async def docker_compose_config(compose_spec_yaml: str, *, timeout: int = 60) -> CommandResult:
     """
     Validate and view the Compose file.
 
@@ -104,9 +100,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     list_of_images = get_docker_service_images(compose_spec_yaml)
 
     async def _progress_cb(report: ProgressReport) -> None:
-        await post_progress_message(
-            app, ProgressType.SERVICE_IMAGES_PULLING, report=report
-        )
+        await post_progress_message(app, ProgressType.SERVICE_IMAGES_PULLING, report=report)
 
     async def _log_cb(msg: LogMessageStr, log_level: LogLevelInt) -> None:
         await post_sidecar_log_message(app, msg, log_level=log_level)
@@ -114,9 +108,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
 
 
-async def docker_compose_create(
-    compose_spec_yaml: str, settings: ApplicationSettings
-) -> CommandResult:
+async def docker_compose_create(compose_spec_yaml: str, settings: ApplicationSettings) -> CommandResult:
     """
     Creates containers required by the service.
 
@@ -134,9 +126,7 @@ async def docker_compose_create(
     return result
 
 
-async def docker_compose_start(
-    compose_spec_yaml: str, settings: ApplicationSettings
-) -> CommandResult:
+async def docker_compose_start(compose_spec_yaml: str, settings: ApplicationSettings) -> CommandResult:
     """
     Starts, existing containers
 
@@ -154,9 +144,7 @@ async def docker_compose_start(
     return result
 
 
-async def docker_compose_restart(
-    compose_spec_yaml: str, settings: ApplicationSettings
-) -> CommandResult:
+async def docker_compose_restart(compose_spec_yaml: str, settings: ApplicationSettings) -> CommandResult:
     """
     Restarts running containers (w/ a timeout)
 
@@ -175,9 +163,7 @@ async def docker_compose_restart(
     return result
 
 
-async def docker_compose_down(
-    compose_spec_yaml: str, settings: ApplicationSettings
-) -> CommandResult:
+async def docker_compose_down(compose_spec_yaml: str, settings: ApplicationSettings) -> CommandResult:
     """
     Stops containers and removes containers, networks and volumes declared in the Compose specs file
 
@@ -200,9 +186,7 @@ async def docker_compose_down(
     return result
 
 
-async def docker_compose_rm(
-    compose_spec_yaml: str, settings: ApplicationSettings
-) -> CommandResult:
+async def docker_compose_rm(compose_spec_yaml: str, settings: ApplicationSettings) -> CommandResult:
     """
     Removes stopped service containers
         - stops the containers, if still running, before removing  (recommended to stop first)

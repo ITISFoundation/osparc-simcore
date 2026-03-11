@@ -90,7 +90,7 @@ pytest_simcore_ops_services_selection = [
 
 class _ExpectedResponseTuple(NamedTuple):
     """
-    Stores respons status to an API request in function of the user
+    Stores response status to an API request in function of the user
 
     e.g. for a request that normally returns OK, a non-authorized user
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
@@ -99,13 +99,11 @@ class _ExpectedResponseTuple(NamedTuple):
     ok: int
     created: int
     no_content: int
-    confict: int
+    conflict: int
 
     # pylint: disable=no-member
     def __str__(self) -> str:
-        items = ", ".join(
-            f"{k}={get_code_display_name(c)}" for k, c in self._asdict().items()
-        )
+        items = ", ".join(f"{k}={get_code_display_name(c)}" for k, c in self._asdict().items())
         return f"{self.__class__.__name__}({items})"
 
 
@@ -119,7 +117,7 @@ def user_role_response():
                     ok=status.HTTP_200_OK,
                     created=status.HTTP_201_CREATED,
                     no_content=status.HTTP_204_NO_CONTENT,
-                    confict=status.HTTP_409_CONFLICT,
+                    conflict=status.HTTP_409_CONFLICT,
                 ),
             ),
         ],
@@ -197,20 +195,14 @@ async def _assert_db_contents(
 ) -> None:
     async with sqlalchemy_async_engine.connect() as conn:
         pipeline_db = (
-            await conn.execute(
-                sa.select(comp_pipeline).where(comp_pipeline.c.project_id == project_id)
-            )
+            await conn.execute(sa.select(comp_pipeline).where(comp_pipeline.c.project_id == project_id))
         ).one()
 
         assert pipeline_db.project_id == project_id
         assert pipeline_db.dag_adjacency_list == fake_workbench_adjacency_list
 
         # check db comp_tasks
-        tasks_db = (
-            await conn.execute(
-                sa.select(comp_tasks).where(comp_tasks.c.project_id == project_id)
-            )
-        ).all()
+        tasks_db = (await conn.execute(sa.select(comp_tasks).where(comp_tasks.c.project_id == project_id))).all()
         assert tasks_db
 
         mock_pipeline = fake_workbench_payload
@@ -238,18 +230,15 @@ async def _get_computational_tasks_from_db(
 ) -> dict[NodeIdStr, Any]:
     # this check is only there to check the comp_pipeline is there
     async with sqlalchemy_async_engine.connect() as conn:
-        assert (
-            await conn.execute(
-                sa.select(comp_pipeline).where(comp_pipeline.c.project_id == project_id)
-            )
-        ).one(), f"missing pipeline in the database under comp_pipeline {project_id}"
+        assert (await conn.execute(sa.select(comp_pipeline).where(comp_pipeline.c.project_id == project_id))).one(), (
+            f"missing pipeline in the database under comp_pipeline {project_id}"
+        )
 
         # get the computational tasks
         tasks_db = (
             await conn.execute(
                 sa.select(comp_tasks).where(
-                    (comp_tasks.c.project_id == project_id)
-                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                    (comp_tasks.c.project_id == project_id) & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 )
             )
         ).all()
@@ -265,13 +254,9 @@ async def _get_project_workbench_from_db(
     # this check is only there to check the comp_pipeline is there
     print(f"--> looking for project {project_id=} in projects table...")
     async with sqlalchemy_async_engine.connect() as conn:
-        project_in_db = (
-            await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))
-        ).one()
+        project_in_db = (await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))).one()
 
-    print(
-        f"<-- found following workbench: {json_dumps(project_in_db.workbench, indent=2)}"
-    )
+    print(f"<-- found following workbench: {json_dumps(project_in_db.workbench, indent=2)}")
     return project_in_db.workbench
 
 
@@ -282,9 +267,7 @@ async def _assert_and_wait_for_pipeline_state(
     expected_api_response: _ExpectedResponseTuple,
 ) -> None:
     assert client.app
-    url_project_state = client.app.router["get_project_state"].url_for(
-        project_id=project_id
-    )
+    url_project_state = client.app.router["get_project_state"].url_for(project_id=project_id)
     assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -323,20 +306,16 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             print(
                 f"--> waiting for pipeline results to move to projects table, attempt {attempt.retry_state.attempt_number}..."
             )
-            comp_tasks_in_db: dict[NodeIdStr, Any] = (
-                await _get_computational_tasks_from_db(
-                    project_id, sqlalchemy_async_engine
-                )
+            comp_tasks_in_db: dict[NodeIdStr, Any] = await _get_computational_tasks_from_db(
+                project_id, sqlalchemy_async_engine
             )
-            workbench_in_db: dict[NodeIdStr, Any] = (
-                await _get_project_workbench_from_db(
-                    project_id, sqlalchemy_async_engine
-                )
+            workbench_in_db: dict[NodeIdStr, Any] = await _get_project_workbench_from_db(
+                project_id, sqlalchemy_async_engine
             )
             for node_id, node_values in comp_tasks_in_db.items():
-                assert (
-                    node_id in workbench_in_db
-                ), f"node {node_id=} is missing from workbench {json_dumps(workbench_in_db, indent=2)}"
+                assert node_id in workbench_in_db, (
+                    f"node {node_id=} is missing from workbench {json_dumps(workbench_in_db, indent=2)}"
+                )
 
                 node_in_project_table = workbench_in_db[node_id]
 
@@ -349,10 +328,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
                 assert "state" in node_in_project_table
                 assert "currentStatus" in node_in_project_table["state"]
                 # NOTE: beware that the comp_tasks has StateType and Workbench has RunningState (sic)
-                assert (
-                    DB_TO_RUNNING_STATE[node_values.state].value
-                    == node_in_project_table["state"]["currentStatus"]
-                )
+                assert DB_TO_RUNNING_STATE[node_values.state].value == node_in_project_table["state"]["currentStatus"]
             print(
                 "--> tasks were properly transferred! "
                 f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
@@ -384,7 +360,7 @@ async def test_start_stop_computation(
     if not error:
         # starting again should be disallowed, since it's already running
         resp = await client.post(f"{url_start}")
-        assert resp.status == expected.confict
+        assert resp.status == expected.conflict
 
         assert "pipeline_id" in data
         assert data["pipeline_id"] == project_id
@@ -397,13 +373,9 @@ async def test_start_stop_computation(
             check_outputs=False,
         )
         # wait for the computation to complete successfully
-        await _assert_and_wait_for_pipeline_state(
-            client, project_id, RunningState.SUCCESS, expected
-        )
+        await _assert_and_wait_for_pipeline_state(client, project_id, RunningState.SUCCESS, expected)
         # we need to wait until the webserver has updated the projects DB before starting another round
-        await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
-            project_id, sqlalchemy_async_engine
-        )
+        await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(project_id, sqlalchemy_async_engine)
         # restart the computation, this should produce a 422 since the computation was complete
         resp = await client.post(f"{url_start}")
         assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -423,13 +395,9 @@ async def test_start_stop_computation(
     data, error = await assert_status(resp, expected.no_content)
     if not error:
         # now wait for it to stop
-        await _assert_and_wait_for_pipeline_state(
-            client, project_id, RunningState.ABORTED, expected
-        )
+        await _assert_and_wait_for_pipeline_state(client, project_id, RunningState.ABORTED, expected)
         # we need to wait until the webserver has updated the projects DB
-        await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
-            project_id, sqlalchemy_async_engine
-        )
+        await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(project_id, sqlalchemy_async_engine)
 
 
 @pytest.mark.parametrize(*user_role_response(), ids=str)
@@ -468,9 +436,7 @@ async def test_run_pipeline_and_check_state(
         check_outputs=False,
     )
 
-    url_project_state = client.app.router["get_project_state"].url_for(
-        project_id=project_id
-    )
+    url_project_state = client.app.router["get_project_state"].url_for(project_id=project_id)
     assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")
 
     running_state_order_lookup = {
@@ -487,9 +453,7 @@ async def test_run_pipeline_and_check_state(
     }
 
     members = [k in running_state_order_lookup for k in RunningState.__members__]
-    assert all(
-        members
-    ), "there are missing members in the order lookup, please complete!"
+    assert all(members), "there are missing members in the order lookup, please complete!"
 
     pipeline_state = RunningState.UNKNOWN
 
@@ -501,19 +465,14 @@ async def test_run_pipeline_and_check_state(
         retry=retry_if_exception_type(ValueError),
     ):
         with attempt:
-            print(
-                f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}..."
-            )
+            print(f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}...")
             resp = await client.get(f"{url_project_state}")
             data, error = await assert_status(resp, expected.ok)
             assert "state" in data
             assert "value" in data["state"]
             received_study_state = RunningState(data["state"]["value"])
             print(f"--> project computation state {received_study_state=}")
-            assert (
-                running_state_order_lookup[received_study_state]
-                >= running_state_order_lookup[pipeline_state]
-            ), (
+            assert running_state_order_lookup[received_study_state] >= running_state_order_lookup[pipeline_state], (
                 f"the received state {received_study_state} shall be greater "
                 f"or equal to the previous state {pipeline_state}"
             )
@@ -528,18 +487,13 @@ async def test_run_pipeline_and_check_state(
                 f"--> pipeline completed with state {received_study_state=}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
     assert pipeline_state == RunningState.SUCCESS
-    comp_tasks_in_db: dict[NodeIdStr, Any] = await _get_computational_tasks_from_db(
-        project_id, sqlalchemy_async_engine
-    )
+    comp_tasks_in_db: dict[NodeIdStr, Any] = await _get_computational_tasks_from_db(project_id, sqlalchemy_async_engine)
     is_success = [t.state == StateType.SUCCESS for t in comp_tasks_in_db.values()]
     assert all(is_success), (
-        "the individual computational services are not finished! "
-        f"Expected to be completed, got {comp_tasks_in_db=}"
+        f"the individual computational services are not finished! Expected to be completed, got {comp_tasks_in_db=}"
     )
     # we need to wait until the webserver has updated the projects DB
-    await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
-        project_id, sqlalchemy_async_engine
-    )
+    await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(project_id, sqlalchemy_async_engine)
 
     print(f"<-- pipeline completed successfully in {time.monotonic() - start} seconds")
 
@@ -595,7 +549,7 @@ async def test_start_multiple_computation_with_the_same_collection_run_id(
 
     resp = await client.post(f"{url_start}")
     # starting again should be disallowed, since it's already running
-    assert resp.status == expected.confict
+    assert resp.status == expected.conflict
 
     # NOTE: This tests that there is only one entry in comp_runs_collections table created
     # as the project metadata has the same group_id
@@ -610,9 +564,7 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
     expected: _ExpectedResponseTuple,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     mocker: MockerFixture,
 ):
     assert client.app
@@ -658,8 +610,7 @@ async def test_running_computation_sends_progress_updates_via_socketio(
 
     # check that the progress updates were sent
     assert mock_node_updated_handler.call_count > 0, (
-        "expected progress updates to be sent via socketio, "
-        f"but got {mock_node_updated_handler.call_count} calls"
+        f"expected progress updates to be sent via socketio, but got {mock_node_updated_handler.call_count} calls"
     )
 
     # Get all computational nodes from the workbench (exclude file-picker nodes)
@@ -673,8 +624,7 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     received_progress_node_ids = set()
     for call_args in mock_node_updated_handler.call_args_list:
         assert len(call_args[0]) == 1, (
-            "expected the progress handler to be called with a single argument, "
-            f"but got {len(call_args[0])} arguments"
+            f"expected the progress handler to be called with a single argument, but got {len(call_args[0])} arguments"
         )
         message = call_args[0][0]
         assert "node_id" in message
@@ -708,6 +658,5 @@ async def test_running_computation_sends_progress_updates_via_socketio(
         assert last_node_data.state.current_status == RunningState.SUCCESS
         assert last_node_data.state.lock_state
         assert last_node_data.state.lock_state.locked is False, (
-            f"expected node {node_id} to be unlocked at the end of the pipeline, "
-            "but it is still locked."
+            f"expected node {node_id} to be unlocked at the end of the pipeline, but it is still locked."
         )

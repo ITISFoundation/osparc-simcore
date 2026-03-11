@@ -10,7 +10,7 @@
 import random
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 from urllib.parse import quote
 
 import httpx
@@ -23,6 +23,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PathTotalSizeCreate,
 )
 from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -37,12 +38,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
-_IsFile: TypeAlias = bool
+type _IsFile = bool
 
 
-def _filter_and_group_paths_one_level_deeper(
-    paths: list[Path], prefix: Path
-) -> list[tuple[Path, _IsFile]]:
+def _filter_and_group_paths_one_level_deeper(paths: list[Path], prefix: Path) -> list[tuple[Path, _IsFile]]:
     relative_paths = (path for path in paths if path.is_relative_to(prefix))
     return sorted(
         {
@@ -62,6 +61,7 @@ async def _assert_list_paths(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     *,
     file_filter: Path | None,
     limit: int = 25,
@@ -74,10 +74,9 @@ async def _assert_list_paths(
     total_received = 0
     page_of_files = None
     while next_cursor is not None:
-        url = url_from_operation_id(
-            client, initialized_app, "list_paths", location_id=f"{location_id}"
-        ).with_query(
+        url = url_from_operation_id(client, initialized_app, "list_paths", location_id=f"{location_id}").with_query(
             user_id=user_id,
+            product_name=product_name,
             size=limit,
         )
         if next_cursor:
@@ -123,6 +122,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     fake_datcore_tokens: tuple[str, str],
 ):
     await _assert_list_paths(
@@ -130,6 +130,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=None,
         expected_paths=[],
     )
@@ -157,6 +158,7 @@ async def test_list_paths_pagination(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -176,6 +178,7 @@ async def test_list_paths_pagination(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
         limit=int(num_nodes / 2 + 0.5),
@@ -184,18 +187,15 @@ async def test_list_paths_pagination(
     # ls in the workspace (S3-based)
     # ls in the workspace
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
-    selected_node_s3_keys = [
-        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
-    ]
+    selected_node_s3_keys = [Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]]
     workspace_file_filter = file_filter / f"{selected_node_id}" / "workspace"
-    expected_paths = _filter_and_group_paths_one_level_deeper(
-        selected_node_s3_keys, workspace_file_filter
-    )
+    expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, workspace_file_filter)
     await _assert_list_paths(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         limit=1,
@@ -204,14 +204,13 @@ async def test_list_paths_pagination(
     # ls in until we get to some files
     while selected_subfolders := [p for p in expected_paths if p[1] is False]:
         selected_path_filter = random.choice(selected_subfolders)  # noqa: S311
-        expected_paths = _filter_and_group_paths_one_level_deeper(
-            selected_node_s3_keys, selected_path_filter[0]
-        )
+        expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, selected_path_filter[0])
         await _assert_list_paths(
             initialized_app,
             client,
             location_id,
             user_id,
+            product_name=product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -240,6 +239,7 @@ async def test_list_paths_pagination_large_page(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -247,18 +247,15 @@ async def test_list_paths_pagination_large_page(
 ):
     project, list_of_files = with_random_project_with_files
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
-    selected_node_s3_keys = [
-        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
-    ]
+    selected_node_s3_keys = [Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]]
     workspace_file_filter = Path(project["uuid"]) / f"{selected_node_id}" / "workspace"
-    expected_paths = _filter_and_group_paths_one_level_deeper(
-        selected_node_s3_keys, workspace_file_filter
-    )
+    expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, workspace_file_filter)
     await _assert_list_paths(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -291,18 +288,15 @@ async def test_list_paths(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
     num_projects: int,
 ):
-    project_to_files_mapping = [
-        await random_project_with_files(project_params) for _ in range(num_projects)
-    ]
+    project_to_files_mapping = [await random_project_with_files(project_params) for _ in range(num_projects)]
     project_to_files_mapping.sort(key=lambda x: x[0]["uuid"])
 
     # ls root returns our projects
@@ -315,6 +309,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=None,
         expected_paths=expected_paths,
     )
@@ -323,18 +318,15 @@ async def test_list_paths(
     selected_project, selected_project_files = random.choice(  # noqa: S311
         project_to_files_mapping
     )
-    partial_file_filter = Path(
-        selected_project["uuid"][: len(selected_project["uuid"]) // 2]
-    )
-    partial_expected_paths = [
-        p for p in expected_paths if f"{p[0]}".startswith(f"{partial_file_filter}")
-    ]
+    partial_file_filter = Path(selected_project["uuid"][: len(selected_project["uuid"]) // 2])
+    partial_expected_paths = [p for p in expected_paths if f"{p[0]}".startswith(f"{partial_file_filter}")]
 
     await _assert_list_paths(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=partial_file_filter,
         expected_paths=partial_expected_paths,
     )
@@ -350,6 +342,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
@@ -358,9 +351,7 @@ async def test_list_paths(
     selected_node_id = NodeID(
         random.choice(list(selected_project["workbench"]))  # noqa: S311
     )
-    selected_node_s3_keys = [
-        Path(s3_object_id) for s3_object_id in selected_project_files[selected_node_id]
-    ]
+    selected_node_s3_keys = [Path(s3_object_id) for s3_object_id in selected_project_files[selected_node_id]]
     file_filter = file_filter / f"{selected_node_id}"
     expected_node_files = _filter_and_group_paths_one_level_deeper(
         selected_node_s3_keys,
@@ -371,48 +362,46 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_node_files,
     )
 
     # ls in the outputs will list 1 entry which is a folder
     node_outputs_file_filter = file_filter / "outputs"
-    expected_paths = _filter_and_group_paths_one_level_deeper(
-        selected_node_s3_keys, node_outputs_file_filter
-    )
+    expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, node_outputs_file_filter)
     await _assert_list_paths(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=node_outputs_file_filter,
         expected_paths=expected_paths,
     )
 
     # ls in output_3 shall reveal the file
     node_outputs_file_filter = file_filter / "outputs" / "output_3"
-    expected_paths = _filter_and_group_paths_one_level_deeper(
-        selected_node_s3_keys, node_outputs_file_filter
-    )
+    expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, node_outputs_file_filter)
     await _assert_list_paths(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=node_outputs_file_filter,
         expected_paths=expected_paths,
     )
 
     # ls in the workspace
     workspace_file_filter = file_filter / "workspace"
-    expected_paths = _filter_and_group_paths_one_level_deeper(
-        selected_node_s3_keys, workspace_file_filter
-    )
+    expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, workspace_file_filter)
     await _assert_list_paths(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -420,14 +409,13 @@ async def test_list_paths(
     # ls in until we get to some files
     while selected_subfolders := [p for p in expected_paths if p[1] is False]:
         selected_path_filter = random.choice(selected_subfolders)  # noqa: S311
-        expected_paths = _filter_and_group_paths_one_level_deeper(
-            selected_node_s3_keys, selected_path_filter[0]
-        )
+        expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, selected_path_filter[0])
         await _assert_list_paths(
             initialized_app,
             client,
             location_id,
             user_id,
+            product_name=product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -456,6 +444,7 @@ async def test_list_paths_with_display_name_containing_slashes(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -496,13 +485,14 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
 
-    assert page_of_paths.items[0].display_path == Path(
-        quote(project_name_with_slashes, safe="")
-    ), "display path parts should be url encoded"
+    assert page_of_paths.items[0].display_path == Path(quote(project_name_with_slashes, safe="")), (
+        "display path parts should be url encoded"
+    )
 
     # ls the nodes to ensure / is still there between project and node
     file_filter = Path(project["uuid"])
@@ -516,29 +506,25 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
-    assert page_of_paths.items[0].display_path == Path(
-        quote(project_name_with_slashes, safe="")
-    ) / quote(
+    assert page_of_paths.items[0].display_path == Path(quote(project_name_with_slashes, safe="")) / quote(
         node_name_with_non_ascii, safe=""
     ), "display path parts should be url encoded"
 
     # ls in the node workspace
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
-    selected_node_s3_keys = [
-        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
-    ]
+    selected_node_s3_keys = [Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]]
     workspace_file_filter = file_filter / f"{selected_node_id}" / "workspace"
-    expected_paths = _filter_and_group_paths_one_level_deeper(
-        selected_node_s3_keys, workspace_file_filter
-    )
+    expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, workspace_file_filter)
     await _assert_list_paths(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -547,14 +533,13 @@ async def test_list_paths_with_display_name_containing_slashes(
     # ls in until we get to some files
     while selected_subfolders := [p for p in expected_paths if p[1] is False]:
         selected_path_filter = random.choice(selected_subfolders)  # noqa: S311
-        expected_paths = _filter_and_group_paths_one_level_deeper(
-            selected_node_s3_keys, selected_path_filter[0]
-        )
+        expected_paths = _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, selected_path_filter[0])
         page_of_paths = await _assert_list_paths(
             initialized_app,
             client,
             location_id,
             user_id,
+            product_name=product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -567,9 +552,9 @@ async def test_list_paths_with_display_name_containing_slashes(
                 *(expected_paths[0][0].parts[2:]),
             ],
         )
-        assert page_of_paths.items[0].display_path == Path(
-            expected_display_path
-        ), "display path parts should be url encoded"
+        assert page_of_paths.items[0].display_path == Path(expected_display_path), (
+            "display path parts should be url encoded"
+        )
 
 
 async def _assert_compute_path_size(
@@ -577,6 +562,7 @@ async def _assert_compute_path_size(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     *,
     path: Path,
     expected_total_size: int,
@@ -587,7 +573,7 @@ async def _assert_compute_path_size(
         "compute_path_size",
         location_id=f"{location_id}",
         path=f"{path}",
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.post(f"{url}")
 
     received, _ = assert_status(
@@ -623,20 +609,19 @@ async def test_path_compute_size(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     project_params: ProjectWithFilesParams,
 ):
-    assert (
-        len(project_params.allowed_file_sizes) == 1
-    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    assert len(project_params.allowed_file_sizes) == 1, (
+        "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    )
     project, list_of_files = with_random_project_with_files
 
-    total_num_files = sum(
-        len(files_in_node) for files_in_node in list_of_files.values()
-    )
+    total_num_files = sum(len(files_in_node) for files_in_node in list_of_files.values())
 
     # get size of a full project
     expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
@@ -646,6 +631,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -653,17 +639,14 @@ async def test_path_compute_size(
     # get size of one of the nodes
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
     path = Path(project["uuid"]) / f"{selected_node_id}"
-    selected_node_s3_keys = [
-        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
-    ]
-    expected_total_size = project_params.allowed_file_sizes[0] * len(
-        selected_node_s3_keys
-    )
+    selected_node_s3_keys = [Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]]
+    expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
     await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -671,18 +654,15 @@ async def test_path_compute_size(
     # get size of the outputs of one of the nodes
     path = Path(project["uuid"]) / f"{selected_node_id}" / "outputs"
     selected_node_s3_keys = [
-        Path(s3_object_id)
-        for s3_object_id in list_of_files[selected_node_id]
-        if s3_object_id.startswith(f"{path}")
+        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id] if s3_object_id.startswith(f"{path}")
     ]
-    expected_total_size = project_params.allowed_file_sizes[0] * len(
-        selected_node_s3_keys
-    )
+    expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
     await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -690,27 +670,22 @@ async def test_path_compute_size(
     # get size of workspace in one of the nodes (this is semi-cached in the DB)
     path = Path(project["uuid"]) / f"{selected_node_id}" / "workspace"
     selected_node_s3_keys = [
-        Path(s3_object_id)
-        for s3_object_id in list_of_files[selected_node_id]
-        if s3_object_id.startswith(f"{path}")
+        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id] if s3_object_id.startswith(f"{path}")
     ]
-    expected_total_size = project_params.allowed_file_sizes[0] * len(
-        selected_node_s3_keys
-    )
+    expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
     workspace_total_size = await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
 
     # get size of folders inside the workspace
     folders_inside_workspace = [
-        p[0]
-        for p in _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, path)
-        if p[1] is False
+        p[0] for p in _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, path) if p[1] is False
     ]
     accumulated_subfolder_size = 0
     for workspace_subfolder in folders_inside_workspace:
@@ -719,14 +694,13 @@ async def test_path_compute_size(
             for s3_object_id in list_of_files[selected_node_id]
             if s3_object_id.startswith(f"{workspace_subfolder}")
         ]
-        expected_total_size = project_params.allowed_file_sizes[0] * len(
-            selected_node_s3_keys
-        )
+        expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
         accumulated_subfolder_size += await _assert_compute_path_size(
             initialized_app,
             client,
             location_id,
             user_id,
+            product_name,
             path=workspace_subfolder,
             expected_total_size=expected_total_size,
         )
@@ -739,6 +713,7 @@ async def test_path_compute_size_inexistent_path(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     faker: Faker,
     fake_datcore_tokens: tuple[str, str],
 ):
@@ -747,6 +722,105 @@ async def test_path_compute_size_inexistent_path(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=5,
+        )
+    ],
+    ids=str,
+)
+async def test_list_paths_filters_by_product(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    create_product: Callable[..., Awaitable[dict[str, Any]]],
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams, dict[str, Any]],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    project_params: ProjectWithFilesParams,
+    faker: Faker,
+):
+    """Test that file listings are scoped to the correct product.
+
+    Creates 2 projects connected to 2 different products, uploads files to both,
+    and verifies that listing paths for one product only returns files from that product.
+    """
+    # Create two different product names
+    product_1 = await create_product(name=faker.word())
+    product_2 = await create_product(name=faker.word())
+
+    # Create project 1 with product 1
+    project_1, _ = await random_project_with_files(project_params, product_1["name"])
+
+    # Create project 2 with product 2
+    project_2, _ = await random_project_with_files(project_params, product_2["name"])
+
+    # List paths for product 1 - should only see project 1
+    expected_paths_product_1 = [(Path(project_1["uuid"]), False)]
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_1["name"],
+        file_filter=None,
+        expected_paths=expected_paths_product_1,
+    )
+
+    # List paths for product 2 - should only see project 2
+    expected_paths_product_2 = [(Path(project_2["uuid"]), False)]
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_2["name"],
+        file_filter=None,
+        expected_paths=expected_paths_product_2,
+    )
+
+    # Verify that listing for product 1 does NOT include project 2
+    page = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_1["name"],
+        file_filter=None,
+        expected_paths=expected_paths_product_1,
+    )
+    assert all(item.path != Path(project_2["uuid"]) for item in page.items), (
+        "Product 1 listing should not contain project 2"
+    )
+
+    # Verify that listing for product 2 does NOT include project 1
+    page = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_2["name"],
+        file_filter=None,
+        expected_paths=expected_paths_product_2,
+    )
+    assert all(item.path != Path(project_1["uuid"]) for item in page.items), (
+        "Product 2 listing should not contain project 1"
     )

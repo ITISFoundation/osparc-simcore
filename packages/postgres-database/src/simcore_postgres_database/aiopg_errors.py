@@ -28,9 +28,6 @@ import warnings
 from psycopg2 import (
     DatabaseError,
     DataError,
-)
-from psycopg2 import Error as DBAPIError
-from psycopg2 import (
     IntegrityError,
     InterfaceError,
     InternalError,
@@ -38,6 +35,7 @@ from psycopg2 import (
     OperationalError,
     ProgrammingError,
 )
+from psycopg2 import Error as DBAPIError
 from psycopg2.errors import (
     CheckViolation,
     ForeignKeyViolation,
@@ -63,9 +61,9 @@ warnings.warn(
 
 __all__: tuple[str, ...] = (
     "CheckViolation",
-    "DatabaseError",
-    "DataError",
     "DBAPIError",
+    "DataError",
+    "DatabaseError",
     "ForeignKeyViolation",
     "IntegrityError",
     "InterfaceError",

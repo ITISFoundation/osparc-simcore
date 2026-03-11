@@ -100,15 +100,15 @@ qx.Class.define("osparc.study.Conversations", {
     __listenToConversationWS: function() {
       this.__wsHandlers = [];
 
+      const types = Object.values(osparc.store.ConversationsSupport.TYPES);
       const socket = osparc.wrapper.WebSocket.getInstance();
-
       [
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
       ].forEach(eventName => {
         const eventHandler = conversation => {
-          if (conversation) {
+          if (conversation && types.includes(conversation["type"])) {
             switch (eventName) {
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
                 if (conversation["projectId"] === this.getStudyData()["uuid"]) {

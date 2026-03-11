@@ -166,7 +166,7 @@ _check_venv_active:
 
 ## DOCKER BUILD -------------------------------
 #
-# - all builds are immediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
+# - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
@@ -195,6 +195,7 @@ docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
+      --allow=fs.write=$(local-dest) \
 			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
 			,--load\
 		)\
@@ -363,6 +364,7 @@ printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc
 printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Dy-scheduler Dashboard" "http://$(get_my_ip).nip.io:8012";\
+printf "$$rows" "Flower" "http://$(get_my_ip).nip.io:5555";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
@@ -423,6 +425,68 @@ else
 	# deploys ONLY $(target) service
 	@docker compose --file $< up --detach $(target)
 endif
+	@$(_show_endpoints)
+
+# Batched stack deployment
+PHASED_DEPLOY_BATCH_SIZE ?= 5
+MAX_WAIT_ITERATIONS := 150
+WAIT_INTERVAL_SECS := 2
+YQ_IMAGE := mikefarah/yq:4
+
+# Extract services in docker-compose.yml order (authoritative desired order)
+# Outputs one service name per line.
+_YQ_STACK_SERVICES_ORDERED := '.services | keys | .[]'
+
+define _wait_for_running
+	count=0; \
+	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+		running=$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
+		[ "$$running" -gt 0 ] && break; \
+		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+	done; \
+	if [ $$count -ge $(MAX_WAIT_ITERATIONS) ]; then \
+		echo " TIMEOUT"; echo "ERROR: Service $(1) failed to start"; exit 1; \
+	fi; \
+		echo " OK"
+endef
+
+up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in batches of $(PHASED_DEPLOY_BATCH_SIZE) services (in YAML order)
+	# Deploy ops and vendors stacks
+	# Ensure external networks (referenced by ops/vendor stacks) exist before deploy
+	@docker network inspect pytest-simcore_default >/dev/null 2>&1 || \
+		docker network create --driver overlay --attachable pytest-simcore_default
+	@docker network inspect pytest-simcore_interactive_services_subnet >/dev/null 2>&1 || \
+		docker network create --driver overlay --attachable pytest-simcore_interactive_services_subnet
+	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
+	@$(MAKE_C) services/dask-sidecar certificates
+	@echo "Deploying stack $(SWARM_STACK_NAME) in batches of $(PHASED_DEPLOY_BATCH_SIZE)..."
+	@docker run --rm -i $(YQ_IMAGE) \
+		$(_YQ_STACK_SERVICES_ORDERED) \
+		< services/docker-compose.yml > .stack-services-all.ignore.txt
+	@total=$$(wc -l < .stack-services-all.ignore.txt | tr -d ' '); \
+		if [ "$$total" -eq 0 ]; then \
+			echo "ERROR: No services found in $<"; exit 1; \
+		fi; \
+		offset=0; \
+		while [ $$offset -lt $$total ]; do \
+			batch_services=$$(sed -n "$$(($$offset + 1)),$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE)))p" .stack-services-all.ignore.txt | tr '\n' ' '); \
+			echo "Deploying services: $$batch_services"; \
+			yq_expr=""; \
+			for s in $$batch_services; do \
+				[ -z "$$yq_expr" ] && yq_expr=".key == \"$$s\"" || yq_expr="$$yq_expr or .key == \"$$s\""; \
+			done; \
+			docker run --rm -i $(YQ_IMAGE) \
+				".services |= with_entries(select($$yq_expr))" \
+				< $< > .stack-batch-tmp.yml; \
+			docker stack deploy --detach=true --with-registry-auth -c .stack-batch-tmp.yml $(SWARM_STACK_NAME); \
+			echo "Waiting for batch services to be ready..."; \
+			for s in $$batch_services; do \
+				$(call _wait_for_running,$$s); \
+			done; \
+			offset=$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE))); \
+		done
+	@rm -f .stack-services-all.ignore.txt .stack-batch-tmp.yml
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
@@ -671,7 +735,7 @@ SERVICES.md: ## Auto generates service.md
 
 
 .PHONY: postgres-upgrade
-postgres-upgrade: ## initalize or upgrade postgres db to latest state
+postgres-upgrade: ## initialize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 

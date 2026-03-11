@@ -44,9 +44,7 @@ def fake_version() -> str:
 
 
 @pytest.fixture
-def cli(
-    fake_settings_class: type[BaseCustomSettings], fake_version: str
-) -> typer.Typer:
+def cli(fake_settings_class: type[BaseCustomSettings], fake_version: str) -> typer.Typer:
     main = typer.Typer(name="app")
 
     @main.command()
@@ -126,9 +124,7 @@ def test_settings_as_json(
     mock_environment,
     cli_runner: CliRunner,
 ):
-    result = cli_runner.invoke(
-        cli, ["settings", "--as-json", "--show-secrets"], catch_exceptions=False
-    )
+    result = cli_runner.invoke(cli, ["settings", "--as-json", "--show-secrets"], catch_exceptions=False)
     print(result.stdout)
 
     # reuse resulting json to build settings
@@ -142,9 +138,7 @@ def test_settings_as_json_schema(
     mock_environment,
     cli_runner: CliRunner,
 ):
-    result = cli_runner.invoke(
-        cli, ["settings", "--as-json-schema"], catch_exceptions=False
-    )
+    result = cli_runner.invoke(cli, ["settings", "--as-json-schema"], catch_exceptions=False)
     print(result.stdout)
 
     # reuse resulting json to build settings
@@ -363,15 +357,11 @@ def test_cli_settings_exclude_unset(
     print(stdout_as_envfile)
 
     # parsing output as an envfile
-    envs_exclude_unset_from_env: EnvVarsDict = dotenv_values(
-        stream=StringIO(stdout_as_envfile)
-    )
+    envs_exclude_unset_from_env: EnvVarsDict = dotenv_values(stream=StringIO(stdout_as_envfile))
     assert envs_exclude_unset_from_env == mocked_envs
 
 
-@pytest.mark.xfail(
-    reason="--show-secrets and --exclude-unset still not implemented with --as-json"
-)
+@pytest.mark.xfail(reason="--show-secrets and --exclude-unset still not implemented with --as-json")
 def test_cli_settings_exclude_unset_as_json(
     cli: typer.Typer,
     cli_runner: CliRunner,

@@ -8,7 +8,6 @@ This OAS are the source of truth
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from typing import Annotated
 
 from _common import as_query
@@ -49,16 +48,12 @@ router = APIRouter(
     tags=[
         "projects",
     ],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 
 class _ProjectCreateHeaderParams(BaseModel):
-    x_simcore_user_agent: Annotated[
-        str | None, Header(description="Optional simcore user agent")
-    ] = "undefined"
+    x_simcore_user_agent: Annotated[str | None, Header(description="Optional simcore user agent")] = "undefined"
     x_simcore_parent_project_uuid: Annotated[
         ProjectID | None,
         Header(

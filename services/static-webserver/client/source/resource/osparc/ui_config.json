@@ -106,6 +106,12 @@
         "idToWidget": "startS4LButton"
       }, {
         "resourceType": "service",
+        "expectedKey": "simcore/services/dynamic/s4l-ui-edge",
+        "title": "Sim4Life-edge",
+        "newStudyLabel": "New Sim4Life-edge",
+        "idToWidget": "startS4LEdgeButton"
+      }, {
+        "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-jupyter",
         "title": "Jupyter Lab",
         "newStudyLabel": "New S4L Jupyter Lab"
@@ -156,6 +162,11 @@
         "title": "Sim4Life",
         "newStudyLabel": "New Sim4Life",
         "idToWidget": "startS4LButton"
+      }, {
+        "resourceType": "service",
+        "expectedKey": "simcore/services/dynamic/s4l-ui-edge",
+        "title": "Sim4Life-edge",
+        "newStudyLabel": "New Sim4Life-edge"
       }, {
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-jupyter",
@@ -221,8 +232,8 @@
       "resources": [{
         "resourceType": "study",
         "icon": "@FontAwesome5Solid/file/18",
-        "title": "Empty Study",
-        "newStudyLabel": "New Study",
+        "title": "Empty Project",
+        "newStudyLabel": "New Project",
         "idToWidget": "emptyStudyBtn"
       }, {
         "resourceType": "service",

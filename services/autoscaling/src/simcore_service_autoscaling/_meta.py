@@ -11,9 +11,7 @@ __version__: Final[VersionStr] = info.__version__
 APP_NAME: Final[str] = info.app_name
 API_VERSION: Final[VersionStr] = info.__version__
 VERSION: Final[Version] = info.version
-API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(
-    info.api_prefix_path_tag
-)
+API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(info.api_prefix_path_tag)
 SUMMARY: Final[str] = info.get_summary()
 
 
@@ -27,9 +25,7 @@ APP_STARTED_BANNER_MSG = r"""
  /_/    \_\__,_|\__\___/|___/\___\__,_|_|_|_| |_|\__, |
                                                   __/ |
                                                  |___/       {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 APP_STARTED_COMPUTATIONAL_BANNER_MSG = r"""
                                        _          _    _                       _

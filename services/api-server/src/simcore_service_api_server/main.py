@@ -7,6 +7,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.tracing import TracingConfig
+
 from simcore_service_api_server._meta import APP_NAME
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -21,9 +22,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 
 def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=app_settings.API_SERVER_TRACING
-    )
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=app_settings.API_SERVER_TRACING)
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.API_SERVER_LOG_FILTER_MAPPING,

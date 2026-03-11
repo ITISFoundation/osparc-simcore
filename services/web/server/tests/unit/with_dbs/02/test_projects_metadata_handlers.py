@@ -40,9 +40,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-)
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4313")
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_custom_metadata_handlers(
     # for deletion
@@ -62,9 +60,7 @@ async def test_custom_metadata_handlers(
 
     # get metadata of a non-existing project -> Not found
     invalid_project_id = faker.uuid4()
-    url = client.app.router["get_project_metadata"].url_for(
-        project_id=invalid_project_id
-    )
+    url = client.app.router["get_project_metadata"].url_for(project_id=invalid_project_id)
     response = await client.get(f"{url}")
 
     _, error = await assert_status(response, expected_status_code=expected.not_found)
@@ -73,9 +69,7 @@ async def test_custom_metadata_handlers(
     assert "project" in error_message.lower()
 
     # get metadata of an existing project the first time -> empty {}
-    url = client.app.router["get_project_metadata"].url_for(
-        project_id=user_project["uuid"]
-    )
+    url = client.app.router["get_project_metadata"].url_for(project_id=user_project["uuid"])
     response = await client.get(f"{url}")
     data, _ = await assert_status(response, expected_status_code=expected.ok)
     assert data["custom"] == {}
@@ -84,12 +78,8 @@ async def test_custom_metadata_handlers(
     custom_metadata = {"number": 3.14, "string": "str", "boolean": False}
     custom_metadata["other"] = json.dumps(custom_metadata)
 
-    url = client.app.router["update_project_metadata"].url_for(
-        project_id=user_project["uuid"]
-    )
-    response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump()
-    )
+    url = client.app.router["update_project_metadata"].url_for(project_id=user_project["uuid"])
+    response = await client.patch(f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump())
 
     data, _ = await assert_status(response, expected_status_code=expected.ok)
 
@@ -101,17 +91,13 @@ async def test_custom_metadata_handlers(
     await assert_status(response, expected_status_code=expected.no_content)
 
     async def _wait_until_deleted():
-        tasks = _crud_api_delete.get_scheduled_tasks(
-            project_uuid=user_project["uuid"], user_id=logged_user["id"]
-        )
+        tasks = _crud_api_delete.get_scheduled_tasks(project_uuid=user_project["uuid"], user_id=logged_user["id"])
         await tasks[0]
 
     await _wait_until_deleted()
 
     # no metadata -> project not found
-    url = client.app.router["get_project_metadata"].url_for(
-        project_id=user_project["uuid"]
-    )
+    url = client.app.router["get_project_metadata"].url_for(project_id=user_project["uuid"])
     response = await client.get(f"{url}")
     await assert_status(response, expected_status_code=expected.not_found)
 
@@ -157,9 +143,7 @@ async def test_new_project_with_parent_project_node(
     )
     assert child_project
     async with aiopg_engine.acquire() as connection:
-        project_db_metadata = await get_db_project_metadata(
-            connection, child_project["uuid"]
-        )
+        project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid == parent_project_uuid
         assert project_db_metadata.parent_node_id == parent_node_id
 
@@ -175,19 +159,13 @@ async def test_new_project_with_parent_project_node(
         "node_id": f"{another_node_id}",
     }
     assert client.app
-    url = client.app.router["update_project_metadata"].url_for(
-        project_id=child_project["uuid"]
-    )
-    response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump()
-    )
+    url = client.app.router["update_project_metadata"].url_for(project_id=child_project["uuid"])
+    response = await client.patch(f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump())
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
     assert ProjectMetadataGet.model_validate(data).custom == custom_metadata
     # check child project has parent unchanged
     async with aiopg_engine.acquire() as connection:
-        project_db_metadata = await get_db_project_metadata(
-            connection, child_project["uuid"]
-        )
+        project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid == parent_project_uuid
         assert project_db_metadata.parent_node_id == parent_node_id
 
@@ -288,7 +266,7 @@ async def test_set_project_parent_backward_compatibility(
     expected: ExpectedResponse,
     aiopg_engine: aiopg.sa.Engine,
 ):
-    """backwards compatiblity with sim4life.io runs like so
+    """backwards compatibility with sim4life.io runs like so
     - create a project
     - pass project metadata with a node_id inside
     - osparc will try to find the project id and set it as parent
@@ -319,22 +297,14 @@ async def test_set_project_parent_backward_compatibility(
         "node_id": f"{random_parent_node_id}",
     }
 
-    url = client.app.router["update_project_metadata"].url_for(
-        project_id=child_project["uuid"]
-    )
-    response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump()
-    )
+    url = client.app.router["update_project_metadata"].url_for(project_id=child_project["uuid"])
+    response = await client.patch(f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump())
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
     assert ProjectMetadataGet.model_validate(data).custom == custom_metadata
     # check child project has parent set correctly
     async with aiopg_engine.acquire() as connection:
-        project_db_metadata = await get_db_project_metadata(
-            connection, child_project["uuid"]
-        )
-        assert project_db_metadata.parent_project_uuid == ProjectID(
-            parent_project["uuid"]
-        )
+        project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
+        assert project_db_metadata.parent_project_uuid == ProjectID(parent_project["uuid"])
         assert f"{project_db_metadata.parent_node_id}" in parent_project["workbench"]
 
 
@@ -360,12 +330,8 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
         "boolean": False,
         "node_id": faker.uuid4(),
     }
-    url = client.app.router["update_project_metadata"].url_for(
-        project_id=child_project["uuid"]
-    )
-    response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump()
-    )
+    url = client.app.router["update_project_metadata"].url_for(project_id=child_project["uuid"])
+    response = await client.patch(f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump())
     await assert_status(response, expected_status_code=expected.ok)
 
     # using one of its own nodes as parent is not allowed
@@ -375,19 +341,13 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
         "boolean": False,
         "node_id": random.choice(list(child_project["workbench"])),  # noqa: S311,
     }
-    url = client.app.router["update_project_metadata"].url_for(
-        project_id=child_project["uuid"]
-    )
-    response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump()
-    )
+    url = client.app.router["update_project_metadata"].url_for(project_id=child_project["uuid"])
+    response = await client.patch(f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump())
     await assert_status(response, expected_status_code=expected.ok)
 
     # check project has no parent
     async with aiopg_engine.acquire() as connection:
-        project_db_metadata = await get_db_project_metadata(
-            connection, child_project["uuid"]
-        )
+        project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid is None
         assert project_db_metadata.parent_node_id is None
 
@@ -425,19 +385,13 @@ async def test_update_project_metadata_s4lacad_backward_compatibility_passing_ni
         "boolean": False,
         "node_id": "00000000-0000-0000-0000-000000000000",
     }
-    url = client.app.router["update_project_metadata"].url_for(
-        project_id=child_project["uuid"]
-    )
-    response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump()
-    )
+    url = client.app.router["update_project_metadata"].url_for(project_id=child_project["uuid"])
+    response = await client.patch(f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump())
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
     assert ProjectMetadataGet.model_validate(data).custom == custom_metadata
 
     # check project has no parent
     async with aiopg_engine.acquire() as connection:
-        project_db_metadata = await get_db_project_metadata(
-            connection, child_project["uuid"]
-        )
+        project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid is None
         assert project_db_metadata.parent_node_id is None

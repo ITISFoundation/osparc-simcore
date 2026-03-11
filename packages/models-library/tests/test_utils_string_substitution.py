@@ -94,9 +94,7 @@ def test_substitution_with_new_and_legacy_identifiers():
 
     # prepare substitutions map {id: value, ...}
     exclude = {"KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS"}
-    substitutions = SubstitutionsDict(
-        {idr: "VALUE" for idr in identifiers if idr not in exclude}
-    )
+    substitutions = SubstitutionsDict({idr: "VALUE" for idr in identifiers if idr not in exclude})
 
     # uses safe because we exclude some identifiers from substitution
     resolved_stringified_config = template.safe_substitute(substitutions)
@@ -141,7 +139,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 TEST_DATA_FOLDER = CURRENT_DIR / "data"
 
 
-# Some fo the supported identifiers
+# Some of the supported identifiers
 KNOWN_IDENTIFIERS = {
     "DISPLAY",  # NOTE: this might be a mistake!
     "OSPARC_VARIABLE_CONTAINER_NAME_DSISTUDIO_APP",
@@ -157,7 +155,7 @@ KNOWN_IDENTIFIERS = {
 }
 
 
-@pytest.mark.diagnostics()
+@pytest.mark.diagnostics
 @pytest.mark.parametrize(
     "metadata_path",
     TEST_DATA_FOLDER.rglob("metadata*.json"),
@@ -172,9 +170,9 @@ def test_substitution_against_service_metadata_configs(metadata_path: Path):
 
     found = template.get_identifiers()
     if found:
-        assert all(
-            identifier in KNOWN_IDENTIFIERS for identifier in found
-        ), f"some identifiers in {found} are new and therefore potentially unsupported"
+        assert all(identifier in KNOWN_IDENTIFIERS for identifier in found), (
+            f"some identifiers in {found} are new and therefore potentially unsupported"
+        )
 
 
 def test_template_substitution_on_envfiles():
@@ -210,9 +208,7 @@ def test_template_substitution_on_envfiles():
         "y": "3",
     }
 
-    deserialize = load_dotenv(
-        template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
-    )
+    deserialize = load_dotenv(template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]}))
     assert deserialize == {
         "x": "['3', '4']",
         "y": "[3, 4]",
@@ -240,9 +236,7 @@ def test_template_substitution_on_jsondumps():
     }
 
     # NOTE does not cast if it is in a container
-    deserialized = json.loads(
-        template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
-    )
+    deserialized = json.loads(template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]}))
 
     assert deserialized == {
         "x": "['3', '4']",

@@ -18,9 +18,7 @@ _logger = logging.getLogger(__name__)
 
 main = typer.Typer(name=PROJECT_NAME)
 
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
 main.callback()(create_version_callback(__version__))
 
 
@@ -49,9 +47,7 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
                 RABBIT_HOST=os.environ.get("RABBIT_HOST", "replace-with-rabbit-host"),
                 RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "0"),
                 RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
-                RABBIT_PASSWORD=os.environ.get(
-                    "RABBIT_PASSWORD", "replace-with-rabbit-password"
-                ),
+                RABBIT_PASSWORD=os.environ.get("RABBIT_PASSWORD", "replace-with-rabbit-password"),
             ),
         ),
         DYNAMIC_SCHEDULER_UI_STORAGE_SECRET=os.environ.get(
@@ -61,30 +57,18 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
         DYNAMIC_SCHEDULER_POSTGRES=os.environ.get(
             "DYNAMIC_SCHEDULER_POSTGRES",
             PostgresSettings.create_from_envs(
-                POSTGRES_HOST=os.environ.get(
-                    "POSTGRES_HOST", "replace-with-postgres-host"
-                ),
-                POSTGRES_USER=os.environ.get(
-                    "POSTGRES_USER", "replace-with-postgres-user"
-                ),
-                POSTGRES_PASSWORD=os.environ.get(
-                    "POSTGRES_PASSWORD", "replace-with-postgres-password"
-                ),
+                POSTGRES_HOST=os.environ.get("POSTGRES_HOST", "replace-with-postgres-host"),
+                POSTGRES_USER=os.environ.get("POSTGRES_USER", "replace-with-postgres-user"),
+                POSTGRES_PASSWORD=os.environ.get("POSTGRES_PASSWORD", "replace-with-postgres-password"),
                 POSTGRES_DB=os.environ.get("POSTGRES_DB", "replace-with-postgres-db"),
             ),
         ),
         DYNAMIC_SCHEDULER_DOCKER_API_PROXY=os.environ.get(
             "DYNAMIC_SCHEDULER_DOCKER_API_PROXY",
             DockerApiProxysettings.create_from_envs(
-                DOCKER_API_PROXY_HOST=os.environ.get(
-                    "DOCKER_API_PROXY_HOST", "replace-with-proxy-host"
-                ),
-                DOCKER_API_PROXY_USER=os.environ.get(
-                    "DOCKER_API_PROXY_USER", "replace-with-proxy-user"
-                ),
-                DOCKER_API_PROXY_PASSWORD=os.environ.get(
-                    "DOCKER_API_PROXY_PASSWORD", "replace-with-proxy-password"
-                ),
+                DOCKER_API_PROXY_HOST=os.environ.get("DOCKER_API_PROXY_HOST", "replace-with-proxy-host"),
+                DOCKER_API_PROXY_USER=os.environ.get("DOCKER_API_PROXY_USER", "replace-with-proxy-user"),
+                DOCKER_API_PROXY_PASSWORD=os.environ.get("DOCKER_API_PROXY_PASSWORD", "replace-with-proxy-password"),
             ),
         ),
     )

@@ -36,7 +36,6 @@ def test_description():
 
 
 def test_status_codes_checks():
-
     assert is_1xx_informational(status.HTTP_102_PROCESSING)
     assert is_2xx_success(status.HTTP_202_ACCEPTED)
     assert is_3xx_redirect(status.HTTP_301_MOVED_PERMANENTLY)
@@ -49,7 +48,6 @@ def test_status_codes_checks():
 
 
 def test_predicates_with_status():
-
     # in formational
     assert get_http_status_codes(status, is_1xx_informational) == [
         status.HTTP_100_CONTINUE,
@@ -61,17 +59,11 @@ def test_predicates_with_status():
     # errors
     assert [is_error(c) for c in get_http_status_codes(status, is_error)]
 
-    # all. Curiously 306 is not in HTTPSTatus!
-    assert [
-        HTTPStatus(c)
-        for c in get_http_status_codes(status)
-        if c != status.HTTP_306_RESERVED
-    ]
+    # all. Curiously 306 is not in HTTPSStatus!
+    assert [HTTPStatus(c) for c in get_http_status_codes(status) if c != status.HTTP_306_RESERVED]
 
 
-AIOHTTP_EXCEPTION_CLASSES_MAP: dict[int, type[HTTPException]] = (
-    get_all_aiohttp_http_exceptions(HTTPException)
-)
+AIOHTTP_EXCEPTION_CLASSES_MAP: dict[int, type[HTTPException]] = get_all_aiohttp_http_exceptions(HTTPException)
 
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status))

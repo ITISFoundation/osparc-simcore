@@ -20,9 +20,7 @@ MEASURE_INTERVAL = 0.5
 MAX_REQUEST_RATE = MAX_NUM_REQUESTS / MEASURE_INTERVAL
 
 
-@global_rate_limit_route(
-    number_of_requests=MAX_NUM_REQUESTS, interval_seconds=MEASURE_INTERVAL
-)
+@global_rate_limit_route(number_of_requests=MAX_NUM_REQUESTS, interval_seconds=MEASURE_INTERVAL)
 async def get_ok_handler(_request: web.Request):
     return web.json_response({"value": 1})
 
@@ -97,17 +95,17 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
     expected_status = HTTPOk.status_code
 
     # first requests are OK
-    assert all(
-        t.result().status == expected_status for t in tasks[:MAX_NUM_REQUESTS]
-    ), f" Failed with {msg[:MAX_NUM_REQUESTS]}"
+    assert all(t.result().status == expected_status for t in tasks[:MAX_NUM_REQUESTS]), (
+        f" Failed with {msg[:MAX_NUM_REQUESTS]}"
+    )
 
     if requests_per_second >= MAX_REQUEST_RATE:
         expected_status = HTTPTooManyRequests.status_code
 
     # after ...
-    assert all(
-        t.result().status == expected_status for t in tasks[MAX_NUM_REQUESTS:]
-    ), f" Failed with {msg[MAX_NUM_REQUESTS:]}"
+    assert all(t.result().status == expected_status for t in tasks[MAX_NUM_REQUESTS:]), (
+        f" Failed with {msg[MAX_NUM_REQUESTS:]}"
+    )
 
     # checks Retry-After header
     failed = []

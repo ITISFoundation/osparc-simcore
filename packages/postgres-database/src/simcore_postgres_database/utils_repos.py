@@ -68,9 +68,7 @@ SQLModel = TypeVar(
 )
 
 
-def get_columns_from_db_model(
-    table: sa.Table, model_cls: type[SQLModel]
-) -> list[sa.Column]:
+def get_columns_from_db_model(table: sa.Table, model_cls: type[SQLModel]) -> list[sa.Column]:
     """
     Usage example:
 

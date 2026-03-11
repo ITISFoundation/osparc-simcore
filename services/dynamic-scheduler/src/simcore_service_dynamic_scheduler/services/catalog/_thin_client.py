@@ -25,9 +25,7 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
         assert settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT  # nosec
 
         super().__init__(
-            total_retry_interval=int(
-                settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
-            ),
+            total_retry_interval=int(settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT),
             extra_allowed_method_names={
                 "attach_lifespan_to",
                 "get_from_app_state",
@@ -40,12 +38,8 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
-    async def get_docker_image_labels(
-        self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> Response:
-        return await self.client.get(
-            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/labels"
-        )
+    async def get_docker_image_labels(self, service_key: ServiceKey, service_version: ServiceVersion) -> Response:
+        return await self.client.get(f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/labels")
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)

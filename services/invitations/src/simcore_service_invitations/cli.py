@@ -29,9 +29,7 @@ _err_console = Console(stderr=True)
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:main'
 main = typer.Typer(name=PROJECT_NAME)
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
 main.callback()(create_version_callback(__version__))
 
 
@@ -54,9 +52,7 @@ def generate_key(
 
 
 @main.command()
-def echo_dotenv(
-    ctx: typer.Context, *, auto_password: bool = False, minimal: bool = True
-):
+def echo_dotenv(ctx: typer.Context, *, auto_password: bool = False, minimal: bool = True):
     """Echos an example of environment variables file (or dot-envfile)
 
     Usage sample:
@@ -69,9 +65,7 @@ def echo_dotenv(
 
     username = getpass.getuser()
     password: str = (
-        getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
-        if not auto_password
-        else None
+        getpass.getpass(prompt="Password [Press Enter to auto-generate]: ") if not auto_password else None
     ) or generate_password(length=32)
 
     settings = ApplicationSettings.create_from_envs(
@@ -99,9 +93,7 @@ def invite(
         callback=lambda v: TypeAdapter(LowerCaseEmailStr).validate_python(v),
         help="Custom invitation for a given guest",
     ),
-    issuer: str = typer.Option(
-        ..., help=InvitationInputs.model_fields["issuer"].description
-    ),
+    issuer: str = typer.Option(..., help=InvitationInputs.model_fields["issuer"].description),
     trial_account_days: int = typer.Option(
         None,
         help=InvitationInputs.model_fields["trial_account_days"].description,
@@ -145,9 +137,7 @@ def extract(ctx: typer.Context, invitation_url: str):
 
     try:
         invitation: InvitationContent = extract_invitation_content(
-            invitation_code=extract_invitation_code_from_query(
-                TypeAdapter(HttpUrl).validate_python(invitation_url)
-            ),
+            invitation_code=extract_invitation_code_from_query(TypeAdapter(HttpUrl).validate_python(invitation_url)),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),  # pylint:disable=no-member
             default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )

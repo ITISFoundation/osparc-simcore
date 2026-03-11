@@ -73,7 +73,7 @@ def create_safe_application(config: dict | None = None) -> web.Application:
     app.on_startup.append(_first_call_on_startup)
 
     # NOTE: Ensures client session context is run first (setup),
-    # then any further get_client_sesions will be correctly closed
+    # then any further get_client_sessions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
 
     app.on_cleanup.append(_first_call_on_cleanup)

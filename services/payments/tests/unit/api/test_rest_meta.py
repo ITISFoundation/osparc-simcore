@@ -30,9 +30,7 @@ async def test_healthcheck(
 
     response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK
-    assert response.text.startswith(
-        f"{health_module.__name__}@"
-    ), f"got {response.text!r}"
+    assert response.text.startswith(f"{health_module.__name__}@"), f"got {response.text!r}"
 
 
 async def test_healthcheck__unhealthy(

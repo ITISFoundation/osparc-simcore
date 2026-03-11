@@ -63,7 +63,7 @@ from ._functions_table_cols import (
 _logger = logging.getLogger(__name__)
 
 
-async def create_function_jobs(  # noqa: PLR0913
+async def create_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -99,20 +99,14 @@ async def create_function_jobs(  # noqa: PLR0913
 
         # Batch insert all function jobs in a single query
         result = await transaction.execute(
-            function_jobs_table.insert()
-            .values(values_to_insert)
-            .returning(*_FUNCTION_JOBS_TABLE_COLS)
+            function_jobs_table.insert().values(values_to_insert).returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
 
         # Get all created jobs
-        created_jobs = TypeAdapter(list[RegisteredFunctionJobDB]).validate_python(
-            list(result)
-        )
+        created_jobs = TypeAdapter(list[RegisteredFunctionJobDB]).validate_python(list(result))
 
         # Get user primary group and set permissions for all jobs
-        user_primary_group_id = await users_service.get_user_primary_group_id(
-            app, user_id=user_id
-        )
+        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
         job_uuids = [job.uuid for job in created_jobs]
 
         await _internal_set_group_permissions(
@@ -138,7 +132,6 @@ async def patch_function_jobs(
     product_name: ProductName,
     function_job_patch_requests: list[FunctionJobPatchRequest],
 ) -> BatchUpdateRegisteredFunctionJobsDB:
-
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
             app,
@@ -151,7 +144,6 @@ async def patch_function_jobs(
         )
         updated_jobs = []
         for patch_request in function_job_patch_requests:
-
             job = await get_function_job(
                 app,
                 connection=transaction,
@@ -160,9 +152,7 @@ async def patch_function_jobs(
                 function_job_id=patch_request.uid,
             )
             if job.function_class != patch_request.patch.function_class:
-                raise FunctionJobPatchModelIncompatibleError(
-                    function_id=job.function_uuid, product_name=product_name
-                )
+                raise FunctionJobPatchModelIncompatibleError(function_id=job.function_uuid, product_name=product_name)
 
             class_specific_data = _update_class_specific_data(
                 class_specific_data=job.class_specific_data, patch=patch_request.patch
@@ -235,9 +225,7 @@ async def list_function_jobs_with_status(
         if filter_by_function_job_collection_id:
             collection_subquery = (
                 function_job_collections_to_function_jobs_table.select()
-                .with_only_columns(
-                    function_job_collections_to_function_jobs_table.c.function_job_uuid
-                )
+                .with_only_columns(function_job_collections_to_function_jobs_table.c.function_job_uuid)
                 .where(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
                     == filter_by_function_job_collection_id
@@ -253,22 +241,14 @@ async def list_function_jobs_with_status(
             )
 
         total_count_result = await conn.scalar(
-            func.count()
-            .select()
-            .select_from(function_jobs_table)
-            .where(filter_conditions)
+            func.count().select().select_from(function_jobs_table).where(filter_conditions)
         )
         if total_count_result == 0:
-            return [], PageMetaInfoLimitOffset(
-                total=0, offset=pagination_offset, limit=pagination_limit, count=0
-            )
+            return [], PageMetaInfoLimitOffset(total=0, offset=pagination_offset, limit=pagination_limit, count=0)
         results = [
             RegisteredFunctionJobWithStatusDB.model_validate(row)
             async for row in await conn.stream(
-                function_jobs_table.select()
-                .where(filter_conditions)
-                .offset(pagination_offset)
-                .limit(pagination_limit)
+                function_jobs_table.select().where(filter_conditions).offset(pagination_offset).limit(pagination_limit)
             )
         ]
 
@@ -301,20 +281,14 @@ async def delete_function_job(
 
         # Check if the function job exists
         result = await transaction.execute(
-            function_jobs_table.select().where(
-                function_jobs_table.c.uuid == function_job_id
-            )
+            function_jobs_table.select().where(function_jobs_table.c.uuid == function_job_id)
         )
         row = result.one_or_none()
         if row is None:
             raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
 
         # Proceed with deletion
-        await transaction.execute(
-            function_jobs_table.delete().where(
-                function_jobs_table.c.uuid == function_job_id
-            )
-        )
+        await transaction.execute(function_jobs_table.delete().where(function_jobs_table.c.uuid == function_job_id))
 
 
 async def find_cached_function_jobs(
@@ -351,9 +325,7 @@ async def find_cached_function_jobs(
             cast(function_jobs_table.c.inputs, Text).in_(json_inputs),
             function_jobs_table.c.uuid.in_(access_subquery),
             (
-                function_jobs_table.c.status.in_(
-                    [status.status for status in cached_job_statuses]
-                )
+                function_jobs_table.c.status.in_([status.status for status in cached_job_statuses])
                 if cached_job_statuses is not None
                 else sqlalchemy.sql.true()
             ),
@@ -373,11 +345,10 @@ async def find_cached_function_jobs(
         # Create a mapping from JSON inputs to jobs
         _ensure_str = lambda x: x if isinstance(x, str) else json.dumps(x)
         jobs_by_input: dict[str, RegisteredFunctionJobDB] = {
-            _ensure_str(row.inputs): RegisteredFunctionJobDB.model_validate(row)
-            for row in results
+            _ensure_str(row.inputs): RegisteredFunctionJobDB.model_validate(row) for row in results
         }
 
-        return [jobs_by_input.get(input_, None) for input_ in json_inputs]
+        return [jobs_by_input.get(input_) for input_ in json_inputs]
 
 
 async def get_function_job_status(
@@ -399,11 +370,7 @@ async def get_function_job_status(
             permissions=["read"],
         )
 
-        result = await conn.execute(
-            function_jobs_table.select().where(
-                function_jobs_table.c.uuid == function_job_id
-            )
-        )
+        result = await conn.execute(function_jobs_table.select().where(function_jobs_table.c.uuid == function_job_id))
         row = result.one_or_none()
 
         if row is None:
@@ -431,11 +398,7 @@ async def get_function_job_outputs(
             permissions=["read"],
         )
 
-        result = await conn.execute(
-            function_jobs_table.select().where(
-                function_jobs_table.c.uuid == function_job_id
-            )
-        )
+        result = await conn.execute(function_jobs_table.select().where(function_jobs_table.c.uuid == function_job_id))
         row = result.one_or_none()
 
         if row is None:
@@ -463,11 +426,7 @@ async def get_function_job(
             permissions=["read"],
         )
 
-        result = await conn.execute(
-            function_jobs_table.select().where(
-                function_jobs_table.c.uuid == function_job_id
-            )
-        )
+        result = await conn.execute(function_jobs_table.select().where(function_jobs_table.c.uuid == function_job_id))
         row = result.one_or_none()
 
         if row is None:
@@ -527,9 +486,7 @@ def _update_class_specific_data(
     if patch.function_class == FunctionClass.PROJECT:
         return FunctionClassSpecificData(
             project_job_id=(
-                f"{patch.project_job_id}"
-                if patch.project_job_id
-                else class_specific_data.get("project_job_id")
+                f"{patch.project_job_id}" if patch.project_job_id else class_specific_data.get("project_job_id")
             ),
             job_creation_task_id=(
                 f"{patch.job_creation_task_id}"
@@ -540,9 +497,7 @@ def _update_class_specific_data(
     if patch.function_class == FunctionClass.SOLVER:
         return FunctionClassSpecificData(
             solver_job_id=(
-                f"{patch.solver_job_id}"
-                if patch.solver_job_id
-                else class_specific_data.get("solver_job_id")
+                f"{patch.solver_job_id}" if patch.solver_job_id else class_specific_data.get("solver_job_id")
             ),
             job_creation_task_id=(
                 f"{patch.job_creation_task_id}"

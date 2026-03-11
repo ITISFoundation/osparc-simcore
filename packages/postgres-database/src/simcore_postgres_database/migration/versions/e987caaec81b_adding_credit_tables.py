@@ -83,9 +83,7 @@ def upgrade():
             ),
             nullable=False,
         ),
-        sa.Column(
-            "service_resources", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("service_resources", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "service_additional_metadata",
             postgresql.JSONB(astext_type=sa.Text()),
@@ -95,9 +93,7 @@ def upgrade():
         sa.Column("stopped_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "service_run_status",
-            sa.Enum(
-                "RUNNING", "SUCCESS", "ERROR", name="resourcetrackerservicerunstatus"
-            ),
+            sa.Enum("RUNNING", "SUCCESS", "ERROR", name="resourcetrackerservicerunstatus"),
             nullable=False,
         ),
         sa.Column(
@@ -159,9 +155,7 @@ def upgrade():
         unique=False,
     )
     op.create_index(
-        op.f(
-            "ix_resource_tracker_wallets_credit_transactions_transaction_classification"
-        ),
+        op.f("ix_resource_tracker_wallets_credit_transactions_transaction_classification"),
         "resource_tracker_wallets_credit_transactions",
         ["transaction_classification"],
         unique=False,
@@ -192,9 +186,7 @@ def upgrade():
         sa.Column("cost_per_unit", sa.Numeric(precision=3, scale=2), nullable=False),
         sa.Column("valid_from", sa.DateTime(timezone=True), nullable=False),
         sa.Column("valid_to", sa.DateTime(timezone=True), nullable=True),
-        sa.Column(
-            "specific_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("specific_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -296,9 +288,7 @@ def downgrade():
         table_name="resource_tracker_wallets_credit_transactions",
     )
     op.drop_index(
-        op.f(
-            "ix_resource_tracker_wallets_credit_transactions_transaction_classification"
-        ),
+        op.f("ix_resource_tracker_wallets_credit_transactions_transaction_classification"),
         table_name="resource_tracker_wallets_credit_transactions",
     )
     op.drop_index(

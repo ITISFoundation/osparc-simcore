@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     navBarPromises.push(osparc.store.Groups.getInstance().fetchGroups());
     navBarPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
     navBarPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
-    navBarPromises.push(osparc.store.ConversationsSupport.getInstance().fetchConversations());
+    navBarPromises.push(osparc.store.ConversationsSupport.getInstance().init());
     Promise.all(navBarPromises)
       .finally(() => navBar.populateLayout());
 
@@ -97,9 +97,16 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __attachTasks: function() {
       const pollTasks = osparc.store.PollTasks.getInstance();
+
+      // these are the tasks that persist after page reload, so we need to re-attach them to the UI
       const exportDataTasks = pollTasks.getExportDataTasks();
       exportDataTasks.forEach(task => {
         osparc.task.ExportData.exportDataTaskReceived(task, false);
+      });
+
+      const sendEmailTasks = pollTasks.getSendEmailTasks();
+      sendEmailTasks.forEach(task => {
+        osparc.task.SendEmail.sendEmailTaskReceived(task);
       });
     },
 

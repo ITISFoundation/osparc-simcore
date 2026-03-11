@@ -37,9 +37,7 @@ class TaskLifecycleWorkerPlugin(WorkerPlugin):
         assert isinstance(self._worker, Worker)  # nosec
         self._worker.log_event(
             TASK_LIFE_CYCLE_EVENT.format(key=key),
-            TaskLifeCycleState.from_worker_task_state(
-                key, kwargs.get("worker"), finish
-            ).model_dump(mode="json"),
+            TaskLifeCycleState.from_worker_task_state(key, kwargs.get("worker"), finish).model_dump(mode="json"),
         )
 
 

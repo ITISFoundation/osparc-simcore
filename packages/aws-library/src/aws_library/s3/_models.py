@@ -21,9 +21,7 @@ class S3MetaData(BaseModel, frozen=True):
     size: ByteSize
 
     @staticmethod
-    def from_botocore_head_object(
-        object_key: S3ObjectKey, obj: HeadObjectOutputTypeDef
-    ) -> "S3MetaData":
+    def from_botocore_head_object(object_key: S3ObjectKey, obj: HeadObjectOutputTypeDef) -> "S3MetaData":
         return S3MetaData(
             object_key=object_key,
             last_modified=obj["LastModified"],

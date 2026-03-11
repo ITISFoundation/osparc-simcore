@@ -15,9 +15,7 @@ depends_on = None
 
 def upgrade():
     """alembic left this empty"""
-    pass
 
 
 def downgrade():
     """alembic left this empty"""
-    pass

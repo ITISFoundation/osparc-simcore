@@ -2,12 +2,13 @@
 
 import contextlib
 import logging
+from enum import Enum
 from typing import Final
 
 from aiocache import cached  # type: ignore[import-untyped]
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from aiohttp import web
-from aiohttp_security.abc import (  # type: ignore[import-untyped]
+from aiohttp_security.abc import (
     AbstractAuthorizationPolicy,
 )
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -38,8 +39,7 @@ _AUTHZ_BURST_CACHE_TTL: Final = (
     # Rationale:
     #   a user's access to a product does not change that frequently
     #   Keeps a cache during bursts to avoid stress on the database
-    30
-    * _MINUTE
+    30 * _MINUTE
 )
 
 
@@ -68,28 +68,22 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
         namespace=__name__,
-        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['email']}",
+        key_builder=lambda f, *_, **kw: f"{f.__name__}/{kw['email']}",
     )
-    async def _get_authorized_user_or_none(
-        self, *, email: str
-    ) -> ActiveUserIdAndRole | None:
+    async def _get_authorized_user_or_none(self, *, email: str) -> ActiveUserIdAndRole | None:
         """
         Raises:
             web.HTTPServiceUnavailable: if database raises an exception
         """
         with _handle_exceptions_as_503():
-            return await _authz_repository.get_active_user_or_none(
-                get_async_engine(self._app), email=email
-            )
+            return await _authz_repository.get_active_user_or_none(get_async_engine(self._app), email=email)
 
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
         namespace=__name__,
-        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['user_id']}/{kw['product_name']}",
+        key_builder=lambda f, *_, **kw: f"{f.__name__}/{kw['user_id']}/{kw['product_name']}",
     )
-    async def _has_access_to_product(
-        self, *, user_id: UserID, product_name: ProductName
-    ) -> bool:
+    async def _has_access_to_product(self, *, user_id: UserID, product_name: ProductName) -> bool:
         """
         Raises:
             web.HTTPServiceUnavailable: if database raises an exception
@@ -102,7 +96,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
         namespace=__name__,
-        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['user_id']}/{kw['group_id']}",
+        key_builder=lambda f, *_, **kw: f"{f.__name__}/{kw['user_id']}/{kw['group_id']}",
     )
     async def _is_user_in_group(self, *, user_id: UserID, group_id: int) -> bool:
         """
@@ -132,25 +126,26 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     # AbstractAuthorizationPolicy API
     #
 
-    async def authorized_userid(self, identity: IdentityStr) -> int | None:
-        """Implements Inteface: Retrieve authorized user id.
+    async def authorized_userid(self, identity: IdentityStr | None) -> str | None:
+        """Implements Interface: Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user_info: ActiveUserIdAndRole | None = await self._get_authorized_user_or_none(
-            email=identity
-        )
+        if identity is None:
+            return None
+
+        user_info: ActiveUserIdAndRole | None = await self._get_authorized_user_or_none(email=identity)
         if user_info is None:
             return None
 
         user_id: int = user_info["id"]
-        return user_id
+        return str(user_id)
 
     async def permits(
         self,
-        identity: IdentityStr,
-        permission: str,
+        identity: IdentityStr | None,
+        permission: str | Enum,
         context: OptionalContext = None,
     ) -> bool:
         """Implements Interface: Determines whether an identified user has permission
@@ -160,7 +155,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :param context: context of the operation, defaults to None
         :return: True if user has permission to execute this operation within the given context
         """
-        if identity is None or permission is None:
+        permission_name = permission.value if isinstance(permission, Enum) else permission
+        if identity is None or not permission_name:
             return False
 
         # authorized user info
@@ -180,7 +176,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         ), f"{user_id}!={context.get('authorized_uid')}"
 
         # PRODUCT access
-        if permission == PERMISSION_PRODUCT_LOGIN_KEY:
+        if permission_name == PERMISSION_PRODUCT_LOGIN_KEY:
             ok: bool = product_name is not None and await self._has_access_to_product(
                 user_id=user_id, product_name=product_name
             )
@@ -190,7 +186,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         role_allowed = await has_access_by_role(
             self._access_model,
             role=user_role,
-            operation=permission,
+            operation=permission_name,
             context=context,
         )
 
@@ -202,10 +198,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         group_allowed = (
             product_support_group_id is not None
             and user_role > UserRole.GUEST
-            and permission in NAMED_GROUP_PERMISSIONS.get("PRODUCT_SUPPORT_GROUP", [])
-            and await self._is_user_in_group(
-                user_id=user_id, group_id=product_support_group_id
-            )
+            and permission_name in NAMED_GROUP_PERMISSIONS.get("PRODUCT_SUPPORT_GROUP", [])
+            and await self._is_user_in_group(user_id=user_id, group_id=product_support_group_id)
         )
 
         return group_allowed  # noqa: RET504

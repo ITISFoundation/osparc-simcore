@@ -29,9 +29,8 @@ def print_as_envfile(
     settings_cls = settings_obj.__class__
 
     for name, field in settings_cls.model_fields.items():
-        auto_default_from_env = (
-            field.json_schema_extra is not None
-            and field.json_schema_extra.get("auto_default_from_env", False)
+        auto_default_from_env = field.json_schema_extra is not None and field.json_schema_extra.get(
+            "auto_default_from_env", False
         )
 
         value = getattr(settings_obj, name)
@@ -45,9 +44,7 @@ def print_as_envfile(
         if isinstance(value, BaseSettings):
             if compact:
                 value = json_dumps(
-                    model_dump_with_secrets(
-                        value, show_secrets=show_secrets, **pydantic_export_options
-                    )
+                    model_dump_with_secrets(value, show_secrets=show_secrets, **pydantic_export_options)
                 )  # flat
             else:
                 if verbose:
@@ -82,9 +79,7 @@ def _print_as_json(
 ):
     typer.echo(
         json_dumps(
-            model_dump_with_secrets(
-                settings_obj, show_secrets=show_secrets, **pydantic_export_options
-            ),
+            model_dump_with_secrets(settings_obj, show_secrets=show_secrets, **pydantic_export_options),
             indent=None if compact else 2,
         )
     )
@@ -111,7 +106,7 @@ def create_settings_command(
         exclude_unset: bool = typer.Option(
             False,
             help="displays settings that were explicitly set"
-            "This represents current config (i.e. required+ defaults overriden).",
+            "This represents current config (i.e. required+ defaults overridden).",
         ),
     ):
         """Resolves settings and prints envfile"""
@@ -138,20 +133,13 @@ def create_settings_command(
 
             assert logger is not None  # nosec
             logger.error(  # noqa: TRY400
-                "Invalid settings. "
-                "Typically this is due to an environment variable missing or misspelled :\n%s",
+                "Invalid settings. Typically this is due to an environment variable missing or misspelled :\n%s",
                 "\n".join(
                     [
                         HEADER_STR.format("detail"),
                         str(err),
                         HEADER_STR.format("environment variables"),
-                        pformat(
-                            {
-                                k: v
-                                for k, v in dict(os.environ).items()
-                                if k.upper() == k
-                            }
-                        ),
+                        pformat({k: v for k, v in dict(os.environ).items() if k.upper() == k}),
                         HEADER_STR.format("json-schema"),
                         settings_schema,
                     ]

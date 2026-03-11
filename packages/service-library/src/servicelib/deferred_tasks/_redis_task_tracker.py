@@ -27,9 +27,7 @@ class RedisTaskTracker(BaseTaskTracker):
         candidate_already_exists = True
         while candidate_already_exists:
             candidate = IDStr(f"{uuid4()}")
-            candidate_already_exists = (
-                await self.redis_client_sdk.redis.get(_get_key(candidate)) is not None
-            )
+            candidate_already_exists = await self.redis_client_sdk.redis.get(_get_key(candidate)) is not None
         return TaskUID(candidate)
 
     async def _get_raw(self, redis_key: str) -> TaskScheduleModel | None:
@@ -40,20 +38,13 @@ class RedisTaskTracker(BaseTaskTracker):
         return await self._get_raw(_get_key(task_uid))
 
     async def save(self, task_uid: TaskUID, task_schedule: TaskScheduleModel) -> None:
-        await self.redis_client_sdk.redis.set(
-            _get_key(task_uid), pickle.dumps(task_schedule)
-        )
+        await self.redis_client_sdk.redis.set(_get_key(task_uid), pickle.dumps(task_schedule))
 
     async def remove(self, task_uid: TaskUID) -> None:
         await self.redis_client_sdk.redis.delete(_get_key(task_uid))
 
     async def all(self) -> list[TaskScheduleModel]:
         return await logged_gather(
-            *[
-                self._get_raw(x)
-                async for x in self.redis_client_sdk.redis.scan_iter(
-                    match=f"{_TASK_TRACKER_PREFIX}*"
-                )
-            ],
+            *[self._get_raw(x) async for x in self.redis_client_sdk.redis.scan_iter(match=f"{_TASK_TRACKER_PREFIX}*")],
             max_concurrency=_MAX_REDIS_CONCURRENCY,
         )

@@ -80,9 +80,7 @@ async def test_list_empty_announcements(client: TestClient):
     assert data == []
 
 
-async def test_list_announcements(
-    client: TestClient, push_announcements_in_redis: Callable, faker: Faker
-):
+async def test_list_announcements(client: TestClient, push_announcements_in_redis: Callable, faker: Faker):
     assert client.app
 
     # redis one item
@@ -111,9 +109,7 @@ async def test_list_announcements(
     assert data == expected
 
 
-async def test_list_announcements_filtered(
-    client: TestClient, push_announcements_in_redis: Callable, faker: Faker
-):
+async def test_list_announcements_filtered(client: TestClient, push_announcements_in_redis: Callable, faker: Faker):
     assert client.app
     now = arrow.utcnow()
 
@@ -160,9 +156,7 @@ async def test_list_announcements_filtered(
         }
     )
 
-    await push_announcements_in_redis(
-        values=[*expected, other_product, expired, invalid]
-    )
+    await push_announcements_in_redis(values=[*expected, other_product, expired, invalid])
 
     # checks route defined
     url = client.app.router["list_announcements"].url_for()
@@ -185,12 +179,8 @@ async def test_list_announcements_filtered(
         simcore_service_webserver.announcements._models  # noqa: SLF001
     ),
 )
-def test_model_examples(
-    model_cls: type[BaseModel], example_name: int, example_data: Any
-):
-    assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_model_examples(model_cls: type[BaseModel], example_name: int, example_data: Any):
+    assert_validation_model(model_cls, example_name=example_name, example_data=example_data)
 
 
 def test_invalid_announcement(faker: Faker):

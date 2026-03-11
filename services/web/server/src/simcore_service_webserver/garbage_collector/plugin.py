@@ -38,9 +38,7 @@ def setup_garbage_collector(app: web.Application) -> None:
 
     app.cleanup_ctx.append(_tasks_core.create_background_task_for_garbage_collection())
 
-    set_parent_module_log_level(
-        _logger.name, min(logging.INFO, get_application_settings(app).log_level)
-    )
+    set_parent_module_log_level(_logger.name, min(logging.INFO, get_application_settings(app).log_level))
 
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6592
 
@@ -49,22 +47,14 @@ def setup_garbage_collector(app: web.Application) -> None:
     # If more tasks of this nature are needed, we should setup some sort of registration mechanism
     # with a interface such that plugins can pass tasks to the GC plugin to handle them
     interval_s = settings.GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S
-    app.cleanup_ctx.append(
-        _tasks_users.create_background_task_for_trial_accounts(interval_s)
-    )
+    app.cleanup_ctx.append(_tasks_users.create_background_task_for_trial_accounts(interval_s))
 
     # SEE https://github.com/ITISFoundation/osparc-issues/issues/705
     wait_period_s = settings.GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S
-    app.cleanup_ctx.append(
-        _tasks_api_keys.create_background_task_to_prune_api_keys(wait_period_s)
-    )
+    app.cleanup_ctx.append(_tasks_api_keys.create_background_task_to_prune_api_keys(wait_period_s))
 
     # SEE https://github.com/ITISFoundation/osparc-issues#468
-    app.cleanup_ctx.append(
-        _tasks_trash.create_background_task_to_prune_trash(wait_period_s)
-    )
+    app.cleanup_ctx.append(_tasks_trash.create_background_task_to_prune_trash(wait_period_s))
 
     wait_period_s = settings.GARBAGE_COLLECTOR_PRUNE_DOCUMENTS_INTERVAL_S
-    app.cleanup_ctx.append(
-        _tasks_documents.create_background_task_to_prune_documents(wait_period_s)
-    )
+    app.cleanup_ctx.append(_tasks_documents.create_background_task_to_prune_documents(wait_period_s))

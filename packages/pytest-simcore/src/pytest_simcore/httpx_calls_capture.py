@@ -40,6 +40,7 @@ import respx
 import yaml
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
+
 from pytest_simcore.helpers.docker import get_service_published_port
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.httpx_client_base_dev import AsyncClientCaptureWrapper
@@ -80,15 +81,12 @@ def spy_httpx_calls_enabled(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(scope="session")
-def spy_httpx_calls_capture_path(
-    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
-) -> Path:
+def spy_httpx_calls_capture_path(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Path:
     if capture_path := request.config.getoption("--spy-httpx-calls-capture-path"):
         assert isinstance(capture_path, Path)
     else:
         capture_path = (
-            tmp_path_factory.mktemp("session_fixture_spy_httpx_calls_capture_path")
-            / _DEFAULT_CAPTURE_PATHNAME
+            tmp_path_factory.mktemp("session_fixture_spy_httpx_calls_capture_path") / _DEFAULT_CAPTURE_PATHNAME
         )
     assert capture_path.suffix == ".json"
     capture_path.touch()
@@ -107,16 +105,12 @@ def create_httpx_async_client_spy_if_enabled(
     spy_httpx_calls_enabled: bool,
     spy_httpx_calls_capture_path: Path,
 ) -> Callable[[str], MockType | None]:
-
     assert spy_httpx_calls_capture_path
 
     def _(spy_target: str) -> MockType | None:
-
         assert spy_target
         assert isinstance(spy_target, str)
-        assert spy_target.endswith(
-            "AsyncClient"
-        ), "Expects AsyncClient instance as spy target"
+        assert spy_target.endswith("AsyncClient"), "Expects AsyncClient instance as spy target"
 
         if spy_httpx_calls_enabled:
             print(
@@ -127,9 +121,7 @@ def create_httpx_async_client_spy_if_enabled(
 
             def _wrapper(*args, **kwargs):
                 assert not args, "AsyncClient should be called only with key-arguments"
-                return AsyncClientCaptureWrapper(
-                    capture_file=spy_httpx_calls_capture_path, **kwargs
-                )
+                return AsyncClientCaptureWrapper(capture_file=spy_httpx_calls_capture_path, **kwargs)
 
             spy: MockType = mocker.patch(spy_target, side_effect=_wrapper)
             spy.httpx_calls_capture_path = spy_httpx_calls_capture_path
@@ -153,9 +145,7 @@ def backend_env_vars_overrides(
     overrides = {}
     if not services_mocks_enabled:
         try:
-            content = yaml.safe_load(
-                (osparc_simcore_root_dir / ".stack-simcore-production.yml").read_text()
-            )
+            content = yaml.safe_load((osparc_simcore_root_dir / ".stack-simcore-production.yml").read_text())
         except FileNotFoundError as err:
             pytest.fail(
                 f"Cannot run --spy_httpx_calls_enabled=true without deploying osparc-simcore locally\n. TIP: run `make prod-up`\n{err}"
@@ -186,9 +176,7 @@ class _CaptureSideEffect:
         assert isinstance(capture.path, PathDescription)
         status_code: int = capture.status_code
         response_body: dict[str, Any] | list | None = capture.response_body
-        assert {param.name for param in capture.path.path_parameters} == set(
-            kwargs.keys()
-        )
+        assert {param.name for param in capture.path.path_parameters} == set(kwargs.keys())
         if self._side_effect_callback:
             response_body = self._side_effect_callback(request, kwargs, capture)
         return httpx.Response(status_code=status_code, json=response_body)
@@ -208,23 +196,20 @@ def create_respx_mock_from_capture(
         capture_path: Path,
         side_effects_callbacks: list[SideEffectCallback],
     ) -> list[respx.MockRouter]:
-
         assert capture_path.is_file()
         assert capture_path.suffix == ".json"
 
         if services_mocks_enabled:
-            captures: list[HttpApiCallCaptureModel] = TypeAdapter(
-                list[HttpApiCallCaptureModel]
-            ).validate_python(json.loads(capture_path.read_text()))
+            captures: list[HttpApiCallCaptureModel] = TypeAdapter(list[HttpApiCallCaptureModel]).validate_python(
+                json.loads(capture_path.read_text())
+            )
 
             if len(side_effects_callbacks) > 0:
                 assert len(side_effects_callbacks) == len(captures)
 
             assert isinstance(respx_mocks, list)
             for respx_router_mock in respx_mocks:
-                assert (
-                    respx_router_mock._bases
-                ), "the base_url must be set before the fixture is extended"
+                assert respx_router_mock._bases, "the base_url must be set before the fixture is extended"
                 respx_router_mock._assert_all_mocked = services_mocks_enabled
 
             def _get_correct_mock_router_for_capture(
@@ -247,16 +232,10 @@ def create_respx_mock_from_capture(
                 # response
                 side_effect = _CaptureSideEffect(
                     capture=capture,
-                    side_effect=(
-                        side_effects_callbacks[ii]
-                        if len(side_effects_callbacks)
-                        else None
-                    ),
+                    side_effect=(side_effects_callbacks[ii] if len(side_effects_callbacks) else None),
                 )
 
-                respx_router_mock = _get_correct_mock_router_for_capture(
-                    respx_mocks, capture
-                )
+                respx_router_mock = _get_correct_mock_router_for_capture(respx_mocks, capture)
                 r = respx_router_mock.request(
                     capture.method.upper(),
                     url=None,
@@ -271,9 +250,7 @@ def create_respx_mock_from_capture(
                 # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
                 respx_router_mock.stop()
 
-            print(
-                f"🔊 Disabling mocks respx.MockRouter from {capture_path.name} since --spy-httpx-calls-enabled=true"
-            )
+            print(f"🔊 Disabling mocks respx.MockRouter from {capture_path.name} since --spy-httpx-calls-enabled=true")
 
         return respx_mocks
 

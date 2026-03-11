@@ -17,9 +17,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from .api import get_session
 from .settings import SessionSettings, get_plugin_settings
 
-_SESSION_GRANTED_ACCESS_TOKENS_KEY: Final = (
-    f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
-)
+_SESSION_GRANTED_ACCESS_TOKENS_KEY: Final = f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
 
 # Errors start in this code https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
 _HTTP_400_BAD_REQUEST: Final = status.HTTP_400_BAD_REQUEST
@@ -49,7 +47,7 @@ def _is_valid(token) -> bool:
 
 @contextmanager
 def _access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, _AccessToken]]:
-    # WARNING: make sure this does not wrapp any ``await handler(request)``
+    # WARNING: make sure this does not wrap any ``await handler(request)``
     # Note that these access_tokens correspond to the values BEFORE that call
     # and all the tokens added/removed in the decorators nested on the handler
     # are not updated on ``access_tokens`` returned.
@@ -61,9 +59,7 @@ def _access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, _AccessTo
 
     finally:
         # prunes
-        pruned_access_tokens = {
-            name: token for name, token in access_tokens.items() if _is_valid(token)
-        }
+        pruned_access_tokens = {name: token for name, token in access_tokens.items() if _is_valid(token)}
         session[_SESSION_GRANTED_ACCESS_TOKENS_KEY] = pruned_access_tokens
 
 
@@ -73,7 +69,7 @@ def on_success_grant_session_access_to(
     *,
     max_access_count: PositiveInt = 1,
 ):
-    """Creates access token if handle suceeds with 2XX"""
+    """Creates access token if handle succeeds with 2XX"""
 
     def _decorator(handler: Handler):
         @functools.wraps(handler)
@@ -88,10 +84,7 @@ def on_success_grant_session_access_to(
                     # NOTE: does NOT add up access counts but re-assigns to max_access_count
                     access_tokens[name] = _AccessToken(
                         count=max_access_count,
-                        expires=int(
-                            time.time()
-                            + settings.SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS
-                        ),
+                        expires=int(time.time() + settings.SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS),
                     )
 
             return response

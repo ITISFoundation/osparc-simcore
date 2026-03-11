@@ -47,7 +47,6 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
         ),
         pk_col=users.c.id,
     ) as user_row:
-
         yield user_row["id"]
 
 
@@ -56,11 +55,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
     # inject project for user in db. This will give user_id, the full project's ownership
 
     # pylint: disable=no-value-for-parameter
-    stmt = (
-        projects.insert()
-        .values(**random_project(prj_owner=user_id))
-        .returning(projects.c.uuid)
-    )
+    stmt = projects.insert().values(**random_project(prj_owner=user_id)).returning(projects.c.uuid)
     print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
@@ -85,9 +80,7 @@ def s3_simcore_location() -> LocationID:
 
 
 @pytest.fixture
-def create_valid_file_uuid(
-    project_id: str, node_uuid: str
-) -> Callable[[str, Path], SimcoreS3FileID]:
+def create_valid_file_uuid(project_id: str, node_uuid: str) -> Callable[[str, Path], SimcoreS3FileID]:
     def _create(key: str, file_path: Path) -> SimcoreS3FileID:
         clean_path = Path(f"{project_id}/{node_uuid}/{key}/{file_path.name}")
         return TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
@@ -138,9 +131,7 @@ def create_store_link(
         async with ClientSession() as session:
             async with session.put(url) as resp:
                 resp.raise_for_status()
-                presigned_links_enveloped = Envelope[FileUploadSchema].model_validate(
-                    await resp.json()
-                )
+                presigned_links_enveloped = Envelope[FileUploadSchema].model_validate(await resp.json())
             assert presigned_links_enveloped.data
             assert len(presigned_links_enveloped.data.urls) == 1
             link = presigned_links_enveloped.data.urls[0]
@@ -151,9 +142,7 @@ def create_store_link(
                 "Content-Length": f"{file_path.stat().st_size}",
                 "Content-Type": "application/binary",
             }
-            async with session.put(
-                f"{link}", data=file_path.read_bytes(), headers=extra_hdr
-            ) as resp:
+            async with session.put(f"{link}", data=file_path.read_bytes(), headers=extra_hdr) as resp:
                 resp.raise_for_status()
 
         # NOTE: that at this point, S3 and pg have some data that is NOT cleaned up
@@ -181,9 +170,7 @@ async def create_special_configuration(
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
         await create_pipeline(project_id=project_id)
-        config_dict = _set_configuration(
-            create_task, project_id, node_id, json.dumps(config_dict)
-        )
+        config_dict = _set_configuration(create_task, project_id, node_id, json.dumps(config_dict))
         return config_dict, project_id, node_uuid
 
     return _create
@@ -209,9 +196,7 @@ async def create_2nodes_configuration(
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
-        _assign_config(
-            previous_config_dict, "inputs", prev_node_inputs if prev_node_inputs else []
-        )
+        _assign_config(previous_config_dict, "inputs", prev_node_inputs if prev_node_inputs else [])
         _assign_config(
             previous_config_dict,
             "outputs",
@@ -282,9 +267,7 @@ def _set_configuration(
     return configuration
 
 
-def _assign_config(
-    config_dict: dict, port_type: str, entries: list[tuple[str, str, Any]]
-):
+def _assign_config(config_dict: dict, port_type: str, entries: list[tuple[str, str, Any]]):
     if entries is None:
         return
     for entry in entries:
@@ -307,9 +290,7 @@ async def r_clone_settings_factory(
     minio_s3_settings: S3Settings, storage_service: URL
 ) -> Callable[[], Awaitable[RCloneSettings]]:
     async def _factory() -> RCloneSettings:
-        settings = RCloneSettings(
-            R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.MINIO
-        )
+        settings = RCloneSettings(R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.MINIO)
         if not await is_r_clone_available(settings):
             pytest.skip("rclone not installed")
 

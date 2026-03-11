@@ -8,7 +8,6 @@ This OAS are the source of truth
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status

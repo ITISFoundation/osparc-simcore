@@ -71,9 +71,7 @@ _RETRY_ATTEMPTS: Final[NonNegativeInt] = 10
 
 
 def _get_random_interruption_duration() -> NonNegativeFloat:
-    random_duration = secrets.SystemRandom().uniform(
-        0.1, _OPERATION_MIN_RUNTIME.total_seconds()
-    )
+    random_duration = secrets.SystemRandom().uniform(0.1, _OPERATION_MIN_RUNTIME.total_seconds())
     print(f"⏳ Waiting {random_duration:.1f} seconds before interrupting...")
     return random_duration
 
@@ -245,42 +243,32 @@ class _BS(BaseStep):
         return _RETRY_ATTEMPTS
 
     @classmethod
-    async def get_execute_wait_between_attempts(
-        cls, context: DeferredContext
-    ) -> timedelta:
+    async def get_execute_wait_between_attempts(cls, context: DeferredContext) -> timedelta:
         _ = context
         return _STEP_SLEEP_DURATION
 
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         if hasattr(app.state, "multiprocessing_queue"):
-            multiprocessing_queue: _AsyncMultiprocessingQueue = (
-                app.state.multiprocessing_queue
-            )
+            multiprocessing_queue: _AsyncMultiprocessingQueue = app.state.multiprocessing_queue
             await multiprocessing_queue.put((cls.__name__, _EXECUTED))
         _STEPS_CALL_ORDER.append((cls.__name__, _EXECUTED))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_execute_provides_context_keys()},
+            **dict.fromkeys(cls.get_execute_provides_context_keys(), _CTX_VALUE),
         }
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         if hasattr(app.state, "multiprocessing_queue"):
-            multiprocessing_queue: _AsyncMultiprocessingQueue = (
-                app.state.multiprocessing_queue
-            )
+            multiprocessing_queue: _AsyncMultiprocessingQueue = app.state.multiprocessing_queue
             await multiprocessing_queue.put((cls.__name__, _REVERTED))
         _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
+            **dict.fromkeys(cls.get_revert_provides_context_keys(), _CTX_VALUE),
         }
 
 
@@ -295,9 +283,7 @@ class _S3(_BS): ...
 
 class _ShortSleep(_BS):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         result = await super().execute(app, required_context)
         # if sleeps more than this it will timeout
         max_allowed_sleep = _STEP_SLEEP_DURATION.total_seconds() * 0.8
@@ -312,9 +298,7 @@ class _ShortSleepThenRevert(_BS):
         return 0
 
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         await super().execute(app, required_context)
         # if sleeps more than this it will timeout
         max_allowed_sleep = _STEP_SLEEP_DURATION.total_seconds() * 0.8
@@ -455,7 +439,6 @@ async def test_run_operation_after(
     expected_order: list[BaseExpectedStepOrder],
     to_start: OperationToStart | None,
 ):
-
     register_operation(_INITIAL_OP_NAME, initial_op)
     if after_op is not None:
         register_operation(_AFTER_OP_NAME, after_op)
@@ -477,13 +460,9 @@ async def test_run_operation_after(
 
     if register_at_creation is False:
         if is_executing:
-            await register_to_start_after_on_executed_completed(
-                app, schedule_id, to_start=to_start
-            )
+            await register_to_start_after_on_executed_completed(app, schedule_id, to_start=to_start)
         else:
-            await register_to_start_after_on_reverted_completed(
-                app, schedule_id, to_start=to_start
-            )
+            await register_to_start_after_on_reverted_completed(app, schedule_id, to_start=to_start)
 
     await ensure_expected_order(steps_call_order, expected_order)
     await ensure_keys_in_store(app, expected_keys=set())
@@ -497,9 +476,7 @@ async def test_missing_initial_context_key_from_operation(
     good_operation_name: OperationName = "good"
     bad_operation_name: OperationName = "bad"
 
-    operation = Operation(
-        SingleStepGroup(_ShortSleep), initial_context_required_keys={"required_key"}
-    )
+    operation = Operation(SingleStepGroup(_ShortSleep), initial_context_required_keys={"required_key"})
     register_operation(good_operation_name, operation)
     register_operation(bad_operation_name, operation)
 
@@ -510,9 +487,7 @@ async def test_missing_initial_context_key_from_operation(
     }
     bad_initial_context: OperationContext = {**common_initial_context}
 
-    bad_operation_to_start = OperationToStart(
-        operation_name=bad_operation_name, initial_context=bad_initial_context
-    )
+    bad_operation_to_start = OperationToStart(operation_name=bad_operation_name, initial_context=bad_initial_context)
 
     # 1. check it works
     await start_operation(app, bad_operation_name, good_initial_context)
@@ -543,11 +518,7 @@ async def test_missing_initial_context_key_from_operation(
     schedule_id = await start_operation(app, bad_operation_name, good_initial_context)
 
     with pytest.raises(OperationInitialContextKeyNotFoundError):
-        await register_to_start_after_on_executed_completed(
-            app, schedule_id, to_start=bad_operation_to_start
-        )
+        await register_to_start_after_on_executed_completed(app, schedule_id, to_start=bad_operation_to_start)
 
     with pytest.raises(OperationInitialContextKeyNotFoundError):
-        await register_to_start_after_on_reverted_completed(
-            app, schedule_id, to_start=bad_operation_to_start
-        )
+        await register_to_start_after_on_reverted_completed(app, schedule_id, to_start=bad_operation_to_start)

@@ -46,13 +46,9 @@ class PostgresSettings(BaseCustomSettings):
     ] = 50
     POSTGRES_MAX_POOLSIZE: Annotated[
         int,
-        Field(
-            description="Maximal number of connection in asyncpg pool (without overflow), lazily created on demand"
-        ),
+        Field(description="Maximal number of connection in asyncpg pool (without overflow), lazily created on demand"),
     ] = 10
-    POSTGRES_MAX_OVERFLOW: Annotated[
-        NonNegativeInt, Field(description="Maximal overflow connections")
-    ] = 20
+    POSTGRES_MAX_OVERFLOW: Annotated[NonNegativeInt, Field(description="Maximal overflow connections")] = 20
 
     POSTGRES_CLIENT_NAME: Annotated[
         str | None,
@@ -70,10 +66,7 @@ class PostgresSettings(BaseCustomSettings):
     @model_validator(mode="after")
     def validate_postgres_sizes(self) -> Self:
         if self.POSTGRES_MINSIZE > self.POSTGRES_MAXSIZE:
-            msg = (
-                f"assert POSTGRES_MINSIZE={self.POSTGRES_MINSIZE} <= "
-                f"POSTGRES_MAXSIZE={self.POSTGRES_MAXSIZE}"
-            )
+            msg = f"assert POSTGRES_MINSIZE={self.POSTGRES_MINSIZE} <= POSTGRES_MAXSIZE={self.POSTGRES_MAXSIZE}"
             raise ValueError(msg)
         return self
 

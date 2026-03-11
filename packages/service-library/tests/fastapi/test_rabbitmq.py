@@ -58,18 +58,14 @@ def rabbit_message(
 
 
 @pytest.fixture
-def disabled_rabbitmq(
-    rabbit_env_vars_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
+def disabled_rabbitmq(rabbit_env_vars_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     for key in rabbit_env_vars_dict:
         rabbit_env_vars_dict[key] = "null"
     setenvs_from_dict(monkeypatch, rabbit_env_vars_dict)
 
 
 @pytest.fixture
-def enabled_rabbitmq(
-    rabbit_env_vars_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> RabbitSettings:
+def enabled_rabbitmq(rabbit_env_vars_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> RabbitSettings:
     setenvs_from_dict(monkeypatch, rabbit_env_vars_dict)
     return RabbitSettings.create_from_envs()
 
@@ -131,7 +127,5 @@ async def test_post_message(
             print(
                 f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
             )
-            mocked_message_handler.assert_called_once_with(
-                rabbit_message.model_dump_json().encode()
-            )
+            mocked_message_handler.assert_called_once_with(rabbit_message.model_dump_json().encode())
             print("... message received")

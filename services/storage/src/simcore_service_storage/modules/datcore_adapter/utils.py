@@ -17,9 +17,7 @@ from ...constants import DATCORE_ID, DATCORE_STR
 from ...models import FileMetaData, PathMetaData
 
 
-def create_fmd_from_datcore_package(
-    user_id: UserID, pck_metadata: PackageMetaData
-) -> FileMetaData:
+def create_fmd_from_datcore_package(user_id: UserID, pck_metadata: PackageMetaData) -> FileMetaData:
     return FileMetaData(
         file_uuid=f"{pck_metadata.package_id}",
         location_id=DATCORE_ID,
@@ -39,9 +37,7 @@ def create_fmd_from_datcore_package(
     )
 
 
-def create_fmd_from_datcore_fmd(
-    user_id: UserID, dat_core_fmd: DatCoreFileMetaData
-) -> FileMetaData:
+def create_fmd_from_datcore_fmd(user_id: UserID, dat_core_fmd: DatCoreFileMetaData) -> FileMetaData:
     return FileMetaData(
         file_uuid=f"{dat_core_fmd.path}",
         location_id=DATCORE_ID,
@@ -79,9 +75,7 @@ def create_path_meta_data_from_datcore_package(
     )
 
 
-def create_path_meta_data_from_datcore_fmd(
-    user_id: UserID, dat_core_fmd: DatCoreFileMetaData
-) -> PathMetaData:
+def create_path_meta_data_from_datcore_fmd(user_id: UserID, dat_core_fmd: DatCoreFileMetaData) -> PathMetaData:
     return PathMetaData(
         path=Path(dat_core_fmd.dataset_id) / dat_core_fmd.id,
         display_path=dat_core_fmd.path,

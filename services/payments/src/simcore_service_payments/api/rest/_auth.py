@@ -15,9 +15,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post(
-    "/token", response_model=Token, operation_id="login_to_create_access_token"
-)
+@router.post("/token", response_model=Token, operation_id="login_to_create_access_token")
 async def login_to_create_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
@@ -34,8 +32,6 @@ async def login_to_create_access_token(
         )
 
     return {
-        "access_token": encode_access_token(
-            username=form_data.username, settings=settings
-        ),
+        "access_token": encode_access_token(username=form_data.username, settings=settings),
         "token_type": "bearer",
     }

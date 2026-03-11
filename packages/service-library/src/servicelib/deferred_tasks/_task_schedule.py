@@ -27,9 +27,7 @@ class TaskState(str, Enum):
 class TaskScheduleModel(BaseModel):
     timeout: Annotated[
         timedelta,
-        Field(
-            description="Amount of time after which the task execution will time out"
-        ),
+        Field(description="Amount of time after which the task execution will time out"),
     ]
     class_unique_reference: Annotated[
         ClassUniqueReference,
@@ -44,15 +42,11 @@ class TaskScheduleModel(BaseModel):
         ),
     ]
 
-    state: Annotated[
-        TaskState, Field(description="represents the execution step of the task")
-    ]
+    state: Annotated[TaskState, Field(description="represents the execution step of the task")]
 
     total_attempts: Annotated[
         NonNegativeInt,
-        Field(
-            description="maximum number of attempts before giving up (0 means no retries)"
-        ),
+        Field(description="maximum number of attempts before giving up (0 means no retries)"),
     ]
 
     execution_attempts: Annotated[
@@ -79,8 +73,7 @@ class TaskScheduleModel(BaseModel):
         TaskExecutionResult | None,
         Field(
             description=(
-                f"Populated by {TaskState.WORKER}. It always has a value after worker handles it."
-                "Will be used "
+                f"Populated by {TaskState.WORKER}. It always has a value after worker handles it.Will be used "
             ),
             discriminator="result_type",
         ),

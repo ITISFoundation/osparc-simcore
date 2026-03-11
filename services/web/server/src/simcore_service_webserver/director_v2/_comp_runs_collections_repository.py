@@ -41,9 +41,7 @@ async def get_comp_run_collection_or_none_by_id(
     conn, collection_run_id: CollectionRunID
 ) -> CompRunCollectionDBGet | None:
     result = await conn.execute(
-        comp_runs_collections.select().where(
-            comp_runs_collections.c.collection_run_id == f"{collection_run_id}"
-        )
+        comp_runs_collections.select().where(comp_runs_collections.c.collection_run_id == f"{collection_run_id}")
     )
     row = result.one_or_none()
     if row is None:
@@ -56,8 +54,7 @@ async def get_comp_run_collection_or_none_by_client_generated_id(
 ) -> CompRunCollectionDBGet | None:
     result = await conn.execute(
         comp_runs_collections.select().where(
-            comp_runs_collections.c.client_or_system_generated_id
-            == client_or_system_generated_id
+            comp_runs_collections.c.client_or_system_generated_id == client_or_system_generated_id
         )
     )
     row = result.one_or_none()
@@ -86,8 +83,6 @@ async def upsert_comp_run_collection(
             "modified": func.now(),
         },
     )
-    result = await conn.stream(
-        on_update_stmt.returning(comp_runs_collections.c.collection_run_id)
-    )
+    result = await conn.stream(on_update_stmt.returning(comp_runs_collections.c.collection_run_id))
     collection_id_tuple: tuple[UUID] = await result.one()
     return TypeAdapter(CollectionRunID).validate_python(collection_id_tuple[0])

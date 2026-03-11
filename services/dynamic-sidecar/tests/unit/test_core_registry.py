@@ -35,9 +35,7 @@ def _get_registry_config(
 
 @pytest.fixture
 def backup_docker_config_file() -> Iterable[None]:
-    backup_path = (
-        DOCKER_CONFIG_JSON_PATH.parent / f"{DOCKER_CONFIG_JSON_PATH.name}.backup"
-    )
+    backup_path = DOCKER_CONFIG_JSON_PATH.parent / f"{DOCKER_CONFIG_JSON_PATH.name}.backup"
 
     if not backup_path.exists() and DOCKER_CONFIG_JSON_PATH.exists():
         backup_path.write_text(DOCKER_CONFIG_JSON_PATH.read_text())
@@ -53,9 +51,7 @@ def backup_docker_config_file() -> Iterable[None]:
 
 
 @pytest.fixture
-def unset_registry_envs(
-    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def unset_registry_envs(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     for env in (
         "REGISTRY_AUTH",
         "REGISTRY_PATH",
@@ -89,9 +85,7 @@ async def test__login_registry(
     app: FastAPI,
     docker_registry: str,
 ) -> None:
-    registry_settings: RegistrySettings = (
-        app.state.settings.DY_DEPLOYMENT_REGISTRY_SETTINGS
-    )
+    registry_settings: RegistrySettings = app.state.settings.DY_DEPLOYMENT_REGISTRY_SETTINGS
     assert registry_settings.REGISTRY_URL == docker_registry  # noqa: SIM300
     assert registry_settings.REGISTRY_AUTH is True
     assert registry_settings.REGISTRY_USER == "testuser"

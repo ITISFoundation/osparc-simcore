@@ -14,9 +14,7 @@ async def test_confirmation_token_workflow(
     # Step 1: Create a new confirmation token
     user_id = registered_user["id"]
     action = "RESET_PASSWORD"
-    confirmation = await confirmation_service.get_or_create_confirmation_without_data(
-        user_id=user_id, action=action
-    )
+    confirmation = await confirmation_service.get_or_create_confirmation_without_data(user_id=user_id, action=action)
 
     assert confirmation is not None
     assert confirmation.user_id == user_id
@@ -41,9 +39,7 @@ async def test_confirmation_token_workflow(
         assert request.match_info["code"] == confirmation.code
         return web.Response()
 
-    app.router.add_get(
-        "/auth/confirmation/{code}", mock_handler, name="auth_confirmation"
-    )
+    app.router.add_get("/auth/confirmation/{code}", mock_handler, name="auth_confirmation")
     request = make_mocked_request(
         "GET",
         "https://example.com/auth/confirmation/{code}",
@@ -52,9 +48,7 @@ async def test_confirmation_token_workflow(
     )
 
     # Create confirmation link
-    confirmation_link = _confirmation_web.make_confirmation_link(
-        request, confirmation.code
-    )
+    confirmation_link = _confirmation_web.make_confirmation_link(request, confirmation.code)
 
     # Assertions
     assert confirmation_link.startswith("https://example.com/auth/confirmation/")
@@ -69,9 +63,7 @@ async def test_expired_confirmation_token(
     action = "CHANGE_EMAIL"
 
     # Create a brand new confirmation token
-    confirmation_1 = await confirmation_service.get_or_create_confirmation_without_data(
-        user_id=user_id, action=action
-    )
+    confirmation_1 = await confirmation_service.get_or_create_confirmation_without_data(user_id=user_id, action=action)
 
     assert confirmation_1 is not None
     assert confirmation_1.user_id == user_id
@@ -81,35 +73,20 @@ async def test_expired_confirmation_token(
     assert not confirmation_service.is_confirmation_expired(confirmation_1)
     assert confirmation_service.get_expiration_date(confirmation_1)
 
-    confirmation_2 = await confirmation_service.get_or_create_confirmation_without_data(
-        user_id=user_id, action=action
-    )
+    confirmation_2 = await confirmation_service.get_or_create_confirmation_without_data(user_id=user_id, action=action)
 
     assert confirmation_2 == confirmation_1
 
     # Enforce ALL EXPIRED
     confirmation_service.options.CHANGE_EMAIL_CONFIRMATION_LIFETIME = 0
-    assert confirmation_service.options.get_confirmation_lifetime(action) == timedelta(
-        seconds=0
-    )
+    assert confirmation_service.options.get_confirmation_lifetime(action) == timedelta(seconds=0)
 
-    confirmation_3 = await confirmation_service.get_or_create_confirmation_without_data(
-        user_id=user_id, action=action
-    )
+    confirmation_3 = await confirmation_service.get_or_create_confirmation_without_data(user_id=user_id, action=action)
 
     # when expired, it gets renewed
     assert confirmation_3 != confirmation_1
 
     # now all have expired
-    assert (
-        await confirmation_service.validate_confirmation_code(confirmation_1.code)
-        is None
-    )
-    assert (
-        await confirmation_service.validate_confirmation_code(confirmation_2.code)
-        is None
-    )
-    assert (
-        await confirmation_service.validate_confirmation_code(confirmation_3.code)
-        is None
-    )
+    assert await confirmation_service.validate_confirmation_code(confirmation_1.code) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_2.code) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_3.code) is None

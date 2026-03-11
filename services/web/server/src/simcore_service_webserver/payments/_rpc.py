@@ -1,4 +1,4 @@
-"""RPC client-side for the RPC server at the payments service"""
+"""RPC server side for the RPC interface of the payments service"""
 
 import logging
 from decimal import Decimal
@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def init_payment(  # pylint: disable=too-many-arguments
+async def init_payment(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     app: web.Application,
     *,
     amount_dollars: Decimal,
@@ -110,8 +110,7 @@ async def get_payments_page(
         timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert (  # nosec
-        TypeAdapter(tuple[int, list[PaymentTransaction]]).validate_python(result)
-        is not None
+        TypeAdapter(tuple[int, list[PaymentTransaction]]).validate_python(result) is not None
     )
     return result
 

@@ -26,24 +26,13 @@ async def test_sa_transactions(asyncpg_engine: AsyncEngine):
     total_count_query = sa.select(sa.func.count()).select_from(tags)
 
     # WRITE queries
-    query1 = (
-        tags.insert().values(id=2, name="query1", color="blue").returning(tags.c.id)
-    )
-    query11 = (
-        tags.insert().values(id=3, name="query11", color="blue").returning(tags.c.id)
-    )
-    query12 = (
-        tags.insert().values(id=5, name="query12", color="blue").returning(tags.c.id)
-    )
-    query2 = (
-        tags.insert().values(id=6, name="query2", color="blue").returning(tags.c.id)
-    )
-    query2 = (
-        tags.insert().values(id=7, name="query2", color="blue").returning(tags.c.id)
-    )
+    query1 = tags.insert().values(id=2, name="query1", color="blue").returning(tags.c.id)
+    query11 = tags.insert().values(id=3, name="query11", color="blue").returning(tags.c.id)
+    query12 = tags.insert().values(id=5, name="query12", color="blue").returning(tags.c.id)
+    query2 = tags.insert().values(id=6, name="query2", color="blue").returning(tags.c.id)
+    query2 = tags.insert().values(id=7, name="query2", color="blue").returning(tags.c.id)
 
     async with asyncpg_engine.connect() as conn, conn.begin():  # starts transaction (savepoint)
-
         result = await conn.execute(query1)
         assert result.scalar() == 2
 
@@ -101,9 +90,7 @@ class OneResourceRepoDemo:
         row_id: int,
     ) -> dict[str, Any] | None:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            result = await conn.execute(
-                sa.select(self.table).where(self.table.c.id == row_id)
-            )
+            result = await conn.execute(sa.select(self.table).where(self.table.c.id == row_id))
             row = result.mappings().fetchone()
             return dict(row) if row else None
 
@@ -135,9 +122,7 @@ class OneResourceRepoDemo:
         **values,
     ) -> bool:
         async with transaction_context(self.engine, connection) as conn:
-            result = await conn.execute(
-                self.table.update().where(self.table.c.id == row_id).values(**values)
-            )
+            result = await conn.execute(self.table.update().where(self.table.c.id == row_id).values(**values))
             return result.rowcount > 0
 
     async def delete(
@@ -147,14 +132,11 @@ class OneResourceRepoDemo:
         row_id: int,
     ) -> bool:
         async with transaction_context(self.engine, connection) as conn:
-            result = await conn.execute(
-                self.table.delete().where(self.table.c.id == row_id)
-            )
+            result = await conn.execute(self.table.delete().where(self.table.c.id == row_id))
             return result.rowcount > 0
 
 
 async def test_oneresourcerepodemo_prototype(asyncpg_engine: AsyncEngine):
-
     tags_repo = OneResourceRepoDemo(engine=asyncpg_engine, table=tags)
 
     # create

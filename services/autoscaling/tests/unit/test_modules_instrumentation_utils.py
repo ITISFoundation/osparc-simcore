@@ -21,7 +21,7 @@ def _assert_metrics(
     *,
     expected_num_samples: int,
     check_sample_index: int | None,
-    expected_sample: _ExpectedSample | None
+    expected_sample: _ExpectedSample | None,
 ) -> None:
     collected_metrics = list(metrics_to_collect.collect())
     assert len(collected_metrics) == 1

@@ -81,9 +81,7 @@ SLOW_HANDLER_DELAY_SECS = 2.0  # secs
 
 
 @pytest.fixture
-def mock_environment(
-    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def mock_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -135,9 +133,7 @@ async def client(
     @routes.get(r"/timeout/{secs}")
     async def time_out(request: web.Request):
         secs = float(request.match_info.get("secs", 0))
-        await asyncio.wait_for(
-            asyncio.sleep(10 * secs), timeout=secs
-        )  # raises TimeOutError
+        await asyncio.wait_for(asyncio.sleep(10 * secs), timeout=secs)  # raises TimeOutError
 
     @routes.get(r"/delay/{secs}")
     async def delay_response(request: web.Request):
@@ -166,9 +162,7 @@ async def client(
 
     app.router.add_routes(routes)
 
-    return await aiohttp_client(
-        app, server_kwargs={key: main[key] for key in ("host", "port")}
-    )
+    return await aiohttp_client(app, server_kwargs={key: main[key] for key in ("host", "port")})
 
 
 def test_diagnostics_setup(client: TestClient):
@@ -193,9 +187,7 @@ async def test_healthy_app(client: TestClient, api_version_prefix: str):
     assert data["version"] == simcore_service_webserver._meta.__version__
 
 
-async def test_unhealthy_app_with_slow_callbacks(
-    client: TestClient, api_version_prefix: str
-):
+async def test_unhealthy_app_with_slow_callbacks(client: TestClient, api_version_prefix: str):
     resp = await client.get(f"/{api_version_prefix}/health")
     await assert_status(resp, status.HTTP_200_OK)
 
@@ -224,9 +216,7 @@ async def test_diagnose_on_failure(client: TestClient):
 
 async def test_diagnose_on_response_delays(client: TestClient):
     assert client.app
-    settings: DiagnosticsSettings = client.app[
-        APP_SETTINGS_APPKEY
-    ].WEBSERVER_DIAGNOSTICS
+    settings: DiagnosticsSettings = client.app[APP_SETTINGS_APPKEY].WEBSERVER_DIAGNOSTICS
 
     tmax = settings.DIAGNOSTICS_MAX_AVG_LATENCY
     coros = [client.get(f"/delay/{1.1 * tmax}") for _ in range(10)]
@@ -248,9 +238,7 @@ def test_read_prometheus_counter():
     # TODO move to test_prometheus_utils.py in servicelib
     from prometheus_client import Counter
 
-    counter = Counter(
-        "my_fullname_counter", "description", labelnames=("name", "surname")
-    )
+    counter = Counter("my_fullname_counter", "description", labelnames=("name", "surname"))
 
     def get_total():
         total_count = 0

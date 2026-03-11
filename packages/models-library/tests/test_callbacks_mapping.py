@@ -24,6 +24,4 @@ def test_inactivity_time_out_is_max_capped():
 
     for out_of_bounds in [INACTIVITY_TIMEOUT_CAP + 1, TIMEOUT_MIN - 1]:
         with pytest.raises(ValidationError):
-            TypeAdapter(CallbacksMapping).validate_python(
-                _format_with_timeout(out_of_bounds)
-            )
+            TypeAdapter(CallbacksMapping).validate_python(_format_with_timeout(out_of_bounds))

@@ -60,9 +60,7 @@ async def insert_init_payment_method(
                 )
             )
         except sqlalchemy.exc.IntegrityError as err:
-            raise PaymentMethodUniqueViolationError(
-                payment_method_id=payment_method_id
-            ) from err
+            raise PaymentMethodUniqueViolationError(payment_method_id=payment_method_id) from err
 
 
 async def list_successful_payment_methods(
@@ -121,13 +119,10 @@ async def get_pending_payment_methods_ids(
             .order_by(payments_methods.c.initiated_at.asc())  # oldest first
         )
         rows = result.fetchall()
-        return [
-            TypeAdapter(PaymentMethodID).validate_python(row.payment_method_id)
-            for row in rows
-        ]
+        return [TypeAdapter(PaymentMethodID).validate_python(row.payment_method_id) for row in rows]
 
 
-async def udpate_payment_method(
+async def update_payment_method(
     app: web.Application,
     payment_method_id: PaymentMethodID,
     connection: AsyncConnection | None = None,

@@ -33,12 +33,8 @@ from yarl import URL
     "model_cls, example_name, example_data",
     walk_model_examples_in_package(simcore_service_webserver.studies_dispatcher),
 )
-def test_model_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-):
-    assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_model_examples(model_cls: type[BaseModel], example_name: str, example_data: Any):
+    assert_validation_model(model_cls, example_name=example_name, example_data=example_data)
 
 
 _SIZEBYTES = TypeAdapter(ByteSize).validate_python("3MiB")
@@ -48,33 +44,29 @@ _SIZEBYTES = TypeAdapter(ByteSize).validate_python("3MiB")
 _DOWNLOAD_LINK = "https://discover-use1.s3.amazonaws.com/23/2/files/dataset_description.xlsx?AWSAccessKeyId=AKIAQNJEWKCFAOLGQTY6&Signature=K229A0CE5Z5OU2PRi2cfrfgLLEw%3D&x-amz-request-payer=requester&Expires=1605545606"
 _DOWNLOAD_LINK1 = "https://prod-discover-publish-use1.s3.amazonaws.com/44/2/files/code/model_validation.ipynb?response-content-type=application%2Foctet-stream&AWSAccessKeyId=AKIAVPHN3KJHIM77P4OY&Signature=WPBOqEyTnUIKfxRFaC2YnyO85XI%3D&x-amz-request-payer=requester&Expires=1680171597"
 _DOWNLOAD_LINK2 = "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
-_DOWNLOAD_LINK3 = (
-    "https://raw.githubusercontent.com/rawgraphs/raw/master/data/orchestra.csv"
-)
+_DOWNLOAD_LINK3 = "https://raw.githubusercontent.com/rawgraphs/raw/master/data/orchestra.csv"
 
 
 @pytest.mark.parametrize(
     "url_in,expected_download_link",
     [
         (
-            f'{URL("http://localhost:9081").with_path("/view").with_query(file_type="CSV", viewer_key="simcore/services/comp/foo", viewer_version="1.0.0", file_size="300", file_name="orchestra.csv", download_link=_DOWNLOAD_LINK3)}',
+            f"{URL('http://localhost:9081').with_path('/view').with_query(file_type='CSV', viewer_key='simcore/services/comp/foo', viewer_version='1.0.0', file_size='300', file_name='orchestra.csv', download_link=_DOWNLOAD_LINK3)}",
             _DOWNLOAD_LINK3,
         ),
         (
-            f'{URL("http://127.0.0.1:9081").with_path("/view").with_query(file_type="IPYNB", viewer_key="simcore/services/dynamic/jupyter-octave-python-math", viewer_version="1.0.0", file_size="300", file_name="sample.ipynb", download_link=_DOWNLOAD_LINK2)}',
+            f"{URL('http://127.0.0.1:9081').with_path('/view').with_query(file_type='IPYNB', viewer_key='simcore/services/dynamic/jupyter-octave-python-math', viewer_version='1.0.0', file_size='300', file_name='sample.ipynb', download_link=_DOWNLOAD_LINK2)}",
             _DOWNLOAD_LINK2,
         ),
         (
-            f'{URL("https://123.123.0.1:9000").with_path("/view").with_query(file_type="VTK", file_size="300", download_link=_DOWNLOAD_LINK1)}',
+            f"{URL('https://123.123.0.1:9000').with_path('/view').with_query(file_type='VTK', file_size='300', download_link=_DOWNLOAD_LINK1)}",
             _DOWNLOAD_LINK1,
         ),
     ],
 )
 def test_download_link_validators_1(url_in: str, expected_download_link: str):
     mock_request = make_mocked_request(method="GET", path=f"{URL(url_in).relative()}")
-    params = parse_request_query_parameters_as(
-        ServiceAndFileParams | FileQueryParams, mock_request
-    )
+    params = parse_request_query_parameters_as(ServiceAndFileParams | FileQueryParams, mock_request)
 
     assert f"{params.download_link}" == expected_download_link
 
@@ -100,9 +92,7 @@ def test_download_link_validators_2(file_and_service_params: dict[str, Any]):
     assert params.download_link.host.endswith("s3.amazonaws.com")
 
     query = parse_qs(params.download_link.query)
-    assert {"AWSAccessKeyId", "Signature", "Expires", "x-amz-request-payer"} == set(
-        query.keys()
-    )
+    assert {"AWSAccessKeyId", "Signature", "Expires", "x-amz-request-payer"} == set(query.keys())
 
 
 def test_file_and_service_params(file_and_service_params: dict[str, Any]):
@@ -114,9 +104,7 @@ def test_file_and_service_params(file_and_service_params: dict[str, Any]):
     service_params = parse_obj_or_none(ServiceParams, request_params)
     assert service_params
 
-    file_and_service_params = parse_obj_or_none(
-        ServiceAndFileParams | FileParams | ServiceParams, request_params
-    )
+    file_and_service_params = parse_obj_or_none(ServiceAndFileParams | FileParams | ServiceParams, request_params)
     assert isinstance(file_and_service_params, ServiceAndFileParams)
 
 
@@ -134,9 +122,7 @@ def test_file_only_params():
     service_params = parse_obj_or_none(ServiceParams, request_params)
     assert not service_params
 
-    file_and_service_params = parse_obj_or_none(
-        ServiceAndFileParams | FileParams | ServiceParams, request_params
-    )
+    file_and_service_params = parse_obj_or_none(ServiceAndFileParams | FileParams | ServiceParams, request_params)
     assert isinstance(file_and_service_params, FileParams)
 
 
@@ -152,7 +138,5 @@ def test_service_only_params():
     service_params = parse_obj_or_none(ServiceParams, request_params)
     assert service_params
 
-    file_and_service_params = parse_obj_or_none(
-        ServiceAndFileParams | FileParams | ServiceParams, request_params
-    )
+    file_and_service_params = parse_obj_or_none(ServiceAndFileParams | FileParams | ServiceParams, request_params)
     assert isinstance(file_and_service_params, ServiceParams)

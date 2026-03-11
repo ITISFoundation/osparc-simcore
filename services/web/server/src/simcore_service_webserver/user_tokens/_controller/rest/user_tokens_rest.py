@@ -44,9 +44,7 @@ async def create_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     token_create = await parse_request_body_as(MyTokenCreate, request)
 
-    token = await _service.create_token(
-        request.app, user_id=req_ctx.user_id, token=token_create.to_domain_model()
-    )
+    token = await _service.create_token(request.app, user_id=req_ctx.user_id, token=token_create.to_domain_model())
 
     return envelope_json_response(MyTokenGet.from_domain_model(token), web.HTTPCreated)
 
@@ -59,9 +57,7 @@ async def get_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(TokenPathParams, request)
 
-    token = await _service.get_token(
-        request.app, user_id=req_ctx.user_id, service_id=req_path_params.service
-    )
+    token = await _service.get_token(request.app, user_id=req_ctx.user_id, service_id=req_path_params.service)
 
     return envelope_json_response(MyTokenGet.from_domain_model(token))
 
@@ -74,8 +70,6 @@ async def delete_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(TokenPathParams, request)
 
-    await _service.delete_token(
-        request.app, user_id=req_ctx.user_id, service_id=req_path_params.service
-    )
+    await _service.delete_token(request.app, user_id=req_ctx.user_id, service_id=req_path_params.service)
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

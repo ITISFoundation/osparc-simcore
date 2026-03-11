@@ -25,9 +25,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._operation imp
 
 class BaseBS(BaseStep):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
 

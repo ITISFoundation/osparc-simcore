@@ -46,20 +46,14 @@ async def service_submission(request: web.Request):
             maxsize = 10 * 1024 * 1024  # 10MB
             actualsize = len(filedata)
             if actualsize > maxsize:
-                raise web.HTTPRequestEntityTooLarge(
-                    max_size=maxsize, actual_size=actualsize
-                )
+                raise web.HTTPRequestEntityTooLarge(max_size=maxsize, actual_size=actualsize)
             filename = part.filename  # type: ignore[union-attr] # PC, IP Whoever is in charge of this. please have a look
             continue
-        raise web.HTTPUnsupportedMediaType(
-            text=f"One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}"
-        )
+        raise web.HTTPUnsupportedMediaType(text=f"One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}")
 
     support_email_address = product.support_email
 
-    user = await users_service.get_user_name_and_email(
-        request.app, user_id=request[RQT_USERID_KEY]
-    )
+    user = await users_service.get_user_name_and_email(request.app, user_id=request[RQT_USERID_KEY])
 
     try:
         attachments = [
@@ -83,9 +77,7 @@ async def service_submission(request: web.Request):
             template=themed("templates/common", _EMAIL_TEMPLATE_NAME),
             context={
                 "user": user.email,
-                "data": json2html.convert(
-                    json=json_dumps(data), table_attributes='class="pure-table"'
-                ),
+                "data": json2html.convert(json=json_dumps(data), table_attributes='class="pure-table"'),
                 "subject": "New service submission",
             },
             attachments=attachments,

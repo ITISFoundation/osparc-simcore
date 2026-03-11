@@ -5,13 +5,13 @@ dependencies = [
   "asyncpg",
   "black",
   "boto3",
-  # NOTE: these must be in sync with ospar
+  # NOTE: these must be in sync with osparc
   "cloudpickle",
   "dask[distributed]",
   "mypy_boto3_ec2",
   "types-boto3",
   "parse",
-  "paramiko",
+  "paramiko<4",          # sshtunnel not yet compatible with paramiko 4
   "pydantic[email]",
   "pylint",
   "python-dotenv",
@@ -29,7 +29,7 @@ authors = [
 ]
 description = "Helper script for monitoring clusters"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 
 [project.scripts]
 autoscaled-monitor = "autoscaled_monitor.cli:app"

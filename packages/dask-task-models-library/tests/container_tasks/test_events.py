@@ -41,12 +41,8 @@ def job_id(faker: Faker, request: pytest.FixtureRequest) -> str | bytes:
 
 
 @pytest.fixture()
-def mocked_dask_worker_job_id(
-    mocker: MockerFixture, job_id: str | bytes
-) -> str | bytes:
-    mock_get_worker = mocker.patch(
-        "dask_task_models_library.container_tasks.events.get_worker", autospec=True
-    )
+def mocked_dask_worker_job_id(mocker: MockerFixture, job_id: str | bytes) -> str | bytes:
+    mock_get_worker = mocker.patch("dask_task_models_library.container_tasks.events.get_worker", autospec=True)
     mock_get_worker.return_value.get_current_task.return_value = job_id
     return job_id
 
@@ -56,9 +52,7 @@ def task_owner(request: pytest.FixtureRequest) -> TaskOwner:
     return TaskOwner(**request.param)
 
 
-def test_task_progress_from_worker(
-    mocked_dask_worker_job_id: str | bytes, task_owner: TaskOwner
-):
+def test_task_progress_from_worker(mocked_dask_worker_job_id: str | bytes, task_owner: TaskOwner):
     event = TaskProgressEvent.from_dask_worker(0.7, task_owner=task_owner)
 
     assert (
@@ -69,9 +63,7 @@ def test_task_progress_from_worker(
     assert event.progress == 0.7
 
 
-@pytest.mark.parametrize(
-    "progress_value, expected_progress", [(1.5, 1), (-0.5, 0), (0.75, 0.75)]
-)
+@pytest.mark.parametrize("progress_value, expected_progress", [(1.5, 1), (-0.5, 0), (0.75, 0.75)])
 def test_task_progress_progress_value_is_capped_between_0_and_1(
     mocked_dask_worker_job_id: str | bytes,
     task_owner: TaskOwner,

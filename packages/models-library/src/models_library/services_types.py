@@ -30,17 +30,11 @@ FileName: TypeAlias = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
 
 ServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
 
-ServiceKeyEncoded: TypeAlias = Annotated[
-    str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)
-]
+ServiceKeyEncoded: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)]
 
-DynamicServiceKey: TypeAlias = Annotated[
-    str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)
-]
+DynamicServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)]
 
-ComputationalServiceKey: TypeAlias = Annotated[
-    str, StringConstraints(pattern=COMPUTATIONAL_SERVICE_KEY_RE)
-]
+ComputationalServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=COMPUTATIONAL_SERVICE_KEY_RE)]
 
 ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 

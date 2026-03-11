@@ -34,13 +34,11 @@ def envs_from_docker_inspect() -> EnvVarsDict:
 
 
 @pytest.fixture
-def app_environment(
-    monkeypatch: pytest.MonkeyPatch, envs_from_docker_inspect: EnvVarsDict
-) -> EnvVarsDict:
+def app_environment(monkeypatch: pytest.MonkeyPatch, envs_from_docker_inspect: EnvVarsDict) -> EnvVarsDict:
     return setenvs_from_dict(monkeypatch, envs_from_docker_inspect)
 
 
-def test_applicaton_settings(app_environment: EnvVarsDict):
+def test_application_settings(app_environment: EnvVarsDict):
     # should not raise
     settings = BaseApplicationSettings.create_from_envs()
 

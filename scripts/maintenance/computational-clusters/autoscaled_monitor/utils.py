@@ -10,11 +10,11 @@ from mypy_boto3_ec2.service_resource import Instance
 from .constants import DANGER, HOUR
 
 
-def timedelta_formatting(
-    time_diff: datetime.timedelta, *, color_code: bool = False
-) -> str:
+def timedelta_formatting(time_diff: datetime.timedelta, *, color_code: bool = False) -> str:
     formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days > 0 else ""
-    formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
+    formatted_time_diff += (
+        f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
+    )
     if time_diff.days and color_code:
         formatted_time_diff = f"[red]{formatted_time_diff}[/red]"
     elif (time_diff.seconds > 5 * HOUR) and color_code:
@@ -39,12 +39,18 @@ def get_last_heartbeat(instance: Instance) -> datetime.datetime | None:
     return None
 
 
+def get_warm_buffer_tag(instance: Instance) -> bool:
+    """Returns True if the instance is a warm buffer, False otherwise."""
+    for tag in instance.tags:
+        assert "Key" in tag  # nosec
+        if tag["Key"] == "io.simcore.autoscaling.buffer_machine":
+            value = tag.get("Value", "false")
+            return value.lower() == "true"
+    return False
+
+
 def color_encode_with_state(string: str, ec2_instance: Instance) -> str:
-    return (
-        f"[green]{string}[/green]"
-        if ec2_instance.state["Name"] == "running"
-        else f"[yellow]{string}[/yellow]"
-    )
+    return f"[green]{string}[/green]" if ec2_instance.state["Name"] == "running" else f"[yellow]{string}[/yellow]"
 
 
 def color_encode_with_threshold(string: str, value, threshold) -> str:
@@ -55,7 +61,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def to_async(func: Callable[P, R]) -> Callable[P, Awaitable[R]]:
+def to_async[**P, R](func: Callable[P, R]) -> Callable[P, Awaitable[R]]:
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Awaitable[R]:
         loop = asyncio.get_running_loop()

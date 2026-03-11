@@ -4,7 +4,7 @@ from aiopg.sa.engine import Engine
 
 from .utils_migration import get_current_head
 
-_ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
+_ENGINE_ATTRS = ["closed", "driver", "dsn", "freesize", "maxsize", "minsize", "name", "size", "timeout"]
 
 
 def get_pg_engine_info(engine: Engine) -> dict[str, Any]:

@@ -46,18 +46,12 @@ async def get_app_diagnostics(request: web.Request):
         /v0/status/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
     """
     # tasks in loop
-    data: dict[str, Any] = {
-        "loop_tasks": [get_task_info(task) for task in asyncio.all_tasks()]
-    }
+    data: dict[str, Any] = {"loop_tasks": [get_task_info(task) for task in asyncio.all_tasks()]}
 
     # allocated memory
-    query_params: StatusDiagnosticsQueryParam = parse_request_query_parameters_as(
-        StatusDiagnosticsQueryParam, request
-    )
+    query_params: StatusDiagnosticsQueryParam = parse_request_query_parameters_as(StatusDiagnosticsQueryParam, request)
     if query_params.top_tracemalloc is not None:
-        data.update(
-            top_tracemalloc=get_tracemalloc_info(top=query_params.top_tracemalloc)
-        )
+        data.update(top_tracemalloc=get_tracemalloc_info(top=query_params.top_tracemalloc))
 
     assert StatusDiagnosticsGet.model_validate(data) is not None  # nosec
     return envelope_json_response(data)
@@ -76,11 +70,7 @@ async def get_app_status(request: web.Request):
     )
 
     def _get_url_for(operation_id, **kwargs):
-        return str(
-            request.url.with_path(
-                str(request.app.router[operation_id].url_for(**kwargs))
-            )
-        )
+        return str(request.url.with_path(str(request.app.router[operation_id].url_for(**kwargs))))
 
     def _get_client_session_info():
         client: ClientSession = get_client_session(request.app)
@@ -123,14 +113,10 @@ async def get_app_status(request: web.Request):
         }
 
     async def _check_director2():
-        check.services["director_v2"] = {
-            "healthy": await director_v2_service.is_healthy(request.app)
-        }
+        check.services["director_v2"] = {"healthy": await director_v2_service.is_healthy(request.app)}
 
     async def _check_catalog():
-        check.services["catalog"] = {
-            "healthy": await catalog_service.is_catalog_service_responsive(request.app)
-        }
+        check.services["catalog"] = {"healthy": await catalog_service.is_catalog_service_responsive(request.app)}
 
     async def _check_resource_usage_tracker():
         check.services["resource_usage_tracker"] = {

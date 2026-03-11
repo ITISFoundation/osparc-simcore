@@ -42,9 +42,7 @@ def volume_content(tmpdir: Path) -> Path:
 
 
 @pytest.fixture
-async def mock_container_with_data(
-    volume_content: Path, monkeypatch: pytest.MonkeyPatch
-) -> AsyncIterable[str]:
+async def mock_container_with_data(volume_content: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncIterable[str]:
     async with aiodocker.Docker() as client:
         container = await client.containers.run(
             config={
@@ -64,7 +62,7 @@ async def mock_container_with_data(
 
 
 @pytest.fixture
-def downlaoded_from_s3(tmpdir: Path) -> Path:
+def downloaded_from_s3(tmpdir: Path) -> Path:
     path = Path(tmpdir) / "downloaded_from_s3"
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -75,9 +73,7 @@ async def mock__get_self_container_ip(
     mock_container_with_data: str,
     mocker: MockerFixture,
 ) -> None:
-    container_ip = await run_command_in_container(
-        mock_container_with_data, command="hostname -i"
-    )
+    container_ip = await run_command_in_container(mock_container_with_data, command="hostname -i")
 
     mocker.patch(
         "simcore_service_agent.services.backup._get_self_container_ip",
@@ -92,13 +88,14 @@ async def test_backup_volume(
     project_id: ProjectID,
     swarm_stack_name: str,
     service_run_id: ServiceRunID,
-    downlaoded_from_s3: Path,
+    downloaded_from_s3: Path,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
     initialized_app: FastAPI,
 ):
     node_id = uuid4()
     volumes: set[str] = await create_dynamic_sidecar_volumes(
-        node_id, True  # noqa: FBT003
+        node_id,
+        True,  # noqa: FBT003
     )
 
     for volume in volumes:
@@ -131,18 +128,13 @@ async def test_backup_volume(
 
         async def _download_file(key: str) -> None:
             key_path = Path(key)
-            (downlaoded_from_s3 / key_path.parent.name).mkdir(
-                parents=True, exist_ok=True
-            )
+            (downloaded_from_s3 / key_path.parent.name).mkdir(parents=True, exist_ok=True)
             await s3_client.download_file(
                 settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET,
                 key,
-                downlaoded_from_s3 / key_path.parent.name / key_path.name,
+                downloaded_from_s3 / key_path.parent.name / key_path.name,
             )
 
         await asyncio.gather(*[_download_file(key) for key in synced_keys])
 
-        assert (
-            len([x for x in downlaoded_from_s3.rglob("*") if x.is_file()])
-            == expected_files
-        )
+        assert len([x for x in downloaded_from_s3.rglob("*") if x.is_file()]) == expected_files

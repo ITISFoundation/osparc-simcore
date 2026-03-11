@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'services/invitations'
+# Shortcut to install all packages for the contiguous integration (CI) of 'services/invitations'
 #
 # - As ci.txt but w/ tests
 #

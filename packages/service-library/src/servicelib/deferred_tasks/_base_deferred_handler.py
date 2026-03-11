@@ -53,7 +53,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         total_attempts: NonNegativeInt,
     ) -> timedelta:
         """
-        returns: the delay between eatch retry attempt (default: 0s)
+        returns: the delay between each retry attempt (default: 0s)
         """
         assert context  # nosec
         assert remaining_attempts  # nosec
@@ -90,9 +90,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         """called when ``run`` provided a successful result"""
 
     @classmethod
-    async def on_finished_with_error(
-        cls, error: TaskResultError, context: DeferredContext
-    ) -> None:
+    async def on_finished_with_error(cls, error: TaskResultError, context: DeferredContext) -> None:
         """
         called when ``run`` code raises an error
 

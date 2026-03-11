@@ -127,12 +127,8 @@ async def check_user_permissions(
     object_type: Literal["function", "function_job", "function_job_collection"],
     permissions: list[Literal["read", "write", "execute"]],
 ) -> bool:
-
     api_access_rights = [
-        getattr(
-            FunctionsApiAccessRights, f"{permission.upper()}_{object_type.upper()}S"
-        )
-        for permission in permissions
+        getattr(FunctionsApiAccessRights, f"{permission.upper()}_{object_type.upper()}S") for permission in permissions
     ]
     await check_user_api_access_rights(
         app,
@@ -155,27 +151,15 @@ async def check_user_permissions(
     match object_type:
         case "function":
             errors = {
-                "read": FunctionReadAccessDeniedError(
-                    user_id=user_id, function_id=object_id
-                ),
-                "write": FunctionWriteAccessDeniedError(
-                    user_id=user_id, function_id=object_id
-                ),
-                "execute": FunctionExecuteAccessDeniedError(
-                    user_id=user_id, function_id=object_id
-                ),
+                "read": FunctionReadAccessDeniedError(user_id=user_id, function_id=object_id),
+                "write": FunctionWriteAccessDeniedError(user_id=user_id, function_id=object_id),
+                "execute": FunctionExecuteAccessDeniedError(user_id=user_id, function_id=object_id),
             }
         case "function_job":
             errors = {
-                "read": FunctionJobReadAccessDeniedError(
-                    user_id=user_id, function_job_id=object_id
-                ),
-                "write": FunctionJobWriteAccessDeniedError(
-                    user_id=user_id, function_job_id=object_id
-                ),
-                "execute": FunctionJobExecuteAccessDeniedError(
-                    user_id=user_id, function_job_id=object_id
-                ),
+                "read": FunctionJobReadAccessDeniedError(user_id=user_id, function_job_id=object_id),
+                "write": FunctionJobWriteAccessDeniedError(user_id=user_id, function_job_id=object_id),
+                "execute": FunctionJobExecuteAccessDeniedError(user_id=user_id, function_job_id=object_id),
             }
         case "function_job_collection":
             errors = {
@@ -314,9 +298,7 @@ async def _internal_set_group_permissions(
                     )
                 )
                 updated_row = update_result.one()
-                access_rights_list.append(
-                    (object_id, FunctionGroupAccessRights(**updated_row))
-                )
+                access_rights_list.append((object_id, FunctionGroupAccessRights(**updated_row)))
 
         return access_rights_list
 
@@ -333,11 +315,7 @@ async def set_group_permissions(
     read: bool | None = None,
     write: bool | None = None,
     execute: bool | None = None,
-) -> list[
-    tuple[
-        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
-    ]
-]:
+) -> list[tuple[FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights]]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         for object_id in object_ids:
             await check_user_permissions(
@@ -468,15 +446,9 @@ async def get_user_api_access_rights(
             combined_permissions.read_function_jobs |= row.read_function_jobs
             combined_permissions.write_function_jobs |= row.write_function_jobs
             combined_permissions.execute_function_jobs |= row.execute_function_jobs
-            combined_permissions.read_function_job_collections |= (
-                row.read_function_job_collections
-            )
-            combined_permissions.write_function_job_collections |= (
-                row.write_function_job_collections
-            )
-            combined_permissions.execute_function_job_collections |= (
-                row.execute_function_job_collections
-            )
+            combined_permissions.read_function_job_collections |= row.read_function_job_collections
+            combined_permissions.write_function_job_collections |= row.write_function_job_collections
+            combined_permissions.execute_function_job_collections |= row.execute_function_job_collections
 
         return combined_permissions
 
@@ -492,9 +464,7 @@ async def check_exists(
     Checks if the object exists in the database.
     """
     error: (
-        FunctionIDNotFoundError
-        | FunctionJobIDNotFoundError
-        | FunctionJobCollectionIDNotFoundError
+        FunctionIDNotFoundError | FunctionJobIDNotFoundError | FunctionJobCollectionIDNotFoundError
     )  # This is to avoid mypy bug
     match object_type:
         case "function":
@@ -505,14 +475,10 @@ async def check_exists(
             error = FunctionJobIDNotFoundError(function_job_id=object_id)
         case "function_job_collection":
             main_table = function_job_collections_table
-            error = FunctionJobCollectionIDNotFoundError(
-                function_job_collection_id=object_id
-            )
+            error = FunctionJobCollectionIDNotFoundError(function_job_collection_id=object_id)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
-            main_table.select().where(main_table.c.uuid == object_id)
-        )
+        result = await conn.execute(main_table.select().where(main_table.c.uuid == object_id))
         row = result.one_or_none()
 
         if row is None:
@@ -553,9 +519,7 @@ async def get_user_permissions(
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
         # Initialize combined permissions with False values
-        combined_permissions = FunctionAccessRightsDB(
-            read=False, write=False, execute=False
-        )
+        combined_permissions = FunctionAccessRightsDB(read=False, write=False, execute=False)
 
         # Process each row only once and combine permissions
         async for row in await conn.stream(

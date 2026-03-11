@@ -42,9 +42,7 @@ async def get_project_wallet(request: web.Request):
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    wallet: WalletGet | None = await _wallets_service.get_project_wallet(
-        request.app, path_params.project_id
-    )
+    wallet: WalletGet | None = await _wallets_service.get_project_wallet(request.app, path_params.project_id)
 
     return envelope_json_response(wallet)
 
@@ -110,14 +108,10 @@ async def pay_project_debt(request: web.Request):
         include_state=False,
     )
 
-    # Get curently associated wallet with the project
-    current_wallet: WalletGet | None = await _wallets_service.get_project_wallet(
-        request.app, path_params.project_id
-    )
+    # Get currently associated wallet with the project
+    current_wallet: WalletGet | None = await _wallets_service.get_project_wallet(request.app, path_params.project_id)
     if not current_wallet:
-        raise web.HTTPNotFound(
-            text="Project doesn't have any wallet associated to the project"
-        )
+        raise web.HTTPNotFound(text="Project doesn't have any wallet associated to the project")
 
     if current_wallet.wallet_id == path_params.wallet_id:
         # NOTE: Currently, this option is not supported. The only way a user can

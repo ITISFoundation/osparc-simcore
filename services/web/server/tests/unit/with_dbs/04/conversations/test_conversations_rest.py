@@ -27,12 +27,7 @@ def mock_functions_factory(
     mocker: MockerFixture,
 ) -> Callable[[Iterable[tuple[object, str]]], SimpleNamespace]:
     def _patch(targets_and_names: Iterable[tuple[object, str]]) -> SimpleNamespace:
-        return SimpleNamespace(
-            **{
-                name: mocker.patch.object(target, name)
-                for target, name in targets_and_names
-            }
-        )
+        return SimpleNamespace(**{name: mocker.patch.object(target, name) for target, name in targets_and_names})
 
     return _patch
 
@@ -84,9 +79,7 @@ async def test_list_conversations_type_validation(
         assert resp.status == expected_status
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/private-issues/issues/51"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/private-issues/issues/51")
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -166,9 +159,7 @@ async def test_conversations_create_and_list(
     return first_conversation_id, second_conversation_id
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/private-issues/issues/51"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/private-issues/issues/51")
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -199,18 +190,14 @@ async def test_conversations_update_and_delete(
     first_conversation_id = data["conversationId"]
 
     # Test getting a specific conversation
-    get_url = client.app.router["get_conversation"].url_for(
-        conversation_id=first_conversation_id
-    )
+    get_url = client.app.router["get_conversation"].url_for(conversation_id=first_conversation_id)
     resp = await client.get(f"{get_url}?type=SUPPORT")
     data, _ = await assert_status(resp, expected)
     assert data["conversationId"] == first_conversation_id
     assert data["name"] == "Support Request - Bug Report"
 
     # Test updating a conversation
-    update_url = client.app.router["update_conversation"].url_for(
-        conversation_id=first_conversation_id
-    )
+    update_url = client.app.router["update_conversation"].url_for(conversation_id=first_conversation_id)
     updated_name = "Updated Support Request - Bug Report"
     resp = await client.patch(
         f"{update_url}?type=SUPPORT",
@@ -227,9 +214,7 @@ async def test_conversations_update_and_delete(
     assert data["name"] == updated_name
 
     # Test deleting a conversation
-    delete_url = client.app.router["delete_conversation"].url_for(
-        conversation_id=first_conversation_id
-    )
+    delete_url = client.app.router["delete_conversation"].url_for(conversation_id=first_conversation_id)
     resp = await client.delete(f"{delete_url}?type=SUPPORT")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -288,7 +273,7 @@ async def test_conversations_pagination(
 
     # Create multiple conversations
     for i in range(5):
-        body = {"name": f"Support Request {i+1}", "type": "SUPPORT"}
+        body = {"name": f"Support Request {i + 1}", "type": "SUPPORT"}
         resp = await client.post(f"{base_url}", json=body)
         await assert_status(resp, status.HTTP_201_CREATED)
 
@@ -342,16 +327,12 @@ async def test_conversations_access_control(
         assert meta["total"] == 0
 
         # The new user should not be able to access the specific conversation
-        get_url = client.app.router["get_conversation"].url_for(
-            conversation_id=conversation_id
-        )
+        get_url = client.app.router["get_conversation"].url_for(conversation_id=conversation_id)
         resp = await client.get(f"{get_url}?type=SUPPORT")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
         # The new user should not be able to update the conversation
-        update_url = client.app.router["update_conversation"].url_for(
-            conversation_id=conversation_id
-        )
+        update_url = client.app.router["update_conversation"].url_for(conversation_id=conversation_id)
         resp = await client.patch(
             f"{update_url}?type=SUPPORT",
             json={"name": "Unauthorized update attempt"},
@@ -359,9 +340,7 @@ async def test_conversations_access_control(
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
         # The new user should not be able to delete the conversation
-        delete_url = client.app.router["delete_conversation"].url_for(
-            conversation_id=conversation_id
-        )
+        delete_url = client.app.router["delete_conversation"].url_for(conversation_id=conversation_id)
         resp = await client.delete(f"{delete_url}?type=SUPPORT")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
@@ -386,24 +365,18 @@ async def test_conversations_error_handling(
     # Test operations on non-existent conversation
     fake_conversation_id = "00000000-0000-0000-0000-000000000000"
 
-    get_url = client.app.router["get_conversation"].url_for(
-        conversation_id=fake_conversation_id
-    )
+    get_url = client.app.router["get_conversation"].url_for(conversation_id=fake_conversation_id)
     resp = await client.get(f"{get_url}?type=SUPPORT")
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
-    update_url = client.app.router["update_conversation"].url_for(
-        conversation_id=fake_conversation_id
-    )
+    update_url = client.app.router["update_conversation"].url_for(conversation_id=fake_conversation_id)
     resp = await client.patch(
         f"{update_url}?type=SUPPORT",
         json={"name": "Update non-existent"},
     )
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
-    delete_url = client.app.router["delete_conversation"].url_for(
-        conversation_id=fake_conversation_id
-    )
+    delete_url = client.app.router["delete_conversation"].url_for(conversation_id=fake_conversation_id)
     resp = await client.delete(f"{delete_url}?type=SUPPORT")
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
@@ -418,9 +391,7 @@ async def test_conversations_without_type_query_param(
 
     # Create a conversation via project endpoint first
     project_id = f"{user_project['uuid']}"
-    project_conversation_url = client.app.router["create_project_conversation"].url_for(
-        project_id=f"{project_id}"
-    )
+    project_conversation_url = client.app.router["create_project_conversation"].url_for(project_id=f"{project_id}")
     body = {"name": "Test Conversation", "type": "PROJECT_STATIC"}
     resp = await client.post(f"{project_conversation_url}", json=body)
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
@@ -432,20 +403,14 @@ async def test_conversations_without_type_query_param(
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     # All other endpoints should return 400, because we currently support only SUPPORT type
-    get_url = client.app.router["get_conversation"].url_for(
-        conversation_id=conversation_id
-    )
+    get_url = client.app.router["get_conversation"].url_for(conversation_id=conversation_id)
     resp = await client.get(f"{get_url}")
     await assert_status(resp, status.HTTP_400_BAD_REQUEST)
 
-    update_url = client.app.router["update_conversation"].url_for(
-        conversation_id=conversation_id
-    )
+    update_url = client.app.router["update_conversation"].url_for(conversation_id=conversation_id)
     resp = await client.patch(f"{update_url}", json={"name": "Updated"})
     await assert_status(resp, status.HTTP_400_BAD_REQUEST)
 
-    delete_url = client.app.router["delete_conversation"].url_for(
-        conversation_id=conversation_id
-    )
+    delete_url = client.app.router["delete_conversation"].url_for(conversation_id=conversation_id)
     resp = await client.delete(f"{delete_url}")
     await assert_status(resp, status.HTTP_400_BAD_REQUEST)

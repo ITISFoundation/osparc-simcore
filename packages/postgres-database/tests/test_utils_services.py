@@ -71,9 +71,7 @@ class RandomServiceFactory:
 
         return row
 
-    def random_service_consume_filetypes(
-        self, port_index: int = 1, **overrides
-    ) -> dict[str, Any]:
+    def random_service_consume_filetypes(self, port_index: int = 1, **overrides) -> dict[str, Any]:
         default_value = self._get_service_meta_data()
 
         row = {
@@ -157,22 +155,16 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
         product_name = conn.execute(
             pg_insert(products)
             .values(**osparc_product)
-            .on_conflict_do_update(
-                index_elements=[products.c.name], set_=osparc_product
-            )
+            .on_conflict_do_update(index_elements=[products.c.name], set_=osparc_product)
             .returning(products.c.name)
         ).scalar()
 
         # GROUPS
         product_gid = conn.execute(
-            groups.insert()
-            .values(**random_group(type=GroupType.STANDARD, name="osparc group"))
-            .returning(groups.c.gid)
+            groups.insert().values(**random_group(type=GroupType.STANDARD, name="osparc group")).returning(groups.c.gid)
         ).scalar()
 
-        everyone_gid = conn.execute(
-            sa.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
-        ).scalar()
+        everyone_gid = conn.execute(sa.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)).scalar()
 
         assert product_gid != everyone_gid
 
@@ -187,11 +179,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
                     version=version,
                     owner=everyone_gid,
                 ),
-                [
-                    service_factory.random_service_access_rights(
-                        product_name=product_name
-                    )
-                ],
+                [service_factory.random_service_access_rights(product_name=product_name)],
                 [
                     service_factory.random_service_consume_filetypes(
                         port_index=1,
@@ -202,9 +190,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
             num_services += 1
 
             if version == service_latest:
-                expected_latest.add(
-                    (service.metadata["key"], service.metadata["version"])
-                )
+                expected_latest.add((service.metadata["key"], service.metadata["version"]))
 
         # SERVICE /two
         service = execute_insert_service(
@@ -235,9 +221,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
     )
 
 
-def test_select_latest_services(
-    services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
-):
+def test_select_latest_services(services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine):
     assert issubclass(INTEGER, sa.Integer)
 
     lts = create_select_latest_services_query().alias("lts")
@@ -245,28 +229,21 @@ def test_select_latest_services(
     stmt = sa.select(lts.c.key, lts.c.latest, services_meta_data.c.name).select_from(
         lts.join(
             services_meta_data,
-            (services_meta_data.c.key == lts.c.key)
-            & (services_meta_data.c.version == lts.c.latest),
+            (services_meta_data.c.key == lts.c.key) & (services_meta_data.c.version == lts.c.latest),
         )
     )
 
     with pg_sa_engine.connect() as conn:
         latest_services: list = conn.execute(stmt).fetchall()
-        assert {
-            (s.key, s.latest) for s in latest_services
-        } == services_fixture.expected_latest
+        assert {(s.key, s.latest) for s in latest_services} == services_fixture.expected_latest
 
 
-def test_trial_queries_for_service_metadata(
-    services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
-):
+def test_trial_queries_for_service_metadata(services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine):
     # check if service exists and whether is public or not
     with pg_sa_engine.connect() as conn:
         query = sa.select(
             services_consume_filetypes.c.service_key,
-            sa.func.array_agg(
-                sa.func.distinct(services_consume_filetypes.c.filetype)
-            ).label("file_extensions"),
+            sa.func.array_agg(sa.func.distinct(services_consume_filetypes.c.filetype)).label("file_extensions"),
         ).group_by(services_consume_filetypes.c.service_key)
 
         rows: list = conn.execute(query).fetchall()
@@ -276,18 +253,13 @@ def test_trial_queries_for_service_metadata(
         query = (
             sa.select(
                 services_consume_filetypes.c.service_key,
-                sa.text(
-                    "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS latest_version"
-                ),
-                sa.func.array_agg(
-                    sa.func.distinct(services_consume_filetypes.c.filetype)
-                ).label("file_extensions"),
+                sa.text("array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS latest_version"),
+                sa.func.array_agg(sa.func.distinct(services_consume_filetypes.c.filetype)).label("file_extensions"),
             )
             .select_from(
                 services_meta_data.join(
                     services_consume_filetypes,
-                    services_meta_data.c.key
-                    == services_consume_filetypes.c.service_key,
+                    services_meta_data.c.key == services_consume_filetypes.c.service_key,
                 )
             )
             .group_by(services_consume_filetypes.c.service_key)
@@ -321,9 +293,7 @@ def test_trial_queries_for_service_metadata(
 
         query1 = query.where(services_meta_data.c.classifiers.contains(["osparc"]))
 
-        query2 = query.where(
-            sa.func.array_length(services_meta_data.c.classifiers, 1) > 0
-        )
+        query2 = query.where(sa.func.array_length(services_meta_data.c.classifiers, 1) > 0)
 
         # list services with gid=1 (x=1, w=0) and with type dynamic and classifier include osparc
         query3 = query.where(

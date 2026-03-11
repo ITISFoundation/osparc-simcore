@@ -41,11 +41,8 @@ async def compute_hashes(file_paths: list[Path]) -> dict[Path, str]:
 
     loop = asyncio.get_event_loop()
 
-    with ProcessPoolExecutor() as prcess_pool_executor:
-        tasks = [
-            loop.run_in_executor(prcess_pool_executor, compute_hash, file_path)
-            for file_path in file_paths
-        ]
+    with ProcessPoolExecutor() as process_pool_executor:
+        tasks = [loop.run_in_executor(process_pool_executor, compute_hash, file_path) for file_path in file_paths]
         # pylint: disable=unnecessary-comprehension
         # see return value of _compute_hash it is a tuple, mapping list[Tuple[Path,str]] to Dict[Path, str] here
         return dict(await asyncio.gather(*tasks))

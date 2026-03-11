@@ -19,9 +19,7 @@ from simcore_service_catalog.service import manifest
 
 
 @pytest.fixture
-def app_environment(
-    monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict
-) -> EnvVarsDict:
+def app_environment(monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -64,9 +62,7 @@ async def test_get_services_map(
         else:
             assert service.image_digest is not None
 
-    services_image_digest = {
-        s.image_digest for s in all_services_map.values() if s.image_digest
-    }
+    services_image_digest = {s.image_digest for s in all_services_map.values() if s.image_digest}
     assert len(services_image_digest) < len(all_services_map)
 
 
@@ -75,7 +71,6 @@ async def test_get_service(
     director_client: DirectorClient,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
-
     for expected_service in all_services_map.values():
         service = await manifest.get_service(
             key=expected_service.key,
@@ -92,7 +87,6 @@ async def test_get_service_ports(
     director_client: DirectorClient,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
-
     for expected_service in all_services_map.values():
         ports = await manifest.get_service_ports(
             key=expected_service.key,
@@ -128,13 +122,12 @@ async def test_get_batch_services(
     director_client: DirectorClient,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
-
     for expected_services in toolz.partition(2, all_services_map.values()):
         selection = [(s.key, s.version) for s in expected_services]
         got_services = await manifest.get_batch_services(selection, director_client)
 
         assert [(s.key, s.version) for s in got_services] == selection
 
-        # NOTE: simplier to visualize
+        # NOTE: simpler to visualize
         for got, expected in zip(got_services, expected_services, strict=True):
             assert got == expected

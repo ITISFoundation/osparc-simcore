@@ -18,16 +18,10 @@ depends_on = None
 
 def upgrade():
     op.execute("ALTER TABLE projects_nodes DROP CONSTRAINT projects_nodes_pkey")
-    op.execute(
-        "ALTER TABLE projects_nodes ADD COLUMN project_node_id SERIAL PRIMARY KEY"
-    )
-    op.execute(
-        "ALTER TABLE projects_nodes ADD CONSTRAINT projects_nodes__node_project UNIQUE (node_id, project_uuid)"
-    )
+    op.execute("ALTER TABLE projects_nodes ADD COLUMN project_node_id SERIAL PRIMARY KEY")
+    op.execute("ALTER TABLE projects_nodes ADD CONSTRAINT projects_nodes__node_project UNIQUE (node_id, project_uuid)")
 
-    op.create_index(
-        op.f("ix_projects_nodes_node_id"), "projects_nodes", ["node_id"], unique=False
-    )
+    op.create_index(op.f("ix_projects_nodes_node_id"), "projects_nodes", ["node_id"], unique=False)
     op.create_index(
         op.f("ix_projects_nodes_project_uuid"),
         "projects_nodes",
@@ -70,7 +64,5 @@ def downgrade():
     op.drop_index(op.f("ix_projects_nodes_node_id"), table_name="projects_nodes")
 
     op.execute("ALTER TABLE projects_nodes DROP CONSTRAINT projects_nodes_pkey")
-    op.execute(
-        "ALTER TABLE projects_nodes DROP CONSTRAINT projects_nodes__node_project"
-    )
+    op.execute("ALTER TABLE projects_nodes DROP CONSTRAINT projects_nodes__node_project")
     op.execute("ALTER TABLE projects_nodes ADD PRIMARY KEY (node_id, project_uuid)")

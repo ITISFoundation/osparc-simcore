@@ -15,14 +15,12 @@ DOCKERHUB_REGISTRY_NAME = ""
 
 
 class AppSettings(BaseSettings):
-    DOCKER_REGISTRIES: dict[str, Registry] = {
-        "local": Registry(url_or_prefix="registry:5000")
-    }
+    DOCKER_REGISTRIES: dict[str, Registry] = {"local": Registry(url_or_prefix="registry:5000")}
     DEFAULT_REGISTRY: str = "local"
 
-    REGISTRY_NAME: Annotated[
-        str, Field(description="name of the registry used as prefix in images")
-    ] = DOCKERHUB_REGISTRY_NAME
+    REGISTRY_NAME: Annotated[str, Field(description="name of the registry used as prefix in images")] = (
+        DOCKERHUB_REGISTRY_NAME
+    )
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",

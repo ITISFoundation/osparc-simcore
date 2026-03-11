@@ -1,0 +1,27 @@
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/reset_password/subject.j2' %} {% endblock %}
+{% block content %}
+<p>Dear {{ user.first_name or user.user_name }},</p>
+
+<p>A request to reset your {{ host }} password has been made.</p>
+{% if success %}
+
+<p>To complete the process, please click the link below:</p>
+<p>
+  <button style="{{ strong_button_style }}">
+    <a href="{{ link }}" style="{{ strong_button_link_style }}">Reset Password</a>
+  </button>
+</p>
+
+{% else %}
+
+<p>It could not be completed due to the following reason:</p>
+<p><strong> {{ reason }} </strong></p>
+
+{% endif %}
+
+<p>If you did not request this, please contact us immediately at {{ product.support_email }} for security reasons.</p>
+
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
+{% endblock %}

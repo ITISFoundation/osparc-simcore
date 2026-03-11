@@ -89,10 +89,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
             allowStretchY: false,
             alignY: "bottom"
           });
-          control.addListener("execute", () => {
-            const table = this.getChildControl("table");
-            table.getTableModel().reloadData();
-          });
+          control.addListener("execute", () => this.reloadData());
           layout = this.getChildControl("filter-layout");
           layout.add(control);
           break;
@@ -124,9 +121,18 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
 
       if (osparc.store.StaticInfo.isBillableProduct()) {
         const store = osparc.store.Store.getInstance();
+        const contextWallet = store.getContextWallet();
+        let preselectItem = null;
         store.getWallets().forEach(wallet => {
-          walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
+          const listItem = new qx.ui.form.ListItem(wallet.getName(), null, wallet);
+          walletSelectBox.add(listItem);
+          if (contextWallet && wallet.getWalletId() === contextWallet.getWalletId()) {
+            preselectItem = listItem;
+          }
         });
+        if (preselectItem) {
+          walletSelectBox.setSelection([preselectItem]);
+        }
       } else {
         introText.setVisibility("excluded");
         walletSelectBox.setVisibility("excluded");
@@ -142,6 +148,11 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
         return selectedWallet.getWalletId();
       }
       return null;
+    },
+
+    reloadData: function() {
+      const table = this.getChildControl("table");
+      table.getTableModel().reloadData();
     },
 
     _handleExport: function() {

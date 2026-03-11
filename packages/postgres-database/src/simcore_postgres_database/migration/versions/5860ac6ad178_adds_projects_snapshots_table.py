@@ -39,9 +39,7 @@ def upgrade():
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("project_uuid"),
-        sa.UniqueConstraint(
-            "parent_uuid", "created_at", name="snapshot_from_project_uniqueness"
-        ),
+        sa.UniqueConstraint("parent_uuid", "created_at", name="snapshot_from_project_uniqueness"),
     )
     # ### end Alembic commands ###
 

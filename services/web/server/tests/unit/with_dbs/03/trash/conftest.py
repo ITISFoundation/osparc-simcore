@@ -28,18 +28,12 @@ _logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"}
-    )
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"})
 
 
 @pytest.fixture
-async def other_user(
-    client: TestClient, logged_user: UserInfoDict
-) -> AsyncIterable[UserInfoDict]:
+async def other_user(client: TestClient, logged_user: UserInfoDict) -> AsyncIterable[UserInfoDict]:
     # new user different from logged_user
     async with NewUser(
         {
@@ -86,9 +80,7 @@ def mocked_storage(storage_subsystem_mock: MockedStorageSubsystem): ...
 @pytest.fixture
 def with_disabled_background_task_to_prune_trash(mocker: MockerFixture) -> None:
     async def _empty_lifespan(app: web.Application):
-        with log_context(
-            logging.INFO, "Fake background_task_to_prune_trash event", logger=_logger
-        ):
+        with log_context(logging.INFO, "Fake background_task_to_prune_trash event", logger=_logger):
             yield
 
     mocker.patch(

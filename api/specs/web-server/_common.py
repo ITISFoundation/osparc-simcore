@@ -41,10 +41,7 @@ def _replace_basemodel_in_annotation(annotation, new_type):
 
     # Handle Optionals, Unions, or other generic types
     if origin in (Optional, Union, list, dict, tuple):  # Extendable for other generics
-        new_args = tuple(
-            _replace_basemodel_in_annotation(arg, new_type)
-            for arg in get_args(annotation)
-        )
+        new_args = tuple(_replace_basemodel_in_annotation(arg, new_type) for arg in get_args(annotation))
         return origin[new_args]
 
     # Replace BaseModel subclass directly
@@ -58,7 +55,6 @@ def _replace_basemodel_in_annotation(annotation, new_type):
 def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     fields = {}
     for field_name, field_info in model_class.model_fields.items():
-
         field_default = field_info.default
         assert not field_info.default_factory, f"got {field_info=}"  # nosec
         query_kwargs = {
@@ -102,22 +98,14 @@ class ParamSpec(NamedTuple):
     field_info: FieldInfo
 
 
-def assert_handler_signature_against_model(
-    handler: Callable, model_cls: type[BaseModel]
-):
+def assert_handler_signature_against_model(handler: Callable, model_cls: type[BaseModel]):
     sig = inspect.signature(handler)
 
     # query, path and body parameters
-    specs_params = [
-        ParamSpec(param.name, param.annotation, param.default)
-        for param in sig.parameters.values()
-    ]
+    specs_params = [ParamSpec(param.name, param.annotation, param.default) for param in sig.parameters.values()]
 
     # query and path parameters
-    implemented_params = [
-        ParamSpec(name, get_type(info), info)
-        for name, info in model_cls.model_fields.items()
-    ]
+    implemented_params = [ParamSpec(name, get_type(info), info) for name, info in model_cls.model_fields.items()]
 
     implemented_names = {p.name for p in implemented_params}
     specified_names = {p.name for p in specs_params}

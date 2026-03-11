@@ -82,9 +82,7 @@ async def get_user_workspace(
 
     # NOTE: check here is optional
     if permission is not None:
-        has_user_granted_permission = getattr(
-            workspace.my_access_rights, permission, False
-        )
+        has_user_granted_permission = getattr(workspace.my_access_rights, permission, False)
         if not has_user_granted_permission:
             raise WorkspaceAccessForbiddenError(
                 user_id=user_id,

@@ -21,9 +21,7 @@ async def test_docker_client():
         await container.start()
         await sleep(5)
         logs = await container.log(stdout=True)
-        assert (
-            "".join(logs)
-        ) == "hello world\n", f"running containers {client.containers.list()}"
+        assert ("".join(logs)) == "hello world\n", f"running containers {client.containers.list()}"
         await container.delete(force=True)
 
 

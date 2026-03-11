@@ -22,7 +22,8 @@ from .jinja2_templates import jinja2_templates
 from .users import users
 
 # NOTE: a default entry is created in the table Product
-# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/
+# 350103a7efbd_modified_products_table.py
 
 
 #
@@ -49,11 +50,21 @@ class Vendor(TypedDict, total=False):
     license_url: str  # Which are the license terms? (if applies)
 
     invitation_url: str  # How to request a trial invitation? (if applies)
-    invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
+    invitation_form: (
+        bool  # If True, it takes precedence over invitation_url and asks the FE to show the form (if defined)
+    )
 
-    release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    release_notes_url_template: (
+        str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    )
 
     ui: VendorUI
+
+    footer_social_links: list[tuple[str, str]]  # list of (social_media_name (youtube, linkedin), social_media_url)
+    footer_share_links: list[tuple[str, str, str]]  # list of (share_name, share_label, share_url)
+    company_name: str
+    company_address: str
+    company_links: list[tuple[str, str]]  # list of (link_name, link_url)
 
 
 class IssueTracker(TypedDict, total=True):
@@ -121,7 +132,8 @@ _LOGIN_SETTINGS_SERVER_DEFAULT = json_dumps(LOGIN_SETTINGS_DEFAULT)
 # Table
 #
 # NOTE: a default entry is created in the table Product
-# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/
+# 350103a7efbd_modified_products_table.py
 
 products = sa.Table(
     "products",
@@ -166,8 +178,7 @@ products = sa.Table(
         sa.String,
         nullable=False,
         server_default="@".join(["support", "osparc." + "io"]),
-        doc="Support email for this product"
-        'Therefore smtp_sender = f"{display_name} support <{support_email}>"',
+        doc='Support email for this productTherefore smtp_sender = f"{display_name} support <{support_email}>"',
     ),
     sa.Column(
         "product_owners_email",
@@ -212,8 +223,7 @@ products = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
-        doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
-        "SEE LoginSettingsForProduct",
+        doc="Overrides simcore_service_webserver.login.settings.LoginSettings.SEE LoginSettingsForProduct",
     ),
     sa.Column(
         "ui",
@@ -248,7 +258,7 @@ products = sa.Table(
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
-        doc="Automaticaly updates on modification of the row",
+        doc="Automatically updates on modification of the row",
     ),
     sa.Column(
         "priority",
@@ -260,7 +270,7 @@ products = sa.Table(
         "max_open_studies_per_user",
         sa.Integer(),
         nullable=True,
-        doc="Limits the number of studies a user may have open concurently (disabled if NULL)",
+        doc="Limits the number of studies a user may have open concurrently (disabled if NULL)",
     ),
     sa.Column(
         "group_id",
@@ -314,6 +324,13 @@ products = sa.Table(
         unique=False,
         nullable=True,
         doc="Fogbugz project ID to assign support case",
+    ),
+    sa.Column(
+        "studies_dispatcher_enabled",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.false(),
+        doc="If True, this product allows anonymous/guest access to published studies via the studies dispatcher",
     ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

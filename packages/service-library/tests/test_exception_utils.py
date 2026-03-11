@@ -23,7 +23,7 @@ def workflow(*, stop_raising_after: PositiveInt) -> int:
         counter += 1
 
         if counter < stop_raising_after:
-            raise TargetException()
+            raise TargetException
 
     delayed_handler_external_service = DelayedExceptionHandler(delay_for=TOLERANCE)
 
@@ -135,9 +135,7 @@ async def test_async_function_with_different_exception():
 
 
 def test_sync_function_predicate_suppresses_matching_exception():
-    result = sync_function_with_predicate(
-        error_code=150
-    )  # code >= 100, should be suppressed
+    result = sync_function_with_predicate(error_code=150)  # code >= 100, should be suppressed
     assert result is None
 
 
@@ -152,17 +150,13 @@ def test_sync_function_predicate_no_exception():
 
 
 async def test_async_function_predicate_suppresses_matching_exception():
-    result = await async_function_with_predicate(
-        error_code=200
-    )  # code >= 100, should be suppressed
+    result = await async_function_with_predicate(error_code=200)  # code >= 100, should be suppressed
     assert result is None
 
 
 async def test_async_function_predicate_raises_non_matching_exception():
     with pytest.raises(CustomError):
-        await async_function_with_predicate(
-            error_code=25
-        )  # code < 100, should be raised
+        await async_function_with_predicate(error_code=25)  # code < 100, should be raised
 
 
 async def test_async_function_predicate_no_exception():

@@ -27,9 +27,7 @@ def upgrade():
         sa.Column("api_secret", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "display_name", "user_id", name="display_name_userid_uniqueness"
-        ),
+        sa.UniqueConstraint("display_name", "user_id", name="display_name_userid_uniqueness"),
     )
     # ### end Alembic commands ###
 

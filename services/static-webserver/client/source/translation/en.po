@@ -295,7 +295,7 @@ msgid "Hits: "
 msgstr ""
 
 #: osparc/dashboard/CardBase.js
-msgid "Unaccessible service(s):"
+msgid "Inaccessible service(s):"
 msgstr ""
 
 #: osparc/dashboard/CardBase.js

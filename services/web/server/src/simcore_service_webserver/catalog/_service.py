@@ -47,20 +47,18 @@ from ._units_service import can_connect, replace_service_input_outputs
 _logger = logging.getLogger(__name__)
 
 
-async def _safe_replace_service_input_outputs(
-    service: dict[str, Any], unit_registry: UnitRegistry
-):
+async def _safe_replace_service_input_outputs(service: dict[str, Any], unit_registry: UnitRegistry):
     try:
         await replace_service_input_outputs(
             service,
             unit_registry=unit_registry,
             **RESPONSE_MODEL_POLICY,
         )
-    except KeyError:  # noqa: PERF203
+    except KeyError:
         # This will limit the effect of a any error in the formatting of
         # service metadata (mostly in label annotations). Otherwise it would
         # completely break all the listing operation. At this moment,
-        # a limitation on schema's $ref produced an error that made faiing
+        # a limitation on schema's $ref produced an error that made failing
         # the full service listing.
         _logger.exception(
             "Failed while processing this %s. "
@@ -96,9 +94,7 @@ async def list_latest_services(
     return page_data, page.meta
 
 
-_BatchServicesIdsValidator = create_batch_ids_validator(
-    tuple[ServiceKey, ServiceVersion]
-)
+_BatchServicesIdsValidator = create_batch_ids_validator(tuple[ServiceKey, ServiceVersion])
 
 
 async def batch_get_my_services(
@@ -197,9 +193,7 @@ async def list_service_inputs(
         product_name=ctx.product_name,
     )
     return [
-        await ServiceInputGetFactory.from_catalog_service_api_model(
-            service=service, input_key=input_key
-        )
+        await ServiceInputGetFactory.from_catalog_service_api_model(service=service, input_key=input_key)
         for input_key in service["inputs"]
     ]
 
@@ -217,10 +211,8 @@ async def get_service_input(
         service_version=service_version,
         product_name=ctx.product_name,
     )
-    service_input: ServiceInputGet = (
-        await ServiceInputGetFactory.from_catalog_service_api_model(
-            service=service, input_key=input_key
-        )
+    service_input: ServiceInputGet = await ServiceInputGetFactory.from_catalog_service_api_model(
+        service=service, input_key=input_key
     )
 
     return service_input
@@ -242,9 +234,7 @@ async def get_compatible_inputs_given_source_output(
     """
 
     # 1 output
-    service_output = await get_service_output(
-        from_service_key, from_service_version, from_output_key, ctx
-    )
+    service_output = await get_service_output(from_service_key, from_service_version, from_output_key, ctx)
 
     from_output: ServiceOutput = ServiceOutput.model_construct(
         **service_output.model_dump(include=ServiceOutput.model_fields.keys())  # type: ignore[arg-type]
@@ -255,8 +245,11 @@ async def get_compatible_inputs_given_source_output(
 
     def iter_service_inputs() -> Iterator[tuple[ServiceInputKey, ServiceInput]]:
         for service_input in service_inputs:
-            yield service_input.key_id, ServiceInput.model_construct(
-                **service_input.model_dump(include=ServiceInput.model_fields.keys())  # type: ignore[arg-type]
+            yield (
+                service_input.key_id,
+                ServiceInput.model_construct(
+                    **service_input.model_dump(include=ServiceInput.model_fields.keys())  # type: ignore[arg-type]
+                ),
             )
 
     # check
@@ -281,9 +274,7 @@ async def list_service_outputs(
         product_name=ctx.product_name,
     )
     return [
-        await ServiceOutputGetFactory.from_catalog_service_api_model(
-            service=service, output_key=output_key, ureg=None
-        )
+        await ServiceOutputGetFactory.from_catalog_service_api_model(service=service, output_key=output_key, ureg=None)
         for output_key in service["outputs"]
     ]
 
@@ -303,9 +294,7 @@ async def get_service_output(
     )
     return cast(  # mypy -> aiocache is not typed.
         ServiceOutputGet,
-        await ServiceOutputGetFactory.from_catalog_service_api_model(
-            service=service, output_key=output_key
-        ),
+        await ServiceOutputGetFactory.from_catalog_service_api_model(service=service, output_key=output_key),
     )
 
 
@@ -322,14 +311,15 @@ async def get_compatible_outputs_given_target_input(
 
     def iter_service_outputs() -> Iterator[tuple[ServiceOutputKey, ServiceOutput]]:
         for service_output in service_outputs:
-            yield service_output.key_id, ServiceOutput.model_construct(
-                **service_output.model_dump(include=ServiceOutput.model_fields.keys())  # type: ignore[arg-type]
+            yield (
+                service_output.key_id,
+                ServiceOutput.model_construct(
+                    **service_output.model_dump(include=ServiceOutput.model_fields.keys())  # type: ignore[arg-type]
+                ),
             )
 
     # 1 input
-    service_input = await get_service_input(
-        to_service_key, to_service_version, to_input_key, ctx
-    )
+    service_input = await get_service_input(to_service_key, to_service_version, to_input_key, ctx)
     to_input: ServiceInput = ServiceInput.model_construct(
         **service_input.model_dump(include=ServiceInput.model_fields.keys())  # type: ignore[arg-type]
     )

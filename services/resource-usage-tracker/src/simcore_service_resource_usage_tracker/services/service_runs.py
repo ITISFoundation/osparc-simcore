@@ -160,9 +160,7 @@ async def export_service_runs(
     s3_bucket_name = TypeAdapter(S3BucketName).validate_python(bucket_name)
     # NOTE: su stands for "service usage"
     file_name = f"su_{shortuuid.uuid()}.csv"
-    s3_object_key = (
-        f"resource-usage-tracker-service-runs/{datetime.now(tz=UTC).date()}/{file_name}"
-    )
+    s3_object_key = f"resource-usage-tracker-service-runs/{datetime.now(tz=UTC).date()}/{file_name}"
 
     # Export CSV to S3
     await service_runs_db.export_service_runs_table_to_s3(

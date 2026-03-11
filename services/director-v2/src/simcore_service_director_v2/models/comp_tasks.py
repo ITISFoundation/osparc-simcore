@@ -35,12 +35,8 @@ class Image(BaseModel):
     name: str = Field(..., pattern=SERVICE_KEY_RE.pattern)
     tag: str = Field(..., pattern=SIMPLE_VERSION_RE)
 
-    requires_gpu: bool | None = Field(
-        default=None, deprecated=True, description="Use instead node_requirements"
-    )
-    requires_mpi: bool | None = Field(
-        default=None, deprecated=True, description="Use instead node_requirements"
-    )
+    requires_gpu: bool | None = Field(default=None, deprecated=True, description="Use instead node_requirements")
+    requires_mpi: bool | None = Field(default=None, deprecated=True, description="Use instead node_requirements")
     node_requirements: NodeRequirements | None = Field(
         default=None,
         description="the requirements for the service to run on a node",
@@ -53,9 +49,7 @@ class Image(BaseModel):
         ],
         description="command to run container. Can override using ContainerSpec service labels",
     )
-    envs: ContainerEnvsDict = Field(
-        default_factory=dict, description="The environment to use to run the service"
-    )
+    envs: ContainerEnvsDict = Field(default_factory=dict, description="The environment to use to run the service")
 
     @field_validator("node_requirements", mode="before")
     @classmethod
@@ -109,7 +103,7 @@ _ServiceOutputsOverride = dict[ServicePortKey, _ServiceOutputOverride]
 
 
 class NodeSchema(BaseModel):
-    inputs: ServiceInputsDict = Field(..., description="the inputs scheam")
+    inputs: ServiceInputsDict = Field(..., description="the inputs schema")
     outputs: _ServiceOutputsOverride = Field(..., description="the outputs schema")
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
@@ -141,9 +135,7 @@ class BaseCompTaskAtDB(BaseModel):
         le=1.0,
         description="current progress of the task if available",
     )
-    last_heartbeat: dt.datetime | None = Field(
-        ..., description="Last time the running task was checked by the backend"
-    )
+    last_heartbeat: dt.datetime | None = Field(..., description="Last time the running task was checked by the backend")
     created: dt.datetime
     modified: dt.datetime
     # Additional information about price and hardware (ex. AWS EC2 instance type)
@@ -155,7 +147,7 @@ class BaseCompTaskAtDB(BaseModel):
     def _convert_state_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
             # try to convert to a StateType, if it fails the validations will continue
-            # and pydantic will try to convert it to a RunninState later on
+            # and pydantic will try to convert it to a RunningState later on
             with suppress(ValueError):
                 v = StateType(v)
         if isinstance(v, StateType):
@@ -179,15 +171,11 @@ class BaseCompTaskAtDB(BaseModel):
 
 class CompTaskAtDB(BaseCompTaskAtDB):
     task_id: PositiveInt | None = None
-    submit: dt.datetime | None = Field(
-        default=None, deprecated=True, description="Required for legacy services"
-    )
+    submit: dt.datetime | None = Field(default=None, deprecated=True, description="Required for legacy services")
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
         # mode json is used to ensure the UUIDs are converted to strings
-        comp_task_dict = self.model_dump(
-            mode="json", by_alias=True, exclude_unset=True, **exclusion_rules
-        )
+        comp_task_dict = self.model_dump(mode="json", by_alias=True, exclude_unset=True, **exclusion_rules)
         # Convert state to DB enum value
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
@@ -214,7 +202,7 @@ class CompTaskAtDB(BaseCompTaskAtDB):
                         "inputs": {
                             "input_1": {
                                 "label": "input_files",
-                                "description": "Any input files. One or serveral files compressed in a zip will be downloaded in an inputs folder.",
+                                "description": "Any input files. One or several files compressed in a zip will be downloaded in an inputs folder.",
                                 "type": "data:*/*",
                                 "displayOrder": 1.0,
                             }
@@ -282,7 +270,7 @@ class ComputationTaskForRpcDBGet(BaseModel):
     def _convert_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
             # try to convert to a StateType, if it fails the validations will continue
-            # and pydantic will try to convert it to a RunninState later on
+            # and pydantic will try to convert it to a RunningState later on
             with suppress(ValueError):
                 v = StateType(v)
         if isinstance(v, StateType):

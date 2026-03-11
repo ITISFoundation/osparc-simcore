@@ -118,20 +118,14 @@ class _EnvironmentSection:
         return envs
 
 
-def _update_paths_mappings(
-    service_spec: ComposeSpecLabelDict, path_mappings: PathMappingsLabel
-) -> None:
+def _update_paths_mappings(service_spec: ComposeSpecLabelDict, path_mappings: PathMappingsLabel) -> None:
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
 
-        env_vars: EnvVarsMap = _EnvironmentSection.parse(
-            service_content.get("environment", {})
-        )
+        env_vars: EnvVarsMap = _EnvironmentSection.parse(service_content.get("environment", {}))
         env_vars["DY_SIDECAR_PATH_INPUTS"] = f"{path_mappings.inputs_path}"
         env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
-        env_vars["DY_SIDECAR_STATE_PATHS"] = (
-            f"{json_dumps({f'{p}' for p in path_mappings.state_paths})}"
-        )
+        env_vars["DY_SIDECAR_STATE_PATHS"] = f"{json_dumps({f'{p}' for p in path_mappings.state_paths})}"
 
         service_content["environment"] = _EnvironmentSection.export_as_list(env_vars)
 
@@ -171,7 +165,7 @@ def _update_resource_limits_and_reservations(
             # assign limits
             limits["cpus"] = f"{cpu.limit}"
             limits["memory"] = f"{memory.limit}"
-            # assing reservations
+            # assign reservations
             reservations["cpus"] = f"{cpu.reservation}"
             reservations["memory"] = f"{memory.reservation}"
 
@@ -197,9 +191,7 @@ def _update_resource_limits_and_reservations(
 
         # remove any already existing env var
         environment = [
-            e
-            for e in environment
-            if all(i not in e for i in [CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY])
+            e for e in environment if all(i not in e for i in [CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY])
         ]
 
         resource_limits = [
@@ -210,9 +202,7 @@ def _update_resource_limits_and_reservations(
         environment.extend(resource_limits)
         spec["environment"] = environment
 
-        assigned_limits[spec_service_key] = _AssignedLimits(
-            cpu=nano_cpu_limits, memory=int(memory.limit)
-        )
+        assigned_limits[spec_service_key] = _AssignedLimits(cpu=nano_cpu_limits, memory=int(memory.limit))
     return assigned_limits
 
 
@@ -238,9 +228,7 @@ def _update_container_labels(
     default_limits = _AssignedLimits(memory=0, cpu=0)
     for spec_service_key, spec in service_spec["services"].items():
         labels: list[str] = spec.setdefault("labels", [])
-        container_limits: _AssignedLimits = assigned_limits.get(
-            spec_service_key, default_limits
-        )
+        container_limits: _AssignedLimits = assigned_limits.get(spec_service_key, default_limits)
 
         label_keys = SimcoreContainerLabels.model_validate(
             {
@@ -254,9 +242,7 @@ def _update_container_labels(
                 "cpu_limit": container_limits["cpu"],
             }
         )
-        docker_labels = [
-            f"{k}={v}" for k, v in label_keys.to_simcore_runtime_docker_labels().items()
-        ]
+        docker_labels = [f"{k}={v}" for k, v in label_keys.to_simcore_runtime_docker_labels().items()]
 
         for docker_label in docker_labels:
             if docker_label not in labels:
@@ -292,9 +278,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     the dynamic-sidecar to start the service
     """
 
-    docker_registry_settings: RegistrySettings = (
-        app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
-    )
+    docker_registry_settings: RegistrySettings = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
 
     docker_compose_version = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION

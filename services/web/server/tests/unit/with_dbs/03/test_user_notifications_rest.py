@@ -49,9 +49,7 @@ async def _get_user_notifications(
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -103,10 +101,8 @@ async def _create_notifications(
     product_name: ProductName,
     count: int,
 ) -> AsyncIterator[list[UserNotification]]:
-
     user_notifications: list[UserNotification] = [
-        _create_notification(logged_user=logged_user, product_name=product_name)
-        for _ in range(count)
+        _create_notification(logged_user=logged_user, product_name=product_name) for _ in range(count)
     ]
 
     user_id = logged_user["id"]
@@ -163,13 +159,9 @@ async def test_list_user_notifications(
             response = await client.get(url.path)
             json_response = await response.json()
 
-            result = TypeAdapter(list[UserNotification]).validate_python(
-                json_response["data"]
-            )
+            result = TypeAdapter(list[UserNotification]).validate_python(json_response["data"])
             assert len(result) <= MAX_NOTIFICATIONS_FOR_USER_TO_SHOW
-            assert result == list(
-                reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER_TO_SHOW])
-            )
+            assert result == list(reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER_TO_SHOW]))
 
 
 @pytest.mark.parametrize(
@@ -285,12 +277,7 @@ async def test_create_user_notification_capped_list_length(
             for _ in range(notification_count)
         )
     )
-    assert (
-        all(
-            x.status == status.HTTP_204_NO_CONTENT for x in notifications_create_results
-        )
-        is True
-    )
+    assert all(x.status == status.HTTP_204_NO_CONTENT for x in notifications_create_results) is True
 
     user_id = logged_user["id"]
     user_notifications = await _get_user_notifications(
@@ -366,9 +353,7 @@ async def test_update_user_notification(
     ) as created_notifications:
         assert client.app
         for notification in created_notifications:
-            url = client.app.router["mark_notification_as_read"].url_for(
-                notification_id=f"{notification.id}"
-            )
+            url = client.app.router["mark_notification_as_read"].url_for(notification_id=f"{notification.id}")
             assert str(url) == f"/v0/me/notifications/{notification.id}"
             assert notification.read is False
 
@@ -393,9 +378,7 @@ async def test_update_user_notification_at_correct_index(
     async def _get_stored_notifications() -> list[UserNotification]:
         return [
             UserNotification.model_validate_json(x)
-            for x in await notification_redis_client.lrange(
-                get_notification_key(user_id), 0, -1
-            )
+            for x in await notification_redis_client.lrange(get_notification_key(user_id), 0, -1)
         ]
 
     def _marked_as_read(
@@ -414,9 +397,7 @@ async def test_update_user_notification_at_correct_index(
     ) as created_notifications:
         notifications_before_update = await _get_stored_notifications()
         for notification in created_notifications:
-            url = client.app.router["mark_notification_as_read"].url_for(
-                notification_id=f"{notification.id}"
-            )
+            url = client.app.router["mark_notification_as_read"].url_for(notification_id=f"{notification.id}")
             assert str(url) == f"/v0/me/notifications/{notification.id}"
             assert notification.read is False
 
@@ -432,9 +413,7 @@ async def test_update_user_notification_at_correct_index(
             assert notification.read is True
 
         # ensure the notifications were updated at the correct index
-        assert (
-            _marked_as_read(notifications_before_update) == notifications_after_update
-        )
+        assert _marked_as_read(notifications_before_update) == notifications_after_update
 
 
 @pytest.mark.parametrize(
@@ -460,9 +439,9 @@ async def test_list_permissions(
     if data:
         assert not error
         list_of_permissions = TypeAdapter(list[MyPermissionGet]).validate_python(data)
-        assert (
-            len(list_of_permissions) == 1
-        ), "for now there is only 1 permission, but when we sync frontend/backend permissions there will be more"
+        assert len(list_of_permissions) == 1, (
+            "for now there is only 1 permission, but when we sync frontend/backend permissions there will be more"
+        )
         assert list_of_permissions[0].name == "override_services_specifications"
         assert list_of_permissions[0].allowed is False, "defaults should be False!"
     else:
@@ -476,7 +455,7 @@ async def test_list_permissions(
         (UserRole.USER, status.HTTP_200_OK),
     ],
 )
-async def test_list_permissions_with_overriden_extra_properties(
+async def test_list_permissions_with_overridden_extra_properties(
     logged_user: UserInfoDict,
     client: TestClient,
     expected_response: HTTPStatus,
@@ -491,11 +470,7 @@ async def test_list_permissions_with_overriden_extra_properties(
     assert data
     assert not error
     list_of_permissions = TypeAdapter(list[MyPermissionGet]).validate_python(data)
-    filtered_permissions = list(
-        filter(
-            lambda x: x.name == "override_services_specifications", list_of_permissions
-        )
-    )
+    filtered_permissions = list(filter(lambda x: x.name == "override_services_specifications", list_of_permissions))
     assert len(filtered_permissions) == 1
     override_services_specifications = filtered_permissions[0]
 

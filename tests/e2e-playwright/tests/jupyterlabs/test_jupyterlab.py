@@ -24,13 +24,9 @@ from pytest_simcore.helpers.playwright import (
     wait_for_service_running,
 )
 
-_WAITING_FOR_SERVICE_TO_START: Final[int] = (
-    10 * MINUTE
-)  # NOTE: smash is 13Gib, math 2Gib
+_WAITING_FOR_SERVICE_TO_START: Final[int] = 10 * MINUTE  # NOTE: smash is 13Gib, math 2Gib
 _WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL: Final[int] = 10 * SECOND
-_DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(
-    r"/api/contents/workspace"
-)
+_DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/api/contents/workspace")
 _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
     "jupyter-octave-python-math": re.compile(r"/api/contents"),  # old way
 }
@@ -63,9 +59,7 @@ class _JLabWaitForTerminalWebSocket:
 def test_jupyterlab(
     page: Page,
     log_in_and_out: RobustWebSocket,
-    create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None, str | None], dict[str, Any]
-    ],
+    create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     service_key: str,
     service_version: str | None,
     large_file_size: ByteSize,
@@ -80,19 +74,13 @@ def test_jupyterlab(
             f"Waiting for {service_key} to be responsive (waiting for {_SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR)})",
         ),
         page.expect_response(
-            _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(
-                service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR
-            ),
+            _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR),
             timeout=_WAITING_FOR_SERVICE_TO_START,
         ),
     ):
-        project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None, service_version
-        )
+        project_data = create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key, None, service_version)
         assert "workbench" in project_data, "Expected workbench to be in project data!"
-        assert isinstance(
-            project_data["workbench"], dict
-        ), "Expected workbench to be a dict!"
+        assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
         node_ids: list[str] = list(project_data["workbench"])
         assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
@@ -108,9 +96,7 @@ def test_jupyterlab(
 
     iframe = page.frame_locator("iframe")
     if service_key == "jupyter-octave-python-math":
-        print(
-            f"skipping any more complicated stuff since this is {service_key=} which is legacy"
-        )
+        print(f"skipping any more complicated stuff since this is {service_key=} which is legacy")
         return
 
     if service_key == "jupyter-ml-pytorch":
@@ -123,9 +109,7 @@ def test_jupyterlab(
     ):
         iframe.get_by_role(
             "tab",
-            name=_SERVICE_NAME_TAB_TO_WAIT_FOR.get(
-                service_key, _DEFAULT_TAB_TO_WAIT_FOR
-            ),
+            name=_SERVICE_NAME_TAB_TO_WAIT_FOR.get(service_key, _DEFAULT_TAB_TO_WAIT_FOR),
         ).wait_for(state="visible")
     if large_file_size:
         with log_context(
@@ -139,9 +123,7 @@ def test_jupyterlab(
             assert not ws_info.value.is_closed()
             restartable_terminal_web_socket = RobustWebSocket(page, ws_info.value)
 
-            terminal = iframe.locator(
-                "#jp-Terminal-0 > div > div.xterm-screen"
-            ).get_by_role("textbox")
+            terminal = iframe.locator("#jp-Terminal-0 > div > div.xterm-screen").get_by_role("textbox")
             terminal.fill("pip install uv")
             terminal.press("Enter")
             terminal.fill("uv pip install numpy pandas dask[distributed] fastapi")
@@ -150,12 +132,10 @@ def test_jupyterlab(
             blocks_count = int(large_file_size / large_file_block_size)
             with restartable_terminal_web_socket.expect_event(
                 "framereceived",
-                _JLabTerminalWebSocketWaiter(
-                    expected_message_type="stdout", expected_message_contents="copied"
-                ),
+                _JLabTerminalWebSocketWaiter(expected_message_type="stdout", expected_message_contents="copied"),
                 timeout=_WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL
                 * max(int(large_file_size.to("GiB")), 1)
-                * 3,  # avoids flakyness since timeout is deterimned based on size
+                * 3,  # avoids flakiness since timeout is deterimned based on size
             ):
                 terminal.fill(
                     f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
@@ -168,9 +148,7 @@ def test_jupyterlab(
         page.wait_for_timeout(2000)
 
     if service_key == "jupyter-ml-pytorch":
-        print(
-            f"skipping any more complicated stuff since this is {service_key=} which is different from the others"
-        )
+        print(f"skipping any more complicated stuff since this is {service_key=} which is different from the others")
         return
     # Wait until iframe is shown and create new notebook with print statement
     with log_context(logging.INFO, "Running new notebook"):

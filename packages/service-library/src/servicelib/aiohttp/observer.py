@@ -16,9 +16,7 @@ from ..utils import logged_gather
 log = logging.getLogger(__name__)
 
 
-_APP_OBSERVER_EVENTS_REGISTRY_APPKEY: Final = web.AppKey(
-    "APP_OBSERVER_EVENTS_REGISTRY", defaultdict
-)
+_APP_OBSERVER_EVENTS_REGISTRY_APPKEY: Final = web.AppKey("APP_OBSERVER_EVENTS_REGISTRY", defaultdict)
 
 
 class ObserverRegistryNotFoundError(RuntimeError): ...
@@ -47,12 +45,9 @@ def register_observer(app: web.Application, func: Callable, event: str):
         _event_registry[event].append(func)
 
 
-def registed_observers_report(app: web.Application) -> str:
+def registered_observers_report(app: web.Application) -> str:
     if _event_registry := app.get(_APP_OBSERVER_EVENTS_REGISTRY_APPKEY):
-        return "\n".join(
-            f" {event}->{len(funcs)} handles"
-            for event, funcs in _event_registry.items()
-        )
+        return "\n".join(f" {event}->{len(funcs)} handles" for event, funcs in _event_registry.items())
     return "No observers registry found in app"
 
 

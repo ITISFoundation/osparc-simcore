@@ -144,13 +144,9 @@ def mocked_director_service_fcts(
         assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get(
-            re.compile(
-                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
-            ),
+            re.compile(r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"),
             name="get_service",
-        ).respond(
-            json={"data": [fake_service_details.model_dump(mode="json", by_alias=True)]}
-        )
+        ).respond(json={"data": [fake_service_details.model_dump(mode="json", by_alias=True)]})
 
         yield respx_mock
 
@@ -164,13 +160,9 @@ def mocked_catalog_service_fcts(
     fake_service_extras: ServiceExtras,
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
-        return httpx.Response(
-            httpx.codes.OK, json=jsonable_encoder(fake_service_resources, by_alias=True)
-        )
+        return httpx.Response(httpx.codes.OK, json=jsonable_encoder(fake_service_resources, by_alias=True))
 
-    def _mocked_services_details(
-        request, service_key: str, service_version: str
-    ) -> httpx.Response:
+    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx.Response:
         data_published = fake_service_details.model_copy(
             update={
                 "key": urllib.parse.unquote(service_key),
@@ -203,15 +195,11 @@ def mocked_catalog_service_fcts(
             name="get_service_resources",
         ).mock(side_effect=_mocked_service_resources)
         respx_mock.get(
-            re.compile(
-                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
-            ),
+            re.compile(r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"),
             name="get_service_labels",
         ).respond(json=fake_service_labels)
         respx_mock.get(
-            re.compile(
-                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/extras"
-            ),
+            re.compile(r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/extras"),
             name="get_service_extras",
         ).respond(json=fake_service_extras.model_dump(mode="json", by_alias=True))
         respx_mock.get(
@@ -230,24 +218,16 @@ def mocked_catalog_service_fcts_deprecated(
     fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
 ) -> Iterator[respx.MockRouter]:
-    def _mocked_services_details(
-        request, service_key: str, service_version: str
-    ) -> httpx.Response:
+    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx.Response:
         data_published = fake_service_details.model_copy(
             update={
                 "key": urllib.parse.unquote(service_key),
                 "version": service_version,
-                "deprecated": (
-                    dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)
-                ).isoformat(),
+                "deprecated": (dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)).isoformat(),
             }
         ).model_dump(by_alias=True)
 
-        deprecated = {
-            "deprecated": (
-                dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)
-            ).isoformat()
-        }
+        deprecated = {"deprecated": (dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)).isoformat()}
 
         data = {
             **ServiceGet.model_json_schema()["examples"][0],
@@ -316,17 +296,13 @@ def default_pricing_plan_aws_ec2_type(
 def mocked_resource_usage_tracker_service_fcts(
     minimal_app: FastAPI, default_pricing_plan: RutPricingPlanGet
 ) -> Iterator[respx.MockRouter]:
-    def _mocked_service_default_pricing_plan(
-        request, service_key: str, service_version: str
-    ) -> httpx.Response:
+    def _mocked_service_default_pricing_plan(request, service_key: str, service_version: str) -> httpx.Response:
         # RUT only returns values if they are in the table resource_tracker_pricing_plan_to_service
         # otherwise it returns 404s
         if "frontend" in service_key:
             # NOTE: there are typically no frontend services that have pricing plans
             return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
-        return httpx.Response(
-            200, json=jsonable_encoder(default_pricing_plan, by_alias=True)
-        )
+        return httpx.Response(200, json=jsonable_encoder(default_pricing_plan, by_alias=True))
 
     def _mocked_get_pricing_unit(request, pricing_plan_id: int) -> httpx.Response:
         assert "json_schema_extra" in RutPricingUnitGet.model_config
@@ -485,14 +461,10 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
 
 assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
 assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict)
-assert isinstance(
-    ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list
-)
+assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list)
 
 
-@pytest.fixture(
-    params=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
-)
+@pytest.fixture(params=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
 def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
@@ -545,39 +517,23 @@ async def test_create_computation_with_wallet(
         mocked_clusters_keeper_service_get_instance_type_details.assert_called()
         assert (
             mocked_resource_usage_tracker_service_fcts.calls.call_count
-            == len(
-                [
-                    v
-                    for v in proj.workbench.values()
-                    if to_node_class(v.key) != NodeClass.FRONTEND
-                ]
-            )
-            * 2
+            == len([v for v in proj.workbench.values() if to_node_class(v.key) != NodeClass.FRONTEND]) * 2
         )
-        # check the project nodes were really overriden now
+        # check the project nodes were really overridden now
         async with sqlalchemy_async_engine.connect() as connection:
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
             for node in await project_nodes_repo.list(connection):
-                if (
-                    to_node_class(proj.workbench[f"{node.node_id}"].key)
-                    != NodeClass.FRONTEND
-                ):
+                if to_node_class(proj.workbench[f"{node.node_id}"].key) != NodeClass.FRONTEND:
                     assert node.required_resources
                     if DEFAULT_SINGLE_SERVICE_NAME in node.required_resources:
-                        assert node.required_resources[DEFAULT_SINGLE_SERVICE_NAME][
-                            "resources"
-                        ] == {
+                        assert node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"] == {
                             "CPU": {
                                 "limit": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
                                 "reservation": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
                             },
                             "RAM": {
-                                "limit": int(
-                                    fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram
-                                ),
-                                "reservation": int(
-                                    fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram
-                                ),
+                                "limit": int(fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram),
+                                "reservation": int(fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram),
                             },
                         }
                     elif "s4l-core" in node.required_resources:
@@ -604,11 +560,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [
-        RutPricingPlanGet.model_validate(
-            RutPricingPlanGet.model_json_schema()["examples"][0]
-        )
-    ],
+    [RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
@@ -769,9 +721,7 @@ async def test_start_computation(
     assert response.status_code == status.HTTP_201_CREATED, response.text
     mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
     # there should be as many calls to the catalog as there are no defined resources by default
-    assert mocked_get_service_resources.call_count == len(
-        fake_workbench_without_outputs
-    )
+    assert mocked_get_service_resources.call_count == len(fake_workbench_without_outputs)
 
 
 async def test_start_computation_with_project_node_resources_defined(
@@ -788,18 +738,12 @@ async def test_start_computation_with_project_node_resources_defined(
 ):
     user = create_registered_user()
     assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
-    assert isinstance(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict
-    )
-    assert isinstance(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list
-    )
+    assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict)
+    assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list)
     proj = await create_project(
         user,
         project_nodes_overrides={
-            "required_resources": ServiceResourcesDictHelpers.model_config[
-                "json_schema_extra"
-            ]["examples"][0]
+            "required_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
         },
         workbench=fake_workbench_without_outputs,
     )
@@ -866,17 +810,13 @@ async def test_get_computation_from_empty_project(
     async_client: httpx.AsyncClient,
 ):
     user = create_registered_user()
-    get_computation_url = httpx.URL(
-        f"/v2/computations/{faker.uuid4()}?user_id={user['id']}"
-    )
+    get_computation_url = httpx.URL(f"/v2/computations/{faker.uuid4()}?user_id={user['id']}")
     # the project exists but there is no pipeline yet
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create the project
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    get_computation_url = httpx.URL(
-        f"/v2/computations/{proj.uuid}?user_id={user['id']}"
-    )
+    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create an empty pipeline
@@ -890,12 +830,8 @@ async def test_get_computation_from_empty_project(
     expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.NOT_STARTED,
-        pipeline_details=PipelineDetails(
-            adjacency_list={}, node_states={}, progress=None
-        ),
-        url=TypeAdapter(AnyHttpUrl).validate_python(
-            f"{async_client.base_url.join(get_computation_url)}"
-        ),
+        pipeline_details=PipelineDetails(adjacency_list={}, node_states={}, progress=None),
+        url=TypeAdapter(AnyHttpUrl).validate_python(f"{async_client.base_url.join(get_computation_url)}"),
         stop_url=None,
         result=None,
         iteration=None,
@@ -918,9 +854,7 @@ async def test_get_computation_from_not_started_computation_task(
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    get_computation_url = httpx.URL(
-        f"/v2/computations/{proj.uuid}?user_id={user['id']}"
-    )
+    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     await create_pipeline(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
@@ -939,9 +873,7 @@ async def test_get_computation_from_not_started_computation_task(
         id=proj.uuid,
         state=RunningState.NOT_STARTED,
         pipeline_details=PipelineDetails(
-            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(
-                fake_workbench_adjacency
-            ),
+            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(fake_workbench_adjacency),
             progress=0,
             node_states={
                 t.node_id: NodeState(
@@ -958,9 +890,7 @@ async def test_get_computation_from_not_started_computation_task(
                 if t.node_class == NodeClass.COMPUTATIONAL
             },
         ),
-        url=TypeAdapter(AnyHttpUrl).validate_python(
-            f"{async_client.base_url.join(get_computation_url)}"
-        ),
+        url=TypeAdapter(AnyHttpUrl).validate_python(f"{async_client.base_url.join(get_computation_url)}"),
         stop_url=None,
         result=None,
         iteration=None,
@@ -988,9 +918,7 @@ async def test_get_computation_from_published_computation_task(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks_from_project(
-        user=user, project=proj, state=StateType.PUBLISHED, progress=0
-    )
+    comp_tasks = await create_tasks_from_project(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
     comp_runs = await create_comp_run(
         user=user,
         project=proj,
@@ -998,23 +926,17 @@ async def test_get_computation_from_published_computation_task(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     assert comp_runs
-    get_computation_url = httpx.URL(
-        f"/v2/computations/{proj.uuid}?user_id={user['id']}"
-    )
+    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
     returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
-    expected_stop_url = async_client.base_url.join(
-        f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}"
-    )
+    expected_stop_url = async_client.base_url.join(f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}")
     expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.PUBLISHED,
         pipeline_details=PipelineDetails(
-            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(
-                fake_workbench_adjacency
-            ),
+            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(fake_workbench_adjacency),
             node_states={
                 t.node_id: NodeState(
                     modified=True,
@@ -1031,9 +953,7 @@ async def test_get_computation_from_published_computation_task(
             },
             progress=0,
         ),
-        url=TypeAdapter(AnyHttpUrl).validate_python(
-            f"{async_client.base_url.join(get_computation_url)}"
-        ),
+        url=TypeAdapter(AnyHttpUrl).validate_python(f"{async_client.base_url.join(get_computation_url)}"),
         stop_url=TypeAdapter(AnyHttpUrl).validate_python(f"{expected_stop_url}"),
         result=None,
         iteration=1,
@@ -1043,9 +963,9 @@ async def test_get_computation_from_published_computation_task(
     )
 
     _CHANGED_FIELDS = {"submitted"}
-    assert returned_computation.model_dump(
+    assert returned_computation.model_dump(exclude=_CHANGED_FIELDS) == expected_computation.model_dump(
         exclude=_CHANGED_FIELDS
-    ) == expected_computation.model_dump(exclude=_CHANGED_FIELDS)
-    assert returned_computation.model_dump(
+    )
+    assert returned_computation.model_dump(include=_CHANGED_FIELDS) != expected_computation.model_dump(
         include=_CHANGED_FIELDS
-    ) != expected_computation.model_dump(include=_CHANGED_FIELDS)
+    )

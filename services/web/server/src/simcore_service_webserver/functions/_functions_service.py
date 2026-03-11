@@ -124,9 +124,7 @@ async def batch_register_function_jobs(
         function_jobs=encoded_function_jobs,
     )
     return BatchCreateRegisteredFunctionJobs(
-        created_items=[
-            _decode_functionjob(job) for job in created_function_jobs_db.created_items
-        ]
+        created_items=[_decode_functionjob(job) for job in created_function_jobs_db.created_items]
     )
 
 
@@ -137,7 +135,6 @@ async def patch_registered_function_job(
     product_name: ProductName,
     function_job_patch_request: FunctionJobPatchRequest,
 ) -> RegisteredFunctionJob:
-
     result = await _function_jobs_repository.patch_function_jobs(
         app=app,
         user_id=user_id,
@@ -155,9 +152,7 @@ async def batch_patch_registered_function_jobs(
     product_name: ProductName,
     function_job_patch_requests: FunctionJobPatchRequestList,
 ) -> BatchUpdateRegisteredFunctionJobs:
-    TypeAdapter(FunctionJobPatchRequestList).validate_python(
-        function_job_patch_requests
-    )
+    TypeAdapter(FunctionJobPatchRequestList).validate_python(function_job_patch_requests)
 
     result = await _function_jobs_repository.patch_function_jobs(
         app=app,
@@ -165,9 +160,7 @@ async def batch_patch_registered_function_jobs(
         product_name=product_name,
         function_job_patch_requests=function_job_patch_requests,
     )
-    return BatchUpdateRegisteredFunctionJobs(
-        updated_items=[_decode_functionjob(job) for job in result.updated_items]
-    )
+    return BatchUpdateRegisteredFunctionJobs(updated_items=[_decode_functionjob(job) for job in result.updated_items])
 
 
 async def register_function_job_collection(
@@ -177,15 +170,16 @@ async def register_function_job_collection(
     product_name: ProductName,
     function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
-    registered_function_job_collection, registered_job_ids = (
-        await _function_job_collections_repository.create_function_job_collection(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            title=function_job_collection.title,
-            description=function_job_collection.description,
-            job_ids=function_job_collection.job_ids,
-        )
+    (
+        registered_function_job_collection,
+        registered_job_ids,
+    ) = await _function_job_collections_repository.create_function_job_collection(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        title=function_job_collection.title,
+        description=function_job_collection.description,
+        job_ids=function_job_collection.job_ids,
     )
     return RegisteredFunctionJobCollection(
         uid=registered_function_job_collection.uuid,
@@ -239,13 +233,14 @@ async def get_function_job_collection(
     product_name: ProductName,
     function_job_collection_id: FunctionJobID,
 ) -> RegisteredFunctionJobCollection:
-    returned_function_job_collection, returned_job_ids = (
-        await _function_job_collections_repository.get_function_job_collection(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            function_job_collection_id=function_job_collection_id,
-        )
+    (
+        returned_function_job_collection,
+        returned_job_ids,
+    ) = await _function_job_collections_repository.get_function_job_collection(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_collection_id=function_job_collection_id,
     )
     return RegisteredFunctionJobCollection(
         uid=returned_function_job_collection.uuid,
@@ -286,9 +281,7 @@ async def list_functions(
         search_by_function_title=search_by_function_title,
         search_by_multi_columns=search_by_multi_columns,
     )
-    return [
-        _decode_function(returned_function) for returned_function in returned_functions
-    ], page
+    return [_decode_function(returned_function) for returned_function in returned_functions], page
 
 
 async def list_function_jobs(
@@ -302,22 +295,17 @@ async def list_function_jobs(
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-    returned_function_jobs, page = (
-        await _function_jobs_repository.list_function_jobs_with_status(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-        )
+    returned_function_jobs, page = await _function_jobs_repository.list_function_jobs_with_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
-    return [
-        _decode_functionjob(returned_function_job)
-        for returned_function_job in returned_function_jobs
-    ], page
+    return [_decode_functionjob(returned_function_job) for returned_function_job in returned_function_jobs], page
 
 
 async def list_function_jobs_with_status(
@@ -334,21 +322,18 @@ async def list_function_jobs_with_status(
     list[RegisteredFunctionJobWithStatus],
     PageMetaInfoLimitOffset,
 ]:
-    returned_function_jobs_wso, page = (
-        await _function_jobs_repository.list_function_jobs_with_status(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-        )
+    returned_function_jobs_wso, page = await _function_jobs_repository.list_function_jobs_with_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
     return [
-        _decode_functionjob_wso(returned_function_job_wso)
-        for returned_function_job_wso in returned_function_jobs_wso
+        _decode_functionjob_wso(returned_function_job_wso) for returned_function_job_wso in returned_function_jobs_wso
     ], page
 
 
@@ -361,15 +346,13 @@ async def list_function_job_collections(
     pagination_offset: int,
     filters: FunctionJobCollectionsListFilters | None = None,
 ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
-    returned_function_job_collections, page = (
-        await _function_job_collections_repository.list_function_job_collections(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-            filters=filters,
-        )
+    returned_function_job_collections, page = await _function_job_collections_repository.list_function_job_collections(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+        filters=filters,
     )
     return [
         RegisteredFunctionJobCollection(
@@ -481,9 +464,7 @@ async def find_cached_function_jobs(
                 inputs=job.inputs,
                 outputs=None,
                 project_job_id=job.class_specific_data["project_job_id"],
-                job_creation_task_id=job.class_specific_data.get(
-                    "job_creation_task_id"
-                ),
+                job_creation_task_id=job.class_specific_data.get("job_creation_task_id"),
                 created_at=job.created,
             )
         if job.function_class == FunctionClass.SOLVER:
@@ -495,9 +476,7 @@ async def find_cached_function_jobs(
                 inputs=job.inputs,
                 outputs=None,
                 solver_job_id=job.class_specific_data.get("solver_job_id"),
-                job_creation_task_id=job.class_specific_data.get(
-                    "job_creation_task_id"
-                ),
+                job_creation_task_id=job.class_specific_data.get("job_creation_task_id"),
                 created_at=job.created,
             )
         raise UnsupportedFunctionJobClassError(function_job_class=job.function_class)
@@ -651,11 +630,7 @@ async def set_group_permissions(
     read: bool | None = None,
     write: bool | None = None,
     execute: bool | None = None,
-) -> list[
-    tuple[
-        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
-    ]
-]:
+) -> list[tuple[FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights]]:
     return await _functions_permissions_repository.set_group_permissions(
         app=app,
         user_id=user_id,
@@ -805,9 +780,7 @@ def _encode_function(
     function: Function,
 ) -> FunctionDB:
     if function.function_class == FunctionClass.PROJECT:
-        class_specific_data = FunctionClassSpecificData(
-            {"project_id": str(function.project_id)}
-        )
+        class_specific_data = FunctionClassSpecificData({"project_id": str(function.project_id)})
     elif function.function_class == FunctionClass.SOLVER:
         class_specific_data = FunctionClassSpecificData(
             {
@@ -832,41 +805,26 @@ def _encode_function(
 def _encode_functionjob(
     functionjob: FunctionJob,
 ) -> FunctionJobDB:
-
     if functionjob.function_class == FunctionClass.PROJECT:
         class_specific_data = FunctionJobClassSpecificData(
             {
-                "project_job_id": (
-                    str(functionjob.project_job_id)
-                    if functionjob.project_job_id
-                    else None
-                ),
+                "project_job_id": (str(functionjob.project_job_id) if functionjob.project_job_id else None),
                 "job_creation_task_id": (
-                    str(functionjob.job_creation_task_id)
-                    if functionjob.job_creation_task_id
-                    else None
+                    str(functionjob.job_creation_task_id) if functionjob.job_creation_task_id else None
                 ),
             }
         )
     elif functionjob.function_class == FunctionClass.SOLVER:
         class_specific_data = FunctionJobClassSpecificData(
             {
-                "solver_job_id": (
-                    str(functionjob.solver_job_id)
-                    if functionjob.solver_job_id
-                    else None
-                ),
+                "solver_job_id": (str(functionjob.solver_job_id) if functionjob.solver_job_id else None),
                 "job_creation_task_id": (
-                    str(functionjob.job_creation_task_id)
-                    if functionjob.job_creation_task_id
-                    else None
+                    str(functionjob.job_creation_task_id) if functionjob.job_creation_task_id else None
                 ),
             }
         )
     else:
-        raise UnsupportedFunctionJobClassError(
-            function_job_class=functionjob.function_class
-        )
+        raise UnsupportedFunctionJobClassError(function_job_class=functionjob.function_class)
 
     return FunctionJobDB(
         title=functionjob.title,
@@ -890,9 +848,7 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
-            job_creation_task_id=functionjob_db.class_specific_data.get(
-                "job_creation_task_id"
-            ),
+            job_creation_task_id=functionjob_db.class_specific_data.get("job_creation_task_id"),
             created_at=functionjob_db.created,
         )
 
@@ -905,15 +861,11 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
-            job_creation_task_id=functionjob_db.class_specific_data.get(
-                "job_creation_task_id"
-            ),
+            job_creation_task_id=functionjob_db.class_specific_data.get("job_creation_task_id"),
             created_at=functionjob_db.created,
         )
 
-    raise UnsupportedFunctionJobClassError(
-        function_job_class=functionjob_db.function_class
-    )
+    raise UnsupportedFunctionJobClassError(function_job_class=functionjob_db.function_class)
 
 
 def _decode_functionjob_wso(
@@ -930,9 +882,7 @@ def _decode_functionjob_wso(
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
             created_at=functionjob_db.created,
             status=FunctionJobStatus(status=functionjob_db.status),
-            job_creation_task_id=functionjob_db.class_specific_data.get(
-                "job_creation_task_id"
-            ),
+            job_creation_task_id=functionjob_db.class_specific_data.get("job_creation_task_id"),
         )
 
     if functionjob_db.function_class == FunctionClass.SOLVER:
@@ -946,11 +896,7 @@ def _decode_functionjob_wso(
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
             created_at=functionjob_db.created,
             status=FunctionJobStatus(status=functionjob_db.status),
-            job_creation_task_id=functionjob_db.class_specific_data.get(
-                "job_creation_task_id"
-            ),
+            job_creation_task_id=functionjob_db.class_specific_data.get("job_creation_task_id"),
         )
 
-    raise UnsupportedFunctionJobClassError(
-        function_job_class=functionjob_db.function_class
-    )
+    raise UnsupportedFunctionJobClassError(function_job_class=functionjob_db.function_class)

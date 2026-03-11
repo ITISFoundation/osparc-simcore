@@ -97,9 +97,7 @@ def _check_group_permissions(
     permission: Literal["read", "write", "delete"],
 ) -> None:
     if not group.access_rights[permission]:
-        raise UserInsufficientRightsError(
-            user_id=caller_id, gid=group_id, permission=permission
-        )
+        raise UserInsufficientRightsError(user_id=caller_id, gid=group_id, permission=permission)
 
 
 async def _get_group_and_access_rights_or_raise(
@@ -154,9 +152,7 @@ async def get_group_by_gid(
     group_id: GroupID,
 ) -> Group | None:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
-            sa.select(*_GROUP_COLUMNS).where(groups.c.gid == group_id)
-        )
+        result = await conn.execute(sa.select(*_GROUP_COLUMNS).where(groups.c.gid == group_id))
         row = result.one_or_none()
         if row:
             return Group.model_validate(row, from_attributes=True)
@@ -174,10 +170,7 @@ def _list_user_groups_with_read_access_query(*group_selection, user_id: UserID):
         .select_from(
             user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
         )
-        .where(
-            (user_to_groups.c.uid == user_id)
-            & (user_to_groups.c.access_rights["read"].astext == "true")
-        )
+        .where((user_to_groups.c.uid == user_id) & (user_to_groups.c.access_rights["read"].astext == "true"))
     )
 
 
@@ -213,9 +206,7 @@ async def get_all_user_groups_with_read_access(
                 if row.access_rights["read"]:
                     standard_groups.append(_to_group_info_tuple(row))
 
-        return GroupsByTypeTuple(
-            primary=primary_group, standard=standard_groups, everyone=everyone_group
-        )
+        return GroupsByTypeTuple(primary=primary_group, standard=standard_groups, everyone=everyone_group)
 
 
 async def get_ids_of_all_user_groups_with_read_access(
@@ -326,7 +317,6 @@ async def create_standard_group(
     user_id: UserID,
     create: StandardGroupCreate,
 ) -> tuple[Group, AccessRightsDict]:
-
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         user = await conn.scalar(
             sa.select(
@@ -372,7 +362,6 @@ async def update_standard_group(
     group_id: GroupID,
     update: StandardGroupUpdate,
 ) -> tuple[Group, AccessRightsDict]:
-
     values = update.model_dump(mode="json", exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -410,9 +399,7 @@ async def delete_standard_group(
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter
-            groups.delete().where(
-                (groups.c.gid == group_id) & (groups.c.type == GroupType.STANDARD)
-            )
+            groups.delete().where((groups.c.gid == group_id) & (groups.c.type == GroupType.STANDARD))
         )
 
 
@@ -436,8 +423,7 @@ async def get_user_from_email(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             sa.select(users.c.id).where(
-                (users.c.email == email)
-                & is_public(users.c.privacy_hide_email, caller_id=caller_id)
+                (users.c.email == email) & is_public(users.c.privacy_hide_email, caller_id=caller_id)
             )
         )
         user = await result.fetchone()
@@ -494,9 +480,9 @@ async def list_users_in_group_with_caller_check(
                 user_to_groups.c.access_rights,
             )
             .select_from(
-                groups.join(
-                    user_to_groups, user_to_groups.c.gid == groups.c.gid, isouter=True
-                ).join(users, users.c.id == user_to_groups.c.uid)
+                groups.join(user_to_groups, user_to_groups.c.gid == groups.c.gid, isouter=True).join(
+                    users, users.c.id == user_to_groups.c.uid
+                )
             )
             .where(
                 (user_to_groups.c.gid == group_id)
@@ -533,15 +519,10 @@ async def list_users_in_group_with_caller_check(
             )
 
         # GET users
-        query = query.select_from(users.join(user_to_groups, isouter=True)).where(
-            user_to_groups.c.gid == group_id
-        )
+        query = query.select_from(users.join(user_to_groups, isouter=True)).where(user_to_groups.c.gid == group_id)
 
         aresult = await conn.stream(query)
-        return [
-            GroupMember.model_validate(row, from_attributes=True)
-            async for row in aresult
-        ]
+        return [GroupMember.model_validate(row, from_attributes=True) async for row in aresult]
 
 
 async def list_users_in_group(
@@ -556,9 +537,7 @@ async def list_users_in_group(
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # Check if group exists
-        group_exists = await conn.scalar(
-            sa.select(groups.c.gid).where(groups.c.gid == group_id)
-        )
+        group_exists = await conn.scalar(sa.select(groups.c.gid).where(groups.c.gid == group_id))
         if not group_exists:
             raise GroupNotFoundError(gid=group_id)
 
@@ -571,17 +550,14 @@ async def list_users_in_group(
                 users.c.first_name,
                 users.c.last_name,
                 users.c.primary_gid,
-                # user_to_groups.c.access_rights,  # <-- currently not neccessary, might be added if needed
+                # user_to_groups.c.access_rights,  # <-- currently not necessary, might be added if needed
             )
             .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
             .where(user_to_groups.c.gid == group_id)
         )
 
         result = await conn.stream(query)
-        return [
-            GroupMember.model_validate(row, from_attributes=True)
-            async for row in result
-        ]
+        return [GroupMember.model_validate(row, from_attributes=True) async for row in result]
 
 
 async def get_user_in_group(
@@ -622,7 +598,6 @@ async def update_user_in_group(
         raise ValueError(msg)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-
         # first check if the group exists
         await _get_group_and_access_rights_or_raise(
             conn, caller_id=caller_id, group_id=group_id, check_permission="write"
@@ -723,9 +698,7 @@ async def is_user_by_email_in_group(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         user_id = await conn.scalar(
             sa.select(users.c.id)
-            .select_from(
-                sa.join(user_to_groups, users, user_to_groups.c.uid == users.c.id)
-            )
+            .select_from(sa.join(user_to_groups, users, user_to_groups.c.uid == users.c.id))
             .where((users.c.email == email) & (user_to_groups.c.gid == group_id))
         )
         return user_id is not None
@@ -785,9 +758,7 @@ async def add_new_user_in_group(
         try:
             await conn.execute(
                 # pylint: disable=no-value-for-parameter
-                user_to_groups.insert().values(
-                    uid=new_user_id, gid=group_id, access_rights=user_access_rights
-                )
+                user_to_groups.insert().values(uid=new_user_id, gid=group_id, access_rights=user_access_rights)
             )
         except IntegrityError as exc:
             raise UserAlreadyInGroupError(
@@ -803,7 +774,6 @@ async def auto_add_user_to_groups(
     *,
     user: dict,
 ) -> None:
-
     user_id: UserID = user["id"]
 
     # auto add user to the groups with the right rules
@@ -843,9 +813,7 @@ async def auto_add_user_to_product_group(
     product_name: str,
 ) -> GroupID:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        product_group_id: GroupID = await get_or_create_product_group(
-            conn, product_name
-        )
+        product_group_id: GroupID = await get_or_create_product_group(conn, product_name)
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter

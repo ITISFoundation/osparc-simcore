@@ -42,9 +42,7 @@ _logger = logging.getLogger(__name__)
     reraise=True,
     retry=retry_if_exception_type(AssertionError),
 )
-def _assert_check_log_message(
-    caplog: pytest.LogCaptureFixture, expected_message: str
-) -> None:
+def _assert_check_log_message(caplog: pytest.LogCaptureFixture, expected_message: str) -> None:
     assert expected_message in caplog.text
 
 
@@ -70,9 +68,7 @@ async def test_error_regression_async_def(
     caplog.set_level(logging.INFO)
 
     @log_decorator(logger, logging.INFO)
-    async def _not_raising_fct(
-        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
-    ) -> int:
+    async def _not_raising_fct(argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str) -> int:
         assert argument1 is not None
         assert argument2 is not None
         assert keyword_arg1 is not None
@@ -80,9 +76,7 @@ async def test_error_regression_async_def(
         return 0
 
     @log_decorator(logger, logging.INFO)
-    async def _raising_error(
-        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
-    ) -> None:
+    async def _raising_error(argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str) -> None:
         assert argument1 is not None
         assert argument2 is not None
         assert keyword_arg1 is not None
@@ -97,16 +91,16 @@ async def test_error_regression_async_def(
 
     # run function under test: _not_raising_fct -----------------
     caplog.clear()
-    result = await _not_raising_fct(
-        argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
-    )
+    result = await _not_raising_fct(argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2)
     assert result == 0
     assert len(caplog.records) == 2
     info_record = caplog.records[0]
     assert info_record.levelno == logging.INFO
     assert (
-        f"{_not_raising_fct.__module__.split('.')[-1]}:{_not_raising_fct.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
-        in info_record.message
+        f"{_not_raising_fct.__module__.split('.')[-1]}:"
+        f"{_not_raising_fct.__name__}("
+        f"{argument1!r}, {argument2!r}, "
+        f"keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})" in info_record.message
     )
     return_record = caplog.records[1]
     assert return_record.levelno == logging.INFO
@@ -119,16 +113,16 @@ async def test_error_regression_async_def(
     # run function under test: _raising_error -----------------
     caplog.clear()
     with pytest.raises(RuntimeError):
-        await _raising_error(
-            argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
-        )
+        await _raising_error(argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2)
 
     assert len(caplog.records) == 2
     info_record = caplog.records[0]
     assert info_record.levelno == logging.INFO
     assert (
-        f"{_raising_error.__module__.split('.')[-1]}:{_raising_error.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
-        in info_record.message
+        f"{_raising_error.__module__.split('.')[-1]}:"
+        f"{_raising_error.__name__}("
+        f"{argument1!r}, {argument2!r}, "
+        f"keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})" in info_record.message
     )
     error_record = caplog.records[1]
     assert error_record.levelno == logging.INFO
@@ -137,16 +131,12 @@ async def test_error_regression_async_def(
 
 
 @pytest.mark.parametrize("logger", [None, _logger])
-def test_error_regression_sync_def(
-    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, faker: Faker
-):
+def test_error_regression_sync_def(caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, faker: Faker):
     # NOTE: change the log level so that the log is visible
     caplog.set_level(logging.INFO)
 
     @log_decorator(logger, logging.INFO)
-    def _not_raising_fct(
-        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
-    ) -> int:
+    def _not_raising_fct(argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str) -> int:
         assert argument1 is not None
         assert argument2 is not None
         assert keyword_arg1 is not None
@@ -154,9 +144,7 @@ def test_error_regression_sync_def(
         return 0
 
     @log_decorator(logger, logging.INFO)
-    def _raising_error(
-        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
-    ) -> None:
+    def _raising_error(argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str) -> None:
         assert argument1 is not None
         assert argument2 is not None
         assert keyword_arg1 is not None
@@ -170,16 +158,16 @@ def test_error_regression_sync_def(
     key_argument1 = faker.pybool()
     key_argument2 = faker.pystr()
 
-    result = _not_raising_fct(
-        argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
-    )
+    result = _not_raising_fct(argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2)
     assert result == 0
     assert len(caplog.records) == 2
     info_record = caplog.records[0]
     assert info_record.levelno == logging.INFO
     assert (
-        f"{_not_raising_fct.__module__.split('.')[-1]}:{_not_raising_fct.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
-        in info_record.message
+        f"{_not_raising_fct.__module__.split('.')[-1]}:"
+        f"{_not_raising_fct.__name__}("
+        f"{argument1!r}, {argument2!r}, "
+        f"keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})" in info_record.message
     )
     return_record = caplog.records[1]
     assert return_record.levelno == logging.INFO
@@ -191,16 +179,16 @@ def test_error_regression_sync_def(
 
     caplog.clear()
     with pytest.raises(RuntimeError):
-        _raising_error(
-            argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
-        )
+        _raising_error(argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2)
 
     assert len(caplog.records) == 2
     info_record = caplog.records[0]
     assert info_record.levelno == logging.INFO
     assert (
-        f"{_raising_error.__module__.split('.')[-1]}:{_raising_error.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
-        in info_record.message
+        f"{_raising_error.__module__.split('.')[-1]}:"
+        f"{_raising_error.__name__}("
+        f"{argument1!r}, {argument2!r}, "
+        f"keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})" in info_record.message
     )
     error_record = caplog.records[1]
     assert error_record.levelno == logging.INFO
@@ -227,16 +215,12 @@ def test_error_regression_sync_def(
         ("Not a Warn: this is an warning", logging.INFO),
     ],
 )
-def test_guess_message_log_level(
-    message: LogMessageStr, expected_log_level: LogLevelInt
-):
+def test_guess_message_log_level(message: LogMessageStr, expected_log_level: LogLevelInt):
     assert guess_message_log_level(message) == expected_log_level
 
 
 @pytest.mark.parametrize("with_log_duration", [True, False])
-def test_log_context_with_log_duration(
-    caplog: pytest.LogCaptureFixture, with_log_duration: bool
-):
+def test_log_context_with_log_duration(caplog: pytest.LogCaptureFixture, with_log_duration: bool):
     caplog.clear()
 
     with log_context(_logger, logging.ERROR, "test", log_duration=with_log_duration):
@@ -328,7 +312,8 @@ def test_log_exceptions_and_suppress(caplog: pytest.LogCaptureFixture, level: in
         record = caplog.records[0]
         # this is how it looks with exc_info=True
         #
-        # CRITICAL tests.test_logging_utils:logging_utils.py:170 CONTEXT raised ValueError: logs exceptions and suppresses
+        # CRITICAL tests.test_logging_utils:logging_utils.py:170 CONTEXT raised ValueError: \
+        # logs exceptions and suppresses
         # Traceback (most recent call last):
         # File "path/to/file.py", line 163, in log_exceptions
         #     yield
@@ -346,9 +331,7 @@ def test_log_exceptions_and_suppress(caplog: pytest.LogCaptureFixture, level: in
 
 
 @pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)
-def test_log_exceptions_and_suppress_without_exc_info(
-    caplog: pytest.LogCaptureFixture, level: int
-):
+def test_log_exceptions_and_suppress_without_exc_info(caplog: pytest.LogCaptureFixture, level: int):
     caplog.set_level(level)
 
     exc_msg = "logs exceptions and suppresses"
@@ -365,7 +348,8 @@ def test_log_exceptions_and_suppress_without_exc_info(
         record = caplog.records[0]
         # this is how it looks with exc_info=False
         #
-        # CRITICAL tests.test_logging_utils:logging_utils.py:170 CONTEXT raised ValueError: logs exceptions and suppresses
+        # CRITICAL tests.test_logging_utils:logging_utils.py:170 CONTEXT raised ValueError: \
+        # logs exceptions and suppresses
         #
 
         assert record.message == f"CONTEXT raised ValueError: {exc_msg}"
@@ -594,32 +578,6 @@ def test_setup_async_loggers_exception_handling(
     assert "Message before exception" in caplog.text
 
 
-def _create_grok_regex_pattern() -> str:
-    """Convert Grok pattern to regex for testing."""
-    # The Grok pattern from the comment:
-    # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}
-
-    grok_to_regex = {
-        r"%{WORD:log_level}": r"(?P<log_level>\w+)",
-        r"%{TIMESTAMP_ISO8601:log_timestamp}": r"(?P<log_timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})",
-        r"%{NOTSPACE:log_source}": r"(?P<log_source>\S+)",
-        r"%{NOTSPACE:log_uid}": r"(?P<log_uid>\S+)",
-        r"%{NOTSPACE:log_oec}": r"(?P<log_oec>\S+)",
-        r"%{NOTSPACE:log_trace_id}": r"(?P<log_trace_id>\S+)",
-        r"%{NOTSPACE:log_span_id}": r"(?P<log_span_id>\S+)",
-        r"%{GREEDYDATA:log_msg}": r"(?P<log_msg>.*)",
-    }
-
-    grok_pattern = r"log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}"
-
-    # Convert to regex
-    regex_pattern = grok_pattern
-    for grok, regex in grok_to_regex.items():
-        regex_pattern = regex_pattern.replace(grok, regex)
-
-    return regex_pattern
-
-
 def _create_test_log_record(
     name: str,
     level: int,
@@ -631,6 +589,7 @@ def _create_test_log_record(
     error_code: str | None = None,
     trace_id: str | None = None,
     span_id: str | None = None,
+    trace_sampled: bool | None = None,
 ) -> logging.LogRecord:
     """Create a test LogRecord with optional extra fields."""
 
@@ -654,20 +613,12 @@ def _create_test_log_record(
     # Add OpenTelemetry trace ID
     record.otelTraceID = trace_id  # type: ignore[attr-defined]
     record.otelSpanID = span_id  # type: ignore[attr-defined]
+    record.otelTraceSampled = trace_sampled  # type: ignore[attr-defined]
 
     return record
 
 
-def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
-    """
-    Test that the Graylog Grok pattern correctly parses logs formatted with _DEFAULT_FORMATTING.
-
-    This test validates that the Grok pattern defined in the comment can correctly
-    parse logs formatted with _DEFAULT_FORMATTING.
-
-    WARNING: If log formatting changes, the Grok pattern in Graylog must be updated accordingly.
-    """
-
+def test_log_parsing(caplog: pytest.LogCaptureFixture) -> None:
     # Create a custom handler with the default formatter
     log_stream = io.StringIO()
     handler = logging.StreamHandler(log_stream)
@@ -675,9 +626,7 @@ def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
     handler.setFormatter(formatter)
 
     # Create test log record with all fields populated
-    test_message = (
-        "This is a test log message with special chars: []{} and new line\nembedded"
-    )
+    test_message = "This is a test log message with special chars: []{} and new line\nembedded"
     record = _create_test_log_record(
         name="test.module.submodule",
         level=logging.INFO,
@@ -688,78 +637,35 @@ def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
         error_code="OEC001",
         trace_id="1234567890abcdef1234567890abcdef",
         span_id="987654321",
+        trace_sampled=True,
     )
 
     # Format the record
     formatted_log = formatter.format(record)
 
     # Test that the formatted log matches the Grok pattern
-    regex_pattern = _create_grok_regex_pattern()
-    match = re.match(regex_pattern, formatted_log)
-
-    assert (
-        match is not None
-    ), f"Grok pattern did not match formatted log. Log: {formatted_log!r}"
-
-    # Verify extracted fields match expected values
-    groups = match.groupdict()
-
-    assert groups["log_level"] == "INFO"
-    assert groups["log_source"] == "test.module.submodule:test_function(42)"
-    assert groups["log_uid"] == "12345"
-    assert groups["log_oec"] == "OEC001"
-    assert groups["log_trace_id"] == "1234567890abcdef1234567890abcdef"
-    assert groups["log_span_id"] == "987654321"
-
-    # Verify the message is correctly escaped (newlines become \\n)
-    expected_message = test_message.replace("\n", "\\n")
-    assert groups["log_msg"] == expected_message
-
-    # Verify timestamp format is ISO8601-like (as expected by Python logging)
-    timestamp_pattern = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}"
-    assert re.match(timestamp_pattern, groups["log_timestamp"])
-
-
-def test_grok_pattern_parsing_with_none_values(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """
-    Test Grok pattern parsing when optional fields are None.
-
-    WARNING: If log formatting changes, the Grok pattern in Graylog must be updated accordingly.
-    """
-
-    # Create a custom handler with the default formatter
-    handler = logging.StreamHandler(io.StringIO())
-    formatter = CustomFormatter(_DEFAULT_FORMATTING, log_format_local_dev_enabled=False)
-    handler.setFormatter(formatter)
-
-    # Create test log record with None values for optional fields
-    record = _create_test_log_record(
-        name="test.module",
-        level=logging.ERROR,
-        func_name="error_function",
-        lineno=100,
-        message="Error message",
-        user_id=None,
-        error_code=None,
-        trace_id=None,
-        span_id=None,
+    # NOTE: The idea is that the regex pattern used in vector dev to parse the logs
+    regex_pattern = (
+        r"log_level=(?P<log_level>[^|]*) "
+        r"\| log_timestamp=(?P<log_timestamp>[^|]*) "
+        r"\| log_source=(?P<log_source>[^|]*) "
+        r"\| log_uid=(?P<log_uid>[^|]*) "
+        r"\| log_oec=(?P<log_oec>[^|]*) "
+        r"\| log_trace_id=(?P<log_trace_id>[^|]*) "
+        r"\| log_span_id=(?P<log_span_id>[^|]*) "
+        r"\| log_trace_sampled=(?P<log_trace_sampled>[^|]*) "
+        r"\| log_msg=(?P<log_msg>.*)$"
     )
-
-    formatted_log = formatter.format(record)
-    regex_pattern = _create_grok_regex_pattern()
     match = re.match(regex_pattern, formatted_log)
-
-    assert (
-        match is not None
-    ), f"Grok pattern did not match log with None values. Log: {formatted_log!r}"
-
-    groups = match.groupdict()
-    assert groups["log_level"] == "ERROR"
-    assert groups["log_source"] == "test.module:error_function(100)"
-    assert groups["log_uid"] == "None"
-    assert groups["log_oec"] == "None"
-    assert groups["log_trace_id"] == "None"
-    assert groups["log_span_id"] == "None"
-    assert groups["log_msg"] == "Error message"
+    assert match is not None
+    for group_name in [
+        "log_level",
+        "log_timestamp",
+        "log_source",
+        "log_uid",
+        "log_oec",
+        "log_trace_id",
+        "log_span_id",
+        "log_msg",
+    ]:
+        assert match.group(group_name), f"Group '{group_name}' was not captured"

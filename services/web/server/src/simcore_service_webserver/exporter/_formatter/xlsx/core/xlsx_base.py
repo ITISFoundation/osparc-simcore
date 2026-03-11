@@ -41,12 +41,8 @@ ALIGNMENT_ATTRIBUTES: set[str] = {
 }
 
 
-def _apply_or_to_objects(
-    self_var: Any, other_var: Any, attributes: set[str]
-) -> dict[str, Any]:
-    return {
-        x: getattr(self_var, x, None) or getattr(other_var, x, None) for x in attributes
-    }
+def _apply_or_to_objects(self_var: Any, other_var: Any, attributes: set[str]) -> dict[str, Any]:
+    return {x: getattr(self_var, x, None) or getattr(other_var, x, None) for x in attributes}
 
 
 def _base_value_or(self_var: Any, entry_var: Any) -> Any:
@@ -58,9 +54,7 @@ def _base_value_or(self_var: Any, entry_var: Any) -> Any:
     if isinstance(self_var, Border):
         return Border(**_apply_or_to_objects(self_var, entry_var, BORDER_ATTRIBUTES))
     if isinstance(self_var, Alignment):
-        return Alignment(
-            **_apply_or_to_objects(self_var, entry_var, ALIGNMENT_ATTRIBUTES)
-        )
+        return Alignment(**_apply_or_to_objects(self_var, entry_var, ALIGNMENT_ATTRIBUTES))
 
     return self_var or entry_var
 
@@ -116,9 +110,7 @@ class BaseXLSXCellData:
         keys_other_vars_to_copy = other_vars_keys - keys_in_common
 
         # apply or to common properties
-        merged_values = {
-            k: _base_value_or(self_vars[k], other_vars[k]) for k in keys_in_common
-        }
+        merged_values = {k: _base_value_or(self_vars[k], other_vars[k]) for k in keys_in_common}
 
         # copy properties which are not shared
         for key in keys_self_vars_to_copy:
@@ -130,9 +122,7 @@ class BaseXLSXCellData:
 
     def __repr__(self):
         """Only outputs not None attributes"""
-        formatted_vars = ", ".join(
-            [f"{x[0]}={x[1]}" for x in vars(self).items() if x[1] is not None]
-        )
+        formatted_vars = ", ".join([f"{x[0]}={x[1]}" for x in vars(self).items() if x[1] is not None])
         return f"<{self.__class__.__name__} {formatted_vars}>"
 
 
@@ -145,7 +135,7 @@ class BaseXLSXSheet:
 
     # used to merge cells via ranges like A1:B2
     cell_merge: ClassVar[set[str]] = set()
-    # specify each column's length liek {"B": 10}
+    # specify each column's length like {"B": 10}
     column_dimensions: ClassVar[dict[str, int]] = {}
 
     def _check_attribute(self, attribute_name: str):
@@ -162,9 +152,7 @@ class BaseXLSXSheet:
 
     # pylint: disable=no-self-use
     # pylint: disable=unused-argument
-    def assemble_data_for_template(
-        self, template_data: BaseModel | None
-    ) -> list[tuple[str, BaseXLSXCellData]]:
+    def assemble_data_for_template(self, template_data: BaseModel | None) -> list[tuple[str, BaseXLSXCellData]]:
         """
         Expected to be implemented by the user.
         Used to populate the sheet before applying the
@@ -186,13 +174,11 @@ def _update_entry_in_cell(
     new_entry: BaseXLSXCellData,
 ) -> None:
     """
-    There may be multiple entires for the same cell, coming from different sources.
+    There may be multiple entries for the same cell, coming from different sources.
     It is useful for applying styling to existing cells and storing values
     """
-    exiting_entry = target.get(address, None)
-    target[address] = (
-        new_entry if exiting_entry is None else (exiting_entry | new_entry)
-    )
+    exiting_entry = target.get(address)
+    target[address] = new_entry if exiting_entry is None else (exiting_entry | new_entry)
 
 
 def _parse_multiple_cell_ranges(
@@ -219,9 +205,7 @@ class BaseXLSXDocument:
     def __init__(self, *args, file_name: str | Path | None = None):
         for k, entry in enumerate(args):
             self.__dict__[f"__sheet__entry__{k}"] = entry
-        self.file_name = (
-            self.__getattribute__("file_name") if file_name is None else file_name
-        )
+        self.file_name = self.__getattribute__("file_name") if file_name is None else file_name
         self._check_attribute("file_name")
         self._sheets_by_name: dict[BaseXLSXSheet, Worksheet] = {}
 

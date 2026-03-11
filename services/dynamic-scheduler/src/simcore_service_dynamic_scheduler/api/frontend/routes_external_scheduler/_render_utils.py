@@ -6,9 +6,7 @@ from nicegui import ui
 
 @contextmanager
 def base_page(*, title: str | None = None) -> Iterator[None]:
-    display_title = (
-        "Dynamic Scheduler" if title is None else f"Dynamic Scheduler - {title}"
-    )
+    display_title = "Dynamic Scheduler" if title is None else f"Dynamic Scheduler - {title}"
     ui.page_title(display_title)
 
     with ui.header(elevated=True).classes("items-center"):

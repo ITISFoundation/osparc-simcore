@@ -26,18 +26,14 @@ def upgrade():
         "resource_tracker_container",
         sa.Column("node_label", sa.String(), nullable=True),
     )
-    op.add_column(
-        "resource_tracker_container", sa.Column("instance", sa.String(), nullable=True)
-    )
+    op.add_column("resource_tracker_container", sa.Column("instance", sa.String(), nullable=True))
     op.add_column(
         "resource_tracker_container",
         sa.Column("service_settings_limit_nano_cpus", sa.BigInteger(), nullable=True),
     )
     op.add_column(
         "resource_tracker_container",
-        sa.Column(
-            "service_settings_limit_memory_bytes", sa.BigInteger(), nullable=True
-        ),
+        sa.Column("service_settings_limit_memory_bytes", sa.BigInteger(), nullable=True),
     )
     op.add_column(
         "resource_tracker_container",

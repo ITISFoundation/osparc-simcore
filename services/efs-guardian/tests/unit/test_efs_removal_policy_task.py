@@ -147,9 +147,7 @@ async def test_efs_removal_policy_task(
     )
     efs_manager: EfsManager = app.state.efs_manager
 
-    with patch(
-        "simcore_service_efs_guardian.services.efs_manager.os.chown"
-    ) as mocked_chown:
+    with patch("simcore_service_efs_guardian.services.efs_manager.os.chown") as mocked_chown:
         await efs_manager.create_project_specific_data_dir(
             project_id=project_id,
             node_id=node_id,
@@ -167,19 +165,13 @@ async def test_efs_removal_policy_task(
     await removal_policy_task(app)
     assert not mock_with_locked_project.called
 
-    # 4. We will artifically change the project last change date
+    # 4. We will artificially change the project last change date
     app_settings: ApplicationSettings = app.state.settings
     _current_timestamp = datetime.now()
-    _old_timestamp = (
-        _current_timestamp
-        - app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA
-        - timedelta(days=1)
-    )
+    _old_timestamp = _current_timestamp - app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA - timedelta(days=1)
     async with transaction_context(app.state.engine) as conn:
         result = await conn.execute(
-            projects.update()
-            .values(last_change_date=_old_timestamp)
-            .where(projects.c.uuid == f"{project_id}")
+            projects.update().values(last_change_date=_old_timestamp).where(projects.c.uuid == f"{project_id}")
         )
         result_row_count: int = result.rowcount
         assert result_row_count == 1  # nosec

@@ -45,9 +45,7 @@ async def test_get_computation_task_log_file_ids(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks_from_project(
-        user=user, project=proj, state=StateType.PUBLISHED, progress=None
-    )
+    comp_tasks = await create_tasks_from_project(user=user, project=proj, state=StateType.PUBLISHED, progress=None)
     comp_runs = await create_comp_run(
         user=user,
         project=proj,
@@ -56,13 +54,9 @@ async def test_get_computation_task_log_file_ids(
     )
     assert comp_runs
 
-    output = await rpc_computations_tasks.get_computation_task_log_file_ids(
-        rpc_client, project_id=proj.uuid
-    )
+    output = await rpc_computations_tasks.get_computation_task_log_file_ids(rpc_client, project_id=proj.uuid)
     assert isinstance(output, list)
-    assert len(output) <= len(
-        comp_tasks
-    )  # output doesn't contain e.g. filepickers and dynamic services
+    assert len(output) <= len(comp_tasks)  # output doesn't contain e.g. filepickers and dynamic services
     assert all(isinstance(elm, TaskLogFileIdGet) for elm in output)
 
 
@@ -70,6 +64,4 @@ async def test_get_computation_task_log_file_ids_no_pipeline(
     rpc_client: RabbitMQRPCClient,
 ):
     with pytest.raises(ComputationalTaskMissingError):
-        await rpc_computations_tasks.get_computation_task_log_file_ids(
-            rpc_client, project_id=ProjectID(_faker.uuid4())
-        )
+        await rpc_computations_tasks.get_computation_task_log_file_ids(rpc_client, project_id=ProjectID(_faker.uuid4()))

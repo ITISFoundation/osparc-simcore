@@ -25,7 +25,7 @@ echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
 echo TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=null >> $(SIMCORE_DOT_ENV)
 echo TRACING_OPENTELEMETRY_COLLECTOR_PORT=null >> $(SIMCORE_DOT_ENV)
 
-$(MAKE_C) $(REPO_BASE_DIR) up-prod ops_ci=1
+$(MAKE_C) $(REPO_BASE_DIR) up-prod-phased ops_ci=1
 endef
 
 SERVICE_IMAGE_NAME = "sleeper"
@@ -73,7 +73,7 @@ install-ci-up-simcore: install-ci  ## run registry and simcore stack locally (pu
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
-	@utils/wait_for_services.py
+	@$(REPO_BASE_DIR)/tests/utils/wait_for_services.py
 
 	# giving access rights to images (this might take some time until the catalog is ready)
 	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
@@ -132,6 +132,27 @@ test-platform-dev: _check_venv_active  ## runs platform test on local deploy (wi
 		--autoregister \
 		--tracing=on \
 		$(CURDIR)/tests/platform_CI_tests/test_platform.py
+
+.PHONY: test-guided-tours
+test-guided-tours: _check_venv_active ## runs guided tours test on local deploy
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--product-url=http://$(get_my_ip):9081 \
+		--autoregister \
+		--tracing=retain-on-failure \
+		$(CURDIR)/tests/guided_tours/test_guided_tours.py
+
+.PHONY: test-guided-tours-dev
+test-guided-tours-dev: _check_venv_active ## runs guided tours test on local deploy (headed mode)
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--pdb \
+		--product-url=http://$(get_my_ip):9081 \
+		--headed \
+		--autoregister \
+		$(CURDIR)/tests/guided_tours/test_guided_tours.py
 
 
 # Define the files where user input will be saved

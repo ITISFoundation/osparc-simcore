@@ -26,9 +26,7 @@ from servicelib.aiohttp import status
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -101,9 +99,7 @@ async def semi_private_user(
 
 
 @pytest.fixture
-async def public_user(
-    client: TestClient, partial_username: str, partial_email: str
-) -> AsyncIterable[UserInfoDict]:
+async def public_user(client: TestClient, partial_username: str, partial_email: str) -> AsyncIterable[UserInfoDict]:
     assert client.app
     async with NewUser(
         app=client.app,
@@ -121,9 +117,7 @@ async def public_user(
         yield usr
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/osparc-issues/issues/1779"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-issues/issues/1779")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_user_by_group_id(
     user_role: UserRole,
@@ -139,9 +133,7 @@ async def test_get_user_by_group_id(
     assert public_user["id"] != logged_user["id"]
 
     # GET public_user by its primary gid
-    url = client.app.router["get_all_group_users"].url_for(
-        gid=f"{public_user['primary_gid']}"
-    )
+    url = client.app.router["get_all_group_users"].url_for(gid=f"{public_user['primary_gid']}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -153,9 +145,7 @@ async def test_get_user_by_group_id(
     assert users[0].last_name == public_user.get("last_name")
 
     # GET private_user by its primary gid
-    url = client.app.router["get_all_group_users"].url_for(
-        gid=f"{private_user['primary_gid']}"
-    )
+    url = client.app.router["get_all_group_users"].url_for(gid=f"{private_user['primary_gid']}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -213,7 +203,6 @@ async def test_search_users_by_partial_email(
     semi_private_user: UserInfoDict,
     private_user: UserInfoDict,
 ):
-
     # SEARCH by partial email
     assert partial_email in private_user["email"]
     assert partial_email not in semi_private_user["email"]
@@ -292,7 +281,6 @@ async def test_search_myself(
     assert client.app
     for user in [public_user, semi_private_user, private_user]:
         async with switch_client_session_to(client, user):
-
             # search me
             url = client.app.router["search_users"].url_for()
             resp = await client.post(f"{url}", json={"match": user["name"]})

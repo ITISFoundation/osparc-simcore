@@ -24,9 +24,7 @@ def app_environment(
 
 
 @pytest.fixture
-async def client(
-    app_environment: EnvVarsDict, app: FastAPI
-) -> AsyncIterator[AsyncClient]:
+async def client(app_environment: EnvVarsDict, app: FastAPI) -> AsyncIterator[AsyncClient]:
     # - Needed for app to trigger start/stop event handlers
     # - Prefer this client instead of fastapi.testclient.TestClient
     async with AsyncClient(

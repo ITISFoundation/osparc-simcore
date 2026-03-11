@@ -39,9 +39,7 @@ async def create_token_in_db(engine, **data):
         return dict(row)
 
 
-async def get_token_from_db(
-    engine, *, token_id=None, user_id=None, token_service=None, token_data=None
-):
+async def get_token_from_db(engine, *, token_id=None, user_id=None, token_service=None, token_data=None):
     async with engine.acquire() as conn:
         expr = to_expression(
             token_id=token_id,

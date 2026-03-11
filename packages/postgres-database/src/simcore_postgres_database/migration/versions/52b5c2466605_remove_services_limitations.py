@@ -88,9 +88,7 @@ def downgrade():
         ),
         sa.UniqueConstraint("gid", "cluster_id", name="gid_cluster_id_uniqueness"),
     )
-    op.create_index(
-        "idx_unique_gid_cluster_id_null", "services_limitations", ["gid"], unique=False
-    )
+    op.create_index("idx_unique_gid_cluster_id_null", "services_limitations", ["gid"], unique=False)
     # ### end Alembic commands ###
 
     # custom

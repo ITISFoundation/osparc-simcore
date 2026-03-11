@@ -76,9 +76,7 @@ _OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 _LOGFILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_200_OK: {
         "content": {
-            "application/octet-stream": {
-                "schema": {"type": "string", "format": "binary"}
-            },
+            "application/octet-stream": {"schema": {"type": "string", "format": "binary"}},
             "application/zip": {"schema": {"type": "string", "format": "binary"}},
             "text/plain": {"schema": {"type": "string"}},
         },
@@ -124,13 +122,10 @@ router = APIRouter()
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],
-    filter_job_metadata_params: Annotated[
-        JobMetadataFilter | None, Depends(get_job_metadata_filter)
-    ],
+    filter_job_metadata_params: Annotated[JobMetadataFilter | None, Depends(get_job_metadata_filter)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-
     jobs, meta = await job_service.list_solver_jobs(
         filter_any_custom_metadata=(
             [
@@ -185,9 +180,7 @@ async def list_jobs(
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects_page = await webserver_api.get_projects_w_solver_page(
-        solver_name=solver.name, limit=20, offset=0
-    )
+    projects_page = await webserver_api.get_projects_w_solver_page(solver_name=solver.name, limit=20, offset=0)
 
     jobs: deque[Job] = deque()
     job_rest_interface_links = get_solver_job_rest_interface_links(
@@ -348,9 +341,7 @@ async def get_job_output_logfile(
 
     project_id = job_id
 
-    log_link_map = await director2_api.get_computation_logs(
-        user_id=user_id, project_id=project_id
-    )
+    log_link_map = await director2_api.get_computation_logs(user_id=user_id, project_id=project_id)
     logs_urls = log_link_map.log_links
 
     _logger.debug(
@@ -460,9 +451,7 @@ async def get_job_pricing_unit(
         node_ids = list(project.workbench.keys())
         assert len(node_ids) == 1  # nosec
         node_id: UUID = UUID(node_ids[0])
-        return await webserver_api.get_project_node_pricing_unit(
-            project_id=job_id, node_id=node_id
-        )
+        return await webserver_api.get_project_node_pricing_unit(project_id=job_id, node_id=node_id)
 
 
 @router.get(
@@ -484,9 +473,7 @@ async def get_log_stream(
     assert request  # nosec
 
     job_name = compose_solver_job_resource_name(solver_key, version, job_id)
-    with log_context(
-        _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"
-    ):
+    with log_context(_logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"):
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         raise_if_job_not_associated_with_solver(job_name, project)
         log_streamer = LogStreamer(

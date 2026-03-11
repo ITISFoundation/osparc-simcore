@@ -42,9 +42,7 @@ def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
     input_1 = input_port_ids[1]
     input_2 = input_port_ids[2]
 
-    modified = set_inputs_in_project(
-        workbench=workbench, update={input_0: 42, input_1: 3, input_2: False}
-    )
+    modified = set_inputs_in_project(workbench=workbench, update={input_0: 42, input_1: 3, input_2: False})
     assert modified == {input_0, input_1}
     assert get_project_inputs(workbench=workbench) == {
         input_0: 42,
@@ -53,9 +51,7 @@ def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
     }
 
     with pytest.raises(InvalidInputValue):
-        set_inputs_in_project(
-            workbench=workbench, update={input_2: "THIS SHOULD HAVE BEEN A BOOL"}
-        )
+        set_inputs_in_project(workbench=workbench, update={input_2: "THIS SHOULD HAVE BEEN A BOOL"})
 
 
 def test_get_outputs_in_workbench(workbench: dict[NodeID, Node]):

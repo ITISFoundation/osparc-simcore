@@ -6,7 +6,6 @@ import logging
 import re
 import socket
 from collections.abc import (
-    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -14,7 +13,7 @@ from collections.abc import (
 )
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Final, ParamSpec, TypeVar, cast
+from typing import Any, Final, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -23,7 +22,7 @@ import arrow
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
-from common_library.async_tools import cancel_wait_task
+from common_library.async_tools import cancel_wait_task, iter_with_timeout
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceTimeoutLoggingError
 from dask_task_models_library.container_tasks.protocol import (
@@ -87,9 +86,7 @@ async def create_container_config(
         f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
     ]
     if envs:
-        env_variables += [
-            f"{env_key}={env_value}" for env_key, env_value in envs.items()
-        ]
+        env_variables += [f"{env_key}={env_value}" for env_key, env_value in envs.items()]
     config = DockerContainerConfig(
         Env=env_variables,
         Cmd=command,
@@ -117,18 +114,12 @@ async def managed_container(
 ) -> AsyncIterator[DockerContainer]:
     container = None
     try:
-        with log_context(
-            _logger, logging.DEBUG, msg=f"managing container {name} for {config.image}"
-        ):
-            container = await docker_client.containers.create(
-                config.model_dump(by_alias=True), name=name
-            )
+        with log_context(_logger, logging.DEBUG, msg=f"managing container {name} for {config.image}"):
+            container = await docker_client.containers.create(config.model_dump(by_alias=True), name=name)
             yield container
     except asyncio.CancelledError:
         if container:
-            _logger.warning(
-                "Cancelling run of container %s, for %s", container.id, config.image
-            )
+            _logger.warning("Cancelling run of container %s, for %s", container.id, config.image)
         raise
     finally:
         try:
@@ -168,18 +159,14 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
 _OSPARC_LOG_NUM_PARTS: Final[int] = 2
 
 
-async def _try_parse_progress(
-    line: str, *, progress_regexp: re.Pattern[str]
-) -> float | None:
+async def _try_parse_progress(line: str, *, progress_regexp: re.Pattern[str]) -> float | None:
     with log_catch(_logger, reraise=False):
         # pattern might be like "timestamp log"
         log = line.strip("\n")
-        splitted_log = log.split(" ", maxsplit=1)
+        split_log = log.split(" ", maxsplit=1)
         with contextlib.suppress(arrow.ParserError, ValueError):
-            if len(splitted_log) == _OSPARC_LOG_NUM_PARTS and arrow.get(
-                splitted_log[0]
-            ):
-                log = splitted_log[1]
+            if len(split_log) == _OSPARC_LOG_NUM_PARTS and arrow.get(split_log[0]):
+                log = split_log[1]
         if match := re.search(progress_regexp, log):
             return _guess_progress_value(match)
 
@@ -193,15 +180,11 @@ async def _parse_and_publish_logs(
     progress_regexp: re.Pattern[str],
     progress_bar: ProgressBarData,
 ) -> None:
-    progress_value = await _try_parse_progress(
-        log_line, progress_regexp=progress_regexp
-    )
+    progress_value = await _try_parse_progress(log_line, progress_regexp=progress_regexp)
     if progress_value is not None:
         await progress_bar.set_(round(progress_value * 100.0))
 
-    await task_publishers.publish_logs(
-        message=log_line, log_level=guess_message_log_level(log_line)
-    )
+    await task_publishers.publish_logs(message=log_line, log_level=guess_message_log_level(log_line))
 
 
 async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many-arguments
@@ -256,9 +239,7 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
         finally:
             # copy the log file to the log_file_url
             if log_file.exists():
-                await push_file_to_remote(
-                    log_file, log_file_url, log_publishing_cb, s3_settings
-                )
+                await push_file_to_remote(log_file, log_file_url, log_publishing_cb, s3_settings)
 
 
 async def _parse_container_docker_logs(
@@ -287,49 +268,41 @@ async def _parse_container_docker_logs(
         "started monitoring of >=1.0 service - using docker logs",
     ):
         async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
-            log_file_path = (
-                Path(tmp_dir)
-                / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
-            )
+            log_file_path = Path(tmp_dir) / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
             try:
-                assert isinstance(
-                    container.docker.connector, aiohttp.UnixConnector
-                )  # nosec
+                assert isinstance(container.docker.connector, aiohttp.UnixConnector)  # nosec
                 async with Docker(
                     session=aiohttp.ClientSession(
-                        connector=aiohttp.UnixConnector(
-                            container.docker.connector.path
-                        ),
+                        connector=aiohttp.UnixConnector(container.docker.connector.path),
                         timeout=aiohttp.ClientTimeout(
-                            total=app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT.total_seconds()
+                            total=None,  # NOTE: no timeout there as the job can run for a very long time
                         ),
                     )
                 ) as docker_client_for_logs:
                     # NOTE: this is a workaround for aiodocker not being able to get the container
                     # logs when the container is not running
-                    container_for_long_running_logs = (
-                        await docker_client_for_logs.containers.get(container.id)
-                    )
+                    container_for_long_running_logs = await docker_client_for_logs.containers.get(container.id)
                     await container.show()
                     await container_for_long_running_logs.show()
 
                     log_file_path.parent.mkdir(parents=True, exist_ok=True)
                     async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
-                        async for log_line in cast(
-                            AsyncGenerator[str],
-                            container_for_long_running_logs.log(
-                                stdout=True,
-                                stderr=True,
-                                follow=True,
-                                timestamps=True,
-                            ),
+                        raw_log_iterator = container_for_long_running_logs.log(
+                            stdout=True,
+                            stderr=True,
+                            follow=True,
+                            timestamps=True,
+                        )
+
+                        async for log_line in iter_with_timeout(
+                            raw_log_iterator,
+                            per_iteration_timeout=app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT,
                         ):
-                            log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[
-                                1
-                            ]
+                            log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[1]
                             _logger.info(
                                 "[%s]: %s",
-                                f"{service_key}:{service_version} - {container_for_long_running_logs.id}{container_name}",
+                                f"{service_key}:{service_version} - "
+                                f"{container_for_long_running_logs.id}{container_name}",
                                 log_msg_without_timestamp,
                             )
                             await log_fp.write(log_line.encode("utf-8"))
@@ -343,7 +316,8 @@ async def _parse_container_docker_logs(
 
             except TimeoutError as exc:
                 await task_publishers.publish_logs(
-                    message=f"Service {service_key}:{service_version} was silent (no logs) for more than {app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT}! Service will be aborted now.",
+                    message=f"Service {service_key}:{service_version} was silent (no logs) for more than "
+                    f"{app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT}! Service will be aborted now.",
                     log_level=logging.ERROR,
                 )
                 raise ServiceTimeoutLoggingError(
@@ -355,9 +329,7 @@ async def _parse_container_docker_logs(
             finally:
                 with log_context(_logger, logging.INFO, "uploading docker logs file"):
                     # copy the log file to the log_file_url
-                    await push_file_to_remote(
-                        log_file_path, log_file_url, log_publishing_cb, s3_settings
-                    )
+                    await push_file_to_remote(log_file_path, log_file_url, log_publishing_cb, s3_settings)
 
 
 async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
@@ -419,11 +391,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
             )
 
 
-P = ParamSpec("P")
-T = TypeVar("T")
-
-
-def cancel_parent_on_child_exception(func: Callable[P, T]) -> Callable[P, T]:
+def cancel_parent_on_child_exception[**P, T](func: Callable[P, T]) -> Callable[P, T]:
     """Decorator that cancels the parent task if the decorated function raises an exception.
 
     Replicates TaskGroup behavior without serialization issues for dask workers.
@@ -437,9 +405,7 @@ def cancel_parent_on_child_exception(func: Callable[P, T]) -> Callable[P, T]:
         except Exception as exc:
             # Cancel parent task when child task fails (same as TaskGroup behavior)
             if parent_task and not parent_task.done():
-                parent_task.cancel(
-                    "child task raised an exception, cancelling parent task"
-                )
+                parent_task.cancel("child task raised an exception, cancelling parent task")
             raise exc from None
 
     return wrapper
@@ -536,16 +502,12 @@ async def get_image_labels(
     service_key: ContainerImage,
     service_version: ContainerTag,
 ) -> ImageLabels:
-    image_cfg = await docker_client.images.inspect(
-        f"{docker_auth.server_address}/{service_key}:{service_version}"
-    )
+    image_cfg = await docker_client.images.inspect(f"{docker_auth.server_address}/{service_key}:{service_version}")
     # NOTE: old services did not have the integration-version label
     # image labels are set to None when empty
     if image_labels := image_cfg["Config"].get("Labels"):
         _logger.debug("found following image labels:\n%s", pformat(image_labels))
-        data = from_labels(
-            image_labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
-        )
+        data = from_labels(image_labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False)
         return TypeAdapter(ImageLabels).validate_python(data)
     return ImageLabels()
 
@@ -560,9 +522,7 @@ async def get_computational_shared_data_mount_point(docker_client: Docker) -> Pa
         volume_attributes = await DockerVolume(
             docker_client, app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME
         ).show()
-        _logger.debug(
-            "found following volume attributes: %s", pformat(volume_attributes)
-        )
+        _logger.debug("found following volume attributes: %s", pformat(volume_attributes))
         return Path(volume_attributes["Mountpoint"])
 
     except DockerError:

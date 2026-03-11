@@ -328,6 +328,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     },
 
     __filter: function(filterType, filterData) {
+      // if text is shorter than 3 chars, ignore
+      if (filterType === "text" && filterData.length < 3) {
+        return;
+      }
       this.fireDataEvent("filterChanged", {
         searchContext: this.getCurrentContext(),
         filterType,

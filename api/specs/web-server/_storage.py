@@ -114,9 +114,7 @@ async def get_files_metadata(
     uuid_filter: str = "",
     expand_dirs: bool = Query(
         True,
-        description=(
-            "Automatic directory expansion. This will be replaced by pagination the future"
-        ),
+        description=("Automatic directory expansion. This will be replaced by pagination the future"),
     ),
 ):
     """returns all the file meta data a user has access to (uuid_filter may be used)"""
@@ -132,9 +130,7 @@ async def list_dataset_files_metadata(
     dataset_id: str,
     expand_dirs: bool = Query(
         True,
-        description=(
-            "Automatic directory expansion. This will be replaced by pagination the future"
-        ),
+        description=("Automatic directory expansion. This will be replaced by pagination the future"),
     ),
 ):
     """returns all the file meta data inside dataset with dataset_id"""
@@ -213,9 +209,7 @@ async def complete_upload_file(
     response_model=Envelope[FileUploadCompleteFutureResponse],
     description="Check for upload completion",
 )
-async def is_completed_upload_file(
-    location_id: LocationID, file_id: StorageFileIDStr, future_id: str
-):
+async def is_completed_upload_file(location_id: LocationID, file_id: StorageFileIDStr, future_id: str):
     """Returns state of upload completion"""
 
 

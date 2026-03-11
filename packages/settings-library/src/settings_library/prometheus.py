@@ -1,6 +1,7 @@
 from functools import cached_property
 
 from pydantic import AnyUrl, SecretStr
+
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
@@ -28,11 +29,7 @@ class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
             AnyUrl.build(
                 scheme=self.PROMETHEUS_URL.scheme,
                 username=self.PROMETHEUS_USERNAME,
-                password=(
-                    self.PROMETHEUS_PASSWORD.get_secret_value()
-                    if self.PROMETHEUS_PASSWORD
-                    else None
-                ),
+                password=(self.PROMETHEUS_PASSWORD.get_secret_value() if self.PROMETHEUS_PASSWORD else None),
                 host=self.PROMETHEUS_URL.host,
                 port=self.PROMETHEUS_URL.port,
                 path=self.PROMETHEUS_URL.path,

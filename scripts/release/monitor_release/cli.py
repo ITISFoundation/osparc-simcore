@@ -2,10 +2,11 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from rich.console import Console
+
 from monitor_release.models import Deployment
 from monitor_release.portainer import check_containers_deploys, check_running_sidecars
 from monitor_release.settings import get_legacy_settings, get_release_settings
-from rich.console import Console
 
 app = typer.Typer()
 console = Console()

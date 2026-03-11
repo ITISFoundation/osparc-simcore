@@ -49,9 +49,7 @@ async def test_get_always_the_same_client_session(server: TestServer):
         assert get_client_session(server.app) == session
 
 
-async def test_app_client_session_json_serialize(
-    server: TestServer, fake_data_dict: dict[str, Any]
-):
+async def test_app_client_session_json_serialize(server: TestServer, fake_data_dict: dict[str, Any]):
     session = get_client_session(server.app)
 
     resp = await session.post(server.make_url("/echo"), json=fake_data_dict)

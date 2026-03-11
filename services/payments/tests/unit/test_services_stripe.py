@@ -82,9 +82,7 @@ async def test_get_invoice(
 
     assert await stripe_api.is_healthy()
 
-    _invoice = await stripe_api.get_invoice(
-        stripe_invoice_id=StripeInvoiceID(stripe_invoice_id)
-    )
+    _invoice = await stripe_api.get_invoice(stripe_invoice_id=StripeInvoiceID(stripe_invoice_id))
     assert _invoice
     assert _invoice.hosted_invoice_url
 

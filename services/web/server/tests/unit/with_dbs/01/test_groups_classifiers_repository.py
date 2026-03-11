@@ -45,9 +45,7 @@ async def test_get_classifiers_from_bundle_returns_bundle(
 ):
     """Test get_classifiers_from_bundle returns the stored bundle."""
     # Act
-    bundle = await group_classifier_repository.get_classifiers_from_bundle(
-        gid=group_classifier_in_db["gid"]
-    )
+    bundle = await group_classifier_repository.get_classifiers_from_bundle(gid=group_classifier_in_db["gid"])
 
     # Assert
     assert bundle is not None
@@ -63,9 +61,7 @@ async def test_group_uses_scicrunch_returns_false(
 ):
     """Test group_uses_scicrunch returns False for non-scicrunch group."""
     # Act
-    uses_scicrunch = await group_classifier_repository.group_uses_scicrunch(
-        gid=group_classifier_in_db["gid"]
-    )
+    uses_scicrunch = await group_classifier_repository.group_uses_scicrunch(gid=group_classifier_in_db["gid"])
 
     # Assert
     assert uses_scicrunch is False

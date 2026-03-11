@@ -99,12 +99,8 @@ class ExtractedResults(BaseModel):
     progress: dict[NodeIDStr, Annotated[int, Field(ge=0, le=100)]] = Field(
         ..., description="Progress in each computational node"
     )
-    labels: dict[NodeIDStr, str] = Field(
-        ..., description="Maps captured node with a label"
-    )
-    values: dict[NodeIDStr, Outputs] = Field(
-        ..., description="Captured outputs per node"
-    )
+    labels: dict[NodeIDStr, str] = Field(..., description="Maps captured node with a label")
+    values: dict[NodeIDStr, Outputs] = Field(..., description="Captured outputs per node")
 
 
 class ProjectIterationResultItem(ProjectIteration):
@@ -142,9 +138,7 @@ def get_profile(client: httpx.Client):
     return r.json()["data"]
 
 
-def iter_items(
-    client: httpx.Client, url_path: str, item_cls: type[ItemT]
-) -> Iterator[ItemT]:
+def iter_items(client: httpx.Client, url_path: str, item_cls: type[ItemT]) -> Iterator[ItemT]:
     """iterates items returned by a List std-method
 
     SEE https://google.aip.dev/132
@@ -159,7 +153,6 @@ def iter_items(
     last_url = None
 
     while next_url and next_url != last_url:
-
         r = client.get(next_url)
         r.raise_for_status()
 
@@ -182,9 +175,7 @@ def iter_checkpoints(client: httpx.Client, project_id: UUID) -> Iterator[CheckPo
     )
 
 
-def iter_project_iteration(
-    client: httpx.Client, project_id: UUID, checkpoint_id: NonNegativeInt
-):
+def iter_project_iteration(client: httpx.Client, project_id: UUID, checkpoint_id: NonNegativeInt):
     return iter_items(
         client,
         f"/projects/{project_id}/checkpoint/{checkpoint_id}/iterations",
@@ -194,10 +185,7 @@ def iter_project_iteration(
 
 # SETUP ------------------------------------------
 class ClientSettings(BaseSettings):
-
-    OSPARC_API_URL: AnyUrl = Field(
-        default="http://127.0.0.1.nip.io:9081/v0"
-    )  #  NOSONAR
+    OSPARC_API_URL: AnyUrl = Field(default="http://127.0.0.1.nip.io:9081/v0")  #  NOSONAR
     OSPARC_USER_EMAIL: EmailStr
     OSPARC_USER_PASSWORD: SecretStr
 
@@ -209,9 +197,7 @@ def init():
     log.info("Creating %s", f"{env_file}")
     kwargs = {}
     kwargs["OSPARC_API_URL"] = input("OSPARC_API_URL: ").strip() or None
-    kwargs["OSPARC_USER_EMAIL"] = (
-        input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
-    )
+    kwargs["OSPARC_USER_EMAIL"] = input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
     kwargs["OSPARC_USER_PASSWORD"] = getpass.getpass()
     with env_file.open("w") as fh:
         for key, value in kwargs.items():

@@ -23,10 +23,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def mock_product_db_get_data(
-    faker: Faker, product_db_server_defaults: dict[str, Any]
-) -> list[dict[str, Any]]:
-
+def mock_product_db_get_data(faker: Faker, product_db_server_defaults: dict[str, Any]) -> list[dict[str, Any]]:
     _SUBDOMAIN_PREFIX = r"[\w-]+\."
 
     return [
@@ -63,8 +60,7 @@ def mock_app(mock_product_db_get_data: list[dict[str, Any]]) -> web.Application:
     app = web.Application()
 
     app_products: dict[str, Product] = {
-        product_db_get["name"]: Product.model_validate(product_db_get)
-        for product_db_get in mock_product_db_get_data
+        product_db_get["name"]: Product.model_validate(product_db_get) for product_db_get in mock_product_db_get_data
     }
 
     default_product_name = next(iter(app_products.keys()))

@@ -6,9 +6,7 @@ from .exceptions import (
 )
 
 
-def validate_new_service_resources(
-    resources: ServiceResourcesDict, *, new_resources: ServiceResourcesDict
-) -> None:
+def validate_new_service_resources(resources: ServiceResourcesDict, *, new_resources: ServiceResourcesDict) -> None:
     """validate new_resources can be applied on resources
 
     Raises:

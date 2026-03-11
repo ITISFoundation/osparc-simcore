@@ -17,9 +17,7 @@ _logger = logging.getLogger(__name__)
 EXCHANGE_NAME: Final[str] = "dynamic-scheduler-events"
 
 
-def _get_global_queue(
-    queue_name: str, arguments: QuorumQueueArgs | None = None
-) -> RabbitQueue:
+def _get_global_queue(queue_name: str, arguments: QuorumQueueArgs | None = None) -> RabbitQueue:
     # See https://github.com/ITISFoundation/osparc-simcore/pull/8573
     # to understand why QUORUM queues are used here
     return RabbitQueue(
@@ -48,10 +46,7 @@ def _stop_retry_for_unintended_errors(func):
                 # message is always retried
                 raise
 
-            msg = (
-                "Unexpected error. Aborting message retry. "
-                f"Please check code at: '{func.__module__}.{func.__name__}'"
-            )
+            msg = f"Unexpected error. Aborting message retry. Please check code at: '{func.__module__}.{func.__name__}'"
             _logger.exception(msg)
             raise RejectMessage from e
 
@@ -87,9 +82,7 @@ class BaseEventQueue(ABC):
 
         # apply decorators
         handler = _stop_retry_for_unintended_errors(self.handler)
-        handler = self.router.subscriber(
-            queue=self._queue, exchange=self.exchange, retry=True
-        )(handler)
+        handler = self.router.subscriber(queue=self._queue, exchange=self.exchange, retry=True)(handler)
 
     @abstractmethod
     async def handler(self, **kwargs) -> None:

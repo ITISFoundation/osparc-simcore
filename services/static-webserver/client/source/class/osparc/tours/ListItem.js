@@ -33,6 +33,8 @@ qx.Class.define("osparc.tours.ListItem", {
       padding: 10
     });
 
+    osparc.utils.Utils.setIdToWidget(this, "tourListItem-" + tour.id);
+
     const titleLabel = new qx.ui.basic.Label(tour.name).set({
       font: "text-14",
       rich: true

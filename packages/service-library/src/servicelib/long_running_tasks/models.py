@@ -2,7 +2,8 @@
 from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Annotated, Any, TypeAlias
+from enum import auto
+from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.api_schemas_long_running_tasks.base import (
@@ -17,20 +18,25 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, model_validator
 
-TaskType: TypeAlias = Callable[..., Coroutine[Any, Any, Any]]
+type TaskType = Callable[..., Coroutine[Any, Any, Any]]
 
-ProgressCallback: TypeAlias = Callable[
-    [ProgressMessage, ProgressPercent | None, TaskId], Awaitable[None]
-]
+type ProgressCallback = Callable[[ProgressMessage, ProgressPercent | None, TaskId], Awaitable[None]]
 
-RequestBody: TypeAlias = Any
-TaskContext: TypeAlias = dict[str, Any]
+type RequestBody = Any
+type TaskContext = dict[str, Any]
 
-LRTNamespace: TypeAlias = str
+type LRTNamespace = str
 
-RegisteredTaskName: TypeAlias = str
+type RegisteredTaskName = str
+
+
+class TaskUniqueness(StrAutoEnum):
+    NONE = auto()  # No uniqueness enforced
+    BY_NAME = auto()  # Only one task with this name
+    BY_NAME_AND_ARGS = auto()  # Only one task with this name and these args
 
 
 class ResultField(BaseModel):
@@ -53,30 +59,20 @@ class TaskData(BaseModel):
     task_context: TaskContext
     fire_and_forget: Annotated[
         bool,
-        Field(
-            description="if True then the task will not be auto-cancelled if no one enquires of its status"
-        ),
+        Field(description="if True then the task will not be auto-cancelled if no one enquires of its status"),
     ]
 
-    started: Annotated[datetime, Field(default_factory=lambda: datetime.now(UTC))] = (
-        DEFAULT_FACTORY
-    )
+    started: Annotated[datetime, Field(default_factory=lambda: datetime.now(UTC))] = DEFAULT_FACTORY
     last_status_check: Annotated[
         datetime | None,
-        Field(
-            description=(
-                "used to detect when if the task is not actively "
-                "polled by the client who created it"
-            )
-        ),
+        Field(description=("used to detect when if the task is not actively polled by the client who created it")),
     ] = None
 
     detected_as_done_at: Annotated[
         datetime | None,
         Field(
             description=(
-                "used to remove the task when it's first detected as done "
-                "if a task was started as fire_and_forget=True"
+                "used to remove the task when it's first detected as done if a task was started as fire_and_forget=True"
             )
         ),
     ] = None
@@ -85,13 +81,22 @@ class TaskData(BaseModel):
         bool,
         Field(description="True when the task finished running with or without errors"),
     ] = False
-    result_field: Annotated[
-        ResultField | None, Field(description="the result of the task")
+    result_field: Annotated[ResultField | None, Field(description="the result of the task")] = None
+
+    @property
+    def marked_for_removal(self) -> bool:
+        return self.marked_for_removal_at is not None
+
+    marked_for_removal_at: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "In some cases we have an entry in Redis but no task to remove, to ensure "
+                "proper cleanup, wait some time after the marke_for_removal and then remove "
+                "the entry form Redis"
+            )
+        ),
     ] = None
-    marked_for_removal: Annotated[
-        bool,
-        Field(description=("if True, indicates the task is marked for removal")),
-    ] = False
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -102,9 +107,7 @@ class TaskData(BaseModel):
                     "task_id": "1a119618-7186-4bc1-b8de-7e3ff314cb7e",
                     "task_name": "running-task",
                     "task_status": "running",
-                    "task_progress": {
-                        "task_id": "1a119618-7186-4bc1-b8de-7e3ff314cb7e"
-                    },
+                    "task_progress": {"task_id": "1a119618-7186-4bc1-b8de-7e3ff314cb7e"},
                     "task_context": {"key": "value"},
                     "fire_and_forget": False,
                 }
@@ -142,6 +145,5 @@ __all__: tuple[str, ...] = (
     "TaskProgress",
     "TaskResult",
     "TaskStatus",
+    "TaskUniqueness",
 )
-
-# nopycln: file

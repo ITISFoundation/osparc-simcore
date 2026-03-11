@@ -55,14 +55,8 @@ async def test_anonymous_websocket_connection(
     security_cookie_factory: Callable,
     mocker,
 ):
-    sio = socketio.AsyncClient(
-        ssl_verify=False
-    )  # enginio 3.10.0 introduced ssl verification
-    url = str(
-        URL(socketio_url_factory()).with_query(
-            {"client_session_id": client_session_id_factory()}
-        )
-    )
+    sio = socketio.AsyncClient(ssl_verify=False)  # enginio 3.10.0 introduced ssl verification
+    url = str(URL(socketio_url_factory()).with_query({"client_session_id": client_session_id_factory()}))
     headers = {}
     cookie = await security_cookie_factory()
     if cookie:
@@ -92,22 +86,14 @@ async def test_websocket_resource_management(
     logged_user: UserInfoDict,
     client: TestClient,
     socket_registry: RedisResourceRegistry,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
 ):
     sio, cur_client_session_id = await create_socketio_connection(None, client)
     sid = sio.get_sid()
-    resource_key = UserSession(
-        user_id=logged_user["id"], client_session_id=cur_client_session_id
-    )
+    resource_key = UserSession(user_id=logged_user["id"], client_session_id=cur_client_session_id)
 
-    assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
-        resource_key
-    ]
-    assert sio.get_sid() in await socket_registry.find_resources(
-        resource_key, "socket_id"
-    )
+    assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [resource_key]
+    assert sio.get_sid() in await socket_registry.find_resources(resource_key, "socket_id")
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
 
     # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
@@ -119,9 +105,7 @@ async def test_websocket_resource_management(
         with attempt:
             # now the entries should be removed
             assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-            assert sid not in await socket_registry.find_resources(
-                resource_key, "socket_id"
-            )
+            assert sid not in await socket_registry.find_resources(resource_key, "socket_id")
             assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
@@ -138,9 +122,7 @@ async def test_websocket_multiple_connections(
     socket_registry: RedisResourceRegistry,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
 ):
     NUMBER_OF_SOCKETS = 5
     resource_keys: list[UserSession] = []
@@ -149,15 +131,9 @@ async def test_websocket_multiple_connections(
     clients = []
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         sio, cur_client_session_id = await create_socketio_connection(None, client)
-        resource_key = UserSession(
-            user_id=logged_user["id"], client_session_id=cur_client_session_id
-        )
-        assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
-            resource_key
-        ]
-        assert [sio.get_sid()] == await socket_registry.find_resources(
-            resource_key, "socket_id"
-        )
+        resource_key = UserSession(user_id=logged_user["id"], client_session_id=cur_client_session_id)
+        assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [resource_key]
+        assert [sio.get_sid()] == await socket_registry.find_resources(resource_key, "socket_id")
         assert (
             len(
                 await socket_registry.find_resources(
@@ -177,9 +153,7 @@ async def test_websocket_multiple_connections(
 
         assert not sio.sid
         assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-        assert sid not in await socket_registry.find_resources(
-            resource_key, "socket_id"
-        )
+        assert sid not in await socket_registry.find_resources(resource_key, "socket_id")
 
     for resource_key in resource_keys:
         assert not await socket_registry.find_resources(resource_key, "socket_id")
@@ -208,9 +182,7 @@ _TENACITY_ASSERT_RETRY = {
 async def test_asyncio_task_pending_on_close(
     client: TestClient,
     logged_user: dict[str, Any],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
 ):
     sio, *_ = await create_socketio_connection(None, client)
     assert sio
@@ -229,9 +201,7 @@ async def test_asyncio_task_pending_on_close(
 async def test_websocket_disconnected_after_logout(
     client: TestClient,
     logged_user: dict[str, Any],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     expected,
     mocker: MockerFixture,
 ):
@@ -257,9 +227,7 @@ async def test_websocket_disconnected_after_logout(
 
     # logout client with socket 2
     logout_url = client.app.router["auth_logout"].url_for()
-    r = await client.post(
-        f"{logout_url}", json={"client_session_id": cur_client_session_id2}
-    )
+    r = await client.post(f"{logout_url}", json={"client_session_id": cur_client_session_id2})
     assert r.url.path == logout_url.path
     await assert_status(r, expected)
 

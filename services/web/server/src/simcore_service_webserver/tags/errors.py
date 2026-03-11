@@ -7,9 +7,7 @@ class TagsPermissionError(WebServerBaseError, PermissionError): ...
 
 
 class ShareTagWithEveryoneNotAllowedError(TagsPermissionError):
-    msg_template = (
-        "User {user_id} is not allowed to share (or unshare) tag {tag_id} with everyone"
-    )
+    msg_template = "User {user_id} is not allowed to share (or unshare) tag {tag_id} with everyone"
 
 
 class ShareTagWithProductGroupNotAllowedError(TagsPermissionError):
@@ -21,6 +19,5 @@ class ShareTagWithProductGroupNotAllowedError(TagsPermissionError):
 
 class InsufficientTagShareAccessError(TagsPermissionError):
     msg_template = (
-        "User {user_id} does not have sufficient access rights to share"
-        " (or unshare) or unshare tag {tag_id}."
+        "User {user_id} does not have sufficient access rights to share (or unshare) or unshare tag {tag_id}."
     )

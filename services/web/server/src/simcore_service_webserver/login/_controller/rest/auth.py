@@ -4,7 +4,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.logging.logging_base import get_log_record_extra
 from common_library.user_messages import user_message
-from models_library.authentification import TwoFactorAuthentificationMethod
+from models_library.authentication import TwoFactorAuthenticationMethod
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
@@ -68,9 +68,7 @@ async def login(request: web.Request):
     If 2FA is enabled, then the login continues with a second request to login_2fa
     """
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
     login_data = await parse_request_body_as(LoginBody, request)
 
     # Authenticate user and verify access to the product
@@ -84,9 +82,7 @@ async def login(request: web.Request):
         password=login_data.password.get_secret_value(),
         product=product,
     )
-    await _auth_service.check_authorized_user_in_product(
-        request.app, user_email=user["email"], product=product
-    )
+    await _auth_service.check_authorized_user_in_product(request.app, user_email=user["email"], product=product)
 
     # Check if user role allows skipping 2FA or if 2FA is not required
     skip_2fa = UserRole(user["role"]) == UserRole.TESTER
@@ -101,30 +97,25 @@ async def login(request: web.Request):
         preference_class=user_preferences_service.TwoFAFrontendUserPreference,
     )
     if not user_2fa_preference:
-        user_2fa_authentification_method = TwoFactorAuthentificationMethod.SMS
-        preference_id = (
-            user_preferences_service.TwoFAFrontendUserPreference().preference_identifier
-        )
+        user_2fa_authentication_method = TwoFactorAuthenticationMethod.SMS
+        preference_id = user_preferences_service.TwoFAFrontendUserPreference().preference_identifier
         await user_preferences_service.set_frontend_user_preference(
             request.app,
             user_id=user["id"],
             product_name=product.name,
             frontend_preference_identifier=preference_id,
-            value=user_2fa_authentification_method,
+            value=user_2fa_authentication_method,
         )
     else:
-        user_2fa_authentification_method = TypeAdapter(
-            TwoFactorAuthentificationMethod
-        ).validate_python(user_2fa_preference.value)
+        user_2fa_authentication_method = TypeAdapter(TwoFactorAuthenticationMethod).validate_python(
+            user_2fa_preference.value
+        )
 
-    if user_2fa_authentification_method == TwoFactorAuthentificationMethod.DISABLED:
+    if user_2fa_authentication_method == TwoFactorAuthenticationMethod.DISABLED:
         return await _security_service.login_granted_response(request, user=user)
 
     # Check phone for SMS authentication
-    if (
-        user_2fa_authentification_method == TwoFactorAuthentificationMethod.SMS
-        and not user["phone"]
-    ):
+    if user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS and not user["phone"]:
         return envelope_response(
             # LoginNextPage
             {
@@ -143,7 +134,7 @@ async def login(request: web.Request):
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
     )
 
-    if user_2fa_authentification_method == TwoFactorAuthentificationMethod.SMS:
+    if user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS:
         # create sms 2FA
         assert user["phone"]  # nosec
         assert settings.LOGIN_2FA_REQUIRED  # nosec
@@ -165,9 +156,7 @@ async def login(request: web.Request):
             {
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
-                    "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=_twofa_service.mask_phone_number(user["phone"])
-                    ),
+                    "message": MSG_2FA_CODE_SENT.format(phone_number=_twofa_service.mask_phone_number(user["phone"])),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
             },
@@ -175,9 +164,7 @@ async def login(request: web.Request):
         )
 
     # otherwise create email f2a
-    assert (
-        user_2fa_authentification_method == TwoFactorAuthentificationMethod.EMAIL
-    )  # nosec
+    assert user_2fa_authentication_method == TwoFactorAuthenticationMethod.EMAIL  # nosec
     await _twofa_service.send_email_code(
         request,
         user_email=user["email"],
@@ -208,9 +195,7 @@ async def login(request: web.Request):
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             text=user_message("2FA login is not available"),
@@ -220,19 +205,15 @@ async def login_2fa(request: web.Request):
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
     # validates code
-    _expected_2fa_code = await _twofa_service.get_2fa_code(
-        request.app, login_2fa_.email
-    )
+    _expected_2fa_code = await _twofa_service.get_2fa_code(request.app, login_2fa_.email)
     if not _expected_2fa_code:
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
     if login_2fa_.code.get_secret_value() != _expected_2fa_code:
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
-    user = _auth_service.check_not_null_user(
-        await _auth_service.get_user_or_none(request.app, email=login_2fa_.email)
-    )
+    user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=login_2fa_.email))
 
-    # NOTE: a priviledge user should not have called this entrypoint
+    # NOTE: a privilege user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
     # dispose since code was used
@@ -259,9 +240,7 @@ async def logout(request: web.Request) -> web.Response:
         extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await _login_service.notify_user_logout(
-            request.app, user_id, logout_.client_session_id
-        )
+        await _login_service.notify_user_logout(request.app, user_id, logout_.client_session_id)
         await security_web.forget_identity(request, response)
 
         return response

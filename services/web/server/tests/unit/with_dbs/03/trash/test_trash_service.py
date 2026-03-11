@@ -127,15 +127,11 @@ async def test_trash_service__delete_expired_trash_for_nested_folders_and_projec
         logged_user_sub_folder = data
 
         # MOVE project to subfolder
-        resp = await client.put(
-            f"/v0/projects/{user_project['uuid']}/folders/{logged_user_sub_folder['folderId']}"
-        )
+        resp = await client.put(f"/v0/projects/{user_project['uuid']}/folders/{logged_user_sub_folder['folderId']}")
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # TRASH root folders
-        resp = await client.post(
-            f"/v0/folders/{logged_user_root_folder['folderId']}:trash"
-        )
+        resp = await client.post(f"/v0/folders/{logged_user_root_folder['folderId']}:trash")
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     async with switch_client_session_to(client, other_user):
@@ -161,9 +157,7 @@ async def test_trash_service__delete_expired_trash_for_nested_folders_and_projec
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # TRASH root folders
-        resp = await client.post(
-            f"/v0/folders/{other_user_root_folder['folderId']}:trash"
-        )
+        resp = await client.post(f"/v0/folders/{other_user_root_folder['folderId']}:trash")
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # UNDER TEST
@@ -222,9 +216,7 @@ async def test_trash_service__delete_expired_trash_for_workspace(
         logged_user_sub_folder = data
 
         # MOVE project to subfolder
-        resp = await client.put(
-            f"/v0/projects/{user_project['uuid']}/folders/{logged_user_sub_folder['folderId']}"
-        )
+        resp = await client.put(f"/v0/projects/{user_project['uuid']}/folders/{logged_user_sub_folder['folderId']}")
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # CREATE workspace
@@ -241,9 +233,7 @@ async def test_trash_service__delete_expired_trash_for_workspace(
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # TRASH workspace
-        resp = await client.post(
-            f"/v0/workspaces/{logged_user_workspace['workspaceId']}:trash"
-        )
+        resp = await client.post(f"/v0/workspaces/{logged_user_workspace['workspaceId']}:trash")
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     async with switch_client_session_to(client, other_user):
@@ -269,9 +259,7 @@ async def test_trash_service__delete_expired_trash_for_workspace(
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # CREATE workspace
-        resp = await client.post(
-            "/v0/workspaces", json={"name": "Other User Workspace"}
-        )
+        resp = await client.post("/v0/workspaces", json={"name": "Other User Workspace"})
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
         other_user_workspace = data
 
@@ -284,9 +272,7 @@ async def test_trash_service__delete_expired_trash_for_workspace(
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # TRASH workspace
-        resp = await client.post(
-            f"/v0/workspaces/{other_user_workspace['workspaceId']}:trash"
-        )
+        resp = await client.post(f"/v0/workspaces/{other_user_workspace['workspaceId']}:trash")
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # UNDER TEST
@@ -294,9 +280,7 @@ async def test_trash_service__delete_expired_trash_for_workspace(
 
     async with switch_client_session_to(client, logged_user):
         # Verify logged_user's resources are gone
-        resp = await client.get(
-            f"/v0/workspaces/{logged_user_workspace['workspaceId']}"
-        )
+        resp = await client.get(f"/v0/workspaces/{logged_user_workspace['workspaceId']}")
         await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
         resp = await client.get(f"/v0/folders/{logged_user_root_folder['folderId']}")

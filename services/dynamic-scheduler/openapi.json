@@ -51,7 +51,7 @@
           "ops"
         ],
         "summary": "Running Services",
-        "description": "returns all running dynamic services. Used by ops internall to determine\nwhen it is safe to shutdown the platform",
+        "description": "returns all running dynamic services. Used by ops internally to determine\nwhen it is safe to shutdown the platform",
         "operationId": "running_services_v1_ops_running_services_get",
         "responses": {
           "200": {

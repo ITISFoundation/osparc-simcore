@@ -26,9 +26,7 @@ else:
         def __getitem__(self, item):
             return self
 
-    class Queue(
-        asyncio.Queue, metaclass=FakeGenericMeta
-    ):  # pylint: disable=function-redefined
+    class Queue(asyncio.Queue, metaclass=FakeGenericMeta):  # pylint: disable=function-redefined
         pass
 
 
@@ -74,10 +72,7 @@ def _generate_context_key(
         sub_args = arg.split(".")
         main_arg = sub_args[0]
         if main_arg not in search_args:
-            msg = (
-                f"Expected '{main_arg}' in '{function.__name__}'"
-                f" arguments. Got '{search_args}'"
-            )
+            msg = f"Expected '{main_arg}' in '{function.__name__}' arguments. Got '{search_args}'"
             raise ValueError(msg)
         context_key = search_args[main_arg]
         for attribute in sub_args[1:]:
@@ -97,7 +92,6 @@ def _generate_context_key(
 async def _sequential_worker(
     context_key: str,
 ) -> AsyncIterator[Context]:
-
     key = context_key
     if key not in _sequential_jobs_contexts:
         _context = Context(
@@ -200,10 +194,8 @@ def run_sequentially_in_context(
     def decorator(
         decorated_function: Callable[P, Awaitable[R]],
     ) -> Callable[P, Awaitable[R]]:
-
         @wraps(decorated_function)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-
             async with _sequential_worker(
                 _generate_context_key(
                     function=decorated_function,
@@ -212,7 +204,6 @@ def run_sequentially_in_context(
                     kwargs=kwargs,
                 )
             ) as context:
-
                 queue_input = QueueElement(
                     input=decorated_function(*args, **kwargs),
                     tracing_context=tracing.get_context(),

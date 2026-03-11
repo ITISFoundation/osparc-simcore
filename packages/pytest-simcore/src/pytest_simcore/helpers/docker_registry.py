@@ -32,10 +32,8 @@ class Registry:
     # SEE  https://github.com/moby/moby/issues/9015
 
     def __init__(self, **data):
-        data.setdefault("url", f'https://{os.environ.get("REGISTRY_URL")}')
-        data.setdefault(
-            "auth", (os.environ.get("REGISTRY_USER"), os.environ.get("REGISTRY_PW"))
-        )
+        data.setdefault("url", f"https://{os.environ.get('REGISTRY_URL')}")
+        data.setdefault("auth", (os.environ.get("REGISTRY_USER"), os.environ.get("REGISTRY_PW")))
         self.data = RegistryConfig(**data)
 
     def __str__(self) -> str:
@@ -157,7 +155,6 @@ def download_all_registry_metadata(dest_dir: Path, **kwargs):
 
     count = 0
     for repo in registry.iter_repositories(limit=500):
-
         # list tags
         try:
             tags = registry.list_tags(repo_name=repo)
@@ -174,9 +171,7 @@ def download_all_registry_metadata(dest_dir: Path, **kwargs):
                 try:
                     manifest = registry.get_manifest(repo_name=repo, repo_reference=tag)
 
-                    labels = get_labels(
-                        image_v1=manifest["history"][0]["v1Compatibility"]
-                    )
+                    labels = get_labels(image_v1=manifest["history"][0]["v1Compatibility"])
 
                     meta = extract_metadata(labels)
                     meta.update(extract_extra_service_metadata(labels))
@@ -195,6 +190,5 @@ def download_all_registry_metadata(dest_dir: Path, **kwargs):
 
 
 if __name__ == "__main__":
-
     dest = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
     download_all_registry_metadata(dest_dir=dest)

@@ -23,9 +23,7 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
         assert isinstance(task_manager, TaskManager)
         return task_manager
 
-    async def run_until_shutdown(
-        self, startup_completed_event: threading.Event
-    ) -> None:
+    async def run_until_shutdown(self, startup_completed_event: threading.Event) -> None:
         async with LifespanManager(
             self.app,
             startup_timeout=_STARTUP_TIMEOUT,

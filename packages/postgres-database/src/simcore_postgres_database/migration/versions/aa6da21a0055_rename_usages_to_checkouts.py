@@ -104,9 +104,7 @@ def downgrade():
             autoincrement=False,
             nullable=False,
         ),
-        sa.Column(
-            "licensed_item_id", postgresql.UUID(), autoincrement=False, nullable=False
-        ),
+        sa.Column("licensed_item_id", postgresql.UUID(), autoincrement=False, nullable=False),
         sa.ForeignKeyConstraint(
             ["product_name", "service_run_id"],
             [
@@ -117,9 +115,7 @@ def downgrade():
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
-        sa.PrimaryKeyConstraint(
-            "licensed_item_usage_id", name="resource_tracker_licensed_items_usage_pkey"
-        ),
+        sa.PrimaryKeyConstraint("licensed_item_usage_id", name="resource_tracker_licensed_items_usage_pkey"),
     )
     op.create_index(
         "ix_resource_tracker_licensed_items_usage_wallet_id",

@@ -51,11 +51,7 @@ def get_all_aiohttp_http_exceptions(
     # Inverse map from code to HTTPException classes
 
     def _pred(obj) -> bool:
-        return (
-            inspect.isclass(obj)
-            and issubclass(obj, base_http_exception_cls)
-            and getattr(obj, "status_code", 0) > 0
-        )
+        return inspect.isclass(obj) and issubclass(obj, base_http_exception_cls) and getattr(obj, "status_code", 0) > 0
 
     found: list[tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
     assert found  # nosec
@@ -72,9 +68,7 @@ def get_all_aiohttp_http_exceptions(
     return status_to_http_exception_map
 
 
-_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[HTTPError]] = (
-    get_all_aiohttp_http_exceptions(HTTPError)
-)
+_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[HTTPError]] = get_all_aiohttp_http_exceptions(HTTPError)
 
 
 def get_http_error_class_or_none(status_code: int) -> type[HTTPError] | None:

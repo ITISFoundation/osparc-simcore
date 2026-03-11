@@ -93,7 +93,7 @@ services_meta_data = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON with quality assesment based on TSR (editable)",
+        doc="Free JSON with quality assessment based on TSR (editable)",
     ),
     # LIFECYCLE ----------------------------
     sa.Column(
@@ -202,7 +202,5 @@ services_access_rights = sa.Table(
         onupdate=RefActions.CASCADE,
         ondelete=RefActions.CASCADE,
     ),
-    sa.PrimaryKeyConstraint(
-        "key", "version", "gid", "product_name", name="services_access_pk"
-    ),
+    sa.PrimaryKeyConstraint("key", "version", "gid", "product_name", name="services_access_pk"),
 )

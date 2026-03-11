@@ -2,6 +2,7 @@ import json
 
 import arrow
 import requests
+
 from monitor_release.models import RunningSidecar
 from monitor_release.settings import LegacySettings
 
@@ -23,7 +24,9 @@ def get_bearer_token(settings: LegacySettings):
 
 
 def get_services(settings: LegacySettings, bearer_token):
-    services_url = f"{settings.portainer_url}/portainer/api/endpoints/{settings.portainer_endpoint_version}/docker/services"
+    services_url = (
+        f"{settings.portainer_url}/portainer/api/endpoints/{settings.portainer_endpoint_version}/docker/services"
+    )
     response = requests.get(
         services_url,
         headers={
@@ -65,23 +68,16 @@ def check_simcore_running_sidecars(settings: LegacySettings, services):
     for service in services:
         if (
             service["Spec"]["Name"].startswith("dy-sidecar")
-            and service["Spec"]["Labels"]["io.simcore.runtime.swarm-stack-name"]
-            == settings.swarm_stack_name
+            and service["Spec"]["Labels"]["io.simcore.runtime.swarm-stack-name"] == settings.swarm_stack_name
         ):
             running_sidecars.append(
                 RunningSidecar(
                     name=service["Spec"]["Name"],
                     created_at=arrow.get(service["CreatedAt"]).datetime,
                     user_id=service["Spec"]["Labels"]["io.simcore.runtime.user-id"],
-                    project_id=service["Spec"]["Labels"][
-                        "io.simcore.runtime.project-id"
-                    ],
-                    service_key=service["Spec"]["Labels"][
-                        "io.simcore.runtime.service-key"
-                    ],
-                    service_version=service["Spec"]["Labels"][
-                        "io.simcore.runtime.service-version"
-                    ],
+                    project_id=service["Spec"]["Labels"]["io.simcore.runtime.project-id"],
+                    service_key=service["Spec"]["Labels"]["io.simcore.runtime.service-key"],
+                    service_version=service["Spec"]["Labels"]["io.simcore.runtime.service-version"],
                 )
             )
     return running_sidecars
@@ -102,9 +98,7 @@ def _generate_containers_map(containers):
     return container_map
 
 
-def check_simcore_deployed_services(
-    settings: LegacySettings, services, tasks, containers
-):
+def check_simcore_deployed_services(settings: LegacySettings, services, tasks, containers):
     container_map = _generate_containers_map(containers)
     service_task_map = {}
     for service in services:

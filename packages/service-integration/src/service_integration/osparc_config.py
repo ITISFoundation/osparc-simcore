@@ -1,4 +1,4 @@
-"""'osparc config' is a set of stardard file forms (yaml) that the user fills to describe how his/her service works and
+"""'osparc config' is a set of standard file forms (yaml) that the user fills to describe how his/her service works and
 integrates with osparc.
 
     - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github, .vscode, etc)
@@ -14,7 +14,7 @@ integrates with osparc.
 
 import logging
 from pathlib import Path
-from typing import Annotated, Any, Final, Literal
+from typing import Annotated, Any, Final, Literal, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import SHA256Str
@@ -62,9 +62,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
     """Content of docker-compose.overwrite.yml configuration file"""
 
     @classmethod
-    def create_default(
-        cls, service_name: str | None = None
-    ) -> "DockerComposeOverwriteConfig":
+    def create_default(cls, service_name: str | None = None) -> "DockerComposeOverwriteConfig":
         return cls.model_validate(
             {
                 "services": {
@@ -115,9 +113,7 @@ class MetadataConfig(ServiceMetaDataPublished):
 
     @classmethod
     def from_labels_annotations(cls, labels: LabelsAnnotationsDict) -> "MetadataConfig":
-        data = from_labels(
-            labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
-        )
+        data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False)
         return cls.model_validate(data)
 
     def to_labels_annotations(self) -> LabelsAnnotationsDict:
@@ -138,9 +134,7 @@ class MetadataConfig(ServiceMetaDataPublished):
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
             # TODO: check thisname is compatible with REGEX
-            service_path = TypeAdapter(ServiceKey).validate_python(
-                service_path.replace("/", ".")
-            )
+            service_path = TypeAdapter(ServiceKey).validate_python(service_path.replace("/", "."))
 
         service_version = self.version
         return f"{registry_prefix}{service_path}:{service_version}"
@@ -185,6 +179,13 @@ class SettingsItem(BaseModel):
             ContainerSpec.model_validate(v)
         return v
 
+    @model_validator(mode="after")
+    def remove_invalid_spaces_in_constraints_model(self) -> Self:
+        if self.name == "constraints":
+            # constraints shall not contain spaces
+            self.value = [_.replace(" ", "") for _ in self.value]
+        return self
+
 
 class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
@@ -205,9 +206,7 @@ class RuntimeConfig(BaseModel):
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
-    callbacks_mapping: Annotated[
-        CallbacksMapping | None, Field(default_factory=dict)
-    ] = DEFAULT_FACTORY
+    callbacks_mapping: Annotated[CallbacksMapping | None, Field(default_factory=dict)] = DEFAULT_FACTORY
 
     paths_mapping: PathMappingsLabel | None = None
 
@@ -221,9 +220,7 @@ class RuntimeConfig(BaseModel):
 
     containers_allowed_outgoing_internet: set[str] | None = None
 
-    settings: Annotated[list[SettingsItem], Field(default_factory=list)] = (
-        DEFAULT_FACTORY
-    )
+    settings: Annotated[list[SettingsItem], Field(default_factory=list)] = DEFAULT_FACTORY
 
     @model_validator(mode="before")
     @classmethod

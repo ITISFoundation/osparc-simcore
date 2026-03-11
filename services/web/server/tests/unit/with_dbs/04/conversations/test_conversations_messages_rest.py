@@ -39,12 +39,7 @@ def mock_functions_factory(
     mocker: MockerFixture,
 ) -> Callable[[Iterable[tuple[object, str]]], SimpleNamespace]:
     def _patch(targets_and_names: Iterable[tuple[object, str]]) -> SimpleNamespace:
-        return SimpleNamespace(
-            **{
-                name: mocker.patch.object(target, name)
-                for target, name in targets_and_names
-            }
-        )
+        return SimpleNamespace(**{name: mocker.patch.object(target, name) for target, name in targets_and_names})
 
     return _patch
 
@@ -81,9 +76,7 @@ async def test_conversation_messages_user_role_access(
 ):
     """Test user role access to conversation messages endpoints"""
     assert client.app
-    list_url = client.app.router["list_conversation_messages"].url_for(
-        conversation_id=conversation_id
-    )
+    list_url = client.app.router["list_conversation_messages"].url_for(conversation_id=conversation_id)
     resp = await client.get(f"{list_url}")
     assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
 
@@ -122,9 +115,7 @@ async def test_conversation_messages_create_and_list(
     mocks.create_support_message.return_value = mock_message
 
     assert client.app
-    create_url = client.app.router["create_conversation_message"].url_for(
-        conversation_id=conversation_id
-    )
+    create_url = client.app.router["create_conversation_message"].url_for(conversation_id=conversation_id)
 
     # Test creating a message
     body = {"content": "Test message content", "type": "MESSAGE"}
@@ -141,9 +132,7 @@ async def test_conversation_messages_create_and_list(
     mocks.list_messages_for_conversation.return_value = (1, [mock_message])
 
     # Test listing messages
-    list_url = client.app.router["list_conversation_messages"].url_for(
-        conversation_id=conversation_id
-    )
+    list_url = client.app.router["list_conversation_messages"].url_for(conversation_id=conversation_id)
     resp = await client.get(f"{list_url}")
     data, _, meta, links = await assert_status(
         resp,
@@ -197,9 +186,7 @@ async def test_conversation_messages_get_update_delete(
     mocks.create_support_message.return_value = mock_message
 
     assert client.app
-    create_url = client.app.router["create_conversation_message"].url_for(
-        conversation_id=conversation_id
-    )
+    create_url = client.app.router["create_conversation_message"].url_for(conversation_id=conversation_id)
 
     # Create a message
     body = {"content": "Original message content", "type": "MESSAGE"}
@@ -278,7 +265,7 @@ async def test_conversation_messages_pagination(
             message_id=uuid4(),
             conversation_id=uuid4(),  # Convert string to UUID
             user_group_id=1,  # Default primary group ID
-            content=f"Message {i+1}",
+            content=f"Message {i + 1}",
             type=ConversationMessageType.MESSAGE,
             created=datetime.now(tz=UTC),
             modified=datetime.now(tz=UTC),
@@ -289,9 +276,7 @@ async def test_conversation_messages_pagination(
     mocks.list_messages_for_conversation.return_value = (5, mock_messages[:3])
 
     assert client.app
-    list_url = client.app.router["list_conversation_messages"].url_for(
-        conversation_id=conversation_id
-    )
+    list_url = client.app.router["list_conversation_messages"].url_for(conversation_id=conversation_id)
 
     # Test pagination with limit
     resp = await client.get(f"{list_url}?limit=3")
@@ -316,9 +301,7 @@ async def test_conversation_messages_validation_errors(
 ):
     """Test validation errors for conversation messages"""
     assert client.app
-    create_url = client.app.router["create_conversation_message"].url_for(
-        conversation_id=conversation_id
-    )
+    create_url = client.app.router["create_conversation_message"].url_for(conversation_id=conversation_id)
 
     # Test creating message with missing content
     body = {"type": "MESSAGE"}
@@ -356,9 +339,7 @@ async def test_conversation_messages_different_types(
     )
 
     assert client.app
-    create_url = client.app.router["create_conversation_message"].url_for(
-        conversation_id=conversation_id
-    )
+    create_url = client.app.router["create_conversation_message"].url_for(conversation_id=conversation_id)
 
     # Test USER_MESSAGE type
     user_message = ConversationMessageGetDB(
@@ -418,15 +399,9 @@ async def test_conversation_messages_nonexistent_resources(
     )
 
     # Mock service to raise ConversationErrorNotFoundError
-    mocks.get_message.side_effect = ConversationErrorNotFoundError(
-        conversation_id="nonexistent"
-    )
-    mocks.update_message.side_effect = ConversationErrorNotFoundError(
-        conversation_id="nonexistent"
-    )
-    mocks.delete_message.side_effect = ConversationErrorNotFoundError(
-        conversation_id="nonexistent"
-    )
+    mocks.get_message.side_effect = ConversationErrorNotFoundError(conversation_id="nonexistent")
+    mocks.update_message.side_effect = ConversationErrorNotFoundError(conversation_id="nonexistent")
+    mocks.delete_message.side_effect = ConversationErrorNotFoundError(conversation_id="nonexistent")
 
     nonexistent_conversation_id = "00000000-0000-0000-0000-000000000000"
     nonexistent_message_id = "00000000-0000-0000-0000-000000000001"
@@ -456,9 +431,7 @@ async def test_conversation_messages_nonexistent_resources(
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {"FOGBUGZ_API_TOKEN": "token-12345", "FOGBUGZ_URL": "http://test.com"},
@@ -502,9 +475,7 @@ def mocked_get_current_product(mocker: MockerFixture) -> MockType:
 
 @pytest.fixture
 def mocked_trigger_chatbot_processing(mocker: MockerFixture) -> MockType:
-    return mocker.patch.object(
-        _conversation_message_service, "_trigger_chatbot_processing"
-    )
+    return mocker.patch.object(_conversation_message_service, "_trigger_chatbot_processing")
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -533,9 +504,7 @@ async def test_conversation_messages_with_database(
     assert data["type"] == "SUPPORT"
 
     # Create a message in the conversation
-    create_message_url = client.app.router["create_conversation_message"].url_for(
-        conversation_id=conversation_id
-    )
+    create_message_url = client.app.router["create_conversation_message"].url_for(conversation_id=conversation_id)
     message_body = {"content": "Hello from database test", "type": "MESSAGE"}
     resp = await client.post(f"{create_message_url}", json=message_body)
     message_data, _ = await assert_status(resp, status.HTTP_201_CREATED)
@@ -568,9 +537,7 @@ async def test_conversation_messages_with_database(
     assert second_message_data["conversationId"] == conversation_id
 
     # Trigger a chatbot processing on the second message via API
-    trigger_chatbot_processing_url = client.app.router[
-        "trigger_chatbot_processing"
-    ].url_for(
+    trigger_chatbot_processing_url = client.app.router["trigger_chatbot_processing"].url_for(
         conversation_id=conversation_id, message_id=second_message_data["messageId"]
     )
     resp = await client.post(f"{trigger_chatbot_processing_url}")

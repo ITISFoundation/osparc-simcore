@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'simcore-postgres-database'
+# Shortcut to install all packages for the contiguous integration (CI) of 'simcore-postgres-database'
 #
 # - As ci.txt but w/ tests
 #

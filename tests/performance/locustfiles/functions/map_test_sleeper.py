@@ -47,9 +47,7 @@ def main(njobs: int, sleep_seconds: int, log_job: bool = False):
         try:
             api_instance = osparc_client.FunctionsApi(api_client)
             job_api_instance = osparc_client.FunctionJobsApi(api_client)
-            job_collection_api_instance = osparc_client.FunctionJobCollectionsApi(
-                api_client
-            )
+            job_collection_api_instance = osparc_client.FunctionJobCollectionsApi(api_client)
             file_client_instance = osparc_client.FilesApi(api_client)
             user_api_instance = osparc_client.UsersApi(api_client)
 
@@ -58,9 +56,7 @@ def main(njobs: int, sleep_seconds: int, log_job: bool = False):
             with TemporaryDirectory() as temp_dir, Path(temp_dir) as tmpdir:
                 _file = tmpdir / "file_with_number.txt"
                 _file.write_text(f"{sleep_seconds}")
-                file_with_number = file_client_instance.upload_file(
-                    file=f"{_file.resolve()}"
-                )
+                file_with_number = file_client_instance.upload_file(file=f"{_file.resolve()}")
                 assert file_with_number.id
                 uploaded_files.append(file_with_number)
 
@@ -78,9 +74,7 @@ def main(njobs: int, sleep_seconds: int, log_job: bool = False):
             )
             print(f"Built function: {solver_function.to_dict()}\n")
 
-            registered_function = api_instance.register_function(
-                solver_function.model_dump()
-            )
+            registered_function = api_instance.register_function(solver_function.model_dump())
             registered_functions.append(registered_function)
 
             print(f"Registered function: {registered_function.to_dict()}\n")
@@ -111,9 +105,7 @@ def main(njobs: int, sleep_seconds: int, log_job: bool = False):
                 job = job_api_instance.get_function_job(function_job_ids[0])
                 print_job_logs(configuration, job.actual_instance.solver_job_id)
 
-            for job_uid in tqdm(
-                function_job_ids, desc="Waiting for jobs to complete", unit="job"
-            ):
+            for job_uid in tqdm(function_job_ids, desc="Waiting for jobs to complete", unit="job"):
                 status = wait_until_done(job_api_instance, job_uid)
                 job_statuses[status] = job_statuses.get(status, 0) + 1
 
@@ -167,9 +159,7 @@ def print_job_logs(configuration: osparc_client.Configuration, solver_job_uid: s
     print(f"Logging job log for solver job UID: {solver_job_uid}")
     client = Client(
         base_url=configuration.host,
-        auth=BasicAuth(
-            username=configuration.username, password=configuration.password
-        ),
+        auth=BasicAuth(username=configuration.username, password=configuration.password),
     )
     with client.stream(
         "GET",
@@ -184,9 +174,7 @@ def print_job_logs(configuration: osparc_client.Configuration, solver_job_uid: s
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--log-job", action="store_true", help="Log details of a single job"
-    )
+    parser.add_argument("--log-job", action="store_true", help="Log details of a single job")
     parser.add_argument(
         "--sleep-seconds",
         type=int,

@@ -52,8 +52,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
 
-    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    mainLayoutWithSideSpacers.add(rightColum, {
+    const rightColumn = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    mainLayoutWithSideSpacers.add(rightColumn, {
       flex: 1
     });
 
@@ -70,7 +70,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
 
       const compactVersion = w < this.__centerLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
-      rightColum.setVisibility(compactVersion ? "excluded" : "visible");
+      rightColumn.setVisibility(compactVersion ? "excluded" : "visible");
     };
     fitResourceCards();
     window.addEventListener("resize", () => fitResourceCards());
@@ -329,7 +329,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
-      resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
+      resourcesContainer.addListener("emptyProjectIconClicked", e => this._emptyProjectIconClicked(e.getData()));
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
       resourcesContainer.addListener("moveFolderToRequested", e => this._moveFolderToRequested(e.getData()));
       resourcesContainer.addListener("trashFolderRequested", e => this._trashFolderRequested(e.getData()));
@@ -784,6 +784,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         studyOptions.addListener("cancel", () => cancelStudyOptions());
         studyOptions.addListener("startStudy", () => {
           const newName = studyOptions.getChildControl("title-field").getValue();
+          const selectedTagIds = studyOptions.getSelectedTags();
           const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
           const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
           win.close();
@@ -805,6 +806,22 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               if (newStudyData["name"] !== newName) {
                 promises.push(osparc.study.StudyOptions.updateName(newStudyData, newName));
               }
+              // add the tags if they changed
+              selectedTagIds.forEach(tagId => {
+                const found = newStudyData["tags"].includes(tagId);
+                if (!found) {
+                  // add the missing tag
+                  promises.push(osparc.store.Study.getInstance().addTag(newStudyData["uuid"], tagId));
+                }
+              });
+              // remove the tags that are not selected anymore
+              newStudyData["tags"].forEach(tagId => {
+                const found = selectedTagIds.includes(tagId);
+                if (!found) {
+                  // remove the tag
+                  promises.push(osparc.store.Study.getInstance().removeTag(newStudyData["uuid"], tagId));
+                }
+              });
               // patch the wallet
               if (walletSelection.length && walletSelection[0]["walletId"]) {
                 const walletId = walletSelection[0]["walletId"];
@@ -835,6 +852,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   win.close();
                   const showStudyOptions = false;
                   this._startStudyById(studyId, openCB, cancelCB, showStudyOptions);
+                })
+                .catch(err => {
+                  this._hideLoadingPage();
+                  osparc.FlashMessenger.logError(err);
                 });
             })
             .catch(err => {
@@ -889,7 +910,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return;
     },
 
-    _deleteResourceRequested: function(resourceId) {
+    _emptyProjectIconClicked: function(resourceId) {
       throw new Error("Abstract method called!");
     },
 

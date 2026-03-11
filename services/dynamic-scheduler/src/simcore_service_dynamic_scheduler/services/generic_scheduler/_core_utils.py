@@ -86,9 +86,7 @@ async def start_and_mark_as_started(
         is_executing=is_executing,
         expected_steps_count=expected_steps_count,
     )
-    await step_proxy.create_or_update_multiple(
-        {"deferred_created": True, "status": StepStatus.SCHEDULED}
-    )
+    await step_proxy.create_or_update_multiple({"deferred_created": True, "status": StepStatus.SCHEDULED})
 
 
 def raise_if_overwrites_any_operation_provided_key(
@@ -97,9 +95,7 @@ def raise_if_overwrites_any_operation_provided_key(
     operation_provided_context_keys = get_operation_provided_context_keys(operation)
     for key in initial_operation_context:
         if key in operation_provided_context_keys:
-            raise InitialOperationContextKeyNotAllowedError(
-                key=key, operation=operation
-            )
+            raise InitialOperationContextKeyNotAllowedError(key=key, operation=operation)
 
 
 async def get_step_error_traceback(
@@ -171,12 +167,10 @@ async def start_steps_which_were_not_started(
     is_executing: bool,
     group_step_count: NonNegativeInt,
 ) -> bool:
-    """retruns True if any step was started"""
+    """returns True if any step was started"""
     started_count: NonNegativeInt = 0
     if to_start_step_proxies := await _get_steps_to_start(group_step_proxies.values()):
-        steps_to_start_names = [
-            step_proxy.step_name for step_proxy in to_start_step_proxies
-        ]
+        steps_to_start_names = [step_proxy.step_name for step_proxy in to_start_step_proxies]
         with log_context(
             _logger,
             logging.DEBUG,
@@ -197,9 +191,7 @@ async def start_steps_which_were_not_started(
     return started_count > 0
 
 
-async def cleanup_after_finishing(
-    store: Store, *, schedule_id: ScheduleId, is_executing: bool
-) -> None:
+async def cleanup_after_finishing(store: Store, *, schedule_id: ScheduleId, is_executing: bool) -> None:
     removal_proxy = OperationRemovalProxy(store=store, schedule_id=schedule_id)
     await removal_proxy.delete()
     verb = "COMPLETED" if is_executing else "REVERTED"
@@ -213,7 +205,7 @@ async def get_requires_manual_intervention(step_proxy: StepStoreProxy) -> bool:
         return False
 
 
-async def set_unexpected_opration_state(
+async def set_unexpected_operation_state(
     store: Store,
     schedule_id: ScheduleId,
     operation_error_type: OperationErrorType,
@@ -248,7 +240,7 @@ async def safe_event(store: Store, schedule_id: ScheduleId) -> AsyncIterator[Non
             tip="This is a bug, please report it to the developers",
         )
         _logger.exception(**log_kwargs)
-        await set_unexpected_opration_state(
+        await set_unexpected_operation_state(
             store,
             schedule_id,
             OperationErrorType.FRAMEWORK_ISSUE,

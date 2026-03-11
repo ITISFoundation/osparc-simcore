@@ -40,9 +40,7 @@ PageOffsetInt: TypeAlias = Annotated[
 PageTotalCount: TypeAlias = NonNegativeInt
 
 
-DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
-    PageLimitInt
-).validate_python(20)
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(PageLimitInt).validate_python(20)
 
 
 class CursorQueryParameters(RequestParameters):
@@ -57,9 +55,7 @@ class CursorQueryParameters(RequestParameters):
     )
     cursor: Annotated[
         str | None,
-        Field(
-            description="unique identifier that represent the position in the dataset"
-        ),
+        Field(description="unique identifier that represent the position in the dataset"),
     ] = None
 
 
@@ -146,9 +142,7 @@ class Page(BaseModel, Generic[ItemT]):
     links: PageLinks = Field(alias="_links")
     data: list[ItemT]
 
-    _none_is_empty = field_validator("data", mode="before")(
-        none_to_empty_list_pre_validator
-    )
+    _none_is_empty = field_validator("data", mode="before")(none_to_empty_list_pre_validator)
 
     @field_validator("data")
     @classmethod

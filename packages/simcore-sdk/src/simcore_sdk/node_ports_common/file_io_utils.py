@@ -85,12 +85,7 @@ class _ExtendedClientResponseError(ClientResponseError):
         # stacktrace with body. SEE links below for details:
         # - https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
         # - https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingRESTError.html
-        return (
-            f"status={self.status}, "
-            f"message={self.message}, "
-            f"url={self.request_info.real_url}, "
-            f"body={self.body}"
-        )
+        return f"status={self.status}, message={self.message}, url={self.request_info.real_url}, body={self.body}"
 
 
 async def _raise_for_status(response: ClientResponse) -> None:
@@ -111,9 +106,7 @@ def _compute_tqdm_miniters(byte_size: int) -> float:
     return min(1.5 * byte_size / 100.0, 1.0)
 
 
-async def _file_object_chunk_reader(
-    file_object: IO, *, offset: int, total_bytes_to_read: int
-) -> AsyncGenerator[bytes]:
+async def _file_object_chunk_reader(file_object: IO, *, offset: int, total_bytes_to_read: int) -> AsyncGenerator[bytes]:
     await asyncio.get_event_loop().run_in_executor(None, file_object.seek, offset)
     num_read_bytes = 0
     while chunk := await asyncio.get_event_loop().run_in_executor(
@@ -123,15 +116,11 @@ async def _file_object_chunk_reader(
         yield chunk
 
 
-async def _file_chunk_reader(
-    file: Path, *, offset: int, total_bytes_to_read: int
-) -> AsyncGenerator[bytes]:
+async def _file_chunk_reader(file: Path, *, offset: int, total_bytes_to_read: int) -> AsyncGenerator[bytes]:
     async with aiofiles.open(file, "rb") as f:
         await f.seek(offset)
         num_read_bytes = 0
-        while chunk := await f.read(
-            min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)
-        ):
+        while chunk := await f.read(min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)):
             num_read_bytes += len(chunk)
             yield chunk
 
@@ -192,15 +181,9 @@ async def download_link_to_file(
         with attempt:
             async with AsyncExitStack() as stack:
                 client = await stack.enter_async_context(
-                    httpx.AsyncClient(
-                        timeout=httpx.Timeout(
-                            client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
-                        )
-                    )
+                    httpx.AsyncClient(timeout=httpx.Timeout(client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT))
                 )
-                response = await stack.enter_async_context(
-                    client.stream("GET", f"{url}")
-                )
+                response = await stack.enter_async_context(client.stream("GET", f"{url}"))
                 if response.status_code == status.HTTP_404_NOT_FOUND:
                     raise exceptions.InvalidDownloadLinkError(url)
                 if response.status_code > _VALID_HTTP_STATUS_CODES:
@@ -215,13 +198,7 @@ async def download_link_to_file(
                             total=file_size,
                             **(
                                 _TQDM_FILE_OPTIONS
-                                | {
-                                    "miniters": (
-                                        _compute_tqdm_miniters(file_size)
-                                        if file_size
-                                        else 1
-                                    )
-                                }
+                                | {"miniters": (_compute_tqdm_miniters(file_size) if file_size else 1)}
                             ),
                         )
                     )
@@ -271,9 +248,7 @@ async def _session_put(
     progress_bar: ProgressBarData,
     file_uploader: Any | None,
 ) -> str:
-    async with session.put(
-        upload_url, data=file_uploader, headers={"Content-Length": f"{file_part_size}"}
-    ) as response:
+    async with session.put(upload_url, data=file_uploader, headers={"Content-Length": f"{file_part_size}"}) as response:
         await _raise_for_status(response)
         if io_log_redirect_cb and pbar.update(file_part_size):
             with log_catch(_logger, reraise=False):
@@ -317,8 +292,7 @@ async def _upload_file_part(
         reraise=True,
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
-        retry=retry_if_exception_type(ClientConnectionError)
-        | retry_if_exception(_check_for_aws_http_errors),
+        retry=retry_if_exception_type(ClientConnectionError) | retry_if_exception(_check_for_aws_http_errors),
         before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
         after=after_log(_logger, log_level=logging.ERROR),
     ):
@@ -361,9 +335,7 @@ async def _process_batch(
 ) -> list[UploadedPart]:
     results: list[UploadedPart] = []
     try:
-        upload_results = await logged_gather(
-            *upload_tasks, log=_logger, max_concurrency=max_concurrency
-        )
+        upload_results = await logged_gather(*upload_tasks, log=_logger, max_concurrency=max_concurrency)
 
         for i, e_tag in upload_results:
             results.append(UploadedPart(number=i + 1, e_tag=e_tag))
@@ -371,10 +343,7 @@ async def _process_batch(
         if e.status == status.HTTP_400_BAD_REQUEST and "RequestTimeout" in e.body:
             raise exceptions.AwsS3BadRequestRequestTimeoutError(e.body) from e
     except ClientError as exc:
-        msg = (
-            f"Could not upload file {file_name} ({file_size=}, "
-            f"{file_chunk_size=}, {last_chunk_size=}):{exc}"
-        )
+        msg = f"Could not upload file {file_name} ({file_size=}, {file_chunk_size=}, {last_chunk_size=}):{exc}"
         raise exceptions.S3TransferError(msg) from exc
 
     return results
@@ -405,26 +374,18 @@ async def upload_file_to_presigned_links(
             tqdm_logging_redirect(
                 desc=f"uploading {file_name}\n",
                 total=file_size,
-                **(
-                    _TQDM_FILE_OPTIONS | {"miniters": _compute_tqdm_miniters(file_size)}
-                ),
+                **(_TQDM_FILE_OPTIONS | {"miniters": _compute_tqdm_miniters(file_size)}),
             )
         )
         sub_progress = await stack.enter_async_context(
-            progress_bar.sub_progress(
-                steps=file_size, description=f"uploading {file_name}"
-            )
+            progress_bar.sub_progress(steps=file_size, description=f"uploading {file_name}")
         )
 
         indexed_urls: list[tuple[int, AnyUrl]] = list(enumerate(file_upload_links.urls))
-        for partition_of_indexed_urls in partition_gen(
-            indexed_urls, slice_size=_CONCURRENT_MULTIPART_UPLOADS_COUNT
-        ):
+        for partition_of_indexed_urls in partition_gen(indexed_urls, slice_size=_CONCURRENT_MULTIPART_UPLOADS_COUNT):
             upload_tasks: list[Coroutine] = []
             for index, upload_url in partition_of_indexed_urls:
-                this_file_chunk_size = (
-                    file_chunk_size if (index + 1) < num_urls else last_chunk_size
-                )
+                this_file_chunk_size = file_chunk_size if (index + 1) < num_urls else last_chunk_size
                 upload_tasks.append(
                     _upload_file_part(
                         session=session,

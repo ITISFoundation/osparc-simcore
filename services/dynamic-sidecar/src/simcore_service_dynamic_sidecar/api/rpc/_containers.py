@@ -22,15 +22,11 @@ async def create_compose_spec(
     """
     Validates and stores the docker compose spec for the user services.
     """
-    await containers.create_compose_spec(
-        app, containers_compose_spec=containers_compose_spec
-    )
+    await containers.create_compose_spec(app, containers_compose_spec=containers_compose_spec)
 
 
 @router.expose()
-async def containers_docker_inspect(
-    app: FastAPI, *, only_status: bool
-) -> dict[str, Any]:
+async def containers_docker_inspect(app: FastAPI, *, only_status: bool) -> dict[str, Any]:
     """
     Returns entire docker inspect data, if only_state is True,
     the status of the containers is returned

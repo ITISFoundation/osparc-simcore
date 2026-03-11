@@ -100,7 +100,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # volumes between itself and the spawned containers
 ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
-# create direcotry to persist SharedStore data accessiable
+# create directory to persist SharedStore data accessible
 # between dynamic-sidecar reboots
 ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}/shared-store"
 RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
@@ -186,14 +186,11 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# NOTE: the start period of 3 minutes is to allow the dynamic-sidecar
-# enough time to connect to the externald dependencies. some times the docker
-# networks take time to get created
-# https://docs.docker.com/reference/dockerfile/#healthcheck
+# NOTE: sometimes docker network may take some time to resolve DNS, thus the longer start-period
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=180s \
+  --start-period=64s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
@@ -206,7 +203,7 @@ CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as my with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR

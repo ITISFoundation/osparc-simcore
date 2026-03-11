@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 import os
@@ -16,13 +17,7 @@ import httpx
 import osparc
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
-from pytest_simcore.helpers.typing_docker import UrlStr
-from pytest_simcore.helpers.typing_public_api import (
-    RegisteredUserDict,
-    ServiceInfoDict,
-    ServiceNameStr,
-    StacksDeployedDict,
-)
+from pytest_simcore.helpers.typing_public_api import RegisteredUserDict, ServiceInfoDict, ServiceNameStr
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -60,8 +55,7 @@ def env_vars_for_docker_compose(
 def core_services_selection(simcore_docker_compose: dict) -> list[str]:
     """Selection of services from the simcore stack"""
     # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
-    all_core_services = list(simcore_docker_compose["services"].keys())
-    return all_core_services
+    return list(simcore_docker_compose["services"].keys())
 
 
 @pytest.fixture(scope="module")
@@ -76,13 +70,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def simcore_docker_stack_and_registry_ready(
-    docker_registry: UrlStr,
-    docker_stack: StacksDeployedDict,
-    simcore_services_ready_module: None,
-) -> StacksDeployedDict:
-    # At this point `simcore_services_ready` waited until all services
-    # are running. Let's make one more check on the web-api
+def registry_ready() -> None:
     for attempt in Retrying(
         wait=wait_fixed(1),
         stop=stop_after_delay(0.5 * _MINUTE),
@@ -97,13 +85,9 @@ def simcore_docker_stack_and_registry_ready(
                 json.dumps(attempt.retry_state.retry_object.statistics),
             )
 
-    return docker_stack
-
 
 @pytest.fixture(scope="module")
-def registered_user(
-    simcore_docker_stack_and_registry_ready: StacksDeployedDict,
-) -> Iterator[RegisteredUserDict]:
+def registered_user(registry_ready: None) -> Iterator[RegisteredUserDict]:
     first_name = "john"
     last_name = "smith"
     user = RegisteredUserDict(
@@ -111,7 +95,7 @@ def registered_user(
         first_name=first_name.lower(),
         last_name=last_name.lower(),
         email=f"{first_name}.{last_name}@company.com".lower(),
-        password="alongpasswordthatisnotweak",
+        password="alongpasswordthatisnotweak",  # noqa: S106
         api_key="",
         api_secret="",
     )
@@ -158,10 +142,8 @@ def registered_user(
 
 
 @pytest.fixture(scope="module")
-async def services_registry(
-    docker_registry_image_injector: Callable[
-        [str, str, str | None], Awaitable[dict[str, Any]]
-    ],
+def services_registry(
+    existing_docker_registry_image_injector: Callable[[str, str, str, str | None], Awaitable[dict[str, Any]]],
     registered_user: RegisteredUserDict,
     env_vars_for_docker_compose: dict[str, str],
 ) -> dict[ServiceNameStr, ServiceInfoDict]:
@@ -171,18 +153,19 @@ async def services_registry(
     #
     user_email = registered_user["email"]
 
-    sleeper_service = await docker_registry_image_injector(
-        "itisfoundation/sleeper",
-        "2.1.1",
-        user_email,
+    sleeper_service = asyncio.run(
+        existing_docker_registry_image_injector(
+            "127.0.0.1:5000",
+            "itisfoundation/sleeper",
+            "2.1.1",
+            user_email,
+        )
     )
 
     assert sleeper_service["image"]["tag"] == "2.1.1"
     assert sleeper_service["image"]["name"] == "simcore/services/comp/itis/sleeper"
     assert sleeper_service["schema"] == {
-        "authors": [
-            {"name": "Tester", "email": user_email, "affiliation": "IT'IS Foundation"}
-        ],
+        "authors": [{"name": "Tester", "email": user_email, "affiliation": "IT'IS Foundation"}],
         "contact": user_email,
         "description": "A service which awaits for time to pass, two times.",
         "inputs": {
@@ -203,8 +186,7 @@ async def services_registry(
             },
             "input_3": {
                 "defaultValue": False,
-                "description": "If set to true will cause service to "
-                "fail after it sleeps",
+                "description": "If set to true will cause service to fail after it sleeps",
                 "displayOrder": 3,
                 "label": "Fail after sleep",
                 "type": "boolean",
@@ -241,9 +223,7 @@ async def services_registry(
         "version": "2.1.1",
     }
 
-    wait_for_catalog_to_detect = float(
-        env_vars_for_docker_compose["CATALOG_BACKGROUND_TASK_REST_TIME"]
-    )
+    wait_for_catalog_to_detect = float(env_vars_for_docker_compose["CATALOG_BACKGROUND_TASK_REST_TIME"])
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
@@ -272,11 +252,7 @@ def api_client(
     print("Configuration:", cfg.to_debug_report())
 
     def as_dict(obj: object):
-        return {
-            attr: getattr(obj, attr)
-            for attr in obj.__dict__
-            if not attr.startswith("_")
-        }
+        return {attr: getattr(obj, attr) for attr in obj.__dict__ if not attr.startswith("_")}
 
     print("cfg", pformat(as_dict(cfg)))
 
@@ -286,7 +262,13 @@ def api_client(
 
 @pytest.fixture(scope="module")
 def files_api(api_client: osparc.ApiClient) -> osparc.FilesApi:
-    return osparc.FilesApi(api_client)
+    api = osparc.FilesApi(api_client)
+
+    # ensure no files are left from previous tests
+    for file in api.list_files():
+        api.delete_file(file.id)
+
+    return api
 
 
 @pytest.fixture(scope="module")

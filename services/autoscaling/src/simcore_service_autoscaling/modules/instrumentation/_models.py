@@ -164,9 +164,7 @@ class WarmBufferPoolsMetrics(MetricsBase):
             registry=self.registry,
         )
 
-    def update_from_buffer_pool_manager(
-        self, buffer_pool_manager: WarmBufferPoolManager
-    ) -> None:
+    def update_from_buffer_pool_manager(self, buffer_pool_manager: WarmBufferPoolManager) -> None:
         flat_pool = buffer_pool_manager.flatten_buffer_pool()
 
         for field_name in WARM_BUFFER_POOLS_METRICS_DEFINITIONS:
@@ -189,13 +187,9 @@ class AutoscalingInstrumentation(MetricsBase):
         self.cluster_metrics = ClusterMetrics(  # pylint: disable=unexpected-keyword-arg
             subsystem=self.subsystem, registry=self.registry
         )
-        self.ec2_client_metrics = (
-            EC2ClientMetrics(  # pylint: disable=unexpected-keyword-arg
-                subsystem=self.subsystem, registry=self.registry
-            )
+        self.ec2_client_metrics = EC2ClientMetrics(  # pylint: disable=unexpected-keyword-arg
+            subsystem=self.subsystem, registry=self.registry
         )
-        self.buffer_machines_pools_metrics = (
-            WarmBufferPoolsMetrics(  # pylint: disable=unexpected-keyword-arg
-                subsystem=self.subsystem, registry=self.registry
-            )
+        self.buffer_machines_pools_metrics = WarmBufferPoolsMetrics(  # pylint: disable=unexpected-keyword-arg
+            subsystem=self.subsystem, registry=self.registry
         )
