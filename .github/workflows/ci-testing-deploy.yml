@@ -1787,6 +1787,18 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
+      - name: upload docker logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./tests/e2e-playwright/test_failures
+      - name: upload tracing if failed
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ github.job }}_tracing
+          path: tests/e2e-playwright/test-results
 
   system-test-e2e-playwright:
     needs: [changes, build-test-images]
