@@ -1,4 +1,5 @@
 import asyncio
+import enum
 import os
 from pathlib import Path
 from typing import Annotated
@@ -21,6 +22,13 @@ from .constants import (
 )
 from .ec2 import autoscaling_ec2_client, cluster_keeper_ec2_client
 from .models import AppState, BastionHost
+
+
+class InstanceTypeFilter(str, enum.Enum):
+    all = "all"
+    dynamic = "dynamic"
+    computational = "computational"
+
 
 state: AppState = AppState(
     dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
@@ -125,6 +133,10 @@ def summary(
     wallet_id: Annotated[int, typer.Option(help="filters by the wallet ID")] = 0,
     as_json: Annotated[bool, typer.Option(help="outputs as json")] = False,
     output: Annotated[Path | None, typer.Option(help="outputs to a file")] = None,
+    only: Annotated[
+        InstanceTypeFilter,
+        typer.Option(help="check only 'dynamic' or 'computational' instances (default: all)"),
+    ] = InstanceTypeFilter.all,
 ) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
@@ -144,6 +156,8 @@ def summary(
             wallet_id or None,
             output_json=as_json,
             output=output,
+            include_dynamic=only in (InstanceTypeFilter.all, InstanceTypeFilter.dynamic),
+            include_computational=only in (InstanceTypeFilter.all, InstanceTypeFilter.computational),
         )
     ):
         raise typer.Exit(1)
