@@ -27,8 +27,7 @@ services:
       MINIO_SECRET_KEY : ${S3_SECRET_KEY:?secret_key_required}
     ports:
       - "9001:9000"
-      - "9090:9090"
-    command: server /data --console-address ":9090"
+    command: server /data
     volumes:
       - minio_data:/data
     networks:
