@@ -178,9 +178,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             marginTop: 15,
             marginBottom: 15,
           });
-          this._add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         case "tiers-checkbox":
           control = new qx.ui.form.CheckBox().set({
