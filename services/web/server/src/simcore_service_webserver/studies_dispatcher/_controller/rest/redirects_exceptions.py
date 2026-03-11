@@ -10,6 +10,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
 from ....exception_handling import create_error_context_from_request
+from ....products import products_web
 from ....utils import compose_support_error_msg
 from ....utils_aiohttp import create_redirect_to_page_response
 from ..._constants import MSG_UNEXPECTED_DISPATCH_ERROR
@@ -49,7 +50,9 @@ def _create_error_redirect_with_logging(
 ) -> web.HTTPFound:
     """Helper to create error redirect with consistent logging"""
     error_code = create_error_code(err)
-    user_error_msg = compose_support_error_msg(msg=message, error_code=error_code)
+    support_email = products_web.get_current_product(request).support_email
+
+    user_error_msg = compose_support_error_msg(msg=message, error_code=error_code, support_email=support_email)
 
     _logger.exception(
         **create_troubleshooting_log_kwargs(
