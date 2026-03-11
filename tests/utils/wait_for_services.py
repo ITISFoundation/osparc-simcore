@@ -55,7 +55,7 @@ _PRE_STATES = [
     "new",  # The task was initialized.
     "pending",  # Resources for the task were allocated.
     "assigned",  # Docker assigned the task to nodes.
-    "accepted",  # The task was accepted by a worker node. If a worker node rejects the task, the state changes to REJECTED.
+    "accepted",  # The task was accepted by a worker node. If a worker node rejects the task, state changes to REJECTED.
     "preparing",  # Docker is preparing the task.
     "starting",  # Docker is starting the task.
 ]
@@ -83,7 +83,7 @@ def _get_status_emoji_and_color(state: str) -> tuple[str, str]:
     return "❓", "white"
 
 
-def _create_services_table(
+def _create_services_table(  # noqa: C901
     service_statuses: dict[str, dict[str, Any]],
 ) -> Table:
     """Create a rich table showing service statuses, ops services first, then simcore."""
@@ -195,9 +195,7 @@ def _osparc_simcore_root_dir() -> Path:
 
 
 def _core_docker_compose_file() -> Path:
-    stack_files = list(_osparc_simcore_root_dir().glob(".stack-simcore*"))
-    assert stack_files
-    return stack_files[0]
+    return _osparc_simcore_root_dir() / "services" / "docker-compose.yml"
 
 
 def _core_services() -> list[str]:
@@ -232,17 +230,28 @@ async def _retrieve_started_services() -> list[dict[str, Any]]:
     async with aiodocker.Docker() as client:
         services_list = await client.services.list()
 
-        started_services = sorted(
-            (s for s in services_list if s["Spec"]["Name"].split("_")[-1] in expected_services),
-            key=_by_service_creation,
+        started_services = sorted(services_list, key=_by_service_creation)
+
+        expected_set = set(expected_services)
+        started_set = {s["Spec"]["Name"].split("_")[-1] for s in started_services}
+
+        missing = expected_set - started_set
+        extra = started_set - expected_set
+
+        assert not missing, (
+            f"Some expected services are missing from the swarm.\nmissing({len(missing)}): {sorted(missing)}"
         )
-        assert started_services, "no services started!"
-        assert len(expected_services) == len(started_services), (
-            "Some services are missing or unexpected:\n"
-            f"expected: {len(expected_services)} {expected_services}\n"
-            f"got: {len(started_services)} {[s['Spec']['Name'] for s in started_services]}"
-        )
-    return started_services
+
+        if extra:
+            print(
+                "Expected vs started analysis:\n"
+                f"expected({len(expected_set)}): {sorted(expected_set)}\n"
+                f"started({len(started_set)}): {sorted(started_set)}\n"
+                f"missing({len(missing)}): {sorted(missing)}\n"
+                f"extra({len(extra)}): {sorted(extra)}\n"
+            )
+
+        return [s for s in started_services if s["Spec"]["Name"].split("_")[-1] in expected_set]
 
 
 async def _check_service_status(

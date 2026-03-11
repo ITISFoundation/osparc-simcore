@@ -326,14 +326,14 @@ async def docker_stack(  # noqa: C901
     assert core_stack_name.startswith("pytest-")
     stacks = [
         (
-            "core",
-            core_stack_name,
-            core_docker_compose_file,
-        ),
-        (
             "ops",
             ops_stack_name,
             ops_docker_compose_file,
+        ),
+        (
+            "core",
+            core_stack_name,
+            core_docker_compose_file,
         ),
     ]
 
