@@ -1,10 +1,4 @@
 #!/bin/bash
-#
-#  This task in the system-testing aims to test some guarantees expected from
-#  the deployment of osparc-simcore in a cluster (swarm).
-#  It follows some of the points enumerated in the https://12factor.net/  methodology.
-#
-
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -o errexit  # abort on nonzero exitstatus
 set -o nounset  # abort on unbound variable
@@ -13,34 +7,29 @@ IFS=$'\n\t'
 
 install() {
   make devenv
-  make pull-externals
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd tests/swarm-deploy
+  pushd packages/pytest-simcore
   make install-ci
   popd
   uv pip list
-  make info-images
 }
 
 test() {
-  # WARNING: this test is heavy. Due to limited CI machine power, please do not
-  # add too much overhead (e.g. low log-level etc)
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --durations=5 \
-    --log-level=INFO \
-    -v \
-    tests/swarm-deploy
+  pushd packages/pytest-simcore
+  make tests-ci
+  popd
 }
 
-clean_up() {
-  docker images
-  make down
-  make leave
+typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  uv pip install mypy
+  pushd packages/pytest-simcore
+  make mypy
+  popd
 }
 
 # Check if the function exists (bash specific)

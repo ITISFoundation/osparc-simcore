@@ -657,7 +657,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const nodesSlidesTree = this.__nodesSlidesTree = new osparc.widget.NodesSlidesTree(study);
       const title = this.tr("Edit App Mode");
       const nNodes = Object.keys(study.getWorkbench().getNodes()).length;
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 370, Math.min(350, 200+(30*nNodes))).set({
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 380, Math.min(350, 200+(30*nNodes))).set({
         modal: false,
         clickAwayClose: false
       });
@@ -666,9 +666,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__workbenchView.getNodesTree().nodeSelected(nodeId);
         this.__workbenchView.getWorkbenchUI().nodeSelected(nodeId);
       });
-      nodesSlidesTree.addListener("finished", () => {
-        const slideshow = study.getUi().getSlideshow();
-        slideshow.fireEvent("changeSlideshow");
+      nodesSlidesTree.addListener("close", () => {
         this.__nodesSlidesTree = null;
         win.close();
       });

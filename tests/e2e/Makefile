@@ -19,7 +19,7 @@ echo DIRECTOR_DEFAULT_MAX_MEMORY=134217728 >> $(SIMCORE_DOT_ENV)
 echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
 echo NOTIFICATIONS_LOGLEVEL=INFO >> $(SIMCORE_DOT_ENV)
 echo NOTIFICATIONS_TRACING=null >> $(SIMCORE_DOT_ENV)
-$(MAKE_C) $(REPO_BASE_DIR) up-prod ops_ci=1
+$(MAKE_C) $(REPO_BASE_DIR) up-prod-phased ops_ci=1
 endef
 
 define _setup_test_environment
@@ -82,7 +82,7 @@ install-ci-no-build:
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
 	@$(_setup_test_environment)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(REPO_BASE_DIR)/tests/utils/wait_for_services.py
 	@$(_transfer-images-to-registry)
 	@$(_inject-templates-in-db)
 
@@ -91,7 +91,7 @@ install-ci install-prod: ## install e2e testing framework and start simcore/regi
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
 	@$(_setup_test_environment)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(REPO_BASE_DIR)/tests/utils/wait_for_services.py
 	@$(_transfer-images-to-registry)
 	@$(_inject-templates-in-db)
 
