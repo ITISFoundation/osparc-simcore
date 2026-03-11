@@ -12,11 +12,14 @@ from typing import Any
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.redis import RedisSettings
 from simcore_service_webserver._meta import api_version_prefix
@@ -57,7 +60,7 @@ async def _list_projects(
         url = url.with_query(**query_parameters)
 
     resp = await client.get(f"{url}")
-    data, errors, meta, links = await assert_status(
+    data, _errors, meta, links = await assert_status(
         resp,
         expected,
         expected_msg=expected_error_msg,
@@ -187,3 +190,63 @@ async def test_list_projects_with_pagination(
 
         assert len(projects) == len(created_projects)
         assert {prj["uuid"] for prj in projects} == {prj["uuid"] for prj in created_projects}
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST])
+async def test_guest_user_only_lists_and_accesses_owned_projects(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    tests_data_dir,
+    director_v2_service_mock: aioresponses,
+    mocked_dynamic_services_interface,
+):
+    """GUEST users must only see/access projects they own, even if other projects are shared with them."""
+    assert client.app
+
+    async with (
+        # Create a project owned by the GUEST user
+        NewProject(
+            {"name": "guest-owned-project"},
+            client.app,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as guest_project,
+        # Create another (regular) user and their project, shared with the GUEST's primary group
+        NewUser(
+            {"role": UserRole.USER.name},
+            client.app,
+        ) as other_user,
+        NewProject(
+            {
+                "name": "other-user-project",
+                "access_rights": {
+                    str(logged_user["primary_gid"]): {
+                        "read": True,
+                        "write": True,
+                        "delete": False,
+                    }
+                },
+            },
+            client.app,
+            user_id=other_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as other_project,
+    ):
+        # GUEST listing should only return their own project
+        data, _, _ = await _list_projects(client, HTTPStatus(status.HTTP_200_OK))
+        project_uuids = {p["uuid"] for p in data}
+        assert guest_project["uuid"] in project_uuids
+        assert other_project["uuid"] not in project_uuids, "GUEST must not see projects they don't own, even if shared"
+
+        # GUEST can GET their own project
+        url = client.app.router["get_project"].url_for(project_id=guest_project["uuid"])
+        resp = await client.get(f"{url}")
+        await assert_status(resp, status.HTTP_200_OK)
+
+        # GUEST cannot GET another user's project even if shared with them
+        url = client.app.router["get_project"].url_for(project_id=other_project["uuid"])
+        resp = await client.get(f"{url}")
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
