@@ -219,10 +219,13 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           fnct = this.__moveDown;
           break;
       }
-      if (fnct.call(this, itemMdl)) {
-        this.getChildControl("tree").refresh();
+      if (fnct) {
+        const changed = fnct.call(this, itemMdl);
+        if (changed) {
+          this.getChildControl("tree").refresh();
+          this.__saveSlides();
+        }
       }
-      this.__saveSlides();
     },
 
     __getVisibleItems: function() {
@@ -315,7 +318,6 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           "instructions": child.getInstructions()
         };
       });
-      console.log("slideshow", slideshow);
       return slideshow;
     },
 
@@ -323,8 +325,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       this.__getVisibleItems().forEach(item => {
         item.setPosition(-1);
       });
-      const slideshow = this.__serialize();
-      this.__study.getUi().getSlideshow().setData(slideshow);
+      this.__saveSlides();
       this.fireEvent("close");
     }
   }
