@@ -185,7 +185,7 @@ async def get_scheduler_details(
             task_resources = task_data["task_resources"]
             task_worker_states = task_data["task_worker_states"]
     except (TimeoutError, OSError, TypeError):
-        rich.print("ERROR while recoverring scheduler details !! no scheduler info found!!")
+        pass  # scheduler not yet ready — caller handles empty defaults
 
     return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks, task_resources, task_worker_states
 

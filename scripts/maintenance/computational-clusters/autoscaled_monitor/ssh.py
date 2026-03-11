@@ -190,12 +190,6 @@ async def get_dask_ip(
             container_ids = (result.stdout or "").strip()
 
             if result.exit_status != 0 or not container_ids:
-                error_message = (result.stderr or "").strip()
-                _logger.warning(
-                    "No matching containers found or command failed with exit status %s: %s",
-                    result.exit_status,
-                    error_message,
-                )
                 return "No Containers Found / Not Ready"
 
             dask_ip_command = (
