@@ -5,13 +5,16 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
 from models_library.progress_bar import ProgressReport
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from servicelib.celery.models import (
     WILDCARD,
     ExecutionMetadata,
+    ExecutorType,
+    GroupExecutionMetadata,
     GroupKey,
     OwnerMetadata,
     Task,
+    TaskExecutionMetadata,
     TaskKey,
     TaskStore,
     TaskStreamItem,
@@ -24,7 +27,6 @@ _CELERY_TASK_PREFIX: Final[str] = "celery-task-"
 _CELERY_TASK_ID_KEY_ENCODING: Final[str] = "utf-8"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_EXEC_METADATA_KEY: Final[str] = "exec-meta"
-_CELERY_TASK_IS_GROUP_METADATA_KEY: Final[str] = "is_group"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
 # Redis list to store streamed results
@@ -56,21 +58,24 @@ class RedisTaskStore:
     async def create_group(
         self,
         group_key: GroupKey,
-        executions: list[tuple[TaskKey, ExecutionMetadata]],
+        execution_metadata: GroupExecutionMetadata,
+        task_keys: list[TaskKey],
         expiry: timedelta,
     ) -> None:
         group_key = _build_redis_task_or_group_key(group_key)
         pipe = self._redis_client_sdk.redis.pipeline()
         pipe.hset(
             name=group_key,
-            key=f"{_CELERY_TASK_IS_GROUP_METADATA_KEY}",
-            value="1",
+            key=_CELERY_TASK_EXEC_METADATA_KEY,
+            value=execution_metadata.model_dump_json(),
         )
-        for task_key, execution_metadata in executions:
+
+        # group tasks
+        for task_key, (task_execution_metadata, _) in zip(task_keys, execution_metadata.tasks, strict=True):
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
-                key=f"{_CELERY_TASK_EXEC_METADATA_KEY}",
-                value=execution_metadata.model_dump_json(),
+                key=_CELERY_TASK_EXEC_METADATA_KEY,
+                value=task_execution_metadata.model_dump_json(),
             )
         await handle_redis_returns_union_types(pipe.execute())
         await self._redis_client_sdk.redis.expire(
@@ -81,7 +86,7 @@ class RedisTaskStore:
     async def create_task(
         self,
         task_key: TaskKey,
-        execution_metadata: ExecutionMetadata,
+        execution_metadata: TaskExecutionMetadata,
         expiry: timedelta,
     ) -> None:
         redis_key = _build_redis_task_or_group_key(task_key)
@@ -108,7 +113,7 @@ class RedisTaskStore:
             return None
 
         try:
-            return ExecutionMetadata.model_validate_json(raw_result)
+            return TypeAdapter(ExecutionMetadata).validate_json(raw_result)
         except ValidationError as exc:
             _logger.debug(
                 "Failed to deserialize task metadata for task %s: %s",
@@ -137,16 +142,6 @@ class RedisTaskStore:
             )
             return None
 
-    async def is_group(self, task_or_group_key: TaskKey | GroupKey) -> bool:
-        raw_result = await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.hget(
-                _build_redis_task_or_group_key(task_or_group_key),
-                _CELERY_TASK_IS_GROUP_METADATA_KEY,
-            )
-        )
-
-        return raw_result == "1"
-
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
         search_key = _CELERY_TASK_PREFIX + owner_metadata.model_dump_key(task_or_group_uuid=WILDCARD)
 
@@ -168,7 +163,10 @@ class RedisTaskStore:
                 continue
 
             with contextlib.suppress(ValidationError):
-                execution_metadata = ExecutionMetadata.model_validate_json(raw_metadata)
+                execution_metadata: ExecutionMetadata = TypeAdapter(ExecutionMetadata).validate_json(raw_metadata)
+                if execution_metadata.type == ExecutorType.GROUP_TASK:
+                    continue
+
                 tasks.append(
                     Task(
                         uuid=OwnerMetadata.get_task_or_group_uuid(key),
