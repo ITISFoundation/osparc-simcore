@@ -3,10 +3,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from servicelib.celery.async_jobs.notifications import (
-    NOTIFICATIONS_SERVICE_QUEUE_NAME,
-    SEND_MESSAGE_TASK_NAME_TEMPLATE,
+    submit_send_message_task,
+    submit_send_messages_task,
 )
-from servicelib.celery.models import ExecutionMetadata, GroupUUID, OwnerMetadata, TaskName, TaskUUID
+from servicelib.celery.models import (
+    GroupUUID,
+    OwnerMetadata,
+    TaskName,
+    TaskUUID,
+)
 from servicelib.celery.task_manager import TaskManager
 
 from .._meta import APP_NAME
@@ -34,30 +39,18 @@ class MessagesService:
         message: dict[str, Any],
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         per_recipient = _fan_out_by_recipient(message)
-        task_name = SEND_MESSAGE_TASK_NAME_TEMPLATE.format(message["channel"])
 
         if len(per_recipient) == 1:
-            task_uuid = await self.task_manager.submit_task(
-                ExecutionMetadata(
-                    name=task_name,
-                    queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
-                ),
+            task_uuid, task_name = await submit_send_message_task(
+                self.task_manager,
                 owner_metadata=_OWNER_METADATA,
                 message=per_recipient[0],
             )
             return task_uuid, task_name
 
-        group_uuid, _ = await self.task_manager.submit_group(
-            [
-                (
-                    ExecutionMetadata(
-                        name=task_name,
-                        queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
-                    ),
-                    {"message": msg},
-                )
-                for msg in per_recipient
-            ],
+        group_uuid, _, task_name = await submit_send_messages_task(
+            self.task_manager,
             owner_metadata=_OWNER_METADATA,
+            messages=per_recipient,
         )
         return group_uuid, task_name
