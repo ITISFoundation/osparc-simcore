@@ -92,14 +92,13 @@ def test_personalized_classic_ti_plan(
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])
 
+    # count the number of elements with test id matching the pattern
     # 1. File Picker (file-picker)
     # 2. Personalizer (ti-pers)
     # 3. Model Inspector (sim4life-modeling)
     # 4. Simulator (ti-simu)
     # 5. Classic TI (ti-postpro)
     # 6. Exposure Analysis (sim4life-postpro)
-
-    # count the number of elements with test id matching the pattern
     expected_number_of_steps = 6
     step_buttons = page.locator("[osparc-test-id^='AppMode_StepBtn_']")
     assert step_buttons.count() == expected_number_of_steps, (
