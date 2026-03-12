@@ -15,13 +15,13 @@ import typer
 from mypy_boto3_ec2.service_resource import Instance
 from pydantic import ByteSize
 
-from .constants import DYN_SERVICES_NAMING_CONVENTION, SSH_USER_NAME
+from .constants import DISK_MOUNT_POINTS, DYN_SERVICES_NAMING_CONVENTION, SSH_USER_NAME
 from .ec2 import (
     get_bastion_instance_from_remote_instance,
     get_computational_bastion_instance,
     get_dynamic_bastion_instance,
 )
-from .models import AppState, DockerContainer, DynamicService
+from .models import AppState, DiskUsage, DockerContainer, DynamicService
 
 _DEFAULT_SSH_PORT: Final[int] = 22
 _LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
@@ -146,35 +146,48 @@ async def _run_command(conn: asyncssh.SSHClientConnection, command: str) -> asyn
     return await conn.run(command, check=False, timeout=10)
 
 
-async def get_available_disk_space(
+async def get_disk_usage(
     state: AppState,
     instance: Instance,
     username: str,
     private_key_path: Path,
     *,
     bastion_conn: asyncssh.SSHClientConnection | None,
-) -> ByteSize:
+    mount_points: list[str] = DISK_MOUNT_POINTS,
+) -> list[DiskUsage]:
     assert state.ssh_key_path
 
     try:
         async with ssh_instance(
             instance, state=state, username=username, private_key_path=private_key_path, bastion_conn=bastion_conn
         ) as conn:
-            disk_space_command = "df --block-size=1 /mnt/docker | awk 'NR==2{print $4}'"
+            mounts = " ".join(mount_points)
+            disk_space_command = f"df --block-size=1 {mounts} | awk 'NR>1{{print $6, $2, $4}}'"
             result = await _run_command(conn, disk_space_command)
 
             if result.exit_status != 0:
                 rich.print(result.stderr)
-                raise typer.Abort(result.stderr)
+                return []
 
-            available_space = (result.stdout or "").strip()
-            return ByteSize(available_space if available_space else 0)
+            usages: list[DiskUsage] = []
+            for line in (result.stdout or "").strip().splitlines():
+                parts = line.split()
+                if len(parts) == 3:  # noqa: PLR2004
+                    mount_point, total_str, free_str = parts
+                    usages.append(
+                        DiskUsage(
+                            mount_point=mount_point,
+                            total=ByteSize(int(total_str)),
+                            free=ByteSize(int(free_str)),
+                        )
+                    )
+            return usages
     except (
         asyncssh.Error,
         OSError,
         TimeoutError,
     ):
-        return ByteSize(0)
+        return []
 
 
 async def get_dask_ip(
