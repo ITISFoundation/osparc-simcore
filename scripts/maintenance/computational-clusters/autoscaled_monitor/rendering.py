@@ -84,11 +84,11 @@ def format_tracker_cells(
     row: TaskReconciliationRow,
     time_now: arrow.Arrow,
     usd_per_credit: float | None,
-) -> tuple[str, str, str, str, str, str]:
-    """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text, heartbeat_text)."""
+) -> tuple[str, str, str, str, str]:
+    """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text)."""
     if row.tracker_run is None:
         rut = "[red]\u274c n/a[/red]" if row.is_actively_executing else "[dim]\u274c n/a[/dim]"
-        return rut, "n/a", "n/a", "n/a", "n/a", "n/a"
+        return rut, "n/a", "n/a", "n/a", "n/a"
     cost = row.tracker_run.pricing_unit_cost
     rate = f"{cost:.1f}" if cost is not None else "n/a"
     now_naive = time_now.datetime.replace(tzinfo=None)
@@ -97,10 +97,7 @@ def format_tracker_cells(
     total_credits = cost * elapsed_hours if cost is not None else None
     total = f"{total_credits:.1f}" if total_credits is not None else "n/a"
     usd = f"{total_credits * usd_per_credit:.2f}" if total_credits is not None and usd_per_credit is not None else "n/a"
-    heartbeat_age = utils.timedelta_formatting(
-        now_naive - row.tracker_run.last_heartbeat_at.replace(tzinfo=None), color_code=True
-    )
-    return "[green]\u2705 RUNNING[/green]", rate, elapsed, total, usd, heartbeat_age
+    return "[green]\u2705 RUNNING[/green]", rate, elapsed, total, usd
 
 
 STATE_STYLES: Final[dict[str, str]] = {
@@ -120,7 +117,7 @@ STATE_STYLES: Final[dict[str, str]] = {
 }
 
 
-def build_cluster_tasks_table(
+def build_cluster_tasks_table(  # noqa: C901
     rows: list[TaskReconciliationRow],
     *,
     job_to_worker: dict[str, str] | None,
@@ -141,12 +138,10 @@ def build_cluster_tasks_table(
     sorted_rows = sorted(rows, key=_worker_sort_key)
 
     table = Table(
-        Column("Job ID", overflow="fold"),
+        Column("Project/Node/Job", overflow="fold"),
         Column("Worker", justify="center"),
         Column("Dask State", justify="center"),
-        Column("DB\ncomp_tasks", justify="center"),
-        Column("DB\nRUT", justify="center"),
-        Column("RUT\nHeartbeat", justify="right"),
+        Column("DB State", justify="center"),
         Column("Resources", overflow="fold"),
         Column("Rate\n(\U0001f4b6/h)", justify="right"),
         Column("Elapsed", justify="right"),
@@ -158,7 +153,11 @@ def build_cluster_tasks_table(
     )
 
     for row in sorted_rows:
-        job_id_display = row.job_id[:36] + "\u2026" if len(row.job_id) > 37 else row.job_id  # noqa: PLR2004
+        job_id_short = row.job_id[:36] + "\u2026" if len(row.job_id) > 37 else row.job_id  # noqa: PLR2004
+        if row.comp_task is not None:
+            id_cell = f"P: {row.comp_task.project_id}\nN: {row.comp_task.node_id}\nJ: {job_id_short}"
+        else:
+            id_cell = f"[red]J: {job_id_short}\n(ghost — no comp_task)[/red]"
 
         if row.worker_state and row.worker_state != row.dask_state:
             combined = f"{row.dask_state}\n{row.worker_state}"
@@ -176,26 +175,28 @@ def build_cluster_tasks_table(
 
         db_comp_tasks_text = format_comp_task_cell(row)
 
+        rut_text, rate_text, elapsed_str, total_text, usd_text = format_tracker_cells(row, time_now, usd_per_credit)
+
+        db_state_cell = f"comp_tasks: {db_comp_tasks_text}\nRUT: {rut_text}"
+
         resources_text = (
             "\n".join(f"{k}: {format_resource_value(k, v)}" for k, v in sorted(row.required_resources.items()))
             if row.required_resources
             else "[dim]n/a[/dim]"
         )
 
-        rut_text, rate_text, elapsed_str, total_text, usd_text, heartbeat_text = format_tracker_cells(
-            row, time_now, usd_per_credit
-        )
-
-        issue_text = "\n".join(f"[red]{i}[/red]" for i in row.issues) if row.issues else "[green]OK[/green]"
+        # Missed heartbeats go into issues
+        all_issues = list(row.issues)
+        if row.tracker_run is not None and row.tracker_run.missed_heartbeat_counter > 0:
+            all_issues.append(f"missed heartbeats: {row.tracker_run.missed_heartbeat_counter}")
+        issue_text = "\n".join(f"[red]{i}[/red]" for i in all_issues) if all_issues else "[green]OK[/green]"
         worker_text = (job_to_worker or {}).get(row.job_id, "[dim]n/a[/dim]")
 
         table.add_row(
-            job_id_display,
+            id_cell,
             worker_text,
             dask_state_text,
-            db_comp_tasks_text,
-            rut_text,
-            heartbeat_text,
+            db_state_cell,
             resources_text,
             rate_text,
             elapsed_str,
@@ -343,10 +344,8 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 "User",
                 "Wallet",
                 "ProductName",
-                "ProjectID",
-                "NodeID",
-                "ServiceName",
-                "ServiceVersion",
+                Column("Project/Node", overflow="fold"),
+                "Service",
                 Column("DB\nRUT", justify="center"),
                 Column("Rate\n(\U0001f4b6/h)", justify="right"),
                 Column("Elapsed", justify="right"),
@@ -380,10 +379,8 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                     user_id_display,
                     wallet_display,
                     service.product_name,
-                    service.project_id,
-                    service.node_id,
-                    service.service_name,
-                    service.service_version,
+                    f"P: {service.project_id}\nN: {service.node_id}",
+                    f"{service.service_name}\n{service.service_version}",
                     rut_text,
                     rate_text,
                     elapsed_text,
@@ -588,10 +585,8 @@ def print_computational_tasks(
 ) -> None:
     table = Table(
         "index",
-        "ProjectID",
-        "NodeID",
-        "ServiceName",
-        "ServiceVersion",
+        Column("Project/Node", overflow="fold"),
+        "Service",
         "State in DB",
         "State in Dask cluster",
         title=f"{len(tasks)} Tasks running for {user_id=}/{wallet_id=}",
@@ -600,13 +595,19 @@ def print_computational_tasks(
     )
 
     for index, (db_task, dask_task) in enumerate(tasks):
+        if db_task:
+            id_cell = f"P: {db_task.project_id}\nN: {db_task.node_id}"
+            service_cell = f"{db_task.service_name}\n{db_task.service_version}"
+            state_cell = f"{db_task.state}"
+        else:
+            id_cell = "[red][bold]intervention needed[/bold][/red]"
+            service_cell = ""
+            state_cell = ""
         table.add_row(
             f"{index}",
-            (f"{db_task.project_id}" if db_task else "[red][bold]intervention needed[/bold][/red]"),
-            f"{db_task.node_id}" if db_task else "",
-            f"{db_task.service_name}" if db_task else "",
-            f"{db_task.service_version}" if db_task else "",
-            f"{db_task.state}" if db_task else "",
+            id_cell,
+            service_cell,
+            state_cell,
             (dask_task.state if dask_task else "[orange]task not yet in cluster[/orange]"),
         )
 
