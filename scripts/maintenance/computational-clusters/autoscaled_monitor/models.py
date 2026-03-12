@@ -75,6 +75,8 @@ class DynamicService:
     containers: list[str]
     product_name: str
     simcore_user_agent: str
+    nano_cpus: int = 0
+    memory: int = 0
 
 
 @dataclass(slots=True, kw_only=True)
@@ -138,6 +140,7 @@ class ResourceTrackerServiceRun:
     last_heartbeat_at: datetime.datetime
     missed_heartbeat_counter: int
     pricing_unit_cost: float | None
+    simcore_user_agent: str | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -119,9 +119,9 @@ class ReconciliationResult:
     cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] = dataclasses.field(
         default_factory=list
     )
-    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]] = (
-        dataclasses.field(default_factory=dict)
-    )
+    cluster_extra_info: dict[
+        tuple[int, int | None], tuple[str | None, str | None, str | None, float | None, str | None]
+    ] = dataclasses.field(default_factory=dict)
 
 
 async def reconcile_computational_clusters(
@@ -165,11 +165,15 @@ async def reconcile_computational_clusters(
             if _product_name:
                 with contextlib.suppress(Exception):
                     _usd_per_credit = await db.get_product_usd_per_credit(engine, _product_name)
+            _simcore_user_agent: str | None = next(
+                (r.simcore_user_agent for r in _cluster_tracker if r.simcore_user_agent), None
+            )
             result.cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
                 _email,
                 _wallet_name,
                 _product_name,
                 _usd_per_credit,
+                _simcore_user_agent,
             )
     except Exception:  # pylint: disable=broad-exception-caught
         rich.print("[yellow]Warning: could not query database (DB unreachable?). Skipping DB reconciliation.[/yellow]")
