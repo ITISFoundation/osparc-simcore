@@ -1,6 +1,8 @@
 """Top-level ``summary`` command — compact overview of both dynamic and computational."""
 
 import asyncio
+import contextlib
+import time
 from pathlib import Path
 from typing import Annotated
 
@@ -8,11 +10,14 @@ import arrow
 import rich
 import typer
 from rich.console import Console
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .. import analysis, db, ec2, rendering
 from .._state import state
 from ..models import AppState, ComputationalCluster, DynamicInstance, DynamicServiceExtraInfo
 from ..reconciliation import ReconciliationResult, reconcile_computational_clusters
+
+_console = Console()
 
 
 def _collect_services(
@@ -22,7 +27,7 @@ def _collect_services(
     return [(svc.user_id, svc.project_id, svc.node_id) for inst in instances for svc in inst.running_services]
 
 
-async def _run(  # noqa: C901
+async def _run(  # noqa: C901, PLR0915
     state: AppState,
     user_id: int | None,
     wallet_id: int | None,
@@ -33,37 +38,82 @@ async def _run(  # noqa: C901
     dynamic_autoscaled_instances: list[DynamicInstance] = []
     computational_clusters: list[ComputationalCluster] = []
 
-    if state.ec2_resource_autoscaling:
-        dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
+    t0 = time.monotonic()
+
+    # --- Phase 1: EC2 listing + SSH/Dask analysis + DB tunnel (all in parallel) ---
+    async def _dynamic_phase() -> list[DynamicInstance]:
+        if not state.ec2_resource_autoscaling:
+            return []
+        t1 = time.monotonic()
+        instances = await ec2.list_dynamic_instances_from_ec2(
             state,
             filter_by_user_id=user_id,
             filter_by_wallet_id=wallet_id,
             filter_by_instance_id=None,
         )
-        dynamic_autoscaled_instances = await analysis.parse_dynamic_instances(
-            state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
-        )
+        _console.log(f"[dim]EC2 list dynamic: {time.monotonic() - t1:.1f}s[/dim]")
+        t1 = time.monotonic()
+        result = await analysis.parse_dynamic_instances(state, instances, state.ssh_key_path, user_id, wallet_id)
+        _console.log(f"[dim]Parse dynamic instances: {time.monotonic() - t1:.1f}s[/dim]")
+        return result
 
-    if state.ec2_resource_clusters_keeper:
-        computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
-        computational_clusters = await analysis.parse_computational_clusters(
-            state, computational_instances, state.ssh_key_path, user_id, wallet_id
-        )
+    async def _computational_phase() -> list[ComputationalCluster]:
+        if not state.ec2_resource_clusters_keeper:
+            return []
+        t1 = time.monotonic()
+        instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
+        _console.log(f"[dim]EC2 list computational: {time.monotonic() - t1:.1f}s[/dim]")
+        t1 = time.monotonic()
+        result = await analysis.parse_computational_clusters(state, instances, state.ssh_key_path, user_id, wallet_id)
+        _console.log(f"[dim]Parse computational clusters: {time.monotonic() - t1:.1f}s[/dim]")
+        return result
 
+    # DB engine — opened in parallel, cleaned up in finally block
+    db_stack = contextlib.AsyncExitStack()
+    db_engine: AsyncEngine | None = None
+
+    async def _db_phase() -> AsyncEngine | None:
+        """Open DB engine early so it overlaps with SSH work."""
+        try:
+            t1 = time.monotonic()
+            engine = await db_stack.enter_async_context(db.db_engine(state))
+            _console.log(f"[dim]  DB engine ready (SSH tunnel): {time.monotonic() - t1:.1f}s[/dim]")
+            return engine
+        except Exception:  # pylint: disable=broad-exception-caught
+            return None
+
+    # Run SSH phases and DB tunnel setup concurrently
+    dyn_result, comp_result, db_engine = await asyncio.gather(
+        _dynamic_phase(),
+        _computational_phase(),
+        _db_phase(),
+    )
+    dynamic_autoscaled_instances = dyn_result
+    computational_clusters = comp_result
+
+    # --- Phase 2: DB queries using shared engine ---
     recon = ReconciliationResult()
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
     services = _collect_services(dynamic_autoscaled_instances)
-    need_db = bool(computational_clusters) or bool(services)
-    if need_db:
-        try:
-            with Console().status("[bold]Querying database...[/bold]"):
-                async with db.db_engine(state) as engine:
-                    if computational_clusters:
-                        recon = await reconcile_computational_clusters(state, computational_clusters, engine=engine)
-                    if services:
-                        service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
-        except Exception:  # pylint: disable=broad-exception-caught
+    try:
+        if db_engine is not None:
+            with _console.status("[bold]Querying database...[/bold]"):
+                if computational_clusters:
+                    t2 = time.monotonic()
+                    recon = await reconcile_computational_clusters(state, computational_clusters, engine=db_engine)
+                    _console.log(f"[dim]  Reconciliation queries: {time.monotonic() - t2:.1f}s[/dim]")
+                if services:
+                    t2 = time.monotonic()
+                    service_extra_info = await db.get_dynamic_service_extra_info(db_engine, services)
+                    _console.log(f"[dim]  Dynamic extra info queries: {time.monotonic() - t2:.1f}s[/dim]")
+        elif bool(computational_clusters) or bool(services):
             rich.print("[yellow]Warning: could not query DB.[/yellow]")
+    except Exception:  # pylint: disable=broad-exception-caught
+        rich.print("[yellow]Warning: could not query DB.[/yellow]")
+    finally:
+        await db_stack.aclose()
+
+    _console.log(f"[dim]Total elapsed: {time.monotonic() - t0:.1f}s[/dim]")
 
     if output_json:
         rendering.print_summary_as_json(
