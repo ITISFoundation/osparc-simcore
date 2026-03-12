@@ -46,6 +46,14 @@ _MODELING_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _MODELING_DOCKER_PULLING_MAX_TIME + _MODELING_MAX_STARTUP_TIME
 )
 
+_SIMULATOR_MAX_STARTUP_TIME: Final[int] = 3 * MINUTE
+_SIMULATOR_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + _SIMULATOR_DOCKER_PULLING_MAX_TIME + _SIMULATOR_MAX_STARTUP_TIME
+)
+_SIMULATOR_SETUP_APPEARANCE_TIME: Final[int] = 2 * MINUTE
+_SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
+
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
 _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
@@ -73,7 +81,20 @@ def _wait_for_personalization_complete(start_button, outputs_button):
         raise ValueError(msg)
 
 
-def test_personalized_classic_ti_plan(
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_fixed(60),
+    reraise=True,
+)
+def _wait_for_simulation_complete(setup_button, export_button):
+    icon_class = setup_button.locator("i").first.evaluate("el => el.className")
+    is_enabled = export_button.evaluate("el => !el.disabled")
+    if "fa-spinner" in icon_class or not is_enabled:
+        msg = f"Simulation still running: {icon_class=}, export enabled={is_enabled}"
+        raise ValueError(msg)
+
+
+def test_personalized_classic_ti_plan(  # noqa: PLR0915
     page: Page,
     log_in_and_out: RobustWebSocket,
     is_autoscaled: bool,
@@ -158,3 +179,39 @@ def test_personalized_classic_ti_plan(
             app_mode_trigger_next_app(page)
         modeling_iframe = service_running.iframe_locator
         assert modeling_iframe
+
+    with log_context(logging.INFO, "Simulator step (4/%s)", expected_number_of_steps):
+        with page.expect_websocket(
+            _JLabWaitForWebSocket(),
+            timeout=_OUTER_EXPECT_TIMEOUT_RATIO
+            * (_SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _SIMULATOR_MAX_STARTUP_TIME),
+        ) as ws_info:
+            with expected_service_running(
+                page=page,
+                node_id=node_ids[4],
+                websocket=log_in_and_out,
+                timeout=(_SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _SIMULATOR_MAX_STARTUP_TIME),
+                press_start_button=False,
+                product_url=product_url,
+                is_service_legacy=is_service_legacy,
+            ) as service_running:
+                app_mode_trigger_next_app(page)
+            simulator_iframe = service_running.iframe_locator
+            assert simulator_iframe
+
+        assert not ws_info.value.is_closed()
+
+        with log_context(logging.INFO, "Run simulation"):
+            setup_button = simulator_iframe.get_by_role("button", name="Setup")
+            setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
+
+            confirm_button = simulator_iframe.get_by_role("button", name="Confirm")
+            confirm_button.click(timeout=30 * SECOND)
+
+            page.wait_for_timeout(_SIMULATION_MAX_TIME)
+            export_button = simulator_iframe.get_by_role("button", name="Export")
+            _wait_for_simulation_complete(setup_button, export_button)
+
+            export_button.click()
+            outputs_button = page.get_by_test_id("outputsBtn")
+            expect(outputs_button).to_contain_text("Outputs (42)", timeout=60 * SECOND)
