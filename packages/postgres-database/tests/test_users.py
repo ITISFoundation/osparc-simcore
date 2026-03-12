@@ -133,7 +133,7 @@ async def test_new_user(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_d
         "email": faker.email(),
         "password_hash": "foo",
         "status": UserStatus.ACTIVE,
-        "expires_at": datetime.utcnow(),
+        "expires_at": datetime.utcnow(),  # noqa: DTZ003
     }
     repo = UsersRepo(asyncpg_engine)
     new_user = await repo.new_user(**data)
@@ -160,7 +160,7 @@ async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table:
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
     # creates trial user
-    client_now = datetime.utcnow()
+    client_now = datetime.utcnow()  # noqa: DTZ003
     async with transaction_context(asyncpg_engine) as connection:
         user_id: int | None = await connection.scalar(
             users.insert()
@@ -331,3 +331,291 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         assert len(password_hashes_after) == 2
         assert password_hashes_after[inserted_user_ids[0]] == "hashed_password_1"
         assert password_hashes_after[inserted_user_ids[1]] == "hashed_password_2"
+
+
+def test_pre_registration_reconciliation_migration_upgrade_downgrade(
+    sync_engine_with_migration: sqlalchemy.engine.Engine,
+):
+    """Tests reconciliation migration for linked pre-registrations left in pending state.
+
+
+    testing
+        packages/postgres-database/src/simcore_postgres_database/migration/versions/7f8d9b1c2e4f_reconcile_linked_pending_pre_registrations.py
+
+    revision = "7f8d9b1c2e4f"
+    down_revision = "4c8dcaac4285"
+
+
+    NOTE: all statements in conn.execute(...) must be sa.text(...) since at that migration point the schemas of the
+         code models might not be the same
+    """
+    assert simcore_postgres_database.cli.upgrade.callback
+    assert simcore_postgres_database.cli.downgrade.callback
+
+    simcore_postgres_database.cli.upgrade.callback("4c8dcaac4285")
+
+    with sync_engine_with_migration.connect() as conn:
+        linked_user_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO users (name, email, role, status)
+                VALUES (:name, :email, 'USER'::userrole, 'ACTIVE'::userstatus)
+                RETURNING id
+                """
+            ),
+            {"name": "linked-user", "email": "linked-user@example.com"},
+        ).scalar_one()
+
+        created_by_user_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO users (name, email, role, status)
+                VALUES (:name, :email, 'PRODUCT_OWNER'::userrole, 'ACTIVE'::userstatus)
+                RETURNING id
+                """
+            ),
+            {"name": "po-user", "email": "po-user-migration@example.com"},
+        ).scalar_one()
+
+        product_group_with_access_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO groups (name, description, type)
+                VALUES (:name, :description, 'STANDARD'::grouptype)
+                RETURNING gid
+                """
+            ),
+            {
+                "name": "Migration Product Group A",
+                "description": "Group for product access migration test",
+            },
+        ).scalar_one()
+
+        product_group_without_access_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO groups (name, description, type)
+                VALUES (:name, :description, 'STANDARD'::grouptype)
+                RETURNING gid
+                """
+            ),
+            {
+                "name": "Migration Product Group B",
+                "description": "Group for no-access migration test",
+            },
+        ).scalar_one()
+
+        product_with_access_name = "migration-access-product"
+        product_without_access_name = "migration-no-access-product"
+
+        conn.execute(
+            sa.text(
+                """
+                INSERT INTO products (name, host_regex, base_url, group_id)
+                VALUES (:name, :host_regex, :base_url, :group_id)
+                """
+            ),
+            {
+                "name": product_with_access_name,
+                "host_regex": "migration-access\\\\.example\\\\.com",
+                "base_url": "https://migration-access.example.com",
+                "group_id": product_group_with_access_id,
+            },
+        )
+        conn.execute(
+            sa.text(
+                """
+                INSERT INTO products (name, host_regex, base_url, group_id)
+                VALUES (:name, :host_regex, :base_url, :group_id)
+                """
+            ),
+            {
+                "name": product_without_access_name,
+                "host_regex": "migration-no-access\\\\.example\\\\.com",
+                "base_url": "https://migration-no-access.example.com",
+                "group_id": product_group_without_access_id,
+            },
+        )
+
+        conn.execute(
+            sa.text(
+                """
+                INSERT INTO user_to_groups (uid, gid)
+                VALUES (:user_id, :group_id)
+                """
+            ),
+            {
+                "user_id": linked_user_id,
+                "group_id": product_group_with_access_id,
+            },
+        )
+
+        pending_pre_registration_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO users_pre_registration_details (
+                    user_id,
+                    pre_email,
+                    account_request_status,
+                    account_request_reviewed_by,
+                    account_request_reviewed_at,
+                    product_name,
+                    created_by
+                )
+                VALUES (
+                    :linked_user_id,
+                    :pre_email,
+                    'PENDING'::accountrequeststatus,
+                    NULL,
+                    NULL,
+                    :product_name,
+                    :created_by
+                )
+                RETURNING id
+                """
+            ),
+            {
+                "linked_user_id": linked_user_id,
+                "pre_email": "pending-linked@example.com",
+                "product_name": product_with_access_name,
+                "created_by": created_by_user_id,
+            },
+        ).scalar_one()
+
+        pending_without_access_pre_registration_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO users_pre_registration_details (
+                    user_id,
+                    pre_email,
+                    account_request_status,
+                    account_request_reviewed_by,
+                    account_request_reviewed_at,
+                    product_name,
+                    created_by
+                )
+                VALUES (
+                    :linked_user_id,
+                    :pre_email,
+                    'PENDING'::accountrequeststatus,
+                    NULL,
+                    NULL,
+                    :product_name,
+                    :created_by
+                )
+                RETURNING id
+                """
+            ),
+            {
+                "linked_user_id": linked_user_id,
+                "pre_email": "pending-no-access-linked@example.com",
+                "product_name": product_without_access_name,
+                "created_by": created_by_user_id,
+            },
+        ).scalar_one()
+
+        rejected_pre_registration_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO users_pre_registration_details (
+                    user_id,
+                    pre_email,
+                    account_request_status,
+                    account_request_reviewed_by,
+                    account_request_reviewed_at,
+                    product_name,
+                    created_by
+                )
+                VALUES (
+                    :linked_user_id,
+                    :pre_email,
+                    'REJECTED'::accountrequeststatus,
+                    :created_by,
+                    NOW(),
+                    :product_name,
+                    :created_by
+                )
+                RETURNING id
+                """
+            ),
+            {
+                "linked_user_id": linked_user_id,
+                "pre_email": "rejected-linked@example.com",
+                "product_name": product_with_access_name,
+                "created_by": created_by_user_id,
+            },
+        ).scalar_one()
+
+        before_row = conn.execute(
+            sa.text(
+                """
+                SELECT account_request_status, account_request_reviewed_by, account_request_reviewed_at
+                FROM users_pre_registration_details
+                WHERE id = :pre_registration_id
+                """
+            ),
+            {"pre_registration_id": pending_pre_registration_id},
+        ).one()
+        assert before_row.account_request_status == "PENDING"
+        assert before_row.account_request_reviewed_by is None
+        assert before_row.account_request_reviewed_at is None
+
+        before_row_without_access = conn.execute(
+            sa.text(
+                """
+                SELECT account_request_status, account_request_reviewed_by, account_request_reviewed_at
+                FROM users_pre_registration_details
+                WHERE id = :pre_registration_id
+                """
+            ),
+            {"pre_registration_id": pending_without_access_pre_registration_id},
+        ).one()
+        assert before_row_without_access.account_request_status == "PENDING"
+        assert before_row_without_access.account_request_reviewed_by is None
+        assert before_row_without_access.account_request_reviewed_at is None
+
+    simcore_postgres_database.cli.upgrade.callback("7f8d9b1c2e4f")
+
+    with sync_engine_with_migration.connect() as conn:
+        reconciled_row = conn.execute(
+            sa.text(
+                """
+                SELECT account_request_status, account_request_reviewed_by, account_request_reviewed_at
+                FROM users_pre_registration_details
+                WHERE id = :pre_registration_id
+                """
+            ),
+            {"pre_registration_id": pending_pre_registration_id},
+        ).one()
+        assert reconciled_row.account_request_status == "APPROVED"
+        assert reconciled_row.account_request_reviewed_by == created_by_user_id
+        assert reconciled_row.account_request_reviewed_at is not None
+
+        unchanged_pending_row = conn.execute(
+            sa.text(
+                """
+                SELECT account_request_status, account_request_reviewed_by, account_request_reviewed_at
+                FROM users_pre_registration_details
+                WHERE id = :pre_registration_id
+                """
+            ),
+            {"pre_registration_id": pending_without_access_pre_registration_id},
+        ).one()
+        assert unchanged_pending_row.account_request_status == "PENDING"
+        assert unchanged_pending_row.account_request_reviewed_by is None
+        assert unchanged_pending_row.account_request_reviewed_at is None
+
+        unchanged_row = conn.execute(
+            sa.text(
+                """
+                SELECT account_request_status, account_request_reviewed_by
+                FROM users_pre_registration_details
+                WHERE id = :pre_registration_id
+                """
+            ),
+            {"pre_registration_id": rejected_pre_registration_id},
+        ).one()
+        assert unchanged_row.account_request_status == "REJECTED"
+        assert unchanged_row.account_request_reviewed_by == created_by_user_id
+
+    simcore_postgres_database.cli.downgrade.callback("4c8dcaac4285")
