@@ -19,6 +19,7 @@ from .models import (
     ComputationalTask,
     DaskTask,
     DynamicInstance,
+    DynamicServiceExtraInfo,
     TaskReconciliationRow,
 )
 
@@ -273,11 +274,36 @@ def build_job_to_worker(cluster: ComputationalCluster) -> dict[str, str]:
     return job_to_worker
 
 
-def print_dynamic_instances(
+def _format_dynamic_rut_cells(
+    extra: DynamicServiceExtraInfo | None,
+    time_now: arrow.Arrow,
+) -> tuple[str, str, str, str, str, str]:
+    """Returns (rut_text, heartbeat_text, rate_text, elapsed_str, total_text, usd_text)."""
+    if extra is None or extra.tracker_run is None:
+        return "[red]\u274c n/a[/red]", "n/a", "n/a", "n/a", "n/a", "n/a"
+    run = extra.tracker_run
+    cost = run.pricing_unit_cost
+    rate = f"{cost:.1f}" if cost is not None else "n/a"
+    now_naive = time_now.datetime.replace(tzinfo=None)
+    elapsed_hours = (now_naive - run.started_at.replace(tzinfo=None)).total_seconds() / 3600
+    elapsed = f"{elapsed_hours:.1f}h"
+    total_credits = cost * elapsed_hours if cost is not None else None
+    total = f"{total_credits:.1f}" if total_credits is not None else "n/a"
+    usd = (
+        f"{total_credits * extra.usd_per_credit:.2f}"
+        if total_credits is not None and extra.usd_per_credit is not None
+        else "n/a"
+    )
+    heartbeat_age = utils.timedelta_formatting(now_naive - run.last_heartbeat_at.replace(tzinfo=None), color_code=True)
+    return "[green]\u2705 RUNNING[/green]", heartbeat_age, rate, elapsed, total, usd
+
+
+def print_dynamic_instances(  # noqa: C901, PLR0912
     instances: list[DynamicInstance],
     environment: dict[str, str | None],
     aws_region: str,
     output: Path | None,
+    service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] | None = None,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
@@ -297,12 +323,17 @@ def print_dynamic_instances(
         service_table = "[i]n/a[/i]"
         if instance.running_services:
             service_table = Table(
-                "UserID",
-                "ProjectID",
-                "NodeID",
+                "User",
+                "Wallet",
+                "ProductName",
                 "ServiceName",
                 "ServiceVersion",
-                "ProductName",
+                Column("DB\nRUT", justify="center"),
+                Column("RUT\nHeartbeat", justify="right"),
+                Column("Rate\n(\U0001f4b6/h)", justify="right"),
+                Column("Elapsed", justify="right"),
+                Column("Total\n(\U0001f4b6)", justify="right"),
+                Column("Total\n(\U0001f4b2)", justify="right"),
                 "Created Since",
                 "Need intervention",
                 expand=True,
@@ -312,13 +343,33 @@ def print_dynamic_instances(
                 user_id_display = f"{service.user_id}"
                 if service.simcore_user_agent and service.simcore_user_agent.lower() != "undefined":
                     user_id_display = f"\U0001f916 {service.user_id}"
+                extra = (service_extra_info or {}).get((service.project_id, service.node_id))
+                if extra:
+                    if extra.email:
+                        user_id_display += f"\n[dim]{extra.email}[/dim]"
+                    if extra.wallet_id is not None:
+                        wallet_display = f"{extra.wallet_id}"
+                        if extra.wallet_name:
+                            wallet_display += f"\n[dim]{extra.wallet_name}[/dim]"
+                    else:
+                        wallet_display = "[dim]n/a[/dim]"
+                else:
+                    wallet_display = "[dim]n/a[/dim]"
+                rut_text, hb_text, rate_text, elapsed_text, total_text, usd_text = _format_dynamic_rut_cells(
+                    extra, time_now
+                )
                 service_table.add_row(
                     user_id_display,
-                    service.project_id,
-                    service.node_id,
+                    wallet_display,
+                    service.product_name,
                     service.service_name,
                     service.service_version,
-                    service.product_name,
+                    rut_text,
+                    hb_text,
+                    rate_text,
+                    elapsed_text,
+                    total_text,
+                    usd_text,
                     utils.timedelta_formatting(time_now - service.created_at, color_code=True),
                     f"{'[red]' if service.needs_manual_intervention else ''}"
                     f"{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
