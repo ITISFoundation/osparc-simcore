@@ -277,10 +277,10 @@ def build_job_to_worker(cluster: ComputationalCluster) -> dict[str, str]:
 def _format_dynamic_rut_cells(
     extra: DynamicServiceExtraInfo | None,
     time_now: arrow.Arrow,
-) -> tuple[str, str, str, str, str, str]:
-    """Returns (rut_text, heartbeat_text, rate_text, elapsed_str, total_text, usd_text)."""
+) -> tuple[str, str, str, str, str]:
+    """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text)."""
     if extra is None or extra.tracker_run is None:
-        return "[red]\u274c n/a[/red]", "n/a", "n/a", "n/a", "n/a", "n/a"
+        return "[red]\u274c n/a[/red]", "n/a", "n/a", "n/a", "n/a"
     run = extra.tracker_run
     cost = run.pricing_unit_cost
     rate = f"{cost:.1f}" if cost is not None else "n/a"
@@ -294,8 +294,7 @@ def _format_dynamic_rut_cells(
         if total_credits is not None and extra.usd_per_credit is not None
         else "n/a"
     )
-    heartbeat_age = utils.timedelta_formatting(now_naive - run.last_heartbeat_at.replace(tzinfo=None), color_code=True)
-    return "[green]\u2705 RUNNING[/green]", heartbeat_age, rate, elapsed, total, usd
+    return "[green]\u2705 RUNNING[/green]", rate, elapsed, total, usd
 
 
 def print_dynamic_instances(  # noqa: C901, PLR0912
@@ -329,7 +328,6 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 "ServiceName",
                 "ServiceVersion",
                 Column("DB\nRUT", justify="center"),
-                Column("RUT\nHeartbeat", justify="right"),
                 Column("Rate\n(\U0001f4b6/h)", justify="right"),
                 Column("Elapsed", justify="right"),
                 Column("Total\n(\U0001f4b6)", justify="right"),
@@ -355,9 +353,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                         wallet_display = "[dim]n/a[/dim]"
                 else:
                     wallet_display = "[dim]n/a[/dim]"
-                rut_text, hb_text, rate_text, elapsed_text, total_text, usd_text = _format_dynamic_rut_cells(
-                    extra, time_now
-                )
+                rut_text, rate_text, elapsed_text, total_text, usd_text = _format_dynamic_rut_cells(extra, time_now)
                 service_table.add_row(
                     user_id_display,
                     wallet_display,
@@ -365,7 +361,6 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                     service.service_name,
                     service.service_version,
                     rut_text,
-                    hb_text,
                     rate_text,
                     elapsed_text,
                     total_text,
