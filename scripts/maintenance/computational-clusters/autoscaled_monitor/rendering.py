@@ -26,6 +26,51 @@ from .models import (
 
 _DISK_FREE_THRESHOLD: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("15Gib")
 
+# Cache for EC2 instance type info (shared across calls)
+_instance_type_cache: dict[str, dict[str, Any]] = {}
+
+
+def _get_instance_type_info(ec2_instance: Instance) -> dict[str, Any]:
+    itype = ec2_instance.instance_type
+    if itype in _instance_type_cache:
+        return _instance_type_cache[itype]
+    try:
+        client = ec2_instance.meta.client
+        response = client.describe_instance_types(InstanceTypes=[itype])
+        info: dict[str, Any] = {}
+        if response["InstanceTypes"]:
+            it = response["InstanceTypes"][0]
+            info["vcpus"] = it.get("VCpuInfo", {}).get("DefaultVCpus", 0)
+            info["ram_mib"] = it.get("MemoryInfo", {}).get("SizeInMiB", 0)
+            gpu_info = it.get("GpuInfo", {})
+            gpus = gpu_info.get("Gpus", [])
+            info["gpu_count"] = sum(g.get("Count", 0) for g in gpus)
+            info["gpu_vram_mib"] = sum(g.get("MemoryInfo", {}).get("SizeInMiB", 0) * g.get("Count", 1) for g in gpus)
+        _instance_type_cache[itype] = info
+        return info
+    except Exception:
+        return {}
+
+
+def _format_instance_resources(ec2_instance: Instance) -> list[str]:
+    info = _get_instance_type_info(ec2_instance)
+    if not info:
+        return []
+    lines: list[str] = []
+    vcpus = info.get("vcpus", 0)
+    ram_mib = info.get("ram_mib", 0)
+    gpu_count = info.get("gpu_count", 0)
+    gpu_vram_mib = info.get("gpu_vram_mib", 0)
+    if vcpus:
+        lines.append(f"CPUs: {vcpus}")
+    if ram_mib:
+        lines.append(f"RAM: {TypeAdapter(ByteSize).validate_python(ram_mib * 1024 * 1024).human_readable()}")
+    if gpu_count:
+        lines.append(f"GPUs: {gpu_count}")
+    if gpu_vram_mib:
+        lines.append(f"VRAM: {TypeAdapter(ByteSize).validate_python(gpu_vram_mib * 1024 * 1024).human_readable()}")
+    return lines
+
 
 def _format_disk_usage_lines(disk_usage: list[DiskUsage], *, indent: str = "") -> list[str]:
     lines: list[str] = []
@@ -145,7 +190,7 @@ def build_cluster_tasks_table(  # noqa: C901
         Column("Worker", justify="center"),
         Column("Dask State", justify="center"),
         Column("DB State", justify="center"),
-        Column("Resources", overflow="fold"),
+        Column("Required resources", overflow="fold"),
         Column("Rate\n(\U0001f4b6/h)", justify="right"),
         Column("Elapsed", justify="right"),
         Column("Total\n(\U0001f4b6)", justify="right"),
@@ -153,7 +198,6 @@ def build_cluster_tasks_table(  # noqa: C901
         Column("Issues"),
         padding=(0, 1),
         expand=True,
-        row_styles=["", "dim"],
     )
 
     for row in sorted_rows:
@@ -352,7 +396,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 "ProductName",
                 Column("Project/Node", overflow="fold"),
                 "Service",
-                Column("Resources"),
+                Column("Resource limits"),
                 Column("DB\nRUT", justify="center"),
                 Column("Rate\n(\U0001f4b6/h)", justify="right"),
                 Column("Elapsed", justify="right"),
@@ -414,6 +458,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 f"ID: {instance.ec2_instance.instance_id}",
                 f"AMI: {instance.ec2_instance.image_id}",
                 f"Type: {instance.ec2_instance.instance_type}",
+                *_format_instance_resources(instance.ec2_instance),
                 f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                 f"PublicIP: {instance.ec2_instance.public_ip_address}",
                 f"PrivateIP: {instance.ec2_instance.private_ip_address}",
@@ -516,6 +561,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 f"ID: {cluster.primary.ec2_instance.id}",
                 f"AMI: {cluster.primary.ec2_instance.image_id}",
                 f"Type: {cluster.primary.ec2_instance.instance_type}",
+                *_format_instance_resources(cluster.primary.ec2_instance),
                 f"Up: {color_encoded_up_time}",
                 f"PublicIP: {cluster.primary.ec2_instance.public_ip_address}",
                 f"PrivateIP: {cluster.primary.ec2_instance.private_ip_address}",
@@ -576,6 +622,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                         f"{indent}ID: {worker.ec2_instance.id}",
                         f"{indent}AMI: {worker.ec2_instance.image_id}",
                         f"{indent}Type: {worker.ec2_instance.instance_type}",
+                        *[f"{indent}{line}" for line in _format_instance_resources(worker.ec2_instance)],
                         f"{indent}Up: {worker_up}",
                         f"{indent}PublicIP: {worker.ec2_instance.public_ip_address}",
                         f"{indent}PrivateIP: {worker.ec2_instance.private_ip_address}",

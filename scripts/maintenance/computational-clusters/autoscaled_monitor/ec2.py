@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Any, Final
 
 import boto3
 import orjson
@@ -164,3 +164,31 @@ def autoscaling_ec2_client(state: AppState) -> EC2ServiceResource:
         aws_access_key_id=state.environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
         aws_secret_access_key=state.environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )
+
+
+# Cache per instance type string to avoid repeated API calls
+_instance_type_cache: dict[str, dict[str, Any]] = {}
+
+
+@cached()
+@to_async
+def _describe_instance_type(ec2_resource: EC2ServiceResource, instance_type: str) -> dict[str, Any]:
+    if instance_type in _instance_type_cache:
+        return _instance_type_cache[instance_type]
+    client = ec2_resource.meta.client
+    response = client.describe_instance_types(InstanceTypes=[instance_type])
+    info: dict[str, Any] = {}
+    if response["InstanceTypes"]:
+        it = response["InstanceTypes"][0]
+        info["vcpus"] = it.get("VCpuInfo", {}).get("DefaultVCpus", 0)
+        info["ram_mib"] = it.get("MemoryInfo", {}).get("SizeInMiB", 0)
+        gpu_info = it.get("GpuInfo", {})
+        gpus = gpu_info.get("Gpus", [])
+        info["gpu_count"] = sum(g.get("Count", 0) for g in gpus)
+        info["gpu_vram_mib"] = sum(g.get("MemoryInfo", {}).get("SizeInMiB", 0) * g.get("Count", 1) for g in gpus)
+    _instance_type_cache[instance_type] = info
+    return info
+
+
+async def get_instance_type_info(ec2_resource: EC2ServiceResource, instance_type: str) -> dict[str, Any]:
+    return await _describe_instance_type(ec2_resource, instance_type)
