@@ -71,9 +71,6 @@ async def is_published_project(
     product_group_id: GroupID | None,
     connection: AsyncConnection | None = None,
 ) -> bool:
-    """
-    Single point of truth to define whether a project is published
-    """
     stmt = (
         sa.select(sa.literal(value=True))
         .select_from(projects)
