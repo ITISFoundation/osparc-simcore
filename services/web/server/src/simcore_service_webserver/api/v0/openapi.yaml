@@ -843,9 +843,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -865,9 +864,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -893,9 +891,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -913,9 +910,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -937,9 +933,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -963,17 +958,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       - name: uid
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Uid
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -994,17 +987,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       - name: uid
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Uid
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -1031,17 +1022,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       - name: uid
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Uid
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -1057,9 +1046,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
       - name: tree_view
         in: query
         required: false
@@ -1177,9 +1165,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -1204,9 +1191,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -1224,9 +1210,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -1261,17 +1246,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -1311,17 +1294,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -1361,17 +1342,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -1877,8 +1856,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Primary Group Id
       - name: user_name
@@ -1975,9 +1953,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -1996,9 +1973,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -2025,9 +2001,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -2086,9 +2061,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: payment_id
         in: path
         required: true
@@ -2115,9 +2089,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: payment_id
         in: path
         required: true
@@ -2141,9 +2114,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       responses:
         '202':
           description: Successfully initialized
@@ -2163,9 +2135,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: payment_method_id
         in: path
         required: true
@@ -2190,9 +2161,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -2212,9 +2182,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: payment_method_id
         in: path
         required: true
@@ -2241,9 +2210,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: payment_method_id
         in: path
         required: true
@@ -2267,9 +2235,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: payment_method_id
         in: path
         required: true
@@ -2303,9 +2270,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -2324,9 +2290,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -2353,17 +2318,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -2389,17 +2352,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -2425,17 +2386,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -2452,9 +2411,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -2918,9 +2876,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -2955,9 +2912,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Tag Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -3381,8 +3337,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Folder Id
       - name: workspace_id
@@ -3391,8 +3346,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspace Id
       responses:
@@ -3517,9 +3471,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Folder Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -3562,9 +3515,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Folder Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -3613,9 +3565,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Folder Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -3657,17 +3608,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Folder Id
-          minimum: 0
       - name: workspace_id
         in: path
         required: true
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspace Id
       responses:
@@ -3902,9 +3851,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -3936,9 +3884,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -4363,9 +4310,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: order_by
         in: query
         required: false
@@ -4478,9 +4424,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: order_by
         in: query
         required: false
@@ -4689,9 +4634,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: File Size
-          minimum: 0
       - name: download_link
         in: query
         required: true
@@ -4990,8 +4934,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Folder Id
       - name: workspace_id
@@ -5000,8 +4943,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspace Id
       - name: filters
@@ -5627,9 +5569,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -5662,9 +5603,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -5697,9 +5637,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -6088,8 +6027,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Folder Id
       responses:
@@ -6488,9 +6426,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: For Gid
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -6610,17 +6547,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       - name: pricing_unit_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Unit Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -6924,9 +6859,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -6953,17 +6887,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
       - name: amount
         in: query
         required: true
         schema:
           anyOf:
           - type: number
-            exclusiveMaximum: true
-            maximum: 0.0
+            exclusiveMaximum: 0.0
           - type: string
           title: Amount
       responses:
@@ -6991,8 +6923,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspace Id
       responses:
@@ -7038,8 +6969,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Wallet Id
       - name: filters
@@ -7145,8 +7075,7 @@ paths:
         schema:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Wallet Id
       - name: filters
@@ -7177,17 +7106,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       - name: pricing_unit_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Unit Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -7236,9 +7163,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -7305,9 +7231,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -7326,9 +7251,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -7354,17 +7278,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       - name: pricing_unit_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Unit Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -7383,17 +7305,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       - name: pricing_unit_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Unit Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -7419,9 +7339,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -7447,9 +7366,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -7468,9 +7386,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -7548,10 +7465,9 @@ paths:
         schema:
           type: integer
           minimum: 1
-          exclusiveMaximum: true
+          exclusiveMaximum: 1000
           default: 50
           title: Size
-          maximum: 1000
       - name: cursor
         in: query
         required: false
@@ -8256,9 +8172,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Folder Id
-          minimum: 0
       - name: force
         in: query
         required: false
@@ -8313,9 +8228,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Folder Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -8374,9 +8288,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       - name: force
         in: query
         required: false
@@ -8431,9 +8344,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -8604,9 +8516,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -8649,9 +8560,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -8700,9 +8610,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -8743,17 +8652,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -8803,17 +8710,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -8863,17 +8768,15 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       - name: group_id
         in: path
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Group Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -8914,9 +8817,8 @@ paths:
         required: true
         schema:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspace Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -9971,8 +9873,7 @@ components:
         expiration_2fa:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Expiration 2Fa
         next_url:
@@ -10139,8 +10040,7 @@ components:
         iteration:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Iteration
           description: the iteration id of the computation task (none if no task ran
@@ -10372,9 +10272,8 @@ components:
           title: Conversationid
         userGroupId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Usergroupid
-          minimum: 0
         content:
           type: string
           maxLength: 4096
@@ -10451,9 +10350,8 @@ components:
           title: Projectuuid
         userGroupId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Usergroupid
-          minimum: 0
         type:
           $ref: '#/components/schemas/ConversationType'
         fogbugzCaseId:
@@ -10597,10 +10495,8 @@ components:
         priceDollars:
           anyOf:
           - type: number
-            exclusiveMaximum: true
-            exclusiveMinimum: true
-            maximum: 1000000.0
-            minimum: 0.0
+            exclusiveMaximum: 1000000.0
+            exclusiveMinimum: 0.0
           - type: string
           title: Pricedollars
         comment:
@@ -12519,9 +12415,8 @@ components:
       title: ExecutableAccessRights
     ExtraCreditsUsdRangeInt:
       type: integer
-      exclusiveMaximum: true
+      exclusiveMaximum: 500
       minimum: 0
-      maximum: 500
     FeaturesDict:
       properties:
         age:
@@ -12830,15 +12725,13 @@ components:
         parentFolderId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Parentfolderid
         workspaceId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspaceid
       additionalProperties: false
@@ -12850,14 +12743,12 @@ components:
       properties:
         folderId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Folderid
-          minimum: 0
         parentFolderId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Parentfolderid
         name:
@@ -12880,21 +12771,18 @@ components:
         trashedBy:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Trashedby
           description: The primary gid of the user who trashed
         owner:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Owner
-          minimum: 0
         workspaceId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspaceid
         myAccessRights:
@@ -12921,8 +12809,7 @@ components:
         parentFolderId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Parentfolderid
       additionalProperties: false
@@ -13061,10 +12948,9 @@ components:
       properties:
         gid:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
           description: the group's unique ID
-          minimum: 0
         label:
           type: string
           title: Label
@@ -13099,10 +12985,9 @@ components:
       properties:
         gid:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
           description: the group's unique ID
-          minimum: 0
         label:
           type: string
           title: Label
@@ -13155,8 +13040,7 @@ components:
         uid:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Uid
         userName:
@@ -13180,8 +13064,7 @@ components:
         id:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Id
           description: the user's id
@@ -13196,8 +13079,7 @@ components:
         gid:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Gid
           description: the user primary gid
@@ -13368,15 +13250,13 @@ components:
         trialAccountDays:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Trialaccountdays
         extraCreditsInUsd:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Extracreditsinusd
         created:
@@ -13459,14 +13339,12 @@ components:
           title: Version
         walletId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Walletid
-          minimum: 0
         pricingUnitCostId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingunitcostid
-          minimum: 0
         pricingUnitCost:
           type: string
           title: Pricingunitcost
@@ -13483,9 +13361,8 @@ components:
           title: Numofseats
         purchasedByUser:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Purchasedbyuser
-          minimum: 0
         userEmail:
           $ref: '#/components/schemas/LowerCaseEmailStr'
         purchasedAt:
@@ -13539,9 +13416,8 @@ components:
           title: Licensedresources
         pricingPlanId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingplanid
-          minimum: 0
         categoryId:
           type: string
           maxLength: 100
@@ -13592,19 +13468,16 @@ components:
       properties:
         wallet_id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Wallet Id
-          minimum: 0
         pricing_plan_id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Plan Id
-          minimum: 0
         pricing_unit_id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricing Unit Id
-          minimum: 0
         num_of_seats:
           type: integer
           title: Num Of Seats
@@ -13625,14 +13498,12 @@ components:
       properties:
         cpus:
           type: number
-          exclusiveMinimum: true
+          exclusiveMinimum: 0.0
           title: Cpus
-          minimum: 0.0
         mem:
           type: number
-          exclusiveMinimum: true
+          exclusiveMinimum: 0.0
           title: Mem
-          minimum: 0.0
       type: object
       required:
       - cpus
@@ -13771,8 +13642,7 @@ components:
           anyOf:
           - items:
               type: integer
-              exclusiveMinimum: true
-              minimum: 0
+              exclusiveMinimum: 0
             type: array
           - type: 'null'
           title: Groupids
@@ -14033,9 +13903,8 @@ components:
       properties:
         id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Id
-          minimum: 0
         userName:
           type: string
           maxLength: 100
@@ -14495,10 +14364,8 @@ components:
         publishedPort:
           anyOf:
           - type: integer
-            exclusiveMaximum: true
-            exclusiveMinimum: true
-            maximum: 65535
-            minimum: 0
+            exclusiveMaximum: 65535
+            exclusiveMinimum: 0
           - type: 'null'
           title: Publishedport
           description: The ports where the service provides its interface
@@ -14530,12 +14397,10 @@ components:
           description: service host name within the network
         servicePort:
           type: integer
-          exclusiveMaximum: true
-          exclusiveMinimum: true
+          exclusiveMaximum: 65535
+          exclusiveMinimum: 0
           title: Serviceport
           description: port to access the service within the network
-          maximum: 65535
-          minimum: 0
         serviceBasepath:
           anyOf:
           - type: string
@@ -14735,8 +14600,7 @@ components:
         owner:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Owner
           description: Service owner primary group id or None if ownership still not
@@ -14760,8 +14624,7 @@ components:
           anyOf:
           - items:
               type: integer
-              exclusiveMinimum: true
-              minimum: 0
+              exclusiveMinimum: 0
             type: array
           - type: 'null'
           title: Current User Groupids
@@ -14922,10 +14785,9 @@ components:
       properties:
         limit:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Limit
           default: 20
-          minimum: 0
         total:
           type: integer
           minimum: 0
@@ -15326,9 +15188,8 @@ components:
           title: Idr
         walletId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Walletid
-          minimum: 0
         cardHolderName:
           anyOf:
           - type: string
@@ -15373,9 +15234,8 @@ components:
       properties:
         walletId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Walletid
-          minimum: 0
         paymentMethodId:
           type: string
           maxLength: 100
@@ -15406,9 +15266,8 @@ components:
           title: Pricedollars
         walletId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Walletid
-          minimum: 0
         osparcCredits:
           type: string
           title: Osparccredits
@@ -15579,9 +15438,8 @@ components:
       properties:
         pricingPlanId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingplanid
-          minimum: 0
         displayName:
           type: string
           title: Displayname
@@ -15628,9 +15486,8 @@ components:
       properties:
         pricingPlanId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingplanid
-          minimum: 0
         displayName:
           type: string
           title: Displayname
@@ -15671,9 +15528,8 @@ components:
       properties:
         pricingPlanId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingplanid
-          minimum: 0
         serviceKey:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -15697,9 +15553,8 @@ components:
       properties:
         pricingUnitId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingunitid
-          minimum: 0
         unitName:
           type: string
           title: Unitname
@@ -15744,9 +15599,8 @@ components:
       properties:
         pricingUnitId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingunitid
-          minimum: 0
         unitName:
           type: string
           title: Unitname
@@ -15824,8 +15678,7 @@ components:
         maxOpenStudiesPerUser:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Maxopenstudiesperuser
         isPaymentEnabled:
@@ -15959,15 +15812,13 @@ components:
         workspaceId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspaceid
         folderId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Folderid
       type: object
@@ -16085,8 +15936,7 @@ components:
         trashedBy:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Trashedby
           description: The primary gid of the user who trashed
@@ -16125,15 +15975,13 @@ components:
         workspaceId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspaceid
         folderId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Folderid
       type: object
@@ -16159,9 +16007,8 @@ components:
       properties:
         gid:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
         read:
           type: boolean
           title: Read
@@ -16285,8 +16132,7 @@ components:
         trashedBy:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Trashedby
           description: The primary gid of the user who trashed
@@ -16325,15 +16171,13 @@ components:
         workspaceId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Workspaceid
         folderId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Folderid
       type: object
@@ -16608,8 +16452,7 @@ components:
         currentUserGroupids:
           items:
             type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           type: array
           title: Currentusergroupids
           description: Current users in the project (if the project is locked, the
@@ -17092,9 +16935,8 @@ components:
           description: semantic version number of the node
         user_id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: User Id
-          minimum: 0
         project_id:
           type: string
           format: uuid
@@ -17123,19 +16965,15 @@ components:
           description: the service swarm internal host name
         service_port:
           type: integer
-          exclusiveMaximum: true
-          exclusiveMinimum: true
+          exclusiveMaximum: 65535
+          exclusiveMinimum: 0
           title: Service Port
           description: the service swarm internal port
-          maximum: 65535
-          minimum: 0
         published_port:
           anyOf:
           - type: integer
-            exclusiveMaximum: true
-            exclusiveMinimum: true
-            maximum: 65535
-            minimum: 0
+            exclusiveMaximum: 65535
+            exclusiveMinimum: 0
           - type: 'null'
           title: Published Port
           description: the service swarm published port if any
@@ -17543,9 +17381,8 @@ components:
       properties:
         pricingPlanId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Pricingplanid
-          minimum: 0
         displayName:
           type: string
           title: Displayname
@@ -17621,8 +17458,7 @@ components:
         wallet_id:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Wallet Id
         wallet_name:
@@ -17632,9 +17468,8 @@ components:
           title: Wallet Name
         user_id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: User Id
-          minimum: 0
         user_email:
           type: string
           title: User Email
@@ -17920,14 +17755,12 @@ components:
       properties:
         cpuUsage:
           type: number
-          exclusiveMinimum: true
+          exclusiveMinimum: 0.0
           title: Cpuusage
-          minimum: 0.0
         memUsage:
           type: number
-          exclusiveMinimum: true
+          exclusiveMinimum: 0.0
           title: Memusage
-          minimum: 0.0
       type: object
       required:
       - cpuUsage
@@ -18119,9 +17952,8 @@ components:
       properties:
         id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Id
-          minimum: 0
         name:
           type: string
           title: Name
@@ -18163,9 +17995,8 @@ components:
       properties:
         gid:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
         read:
           type: boolean
           title: Read
@@ -18429,10 +18260,9 @@ components:
       properties:
         minHeight:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Minheight
           description: minimum Height of the textarea
-          minimum: 0
       additionalProperties: false
       type: object
       required:
@@ -18462,8 +18292,7 @@ components:
     TrialAccountAnnotated:
       anyOf:
       - type: integer
-        exclusiveMinimum: true
-        minimum: 0
+        exclusiveMinimum: 0
       - type: 'null'
       description: Expiration time in days for trial accounts; `null` means not a
         trial account
@@ -18593,9 +18422,8 @@ components:
       properties:
         number:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Number
-          minimum: 0
         e_tag:
           type: string
           title: E Tag
@@ -18734,8 +18562,7 @@ components:
         userId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Userid
           description: Unique identifier of the user if an account was created
@@ -18750,8 +18577,7 @@ components:
         groupId:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 1
+            exclusiveMinimum: 1
           - type: 'null'
           title: Groupid
           description: Primary group ID of the user if an account was created
@@ -18892,14 +18718,12 @@ components:
       properties:
         userId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Userid
-          minimum: 0
         groupId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Groupid
-          minimum: 0
         userName:
           anyOf:
           - type: string
@@ -18932,9 +18756,8 @@ components:
       properties:
         user_id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: User Id
-          minimum: 0
         category:
           $ref: '#/components/schemas/NotificationCategory'
         actionable_path:
@@ -18967,8 +18790,7 @@ components:
         user_from_id:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: User From Id
         id:
@@ -18992,9 +18814,8 @@ components:
       properties:
         user_id:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: User Id
-          minimum: 0
         category:
           $ref: '#/components/schemas/NotificationCategory'
         actionable_path:
@@ -19027,8 +18848,7 @@ components:
         user_from_id:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: User From Id
       type: object
@@ -19113,9 +18933,8 @@ components:
       properties:
         walletId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Walletid
-          minimum: 0
         name:
           type: string
           maxLength: 100
@@ -19128,9 +18947,8 @@ components:
           title: Description
         owner:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Owner
-          minimum: 0
         thumbnail:
           anyOf:
           - type: string
@@ -19159,9 +18977,8 @@ components:
       properties:
         walletId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Walletid
-          minimum: 0
         name:
           type: string
           maxLength: 100
@@ -19174,9 +18991,8 @@ components:
           title: Description
         owner:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Owner
-          minimum: 0
         thumbnail:
           anyOf:
           - type: string
@@ -19209,9 +19025,8 @@ components:
       properties:
         gid:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
         read:
           type: boolean
           title: Read
@@ -19330,9 +19145,8 @@ components:
       properties:
         workspaceId:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Workspaceid
-          minimum: 0
         name:
           type: string
           title: Name
@@ -19363,8 +19177,7 @@ components:
         trashedBy:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Trashedby
           description: The primary gid of the user who trashed
@@ -19392,9 +19205,8 @@ components:
       properties:
         gid:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
         read:
           type: boolean
           title: Read
@@ -19543,8 +19355,7 @@ components:
         expiration_2fa:
           anyOf:
           - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+            exclusiveMinimum: 0
           - type: 'null'
           title: Expiration 2Fa
       type: object
@@ -19597,9 +19408,8 @@ components:
       properties:
         gid:
           type: integer
-          exclusiveMinimum: true
+          exclusiveMinimum: 0
           title: Gid
-          minimum: 0
         accessible:
           type: boolean
           title: Accessible
