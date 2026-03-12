@@ -10,7 +10,6 @@ import rich
 from mypy_boto3_ec2.service_resource import Instance
 from pydantic import ByteSize, TypeAdapter
 from rich.console import Group
-from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
 
@@ -294,7 +293,7 @@ def print_dynamic_instances(
         title_style=Style(color="red", encircle=True),
         expand=True,
     )
-    for instance in track(instances, description="Preparing dynamic autoscaled instances details..."):
+    for instance in instances:
         service_table = "[i]n/a[/i]"
         if instance.running_services:
             service_table = Table(

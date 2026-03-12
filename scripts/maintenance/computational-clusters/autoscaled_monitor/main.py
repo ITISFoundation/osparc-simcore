@@ -137,10 +137,7 @@ def main(
         if DEPLOY_SSH_KEY_PARSER.parse(f"{file_path.name}") is not None or UNIFIED_SSH_KEY_PARSE.parse(
             f"{file_path.name}"
         ):
-            rich.print(
-                f"will be using following ssh_key_path: {file_path}. "
-                "TIP: if wrong adapt the code or manually remove some of them."
-            )
+            rich.print(f"[dim]SSH key: {file_path}[/dim]")
             state.ssh_key_path = file_path
             break
     if not state.ssh_key_path:

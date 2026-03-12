@@ -10,7 +10,7 @@ import parse
 import rich
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from pydantic import ByteSize
-from rich.progress import track
+from rich.console import Console
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from . import dask, db, ec2, ssh, utils
@@ -27,6 +27,8 @@ from .models import (
     TaskId,
     TaskState,
 )
+
+console = Console()
 
 
 @utils.to_async
@@ -108,8 +110,9 @@ async def analyze_dynamic_instances(
                 )
             )
         except (AssertionError, asyncssh.Error, OSError):
-            rich.print("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
+            console.log("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
 
+        console.log(f"Fetching details for {len(dynamic_instances)} dynamic instance(s) via SSH...")
         details = await asyncio.gather(
             *(
                 _fetch_instance_details(state, instance, ssh_key_path, bastion_conn=bastion_conn)
@@ -153,10 +156,11 @@ async def analyze_computational_instances(  # noqa: C901
                     )
                 )
             except (AssertionError, asyncssh.Error, OSError):
-                rich.print(
+                console.log(
                     "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
                 )
 
+            console.log(f"Fetching disk space for {len(computational_instances)} computational instance(s)...")
             all_disk_spaces = await asyncio.gather(
                 *(
                     ssh.get_available_disk_space(
@@ -171,6 +175,7 @@ async def analyze_computational_instances(  # noqa: C901
                 return_exceptions=True,
             )
 
+            console.log(f"Fetching Dask IPs for {len(computational_instances)} computational instance(s)...")
             all_dask_ips = await asyncio.gather(
                 *(
                     ssh.get_dask_ip(
@@ -186,10 +191,7 @@ async def analyze_computational_instances(  # noqa: C901
             )
 
         computational_clusters = []
-        for instance, disk_space, dask_ip in track(
-            zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True),
-            description="Collecting computational clusters data...",
-        ):
+        for instance, disk_space, dask_ip in zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True):
             if isinstance(disk_space, ByteSize):
                 instance.disk_space = disk_space
             if isinstance(dask_ip, str):
@@ -230,6 +232,7 @@ async def analyze_computational_instances(  # noqa: C901
                 if cluster.primary.user_id == instance.user_id and cluster.primary.wallet_id == instance.wallet_id:
                     cluster.workers.append(instance)
 
+    console.log(f"Found {len(computational_clusters)} computational cluster(s)")
     return computational_clusters
 
 
@@ -242,11 +245,12 @@ async def parse_computational_clusters(
 ) -> list[ComputationalCluster]:
     computational_instances = [
         comp_instance
-        for instance in track(instances, description="Parsing computational instances...")
+        for instance in instances
         if (comp_instance := await parse_computational(state, instance))
         and (user_id is None or comp_instance.user_id == user_id)
         and (wallet_id is None or comp_instance.wallet_id == wallet_id)
     ]
+    console.log(f"Parsed {len(computational_instances)} computational instance(s)")
     return await analyze_computational_instances(state, computational_instances, ssh_key_path)
 
 
@@ -257,11 +261,8 @@ async def parse_dynamic_instances(
     user_id: int | None,
     wallet_id: int | None,  # noqa: ARG001
 ) -> list[DynamicInstance]:
-    dynamic_instances = [
-        dyn_instance
-        for instance in track(instances, description="Parsing dynamic instances...")
-        if (dyn_instance := parse_dynamic(state, instance))
-    ]
+    dynamic_instances = [dyn_instance for instance in instances if (dyn_instance := parse_dynamic(state, instance))]
+    console.log(f"Parsed {len(dynamic_instances)} dynamic instance(s)")
 
     if dynamic_instances and ssh_key_path:
         dynamic_instances = await analyze_dynamic_instances(state, dynamic_instances, ssh_key_path, user_id)
