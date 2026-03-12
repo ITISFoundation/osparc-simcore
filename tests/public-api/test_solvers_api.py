@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-import random
+import secrets
 from typing import NamedTuple
 
 import osparc
@@ -55,7 +55,7 @@ def test_get_all_releases(solvers_api: osparc.SolversApi):
 
     assert all_releases
 
-    one_solver = random.choice(all_releases)
+    one_solver = secrets.choice(all_releases)
     all_releases_of_given_solver: list[osparc.Solver] = solvers_api.list_solver_releases(one_solver.id)
 
     latest: osparc.Solver | None = None

@@ -70,7 +70,7 @@ class _JLabWaitForWebSocket:
 def _wait_for_optimization_complete(run_button):
     bg_color = run_button.evaluate("el => getComputedStyle(el).backgroundColor")
     if bg_color != "rgb(0, 128, 0)":
-        msg = f"Optimization not finished yet: {bg_color=}, {run_button=}"
+        msg = "Optimization not finished yet: {bg_color=}, {run_button=}"
         raise ValueError(msg)
 
 
