@@ -112,14 +112,17 @@ async def analyze_dynamic_instances(
         except (AssertionError, asyncssh.Error, OSError):
             console.log("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
 
-        console.log(f"Fetching details for {len(dynamic_instances)} dynamic instance(s) via SSH...")
-        details = await asyncio.gather(
-            *(
-                _fetch_instance_details(state, instance, ssh_key_path, bastion_conn=bastion_conn)
-                for instance in dynamic_instances
-            ),
-            return_exceptions=True,
-        )
+        with console.status(
+            f"[bold]Fetching details for {len(dynamic_instances)} dynamic instance(s) via SSH...[/bold]"
+        ):
+            details = await asyncio.gather(
+                *(
+                    _fetch_instance_details(state, instance, ssh_key_path, bastion_conn=bastion_conn)
+                    for instance in dynamic_instances
+                ),
+                return_exceptions=True,
+            )
+        console.log(f"Fetched details for {len(dynamic_instances)} dynamic instance(s) via SSH")
 
     return [
         replace(
@@ -160,35 +163,41 @@ async def analyze_computational_instances(  # noqa: C901
                     "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
                 )
 
-            console.log(f"Fetching disk space for {len(computational_instances)} computational instance(s)...")
-            all_disk_spaces = await asyncio.gather(
-                *(
-                    ssh.get_available_disk_space(
-                        state,
-                        instance.ec2_instance,
-                        SSH_USER_NAME,
-                        ssh_key_path,
-                        bastion_conn=bastion_conn,
+            if computational_instances:
+                with console.status(
+                    f"[bold]Fetching disk space for {len(computational_instances)} computational instance(s)...[/bold]"
+                ):
+                    all_disk_spaces = await asyncio.gather(
+                        *(
+                            ssh.get_available_disk_space(
+                                state,
+                                instance.ec2_instance,
+                                SSH_USER_NAME,
+                                ssh_key_path,
+                                bastion_conn=bastion_conn,
+                            )
+                            for instance in computational_instances
+                        ),
+                        return_exceptions=True,
                     )
-                    for instance in computational_instances
-                ),
-                return_exceptions=True,
-            )
 
-            console.log(f"Fetching Dask IPs for {len(computational_instances)} computational instance(s)...")
-            all_dask_ips = await asyncio.gather(
-                *(
-                    ssh.get_dask_ip(
-                        state,
-                        instance.ec2_instance,
-                        SSH_USER_NAME,
-                        ssh_key_path,
-                        bastion_conn=bastion_conn,
+                with console.status(
+                    f"[bold]Fetching Dask IPs for {len(computational_instances)} computational instance(s)...[/bold]"
+                ):
+                    all_dask_ips = await asyncio.gather(
+                        *(
+                            ssh.get_dask_ip(
+                                state,
+                                instance.ec2_instance,
+                                SSH_USER_NAME,
+                                ssh_key_path,
+                                bastion_conn=bastion_conn,
+                            )
+                            for instance in computational_instances
+                        ),
+                        return_exceptions=True,
                     )
-                    for instance in computational_instances
-                ),
-                return_exceptions=True,
-            )
+                console.log(f"Fetched SSH details for {len(computational_instances)} computational instance(s)")
 
         computational_clusters = []
         for instance, disk_space, dask_ip in zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True):
@@ -197,18 +206,19 @@ async def analyze_computational_instances(  # noqa: C901
             if isinstance(dask_ip, str):
                 instance.dask_ip = dask_ip
             if instance.role is InstanceRole.manager:
-                (
-                    scheduler_info,
-                    datasets_on_cluster,
-                    processing_jobs,
-                    all_tasks,
-                    task_resources,
-                    task_worker_states,
-                ) = await dask.get_scheduler_details(
-                    state,
-                    instance.ec2_instance,
-                    bastion_conn,
-                )
+                with console.status(f"[bold]Fetching Dask scheduler details for {instance.name}...[/bold]"):
+                    (
+                        scheduler_info,
+                        datasets_on_cluster,
+                        processing_jobs,
+                        all_tasks,
+                        task_resources,
+                        task_worker_states,
+                    ) = await dask.get_scheduler_details(
+                        state,
+                        instance.ec2_instance,
+                        bastion_conn,
+                    )
 
                 assert isinstance(datasets_on_cluster, tuple)
                 assert isinstance(processing_jobs, dict)
