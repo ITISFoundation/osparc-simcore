@@ -16,7 +16,11 @@ from mypy_boto3_ec2.service_resource import Instance
 from pydantic import ByteSize
 
 from .constants import DYN_SERVICES_NAMING_CONVENTION, SSH_USER_NAME
-from .ec2 import get_bastion_instance_from_remote_instance, get_computational_bastion_instance
+from .ec2 import (
+    get_bastion_instance_from_remote_instance,
+    get_computational_bastion_instance,
+    get_dynamic_bastion_instance,
+)
 from .models import AppState, DockerContainer, DynamicService
 
 _DEFAULT_SSH_PORT: Final[int] = 22
@@ -33,7 +37,7 @@ async def ssh_tunnel(
     private_key_path: Path,
     remote_bind_host: str,
     remote_bind_port: int,
-    bastion_conn: asyncssh.SSHClientConnection | None = None,
+    bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> AsyncGenerator[tuple[str, int], Any]:
     """Open an asyncssh TCP port-forward and yield (local_host, local_port)."""
     try:
@@ -321,4 +325,26 @@ async def computational_bastion_connection(
             rich.print(
                 "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
             )
+        yield bastion_conn
+
+
+@contextlib.asynccontextmanager
+async def dynamic_bastion_connection(
+    state: AppState,
+) -> AsyncGenerator[asyncssh.SSHClientConnection | None, Any]:
+    """Open a bastion connection for dynamic instances, yielding None on failure."""
+    assert state.ssh_key_path  # nosec
+    bastion_conn: asyncssh.SSHClientConnection | None = None
+    async with contextlib.AsyncExitStack() as stack:
+        try:
+            bastion_instance = await get_dynamic_bastion_instance(state)
+            bastion_conn = await stack.enter_async_context(
+                connect_bastion(
+                    bastion_instance,
+                    username=SSH_USER_NAME,
+                    private_key_path=state.ssh_key_path,
+                )
+            )
+        except (AssertionError, asyncssh.Error, OSError):
+            rich.print("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
         yield bastion_conn

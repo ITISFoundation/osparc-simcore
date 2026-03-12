@@ -91,40 +91,41 @@ async def list_dynamic_instances_from_ec2(
 _DEFAULT_BASTION_NAME: Final[str] = "bastion-host"
 
 
-@cached()
-async def get_computational_bastion_instance(state: AppState) -> Instance:
-    assert state.ec2_resource_clusters_keeper  # nosec
-    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]  # nosec
+async def _get_bastion_instance(
+    ec2_resource: EC2ServiceResource,
+    key_name: str,
+) -> Instance:
     instances = await _list_running_ec2_instances(
-        state.ec2_resource_clusters_keeper,
-        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+        ec2_resource,
+        key_name,
         {},
         None,
         None,
         None,
     )
-
     possible_bastions = list(filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances))
     assert len(possible_bastions) == 1
     return possible_bastions[0]
+
+
+@cached()
+async def get_computational_bastion_instance(state: AppState) -> Instance:
+    assert state.ec2_resource_clusters_keeper  # nosec
+    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]  # nosec
+    return await _get_bastion_instance(
+        state.ec2_resource_clusters_keeper,
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+    )
 
 
 @cached()
 async def get_dynamic_bastion_instance(state: AppState) -> Instance:
     assert state.ec2_resource_autoscaling  # nosec
     assert state.environment["EC2_INSTANCES_KEY_NAME"]  # nosec
-    instances = await _list_running_ec2_instances(
+    return await _get_bastion_instance(
         state.ec2_resource_autoscaling,
         state.environment["EC2_INSTANCES_KEY_NAME"],
-        {},
-        None,
-        None,
-        None,
     )
-
-    possible_bastions = list(filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances))
-    assert len(possible_bastions) == 1
-    return possible_bastions[0]
 
 
 def cluster_keeper_region(state: AppState) -> str:
