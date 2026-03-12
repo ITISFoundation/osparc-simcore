@@ -118,7 +118,7 @@ wheels = [
 [[package]]
 name = "autoscaled-monitor"
 version = "1.0.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "aiocache" },
     { name = "ansible" },
