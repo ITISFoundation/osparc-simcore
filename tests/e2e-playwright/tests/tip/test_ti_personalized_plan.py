@@ -22,7 +22,7 @@ from pytest_simcore.helpers.playwright import (
     app_mode_trigger_next_app,
     expected_service_running,
 )
-from tenacity import retry, stop_after_attempt, stop_after_delay, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
@@ -61,30 +61,16 @@ class _JLabWaitForWebSocket:
 
 
 @retry(
-    stop=stop_after_delay(_JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(2),
-    reraise=True,
-)
-def _wait_for_optimization_complete(run_button):
-    bg_color = run_button.evaluate("el => getComputedStyle(el).backgroundColor")
-    if bg_color != "rgb(0, 128, 0)":
-        msg = f"Optimization not finished yet: {bg_color=}, {run_button=}"
-        raise ValueError(msg)
-
-
-@retry(
     stop=stop_after_attempt(5),
     wait=wait_fixed(60),
     reraise=True,
 )
 def _wait_for_personalization_complete(start_button, outputs_button):
     icon_class = start_button.locator("i").first.evaluate("el => el.className")
-    if "fa-spinner" in icon_class:
-        msg = f"Personalization still running: {icon_class=}"
-        raise ValueError(msg)
-    assert "fa-check" in icon_class, f"Expected fa-check icon, got {icon_class=}"
     outputs_text = outputs_button.inner_text()
-    assert "Outputs (6)" in outputs_text, f"Expected 'Outputs (6)', got {outputs_text=}"
+    if "fa-check" not in icon_class or "Outputs (6)" not in outputs_text:
+        msg = f"Personalization still running: {icon_class=}, {outputs_text=}"
+        raise ValueError(msg)
 
 
 def test_personalized_classic_ti_plan(
