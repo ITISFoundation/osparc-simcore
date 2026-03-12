@@ -18,10 +18,21 @@ from .models import (
     ComputationalCluster,
     ComputationalTask,
     DaskTask,
+    DiskUsage,
     DynamicInstance,
     DynamicServiceExtraInfo,
     TaskReconciliationRow,
 )
+
+_DISK_FREE_THRESHOLD: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("15Gib")
+
+
+def _format_disk_usage_lines(disk_usage: list[DiskUsage], *, indent: str = "") -> list[str]:
+    lines: list[str] = []
+    for du in disk_usage:
+        color_free = utils.color_encode_with_threshold(du.free.human_readable(), du.free, _DISK_FREE_THRESHOLD)
+        lines.append(f"{indent}{du.mount_point}: {color_free} / {du.total.human_readable()}")
+    return lines
 
 
 def create_graylog_permalinks(environment: dict[str, str | None], instance: Instance) -> str:
@@ -383,9 +394,6 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
         elif instance.is_warm_buffer:
             service_table = "[dim]warm buffer - no services running[/dim]"
 
-        color_encoded_free_space = utils.color_encode_with_threshold(
-            instance.disk_space.human_readable(), instance.disk_space, TypeAdapter(ByteSize).validate_python("15Gib")
-        )
         instance_info = "\n".join(
             [
                 f"{utils.color_encode_with_state(instance.name, instance.ec2_instance)}",
@@ -395,13 +403,13 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                 f"PublicIP: {instance.ec2_instance.public_ip_address}",
                 f"PrivateIP: {instance.ec2_instance.private_ip_address}",
+                *_format_disk_usage_lines(instance.disk_usage),
             ]
         )
         if instance.is_warm_buffer:
             instance_info = f"[dim]{instance_info}[/dim]"
         graylog_line = f"Graylog: {create_graylog_permalinks(environment, instance.ec2_instance)}"
-        disk_line = f"/mnt/docker(free): {color_encoded_free_space}"
-        right_content = Group(graylog_line, disk_line, service_table)
+        right_content = Group(graylog_line, service_table)
         table.add_row(
             instance_info,
             right_content,
@@ -474,11 +482,6 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
         color_encoded_up_time = utils.timedelta_formatting(
             time_now - cluster.primary.ec2_instance.launch_time, color_code=True
         )
-        color_encoded_free_docker_space = utils.color_encode_with_threshold(
-            cluster.primary.disk_space.human_readable(),
-            cluster.primary.disk_space,
-            TypeAdapter(ByteSize).validate_python("15Gib"),
-        )
         dask_state_display = cluster.primary.dask_ip
         if "Not Ready" in dask_state_display:
             dask_state_display = f"[red]{dask_state_display}[/red]"
@@ -494,6 +497,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 f"Up: {color_encoded_up_time}",
                 f"PublicIP: {cluster.primary.ec2_instance.public_ip_address}",
                 f"PrivateIP: {cluster.primary.ec2_instance.private_ip_address}",
+                *_format_disk_usage_lines(cluster.primary.disk_usage),
             ]
         )
         if cluster.primary.is_warm_buffer:
@@ -507,9 +511,8 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                     _task_rows, job_to_worker=job_to_worker, usd_per_credit=usd_per_credit
                 )
         cluster_links_table = build_cluster_links_table(environment, cluster)
-        primary_disk_line = f"/mnt/docker(free): {color_encoded_free_docker_space}"
         dask_state_line = f"DaskScheduler: {dask_state_display}"
-        right_parts: list[object] = [cluster_links_table, dask_state_line, primary_disk_line]
+        right_parts: list[object] = [cluster_links_table, dask_state_line]
         if _tasks_table is not None:
             right_parts.append(_tasks_table)
         right_content: object = Group(*right_parts)
@@ -540,11 +543,6 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                     for job_id in job_ids
                 ]
                 table.add_row()
-                color_encoded_free_docker_space = utils.color_encode_with_threshold(
-                    worker.disk_space.human_readable(),
-                    worker.disk_space,
-                    TypeAdapter(ByteSize).validate_python("15Gib"),
-                )
                 indent = "  "
                 worker_label = utils.color_encode_with_state(f"Worker {index + 1}", worker.ec2_instance)
                 worker_up = utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)
@@ -559,6 +557,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                         f"{indent}PublicIP: {worker.ec2_instance.public_ip_address}",
                         f"{indent}PrivateIP: {worker.ec2_instance.private_ip_address}",
                         f"{indent}DaskWorkerIP: {worker.dask_ip}",
+                        *_format_disk_usage_lines(worker.disk_usage, indent=indent),
                         "",
                     ]
                 )
@@ -566,11 +565,10 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                     worker_info = f"[dim]{worker_info}[/dim]"
                 worker_graylog = create_graylog_permalinks(environment, worker.ec2_instance)
                 metrics_table = build_worker_metrics_table(worker_dask_metrics, worker_graylog)
-                worker_disk_line = f"/mnt/docker(free): {color_encoded_free_docker_space}"
                 worker_tasks = build_worker_tasks_table(
                     worker_processing_jobs, cluster.task_resources, cluster.task_worker_states
                 )
-                worker_right_parts: list[object] = [metrics_table, worker_disk_line]
+                worker_right_parts: list[object] = [metrics_table]
                 if worker_tasks is not None:
                     worker_right_parts.append(worker_tasks)
                 worker_right: object = Group(*worker_right_parts)
@@ -642,7 +640,10 @@ def print_summary_as_json(
                     }
                     for service in instance.running_services
                 ],
-                "disk_space": instance.disk_space.human_readable(),
+                "disk_usage": [
+                    {"mount": du.mount_point, "free": du.free.human_readable(), "total": du.total.human_readable()}
+                    for du in instance.disk_usage
+                ],
             }
             for instance in dynamic_instances
         ],
@@ -654,7 +655,10 @@ def print_summary_as_json(
                     "is_warm_buffer": cluster.primary.is_warm_buffer,
                     "user_id": cluster.primary.user_id,
                     "wallet_id": cluster.primary.wallet_id,
-                    "disk_space": cluster.primary.disk_space.human_readable(),
+                    "disk_usage": [
+                        {"mount": du.mount_point, "free": du.free.human_readable(), "total": du.total.human_readable()}
+                        for du in cluster.primary.disk_usage
+                    ],
                     "last_heartbeat": (
                         cluster.primary.last_heartbeat.isoformat() if cluster.primary.last_heartbeat else "n/a"
                     ),
@@ -664,7 +668,14 @@ def print_summary_as_json(
                         "name": worker.name,
                         "ec2_instance_id": worker.ec2_instance.instance_id,
                         "is_warm_buffer": worker.is_warm_buffer,
-                        "disk_space": worker.disk_space.human_readable(),
+                        "disk_usage": [
+                            {
+                                "mount": du.mount_point,
+                                "free": du.free.human_readable(),
+                                "total": du.total.human_readable(),
+                            }
+                            for du in worker.disk_usage
+                        ],
                     }
                     for worker in cluster.workers
                 ],

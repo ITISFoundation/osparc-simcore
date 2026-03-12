@@ -34,12 +34,19 @@ class AppState:
     dynamic_bastion: Instance | None = None
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DiskUsage:
+    mount_point: str
+    free: ByteSize
+    total: ByteSize
+
+
 @dataclass(slots=True, kw_only=True)
 class AutoscaledInstance:
     name: str
     ec2_instance: Instance
-    disk_space: ByteSize
-    is_warm_buffer: bool
+    disk_usage: list[DiskUsage] = field(default_factory=list)
+    is_warm_buffer: bool = False
 
 
 class InstanceRole(str, Enum):

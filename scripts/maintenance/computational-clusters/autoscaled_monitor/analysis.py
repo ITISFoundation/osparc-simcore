@@ -8,18 +8,18 @@ import asyncssh
 import parse
 import rich
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
-from pydantic import ByteSize
 from rich.console import Console
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from . import dask, db, ssh, utils
-from .constants import SSH_USER_NAME, UNDEFINED_BYTESIZE
+from .constants import SSH_USER_NAME
 from .models import (
     AppState,
     ComputationalCluster,
     ComputationalInstance,
     ComputationalTask,
     DaskTask,
+    DiskUsage,
     DynamicInstance,
     DynamicService,
     InstanceRole,
@@ -43,7 +43,7 @@ def parse_computational(state: AppState, instance: Instance) -> ComputationalIns
             name=name,
             last_heartbeat=last_heartbeat,
             ec2_instance=instance,
-            disk_space=UNDEFINED_BYTESIZE,
+            disk_usage=[],
             dask_ip="unknown",
             is_warm_buffer=utils.get_warm_buffer_tag(instance),
         )
@@ -58,7 +58,7 @@ def parse_dynamic(state: AppState, instance: Instance) -> DynamicInstance | None
             name=name,
             ec2_instance=instance,
             running_services=[],
-            disk_space=UNDEFINED_BYTESIZE,
+            disk_usage=[],
             is_warm_buffer=utils.get_warm_buffer_tag(instance),
         )
     return None
@@ -70,8 +70,8 @@ async def _fetch_instance_details(
     ssh_key_path: Path,
     *,
     bastion_conn: asyncssh.SSHClientConnection | None,
-) -> tuple[list[DynamicService] | BaseException, ByteSize | BaseException]:
-    running_services, disk_space = await asyncio.gather(
+) -> tuple[list[DynamicService] | BaseException, list[DiskUsage] | BaseException]:
+    running_services, disk_usage = await asyncio.gather(
         ssh.list_running_dyn_services(
             state,
             instance.ec2_instance,
@@ -79,7 +79,7 @@ async def _fetch_instance_details(
             ssh_key_path,
             bastion_conn=bastion_conn,
         ),
-        ssh.get_available_disk_space(
+        ssh.get_disk_usage(
             state,
             instance.ec2_instance,
             SSH_USER_NAME,
@@ -88,7 +88,7 @@ async def _fetch_instance_details(
         ),
         return_exceptions=True,
     )
-    return running_services, disk_space
+    return running_services, disk_usage
 
 
 async def analyze_dynamic_instances(
@@ -112,12 +112,12 @@ async def analyze_dynamic_instances(
         replace(
             instance,
             running_services=instance_details[0],
-            disk_space=instance_details[1],
+            disk_usage=instance_details[1],
         )
         for instance, instance_details in zip(dynamic_instances, details, strict=True)
         if isinstance(instance_details, tuple)
         and isinstance(instance_details[0], list)
-        and isinstance(instance_details[1], ByteSize)
+        and isinstance(instance_details[1], list)
         and (user_id is None or any(s.user_id == user_id for s in instance_details[0]))
     ]
 
@@ -127,15 +127,15 @@ async def analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
     ssh_key_path: Path | None,
 ) -> list[ComputationalCluster]:
-    all_disk_spaces: list[ByteSize | BaseException] = [UNDEFINED_BYTESIZE] * len(computational_instances)
+    all_disk_usages: list[list[DiskUsage] | BaseException] = [[]] * len(computational_instances)
     all_dask_ips: list[str | BaseException] = [""] * len(computational_instances)
 
     async with ssh.computational_bastion_connection(state) as bastion_conn:
         if ssh_key_path is not None and computational_instances:
-            console.log(f"Fetching disk space for {len(computational_instances)} computational instance(s)...")
-            all_disk_spaces = await asyncio.gather(
+            console.log(f"Fetching disk usage for {len(computational_instances)} computational instance(s)...")
+            all_disk_usages = await asyncio.gather(
                 *(
-                    ssh.get_available_disk_space(
+                    ssh.get_disk_usage(
                         state,
                         instance.ec2_instance,
                         SSH_USER_NAME,
@@ -164,9 +164,9 @@ async def analyze_computational_instances(
             console.log(f"Fetched SSH details for {len(computational_instances)} computational instance(s)")
 
         computational_clusters = []
-        for instance, disk_space, dask_ip in zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True):
-            if isinstance(disk_space, ByteSize):
-                instance.disk_space = disk_space
+        for instance, disk_usage, dask_ip in zip(computational_instances, all_disk_usages, all_dask_ips, strict=True):
+            if isinstance(disk_usage, list):
+                instance.disk_usage = disk_usage
             if isinstance(dask_ip, str):
                 instance.dask_ip = dask_ip
             if instance.role is InstanceRole.manager:
