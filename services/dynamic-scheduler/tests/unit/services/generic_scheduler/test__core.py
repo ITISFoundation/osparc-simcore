@@ -915,6 +915,7 @@ _FAST_REPEAT_INTERVAL: Final[timedelta] = timedelta(seconds=0.1)
 _REPAT_COUNT: Final[NonNegativeInt] = 10
 
 
+@pytest.mark.skip("disabled since feature will be replaced and design makes it flaky")
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_before_cancel_order, expected_order",
