@@ -62,6 +62,7 @@ async def ssh_tunnel(
                 await listener.wait_closed()
     except TimeoutError:
         _logger.warning("Timeout while establishing ssh tunnel")
+        raise
     except Exception:
         _logger.exception("Unexpected issue with ssh tunnel")
         raise
@@ -253,7 +254,7 @@ async def list_running_dyn_services(  # noqa: C901
 
             if result.exit_status != 0:
                 rich.print(result.stderr)
-                raise typer.Abort(result.stderr)
+                raise typer.Abort
 
             output = result.stdout or ""
             assert isinstance(output, str)  # nosec
