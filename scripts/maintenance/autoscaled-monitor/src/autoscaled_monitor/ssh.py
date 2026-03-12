@@ -51,7 +51,6 @@ async def ssh_tunnel(
                         port=_DEFAULT_SSH_PORT,
                         username=username,
                         client_keys=[str(private_key_path)],
-                        known_hosts=None,
                         keepalive_interval=10,
                     )
                 )
@@ -81,7 +80,6 @@ async def connect_bastion(
         port=_DEFAULT_SSH_PORT,
         username=username,
         client_keys=[str(private_key_path)],
-        known_hosts=None,
         keepalive_interval=10,
     ) as conn:
         yield conn
@@ -105,7 +103,6 @@ async def ssh_instance(
                 port=_DEFAULT_SSH_PORT,
                 username=username,
                 client_keys=[str(private_key_path)],
-                known_hosts=None,
             ) as conn:
                 yield conn
         elif bastion_conn is not None:
@@ -114,7 +111,6 @@ async def ssh_instance(
                 port=_DEFAULT_SSH_PORT,
                 username=username,
                 client_keys=[str(private_key_path)],
-                known_hosts=None,
             ) as conn:
                 yield conn
         else:
@@ -125,7 +121,6 @@ async def ssh_instance(
                     port=_DEFAULT_SSH_PORT,
                     username=username,
                     client_keys=[str(state.ssh_key_path)],
-                    known_hosts=None,
                     keepalive_interval=10,
                 ) as new_bastion_conn,
                 new_bastion_conn.connect_ssh(
@@ -133,7 +128,6 @@ async def ssh_instance(
                     port=_DEFAULT_SSH_PORT,
                     username=username,
                     client_keys=[str(private_key_path)],
-                    known_hosts=None,
                 ) as conn,
             ):
                 yield conn
