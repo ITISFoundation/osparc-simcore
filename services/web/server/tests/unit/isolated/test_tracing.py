@@ -24,7 +24,6 @@ def mock_webserver_service_environment(
         {
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://opentelemetry-collector",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
-            "REST_SWAGGER_API_DOC_ENABLED": "False",
         },
     )
 
