@@ -131,11 +131,10 @@ qx.Class.define("osparc.po.SendEmail", {
       }
 
       // if the user is not in the preview page, force them there so they can see the final email before sending
-      const previewPage = emailEditor.getChildControl("email-content-editor-and-preview").getChildControl("preview-page");
-      if (!previewPage.isVisible()) {
-        const tabView = previewPage.getLayoutParent().getLayoutParent();
-        tabView.setSelection([previewPage]);
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      if (!emailContentEditor.isPreviewActive()) {
         osparc.FlashMessenger.logAs(this.tr("Please preview the email before sending"), "WARNING");
+        emailContentEditor.makePreviewActive();
         return;
       }
 
