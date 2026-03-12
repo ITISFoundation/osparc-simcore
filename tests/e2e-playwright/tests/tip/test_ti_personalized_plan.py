@@ -78,7 +78,7 @@ def _wait_for_personalization_complete(start_button, outputs_button):
         raise ValueError(msg)
     assert "fa-check" in icon_class, f"Expected fa-check icon, got {icon_class=}"
     outputs_text = outputs_button.inner_text()
-    assert "Outputs (3)" in outputs_text, f"Expected 'Outputs (3)', got {outputs_text=}"
+    assert "Outputs (6)" in outputs_text, f"Expected 'Outputs (6)', got {outputs_text=}"
 
 
 def test_personalized_classic_ti_plan(
