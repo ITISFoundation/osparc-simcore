@@ -368,6 +368,7 @@ printf "$$rows" "Flower" "http://$(get_my_ip).nip.io:5555";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
+printf "$$rows" "Mailpit" "http://$(get_my_ip).nip.io:8025";\
 printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
 printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
