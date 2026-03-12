@@ -7,6 +7,7 @@ from simcore_postgres_database.models.users import UserRole
 from ..db.plugin import get_database_engine_legacy
 from ..products import products_service
 from ..users import users_service
+from ..users.exceptions import UserNotFoundError
 from ..workspaces.api import get_workspace
 from ._access_rights_repository import get_project_owner, is_published_project
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
@@ -145,7 +146,7 @@ async def has_user_project_access_rights(
             app, project_id=project_id, user_id=user_id, product_name=product_name
         )
         return getattr(prj_access_rights, permission, False) is not False
-    except (ProjectInvalidRightsError, ProjectNotFoundError):
+    except (ProjectInvalidRightsError, ProjectNotFoundError, UserNotFoundError):
         return False
 
 
