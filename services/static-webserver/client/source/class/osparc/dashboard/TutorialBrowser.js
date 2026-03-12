@@ -272,7 +272,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       const tasks = osparc.store.PollTasks.getInstance().getPublishTemplateTasks();
       tasks.forEach(task => {
         const studyName = "";
-        this.taskToTemplateReceived(task, studyName);
+        this.taskToTemplateReceived(task, studyName, osparc.data.model.StudyUI.TUTORIAL_TYPE);
       });
     },
     // TASKS //

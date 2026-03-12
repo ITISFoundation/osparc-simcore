@@ -696,6 +696,21 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "form-button-transparent": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          textColor: "text",
+          decorator: "no-border",
+          backgroundColor: "transparent",
+        };
+        if (states.disabled) {
+          style.cursor = "not-allowed";
+        }
+        return style;
+      }
+    },
+
     "form-button-outlined": {
       include: "form-button",
       style: function(states) {
@@ -1087,6 +1102,12 @@ qx.Theme.define("osparc.theme.Appearance", {
         decorator: state.hovered || state.focused ? "form-button-danger-hover" : "form-button-danger",
         backgroundColor: state.hovered || state.focused || state.disabled ? "default-button-hover-background" : "error",
         textColor: state.disabled ? "text": "black",
+      })
+    },
+    "danger-button-transparent": {
+      include: "form-button-transparent",
+      style: state => ({
+        textColor: state.disabled ? "text": "error",
       })
     },
 

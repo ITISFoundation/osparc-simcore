@@ -131,11 +131,10 @@ qx.Class.define("osparc.po.SendEmail", {
       }
 
       // if the user is not in the preview page, force them there so they can see the final email before sending
-      const previewPage = emailEditor.getChildControl("email-content-editor-and-preview").getChildControl("preview-page");
-      if (!previewPage.isVisible()) {
-        const tabView = previewPage.getLayoutParent().getLayoutParent();
-        tabView.setSelection([previewPage]);
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      if (!emailContentEditor.isPreviewActive()) {
         osparc.FlashMessenger.logAs(this.tr("Please preview the email before sending"), "WARNING");
+        emailContentEditor.makePreviewActive();
         return;
       }
 
@@ -166,20 +165,27 @@ qx.Class.define("osparc.po.SendEmail", {
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
         .then(task => {
-          task.addListener("resultReceived", () => {
-            osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
-            notSending();
-          });
-          task.addListener("pollingError", e => {
-            osparc.FlashMessenger.logError(e.getData());
-            notSending();
-          });
+          osparc.task.SendEmail.sendEmailTaskReceived(task, subject);
+          const text = this.tr("Sending email(s) process started and added to the background tasks");
+          osparc.FlashMessenger.logAs(text, "INFO");
+          notSending();
+          this.__emailSent();
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
           osparc.FlashMessenger.logError(errorMsg);
           notSending();
         });
+    },
+
+    __emailSent: function() {
+      // cleared "To" field
+      const emailEditor = this.getChildControl("email-editor");
+      emailEditor.clearRecipients();
+
+      // switch to Editor tab
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      emailContentEditor.setSelection([emailContentEditor.getChildControl("editor-page")]);
     },
   }
 });

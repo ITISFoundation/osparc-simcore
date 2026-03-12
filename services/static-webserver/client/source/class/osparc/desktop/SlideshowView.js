@@ -72,7 +72,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
-    slideshowToolbar.addListener("slidesStop", () => this.getStudy().getUi().setMode("pipeline"), this);
+    slideshowToolbar.addListener("slidesStop", () => {
+      this.getStudy().getUi().setMode("pipeline");
+      if (this.__nodeView) {
+        this.__nodeView.closeInstructionsWindow();
+      }
+    }, this);
     this._add(slideshowToolbar);
 
     const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
@@ -294,11 +299,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__prevNextButtons.setNode(node);
 
         if (view) {
-          if (this.__nodeView && this.__nodeView.getInstructionsWindow()) {
-            this.__nodeView.getInstructionsWindow().close();
-          }
-          if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
-            this.__mainView.remove(this.__nodeView);
+          if (this.__nodeView) {
+            this.__nodeView.closeInstructionsWindow();
+            if (this.__mainView.getChildren().includes(this.__nodeView)) {
+              this.__mainView.remove(this.__nodeView);
+            }
           }
           this.__mainView.addAt(view, 1, {
             flex: 1

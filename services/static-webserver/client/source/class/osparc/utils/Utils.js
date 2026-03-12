@@ -564,22 +564,24 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    getEditButton: function(isVisible = true) {
+    getEditButton: function(isVisible = true, toolTipText = qx.locale.Manager.tr("Edit")) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
-        appearance: "form-button-outlined",
+        appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
         maxWidth: 20,
+        toolTipText,
         visibility: isVisible ? "visible" : "excluded"
       });
     },
 
-    getLinkButton: function(isVisible = true) {
+    getLinkButton: function(isVisible = true, toolTipText = "") {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/link/12").set({
-        appearance: "form-button-outlined",
+        appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
         maxWidth: 20,
+        toolTipText,
         visibility: isVisible ? "visible" : "excluded"
       });
     },
@@ -992,9 +994,8 @@ qx.Class.define("osparc.utils.Utils", {
       return new Promise((resolve, reject) => {
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
-        const download = true;
         const dataStore = osparc.store.Data.getInstance();
-        dataStore.getPresignedLink(download, locationId, fileId)
+        dataStore.getPresignedLink(true, locationId, fileId)
           .then(presignedLinkData => {
             if (presignedLinkData.resp) {
               const link = presignedLinkData.resp.link;

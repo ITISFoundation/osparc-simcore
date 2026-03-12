@@ -227,29 +227,13 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     },
 
     __openInstructions: function() {
-      if (this.getInstructionsWindow()) {
-        this.getInstructionsWindow().center();
+      if (this.__instructionsWindow) {
+        this.__instructionsWindow.center();
         return;
       }
-      const desc = this.getNode().getSlideshowInstructions();
-      if (desc) {
-        const markdownInstructions = new osparc.ui.markdown.Markdown().set({
-          value: desc,
-          padding: 3,
-          font: "text-14"
-        });
-        const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
-        const width = 600;
-        const minHeight = 200;
-        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(markdownInstructions, title, width, minHeight).set({
-          modal: false,
-          clickAwayClose: false
-        });
-        markdownInstructions.addListener("resized", () => win.center());
 
-        win.getContentElement().setStyles({
-          "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
-        });
+      const win = this.__instructionsWindow = osparc.node.slideshow.Instructions.popUpInWindow(this.getNode());
+      if (win) {
         win.addListener("close", () => {
           this.__instructionsWindow = null;
           osparc.utils.Utils.makeButtonBlink(this.__instructionsBtn, 2);
@@ -257,8 +241,10 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       }
     },
 
-    getInstructionsWindow: function() {
-      return this.__instructionsWindow;
+    closeInstructionsWindow: function() {
+      if (this.__instructionsWindow) {
+        this.__instructionsWindow.close();
+      }
     },
 
     getHeaderLayout: function() {

@@ -221,12 +221,11 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           const filename = value.filename || osparc.file.FilePicker.getFilenameFromPath(value);
           valueWidget.setValue(filename);
           valueWidget.eTag = value["eTag"];
-          const download = true;
           const locationId = value.store;
           const fileId = value.path;
           // request the presigned link only when the widget is shown
           valueWidget.addListenerOnce("appear", () => {
-            osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+            osparc.store.Data.getInstance().getPresignedLink(true, locationId, fileId)
               .then(presignedLinkData => {
                 if ("resp" in presignedLinkData && presignedLinkData.resp) {
                   valueWidget.setUrl(presignedLinkData.resp.link);

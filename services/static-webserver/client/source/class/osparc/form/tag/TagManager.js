@@ -111,7 +111,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
       });
 
       const addTagButton = this.__addTagButton = new qx.ui.form.Button().set({
-        appearance: "form-button-outlined",
+        appearance: "strong-button",
         label: this.tr("New Tag"),
         icon: "@FontAwesome5Solid/plus/14",
         alignX: "center",
