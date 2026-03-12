@@ -13,7 +13,6 @@ dependencies = [
   "types-boto3",
   "parse",
   "pydantic[email]",
-  "pylint",
   "python-dotenv",
   "typer",
   "rich",
