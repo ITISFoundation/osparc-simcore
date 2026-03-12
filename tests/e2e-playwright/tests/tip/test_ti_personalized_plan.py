@@ -40,6 +40,12 @@ _JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 _PERSONALIZATION_MAX_TIME: Final[int] = 10 * MINUTE
 
 
+_MODELING_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
+_MODELING_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_MODELING_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + _MODELING_DOCKER_PULLING_MAX_TIME + _MODELING_MAX_STARTUP_TIME
+)
+
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
 _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
@@ -152,3 +158,17 @@ def test_personalized_classic_ti_plan(
             page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
             outputs_button = page.get_by_test_id("outputsBtn")
             _wait_for_personalization_complete(start_button, outputs_button)
+
+    with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
+        with expected_service_running(
+            page=page,
+            node_id=node_ids[3],
+            websocket=log_in_and_out,
+            timeout=(_MODELING_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _MODELING_MAX_STARTUP_TIME),
+            press_start_button=False,
+            product_url=product_url,
+            is_service_legacy=is_service_legacy,
+        ) as service_running:
+            app_mode_trigger_next_app(page)
+        modeling_iframe = service_running.iframe_locator
+        assert modeling_iframe
