@@ -1,6 +1,5 @@
 import contextlib
 import datetime
-import logging
 import re
 from collections import defaultdict
 from collections.abc import AsyncGenerator
@@ -26,8 +25,6 @@ from .models import AppState, DiskUsage, DockerContainer, DynamicService
 _DEFAULT_SSH_PORT: Final[int] = 22
 _LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
 
-_logger = logging.getLogger(__name__)
-
 
 @contextlib.asynccontextmanager
 async def ssh_tunnel(
@@ -51,6 +48,7 @@ async def ssh_tunnel(
                         port=_DEFAULT_SSH_PORT,
                         username=username,
                         client_keys=[str(private_key_path)],
+                        known_hosts=None,
                         keepalive_interval=10,
                     )
                 )
@@ -61,10 +59,10 @@ async def ssh_tunnel(
                 listener.close()
                 await listener.wait_closed()
     except TimeoutError:
-        _logger.warning("Timeout while establishing ssh tunnel")
+        rich.print("[yellow]Timeout while establishing ssh tunnel[/yellow]")
         raise
-    except Exception:
-        _logger.exception("Unexpected issue with ssh tunnel")
+    except Exception as exc:
+        rich.print(f"[red]Unexpected issue with ssh tunnel: {exc}[/red]")
         raise
 
 
@@ -81,6 +79,7 @@ async def connect_bastion(
         port=_DEFAULT_SSH_PORT,
         username=username,
         client_keys=[str(private_key_path)],
+        known_hosts=None,
         keepalive_interval=10,
     ) as conn:
         yield conn
@@ -104,6 +103,7 @@ async def ssh_instance(
                 port=_DEFAULT_SSH_PORT,
                 username=username,
                 client_keys=[str(private_key_path)],
+                known_hosts=None,
             ) as conn:
                 yield conn
         elif bastion_conn is not None:
@@ -112,6 +112,7 @@ async def ssh_instance(
                 port=_DEFAULT_SSH_PORT,
                 username=username,
                 client_keys=[str(private_key_path)],
+                known_hosts=None,
             ) as conn:
                 yield conn
         else:
@@ -122,6 +123,7 @@ async def ssh_instance(
                     port=_DEFAULT_SSH_PORT,
                     username=username,
                     client_keys=[str(state.ssh_key_path)],
+                    known_hosts=None,
                     keepalive_interval=10,
                 ) as new_bastion_conn,
                 new_bastion_conn.connect_ssh(
@@ -129,11 +131,12 @@ async def ssh_instance(
                     port=_DEFAULT_SSH_PORT,
                     username=username,
                     client_keys=[str(private_key_path)],
+                    known_hosts=None,
                 ) as conn,
             ):
                 yield conn
-    except (asyncssh.Error, OSError):
-        _logger.warning("Could not connect to ssh instance %s", instance.id)
+    except (asyncssh.Error, OSError) as exc:
+        rich.print(f"[yellow]Could not connect to ssh instance {instance.id}: {exc}[/yellow]")
         raise
 
 
@@ -211,16 +214,15 @@ async def get_dask_ip(
 
             if result.exit_status != 0:
                 error_message = (result.stderr or "").strip()
-                _logger.error(
-                    "Inspecting Dask IP command failed with exit status %s: %s",
-                    result.exit_status,
-                    error_message,
+                rich.print(
+                    "[red]Inspecting Dask IP command failed with exit status "
+                    f"{result.exit_status}: {error_message}[/red]"
                 )
                 return "Not docker network Found / Drained / Not Ready"
 
             ip_address = (result.stdout or "").strip()
             if not ip_address:
-                _logger.error("Dask IP address not found in the output")
+                rich.print("[red]Dask IP address not found in the output[/red]")
                 return "Not IP Found / Drained / Not Ready"
             assert isinstance(ip_address, str)  # nosec
             return ip_address
