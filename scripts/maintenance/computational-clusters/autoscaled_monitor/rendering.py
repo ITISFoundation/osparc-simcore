@@ -48,9 +48,11 @@ def format_cluster_identity(
     email: str | None,
     wallet_name: str | None,
     product_name: str | None,
+    is_bot: bool = False,
 ) -> str:
     wid = str(wallet_id) if wallet_id is not None else "n/a"
-    identity = f"Cluster details for [bold cyan]UserID: {user_id}[/bold cyan]"
+    bot_prefix = "\U0001f916 " if is_bot else ""
+    identity = f"Cluster details for [bold cyan]{bot_prefix}UserID: {user_id}[/bold cyan]"
     if email:
         identity += f" [dim]({email})[/dim]"
     identity += f", [bold yellow]WalletID: {wid}[/bold yellow]"
@@ -139,6 +141,7 @@ def build_cluster_tasks_table(  # noqa: C901
 
     table = Table(
         Column("Project/Node/Job", overflow="fold"),
+        Column("Service", overflow="fold"),
         Column("Worker", justify="center"),
         Column("Dask State", justify="center"),
         Column("DB State", justify="center"),
@@ -150,14 +153,17 @@ def build_cluster_tasks_table(  # noqa: C901
         Column("Issues"),
         padding=(0, 1),
         expand=True,
+        row_styles=["", "dim"],
     )
 
     for row in sorted_rows:
         job_id_short = row.job_id[:36] + "\u2026" if len(row.job_id) > 37 else row.job_id  # noqa: PLR2004
         if row.comp_task is not None:
             id_cell = f"P: {row.comp_task.project_id}\nN: {row.comp_task.node_id}\nJ: {job_id_short}"
+            service_cell = f"{row.comp_task.service_name}:{row.comp_task.service_version}"
         else:
             id_cell = f"[red]J: {job_id_short}\n(ghost — no comp_task)[/red]"
+            service_cell = "[dim]n/a[/dim]"
 
         if row.worker_state and row.worker_state != row.dask_state:
             combined = f"{row.dask_state}\n{row.worker_state}"
@@ -194,6 +200,7 @@ def build_cluster_tasks_table(  # noqa: C901
 
         table.add_row(
             id_cell,
+            service_cell,
             worker_text,
             dask_state_text,
             db_state_cell,
@@ -203,6 +210,7 @@ def build_cluster_tasks_table(  # noqa: C901
             total_text,
             usd_text,
             issue_text,
+            end_section=True,
         )
 
     return table
@@ -259,6 +267,7 @@ def build_worker_tasks_table(
 def build_cluster_links_table(
     environment: dict[str, str | None],
     cluster: ComputationalCluster,
+    dask_state_display: str,
 ) -> Table:
     table = Table(
         Column(""),
@@ -270,7 +279,7 @@ def build_cluster_links_table(
     )
     ip = cluster.primary.ec2_instance.public_ip_address
     table.add_row("Graylog", create_graylog_permalinks(environment, cluster.primary.ec2_instance))
-    table.add_row("Dask Scheduler", f"http://{ip}:8787")
+    table.add_row("Dask Scheduler", f"http://{ip}:8787 — {dask_state_display}")
     table.add_row("Prometheus", f"http://{ip}:9090")
     return table
 
@@ -320,10 +329,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] | None,
 ) -> None:
     time_now = arrow.utcnow()
-    product_names = {s.product_name for inst in instances for s in inst.running_services if s.product_name}
     table_title = f"dynamic autoscaled instances: {aws_region}"
-    if product_names:
-        table_title += f" — {', '.join(sorted(product_names))}"
     table = Table(
         Column("Instance"),
         Column(
@@ -346,6 +352,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 "ProductName",
                 Column("Project/Node", overflow="fold"),
                 "Service",
+                Column("Resources"),
                 Column("DB\nRUT", justify="center"),
                 Column("Rate\n(\U0001f4b6/h)", justify="right"),
                 Column("Elapsed", justify="right"),
@@ -353,7 +360,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 Column("Total\n(\U0001f4b2)", justify="right"),
                 "Issues",
                 expand=True,
-                padding=(0, 0),
+                padding=(0, 1),
             )
             for service in instance.running_services:
                 user_id_display = f"{service.user_id}"
@@ -375,18 +382,28 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                     extra, service.created_at, time_now
                 )
                 issues = "[red]needs intervention[/red]" if service.needs_manual_intervention else "[green]OK[/green]"
+                resources_parts: list[str] = []
+                if service.nano_cpus > 0:
+                    resources_parts.append(f"CPU: {service.nano_cpus / 1e9:.1f}")
+                if service.memory > 0:
+                    resources_parts.append(
+                        f"RAM: {TypeAdapter(ByteSize).validate_python(service.memory).human_readable()}"
+                    )
+                resources_text = "\n".join(resources_parts) if resources_parts else "[dim]n/a[/dim]"
                 service_table.add_row(
                     user_id_display,
                     wallet_display,
                     service.product_name,
                     f"P: {service.project_id}\nN: {service.node_id}",
-                    f"{service.service_name}\n{service.service_version}",
+                    f"{service.service_name}:{service.service_version}",
+                    resources_text,
                     rut_text,
                     rate_text,
                     elapsed_text,
                     total_text,
                     usd_text,
                     issues,
+                    end_section=True,
                 )
         elif instance.is_warm_buffer:
             service_table = "[dim]warm buffer - no services running[/dim]"
@@ -426,7 +443,10 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
     output: Path | None,
     *,
     cluster_task_rows: dict[tuple[int, int | None], list[TaskReconciliationRow]] | None,
-    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]] | None,
+    cluster_extra_info: dict[
+        tuple[int, int | None], tuple[str | None, str | None, str | None, float | None, str | None]
+    ]
+    | None,
     compact: bool,
 ) -> None:
     """Print computational clusters.
@@ -441,7 +461,11 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
         job_to_worker = build_job_to_worker(cluster)
 
         extra = (cluster_extra_info or {}).get((cluster.primary.user_id, cluster.primary.wallet_id))
-        email, wallet_name, product_name, usd_per_credit = extra if extra else (None, None, None, None)
+        email, wallet_name, product_name, usd_per_credit, simcore_user_agent = (
+            extra if extra else (None, None, None, None, None)
+        )
+
+        is_bot = bool(simcore_user_agent and simcore_user_agent.lower() != "undefined")
 
         color_encoded_heartbeat = (
             utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat)
@@ -455,6 +479,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 email=email,
                 wallet_name=wallet_name,
                 product_name=product_name,
+                is_bot=is_bot,
             )
             + f" — Heartbeat: {color_encoded_heartbeat}"
         )
@@ -505,11 +530,12 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
             _task_rows = cluster_task_rows.get((cluster.primary.user_id, cluster.primary.wallet_id))
             if _task_rows:
                 _tasks_table = build_cluster_tasks_table(
-                    _task_rows, job_to_worker=job_to_worker, usd_per_credit=usd_per_credit
+                    _task_rows,
+                    job_to_worker=job_to_worker,
+                    usd_per_credit=usd_per_credit,
                 )
-        cluster_links_table = build_cluster_links_table(environment, cluster)
-        dask_state_line = f"DaskScheduler: {dask_state_display}"
-        right_parts: list[object] = [cluster_links_table, dask_state_line]
+        cluster_links_table = build_cluster_links_table(environment, cluster, dask_state_display)
+        right_parts: list[object] = [cluster_links_table]
         if _tasks_table is not None:
             right_parts.append(_tasks_table)
         right_content: object = Group(*right_parts)
@@ -590,14 +616,15 @@ def print_computational_tasks(
         "State in DB",
         "State in Dask cluster",
         title=f"{len(tasks)} Tasks running for {user_id=}/{wallet_id=}",
-        padding=(0, 0),
+        padding=(0, 1),
+        row_styles=["", "dim"],
         title_style=Style(color="red", encircle=True),
     )
 
     for index, (db_task, dask_task) in enumerate(tasks):
         if db_task:
             id_cell = f"P: {db_task.project_id}\nN: {db_task.node_id}"
-            service_cell = f"{db_task.service_name}\n{db_task.service_version}"
+            service_cell = f"{db_task.service_name}:{db_task.service_version}"
             state_cell = f"{db_task.state}"
         else:
             id_cell = "[red][bold]intervention needed[/bold][/red]"

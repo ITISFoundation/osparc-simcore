@@ -237,7 +237,7 @@ async def get_dask_ip(
         return "Not Ready"
 
 
-async def list_running_dyn_services(
+async def list_running_dyn_services(  # noqa: C901
     state: AppState,
     instance: Instance,
     username: str,
@@ -293,6 +293,42 @@ async def list_running_dyn_services(
                         return True
                 return False
 
+            # Fetch resource limits from dy-sidecar_ and dy-proxy_ containers
+            resource_by_node: dict[str, tuple[int, int]] = {}
+            inspect_containers: list[str] = []
+            container_to_node: dict[str, str] = {}
+            resource_prefixes = ("dy-sidecar_", "dy-proxy_")
+            for nid, containers in running_service.items():
+                for c in containers:
+                    # c.name is the full docker ps line; extract just the container name (first tab field)
+                    actual_name = c.name.split("\t")[0]
+                    if actual_name.startswith(resource_prefixes):
+                        inspect_containers.append(actual_name)
+                        container_to_node[actual_name] = nid
+            if inspect_containers:
+                inspect_cmd = (
+                    "docker inspect --format='{{.Name}}|||{{.HostConfig.NanoCpus}}|||{{.HostConfig.Memory}}' "
+                    + " ".join(inspect_containers)
+                )
+                res = await _run_command(conn, inspect_cmd)
+                if res.stdout:
+                    for line in res.stdout.strip().splitlines():
+                        parts = line.lstrip("/").split("|||")
+                        if len(parts) == 3:  # noqa: PLR2004
+                            cname = parts[0]
+                            try:
+                                nano = int(parts[1])
+                                mem = int(parts[2])
+                            except ValueError:
+                                continue
+                            nid = container_to_node.get(cname, "")
+                            if nid:
+                                prev = resource_by_node.get(nid, (0, 0))
+                                resource_by_node[nid] = (
+                                    prev[0] + nano,
+                                    prev[1] + mem,
+                                )
+
             return [
                 DynamicService(
                     node_id=node_id,
@@ -306,6 +342,8 @@ async def list_running_dyn_services(
                     service_version=containers[0].service_version,
                     product_name=containers[0].product_name,
                     simcore_user_agent=containers[0].simcore_user_agent,
+                    nano_cpus=resource_by_node.get(node_id, (0, 0))[0],
+                    memory=resource_by_node.get(node_id, (0, 0))[1],
                 )
                 for node_id, containers in running_service.items()
             ]

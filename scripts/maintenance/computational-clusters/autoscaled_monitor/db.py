@@ -166,6 +166,7 @@ async def list_resource_tracker_running_computational_services(
             sa.column("last_heartbeat_at"),
             sa.column("missed_heartbeat_counter"),
             sa.column("pricing_unit_cost"),
+            sa.column("simcore_user_agent"),
         )
         .select_from(sa.table("resource_tracker_service_runs"))
         .where(
@@ -192,6 +193,7 @@ async def list_resource_tracker_running_computational_services(
             last_heartbeat_at=row.last_heartbeat_at,
             missed_heartbeat_counter=row.missed_heartbeat_counter,
             pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
+            simcore_user_agent=row.simcore_user_agent,
         )
         for row in rows
     ]
@@ -276,6 +278,7 @@ async def get_dynamic_service_extra_info(
                 sa.column("last_heartbeat_at"),
                 sa.column("missed_heartbeat_counter"),
                 sa.column("pricing_unit_cost"),
+                sa.column("simcore_user_agent"),
             )
             .select_from(sa.table("resource_tracker_service_runs"))
             .where(
@@ -299,6 +302,7 @@ async def get_dynamic_service_extra_info(
                 last_heartbeat_at=row.last_heartbeat_at,
                 missed_heartbeat_counter=row.missed_heartbeat_counter,
                 pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
+                simcore_user_agent=row.simcore_user_agent,
             )
 
         # Batch-fetch wallet names
