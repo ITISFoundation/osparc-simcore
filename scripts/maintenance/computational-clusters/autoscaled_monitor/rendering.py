@@ -276,17 +276,18 @@ def build_job_to_worker(cluster: ComputationalCluster) -> dict[str, str]:
 
 def _format_dynamic_rut_cells(
     extra: DynamicServiceExtraInfo | None,
+    service_created_at: datetime.datetime,
     time_now: arrow.Arrow,
 ) -> tuple[str, str, str, str, str]:
     """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text)."""
+    elapsed = utils.timedelta_formatting(time_now - service_created_at, color_code=True)
     if extra is None or extra.tracker_run is None:
-        return "[red]\u274c n/a[/red]", "n/a", "n/a", "n/a", "n/a"
+        return "[red]\u274c n/a[/red]", "n/a", elapsed, "n/a", "n/a"
     run = extra.tracker_run
     cost = run.pricing_unit_cost
     rate = f"{cost:.1f}" if cost is not None else "n/a"
     now_naive = time_now.datetime.replace(tzinfo=None)
     elapsed_hours = (now_naive - run.started_at.replace(tzinfo=None)).total_seconds() / 3600
-    elapsed = f"{elapsed_hours:.1f}h"
     total_credits = cost * elapsed_hours if cost is not None else None
     total = f"{total_credits:.1f}" if total_credits is not None else "n/a"
     usd = (
@@ -325,6 +326,8 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 "User",
                 "Wallet",
                 "ProductName",
+                "ProjectID",
+                "NodeID",
                 "ServiceName",
                 "ServiceVersion",
                 Column("DB\nRUT", justify="center"),
@@ -332,8 +335,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 Column("Elapsed", justify="right"),
                 Column("Total\n(\U0001f4b6)", justify="right"),
                 Column("Total\n(\U0001f4b2)", justify="right"),
-                "Created Since",
-                "Need intervention",
+                "Issues",
                 expand=True,
                 padding=(0, 0),
             )
@@ -353,11 +355,16 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                         wallet_display = "[dim]n/a[/dim]"
                 else:
                     wallet_display = "[dim]n/a[/dim]"
-                rut_text, rate_text, elapsed_text, total_text, usd_text = _format_dynamic_rut_cells(extra, time_now)
+                rut_text, rate_text, elapsed_text, total_text, usd_text = _format_dynamic_rut_cells(
+                    extra, service.created_at, time_now
+                )
+                issues = "[red]needs intervention[/red]" if service.needs_manual_intervention else "[green]OK[/green]"
                 service_table.add_row(
                     user_id_display,
                     wallet_display,
                     service.product_name,
+                    service.project_id,
+                    service.node_id,
                     service.service_name,
                     service.service_version,
                     rut_text,
@@ -365,9 +372,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                     elapsed_text,
                     total_text,
                     usd_text,
-                    utils.timedelta_formatting(time_now - service.created_at, color_code=True),
-                    f"{'[red]' if service.needs_manual_intervention else ''}"
-                    f"{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
+                    issues,
                 )
         elif instance.is_warm_buffer:
             service_table = "[dim]warm buffer - no services running[/dim]"
