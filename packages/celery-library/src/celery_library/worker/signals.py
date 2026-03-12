@@ -10,11 +10,11 @@ from celery.signals import (  # type: ignore[import-untyped]
     worker_process_shutdown,
     worker_shutdown,
 )
+from common_library.heartbeat import update_heartbeat
 from servicelib.celery.app_server import BaseAppServer
 from settings_library.celery import CeleryPoolType, CelerySettings
 
 from .app_server import get_app_server, set_app_server
-from .heartbeat import update_heartbeat
 
 
 def _worker_init_wrapper(app: Celery, app_server_factory: Callable[[], BaseAppServer]) -> Callable[..., None]:
