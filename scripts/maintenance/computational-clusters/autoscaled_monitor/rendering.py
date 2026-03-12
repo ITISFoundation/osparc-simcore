@@ -382,16 +382,26 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
         extra = (cluster_extra_info or {}).get((cluster.primary.user_id, cluster.primary.wallet_id))
         email, wallet_name, product_name, usd_per_credit = extra if extra else (None, None, None, None)
 
+        color_encoded_heartbeat = (
+            utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat)
+            if cluster.primary.last_heartbeat
+            else "n/a"
+        )
+        col2_header = (
+            format_cluster_identity(
+                cluster.primary.user_id,
+                cluster.primary.wallet_id,
+                email=email,
+                wallet_name=wallet_name,
+                product_name=product_name,
+            )
+            + f" — Heartbeat: {color_encoded_heartbeat}"
+        )
+
         table = Table(
             Column("Instance", justify="left", overflow="fold", ratio=1),
             Column(
-                format_cluster_identity(
-                    cluster.primary.user_id,
-                    cluster.primary.wallet_id,
-                    email=email,
-                    wallet_name=wallet_name,
-                    product_name=product_name,
-                ),
+                col2_header,
                 overflow="fold",
                 ratio=3,
             ),
@@ -404,19 +414,16 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
         color_encoded_up_time = utils.timedelta_formatting(
             time_now - cluster.primary.ec2_instance.launch_time, color_code=True
         )
-        color_encoded_heartbeat = (
-            utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat)
-            if cluster.primary.last_heartbeat
-            else "n/a"
-        )
         color_encoded_free_docker_space = utils.color_encode_with_threshold(
             cluster.primary.disk_space.human_readable(),
             cluster.primary.disk_space,
             TypeAdapter(ByteSize).validate_python("15Gib"),
         )
-        dask_ip_display = cluster.primary.dask_ip
-        if "Not Ready" in dask_ip_display:
-            dask_ip_display = f"[red]{dask_ip_display}[/red]"
+        dask_state_display = cluster.primary.dask_ip
+        if "Not Ready" in dask_state_display:
+            dask_state_display = f"[red]{dask_state_display}[/red]"
+        else:
+            dask_state_display = "[green]Ready[/green]"
         primary_info = "\n".join(
             [
                 f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
@@ -427,8 +434,6 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 f"Up: {color_encoded_up_time}",
                 f"PublicIP: {cluster.primary.ec2_instance.public_ip_address}",
                 f"PrivateIP: {cluster.primary.ec2_instance.private_ip_address}",
-                f"DaskSchedulerIP: {dask_ip_display}",
-                f"Heartbeat: {color_encoded_heartbeat}",
             ]
         )
         if cluster.primary.is_warm_buffer:
@@ -443,7 +448,8 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 )
         cluster_links_table = build_cluster_links_table(environment, cluster)
         primary_disk_line = f"/mnt/docker(free): {color_encoded_free_docker_space}"
-        right_parts: list[object] = [cluster_links_table, primary_disk_line]
+        dask_state_line = f"DaskScheduler: {dask_state_display}"
+        right_parts: list[object] = [cluster_links_table, dask_state_line, primary_disk_line]
         if _tasks_table is not None:
             right_parts.append(_tasks_table)
         right_content: object = Group(*right_parts)
