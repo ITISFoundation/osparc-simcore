@@ -12,13 +12,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
-from playwright.sync_api import Page, WebSocket
+from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     RobustWebSocket,
+    app_mode_trigger_next_app,
+    expected_service_running,
 )
 from tenacity import retry, stop_after_delay, wait_fixed
 
@@ -41,6 +43,8 @@ _JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME: Final[int] = 2 * MINUTE
 _JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 4 * MINUTE
 _JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
+
+_PERSONALIZATION_MAX_TIME: Final[int] = 10 * MINUTE
 
 
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
@@ -66,6 +70,18 @@ def _wait_for_optimization_complete(run_button):
     bg_color = run_button.evaluate("el => getComputedStyle(el).backgroundColor")
     if bg_color != "rgb(0, 128, 0)":
         msg = f"Optimization not finished yet: {bg_color=}, {run_button=}"
+        raise ValueError(msg)
+
+
+@retry(
+    stop=stop_after_delay(_PERSONALIZATION_MAX_TIME / 1000),  # seconds
+    wait=wait_fixed(2),
+    reraise=True,
+)
+def _wait_for_personalization_complete(start_button):
+    bg_color = start_button.evaluate("el => getComputedStyle(el).backgroundColor")
+    if bg_color == "rgb(105, 105, 255)":
+        msg = f"Personalization still running: {bg_color=}"
         raise ValueError(msg)
 
 
@@ -107,3 +123,34 @@ def test_personalized_classic_ti_plan(
     assert len(node_ids) >= expected_number_of_steps, (
         f"Expected at least {expected_number_of_steps} nodes in the workbench"
     )
+
+    with log_context(logging.INFO, "File Picker step (1/%s)", expected_number_of_steps):
+        # in the testing project the file is already uploaded, so just check the file is already there
+        file_picker_step = page.get_by_test_id("AppMode_StepBtn_1")
+        expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
+
+    with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
+        with page.expect_websocket(
+            _JLabWaitForWebSocket(),
+            timeout=_OUTER_EXPECT_TIMEOUT_RATIO
+            * (_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
+        ) as ws_info:
+            with expected_service_running(
+                page=page,
+                node_id=node_ids[2],
+                websocket=log_in_and_out,
+                timeout=(_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
+                press_start_button=False,
+                product_url=product_url,
+                is_service_legacy=is_service_legacy,
+            ) as service_running:
+                app_mode_trigger_next_app(page)
+            personalizer_iframe = service_running.iframe_locator
+            assert personalizer_iframe
+
+        assert not ws_info.value.is_closed()
+
+        with log_context(logging.INFO, "Start personalization"):
+            start_button = personalizer_iframe.get_by_role("button", name="Start")
+            start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+            _wait_for_personalization_complete(start_button)
