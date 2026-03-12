@@ -27,13 +27,6 @@ from tenacity import retry, stop_after_delay, wait_fixed
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
 
-_ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
-_ELECTRODE_SELECTOR_DOCKER_PULLING_MAX_TIME: Final[int] = 3 * MINUTE
-_ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + _ELECTRODE_SELECTOR_DOCKER_PULLING_MAX_TIME + _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
-)
-_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME: Final[int] = 5 * SECOND
-
 
 _JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 3 * MINUTE
 _JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
@@ -75,14 +68,17 @@ def _wait_for_optimization_complete(run_button):
 
 @retry(
     stop=stop_after_delay(_PERSONALIZATION_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(2),
+    wait=wait_fixed(5),
     reraise=True,
 )
-def _wait_for_personalization_complete(start_button):
-    bg_color = start_button.evaluate("el => getComputedStyle(el).backgroundColor")
-    if bg_color == "rgb(105, 105, 255)":
-        msg = f"Personalization still running: {bg_color=}"
+def _wait_for_personalization_complete(start_button, outputs_button):
+    icon_class = start_button.locator("i").first.evaluate("el => el.className")
+    if "fa-spinner" in icon_class:
+        msg = f"Personalization still running: {icon_class=}"
         raise ValueError(msg)
+    assert "fa-check" in icon_class, f"Expected fa-check icon, got {icon_class=}"
+    outputs_text = outputs_button.inner_text()
+    assert "Outputs (3)" in outputs_text, f"Expected 'Outputs (3)', got {outputs_text=}"
 
 
 def test_personalized_classic_ti_plan(
@@ -153,4 +149,5 @@ def test_personalized_classic_ti_plan(
         with log_context(logging.INFO, "Start personalization"):
             start_button = personalizer_iframe.get_by_role("button", name="Start")
             start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-            _wait_for_personalization_complete(start_button)
+            outputs_button = page.get_by_test_id("outputsBtn")
+            _wait_for_personalization_complete(start_button, outputs_button)
