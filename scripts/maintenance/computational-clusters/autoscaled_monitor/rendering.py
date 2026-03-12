@@ -256,8 +256,8 @@ def build_cluster_links_table(
         expand=True,
     )
     ip = cluster.primary.ec2_instance.public_ip_address
-    table.add_row("Dask Scheduler", f"http://{ip}:8787")
     table.add_row("Graylog", create_graylog_permalinks(environment, cluster.primary.ec2_instance))
+    table.add_row("Dask Scheduler", f"http://{ip}:8787")
     table.add_row("Prometheus", f"http://{ip}:9090")
     return table
 
@@ -292,6 +292,7 @@ def print_dynamic_instances(
         show_footer=True,
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
+        expand=True,
     )
     for instance in track(instances, description="Preparing dynamic autoscaled instances details..."):
         service_table = "[i]n/a[/i]"
@@ -336,20 +337,18 @@ def print_dynamic_instances(
                 f"AMI: {instance.ec2_instance.image_id}",
                 f"Type: {instance.ec2_instance.instance_type}",
                 f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
-                f"ExtIP: {instance.ec2_instance.public_ip_address}",
-                f"IntIP: {instance.ec2_instance.private_ip_address}",
-                f"/mnt/docker(free): {color_encoded_free_space}",
+                f"PublicIP: {instance.ec2_instance.public_ip_address}",
+                f"PrivateIP: {instance.ec2_instance.private_ip_address}",
             ]
         )
         if instance.is_warm_buffer:
             instance_info = f"[dim]{instance_info}[/dim]"
+        graylog_line = f"Graylog: {create_graylog_permalinks(environment, instance.ec2_instance)}"
+        disk_line = f"/mnt/docker(free): {color_encoded_free_space}"
+        right_content = Group(graylog_line, disk_line, service_table)
         table.add_row(
             instance_info,
-            service_table,
-        )
-        table.add_row(
-            "",
-            f"Graylog: {create_graylog_permalinks(environment, instance.ec2_instance)}",
+            right_content,
             end_section=True,
         )
     if output:
@@ -359,7 +358,7 @@ def print_dynamic_instances(
         rich.print(table, flush=True)
 
 
-def print_computational_clusters(  # noqa: C901
+def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
     clusters: list[ComputationalCluster],
     environment: dict[str, str | None],
     aws_region: str,
@@ -427,11 +426,10 @@ def print_computational_clusters(  # noqa: C901
                 f"AMI: {cluster.primary.ec2_instance.image_id}",
                 f"Type: {cluster.primary.ec2_instance.instance_type}",
                 f"Up: {color_encoded_up_time}",
-                f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
-                f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
+                f"PublicIP: {cluster.primary.ec2_instance.public_ip_address}",
+                f"PrivateIP: {cluster.primary.ec2_instance.private_ip_address}",
                 f"DaskSchedulerIP: {dask_ip_display}",
                 f"Heartbeat: {color_encoded_heartbeat}",
-                f"/mnt/docker(free): {color_encoded_free_docker_space}",
             ]
         )
         if cluster.primary.is_warm_buffer:
@@ -445,9 +443,11 @@ def print_computational_clusters(  # noqa: C901
                     _task_rows, job_to_worker=job_to_worker, usd_per_credit=usd_per_credit
                 )
         cluster_links_table = build_cluster_links_table(environment, cluster)
-        right_content: object = (
-            Group(cluster_links_table, _tasks_table) if _tasks_table is not None else cluster_links_table
-        )
+        primary_disk_line = f"/mnt/docker(free): {color_encoded_free_docker_space}"
+        right_parts: list[object] = [cluster_links_table, primary_disk_line]
+        if _tasks_table is not None:
+            right_parts.append(_tasks_table)
+        right_content: object = Group(*right_parts)
         table.add_row(primary_info, right_content)
 
         if compact:
@@ -491,10 +491,9 @@ def print_computational_clusters(  # noqa: C901
                         f"{indent}AMI: {worker.ec2_instance.image_id}",
                         f"{indent}Type: {worker.ec2_instance.instance_type}",
                         f"{indent}Up: {worker_up}",
-                        f"{indent}ExtIP: {worker.ec2_instance.public_ip_address}",
-                        f"{indent}IntIP: {worker.ec2_instance.private_ip_address}",
+                        f"{indent}PublicIP: {worker.ec2_instance.public_ip_address}",
+                        f"{indent}PrivateIP: {worker.ec2_instance.private_ip_address}",
                         f"{indent}DaskWorkerIP: {worker.dask_ip}",
-                        f"{indent}/mnt/docker(free): {color_encoded_free_docker_space}",
                         "",
                     ]
                 )
@@ -502,10 +501,14 @@ def print_computational_clusters(  # noqa: C901
                     worker_info = f"[dim]{worker_info}[/dim]"
                 worker_graylog = create_graylog_permalinks(environment, worker.ec2_instance)
                 metrics_table = build_worker_metrics_table(worker_dask_metrics, worker_graylog)
+                worker_disk_line = f"/mnt/docker(free): {color_encoded_free_docker_space}"
                 worker_tasks = build_worker_tasks_table(
                     worker_processing_jobs, cluster.task_resources, cluster.task_worker_states
                 )
-                worker_right: object = Group(metrics_table, worker_tasks) if worker_tasks is not None else metrics_table
+                worker_right_parts: list[object] = [metrics_table, worker_disk_line]
+                if worker_tasks is not None:
+                    worker_right_parts.append(worker_tasks)
+                worker_right: object = Group(*worker_right_parts)
                 table.add_row(worker_info, worker_right)
 
         if output:
