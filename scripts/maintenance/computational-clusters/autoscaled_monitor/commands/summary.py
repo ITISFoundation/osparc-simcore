@@ -7,6 +7,7 @@ from typing import Annotated
 import arrow
 import rich
 import typer
+from rich.console import Console
 
 from .. import analysis, db, ec2, rendering
 from .._state import state
@@ -52,12 +53,14 @@ async def _run(  # noqa: C901
     recon = ReconciliationResult()
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
     if computational_clusters:
-        recon = await reconcile_computational_clusters(state, computational_clusters)
+        with Console().status("[bold]Reconciling computational clusters with DB...[/bold]"):
+            recon = await reconcile_computational_clusters(state, computational_clusters)
     services = _collect_services(dynamic_autoscaled_instances)
     if services:
         try:
-            async with db.db_engine(state) as engine:
-                service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
+            with Console().status("[bold]Querying database for user/wallet info...[/bold]"):
+                async with db.db_engine(state) as engine:
+                    service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
         except Exception:  # pylint: disable=broad-exception-caught
             rich.print("[yellow]Warning: could not query DB for user/wallet info.[/yellow]")
 

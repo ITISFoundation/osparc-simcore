@@ -7,11 +7,11 @@ from typing import Annotated
 import arrow
 import rich
 import typer
+from rich.console import Console
 
 from ... import analysis, db, ec2, rendering
 from ..._state import state
-from ...models import AppState as _AppState
-from ...models import DynamicInstance, DynamicServiceExtraInfo
+from ...models import AppState, DynamicInstance, DynamicServiceExtraInfo
 
 
 def _collect_services(
@@ -22,13 +22,12 @@ def _collect_services(
 
 
 async def _run(
-    state: "AppState",  # noqa: F821
+    state: AppState,
     user_id: int | None,
     *,
     output_json: bool,
     output: Path | None,
 ) -> bool:
-    assert isinstance(state, _AppState)
     assert state.ec2_resource_autoscaling
 
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
@@ -46,8 +45,9 @@ async def _run(
     services = _collect_services(dynamic_autoscaled_instances)
     if services:
         try:
-            async with db.db_engine(state) as engine:
-                service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
+            with Console().status("[bold]Querying database for user/wallet info...[/bold]"):
+                async with db.db_engine(state) as engine:
+                    service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
         except Exception:  # pylint: disable=broad-exception-caught
             rich.print("[yellow]Warning: could not query DB for user/wallet info.[/yellow]")
 
