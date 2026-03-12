@@ -576,6 +576,7 @@ def create_new_project_and_delete(
                 service_version=service_version,
                 timeout=timeout,
             )
+            assert project_data
 
             project_uuid = project_data["data"]["uuid"]
             ctx.logger.info("%s", f"{project_uuid=}")
