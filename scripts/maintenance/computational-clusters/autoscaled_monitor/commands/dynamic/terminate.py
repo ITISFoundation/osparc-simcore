@@ -6,7 +6,8 @@ from typing import Annotated
 import rich
 import typer
 
-from ... import analysis, ec2, rendering, utils
+from ... import rendering, utils
+from ..._helpers import load_dynamic_instances
 from ..._state import state
 from ...models import AppState
 
@@ -22,15 +23,16 @@ async def _run(
         rich.print("either define user_id or instance_id!")
         raise typer.Exit(2)
 
-    dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
-        state,
-        filter_by_user_id=None,
-        filter_by_wallet_id=None,
-        filter_by_instance_id=instance_id,
+    dynamic_autoscaled_instances = await load_dynamic_instances(
+        state, user_id=None, wallet_id=None, instance_id=instance_id
     )
-    dynamic_autoscaled_instances = await analysis.parse_dynamic_instances(
-        state, dynamic_instances, state.ssh_key_path, user_id, None
-    )
+
+    if user_id:
+        dynamic_autoscaled_instances = [
+            inst
+            for inst in dynamic_autoscaled_instances
+            if any(svc.user_id == user_id for svc in inst.running_services)
+        ]
 
     if not dynamic_autoscaled_instances:
         rich.print("no instances found")
@@ -42,6 +44,7 @@ async def _run(
         state.environment,
         state.ec2_resource_autoscaling.meta.client.meta.region_name,
         output=None,
+        service_extra_info=None,
     )
 
     for instance in dynamic_autoscaled_instances:

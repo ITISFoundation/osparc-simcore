@@ -6,7 +6,8 @@ from typing import Annotated
 
 import typer
 
-from ... import analysis, ec2, rendering
+from ... import db, rendering
+from ..._helpers import load_computational_clusters
 from ..._state import state
 from ...models import AppState, ComputationalCluster
 from ...reconciliation import ReconciliationResult, reconcile_computational_clusters
@@ -22,14 +23,12 @@ async def _run(
 ) -> bool:
     assert state.ec2_resource_clusters_keeper
 
-    computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
-    computational_clusters: list[ComputationalCluster] = await analysis.parse_computational_clusters(
-        state, computational_instances, state.ssh_key_path, user_id, wallet_id
-    )
+    computational_clusters: list[ComputationalCluster] = await load_computational_clusters(state, user_id, wallet_id)
 
     recon = ReconciliationResult()
     if computational_clusters:
-        recon = await reconcile_computational_clusters(state, computational_clusters)
+        async with db.db_engine(state) as engine:
+            recon = await reconcile_computational_clusters(computational_clusters, engine=engine)
 
     if output_json:
         rendering.print_summary_as_json(
@@ -46,6 +45,7 @@ async def _run(
             output=output,
             cluster_task_rows={(c.primary.user_id, c.primary.wallet_id): rows for c, rows in recon.cluster_task_rows},
             cluster_extra_info=recon.cluster_extra_info,
+            compact=False,
         )
 
     task_issues_found = any(row.issues for _, task_rows in recon.cluster_task_rows for row in task_rows)

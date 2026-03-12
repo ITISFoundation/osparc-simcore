@@ -43,6 +43,7 @@ async def db_engine(
                     private_key_path=state.ssh_key_path,
                     remote_bind_host=db_host,
                     remote_bind_port=int(db_port),
+                    bastion_conn=None,
                 )
             )
             db_endpoint = f"{host}:{port}"

@@ -48,23 +48,31 @@ async def dask_client(
             if instance.public_ip_address is not None:
                 url = AnyUrl(f"tls://{instance.public_ip_address}:{_SCHEDULER_PORT}")
             else:
-                if bastion_conn is None:
-                    bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
-                    ssh_host = bastion_instance.public_dns_name
-                else:
-                    ssh_host = instance.private_ip_address
                 assert state.ssh_key_path  # nosec
                 assert state.environment  # nosec
-                host, port = await stack.enter_async_context(
-                    ssh_tunnel(
-                        ssh_host=ssh_host,
-                        username=SSH_USER_NAME,
-                        private_key_path=state.ssh_key_path,
-                        remote_bind_host=instance.private_ip_address,
-                        remote_bind_port=_SCHEDULER_PORT,
-                        bastion_conn=bastion_conn,
+                if bastion_conn is not None:
+                    host, port = await stack.enter_async_context(
+                        ssh_tunnel(
+                            ssh_host=instance.private_ip_address,
+                            username=SSH_USER_NAME,
+                            private_key_path=state.ssh_key_path,
+                            remote_bind_host=instance.private_ip_address,
+                            remote_bind_port=_SCHEDULER_PORT,
+                            bastion_conn=bastion_conn,
+                        )
                     )
-                )
+                else:
+                    bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
+                    host, port = await stack.enter_async_context(
+                        ssh_tunnel(
+                            ssh_host=bastion_instance.public_dns_name,
+                            username=SSH_USER_NAME,
+                            private_key_path=state.ssh_key_path,
+                            remote_bind_host=instance.private_ip_address,
+                            remote_bind_port=_SCHEDULER_PORT,
+                            bastion_conn=None,
+                        )
+                    )
                 url = AnyUrl(f"tls://{host}:{port}")
             client = await stack.enter_async_context(
                 distributed.Client(f"{url}", security=security, timeout="5", asynchronous=True)
@@ -101,6 +109,32 @@ async def trigger_job_cancellation_in_scheduler(
         await _wrap_dask_async_call(cancel_event.set())
         await _wrap_dask_async_call(task_future.cancel())
         rich.print(f"cancelled {task_id} in scheduler/workers")
+
+
+async def cancel_and_cleanup_jobs(
+    state: AppState,
+    cluster: ComputationalCluster,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+    *,
+    jobs_to_cancel: list[TaskId],
+    jobs_to_remove: list[TaskId],
+) -> None:
+    """Cancel and/or remove multiple jobs using a single Dask connection."""
+    if not jobs_to_cancel and not jobs_to_remove:
+        return
+    async with dask_client(state, cluster.primary.ec2_instance, bastion_conn) as client:
+        for task_id in jobs_to_cancel:
+            task_future = distributed.Future(task_id, client=client)
+            cancel_event = distributed.Event(
+                name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
+                client=client,
+            )
+            await _wrap_dask_async_call(cancel_event.set())
+            await _wrap_dask_async_call(task_future.cancel())
+            rich.print(f"cancelled {task_id} in scheduler/workers")
+        for task_id in jobs_to_remove:
+            await _wrap_dask_async_call(client.unpublish_dataset(task_id))
+            rich.print(f"unpublished {task_id} from scheduler")
 
 
 async def _get_cached_scheduler_task_data(client: distributed.Client, instance_id: str) -> dict[str, Any]:  # noqa: C901

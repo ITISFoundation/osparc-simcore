@@ -34,9 +34,9 @@ def format_cluster_identity(
     user_id: int,
     wallet_id: int | None,
     *,
-    email: str | None = None,
-    wallet_name: str | None = None,
-    product_name: str | None = None,
+    email: str | None,
+    wallet_name: str | None,
+    product_name: str | None,
 ) -> str:
     wid = str(wallet_id) if wallet_id is not None else "n/a"
     identity = f"Cluster details for [bold cyan]UserID: {user_id}[/bold cyan]"
@@ -111,8 +111,9 @@ STATE_STYLES: Final[dict[str, str]] = {
 
 def build_cluster_tasks_table(
     rows: list[TaskReconciliationRow],
-    job_to_worker: dict[str, str] | None = None,
-    usd_per_credit: float | None = None,
+    *,
+    job_to_worker: dict[str, str] | None,
+    usd_per_credit: float | None,
 ) -> Table | None:
     if not rows:
         return None
@@ -303,7 +304,8 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
     environment: dict[str, str | None],
     aws_region: str,
     output: Path | None,
-    service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] | None = None,
+    *,
+    service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] | None,
 ) -> None:
     time_now = arrow.utcnow()
     product_names = {s.product_name for inst in instances for s in inst.running_services if s.product_name}
@@ -417,11 +419,10 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
     environment: dict[str, str | None],
     aws_region: str,
     output: Path | None,
-    cluster_task_rows: dict[tuple[int, int | None], list[TaskReconciliationRow]] | None = None,
-    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]]
-    | None = None,
     *,
-    compact: bool = False,
+    cluster_task_rows: dict[tuple[int, int | None], list[TaskReconciliationRow]] | None,
+    cluster_extra_info: dict[tuple[int, int | None], tuple[str | None, str | None, str | None, float | None]] | None,
+    compact: bool,
 ) -> None:
     """Print computational clusters.
 
@@ -618,7 +619,8 @@ def print_summary_as_json(
     dynamic_instances: list[DynamicInstance],
     computational_clusters: list[ComputationalCluster],
     output: Path | None,
-    cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] | None = None,
+    *,
+    cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] | None,
 ) -> None:
     result = {
         "dynamic_instances": [

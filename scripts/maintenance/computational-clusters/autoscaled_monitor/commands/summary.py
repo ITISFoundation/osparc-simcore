@@ -12,19 +12,13 @@ import typer
 from rich.console import Console
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .. import analysis, db, ec2, rendering
+from .. import db, rendering
+from .._helpers import collect_services, load_computational_clusters, load_dynamic_instances
 from .._state import state
 from ..models import AppState, ComputationalCluster, DynamicInstance, DynamicServiceExtraInfo
 from ..reconciliation import ReconciliationResult, reconcile_computational_clusters
 
 _console = Console()
-
-
-def _collect_services(
-    instances: list[DynamicInstance],
-) -> list[tuple[int, str, str]]:
-    """Collect (user_id, project_id, node_id) for all running services."""
-    return [(svc.user_id, svc.project_id, svc.node_id) for inst in instances for svc in inst.running_services]
 
 
 async def _run(  # noqa: C901, PLR0915
@@ -44,29 +38,12 @@ async def _run(  # noqa: C901, PLR0915
     async def _dynamic_phase() -> list[DynamicInstance]:
         if not state.ec2_resource_autoscaling:
             return []
-        t1 = time.monotonic()
-        instances = await ec2.list_dynamic_instances_from_ec2(
-            state,
-            filter_by_user_id=user_id,
-            filter_by_wallet_id=wallet_id,
-            filter_by_instance_id=None,
-        )
-        _console.log(f"[dim]EC2 list dynamic: {time.monotonic() - t1:.1f}s[/dim]")
-        t1 = time.monotonic()
-        result = await analysis.parse_dynamic_instances(state, instances, state.ssh_key_path, user_id, wallet_id)
-        _console.log(f"[dim]Parse dynamic instances: {time.monotonic() - t1:.1f}s[/dim]")
-        return result
+        return await load_dynamic_instances(state, user_id, wallet_id, instance_id=None)
 
     async def _computational_phase() -> list[ComputationalCluster]:
         if not state.ec2_resource_clusters_keeper:
             return []
-        t1 = time.monotonic()
-        instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
-        _console.log(f"[dim]EC2 list computational: {time.monotonic() - t1:.1f}s[/dim]")
-        t1 = time.monotonic()
-        result = await analysis.parse_computational_clusters(state, instances, state.ssh_key_path, user_id, wallet_id)
-        _console.log(f"[dim]Parse computational clusters: {time.monotonic() - t1:.1f}s[/dim]")
-        return result
+        return await load_computational_clusters(state, user_id, wallet_id)
 
     # DB engine — opened in parallel, cleaned up in finally block
     db_stack = contextlib.AsyncExitStack()
@@ -94,13 +71,13 @@ async def _run(  # noqa: C901, PLR0915
     # --- Phase 2: DB queries using shared engine ---
     recon = ReconciliationResult()
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
-    services = _collect_services(dynamic_autoscaled_instances)
+    services = collect_services(dynamic_autoscaled_instances)
     try:
         if db_engine is not None:
             with _console.status("[bold]Querying database...[/bold]"):
                 if computational_clusters:
                     t2 = time.monotonic()
-                    recon = await reconcile_computational_clusters(state, computational_clusters, engine=db_engine)
+                    recon = await reconcile_computational_clusters(computational_clusters, engine=db_engine)
                     _console.log(f"[dim]  Reconciliation queries: {time.monotonic() - t2:.1f}s[/dim]")
                 if services:
                     t2 = time.monotonic()

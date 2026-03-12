@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from . import db
 from .models import (
-    AppState,
     ComputationalCluster,
     ComputationalTask,
     ResourceTrackerServiceRun,
@@ -126,56 +125,52 @@ class ReconciliationResult:
 
 
 async def reconcile_computational_clusters(
-    state: AppState,
     computational_clusters: list[ComputationalCluster],
-    engine: AsyncEngine | None = None,
+    engine: AsyncEngine,
 ) -> ReconciliationResult:
     """Reconcile computational clusters with resource tracker and DB data."""
     result = ReconciliationResult()
     try:
-        async with contextlib.AsyncExitStack() as stack:
-            if engine is None:
-                engine = await stack.enter_async_context(db.db_engine(state))
-            result.tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
+        result.tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
 
-            tracker_runs_by_key: dict[tuple[int, int | None], list[ResourceTrackerServiceRun]] = {}
-            for _run in result.tracker_runs:
-                tracker_runs_by_key.setdefault((_run.user_id, _run.wallet_id), []).append(_run)
+        tracker_runs_by_key: dict[tuple[int, int | None], list[ResourceTrackerServiceRun]] = {}
+        for _run in result.tracker_runs:
+            tracker_runs_by_key.setdefault((_run.user_id, _run.wallet_id), []).append(_run)
 
-            for cluster in computational_clusters:
-                try:
-                    comp_tasks = await db.list_computational_tasks_from_db(engine, cluster.primary.user_id)
-                except Exception:  # pylint: disable=broad-exception-caught
-                    rich.print(
-                        f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]"
-                    )
-                    comp_tasks = []
-                _cluster_key = (cluster.primary.user_id, cluster.primary.wallet_id)
-                cluster_tracker_runs = tracker_runs_by_key.get(_cluster_key, [])
-                task_rows = reconcile_cluster_tasks(cluster, comp_tasks, cluster_tracker_runs)
-                result.cluster_task_rows.append((cluster, task_rows))
-
-            for _cluster in computational_clusters:
-                try:
-                    _email, _wallet_name, _product_name = await db.get_user_and_wallet_info(
-                        engine, _cluster.primary.user_id, _cluster.primary.wallet_id
-                    )
-                except Exception:  # pylint: disable=broad-exception-caught
-                    _email, _wallet_name, _product_name = None, None, None
-                _cluster_key = (_cluster.primary.user_id, _cluster.primary.wallet_id)
-                _cluster_tracker = tracker_runs_by_key.get(_cluster_key, [])
-                if _product_name is None:
-                    _product_name = next((r.product_name for r in _cluster_tracker), None)
-                _usd_per_credit: float | None = None
-                if _product_name:
-                    with contextlib.suppress(Exception):
-                        _usd_per_credit = await db.get_product_usd_per_credit(engine, _product_name)
-                result.cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
-                    _email,
-                    _wallet_name,
-                    _product_name,
-                    _usd_per_credit,
+        for cluster in computational_clusters:
+            try:
+                comp_tasks = await db.list_computational_tasks_from_db(engine, cluster.primary.user_id)
+            except Exception:  # pylint: disable=broad-exception-caught
+                rich.print(
+                    f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]"
                 )
+                comp_tasks = []
+            _cluster_key = (cluster.primary.user_id, cluster.primary.wallet_id)
+            cluster_tracker_runs = tracker_runs_by_key.get(_cluster_key, [])
+            task_rows = reconcile_cluster_tasks(cluster, comp_tasks, cluster_tracker_runs)
+            result.cluster_task_rows.append((cluster, task_rows))
+
+        for _cluster in computational_clusters:
+            try:
+                _email, _wallet_name, _product_name = await db.get_user_and_wallet_info(
+                    engine, _cluster.primary.user_id, _cluster.primary.wallet_id
+                )
+            except Exception:  # pylint: disable=broad-exception-caught
+                _email, _wallet_name, _product_name = None, None, None
+            _cluster_key = (_cluster.primary.user_id, _cluster.primary.wallet_id)
+            _cluster_tracker = tracker_runs_by_key.get(_cluster_key, [])
+            if _product_name is None:
+                _product_name = next((r.product_name for r in _cluster_tracker), None)
+            _usd_per_credit: float | None = None
+            if _product_name:
+                with contextlib.suppress(Exception):
+                    _usd_per_credit = await db.get_product_usd_per_credit(engine, _product_name)
+            result.cluster_extra_info[(_cluster.primary.user_id, _cluster.primary.wallet_id)] = (
+                _email,
+                _wallet_name,
+                _product_name,
+                _usd_per_credit,
+            )
     except Exception:  # pylint: disable=broad-exception-caught
         rich.print("[yellow]Warning: could not query database (DB unreachable?). Skipping DB reconciliation.[/yellow]")
     return result

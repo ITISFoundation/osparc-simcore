@@ -8,6 +8,7 @@ import typer
 from pydantic import ValidationError
 
 from ... import analysis, dask, db, rendering, ssh
+from ..._helpers import load_computational_clusters
 from ..._state import state
 from ...models import AppState, ComputationalTask, DaskTask
 
@@ -21,7 +22,7 @@ async def _run(  # noqa: C901, PLR0912
 ) -> None:
     async with db.db_engine(state) as engine:
         computational_tasks = await db.list_computational_tasks_from_db(engine, user_id)
-        computational_clusters = await analysis.list_computational_clusters(state, user_id, wallet_id)
+        computational_clusters = await load_computational_clusters(state, user_id, wallet_id)
 
         if computational_clusters:
             assert len(computational_clusters) == 1, (

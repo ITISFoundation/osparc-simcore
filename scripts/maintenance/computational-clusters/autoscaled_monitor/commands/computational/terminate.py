@@ -10,6 +10,7 @@ import typer
 from mypy_boto3_ec2.type_defs import TagTypeDef
 
 from ... import analysis, db, rendering, ssh
+from ..._helpers import load_computational_clusters
 from ..._state import state
 from ...models import AppState, ComputationalTask, DaskTask
 
@@ -22,7 +23,7 @@ async def _run(
     force: bool,
 ) -> None:
     assert state.ec2_resource_clusters_keeper
-    computational_clusters = await analysis.list_computational_clusters(state, user_id, wallet_id)
+    computational_clusters = await load_computational_clusters(state, user_id, wallet_id)
     assert computational_clusters
     assert len(computational_clusters) == 1, "too many clusters found! TIP: fix this code"
 
@@ -31,6 +32,9 @@ async def _run(
         state.environment,
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
         output=None,
+        cluster_task_rows=None,
+        cluster_extra_info=None,
+        compact=False,
     )
     if (force is True) or typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]

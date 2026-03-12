@@ -1,7 +1,6 @@
 """Instance parsing, SSH introspection, and Dask data collection."""
 
 import asyncio
-import contextlib
 from dataclasses import replace
 from pathlib import Path
 
@@ -13,7 +12,7 @@ from pydantic import ByteSize
 from rich.console import Console
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from . import dask, db, ec2, ssh, utils
+from . import dask, db, ssh, utils
 from .constants import SSH_USER_NAME, UNDEFINED_BYTESIZE
 from .models import (
     AppState,
@@ -98,20 +97,7 @@ async def analyze_dynamic_instances(
     ssh_key_path: Path,
     user_id: int | None,
 ) -> list[DynamicInstance]:
-    bastion_conn: asyncssh.SSHClientConnection | None = None
-    async with contextlib.AsyncExitStack() as stack:
-        try:
-            bastion_instance = await ec2.get_dynamic_bastion_instance(state)
-            bastion_conn = await stack.enter_async_context(
-                ssh.connect_bastion(
-                    bastion_instance,
-                    username=SSH_USER_NAME,
-                    private_key_path=ssh_key_path,
-                )
-            )
-        except (AssertionError, asyncssh.Error, OSError):
-            console.log("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
-
+    async with ssh.dynamic_bastion_connection(state) as bastion_conn:
         console.log(f"Fetching details for {len(dynamic_instances)} dynamic instance(s) via SSH...")
         details = await asyncio.gather(
             *(
@@ -136,7 +122,7 @@ async def analyze_dynamic_instances(
     ]
 
 
-async def analyze_computational_instances(  # noqa: C901
+async def analyze_computational_instances(
     state: AppState,
     computational_instances: list[ComputationalInstance],
     ssh_key_path: Path | None,
@@ -144,54 +130,38 @@ async def analyze_computational_instances(  # noqa: C901
     all_disk_spaces: list[ByteSize | BaseException] = [UNDEFINED_BYTESIZE] * len(computational_instances)
     all_dask_ips: list[str | BaseException] = [""] * len(computational_instances)
 
-    async with contextlib.AsyncExitStack() as stack:
-        bastion_conn: asyncssh.SSHClientConnection | None = None
-        if ssh_key_path is not None:
-            try:
-                bastion_instance = await ec2.get_computational_bastion_instance(state)
-                bastion_conn = await stack.enter_async_context(
-                    ssh.connect_bastion(
-                        bastion_instance,
-                        username=SSH_USER_NAME,
-                        private_key_path=ssh_key_path,
+    async with ssh.computational_bastion_connection(state) as bastion_conn:
+        if ssh_key_path is not None and computational_instances:
+            console.log(f"Fetching disk space for {len(computational_instances)} computational instance(s)...")
+            all_disk_spaces = await asyncio.gather(
+                *(
+                    ssh.get_available_disk_space(
+                        state,
+                        instance.ec2_instance,
+                        SSH_USER_NAME,
+                        ssh_key_path,
+                        bastion_conn=bastion_conn,
                     )
-                )
-            except (AssertionError, asyncssh.Error, OSError):
-                console.log(
-                    "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
-                )
+                    for instance in computational_instances
+                ),
+                return_exceptions=True,
+            )
 
-            if computational_instances:
-                console.log(f"Fetching disk space for {len(computational_instances)} computational instance(s)...")
-                all_disk_spaces = await asyncio.gather(
-                    *(
-                        ssh.get_available_disk_space(
-                            state,
-                            instance.ec2_instance,
-                            SSH_USER_NAME,
-                            ssh_key_path,
-                            bastion_conn=bastion_conn,
-                        )
-                        for instance in computational_instances
-                    ),
-                    return_exceptions=True,
-                )
-
-                console.log(f"Fetching Dask IPs for {len(computational_instances)} computational instance(s)...")
-                all_dask_ips = await asyncio.gather(
-                    *(
-                        ssh.get_dask_ip(
-                            state,
-                            instance.ec2_instance,
-                            SSH_USER_NAME,
-                            ssh_key_path,
-                            bastion_conn=bastion_conn,
-                        )
-                        for instance in computational_instances
-                    ),
-                    return_exceptions=True,
-                )
-                console.log(f"Fetched SSH details for {len(computational_instances)} computational instance(s)")
+            console.log(f"Fetching Dask IPs for {len(computational_instances)} computational instance(s)...")
+            all_dask_ips = await asyncio.gather(
+                *(
+                    ssh.get_dask_ip(
+                        state,
+                        instance.ec2_instance,
+                        SSH_USER_NAME,
+                        ssh_key_path,
+                        bastion_conn=bastion_conn,
+                    )
+                    for instance in computational_instances
+                ),
+                return_exceptions=True,
+            )
+            console.log(f"Fetched SSH details for {len(computational_instances)} computational instance(s)")
 
         computational_clusters = []
         for instance, disk_space, dask_ip in zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True):
@@ -273,14 +243,6 @@ async def parse_dynamic_instances(
     return dynamic_instances
 
 
-async def list_computational_clusters(
-    state: AppState, user_id: int, wallet_id: int | None
-) -> list[ComputationalCluster]:
-    assert state.ec2_resource_clusters_keeper
-    computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
-    return await parse_computational_clusters(state, computational_instances, state.ssh_key_path, user_id, wallet_id)
-
-
 async def get_job_id_to_dask_state_from_cluster(
     cluster: ComputationalCluster,
 ) -> dict[TaskId, TaskState]:
@@ -315,27 +277,29 @@ async def cancel_all_jobs(
     *,
     task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]],
     abort_in_db: bool,
-    engine: AsyncEngine | None = None,
+    engine: AsyncEngine,
     bastion_conn: asyncssh.SSHClientConnection | None,
 ) -> None:
     rich.print("cancelling all tasks")
+
+    jobs_to_cancel: list[TaskId] = []
+    jobs_to_remove: list[TaskId] = []
     for comp_task, dask_task in task_to_dask_job:
         if dask_task is not None and dask_task.state != "unknown":
-            await dask.trigger_job_cancellation_in_scheduler(
-                state,
-                the_cluster,
-                dask_task.job_id,
-                bastion_conn,
-            )
+            jobs_to_cancel.append(dask_task.job_id)
             if comp_task is None:
-                await dask.remove_job_from_scheduler(
-                    state,
-                    the_cluster,
-                    dask_task.job_id,
-                    bastion_conn,
-                )
+                jobs_to_remove.append(dask_task.job_id)
+
+    await dask.cancel_and_cleanup_jobs(
+        state,
+        the_cluster,
+        bastion_conn,
+        jobs_to_cancel=jobs_to_cancel,
+        jobs_to_remove=jobs_to_remove,
+    )
+
+    for comp_task, _dask_task in task_to_dask_job:
         if comp_task is not None and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"] and abort_in_db:
-            assert engine is not None  # nosec
             await db.abort_job_in_db(engine, comp_task.project_id, comp_task.node_id)
 
         rich.print("cancelled all tasks")
