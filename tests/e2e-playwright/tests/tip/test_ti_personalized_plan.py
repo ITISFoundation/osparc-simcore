@@ -106,7 +106,7 @@ def test_personalized_classic_ti_plan(
 
     # count the number of elements with test id matching the pattern
     # 1. File Picker (file-picker)
-    # 2. Personalizer (ti-pers)
+    # 2. Personalizer (ti-pers (voila))
     # 3. Model Inspector (sim4life-modeling)
     # 4. Simulator (ti-simu)
     # 5. Classic TI (ti-postpro)
