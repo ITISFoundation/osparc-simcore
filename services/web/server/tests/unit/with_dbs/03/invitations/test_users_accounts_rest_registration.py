@@ -842,12 +842,12 @@ def mock_notifications_preview_template(mocker: MockerFixture) -> AsyncMock:
         if ref.template_name == "account_approved":
             invitation_url = context.get("link", "https://example.com")
             trial_days = context.get("trial_account_days")
-            credits_usd = context.get("extra_credits_in_usd")
+            extra_credits = context.get("extra_credits")
             body_parts = [f"<p>Dear {first_name},</p>", "<p>Your account has been approved!</p>"]
             if trial_days:
                 body_parts.append(f"<p>Trial period: {trial_days} days</p>")
-            if credits_usd:
-                body_parts.append(f"<p>Extra credits: ${credits_usd}</p>")
+            if extra_credits:
+                body_parts.append(f"<p>Extra credits: ${extra_credits}</p>")
             body_parts.append(f'<p><a href="{invitation_url}">Accept Invitation</a></p>')
             return TemplatePreview(
                 ref=TemplateRef(channel=ChannelType.email, template_name="account_approved"),
