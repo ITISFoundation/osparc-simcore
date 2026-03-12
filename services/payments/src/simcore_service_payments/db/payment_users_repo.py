@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from models_library.api_schemas_webserver.wallets import PaymentID
-from models_library.groups import GroupID
+from models_library.groups import GroupID, group_id_adapter
 from models_library.users import UserID
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
@@ -26,7 +26,7 @@ class PaymentsUsersRepo(BaseRepository):
                 users.c.primary_gid,
             ).where(users.c.id == user_id)
         ):
-            return GroupID(row.primary_gid)
+            return group_id_adapter.validate_python(row.primary_gid)
 
         msg = f"{user_id=} not found"
         raise ValueError(msg)
