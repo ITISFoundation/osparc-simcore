@@ -75,6 +75,15 @@ class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DynamicServiceExtraInfo:
+    email: str | None = None
+    wallet_id: int | None = None
+    wallet_name: str | None = None
+    tracker_run: "ResourceTrackerServiceRun | None" = None
+    usd_per_credit: float | None = None
+
+
 type TaskId = str
 type TaskState = str
 

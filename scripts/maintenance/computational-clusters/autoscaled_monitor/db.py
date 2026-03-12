@@ -9,7 +9,13 @@ import sqlalchemy as sa
 from pydantic import PostgresDsn, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from .models import AppState, ComputationalTask, PostgresDB, ResourceTrackerServiceRun
+from .models import (
+    AppState,
+    ComputationalTask,
+    DynamicServiceExtraInfo,
+    PostgresDB,
+    ResourceTrackerServiceRun,
+)
 from .ssh import ssh_tunnel
 
 
@@ -208,6 +214,109 @@ async def get_user_and_wallet_info(
                 wallet_name = str(row.name)
 
         return email, wallet_name
+
+
+async def get_dynamic_service_extra_info(
+    engine: AsyncEngine,
+    services: list[tuple[int, str, str]],
+) -> dict[tuple[str, str], DynamicServiceExtraInfo]:
+    """Resolve email, wallet and RUT info for dynamic services.
+
+    Args:
+        services: list of (user_id, project_id, node_id) tuples
+
+    Returns:
+        mapping (project_id, node_id) -> DynamicServiceExtraInfo
+    """
+    if not services:
+        return {}
+
+    unique_user_ids = {uid for uid, _, _ in services}
+
+    async with engine.connect() as db_connection:
+        # Batch-fetch user emails
+        user_emails: dict[int, str | None] = {}
+        if unique_user_ids:
+            result = await db_connection.execute(
+                sa.select(sa.column("id"), sa.column("email"))
+                .select_from(sa.table("users"))
+                .where(sa.column("id").in_(unique_user_ids))
+            )
+            for row in result.fetchall():
+                user_emails[row.id] = str(row.email)
+
+        # Fetch RUT entries for DYNAMIC_SERVICE
+        rut_by_key: dict[tuple[str, str], ResourceTrackerServiceRun] = {}
+        result = await db_connection.execute(
+            sa.select(
+                sa.column("service_run_id"),
+                sa.column("user_id"),
+                sa.column("wallet_id"),
+                sa.column("product_name"),
+                sa.column("project_id"),
+                sa.column("node_id"),
+                sa.column("service_key"),
+                sa.column("service_version"),
+                sa.column("started_at"),
+                sa.column("last_heartbeat_at"),
+                sa.column("missed_heartbeat_counter"),
+                sa.column("pricing_unit_cost"),
+            )
+            .select_from(sa.table("resource_tracker_service_runs"))
+            .where(
+                sa.and_(
+                    sa.cast(sa.column("service_run_status"), sa.VARCHAR) == "RUNNING",
+                    sa.cast(sa.column("service_type"), sa.VARCHAR) == "DYNAMIC_SERVICE",
+                )
+            )
+        )
+        for row in result.fetchall():
+            rut_by_key[(str(row.project_id), str(row.node_id))] = ResourceTrackerServiceRun(
+                service_run_id=row.service_run_id,
+                user_id=row.user_id,
+                wallet_id=row.wallet_id,
+                product_name=row.product_name,
+                project_id=str(row.project_id),
+                node_id=str(row.node_id),
+                service_key=row.service_key,
+                service_version=row.service_version,
+                started_at=row.started_at,
+                last_heartbeat_at=row.last_heartbeat_at,
+                missed_heartbeat_counter=row.missed_heartbeat_counter,
+                pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
+            )
+
+        # Batch-fetch wallet names
+        unique_wallet_ids = {r.wallet_id for r in rut_by_key.values() if r.wallet_id is not None}
+        wallet_names: dict[int, str | None] = {}
+        if unique_wallet_ids:
+            result = await db_connection.execute(
+                sa.select(sa.column("wallet_id"), sa.column("name"))
+                .select_from(sa.table("wallets"))
+                .where(sa.column("wallet_id").in_(unique_wallet_ids))
+            )
+            for row in result.fetchall():
+                wallet_names[row.wallet_id] = str(row.name)
+
+        # Batch-fetch usd_per_credit per product
+        unique_products = {r.product_name for r in rut_by_key.values()}
+        product_usd: dict[str, float | None] = {}
+        for product in unique_products:
+            product_usd[product] = await get_product_usd_per_credit(engine, product)
+
+    # Build final mapping
+    info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
+    for uid, pid, nid in services:
+        rut = rut_by_key.get((pid, nid))
+        wid = rut.wallet_id if rut else None
+        info[(pid, nid)] = DynamicServiceExtraInfo(
+            email=user_emails.get(uid),
+            wallet_id=wid,
+            wallet_name=wallet_names.get(wid) if wid is not None else None,
+            tracker_run=rut,
+            usd_per_credit=product_usd.get(rut.product_name) if rut else None,
+        )
+    return info
 
 
 async def get_product_usd_per_credit(

@@ -8,13 +8,20 @@ import arrow
 import rich
 import typer
 
-from .. import analysis, ec2, rendering
+from .. import analysis, db, ec2, rendering
 from .._state import state
-from ..models import AppState, ComputationalCluster, DynamicInstance
+from ..models import AppState, ComputationalCluster, DynamicInstance, DynamicServiceExtraInfo
 from ..reconciliation import ReconciliationResult, reconcile_computational_clusters
 
 
-async def _run(
+def _collect_services(
+    instances: list[DynamicInstance],
+) -> list[tuple[int, str, str]]:
+    """Collect (user_id, project_id, node_id) for all running services."""
+    return [(svc.user_id, svc.project_id, svc.node_id) for inst in instances for svc in inst.running_services]
+
+
+async def _run(  # noqa: C901
     state: AppState,
     user_id: int | None,
     wallet_id: int | None,
@@ -43,8 +50,16 @@ async def _run(
         )
 
     recon = ReconciliationResult()
+    service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
     if computational_clusters:
         recon = await reconcile_computational_clusters(state, computational_clusters)
+    services = _collect_services(dynamic_autoscaled_instances)
+    if services:
+        try:
+            async with db.db_engine(state) as engine:
+                service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
+        except Exception:  # pylint: disable=broad-exception-caught
+            rich.print("[yellow]Warning: could not query DB for user/wallet info.[/yellow]")
 
     if output_json:
         rendering.print_summary_as_json(
@@ -60,6 +75,7 @@ async def _run(
                 state.environment,
                 state.ec2_resource_autoscaling.meta.client.meta.region_name,
                 output=output,
+                service_extra_info=service_extra_info,
             )
         if state.ec2_resource_clusters_keeper:
             rendering.print_computational_clusters(
