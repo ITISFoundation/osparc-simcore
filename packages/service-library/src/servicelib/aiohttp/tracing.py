@@ -108,9 +108,6 @@ async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler)
     and should be used once released.
     """
 
-    # NOTE: opentelemetry-instrumentation-aiohttp-server removed
-    # `get_default_span_details` in favor of `get_default_span_name`.
-    # We only relied on the default span name; additional attributes were empty.
     span_name = get_default_span_name(request)
     additional_attributes: dict[str, str | None] = {}
 
@@ -118,8 +115,6 @@ async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler)
     duration_attrs = _parse_duration_attrs(req_attrs)
     active_requests_count_attrs = _parse_active_request_count_attrs(req_attrs)
 
-    # NOTE: newer opentelemetry-instrumentation-aiohttp-server no longer exposes
-    # a module-level `meter`. Use the public OpenTelemetry metrics API instead.
     otel_meter = metrics.get_meter(__name__)
 
     duration_histogram = otel_meter.create_histogram(
