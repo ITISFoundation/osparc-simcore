@@ -133,7 +133,15 @@ def _startup(
 
     app.middlewares.insert(0, add_custom_request_attributes_to_span_middleware)
     app.middlewares.insert(0, create_aiohttp_middleware(tracer_provider=tracer_provider))
+    # NOTE: AioHttpServerInstrumentor().instrument() initializes module-level globals
+    # (e.g. _excluded_urls, metrics) that create_aiohttp_middleware's inner _middleware
+    # depends on. However, instrument() also replaces aiohttp.web.Application with a
+    # subclass, which breaks isinstance() checks for apps created before instrumentation
+    # (e.g. swagger_ui's handler matching). We restore the original Application class
+    # immediately after to avoid this side effect.
+    _original_application = web.Application
     AioHttpServerInstrumentor().instrument(tracer_provider=tracer_provider)
+    web.Application = _original_application
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
