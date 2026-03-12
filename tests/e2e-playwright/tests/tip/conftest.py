@@ -27,13 +27,13 @@ def find_and_start_tip_plan_in_dashboard(
 def create_tip_plan_from_dashboard(
     find_and_start_tip_plan_in_dashboard: Callable[[str], None],
     create_new_project_and_delete: Callable[[tuple[RunningState], bool, str | None, str | None], dict[str, Any]],
-) -> Callable[[str], dict[str, Any]]:
-    def _(plan_name_test_id: str) -> dict[str, Any]:
+) -> Callable[..., dict[str, Any]]:
+    def _(plan_name_test_id: str, press_open: bool) -> dict[str, Any]:
         find_and_start_tip_plan_in_dashboard(plan_name_test_id)
         expected_states = (RunningState.NOT_STARTED,)
         return create_new_project_and_delete(
             expected_states,
-            False,  # noqa: FBT003
+            press_open,
             None,
             None,
         )

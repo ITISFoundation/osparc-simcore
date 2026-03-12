@@ -79,7 +79,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
     log_in_and_out: RobustWebSocket,
     is_autoscaled: bool,
     is_product_lite: bool,
-    create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
+    create_tip_plan_from_dashboard: Callable[..., dict[str, Any]],
     product_url: AnyUrl,
     is_service_legacy: bool,
     playwright_test_results_dir: Path,
@@ -98,7 +98,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
             page.get_by_test_id("userMenuBtn").click()
 
     # press + button
-    project_data = create_tip_plan_from_dashboard("newTIPlanButton")
+    project_data = create_tip_plan_from_dashboard("newTIPlanButton", press_open=False)
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])
