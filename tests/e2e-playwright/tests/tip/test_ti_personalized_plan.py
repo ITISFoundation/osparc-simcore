@@ -22,7 +22,7 @@ from pytest_simcore.helpers.playwright import (
     app_mode_trigger_next_app,
     expected_service_running,
 )
-from tenacity import retry, stop_after_delay, wait_fixed
+from tenacity import retry, stop_after_attempt, stop_after_delay, wait_fixed
 
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
@@ -67,8 +67,8 @@ def _wait_for_optimization_complete(run_button):
 
 
 @retry(
-    stop=stop_after_delay(_PERSONALIZATION_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(5),
+    stop=stop_after_attempt(5),
+    wait=wait_fixed(60),
     reraise=True,
 )
 def _wait_for_personalization_complete(start_button, outputs_button):
@@ -149,5 +149,6 @@ def test_personalized_classic_ti_plan(
         with log_context(logging.INFO, "Start personalization"):
             start_button = personalizer_iframe.get_by_role("button", name="Start")
             start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+            page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
             outputs_button = page.get_by_test_id("outputsBtn")
             _wait_for_personalization_complete(start_button, outputs_button)
