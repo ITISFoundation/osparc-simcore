@@ -189,7 +189,7 @@ async def response_trace_id_header_middleware(request: web.Request, handler):
 
 
 @web.middleware
-async def add_custom_request_attributes_to_span_middleware(request: web.Request, handler) -> web.StreamResponse:
+async def add_custom_request_attributes_to_span_middleware(request: web.Request, handler):
     """Adds custom request attributes to the active OpenTelemetry span."""
     response = await handler(request)
 
