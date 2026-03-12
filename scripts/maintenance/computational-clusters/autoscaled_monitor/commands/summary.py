@@ -52,17 +52,18 @@ async def _run(  # noqa: C901
 
     recon = ReconciliationResult()
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
-    if computational_clusters:
-        with Console().status("[bold]Reconciling computational clusters with DB...[/bold]"):
-            recon = await reconcile_computational_clusters(state, computational_clusters)
     services = _collect_services(dynamic_autoscaled_instances)
-    if services:
+    need_db = bool(computational_clusters) or bool(services)
+    if need_db:
         try:
-            with Console().status("[bold]Querying database for user/wallet info...[/bold]"):
+            with Console().status("[bold]Querying database...[/bold]"):
                 async with db.db_engine(state) as engine:
-                    service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
+                    if computational_clusters:
+                        recon = await reconcile_computational_clusters(state, computational_clusters, engine=engine)
+                    if services:
+                        service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
         except Exception:  # pylint: disable=broad-exception-caught
-            rich.print("[yellow]Warning: could not query DB for user/wallet info.[/yellow]")
+            rich.print("[yellow]Warning: could not query DB.[/yellow]")
 
     if output_json:
         rendering.print_summary_as_json(
