@@ -5,6 +5,7 @@ import dataclasses
 from typing import Any
 
 import rich
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from . import db
 from .models import (
@@ -127,11 +128,14 @@ class ReconciliationResult:
 async def reconcile_computational_clusters(
     state: AppState,
     computational_clusters: list[ComputationalCluster],
+    engine: AsyncEngine | None = None,
 ) -> ReconciliationResult:
     """Reconcile computational clusters with resource tracker and DB data."""
     result = ReconciliationResult()
     try:
-        async with db.db_engine(state) as engine:
+        async with contextlib.AsyncExitStack() as stack:
+            if engine is None:
+                engine = await stack.enter_async_context(db.db_engine(state))
             result.tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
 
             tracker_runs_by_key: dict[tuple[int, int | None], list[ResourceTrackerServiceRun]] = {}
