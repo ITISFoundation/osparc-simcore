@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from typing import Final
 
-HEARTBEAT_FILE: Final[Path] = Path(tempfile.gettempdir()) / "celery_heartbeat"
+HEARTBEAT_FILE: Final[Path] = Path(tempfile.gettempdir()) / "heartbeat"
 
 
 def update_heartbeat() -> None:
