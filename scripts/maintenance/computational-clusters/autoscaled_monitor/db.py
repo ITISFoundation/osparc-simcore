@@ -6,6 +6,7 @@ from typing import Any
 
 import rich
 import sqlalchemy as sa
+from aiocache import cached
 from pydantic import PostgresDsn, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -17,6 +18,11 @@ from .models import (
     ResourceTrackerServiceRun,
 )
 from .ssh import ssh_tunnel
+
+
+def _build_key(fn, *args, **kwargs):
+    """Cache key builder that skips the first arg (engine)."""
+    return f"{fn.__module__}.{fn.__name__}:{args[1:]}:{kwargs}"
 
 
 @contextlib.asynccontextmanager
@@ -94,6 +100,7 @@ async def check_db_connection(state: AppState) -> bool:
     return False
 
 
+@cached(key_builder=_build_key)
 async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) -> list[ComputationalTask]:
     # Get the list of running project UUIDs with a subquery
     subquery = (
@@ -139,6 +146,7 @@ async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) ->
     ]
 
 
+@cached(key_builder=_build_key)
 async def list_resource_tracker_running_computational_services(
     engine: AsyncEngine,
 ) -> list[ResourceTrackerServiceRun]:
@@ -188,14 +196,16 @@ async def list_resource_tracker_running_computational_services(
     ]
 
 
+@cached(key_builder=_build_key)
 async def get_user_and_wallet_info(
     engine: AsyncEngine,
     user_id: int,
     wallet_id: int | None,
-) -> tuple[str | None, str | None]:
-    """Returns (user_email, wallet_name)."""
+) -> tuple[str | None, str | None, str | None]:
+    """Returns (user_email, wallet_name, product_name)."""
     email: str | None = None
     wallet_name: str | None = None
+    product_name: str | None = None
 
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -207,13 +217,16 @@ async def get_user_and_wallet_info(
 
         if wallet_id is not None:
             result = await conn.execute(
-                sa.select(sa.column("name")).select_from(sa.table("wallets")).where(sa.column("wallet_id") == wallet_id)
+                sa.select(sa.column("name"), sa.column("product_name"))
+                .select_from(sa.table("wallets"))
+                .where(sa.column("wallet_id") == wallet_id)
             )
             row = result.fetchone()
             if row:
                 wallet_name = str(row.name)
+                product_name = str(row.product_name)
 
-    return email, wallet_name
+    return email, wallet_name, product_name
 
 
 async def get_dynamic_service_extra_info(
@@ -339,6 +352,7 @@ async def _get_product_usd_per_credit(
     return None
 
 
+@cached(key_builder=_build_key)
 async def get_product_usd_per_credit(
     engine: AsyncEngine,
     product_name: str,

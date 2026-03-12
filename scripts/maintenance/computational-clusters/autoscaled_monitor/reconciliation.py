@@ -157,14 +157,15 @@ async def reconcile_computational_clusters(
 
             for _cluster in computational_clusters:
                 try:
-                    _email, _wallet_name = await db.get_user_and_wallet_info(
+                    _email, _wallet_name, _product_name = await db.get_user_and_wallet_info(
                         engine, _cluster.primary.user_id, _cluster.primary.wallet_id
                     )
                 except Exception:  # pylint: disable=broad-exception-caught
-                    _email, _wallet_name = None, None
+                    _email, _wallet_name, _product_name = None, None, None
                 _cluster_key = (_cluster.primary.user_id, _cluster.primary.wallet_id)
                 _cluster_tracker = tracker_runs_by_key.get(_cluster_key, [])
-                _product_name = next((r.product_name for r in _cluster_tracker), None)
+                if _product_name is None:
+                    _product_name = next((r.product_name for r in _cluster_tracker), None)
                 _usd_per_credit: float | None = None
                 if _product_name:
                     with contextlib.suppress(Exception):

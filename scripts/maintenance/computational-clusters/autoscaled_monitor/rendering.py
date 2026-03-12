@@ -46,7 +46,7 @@ def format_cluster_identity(
     if wallet_name:
         identity += f" [dim]({wallet_name})[/dim]"
     if product_name:
-        identity += f" — [dim]Product: {product_name}[/dim]"
+        identity += f" — Product: {product_name}"
     return identity
 
 
@@ -306,6 +306,10 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] | None = None,
 ) -> None:
     time_now = arrow.utcnow()
+    product_names = {s.product_name for inst in instances for s in inst.running_services if s.product_name}
+    table_title = f"dynamic autoscaled instances: {aws_region}"
+    if product_names:
+        table_title += f" — {', '.join(sorted(product_names))}"
     table = Table(
         Column("Instance"),
         Column(
@@ -313,7 +317,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
             footer="[red]Intervention detection might show false positive"
             " if in transient state, be careful and always double-check!![/red]",
         ),
-        title=f"dynamic autoscaled instances: {aws_region}",
+        title=table_title,
         show_footer=True,
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
@@ -449,6 +453,10 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
             + f" — Heartbeat: {color_encoded_heartbeat}"
         )
 
+        table_title = f"computational cluster: {aws_region}"
+        if product_name:
+            table_title += f" — {product_name}"
+
         table = Table(
             Column("Instance", justify="left", overflow="fold", ratio=1),
             Column(
@@ -456,7 +464,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 overflow="fold",
                 ratio=3,
             ),
-            title=f"computational cluster: {aws_region}",
+            title=table_title,
             padding=(0, 0),
             title_style=Style(color="red", encircle=True),
             expand=True,
