@@ -140,15 +140,6 @@ class TaskReconciliationRow:
         return self.worker_state in {"executing", "long-running"}
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class TrackerReconciliationEntry:
-    user_id: int
-    wallet_id: int | None
-    ec2_cluster: ComputationalCluster | None
-    tracker_runs: list[ResourceTrackerServiceRun]
-    issues: list[str]
-
-
 DockerContainer = namedtuple(  # noqa: PYI024
     "docker_container",
     [

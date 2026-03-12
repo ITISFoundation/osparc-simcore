@@ -24,7 +24,6 @@ UNIFIED_SSH_KEY_PARSE: Final[parse.Parser] = parse.compile("sshkey.pem")
 
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE
-STALE_HEARTBEAT_THRESHOLD_MINUTES: Final[int] = 15
 
 
 SSH_USER_NAME: Final[str] = "ubuntu"

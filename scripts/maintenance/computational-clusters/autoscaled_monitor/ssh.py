@@ -15,8 +15,8 @@ import typer
 from mypy_boto3_ec2.service_resource import Instance
 from pydantic import ByteSize
 
-from .constants import DYN_SERVICES_NAMING_CONVENTION
-from .ec2 import get_bastion_instance_from_remote_instance
+from .constants import DYN_SERVICES_NAMING_CONVENTION, SSH_USER_NAME
+from .ec2 import get_bastion_instance_from_remote_instance, get_computational_bastion_instance
 from .models import AppState, DockerContainer, DynamicService
 
 _DEFAULT_SSH_PORT: Final[int] = 22
@@ -298,3 +298,27 @@ async def list_running_dyn_services(
         TimeoutError,
     ):
         return []
+
+
+@contextlib.asynccontextmanager
+async def computational_bastion_connection(
+    state: AppState,
+) -> AsyncGenerator[asyncssh.SSHClientConnection | None, Any]:
+    """Open a bastion connection for computational instances, yielding None on failure."""
+    assert state.ssh_key_path  # nosec
+    bastion_conn: asyncssh.SSHClientConnection | None = None
+    async with contextlib.AsyncExitStack() as stack:
+        try:
+            bastion_instance = await get_computational_bastion_instance(state)
+            bastion_conn = await stack.enter_async_context(
+                connect_bastion(
+                    bastion_instance,
+                    username=SSH_USER_NAME,
+                    private_key_path=state.ssh_key_path,
+                )
+            )
+        except (AssertionError, asyncssh.Error, OSError):
+            rich.print(
+                "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
+            )
+        yield bastion_conn
