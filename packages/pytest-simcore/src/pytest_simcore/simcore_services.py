@@ -44,7 +44,6 @@ _SERVICES_TO_SKIP: Final[set[str]] = {
     "sto-worker-cpu-bound",
     "traefik-config-placeholder",
 }
-# TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
 DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[str] = "/v0/"
 MAP_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[dict[str, str]] = {
     "autoscaling": "/",
@@ -116,11 +115,10 @@ class ServiceHealthcheckEndpoint:
 
     @classmethod
     def create(cls, service_name: str, baseurl):
-        # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
         return cls(
             name=service_name,
             url=URL(
-                f"{baseurl}{MAP_SERVICE_HEALTHCHECK_ENTRYPOINT.get(service_name, DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT)}"
+                f"{baseurl}{MAP_SERVICE_HEALTHCHECK_ENTRYPOINT.get(service_name, DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT)}"  # noqa: E501
             ),
         )
 
@@ -134,13 +132,11 @@ def services_endpoint(
     services_endpoint = {}
 
     stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
-    for service in core_services_selection:
-        service = _SERVICE_NAME_REPLACEMENTS.get(service, service)
+    for service_name in core_services_selection:
+        service = _SERVICE_NAME_REPLACEMENTS.get(service_name, service_name)
         assert f"{stack_name}_{service}" in docker_stack["services"]
         full_service_name = f"{stack_name}_{service}"
 
-        # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
-        # TODO: get health-check cmd from Dockerfile or docker-compose (e.g. postgres?)
         if service not in _SERVICES_TO_SKIP:
             target_ports = [
                 AIOHTTP_BASED_SERVICE_PORT,
@@ -153,7 +149,8 @@ def services_endpoint(
                 user = env_vars_for_docker_compose[user_env]
                 password = env_vars_for_docker_compose[password_env]
                 endpoint = URL(
-                    f"http://{user}:{password}@{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
+                    f"http://{user}:{password}@{get_localhost_ip()}:"
+                    f"{get_service_published_port(full_service_name, target_ports)}"
                 )
             else:
                 endpoint = URL(
