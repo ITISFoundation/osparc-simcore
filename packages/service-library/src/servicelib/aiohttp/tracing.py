@@ -141,7 +141,7 @@ def _startup(
     # immediately after to avoid this side effect.
     _original_application = web.Application
     AioHttpServerInstrumentor().instrument(tracer_provider=tracer_provider)
-    web.Application = _original_application
+    web.Application = _original_application  # type: ignore[misc]
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
