@@ -1,0 +1,398 @@
+import contextlib
+import datetime
+import re
+from collections import defaultdict
+from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Any, Final
+
+import arrow
+import asyncssh
+import orjson
+import rich
+import typer
+from mypy_boto3_ec2.service_resource import Instance
+from pydantic import ByteSize
+
+from .constants import DISK_MOUNT_POINTS, DYN_SERVICES_NAMING_CONVENTION, SSH_USER_NAME
+from .ec2 import (
+    get_bastion_instance_from_remote_instance,
+    get_computational_bastion_instance,
+    get_dynamic_bastion_instance,
+)
+from .models import AppState, DiskUsage, DockerContainer, DynamicService
+
+_DEFAULT_SSH_PORT: Final[int] = 22
+_LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
+
+
+@contextlib.asynccontextmanager
+async def ssh_tunnel(
+    *,
+    ssh_host: str,
+    username: str,
+    private_key_path: Path,
+    remote_bind_host: str,
+    remote_bind_port: int,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+) -> AsyncGenerator[tuple[str, int], Any]:
+    """Open an asyncssh TCP port-forward and yield (local_host, local_port)."""
+    try:
+        async with contextlib.AsyncExitStack() as stack:
+            if bastion_conn is not None:
+                conn = bastion_conn
+            else:
+                conn = await stack.enter_async_context(
+                    asyncssh.connect(
+                        ssh_host,
+                        port=_DEFAULT_SSH_PORT,
+                        username=username,
+                        client_keys=[str(private_key_path)],
+                        known_hosts=None,
+                        keepalive_interval=10,
+                    )
+                )
+            listener = await conn.forward_local_port(_LOCAL_BIND_ADDRESS, 0, remote_bind_host, remote_bind_port)
+            try:
+                yield (_LOCAL_BIND_ADDRESS, listener.get_port())
+            finally:
+                listener.close()
+                await listener.wait_closed()
+    except TimeoutError:
+        rich.print("[yellow]Timeout while establishing ssh tunnel[/yellow]")
+        raise
+    except Exception as exc:
+        rich.print(f"[red]Unexpected issue with ssh tunnel: {exc}[/red]")
+        raise
+
+
+@contextlib.asynccontextmanager
+async def connect_bastion(
+    bastion_instance: Instance,
+    *,
+    username: str,
+    private_key_path: Path,
+) -> AsyncGenerator[asyncssh.SSHClientConnection, Any]:
+    """Open a persistent SSH connection to a bastion host for reuse."""
+    async with asyncssh.connect(
+        bastion_instance.public_dns_name,
+        port=_DEFAULT_SSH_PORT,
+        username=username,
+        client_keys=[str(private_key_path)],
+        known_hosts=None,
+        keepalive_interval=10,
+    ) as conn:
+        yield conn
+
+
+@contextlib.asynccontextmanager
+async def ssh_instance(
+    instance: Instance,
+    *,
+    state: AppState,
+    username: str,
+    private_key_path: Path,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+) -> AsyncGenerator[asyncssh.SSHClientConnection, Any]:
+    """SSH into an instance, tunnelling through the bastion when needed."""
+    assert state.ssh_key_path  # nosec
+    try:
+        if instance.public_ip_address:
+            async with asyncssh.connect(
+                instance.public_ip_address,
+                port=_DEFAULT_SSH_PORT,
+                username=username,
+                client_keys=[str(private_key_path)],
+                known_hosts=None,
+            ) as conn:
+                yield conn
+        elif bastion_conn is not None:
+            async with bastion_conn.connect_ssh(
+                instance.private_ip_address,
+                port=_DEFAULT_SSH_PORT,
+                username=username,
+                client_keys=[str(private_key_path)],
+                known_hosts=None,
+            ) as conn:
+                yield conn
+        else:
+            bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
+            async with (
+                asyncssh.connect(
+                    bastion_instance.public_dns_name,
+                    port=_DEFAULT_SSH_PORT,
+                    username=username,
+                    client_keys=[str(state.ssh_key_path)],
+                    known_hosts=None,
+                    keepalive_interval=10,
+                ) as new_bastion_conn,
+                new_bastion_conn.connect_ssh(
+                    instance.private_ip_address,
+                    port=_DEFAULT_SSH_PORT,
+                    username=username,
+                    client_keys=[str(private_key_path)],
+                    known_hosts=None,
+                ) as conn,
+            ):
+                yield conn
+    except (asyncssh.Error, OSError) as exc:
+        rich.print(f"[yellow]Could not connect to ssh instance {instance.id}: {exc}[/yellow]")
+        raise
+
+
+async def _run_command(conn: asyncssh.SSHClientConnection, command: str) -> asyncssh.SSHCompletedProcess:
+    return await conn.run(command, check=False, timeout=10)
+
+
+async def get_disk_usage(
+    state: AppState,
+    instance: Instance,
+    username: str,
+    private_key_path: Path,
+    *,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+    mount_points: list[str] = DISK_MOUNT_POINTS,
+) -> list[DiskUsage]:
+    assert state.ssh_key_path
+
+    try:
+        async with ssh_instance(
+            instance, state=state, username=username, private_key_path=private_key_path, bastion_conn=bastion_conn
+        ) as conn:
+            mounts = " ".join(mount_points)
+            disk_space_command = f"df --block-size=1 {mounts} | awk 'NR>1{{print $6, $2, $4}}'"
+            result = await _run_command(conn, disk_space_command)
+
+            if result.exit_status != 0:
+                rich.print(result.stderr)
+                return []
+
+            usages: list[DiskUsage] = []
+            for line in (result.stdout or "").strip().splitlines():
+                parts = line.split()
+                if len(parts) == 3:  # noqa: PLR2004
+                    mount_point, total_str, free_str = parts
+                    usages.append(
+                        DiskUsage(
+                            mount_point=mount_point,
+                            total=ByteSize(int(total_str)),
+                            free=ByteSize(int(free_str)),
+                        )
+                    )
+            return usages
+    except (
+        asyncssh.Error,
+        OSError,
+        TimeoutError,
+    ):
+        return []
+
+
+async def get_dask_ip(
+    state: AppState,
+    instance: Instance,
+    username: str,
+    private_key_path: Path,
+    *,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+) -> str:
+    try:
+        async with ssh_instance(
+            instance, state=state, username=username, private_key_path=private_key_path, bastion_conn=bastion_conn
+        ) as conn:
+            list_containers_command = "docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}'"
+            result = await _run_command(conn, list_containers_command)
+            container_ids = (result.stdout or "").strip()
+
+            if result.exit_status != 0 or not container_ids:
+                return "No Containers Found / Not Ready"
+
+            dask_ip_command = (
+                f"docker inspect -f '{{{{.NetworkSettings.Networks.dask_stack_cluster.IPAddress}}}}' {container_ids}"
+            )
+            result = await _run_command(conn, dask_ip_command)
+
+            if result.exit_status != 0:
+                error_message = (result.stderr or "").strip()
+                rich.print(
+                    "[red]Inspecting Dask IP command failed with exit status "
+                    f"{result.exit_status}: {error_message}[/red]"
+                )
+                return "Not docker network Found / Drained / Not Ready"
+
+            ip_address = (result.stdout or "").strip()
+            if not ip_address:
+                rich.print("[red]Dask IP address not found in the output[/red]")
+                return "Not IP Found / Drained / Not Ready"
+            assert isinstance(ip_address, str)  # nosec
+            return ip_address
+    except (
+        asyncssh.Error,
+        OSError,
+        TimeoutError,
+    ):
+        return "Not Ready"
+
+
+async def list_running_dyn_services(  # noqa: C901
+    state: AppState,
+    instance: Instance,
+    username: str,
+    private_key_path: Path,
+    *,
+    bastion_conn: asyncssh.SSHClientConnection | None,
+) -> list[DynamicService]:
+    try:
+        async with ssh_instance(
+            instance, state=state, username=username, private_key_path=private_key_path, bastion_conn=bastion_conn
+        ) as conn:
+            docker_command = (
+                'docker ps --format=\'{{.Names}}\t{{.CreatedAt}}\t{{.Label "io.simcore.runtime.user-id"}}'
+                '\t{{.Label "io.simcore.runtime.project-id"}}\t{{.Label "io.simcore.name"}}'
+                '\t{{.Label "io.simcore.version"}}\t{{.Label "io.simcore.runtime.product-name"}}'
+                '\t{{.Label "io.simcore.runtime.simcore-user-agent"}}\' --filter=name=dy-'
+            )
+            result = await _run_command(conn, docker_command)
+
+            if result.exit_status != 0:
+                rich.print(result.stderr)
+                raise typer.Abort
+
+            output = result.stdout or ""
+            assert isinstance(output, str)  # nosec
+            running_service: dict[str, list[DockerContainer]] = defaultdict(list)
+            for container in output.splitlines():
+                if match := re.match(DYN_SERVICES_NAMING_CONVENTION, container):
+                    named_container = DockerContainer(
+                        match["node_id"],
+                        int(match["user_id"]),
+                        match["project_id"],
+                        arrow.get(
+                            match["created_at"],
+                            "YYYY-MM-DD HH:mm:ss",
+                            tzinfo=datetime.UTC,
+                        ).datetime,
+                        container,
+                        (orjson.loads(match["service_name"])["name"] if match["service_name"] else ""),
+                        (orjson.loads(match["service_version"])["version"] if match["service_version"] else ""),
+                        match["product_name"],
+                        match["simcore_user_agent"],
+                    )
+                    running_service[match["node_id"]].append(named_container)
+
+            def _needs_manual_intervention(
+                running_containers: list[DockerContainer],
+            ) -> bool:
+                valid_prefixes = ["dy-sidecar_", "dy-proxy_", "dy-sidecar-"]
+                for prefix in valid_prefixes:
+                    found = any(container.name.startswith(prefix) for container in running_containers)
+                    if not found:
+                        return True
+                return False
+
+            # Fetch resource limits from dy-sidecar_ and dy-proxy_ containers
+            resource_by_node: dict[str, tuple[int, int]] = {}
+            inspect_containers: list[str] = []
+            container_to_node: dict[str, str] = {}
+            resource_prefixes = ("dy-sidecar_", "dy-proxy_")
+            for nid, containers in running_service.items():
+                for c in containers:
+                    # c.name is the full docker ps line; extract just the container name (first tab field)
+                    actual_name = c.name.split("\t")[0]
+                    if actual_name.startswith(resource_prefixes):
+                        inspect_containers.append(actual_name)
+                        container_to_node[actual_name] = nid
+            if inspect_containers:
+                inspect_cmd = (
+                    "docker inspect --format='{{.Name}}|||{{.HostConfig.NanoCpus}}|||{{.HostConfig.Memory}}' "
+                    + " ".join(inspect_containers)
+                )
+                res = await _run_command(conn, inspect_cmd)
+                if res.stdout:
+                    for line in res.stdout.strip().splitlines():
+                        parts = line.lstrip("/").split("|||")
+                        if len(parts) == 3:  # noqa: PLR2004
+                            cname = parts[0]
+                            try:
+                                nano = int(parts[1])
+                                mem = int(parts[2])
+                            except ValueError:
+                                continue
+                            nid = container_to_node.get(cname, "")
+                            if nid:
+                                prev = resource_by_node.get(nid, (0, 0))
+                                resource_by_node[nid] = (
+                                    prev[0] + nano,
+                                    prev[1] + mem,
+                                )
+
+            return [
+                DynamicService(
+                    node_id=node_id,
+                    user_id=containers[0].user_id,
+                    project_id=containers[0].project_id,
+                    created_at=containers[0].created_at,
+                    needs_manual_intervention=_needs_manual_intervention(containers)
+                    and ((arrow.utcnow().datetime - containers[0].created_at) > datetime.timedelta(minutes=2)),
+                    containers=[c.name for c in containers],
+                    service_name=containers[0].service_name,
+                    service_version=containers[0].service_version,
+                    product_name=containers[0].product_name,
+                    simcore_user_agent=containers[0].simcore_user_agent,
+                    nano_cpus=resource_by_node.get(node_id, (0, 0))[0],
+                    memory=resource_by_node.get(node_id, (0, 0))[1],
+                )
+                for node_id, containers in running_service.items()
+            ]
+    except (
+        asyncssh.Error,
+        OSError,
+        TimeoutError,
+    ):
+        return []
+
+
+@contextlib.asynccontextmanager
+async def computational_bastion_connection(
+    state: AppState,
+) -> AsyncGenerator[asyncssh.SSHClientConnection | None, Any]:
+    """Open a bastion connection for computational instances, yielding None on failure."""
+    assert state.ssh_key_path  # nosec
+    bastion_conn: asyncssh.SSHClientConnection | None = None
+    async with contextlib.AsyncExitStack() as stack:
+        try:
+            bastion_instance = await get_computational_bastion_instance(state)
+            bastion_conn = await stack.enter_async_context(
+                connect_bastion(
+                    bastion_instance,
+                    username=SSH_USER_NAME,
+                    private_key_path=state.ssh_key_path,
+                )
+            )
+        except (AssertionError, asyncssh.Error, OSError):
+            rich.print(
+                "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
+            )
+        yield bastion_conn
+
+
+@contextlib.asynccontextmanager
+async def dynamic_bastion_connection(
+    state: AppState,
+) -> AsyncGenerator[asyncssh.SSHClientConnection | None, Any]:
+    """Open a bastion connection for dynamic instances, yielding None on failure."""
+    assert state.ssh_key_path  # nosec
+    bastion_conn: asyncssh.SSHClientConnection | None = None
+    async with contextlib.AsyncExitStack() as stack:
+        try:
+            bastion_instance = await get_dynamic_bastion_instance(state)
+            bastion_conn = await stack.enter_async_context(
+                connect_bastion(
+                    bastion_instance,
+                    username=SSH_USER_NAME,
+                    private_key_path=state.ssh_key_path,
+                )
+            )
+        except (AssertionError, asyncssh.Error, OSError):
+            rich.print("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
+        yield bastion_conn

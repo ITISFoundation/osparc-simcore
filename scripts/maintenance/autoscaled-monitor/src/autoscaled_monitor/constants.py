@@ -2,7 +2,6 @@ import re
 from typing import Final
 
 import parse
-from pydantic import ByteSize
 
 
 @parse.with_pattern(r"None|\d+")
@@ -27,8 +26,8 @@ HOUR: Final[int] = 60 * MINUTE
 
 
 SSH_USER_NAME: Final[str] = "ubuntu"
-UNDEFINED_BYTESIZE: Final[ByteSize] = ByteSize(-1)
 TASK_CANCEL_EVENT_NAME_TEMPLATE: Final[str] = "cancel_event_{}"
+DISK_MOUNT_POINTS: Final[list[str]] = ["/mnt/docker"]
 
 # NOTE: service_name and service_version are not available on dynamic-sidecar/dynamic-proxies!
 DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
