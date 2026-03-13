@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, ClassVar, Literal
 
 from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, Field
@@ -29,8 +29,8 @@ class _AutoRegisterMeta(ModelMetaclass):
         return new_class
 
 
-PreferenceName: TypeAlias = str
-PreferenceIdentifier: TypeAlias = str
+type PreferenceName = str
+type PreferenceIdentifier = str
 
 
 class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta): ...
@@ -38,6 +38,7 @@ class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta): ...
 
 class PreferenceType(StrAutoEnum):
     FRONTEND = auto()
+    NOTIFICATIONS = auto()
     USER_SERVICE = auto()
 
 
@@ -48,9 +49,9 @@ class NoPreferenceFoundError(RuntimeError):
 
 
 class _BaseUserPreferenceModel(_ExtendedBaseModel):
-    preference_type: PreferenceType = Field(..., description="distinguish between the types of preferences")
+    preference_type: Annotated[PreferenceType, Field(description="distinguish between the types of preferences")]
 
-    value: Any = Field(..., description="value of the preference")
+    value: Annotated[Any, Field(description="value of the preference")]
 
     @classmethod
     def get_preference_class_from_name(cls, preference_name: PreferenceName) -> type["_BaseUserPreferenceModel"]:
@@ -82,7 +83,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 class FrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: Literal[PreferenceType.FRONTEND] = PreferenceType.FRONTEND
 
-    preference_identifier: PreferenceIdentifier = Field(..., description="used by the frontend")
+    preference_identifier: Annotated[PreferenceIdentifier, Field(description="used by the frontend")]
 
     value: Any
 
@@ -110,14 +111,23 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 class UserServiceUserPreference(_BaseUserPreferenceModel):
     preference_type: Literal[PreferenceType.USER_SERVICE] = PreferenceType.USER_SERVICE
 
-    service_key: ServiceKey = Field(..., description="the service which manages the preferences")
-    service_version: ServiceVersion = Field(..., description="version of the service which manages the preference")
+    service_key: Annotated[ServiceKey, Field(description="the service which manages the preferences")]
+    service_version: Annotated[ServiceVersion, Field(description="version of the service which manages the preference")]
 
     def to_db(self) -> dict:
         return self.model_dump(exclude={"preference_type"})
 
 
-AnyUserPreference: TypeAlias = Annotated[
-    FrontendUserPreference | UserServiceUserPreference,
+class NotificationsUserPreference(_BaseUserPreferenceModel):
+    preference_type: Literal[PreferenceType.NOTIFICATIONS] = PreferenceType.NOTIFICATIONS
+
+    value: Any
+
+    def to_db(self) -> dict:
+        return self.model_dump(include={"value"})
+
+
+type AnyUserPreference = Annotated[
+    FrontendUserPreference | UserServiceUserPreference | NotificationsUserPreference,
     Field(discriminator="preference_type"),
 ]

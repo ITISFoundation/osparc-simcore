@@ -1,12 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
 from ..models.preview import TemplatePreview
 from ..models.template import Template
 
 
-class Renderer(ABC):
-    @abstractmethod
+class Renderer(Protocol):
     def preview_template(
         self,
         template: Template,
