@@ -2,12 +2,11 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
     Annotated,
     Final,
     NamedTuple,
-    TypeAlias,
     TypedDict,
 )
 
 from common_library.basic_types import DEFAULT_FACTORY
-from common_library.groups_enums import GroupType as GroupType
+from common_library.groups_enums import GroupType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
@@ -17,9 +16,10 @@ from .utils.common_validators import create_enums_pre_validator
 
 EVERYONE_GROUP_ID: Final[int] = 1
 
-GroupID: TypeAlias = PositiveInt
-PrimaryGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
-StandardGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
+type GroupID = PositiveInt
+type PrimaryGroupID = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
+type StandardGroupID = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
+
 
 __all__: tuple[str, ...] = ("GroupType",)
 
@@ -31,12 +31,7 @@ class Group(BaseModel):
     group_type: Annotated[GroupType, Field(alias="type")]
     thumbnail: str | None
 
-    inclusion_rules: Annotated[
-        dict[str, str],
-        Field(
-            default_factory=dict,
-        ),
-    ] = DEFAULT_FACTORY
+    inclusion_rules: Annotated[dict[str, str], Field(default_factory=dict)] = DEFAULT_FACTORY
 
     _from_equivalent_enums = field_validator("group_type", mode="before")(create_enums_pre_validator(GroupType))
 
@@ -108,7 +103,7 @@ class AccessRightsDict(TypedDict):
     delete: bool
 
 
-GroupInfoTuple: TypeAlias = tuple[Group, AccessRightsDict]
+type GroupInfoTuple = tuple[Group, AccessRightsDict]
 
 
 class GroupsByTypeTuple(NamedTuple):

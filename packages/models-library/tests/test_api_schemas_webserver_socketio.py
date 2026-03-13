@@ -5,16 +5,17 @@ from faker import Faker
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.groups import GroupID
 from models_library.users import UserID
+from pydantic import TypeAdapter
 
 
 @pytest.fixture
 def user_id(faker: Faker) -> UserID:
-    return UserID(faker.pyint())
+    return TypeAdapter(UserID).validate_python(faker.pyint())
 
 
 @pytest.fixture
 def group_id(faker: Faker) -> GroupID:
-    return GroupID(faker.pyint())
+    return TypeAdapter(GroupID).validate_python(faker.pyint())
 
 
 @pytest.fixture
