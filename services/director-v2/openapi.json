@@ -2115,6 +2115,11 @@
           "is_inactive": "false"
         }
       },
+      "GroupID": {
+        "type": "integer",
+        "exclusiveMinimum": true,
+        "minimum": 0
+      },
       "HTTPValidationError": {
         "properties": {
           "errors": {
@@ -2416,9 +2421,7 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "integer",
-                  "exclusiveMinimum": true,
-                  "minimum": 0
+                  "$ref": "#/components/schemas/GroupID"
                 },
                 "type": "array"
               },
