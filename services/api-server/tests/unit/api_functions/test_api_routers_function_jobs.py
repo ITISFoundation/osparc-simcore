@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
 )
+from models_library.celery import OwnerMetadata, TaskState, TaskStatus, TaskUUID
 from models_library.functions import (
     FunctionJob,
     FunctionJobStatus,
@@ -33,7 +34,6 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import OwnerMetadata, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_function_jobs_task_client import (
     FunctionJobTaskClientService,

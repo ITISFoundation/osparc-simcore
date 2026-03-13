@@ -14,16 +14,16 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.celery import (
+    TaskKey,
+    TaskStreamItem,
+)
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import (
-    TaskKey,
-    TaskStreamItem,
-)
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 

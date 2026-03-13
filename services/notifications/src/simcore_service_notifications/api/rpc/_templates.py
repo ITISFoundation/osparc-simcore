@@ -1,11 +1,13 @@
+from dataclasses import asdict
+
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc import (
     PreviewTemplateRequest,
     PreviewTemplateResponse,
     SearchTemplatesResponse,
 )
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc import (
     TemplateRef as TemplateRefRpc,
 )
 from models_library.notifications_errors import (
@@ -15,7 +17,7 @@ from models_library.notifications_errors import (
 from servicelib.rabbitmq import RPCRouter
 
 from ...models.template import TemplateRef
-from .dependencies import get_notifications_templates_service
+from .dependencies import get_template_service
 
 router = RPCRouter()
 
@@ -27,11 +29,12 @@ router = RPCRouter()
     )
 )
 async def preview_template(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     request: PreviewTemplateRequest,
 ) -> PreviewTemplateResponse:
-    service = get_notifications_templates_service()
+    assert app  # nosec
+    service = get_template_service()
 
     preview = service.preview_template(
         ref=TemplateRef(**request.ref.model_dump()),
@@ -46,7 +49,7 @@ async def preview_template(
 
 @router.expose()
 async def search_templates(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     channel: ChannelType | None,
     template_name: str | None,
@@ -63,15 +66,14 @@ async def search_templates(
     Returns:
         A list of notification template responses matching the search criteria.
     """
-    service = get_notifications_templates_service()
+    assert app  # nosec
+
+    service = get_template_service()
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [
         SearchTemplatesResponse(
-            ref=TemplateRefRpc(
-                channel=template.ref.channel,
-                template_name=template.ref.template_name,
-            ),
+            ref=TemplateRefRpc(**asdict(template.ref)),
             context_schema=template.context_model.model_json_schema(),
         )
         for template in templates

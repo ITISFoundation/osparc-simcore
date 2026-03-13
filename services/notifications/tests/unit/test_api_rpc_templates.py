@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 import pytest
 from fastapi import FastAPI
 from models_library.notifications import ChannelType, TemplateRef
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc import (
     PreviewTemplateResponse,
 )
 from models_library.notifications_errors import (
@@ -12,7 +12,7 @@ from models_library.notifications_errors import (
     NotificationsTemplateNotFoundError,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template,
     search_templates,
 )
