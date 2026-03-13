@@ -276,7 +276,10 @@ def _handle_errors_with_error_page(handler: Handler):
 
         except Exception as err:
             error_code = create_error_code(err)
-            user_error_msg = compose_support_error_msg(msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code)
+            user_error_msg = compose_support_error_msg(
+                msg=MSG_UNEXPECTED_DISPATCH_ERROR,
+                error_code=error_code,
+            )
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     user_error_msg,
@@ -383,8 +386,10 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
-
-        user_error_msg = MSG_UNEXPECTED_DISPATCH_ERROR
+        user_error_msg = compose_support_error_msg(
+            msg=MSG_UNEXPECTED_DISPATCH_ERROR,
+            error_code=error_code,
+        )
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 user_error_msg,
