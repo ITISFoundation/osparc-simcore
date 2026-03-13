@@ -5,7 +5,7 @@ from jinja2 import Template as JinjaTemplate
 from ..models.template import Template
 
 
-class TemplatesRepository(ABC):
+class TemplateRepository(ABC):
     @abstractmethod
     def get_jinja_template(self, template: Template, part: str) -> JinjaTemplate: ...
 

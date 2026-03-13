@@ -3,13 +3,13 @@ from typing import Any
 
 from ..models.content import for_channel
 from ..models.template import Template, TemplatePreview
-from ..repositories import TemplatesRepository
+from ..repositories import TemplateRepository
 from ._renderer import Renderer
 
 
 @dataclass(frozen=True)
 class JinjaNotificationsRenderer(Renderer):
-    templates_repo: TemplatesRepository
+    templates_repo: TemplateRepository
 
     def preview_template(
         self,
