@@ -8886,6 +8886,11 @@
         ],
         "title": "GetCreditPriceLegacy"
       },
+      "GroupID": {
+        "type": "integer",
+        "exclusiveMinimum": true,
+        "minimum": 0
+      },
       "Groups": {
         "properties": {
           "me": {
@@ -12690,10 +12695,7 @@
             "title": "Description"
           },
           "owner": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Owner",
-            "minimum": 0
+            "$ref": "#/components/schemas/GroupID"
           },
           "thumbnail": {
             "anyOf": [
