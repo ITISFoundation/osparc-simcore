@@ -29,9 +29,10 @@ from models_library.api_schemas_webserver.storage import (
     SearchBodyParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
+    StoragePathNotifyChangeParams,
 )
 from models_library.products import ProductName
-from models_library.projects_nodes_io import LocationID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import (
@@ -60,6 +61,7 @@ from yarl import URL
 from .._meta import API_VTAG
 from ..celery import get_task_manager
 from ..constants import RQ_PRODUCT_KEY
+from ..dynamic_scheduler import api as dynamic_scheduler
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..security.decorators import permission_required
@@ -178,6 +180,27 @@ async def list_paths(request: web.Request) -> web.Response:
         request, "GET", body=None, product_name=request[RQ_PRODUCT_KEY]
     )
     return create_data_response(payload, status=resp_status)
+
+
+@routes.post(
+    f"{_storage_locations_prefix}/{{location_id}}/paths/{{path}}:notifyChange",
+    name="notify_change_in_path",
+)
+@login_required
+@permission_required("storage.files.*")
+async def notify_change_in_path(request: web.Request) -> web.Response:
+    # After a change in a S3 directory, the frontend should call this endpoint.
+    # Inform backend service that a change occurred in a S3 directory.
+    # This is used by the running dynamic service node to trigger a reload of the files from S3 for a given directory.
+    # If no service is running, no errors are raised.
+    _ = AuthenticatedRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(StoragePathNotifyChangeParams, request)
+
+    await dynamic_scheduler.notify_path_change(
+        request.app, path=TypeAdapter(StorageFileID).validate_python(f"{path_params.path}")
+    )
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 def _create_data_response_from_async_job(

@@ -28,6 +28,10 @@ class StoragePathComputeSizeParams(StorageLocationPathParams):
     path: Path
 
 
+class StoragePathNotifyChangeParams(StorageLocationPathParams):
+    path: Path
+
+
 class ListPathsQueryParams(InputSchema, CursorQueryParameters):
     file_filter: Path | None = None
 

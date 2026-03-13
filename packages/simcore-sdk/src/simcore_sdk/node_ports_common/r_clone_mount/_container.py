@@ -26,6 +26,7 @@ from ..r_clone_utils import overwrite_command
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY
 from ._errors import (
+    RefreshMountError,
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
 )
@@ -264,9 +265,10 @@ class RemoteControlHttpClient:
     def _base_url(self) -> str:
         return f"http://{self.rc_host}:{self.rc_port}"
 
-    async def _request(self, method: str, path: str) -> dict:
+    async def _request(self, method: str, path: str, params: dict[str, str] | None = None) -> dict:
         request_url = f"{self._base_url}/{path}"
-        _logger.debug("Sending '%s %s' request", method, request_url)
+        params = params or {}
+        _logger.debug("Sending '%s %s' request with payload '%s'", method, request_url, params)
 
         async with AsyncClient(timeout=self._r_clone_client_timeout_seconds) as client:
             response = await client.request(method, request_url, auth=self._auth)
@@ -285,6 +287,17 @@ class RemoteControlHttpClient:
     async def _rc_noop(self) -> dict:
         """for details refer to https://rclone.org/rc/#rc-noopauth"""
         return await self._request("POST", "rc/noopauth")
+
+    async def post_vfs_refresh(self, dir_to_refresh: str, *, recursive: bool) -> None:
+        params = {}
+        if recursive:
+            params["recursive"] = "true"
+        if dir_to_refresh != "":
+            params["dir"] = dir_to_refresh
+        refresh_result = await self._request("POST", "vfs/refresh", params=params)
+
+        if refresh_result.get("result") != {dir_to_refresh: "OK"}:
+            raise RefreshMountError(refresh_result=refresh_result)
 
     async def get_mount_activity(self) -> MountActivity:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
@@ -313,7 +326,7 @@ class RemoteControlHttpClient:
 
     async def is_responsive(self) -> bool:
         try:
-            await self._rc_noop()
+            await self._post_rc_noop()
             return True
         except HTTPError:
             return False
