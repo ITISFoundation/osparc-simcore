@@ -17,7 +17,7 @@ from models_library.notifications_errors import (
 from servicelib.rabbitmq import RPCRouter
 
 from ...models.template import TemplateRef
-from .dependencies import get_templates_service
+from .dependencies import get_template_service
 
 router = RPCRouter()
 
@@ -34,7 +34,7 @@ async def preview_template(
     request: PreviewTemplateRequest,
 ) -> PreviewTemplateResponse:
     assert app  # nosec
-    service = get_templates_service()
+    service = get_template_service()
 
     preview = service.preview_template(
         ref=TemplateRef(**request.ref.model_dump()),
@@ -68,7 +68,7 @@ async def search_templates(
     """
     assert app  # nosec
 
-    service = get_templates_service()
+    service = get_template_service()
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [

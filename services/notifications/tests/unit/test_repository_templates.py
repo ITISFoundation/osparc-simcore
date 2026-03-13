@@ -7,7 +7,7 @@ from models_library.notifications import ChannelType, TemplateName
 from pydantic import TypeAdapter
 from simcore_service_notifications.models.template import TemplateRef
 from simcore_service_notifications.repositories import (
-    FileTemplatesRepository,
+    FileTemplateRepository,
     TemplateRepository,
     template_path_prefix,
 )
@@ -16,7 +16,7 @@ from simcore_service_notifications.repositories import (
 @pytest.fixture
 def template_repository(mock_jinja_env: Environment) -> TemplateRepository:
     """Create a FileTemplatesRepository instance with mock templates."""
-    return FileTemplatesRepository(env=mock_jinja_env)
+    return FileTemplateRepository(env=mock_jinja_env)
 
 
 def test_template_path_prefix() -> None:

@@ -48,7 +48,7 @@ def template_path_prefix(template_ref: TemplateRef) -> str:
 
 
 @dataclass(frozen=True)
-class FileTemplatesRepository(TemplateRepository):
+class FileTemplateRepository(TemplateRepository):
     env: Environment
 
     @staticmethod

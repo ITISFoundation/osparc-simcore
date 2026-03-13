@@ -8,8 +8,8 @@ from ._renderer import Renderer
 
 
 @dataclass(frozen=True)
-class JinjaNotificationsRenderer(Renderer):
-    templates_repo: TemplateRepository
+class JinjaRenderer(Renderer):
+    repository: TemplateRepository
 
     def preview_template(
         self,
@@ -18,7 +18,7 @@ class JinjaNotificationsRenderer(Renderer):
     ) -> TemplatePreview:
         content = {}
         for render_part in template.parts:
-            jinja_template = self.templates_repo.get_jinja_template(template, render_part)
+            jinja_template = self.repository.get_jinja_template(template, render_part)
 
             content[render_part] = jinja_template.render(context)
 
