@@ -8,6 +8,7 @@ from typing import Any, Final
 
 import arrow
 from faststream.exceptions import NackMessage, RejectMessage
+from faststream.middlewares import AckPolicy
 from faststream.rabbit import (
     ExchangeType,
     QueueType,
@@ -570,43 +571,43 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self._fs_handle_scheduled = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.SCHEDULED),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.ACK_FIRST,
         )(self._fs_handle_scheduled)
 
         self._fs_handle_submit_task = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.SUBMIT_TASK),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.ACK_FIRST,
         )(self._fs_handle_submit_task)
 
         self._fs_handle_worker = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.WORKER),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.ACK_FIRST,
         )(self._fs_handle_worker)
 
         self._fs_handle_error_result = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.ERROR_RESULT),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.ACK_FIRST,
         )(self._fs_handle_error_result)
 
         self._fs_handle_finished_with_error = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.FINISHED_WITH_ERROR),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.ACK_FIRST,
         )(self._fs_handle_finished_with_error)
 
         self._fs_handle_deferred_result = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.DEFERRED_RESULT),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.ACK_FIRST,
         )(self._fs_handle_deferred_result)
 
         self._fs_handle_manually_cancelled = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.MANUALLY_CANCELLED),
             exchange=self.cancellation_exchange,
-            retry=True,
+            ack_policy=AckPolicy.ACK_FIRST,
         )(self._fs_handle_manually_cancelled)
 
     async def setup(self) -> None:

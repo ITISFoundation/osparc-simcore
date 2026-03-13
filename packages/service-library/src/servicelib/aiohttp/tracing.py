@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator, Callable
 from typing import Final
 
 from aiohttp import web
-from opentelemetry import trace
+from opentelemetry import metrics, trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
@@ -17,9 +17,8 @@ from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-
     _parse_active_request_count_attrs,
     _parse_duration_attrs,
     collect_request_attributes,
-    get_default_span_details,
+    get_default_span_name,
     getter,
-    meter,
     set_status_code,
 )
 from opentelemetry.propagate import extract
@@ -109,19 +108,27 @@ async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler)
     and should be used once released.
     """
 
-    span_name, additional_attributes = get_default_span_details(request)
+    # NOTE: opentelemetry-instrumentation-aiohttp-server removed
+    # `get_default_span_details` in favor of `get_default_span_name`.
+    # We only relied on the default span name; additional attributes were empty.
+    span_name = get_default_span_name(request)
+    additional_attributes: dict[str, str | None] = {}
 
     req_attrs = collect_request_attributes(request)
     duration_attrs = _parse_duration_attrs(req_attrs)
     active_requests_count_attrs = _parse_active_request_count_attrs(req_attrs)
 
-    duration_histogram = meter.create_histogram(
+    # NOTE: newer opentelemetry-instrumentation-aiohttp-server no longer exposes
+    # a module-level `meter`. Use the public OpenTelemetry metrics API instead.
+    otel_meter = metrics.get_meter(__name__)
+
+    duration_histogram = otel_meter.create_histogram(
         name=MetricInstruments.HTTP_SERVER_DURATION,
         unit="ms",
         description="Measures the duration of inbound HTTP requests.",
     )
 
-    active_requests_counter = meter.create_up_down_counter(
+    active_requests_counter = otel_meter.create_up_down_counter(
         name=MetricInstruments.HTTP_SERVER_ACTIVE_REQUESTS,
         unit="requests",
         description="measures the number of concurrent HTTP requests those are currently in flight",
