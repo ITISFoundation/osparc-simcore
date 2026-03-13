@@ -297,9 +297,12 @@ async def cancel_all_jobs(
         jobs_to_cancel=jobs_to_cancel,
         jobs_to_remove=jobs_to_remove,
     )
+    if abort_in_db:
+        project_id_node_ids_to_abort_in_db = {
+            (comp_task.project_id, comp_task.node_id)
+            for comp_task, dask_task in task_to_dask_job
+            if comp_task is not None and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"]
+        }
+        await db.abort_jobs_in_db(engine, project_id_node_ids_to_abort_in_db)
 
-    for comp_task, _dask_task in task_to_dask_job:
-        if comp_task is not None and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"] and abort_in_db:
-            await db.abort_job_in_db(engine, comp_task.project_id, comp_task.node_id)
-
-        rich.print("cancelled all tasks")
+    rich.print("cancelled all tasks")

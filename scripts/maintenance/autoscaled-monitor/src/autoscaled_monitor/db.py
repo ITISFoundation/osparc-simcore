@@ -87,6 +87,20 @@ async def abort_job_in_db(engine: AsyncEngine, project_id: uuid.UUID, node_id: u
         rich.print(f"set comp_tasks for {project_id=}/{node_id=} set to ABORTED")
 
 
+async def abort_jobs_in_db(engine: AsyncEngine, project_node_ids: set[tuple[uuid.UUID, uuid.UUID]]) -> None:
+    async with engine.begin() as db_connection:
+        await db_connection.execute(
+            sa.update(sa.table("comp_tasks"))
+            .where(
+                sa.tuple_(sa.column("project_id"), sa.column("node_id")).in_(
+                    [(str(pid), str(nid)) for pid, nid in project_node_ids]
+                )
+            )
+            .values(state="ABORTED")
+        )
+    rich.print(f"set comp_tasks for {project_node_ids=} set to ABORTED")
+
+
 async def check_db_connection(state: AppState) -> bool:
     try:
         async with db_engine(state) as engine:
