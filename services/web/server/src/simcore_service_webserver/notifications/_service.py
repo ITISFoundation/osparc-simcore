@@ -11,7 +11,7 @@ from models_library.notifications_errors import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.celery.models import GroupUUID, TaskUUID
+from servicelib.celery.models import GroupUUID, TaskName, TaskUUID
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template as remote_preview_template,
 )
@@ -139,7 +139,7 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
-) -> tuple[TaskUUID | GroupUUID, str]:
+) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
         case ChannelType.email:
             message = await _create_email_message(
