@@ -11,10 +11,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
     AioHttpClientInstrumentor,
 )
-from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
-    AioHttpServerInstrumentor,
-    create_aiohttp_middleware,
-)
+from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor, create_aiohttp_middleware
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import get_current_span
@@ -132,16 +129,15 @@ def _startup(
         app.middlewares.insert(0, response_trace_id_header_middleware)
 
     app.middlewares.insert(0, add_custom_request_attributes_to_span_middleware)
-    app.middlewares.insert(0, create_aiohttp_middleware(tracer_provider=tracer_provider))
+
     # NOTE: AioHttpServerInstrumentor().instrument() initializes module-level globals
     # (e.g. _excluded_urls, metrics) that create_aiohttp_middleware's inner _middleware
     # depends on. However, instrument() also replaces aiohttp.web.Application with a
     # subclass, which breaks isinstance() checks for apps created before instrumentation
-    # (e.g. swagger_ui's handler matching). We restore the original Application class
-    # immediately after to avoid this side effect.
-    _original_application = web.Application
+    # (e.g. swagger_ui's handler matching).
     AioHttpServerInstrumentor().instrument(tracer_provider=tracer_provider)
-    web.Application = _original_application  # type: ignore[misc]
+    AioHttpServerInstrumentor().uninstrument(tracer_provider=tracer_provider)
+    app.middlewares.insert(0, create_aiohttp_middleware(tracer_provider=tracer_provider))
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
@@ -210,8 +206,6 @@ async def add_custom_request_attributes_to_span_middleware(request: web.Request,
 
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
-    with log_catch(_logger, reraise=False):
-        AioHttpServerInstrumentor().uninstrument()
     with log_catch(_logger, reraise=False):
         AioHttpClientInstrumentor().uninstrument()
     if HAS_AIOPG:
