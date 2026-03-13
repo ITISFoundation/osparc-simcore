@@ -42,11 +42,6 @@ def mocked_notifications_rpc_client(
         autospec=True,
     )
 
-    mocker.patch(
-        f"{_service.__name__}.remote_send_message",
-        autospec=True,
-    )
-
     return mocker
 
 
