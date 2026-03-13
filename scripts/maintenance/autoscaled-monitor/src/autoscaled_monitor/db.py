@@ -111,23 +111,23 @@ async def check_db_connection(state: AppState) -> bool:
 
 
 @cached()
-async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) -> list[ComputationalTask]:
-    # Get the list of running project UUIDs with a subquery
-    # Avoid casts if columns are already text to allow index usage
-    subquery = (
-        sa.select(sa.column("project_uuid"))
-        .select_from(sa.table("comp_runs"))
-        .where(
-            sa.and_(
-                sa.column("user_id") == user_id,
-                sa.column("result") != "SUCCESS",
-                sa.column("result") != "FAILED",
-                sa.column("result") != "ABORTED",
-            )
-        )
-    )
+async def get_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list[str]) -> list[ComputationalTask]:
+    """Fetch computational tasks by specific job IDs.
 
-    # Select only needed columns instead of wildcard to reduce network transfer
+    Much more efficient than list_computational_tasks_from_db when you already know
+    which job_ids you're interested in (e.g., from a cluster's running jobs).
+    Uses direct job_id matching instead of scanning all user tasks.
+
+    Args:
+        engine: async DB engine
+        job_ids: list of job IDs to fetch
+
+    Returns:
+        list of ComputationalTask matching the job_ids
+    """
+    if not job_ids:
+        return []
+
     query = (
         sa.select(
             sa.column("project_id"),
@@ -137,12 +137,7 @@ async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) ->
             sa.column("state"),
         )
         .select_from(sa.table("comp_tasks"))
-        .where(
-            sa.column("project_id").in_(subquery)
-            & (sa.column("state") != "SUCCESS")
-            & (sa.column("state") != "FAILED")
-            & (sa.column("state") != "ABORTED")
-        )
+        .where(sa.column("job_id").in_(job_ids))
     )
 
     async with engine.connect() as conn:
