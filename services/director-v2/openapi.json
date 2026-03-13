@@ -2106,7 +2106,8 @@
       },
       "GroupID": {
         "type": "integer",
-        "exclusiveMinimum": 0
+        "exclusiveMinimum": true,
+        "minimum": 0
       },
       "HTTPValidationError": {
         "properties": {

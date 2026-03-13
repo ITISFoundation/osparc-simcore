@@ -12958,7 +12958,8 @@ components:
       title: GroupGetBase
     GroupID:
       type: integer
-      exclusiveMinimum: 0
+      exclusiveMinimum: true
+      minimum: 0
     GroupUpdate:
       properties:
         label:
@@ -15569,7 +15570,8 @@ components:
       title: PricingUnitGet
     PrimaryGroupID:
       type: integer
-      exclusiveMinimum: 1
+      exclusiveMinimum: true
+      minimum: 1
     ProductGet:
       properties:
         name:
