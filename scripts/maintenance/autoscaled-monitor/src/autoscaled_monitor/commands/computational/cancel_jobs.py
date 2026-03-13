@@ -20,16 +20,22 @@ async def _run(  # noqa: C901, PLR0912
     *,
     abort_in_db: bool,
 ) -> None:
-    async with db.db_engine(state) as engine:
-        computational_tasks = await db.list_computational_tasks_from_db(engine, user_id)
-        computational_clusters = await load_computational_clusters(state, user_id, wallet_id)
+    # Load cluster first to extract job IDs for targeted lookup
+    computational_clusters = await load_computational_clusters(state, user_id, wallet_id)
 
-        if computational_clusters:
-            assert len(computational_clusters) == 1, (
-                "too many clusters found! TIP: fix this code or something weird is playing out"
-            )
-            the_cluster = computational_clusters[0]
-            rich.print(f"{the_cluster.task_states_to_tasks=}")
+    if computational_clusters:
+        assert len(computational_clusters) == 1, (
+            "too many clusters found! TIP: fix this code or something weird is playing out"
+        )
+        the_cluster = computational_clusters[0]
+        rich.print(f"{the_cluster.task_states_to_tasks=}")
+
+        # Extract job_ids from cluster to fetch only relevant tasks
+        job_ids = [job_id for job_ids in the_cluster.task_states_to_tasks.values() for job_id in job_ids]
+
+    async with db.db_engine(state) as engine:
+        # Fetch only the computational tasks that are actually on the cluster
+        computational_tasks = await db.get_computational_tasks_by_job_ids(engine, job_ids)
 
         job_id_to_dask_state = await analysis.get_job_id_to_dask_state_from_cluster(the_cluster)
         task_to_dask_job: list[

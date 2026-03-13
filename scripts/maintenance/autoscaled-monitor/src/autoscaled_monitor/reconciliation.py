@@ -139,7 +139,9 @@ async def reconcile_computational_clusters(
 
         for cluster in computational_clusters:
             try:
-                comp_tasks = await db.list_computational_tasks_from_db(engine, cluster.primary.user_id)
+                # Extract job_ids from cluster for targeted lookup
+                job_ids = [job_id for job_ids in cluster.task_states_to_tasks.values() for job_id in job_ids]
+                comp_tasks = await db.get_computational_tasks_by_job_ids(engine, job_ids)
             except Exception:  # pylint: disable=broad-exception-caught
                 rich.print(
                     f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]"
