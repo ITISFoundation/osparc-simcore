@@ -1346,6 +1346,11 @@
         "title": "GenericResources",
         "description": "User-defined resources can be either Integer resources (e.g, `SSD=3`) or\nString resources (e.g, `GPU=UUID1`)."
       },
+      "GroupID": {
+        "type": "integer",
+        "exclusiveMinimum": true,
+        "minimum": 0
+      },
       "HTTPValidationError": {
         "properties": {
           "errors": {
@@ -2687,6 +2692,9 @@
               },
               "type": "object"
             },
+            "propertyNames": {
+              "$ref": "#/components/schemas/GroupID"
+            },
             "type": "object",
             "title": "Gids With Access Rights"
           }
@@ -2849,6 +2857,9 @@
               {
                 "additionalProperties": {
                   "$ref": "#/components/schemas/ServiceGroupAccessRights"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/GroupID"
                 },
                 "type": "object"
               },

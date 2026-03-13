@@ -842,9 +842,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       responses:
         '200':
           description: Successful Response
@@ -863,9 +861,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -890,9 +886,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       responses:
         '204':
           description: Successful Response
@@ -909,9 +903,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       responses:
         '200':
           description: Successful Response
@@ -932,9 +924,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -957,9 +947,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       - name: uid
         in: path
         required: true
@@ -986,9 +974,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       - name: uid
         in: path
         required: true
@@ -1021,9 +1007,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       - name: uid
         in: path
         required: true
@@ -1045,9 +1029,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
       - name: tree_view
         in: query
         required: false
@@ -1252,9 +1234,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -1300,9 +1280,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -1348,9 +1326,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       responses:
         '204':
           description: Successful Response
@@ -1855,8 +1831,7 @@ paths:
         required: false
         schema:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
+          - $ref: '#/components/schemas/GroupID'
           - type: 'null'
           title: Primary Group Id
       - name: user_name
@@ -2324,9 +2299,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -2358,9 +2331,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -2392,9 +2363,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       responses:
         '204':
           description: Successful Response
@@ -3831,7 +3800,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__'
+                $ref: '#/components/schemas/Envelope_dict_GroupID__FunctionGroupAccessRightsGet__'
   /v0/functions/{function_id}/groups/{group_id}:
     put:
       tags:
@@ -3850,9 +3819,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -3883,9 +3850,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       responses:
         '204':
           description: Successful Response
@@ -5568,9 +5533,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -5602,9 +5565,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -5636,9 +5597,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       responses:
         '204':
           description: Successful Response
@@ -6425,9 +6384,7 @@ paths:
         in: query
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: For Gid
+          $ref: '#/components/schemas/GroupID'
       responses:
         '200':
           description: Successful Response
@@ -8658,9 +8615,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -8716,9 +8671,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       requestBody:
         required: true
         content:
@@ -8774,9 +8727,7 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: 0
-          title: Group Id
+          $ref: '#/components/schemas/GroupID'
       responses:
         '204':
           description: Successful Response
@@ -9445,6 +9396,8 @@ components:
           anyOf:
           - additionalProperties:
               $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+            propertyNames:
+              $ref: '#/components/schemas/GroupID'
             type: object
           - type: 'null'
           title: Accessrights
@@ -9669,6 +9622,8 @@ components:
           anyOf:
           - additionalProperties:
               $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+            propertyNames:
+              $ref: '#/components/schemas/GroupID'
             type: object
           - type: 'null'
           title: Accessrights
@@ -9831,6 +9786,8 @@ components:
           anyOf:
           - additionalProperties:
               $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+            propertyNames:
+              $ref: '#/components/schemas/GroupID'
             type: object
           - type: 'null'
           title: Accessrights
@@ -10271,9 +10228,7 @@ components:
           format: uuid
           title: Conversationid
         userGroupId:
-          type: integer
-          exclusiveMinimum: 0
-          title: Usergroupid
+          $ref: '#/components/schemas/GroupID'
         content:
           type: string
           maxLength: 4096
@@ -10349,9 +10304,7 @@ components:
           - type: 'null'
           title: Projectuuid
         userGroupId:
-          type: integer
-          exclusiveMinimum: 0
-          title: Usergroupid
+          $ref: '#/components/schemas/GroupID'
         type:
           $ref: '#/components/schemas/ConversationType'
         fogbugzCaseId:
@@ -11704,22 +11657,6 @@ components:
           title: Error
       type: object
       title: Envelope[_ProjectNodePreview]
-    Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__:
-      properties:
-        data:
-          anyOf:
-          - additionalProperties:
-              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
-            type: object
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[dict[Annotated[int, Gt], FunctionGroupAccessRightsGet]]
     Envelope_dict_Annotated_str__StringConstraints___ImageResources__:
       properties:
         data:
@@ -11734,6 +11671,24 @@ components:
           title: Error
       type: object
       title: Envelope[dict[Annotated[str, StringConstraints], ImageResources]]
+    Envelope_dict_GroupID__FunctionGroupAccessRightsGet__:
+      properties:
+        data:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            propertyNames:
+              $ref: '#/components/schemas/GroupID'
+            type: object
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[dict[GroupID, FunctionGroupAccessRightsGet]]
     Envelope_dict_UUID__Activity__:
       properties:
         data:
@@ -12770,21 +12725,11 @@ components:
           title: Trashedat
         trashedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
+          - $ref: '#/components/schemas/GroupID'
           - type: 'null'
-          title: Trashedby
           description: The primary gid of the user who trashed
         owner:
-          type: integer
-          exclusiveMinimum: 0
-          title: Owner
-        workspaceId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: 0
-          - type: 'null'
-          title: Workspaceid
+          $ref: '#/components/schemas/GroupID'
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
       type: object
@@ -12947,9 +12892,7 @@ components:
     GroupGet:
       properties:
         gid:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
           description: the group's unique ID
         label:
           type: string
@@ -12984,9 +12927,7 @@ components:
     GroupGetBase:
       properties:
         gid:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
           description: the group's unique ID
         label:
           type: string
@@ -13009,6 +12950,10 @@ components:
       - label
       - description
       title: GroupGetBase
+    GroupID:
+      type: integer
+      exclusiveMinimum: true
+      minimum: 0
     GroupUpdate:
       properties:
         label:
@@ -13078,10 +13023,8 @@ components:
           description: None if private
         gid:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
+          - $ref: '#/components/schemas/GroupID'
           - type: 'null'
-          title: Gid
           description: the user primary gid
         login:
           anyOf:
@@ -13641,8 +13584,7 @@ components:
         groupIds:
           anyOf:
           - items:
-              type: integer
-              exclusiveMinimum: 0
+              $ref: '#/components/schemas/GroupID'
             type: array
           - type: 'null'
           title: Groupids
@@ -14599,10 +14541,8 @@ components:
           $ref: '#/components/schemas/ServiceRelease'
         owner:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
+          - $ref: '#/components/schemas/GroupID'
           - type: 'null'
-          title: Owner
           description: Service owner primary group id or None if ownership still not
             defined
         myAccessRights:
@@ -14623,8 +14563,7 @@ components:
         current_user_groupids:
           anyOf:
           - items:
-              type: integer
-              exclusiveMinimum: 0
+              $ref: '#/components/schemas/GroupID'
             type: array
           - type: 'null'
           title: Current User Groupids
@@ -15623,6 +15562,10 @@ components:
       - currentCostPerUnit
       - default
       title: PricingUnitGet
+    PrimaryGroupID:
+      type: integer
+      exclusiveMinimum: true
+      minimum: 1
     ProductGet:
       properties:
         name:
@@ -15935,10 +15878,8 @@ components:
           title: Trashedat
         trashedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
+          - $ref: '#/components/schemas/GroupID'
           - type: 'null'
-          title: Trashedby
           description: The primary gid of the user who trashed
         tags:
           items:
@@ -16006,9 +15947,7 @@ components:
     ProjectGroupGet:
       properties:
         gid:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
         read:
           type: boolean
           title: Read
@@ -16131,10 +16070,8 @@ components:
           title: Trashedat
         trashedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
+          - $ref: '#/components/schemas/GroupID'
           - type: 'null'
-          title: Trashedby
           description: The primary gid of the user who trashed
         tags:
           items:
@@ -16451,8 +16388,7 @@ components:
           description: True if the project is locked
         currentUserGroupids:
           items:
-            type: integer
-            exclusiveMinimum: 0
+            $ref: '#/components/schemas/GroupID'
           type: array
           title: Currentusergroupids
           description: Current users in the project (if the project is locked, the
@@ -16691,6 +16627,8 @@ components:
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          propertyNames:
+            $ref: '#/components/schemas/GroupID'
           type: object
           title: Accessrights
         thumbnail:
@@ -16772,6 +16710,8 @@ components:
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          propertyNames:
+            $ref: '#/components/schemas/GroupID'
           type: object
           title: Accessrights
         thumbnail:
@@ -17994,9 +17934,7 @@ components:
     TagGroupGet:
       properties:
         gid:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
         read:
           type: boolean
           title: Read
@@ -18576,10 +18514,8 @@ components:
           description: Username of the user if an account was created
         groupId:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 1
+          - $ref: '#/components/schemas/PrimaryGroupID'
           - type: 'null'
-          title: Groupid
           description: Primary group ID of the user if an account was created
       type: object
       required:
@@ -18721,9 +18657,7 @@ components:
           exclusiveMinimum: 0
           title: Userid
         groupId:
-          type: integer
-          exclusiveMinimum: 0
-          title: Groupid
+          $ref: '#/components/schemas/GroupID'
         userName:
           anyOf:
           - type: string
@@ -18946,9 +18880,7 @@ components:
           - type: 'null'
           title: Description
         owner:
-          type: integer
-          exclusiveMinimum: 0
-          title: Owner
+          $ref: '#/components/schemas/GroupID'
         thumbnail:
           anyOf:
           - type: string
@@ -18990,9 +18922,7 @@ components:
           - type: 'null'
           title: Description
         owner:
-          type: integer
-          exclusiveMinimum: 0
-          title: Owner
+          $ref: '#/components/schemas/GroupID'
         thumbnail:
           anyOf:
           - type: string
@@ -19024,9 +18954,7 @@ components:
     WalletGroupGet:
       properties:
         gid:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
         read:
           type: boolean
           title: Read
@@ -19176,16 +19104,16 @@ components:
           title: Trashedat
         trashedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
+          - $ref: '#/components/schemas/GroupID'
           - type: 'null'
-          title: Trashedby
           description: The primary gid of the user who trashed
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/AccessRights'
+          propertyNames:
+            $ref: '#/components/schemas/GroupID'
           type: object
           title: Accessrights
       type: object
@@ -19204,9 +19132,7 @@ components:
     WorkspaceGroupGet:
       properties:
         gid:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
         read:
           type: boolean
           title: Read
@@ -19407,9 +19333,7 @@ components:
     _ProjectGroupAccess:
       properties:
         gid:
-          type: integer
-          exclusiveMinimum: 0
-          title: Gid
+          $ref: '#/components/schemas/GroupID'
         accessible:
           type: boolean
           title: Accessible

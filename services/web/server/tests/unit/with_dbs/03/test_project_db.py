@@ -390,11 +390,11 @@ async def test_patch_user_project_workbench_creates_nodes(
         project_uuid=new_project["uuid"],
         allow_workbench_changes=True,
     )
-    for node_id in partial_workbench_data:
+    for node_id, node_data in partial_workbench_data.items():
         assert node_id in patched_project["workbench"]
-        assert partial_workbench_data[node_id] == patched_project["workbench"][node_id]
+        assert node_data == patched_project["workbench"][node_id]
         assert node_id in changed_entries
-        assert changed_entries[node_id] == partial_workbench_data[node_id]
+        assert changed_entries[node_id] == node_data
 
 
 @pytest.mark.parametrize(
@@ -701,7 +701,9 @@ async def test_has_permission(
 
         # user does not exits
         assert (
-            await has_user_project_access_rights(client.app, project_id=project_id, user_id=-1, permission=permission)
+            await has_user_project_access_rights(
+                client.app, project_id=project_id, user_id=99999, permission=permission
+            )
             is False
         )
 
@@ -720,7 +722,8 @@ async def test_has_permission(
 def _fake_output_data() -> dict:
     return {
         "store": 0,
-        "path": "9f8207e6-144a-11ef-831f-0242ac140027/98b68cbe-9e22-4eb5-a91b-2708ad5317b7/outputs/output_2/output_2.zip",
+        "path": "9f8207e6-144a-11ef-831f-0242ac140027/98b68cbe-9e22-4eb5-a91b-2708ad5317b7/"
+        "outputs/output_2/output_2.zip",
         "eTag": "ec3bc734d85359b660aab400147cd1ea",
     }
 
