@@ -17,11 +17,11 @@ _logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class TemplateService:
-    templates_repo: TemplateRepository
+    repository: TemplateRepository
     renderer: Renderer
 
     def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> TemplatePreview:
-        templates = self.templates_repo.search_templates(
+        templates = self.repository.search_templates(
             channel=ref.channel,
             template_name=ref.template_name,
         )
@@ -52,4 +52,4 @@ class TemplateService:
         )
 
     def search_templates(self, channel: str | None, template_name: str | None) -> list[Template]:
-        return self.templates_repo.search_templates(channel=channel, template_name=template_name)
+        return self.repository.search_templates(channel=channel, template_name=template_name)
