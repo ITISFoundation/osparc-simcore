@@ -20,16 +20,6 @@ from .models import (
 from .ssh import ssh_tunnel
 
 
-def _build_key(fn, *args, **kwargs):
-    """Cache key builder that skips the first arg (engine).
-
-    Note: Cache is intentionally shared across engine instances to avoid redundant queries
-    within a monitoring cycle. If engine reconnects, rely on TTL-based expiration.
-    """
-    cache_args = args[1:] if len(args) > 1 else ()
-    return f"{fn.__module__}.{fn.__name__}:{cache_args}:{kwargs}"
-
-
 @contextlib.asynccontextmanager
 async def db_engine(
     state: AppState,
@@ -120,7 +110,7 @@ async def check_db_connection(state: AppState) -> bool:
     return False
 
 
-@cached(key_builder=_build_key)
+@cached()
 async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) -> list[ComputationalTask]:
     # Get the list of running project UUIDs with a subquery
     # Avoid casts if columns are already text to allow index usage
@@ -173,7 +163,7 @@ async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) ->
     ]
 
 
-@cached(key_builder=_build_key)
+@cached()
 async def list_resource_tracker_running_computational_services(
     engine: AsyncEngine,
 ) -> list[ResourceTrackerServiceRun]:
@@ -225,7 +215,7 @@ async def list_resource_tracker_running_computational_services(
     ]
 
 
-@cached(key_builder=_build_key)
+@cached()
 async def get_user_and_wallet_info(
     engine: AsyncEngine,
     user_id: int,
@@ -274,9 +264,6 @@ async def get_dynamic_service_extra_info(
     if not services:
         return {}
 
-    # Convert services list to mappings for efficient lookup later
-    project_node_ids = [(pid, nid) for _, pid, nid in services]
-
     async with engine.connect() as conn:
         # Single optimized query: fetch RUT entries with user email and wallet name via JOINs
         # This replaces 3 separate queries with 1 JOIN operation
@@ -314,10 +301,9 @@ async def get_dynamic_service_extra_info(
             )
             .where(
                 sa.and_(
-                    sa.column("service_run_status") == "RUNNING",
                     sa.column("service_type") == "DYNAMIC_SERVICE",
-                    sa.tuple_(sa.column("project_id"), sa.column("node_id")).in_(
-                        [(str(pid), str(nid)) for pid, nid in project_node_ids]
+                    sa.tuple_(sa.column("user_id"), sa.column("project_id"), sa.column("node_id")).in_(
+                        [(pid, str(nid)) for uid, pid, nid in services]
                     ),
                 )
             )
@@ -389,30 +375,21 @@ async def get_dynamic_service_extra_info(
     return info
 
 
-async def _get_product_usd_per_credit(
-    conn: Any,
-    product_name: str,
-) -> float | None:
-    """Returns the latest usd_per_credit for the product, or None if not found/zero."""
-    result = await conn.execute(
-        sa.select(sa.column("usd_per_credit"))
-        .select_from(sa.table("products_prices"))
-        .where(sa.column("product_name") == product_name)
-        .order_by(sa.column("valid_from").desc())
-        .limit(1)
-    )
-    row = result.fetchone()
-    if row and row.usd_per_credit is not None:
-        value = float(row.usd_per_credit)
-        return value if value > 0 else None
-    return None
-
-
-@cached(key_builder=_build_key)
+@cached()
 async def get_product_usd_per_credit(
     engine: AsyncEngine,
     product_name: str,
 ) -> float | None:
-    """Returns the latest usd_per_credit for the product, or None if not found/zero."""
+    """Returns the latest usd_per_credit for the product, or None if not found."""
     async with engine.connect() as conn:
-        return await _get_product_usd_per_credit(conn, product_name)
+        result = await conn.execute(
+            sa.select(sa.column("usd_per_credit"))
+            .select_from(sa.table("products_prices"))
+            .where(sa.column("product_name") == product_name)
+            .order_by(sa.column("valid_from").desc())
+            .limit(1)
+        )
+        row = result.fetchone()
+        if row and row.usd_per_credit is not None:
+            return float(row.usd_per_credit)
+        return None
