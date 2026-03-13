@@ -7,7 +7,7 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.groups_enums import GroupType
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, TypeAdapter, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
 
@@ -19,8 +19,6 @@ EVERYONE_GROUP_ID: Final[int] = 1
 type GroupID = PositiveInt
 type PrimaryGroupID = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
 type StandardGroupID = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
-
-group_id_adapter = TypeAdapter(GroupID)
 
 
 __all__: tuple[str, ...] = ("GroupType",)
