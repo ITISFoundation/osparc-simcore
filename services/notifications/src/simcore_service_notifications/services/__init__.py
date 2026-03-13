@@ -1,5 +1,5 @@
-from ._messages import MessagesService
-from ._templates import TemplatesService
+from ._message import MessagesService
+from ._template import TemplatesService
 
 __all__: tuple[str, ...] = (
     "MessagesService",
