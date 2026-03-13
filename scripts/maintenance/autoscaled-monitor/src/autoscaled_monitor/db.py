@@ -299,6 +299,9 @@ async def get_dynamic_service_extra_info(
                 sa.and_(
                     sa.cast(sa.column("service_run_status"), sa.VARCHAR) == "RUNNING",
                     sa.cast(sa.column("service_type"), sa.VARCHAR) == "DYNAMIC_SERVICE",
+                    sa.tuple_(sa.column("project_id"), sa.column("node_id")).in_(
+                        [(str(pid), str(nid)) for _, pid, nid in services]
+                    ),
                 )
             )
         )
