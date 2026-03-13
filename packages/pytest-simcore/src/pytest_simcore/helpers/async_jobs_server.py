@@ -10,11 +10,11 @@ from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobStatus,
 )
 from models_library.api_schemas_async_jobs.exceptions import BaseAsyncjobRpcError
+from models_library.celery import OwnerMetadata
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import validate_call
 from pytest_mock import MockType
-from servicelib.celery.models import OwnerMetadata
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 

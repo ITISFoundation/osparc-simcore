@@ -1,7 +1,8 @@
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
-from servicelib.celery.models import GroupUUID, TaskUUID
+
+from models_library.celery import GroupUUID, TaskUUID
 
 
 class SendMessageRequest(BaseModel):

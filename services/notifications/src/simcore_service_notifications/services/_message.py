@@ -2,15 +2,15 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from servicelib.celery.async_jobs.notifications import (
-    submit_send_message_task,
-    submit_send_messages_task,
-)
-from servicelib.celery.models import (
+from models_library.celery import (
     GroupUUID,
     OwnerMetadata,
     TaskName,
     TaskUUID,
+)
+from servicelib.celery.async_jobs.notifications import (
+    submit_send_message_task,
+    submit_send_messages_task,
 )
 from servicelib.celery.task_manager import TaskManager
 
