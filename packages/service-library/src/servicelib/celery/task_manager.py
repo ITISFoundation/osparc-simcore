@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 
-from models_library.progress_bar import ProgressReport
-
-from .models import (
+from models_library.celery import (
     GroupExecutionMetadata,
     GroupKey,
     GroupStatus,
@@ -16,6 +14,7 @@ from .models import (
     TaskStreamItem,
     TaskUUID,
 )
+from models_library.progress_bar import ProgressReport
 
 
 @runtime_checkable
