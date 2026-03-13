@@ -21,8 +21,13 @@ from .ssh import ssh_tunnel
 
 
 def _build_key(fn, *args, **kwargs):
-    """Cache key builder that skips the first arg (engine)."""
-    return f"{fn.__module__}.{fn.__name__}:{args[1:]}:{kwargs}"
+    """Cache key builder that skips the first arg (engine).
+
+    Note: Cache is intentionally shared across engine instances to avoid redundant queries
+    within a monitoring cycle. If engine reconnects, rely on TTL-based expiration.
+    """
+    cache_args = args[1:] if len(args) > 1 else ()
+    return f"{fn.__module__}.{fn.__name__}:{cache_args}:{kwargs}"
 
 
 @contextlib.asynccontextmanager
@@ -118,32 +123,39 @@ async def check_db_connection(state: AppState) -> bool:
 @cached(key_builder=_build_key)
 async def list_computational_tasks_from_db(engine: AsyncEngine, user_id: int) -> list[ComputationalTask]:
     # Get the list of running project UUIDs with a subquery
+    # Avoid casts if columns are already text to allow index usage
     subquery = (
         sa.select(sa.column("project_uuid"))
         .select_from(sa.table("comp_runs"))
         .where(
             sa.and_(
                 sa.column("user_id") == user_id,
-                sa.cast(sa.column("result"), sa.VARCHAR) != "SUCCESS",
-                sa.cast(sa.column("result"), sa.VARCHAR) != "FAILED",
-                sa.cast(sa.column("result"), sa.VARCHAR) != "ABORTED",
+                sa.column("result") != "SUCCESS",
+                sa.column("result") != "FAILED",
+                sa.column("result") != "ABORTED",
             )
         )
     )
 
-    # Now select comp_tasks rows where project_id is one of the project_uuids
+    # Select only needed columns instead of wildcard to reduce network transfer
     query = (
-        sa.select("*")
+        sa.select(
+            sa.column("project_id"),
+            sa.column("node_id"),
+            sa.column("job_id"),
+            sa.column("image"),
+            sa.column("state"),
+        )
         .select_from(sa.table("comp_tasks"))
         .where(
             sa.column("project_id").in_(subquery)
-            & (sa.cast(sa.column("state"), sa.VARCHAR) != "SUCCESS")
-            & (sa.cast(sa.column("state"), sa.VARCHAR) != "FAILED")
-            & (sa.cast(sa.column("state"), sa.VARCHAR) != "ABORTED")
+            & (sa.column("state") != "SUCCESS")
+            & (sa.column("state") != "FAILED")
+            & (sa.column("state") != "ABORTED")
         )
     )
 
-    async with engine.begin() as conn:
+    async with engine.connect() as conn:
         result = await conn.execute(query)
     comp_tasks_list = result.fetchall()
     return [
@@ -185,8 +197,8 @@ async def list_resource_tracker_running_computational_services(
         .select_from(sa.table("resource_tracker_service_runs"))
         .where(
             sa.and_(
-                sa.cast(sa.column("service_run_status"), sa.VARCHAR) == "RUNNING",
-                sa.cast(sa.column("service_type"), sa.VARCHAR) == "COMPUTATIONAL_SERVICE",
+                sa.column("service_run_status") == "RUNNING",
+                sa.column("service_type") == "COMPUTATIONAL_SERVICE",
             )
         )
     )
@@ -250,7 +262,7 @@ async def get_dynamic_service_extra_info(
     engine: AsyncEngine,
     services: list[tuple[int, str, str]],
 ) -> dict[tuple[str, str], DynamicServiceExtraInfo]:
-    """Resolve email, wallet and RUT info for dynamic services.
+    """Resolve email, wallet and RUT info for dynamic services using optimized JOINs.
 
     Args:
         engine: async DB engine
@@ -262,22 +274,13 @@ async def get_dynamic_service_extra_info(
     if not services:
         return {}
 
-    unique_user_ids = {uid for uid, _, _ in services}
+    # Convert services list to mappings for efficient lookup later
+    project_node_ids = [(pid, nid) for _, pid, nid in services]
 
     async with engine.connect() as conn:
-        # Batch-fetch user emails
-        user_emails: dict[int, str | None] = {}
-        if unique_user_ids:
-            result = await conn.execute(
-                sa.select(sa.column("id"), sa.column("email"))
-                .select_from(sa.table("users"))
-                .where(sa.column("id").in_(unique_user_ids))
-            )
-            for row in result.fetchall():
-                user_emails[row.id] = str(row.email)
-
-        # Fetch RUT entries for DYNAMIC_SERVICE
-        rut_by_key: dict[tuple[str, str], ResourceTrackerServiceRun] = {}
+        # Single optimized query: fetch RUT entries with user email and wallet name via JOINs
+        # This replaces 3 separate queries with 1 JOIN operation
+        rut_with_metadata = {}
         result = await conn.execute(
             sa.select(
                 sa.column("service_run_id"),
@@ -293,65 +296,96 @@ async def get_dynamic_service_extra_info(
                 sa.column("missed_heartbeat_counter"),
                 sa.column("pricing_unit_cost"),
                 sa.column("simcore_user_agent"),
+                sa.column("email"),  # from users table via LEFT JOIN
+                sa.column("name").label("wallet_name"),  # from wallets table via LEFT JOIN
             )
-            .select_from(sa.table("resource_tracker_service_runs"))
+            .select_from(
+                sa.table("resource_tracker_service_runs")
+                .join(
+                    sa.table("users"),
+                    sa.column("resource_tracker_service_runs.user_id") == sa.column("users.id"),
+                    isouter=True,
+                )
+                .join(
+                    sa.table("wallets"),
+                    sa.column("resource_tracker_service_runs.wallet_id") == sa.column("wallets.wallet_id"),
+                    isouter=True,
+                )
+            )
             .where(
                 sa.and_(
-                    sa.cast(sa.column("service_run_status"), sa.VARCHAR) == "RUNNING",
-                    sa.cast(sa.column("service_type"), sa.VARCHAR) == "DYNAMIC_SERVICE",
+                    sa.column("service_run_status") == "RUNNING",
+                    sa.column("service_type") == "DYNAMIC_SERVICE",
                     sa.tuple_(sa.column("project_id"), sa.column("node_id")).in_(
-                        [(str(pid), str(nid)) for _, pid, nid in services]
+                        [(str(pid), str(nid)) for pid, nid in project_node_ids]
                     ),
                 )
             )
         )
         for row in result.fetchall():
-            rut_by_key[(str(row.project_id), str(row.node_id))] = ResourceTrackerServiceRun(
-                service_run_id=row.service_run_id,
-                user_id=row.user_id,
-                wallet_id=row.wallet_id,
-                product_name=row.product_name,
-                project_id=str(row.project_id),
-                node_id=str(row.node_id),
-                service_key=row.service_key,
-                service_version=row.service_version,
-                started_at=row.started_at,
-                last_heartbeat_at=row.last_heartbeat_at,
-                missed_heartbeat_counter=row.missed_heartbeat_counter,
-                pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
-                simcore_user_agent=row.simcore_user_agent,
-            )
+            key = (str(row.project_id), str(row.node_id))
+            rut_with_metadata[key] = {
+                "rut": ResourceTrackerServiceRun(
+                    service_run_id=row.service_run_id,
+                    user_id=row.user_id,
+                    wallet_id=row.wallet_id,
+                    product_name=row.product_name,
+                    project_id=str(row.project_id),
+                    node_id=str(row.node_id),
+                    service_key=row.service_key,
+                    service_version=row.service_version,
+                    started_at=row.started_at,
+                    last_heartbeat_at=row.last_heartbeat_at,
+                    missed_heartbeat_counter=row.missed_heartbeat_counter,
+                    pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
+                    simcore_user_agent=row.simcore_user_agent,
+                ),
+                "email": str(row.email) if row.email else None,
+                "wallet_name": str(row.wallet_name) if row.wallet_name else None,
+            }
 
-        # Batch-fetch wallet names
-        unique_wallet_ids = {r.wallet_id for r in rut_by_key.values() if r.wallet_id is not None}
-        wallet_names: dict[int, str | None] = {}
-        if unique_wallet_ids:
-            result = await conn.execute(
-                sa.select(sa.column("wallet_id"), sa.column("name"))
-                .select_from(sa.table("wallets"))
-                .where(sa.column("wallet_id").in_(unique_wallet_ids))
-            )
-            for row in result.fetchall():
-                wallet_names[row.wallet_id] = str(row.name)
-
-        # Batch-fetch usd_per_credit per product
-        unique_products = {r.product_name for r in rut_by_key.values()}
+        # Fetch product USD rates in a single query for all products
+        unique_products = {rut_with_metadata[key]["rut"].product_name for key in rut_with_metadata}
         product_usd: dict[str, float | None] = {}
-        for product in unique_products:
-            product_usd[product] = await _get_product_usd_per_credit(conn, product)
+        if unique_products:
+            result = await conn.execute(
+                sa.select(
+                    sa.column("product_name"),
+                    sa.column("usd_per_credit"),
+                )
+                .select_from(sa.table("products_prices"))
+                .where(sa.column("product_name").in_(unique_products))
+                .distinct(sa.column("product_name"))
+                .order_by(sa.column("product_name"), sa.column("valid_from").desc())
+            )
+            seen_products = set()
+            for row in result.fetchall():
+                product_name = str(row.product_name)
+                if product_name not in seen_products:
+                    seen_products.add(product_name)
+                    if row.usd_per_credit is not None:
+                        value = float(row.usd_per_credit)
+                        product_usd[product_name] = value if value > 0 else None
+                    else:
+                        product_usd[product_name] = None
 
     # Build final mapping
     info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
-    for uid, pid, nid in services:
-        rut = rut_by_key.get((pid, nid))
-        wid = rut.wallet_id if rut else None
-        info[(pid, nid)] = DynamicServiceExtraInfo(
-            email=user_emails.get(uid),
-            wallet_id=wid,
-            wallet_name=wallet_names.get(wid) if wid is not None else None,
-            tracker_run=rut,
-            usd_per_credit=product_usd.get(rut.product_name) if rut else None,
-        )
+    for _, pid, nid in services:
+        key = (pid, nid)
+        metadata = rut_with_metadata.get(key)
+        if metadata:
+            rut = metadata["rut"]
+            info[key] = DynamicServiceExtraInfo(
+                email=metadata["email"],
+                wallet_id=rut.wallet_id,
+                wallet_name=metadata["wallet_name"],
+                tracker_run=rut,
+                usd_per_credit=product_usd.get(rut.product_name),
+            )
+        else:
+            # Service not found in RUT; still include it with minimal info
+            info[key] = DynamicServiceExtraInfo()
     return info
 
 
