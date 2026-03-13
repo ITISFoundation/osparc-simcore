@@ -10,12 +10,15 @@ from datetime import datetime
 from typing import Any, Final
 
 import sqlalchemy as sa
+from common_library.users_enums import AccountRequestStatus
 from sqlalchemy import Column
 from sqlalchemy.engine.result import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Select
 
+from .models.groups import user_to_groups
+from .models.products import products
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 from .models.users_secrets import users_secrets
@@ -157,11 +160,48 @@ class UsersRepo:
         assert new_user_id > 0  # nosec
 
         async with transaction_context(self._engine, connection) as conn:
+            user_has_access_to_pre_reg_product = sa.exists(
+                sa.select(sa.literal(1))
+                .select_from(user_to_groups.join(products, products.c.group_id == user_to_groups.c.gid))
+                .where(
+                    (user_to_groups.c.uid == new_user_id)
+                    & (products.c.name == users_pre_registration_details.c.product_name)
+                )
+            )
+
             # Link ALL pre-registrations for this email to the user
-            result = await conn.execute(
+            await conn.execute(
                 users_pre_registration_details.update()
                 .where(users_pre_registration_details.c.pre_email == new_user_email)
-                .values(user_id=new_user_id)
+                .values(
+                    user_id=new_user_id,
+                    account_request_status=sa.case(
+                        (
+                            (users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING)
+                            & user_has_access_to_pre_reg_product,
+                            AccountRequestStatus.APPROVED,
+                        ),
+                        else_=users_pre_registration_details.c.account_request_status,
+                    ),
+                    account_request_reviewed_by=sa.case(
+                        (
+                            (users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING)
+                            & user_has_access_to_pre_reg_product
+                            & users_pre_registration_details.c.account_request_reviewed_by.is_(None),
+                            users_pre_registration_details.c.created_by,
+                        ),
+                        else_=users_pre_registration_details.c.account_request_reviewed_by,
+                    ),
+                    account_request_reviewed_at=sa.case(
+                        (
+                            (users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING)
+                            & user_has_access_to_pre_reg_product
+                            & users_pre_registration_details.c.account_request_reviewed_at.is_(None),
+                            sa.func.now(),
+                        ),
+                        else_=users_pre_registration_details.c.account_request_reviewed_at,
+                    ),
+                )
             )
 
             # COPIES some pre-registration details to the users table
