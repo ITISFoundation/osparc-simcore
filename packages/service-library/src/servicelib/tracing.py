@@ -93,7 +93,7 @@ def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: Tra
 def setup_log_tracing(tracing_config: TracingConfig):
     if tracing_config.tracing_enabled:
         LoggingInstrumentor().instrument(
-            set_logging_format=False,
+            set_logging_format=True,
             tracer_provider=tracing_config.tracer_provider,
         )
 
