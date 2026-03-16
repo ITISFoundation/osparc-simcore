@@ -1,7 +1,9 @@
+from typing import cast as typing_cast
+
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
-from models_library.groups import GroupID
+from models_library.groups import EVERYONE_GROUP_ID, GroupID
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
@@ -13,7 +15,10 @@ from simcore_postgres_database.models.workspaces_access_rights import (
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
 )
+from simcore_postgres_database.webserver_models import ProjectType
 from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.sql import ColumnElement
+from sqlalchemy.types import Boolean
 
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import ProjectNotFoundError
@@ -28,6 +33,61 @@ async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         assert isinstance(owner_id, int)
         return owner_id
+
+
+def published_project_read_condition(
+    *,
+    project_uuid_column: ColumnElement,
+    project_type_column: ColumnElement,
+    project_published_column: ColumnElement,
+    product_group_id: GroupID | None,
+) -> ColumnElement[Boolean]:
+    readable_group_ids = [EVERYONE_GROUP_ID]
+    if product_group_id is not None:
+        readable_group_ids.append(product_group_id)
+
+    return typing_cast(
+        ColumnElement[Boolean],
+        sa.and_(
+            project_type_column == ProjectType.TEMPLATE.value,
+            project_published_column.is_(True),
+            sa.exists(
+                sa.select(sa.literal(1))
+                .select_from(project_to_groups)
+                .where(
+                    (project_to_groups.c.project_uuid == project_uuid_column)
+                    & project_to_groups.c.read.is_(True)
+                    & project_to_groups.c.gid.in_(readable_group_ids)
+                )
+            ),
+        ),
+    )
+
+
+async def is_published_project(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    product_group_id: GroupID | None,
+    connection: AsyncConnection | None = None,
+) -> bool:
+    stmt = (
+        sa.select(sa.literal(value=True))
+        .select_from(projects)
+        .where(
+            projects.c.uuid == f"{project_id}",
+            published_project_read_condition(
+                project_uuid_column=projects.c.uuid,
+                project_type_column=projects.c.type,
+                project_published_column=projects.c.published,
+                product_group_id=product_group_id,
+            ),
+        )
+        .limit(1)
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        return (await conn.scalar(stmt)) is True
 
 
 def _split_private_and_shared_projects(

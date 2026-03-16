@@ -61,10 +61,15 @@ def test_compose_support_error_msg():
         error_code="OEC:139641204989600",
         support_email="support@email.com",
     )
-    assert (
-        msg == "First sentence for Mr.X. Second sentence."
-        " For more information please forward this message to support@email.com (supportID=OEC:139641204989600)"
+    assert msg == "First sentence for Mr.X. Second sentence. Forward to support@email.com with [OEC:139641204989600]"
+
+
+def test_compose_support_error_msg_without_email():
+    msg = compose_support_error_msg(
+        "first sentence for Mr.X   \n  Second sentence.",
+        error_code="OEC:139641204989600",
     )
+    assert msg == "First sentence for Mr.X. Second sentence. [OEC:139641204989600]"
 
 
 async def test_get_task_info():
