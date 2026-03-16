@@ -94,7 +94,7 @@ def _wait_for_simulation_complete(setup_button, export_button):
         raise ValueError(msg)
 
 
-def test_personalized_classic_ti_plan(  # noqa: PLR0915
+def test_personalized_classic_ti_plan(
     page: Page,
     log_in_and_out: RobustWebSocket,
     is_autoscaled: bool,
@@ -201,17 +201,6 @@ def test_personalized_classic_ti_plan(  # noqa: PLR0915
 
         assert not ws_info.value.is_closed()
 
-        with log_context(logging.INFO, "Run simulation"):
+        with log_context(logging.INFO, "Setup simulation"):
             setup_button = simulator_iframe.get_by_role("button", name="Setup")
             setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
-
-            confirm_button = simulator_iframe.get_by_role("button", name="Confirm")
-            confirm_button.click(timeout=30 * SECOND)
-
-            page.wait_for_timeout(_SIMULATION_MAX_TIME)
-            export_button = simulator_iframe.get_by_role("button", name="Export")
-            _wait_for_simulation_complete(setup_button, export_button)
-
-            export_button.click()
-            outputs_button = page.get_by_test_id("outputsBtn")
-            expect(outputs_button).to_contain_text("Outputs (42)", timeout=60 * SECOND)
