@@ -90,8 +90,8 @@ class MessageService:
     async def send_message_from_template(
         self,
         *,
-        ref: TemplateRef,
         envelope: dict[str, Any],
+        ref: TemplateRef,
         context: dict[str, Any],
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         preview = self.template_service.preview_template(ref=ref, context=context)
