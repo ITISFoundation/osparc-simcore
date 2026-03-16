@@ -12,7 +12,7 @@ from mypy_boto3_ec2.type_defs import TagTypeDef
 from ... import analysis, db, rendering, ssh
 from ..._helpers import load_computational_clusters
 from ..._state import state
-from ...models import AppState, ComputationalTask, DaskTask
+from ...models import AppState
 
 
 async def _run(
@@ -39,15 +39,8 @@ async def _run(
     if (force is True) or typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
 
-        # Extract job_ids from cluster to fetch only relevant tasks
-        job_ids = [job_id for job_ids in the_cluster.task_states_to_tasks.values() for job_id in job_ids]
-
         async with db.db_engine(state) as engine:
-            computational_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids=job_ids)
-            job_id_to_dask_state = analysis.get_job_id_to_dask_state_from_cluster(the_cluster)
-            task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = analysis.get_db_task_to_dask_job(
-                computational_tasks, job_id_to_dask_state
-            )
+            task_to_dask_job = await analysis.resolve_cluster_tasks(engine, the_cluster)
             assert state.ssh_key_path  # nosec
             async with ssh.computational_bastion_connection(state) as bastion_conn:
                 await analysis.cancel_all_jobs(

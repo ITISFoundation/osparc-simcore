@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from ... import analysis, dask, db, rendering, ssh
 from ..._helpers import load_computational_clusters
 from ..._state import state
-from ...models import AppState, ComputationalTask, DaskTask
+from ...models import AppState
 
 
 async def _run(  # noqa: C901, PLR0912
@@ -33,17 +33,8 @@ async def _run(  # noqa: C901, PLR0912
     the_cluster = computational_clusters[0]
     rich.print(f"{the_cluster.task_states_to_tasks=}")
 
-    # Extract job_ids from cluster to fetch only relevant tasks
-    job_ids = [job_id for job_ids in the_cluster.task_states_to_tasks.values() for job_id in job_ids]
-
     async with db.db_engine(run_state) as engine:
-        # Fetch only the computational tasks that are actually on the cluster
-        computational_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids=job_ids)
-
-        job_id_to_dask_state = analysis.get_job_id_to_dask_state_from_cluster(the_cluster)
-        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = analysis.get_db_task_to_dask_job(
-            computational_tasks, job_id_to_dask_state
-        )
+        task_to_dask_job = await analysis.resolve_cluster_tasks(engine, the_cluster)
 
         if not task_to_dask_job:
             rich.print("[red]nothing found![/red]")

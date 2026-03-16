@@ -26,6 +26,19 @@ _DEFAULT_SSH_PORT: Final[int] = 22
 _LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
 
 
+def _ssh_kwargs(username: str, private_key_path: Path, *, keepalive: bool = False) -> dict[str, Any]:
+    """Common asyncssh.connect / connect_ssh keyword arguments."""
+    kw: dict[str, Any] = {
+        "port": _DEFAULT_SSH_PORT,
+        "username": username,
+        "client_keys": [str(private_key_path)],
+        "known_hosts": None,
+    }
+    if keepalive:
+        kw["keepalive_interval"] = 10
+    return kw
+
+
 @contextlib.asynccontextmanager
 async def ssh_tunnel(
     *,
@@ -43,14 +56,7 @@ async def ssh_tunnel(
                 conn = bastion_conn
             else:
                 conn = await stack.enter_async_context(
-                    asyncssh.connect(
-                        ssh_host,
-                        port=_DEFAULT_SSH_PORT,
-                        username=username,
-                        client_keys=[str(private_key_path)],
-                        known_hosts=None,
-                        keepalive_interval=10,
-                    )
+                    asyncssh.connect(ssh_host, **_ssh_kwargs(username, private_key_path, keepalive=True))
                 )
             listener = await conn.forward_local_port(_LOCAL_BIND_ADDRESS, 0, remote_bind_host, remote_bind_port)
             try:
@@ -75,12 +81,7 @@ async def connect_bastion(
 ) -> AsyncGenerator[asyncssh.SSHClientConnection, Any]:
     """Open a persistent SSH connection to a bastion host for reuse."""
     async with asyncssh.connect(
-        bastion_instance.public_dns_name,
-        port=_DEFAULT_SSH_PORT,
-        username=username,
-        client_keys=[str(private_key_path)],
-        known_hosts=None,
-        keepalive_interval=10,
+        bastion_instance.public_dns_name, **_ssh_kwargs(username, private_key_path, keepalive=True)
     ) as conn:
         yield conn
 
@@ -98,21 +99,11 @@ async def ssh_instance(
     assert state.ssh_key_path  # nosec
     try:
         if instance.public_ip_address:
-            async with asyncssh.connect(
-                instance.public_ip_address,
-                port=_DEFAULT_SSH_PORT,
-                username=username,
-                client_keys=[str(private_key_path)],
-                known_hosts=None,
-            ) as conn:
+            async with asyncssh.connect(instance.public_ip_address, **_ssh_kwargs(username, private_key_path)) as conn:
                 yield conn
         elif bastion_conn is not None:
             async with bastion_conn.connect_ssh(
-                instance.private_ip_address,
-                port=_DEFAULT_SSH_PORT,
-                username=username,
-                client_keys=[str(private_key_path)],
-                known_hosts=None,
+                instance.private_ip_address, **_ssh_kwargs(username, private_key_path)
             ) as conn:
                 yield conn
         else:
@@ -120,18 +111,10 @@ async def ssh_instance(
             async with (
                 asyncssh.connect(
                     bastion_instance.public_dns_name,
-                    port=_DEFAULT_SSH_PORT,
-                    username=username,
-                    client_keys=[str(state.ssh_key_path)],
-                    known_hosts=None,
-                    keepalive_interval=10,
+                    **_ssh_kwargs(username, state.ssh_key_path, keepalive=True),
                 ) as new_bastion_conn,
                 new_bastion_conn.connect_ssh(
-                    instance.private_ip_address,
-                    port=_DEFAULT_SSH_PORT,
-                    username=username,
-                    client_keys=[str(private_key_path)],
-                    known_hosts=None,
+                    instance.private_ip_address, **_ssh_kwargs(username, private_key_path)
                 ) as conn,
             ):
                 yield conn
@@ -232,7 +215,50 @@ async def get_dask_ip(
         return "Not Ready"
 
 
-async def list_running_dyn_services(  # noqa: C901
+def _needs_manual_intervention(running_containers: list[DockerContainer]) -> bool:
+    required_prefixes = ("dy-sidecar_", "dy-proxy_", "dy-sidecar-")
+    return not all(any(c.name.startswith(prefix) for c in running_containers) for prefix in required_prefixes)
+
+
+async def _fetch_container_resources(
+    conn: asyncssh.SSHClientConnection,
+    running_service: dict[str, list[DockerContainer]],
+) -> dict[str, tuple[int, int]]:
+    """Inspect dy-sidecar_ / dy-proxy_ containers and sum NanoCpus+Memory per node."""
+    resource_by_node: dict[str, tuple[int, int]] = {}
+    inspect_containers: list[str] = []
+    container_to_node: dict[str, str] = {}
+    resource_prefixes = ("dy-sidecar_", "dy-proxy_")
+    for nid, containers in running_service.items():
+        for c in containers:
+            actual_name = c.name.split("\t")[0]
+            if actual_name.startswith(resource_prefixes):
+                inspect_containers.append(actual_name)
+                container_to_node[actual_name] = nid
+    if not inspect_containers:
+        return resource_by_node
+    inspect_cmd = "docker inspect --format='{{.Name}}|||{{.HostConfig.NanoCpus}}|||{{.HostConfig.Memory}}' " + " ".join(
+        inspect_containers
+    )
+    res = await _run_command(conn, inspect_cmd)
+    if res.stdout:
+        for line in res.stdout.strip().splitlines():
+            parts = line.lstrip("/").split("|||")
+            if len(parts) == 3:  # noqa: PLR2004
+                cname = parts[0]
+                try:
+                    nano = int(parts[1])
+                    mem = int(parts[2])
+                except ValueError:
+                    continue
+                nid = container_to_node.get(cname, "")
+                if nid:
+                    prev = resource_by_node.get(nid, (0, 0))
+                    resource_by_node[nid] = (prev[0] + nano, prev[1] + mem)
+    return resource_by_node
+
+
+async def list_running_dyn_services(
     state: AppState,
     instance: Instance,
     username: str,
@@ -278,51 +304,7 @@ async def list_running_dyn_services(  # noqa: C901
                     )
                     running_service[match["node_id"]].append(named_container)
 
-            def _needs_manual_intervention(
-                running_containers: list[DockerContainer],
-            ) -> bool:
-                valid_prefixes = ["dy-sidecar_", "dy-proxy_", "dy-sidecar-"]
-                for prefix in valid_prefixes:
-                    found = any(container.name.startswith(prefix) for container in running_containers)
-                    if not found:
-                        return True
-                return False
-
-            # Fetch resource limits from dy-sidecar_ and dy-proxy_ containers
-            resource_by_node: dict[str, tuple[int, int]] = {}
-            inspect_containers: list[str] = []
-            container_to_node: dict[str, str] = {}
-            resource_prefixes = ("dy-sidecar_", "dy-proxy_")
-            for nid, containers in running_service.items():
-                for c in containers:
-                    # c.name is the full docker ps line; extract just the container name (first tab field)
-                    actual_name = c.name.split("\t")[0]
-                    if actual_name.startswith(resource_prefixes):
-                        inspect_containers.append(actual_name)
-                        container_to_node[actual_name] = nid
-            if inspect_containers:
-                inspect_cmd = (
-                    "docker inspect --format='{{.Name}}|||{{.HostConfig.NanoCpus}}|||{{.HostConfig.Memory}}' "
-                    + " ".join(inspect_containers)
-                )
-                res = await _run_command(conn, inspect_cmd)
-                if res.stdout:
-                    for line in res.stdout.strip().splitlines():
-                        parts = line.lstrip("/").split("|||")
-                        if len(parts) == 3:  # noqa: PLR2004
-                            cname = parts[0]
-                            try:
-                                nano = int(parts[1])
-                                mem = int(parts[2])
-                            except ValueError:
-                                continue
-                            nid = container_to_node.get(cname, "")
-                            if nid:
-                                prev = resource_by_node.get(nid, (0, 0))
-                                resource_by_node[nid] = (
-                                    prev[0] + nano,
-                                    prev[1] + mem,
-                                )
+            resource_by_node = await _fetch_container_resources(conn, running_service)
 
             return [
                 DynamicService(
@@ -350,15 +332,17 @@ async def list_running_dyn_services(  # noqa: C901
 
 
 @contextlib.asynccontextmanager
-async def computational_bastion_connection(
+async def _bastion_connection(
     state: AppState,
+    get_bastion: Any,
+    label: str,
 ) -> AsyncGenerator[asyncssh.SSHClientConnection | None, Any]:
-    """Open a bastion connection for computational instances, yielding None on failure."""
+    """Open a bastion connection, yielding None on failure."""
     assert state.ssh_key_path  # nosec
     bastion_conn: asyncssh.SSHClientConnection | None = None
     async with contextlib.AsyncExitStack() as stack:
         try:
-            bastion_instance = await get_computational_bastion_instance(state)
+            bastion_instance = await get_bastion(state)
             bastion_conn = await stack.enter_async_context(
                 connect_bastion(
                     bastion_instance,
@@ -367,10 +351,17 @@ async def computational_bastion_connection(
                 )
             )
         except (AssertionError, asyncssh.Error, OSError):
-            rich.print(
-                "[yellow]No computational bastion available, SSH operations will use per-instance fallback[/yellow]"
-            )
+            rich.print(f"[yellow]No {label} bastion available, SSH operations will use per-instance fallback[/yellow]")
         yield bastion_conn
+
+
+@contextlib.asynccontextmanager
+async def computational_bastion_connection(
+    state: AppState,
+) -> AsyncGenerator[asyncssh.SSHClientConnection | None, Any]:
+    """Open a bastion connection for computational instances, yielding None on failure."""
+    async with _bastion_connection(state, get_computational_bastion_instance, "computational") as conn:
+        yield conn
 
 
 @contextlib.asynccontextmanager
@@ -378,18 +369,5 @@ async def dynamic_bastion_connection(
     state: AppState,
 ) -> AsyncGenerator[asyncssh.SSHClientConnection | None, Any]:
     """Open a bastion connection for dynamic instances, yielding None on failure."""
-    assert state.ssh_key_path  # nosec
-    bastion_conn: asyncssh.SSHClientConnection | None = None
-    async with contextlib.AsyncExitStack() as stack:
-        try:
-            bastion_instance = await get_dynamic_bastion_instance(state)
-            bastion_conn = await stack.enter_async_context(
-                connect_bastion(
-                    bastion_instance,
-                    username=SSH_USER_NAME,
-                    private_key_path=state.ssh_key_path,
-                )
-            )
-        except (AssertionError, asyncssh.Error, OSError):
-            rich.print("[yellow]No dynamic bastion available, SSH operations will use per-instance fallback[/yellow]")
-        yield bastion_conn
+    async with _bastion_connection(state, get_dynamic_bastion_instance, "dynamic") as conn:
+        yield conn

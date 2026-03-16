@@ -19,6 +19,62 @@ from .models import (
 )
 from .ssh import ssh_tunnel
 
+# ── Shared lightweight table/column references for raw SQL queries ──
+_RTS = sa.table(
+    "resource_tracker_service_runs",
+    sa.column("service_run_id"),
+    sa.column("user_id"),
+    sa.column("wallet_id"),
+    sa.column("product_name"),
+    sa.column("project_id"),
+    sa.column("node_id"),
+    sa.column("service_key"),
+    sa.column("service_version"),
+    sa.column("started_at"),
+    sa.column("last_heartbeat_at"),
+    sa.column("missed_heartbeat_counter"),
+    sa.column("pricing_unit_cost"),
+    sa.column("simcore_user_agent"),
+    sa.column("service_run_status"),
+    sa.column("service_type"),
+)
+_USERS = sa.table("users", sa.column("id"), sa.column("email"))
+_WALLETS = sa.table("wallets", sa.column("wallet_id"), sa.column("name"))
+
+_RTS_COMMON_COLUMNS = (
+    _RTS.c.service_run_id,
+    _RTS.c.user_id,
+    _RTS.c.wallet_id,
+    _RTS.c.product_name,
+    _RTS.c.project_id,
+    _RTS.c.node_id,
+    _RTS.c.service_key,
+    _RTS.c.service_version,
+    _RTS.c.started_at,
+    _RTS.c.last_heartbeat_at,
+    _RTS.c.missed_heartbeat_counter,
+    _RTS.c.pricing_unit_cost,
+    _RTS.c.simcore_user_agent,
+)
+
+
+def _rts_row_to_service_run(row: Any) -> ResourceTrackerServiceRun:
+    return ResourceTrackerServiceRun(
+        service_run_id=row.service_run_id,
+        user_id=row.user_id,
+        wallet_id=row.wallet_id,
+        product_name=row.product_name,
+        project_id=str(row.project_id),
+        node_id=str(row.node_id),
+        service_key=row.service_key,
+        service_version=row.service_version,
+        started_at=row.started_at,
+        last_heartbeat_at=row.last_heartbeat_at,
+        missed_heartbeat_counter=row.missed_heartbeat_counter,
+        pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
+        simcore_user_agent=row.simcore_user_agent,
+    )
+
 
 @contextlib.asynccontextmanager
 async def db_engine(
@@ -170,60 +226,27 @@ async def list_resource_tracker_for_user_wallet_pairs(
     if not user_wallet_pairs:
         return []
 
-    rts = sa.table(
-        "resource_tracker_service_runs",
-        sa.column("service_run_id"),
-        sa.column("user_id"),
-        sa.column("wallet_id"),
-        sa.column("product_name"),
-        sa.column("project_id"),
-        sa.column("node_id"),
-        sa.column("service_key"),
-        sa.column("service_version"),
-        sa.column("started_at"),
-        sa.column("last_heartbeat_at"),
-        sa.column("missed_heartbeat_counter"),
-        sa.column("pricing_unit_cost"),
-        sa.column("simcore_user_agent"),
-        sa.column("service_run_status"),
-        sa.column("service_type"),
-    )
-
     pairs_with_wallet = [(uid, wid) for uid, wid in user_wallet_pairs if wid is not None]
     pairs_without_wallet = [uid for uid, wid in user_wallet_pairs if wid is None]
 
     wallet_conditions = []
     if pairs_with_wallet:
-        wallet_conditions.append(sa.tuple_(rts.c.user_id, rts.c.wallet_id).in_(pairs_with_wallet))
+        wallet_conditions.append(sa.tuple_(_RTS.c.user_id, _RTS.c.wallet_id).in_(pairs_with_wallet))
     if pairs_without_wallet:
         wallet_conditions.append(
             sa.and_(
-                rts.c.user_id.in_(pairs_without_wallet),
-                rts.c.wallet_id.is_(None),
+                _RTS.c.user_id.in_(pairs_without_wallet),
+                _RTS.c.wallet_id.is_(None),
             )
         )
 
     query = (
-        sa.select(
-            rts.c.service_run_id,
-            rts.c.user_id,
-            rts.c.wallet_id,
-            rts.c.product_name,
-            rts.c.project_id,
-            rts.c.node_id,
-            rts.c.service_key,
-            rts.c.service_version,
-            rts.c.started_at,
-            rts.c.last_heartbeat_at,
-            rts.c.missed_heartbeat_counter,
-            rts.c.pricing_unit_cost,
-            rts.c.simcore_user_agent,
-        )
-        .select_from(rts)
+        sa.select(*_RTS_COMMON_COLUMNS)
+        .select_from(_RTS)
         .where(
             sa.and_(
-                sa.cast(rts.c.service_run_status, sa.Text) == "RUNNING",
-                sa.cast(rts.c.service_type, sa.Text) == "COMPUTATIONAL_SERVICE",
+                sa.cast(_RTS.c.service_run_status, sa.Text) == "RUNNING",
+                sa.cast(_RTS.c.service_type, sa.Text) == "COMPUTATIONAL_SERVICE",
                 sa.or_(*wallet_conditions) if wallet_conditions else sa.false(),
             )
         )
@@ -231,24 +254,7 @@ async def list_resource_tracker_for_user_wallet_pairs(
     async with engine.connect() as conn:
         result = await conn.execute(query)
     rows = result.fetchall()
-    return [
-        ResourceTrackerServiceRun(
-            service_run_id=row.service_run_id,
-            user_id=row.user_id,
-            wallet_id=row.wallet_id,
-            product_name=row.product_name,
-            project_id=row.project_id,
-            node_id=row.node_id,
-            service_key=row.service_key,
-            service_version=row.service_version,
-            started_at=row.started_at,
-            last_heartbeat_at=row.last_heartbeat_at,
-            missed_heartbeat_counter=row.missed_heartbeat_counter,
-            pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
-            simcore_user_agent=row.simcore_user_agent,
-        )
-        for row in rows
-    ]
+    return [_rts_row_to_service_run(row) for row in rows]
 
 
 @cached(key_builder=_cache_key_without_engine)
@@ -305,54 +311,22 @@ async def get_dynamic_service_extra_info(
 
     async with engine.connect() as conn:
         # Single optimized query: fetch RUT entries with user email and wallet name via JOINs
-        # This replaces 3 separate queries with 1 JOIN operation
         rut_with_metadata = {}
-        _rts = sa.table(
-            "resource_tracker_service_runs",
-            sa.column("service_run_id"),
-            sa.column("user_id"),
-            sa.column("wallet_id"),
-            sa.column("product_name"),
-            sa.column("project_id"),
-            sa.column("node_id"),
-            sa.column("service_key"),
-            sa.column("service_version"),
-            sa.column("started_at"),
-            sa.column("last_heartbeat_at"),
-            sa.column("missed_heartbeat_counter"),
-            sa.column("pricing_unit_cost"),
-            sa.column("simcore_user_agent"),
-            sa.column("service_type"),
-        )
-        _users = sa.table("users", sa.column("id"), sa.column("email"))
-        _wallets = sa.table("wallets", sa.column("wallet_id"), sa.column("name"))
         result = await conn.execute(
             sa.select(
-                _rts.c.service_run_id,
-                _rts.c.user_id,
-                _rts.c.wallet_id,
-                _rts.c.product_name,
-                _rts.c.project_id,
-                _rts.c.node_id,
-                _rts.c.service_key,
-                _rts.c.service_version,
-                _rts.c.started_at,
-                _rts.c.last_heartbeat_at,
-                _rts.c.missed_heartbeat_counter,
-                _rts.c.pricing_unit_cost,
-                _rts.c.simcore_user_agent,
-                _users.c.email,
-                _wallets.c.name.label("wallet_name"),
+                *_RTS_COMMON_COLUMNS,
+                _USERS.c.email,
+                _WALLETS.c.name.label("wallet_name"),
             )
             .select_from(
-                _rts.join(_users, _rts.c.user_id == _users.c.id, isouter=True).join(
-                    _wallets, _rts.c.wallet_id == _wallets.c.wallet_id, isouter=True
+                _RTS.join(_USERS, _RTS.c.user_id == _USERS.c.id, isouter=True).join(
+                    _WALLETS, _RTS.c.wallet_id == _WALLETS.c.wallet_id, isouter=True
                 )
             )
             .where(
                 sa.and_(
-                    sa.cast(_rts.c.service_type, sa.Text) == "DYNAMIC_SERVICE",
-                    sa.tuple_(_rts.c.user_id, _rts.c.project_id, _rts.c.node_id).in_(
+                    sa.cast(_RTS.c.service_type, sa.Text) == "DYNAMIC_SERVICE",
+                    sa.tuple_(_RTS.c.user_id, _RTS.c.project_id, _RTS.c.node_id).in_(
                         [(uid, pid, nid) for uid, pid, nid in services]
                     ),
                 )
@@ -361,21 +335,7 @@ async def get_dynamic_service_extra_info(
         for row in result.fetchall():
             key = (str(row.project_id), str(row.node_id))
             rut_with_metadata[key] = {
-                "rut": ResourceTrackerServiceRun(
-                    service_run_id=row.service_run_id,
-                    user_id=row.user_id,
-                    wallet_id=row.wallet_id,
-                    product_name=row.product_name,
-                    project_id=str(row.project_id),
-                    node_id=str(row.node_id),
-                    service_key=row.service_key,
-                    service_version=row.service_version,
-                    started_at=row.started_at,
-                    last_heartbeat_at=row.last_heartbeat_at,
-                    missed_heartbeat_counter=row.missed_heartbeat_counter,
-                    pricing_unit_cost=float(row.pricing_unit_cost) if row.pricing_unit_cost is not None else None,
-                    simcore_user_agent=row.simcore_user_agent,
-                ),
+                "rut": _rts_row_to_service_run(row),
                 "email": str(row.email) if row.email else None,
                 "wallet_name": str(row.wallet_name) if row.wallet_name else None,
             }

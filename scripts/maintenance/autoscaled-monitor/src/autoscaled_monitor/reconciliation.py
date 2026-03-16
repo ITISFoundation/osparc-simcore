@@ -142,7 +142,7 @@ async def reconcile_computational_clusters(
         for cluster in computational_clusters:
             try:
                 # Extract job_ids from cluster for targeted lookup
-                job_ids = [job_id for job_ids in cluster.task_states_to_tasks.values() for job_id in job_ids]
+                job_ids = cluster.all_job_ids
                 comp_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids=job_ids)
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 rich.print(

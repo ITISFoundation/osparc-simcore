@@ -125,6 +125,10 @@ class ComputationalCluster:
     task_resources: dict[str, dict[str, Any]]  # resource_restrictions per job_id
     task_worker_states: dict[str, str]  # job_id -> worker-level state (executing/constrained/long-running)
 
+    @property
+    def all_job_ids(self) -> list[TaskId]:
+        return [job_id for job_ids in self.task_states_to_tasks.values() for job_id in job_ids]
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResourceTrackerServiceRun:

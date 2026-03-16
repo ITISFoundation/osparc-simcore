@@ -271,6 +271,16 @@ def get_db_task_to_dask_job(
     return task_to_dask_job
 
 
+async def resolve_cluster_tasks(
+    engine: AsyncEngine,
+    cluster: ComputationalCluster,
+) -> list[tuple[ComputationalTask | None, DaskTask | None]]:
+    """Fetch comp_tasks for a cluster and pair them with Dask state in one call."""
+    comp_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids=cluster.all_job_ids)
+    job_id_to_dask_state = get_job_id_to_dask_state_from_cluster(cluster)
+    return get_db_task_to_dask_job(comp_tasks, job_id_to_dask_state)
+
+
 async def cancel_all_jobs(
     state: AppState,
     the_cluster: ComputationalCluster,
