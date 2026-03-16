@@ -10,6 +10,7 @@ from models_library.celery import (
 )
 from models_library.notifications import ChannelType
 from models_library.notifications.errors import NotificationsUnsupportedChannelError
+from pydantic import TypeAdapter
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
     submit_send_messages_task,
@@ -34,8 +35,9 @@ def _validate_and_prepare_messages(message: dict[str, Any]) -> list[dict[str, An
         pydantic.ValidationError: If the message does not conform to the channel model.
     """
     raw_channel = message.get("channel")
+
     try:
-        channel = ChannelType(raw_channel)
+        channel = TypeAdapter(ChannelType).validate_python(raw_channel)
     except ValueError as exc:
         raise NotificationsUnsupportedChannelError(channel=raw_channel) from exc
 
