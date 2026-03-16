@@ -113,11 +113,6 @@ async def check_db_connection(state: AppState) -> bool:
 @cached()
 async def list_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list[str]) -> list[ComputationalTask]:
     """Fetch computational tasks by specific job IDs.
-
-    Much more efficient than list_computational_tasks_from_db when you already know
-    which job_ids you're interested in (e.g., from a cluster's running jobs).
-    Uses direct job_id matching instead of scanning all user tasks.
-
     Args:
         engine: async DB engine
         job_ids: list of job IDs to fetch
