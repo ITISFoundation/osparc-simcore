@@ -243,7 +243,7 @@ async def parse_dynamic_instances(
     return dynamic_instances
 
 
-async def get_job_id_to_dask_state_from_cluster(
+def get_job_id_to_dask_state_from_cluster(
     cluster: ComputationalCluster,
 ) -> dict[TaskId, TaskState]:
     job_id_to_dask_state: dict[TaskId, TaskState] = {}
