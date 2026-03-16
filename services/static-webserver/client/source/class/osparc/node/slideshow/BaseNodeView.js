@@ -200,7 +200,9 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     },
 
     __buildMainView: function() {
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        separator: "separator-horizontal",
+      }));
 
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
