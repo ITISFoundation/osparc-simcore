@@ -97,7 +97,7 @@ email-validator==2.2.0
     #   pydantic
 exceptiongroup==1.2.2
     # via aio-pika
-fast-depends==2.4.12
+fast-depends==3.0.8
     # via faststream
 fastapi==0.116.1
     # via
@@ -109,7 +109,7 @@ fastapi-cloud-cli==0.1.5
     # via fastapi-cli
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-faststream==0.5.35
+faststream==0.6.7
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.5.0
     # via
@@ -582,6 +582,7 @@ typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic
+    #   fast-depends
     #   fastapi
     #   faststream
     #   opentelemetry-api
