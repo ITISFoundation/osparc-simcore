@@ -5,7 +5,7 @@ from servicelib.celery.task_manager import TaskManager
 
 from ...renderers import JinjaRenderer, Renderer
 from ...repositories import FileTemplateRepository, TemplateRepository
-from ...services import MessagesService, TemplateService
+from ...services import MessageService, TemplateService
 
 
 def get_jinja_env() -> Environment:
@@ -24,6 +24,6 @@ def get_template_service() -> TemplateService:
     return TemplateService(get_template_repository(), get_renderer())
 
 
-def get_messages_service(app: FastAPI) -> MessagesService:
+def get_messages_service(app: FastAPI) -> MessageService:
     task_manager: TaskManager = app.state.task_manager
-    return MessagesService(task_manager=task_manager)
+    return MessageService(task_manager=task_manager)

@@ -30,7 +30,7 @@ def _fan_out_by_recipient(message: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 @dataclass(frozen=True)
-class MessagesService:
+class MessageService:
     task_manager: TaskManager
 
     async def send_message(
