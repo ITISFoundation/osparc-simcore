@@ -43,7 +43,6 @@ def reconcile_cluster_tasks(  # noqa: C901, PLR0912
             issues: list[str] = []
 
             worker_state = cluster.task_worker_states.get(job_id, dask_state)
-            actively_executing = worker_state in {"executing", "long-running"}
 
             if comp_task is None:
                 issues.append("not found in comp_tasks (ghost task in cluster)")
