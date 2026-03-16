@@ -211,8 +211,8 @@ async def list_resource_tracker_for_user_wallet_pairs(
         .select_from(rts)
         .where(
             sa.and_(
-                rts.c.service_run_status == "RUNNING",
-                rts.c.service_type == "COMPUTATIONAL_SERVICE",
+                sa.cast(rts.c.service_run_status, sa.Text) == "RUNNING",
+                sa.cast(rts.c.service_type, sa.Text) == "COMPUTATIONAL_SERVICE",
                 sa.or_(*wallet_conditions) if wallet_conditions else sa.false(),
             )
         )
@@ -336,7 +336,7 @@ async def get_dynamic_service_extra_info(
             )
             .where(
                 sa.and_(
-                    _rts.c.service_type == "DYNAMIC_SERVICE",
+                    sa.cast(_rts.c.service_type, sa.Text) == "DYNAMIC_SERVICE",
                     sa.tuple_(_rts.c.user_id, _rts.c.project_id, _rts.c.node_id).in_(
                         [(uid, pid, nid) for uid, pid, nid in services]
                     ),
