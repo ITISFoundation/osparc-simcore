@@ -136,6 +136,8 @@ def test_personalized_classic_ti_plan(
     with log_context(logging.INFO, "File Picker step (1/%s)", expected_number_of_steps):
         # in the testing project the file is already uploaded, so just check the file is already there
         file_picker_step = page.get_by_test_id("AppMode_StepBtn_1")
+        # wait 2 seconds to show the File in the tracer
+        page.wait_for_timeout(2 * SECOND)
         expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
 
     with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
