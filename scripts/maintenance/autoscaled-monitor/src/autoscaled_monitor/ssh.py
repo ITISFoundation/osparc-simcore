@@ -183,7 +183,6 @@ async def get_disk_usage(
     except (
         asyncssh.Error,
         OSError,
-        TimeoutError,
     ):
         return []
 
@@ -229,7 +228,6 @@ async def get_dask_ip(
     except (
         asyncssh.Error,
         OSError,
-        TimeoutError,
     ):
         return "Not Ready"
 
@@ -347,7 +345,6 @@ async def list_running_dyn_services(  # noqa: C901
     except (
         asyncssh.Error,
         OSError,
-        TimeoutError,
     ):
         return []
 
