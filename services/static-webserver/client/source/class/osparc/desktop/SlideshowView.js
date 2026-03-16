@@ -227,13 +227,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         const renderer = new osparc.node.ParameterEditor(node);
         renderer.buildForm(false);
         view.add(renderer);
+      } else if (node.isFilePicker()) {
+        view = new osparc.node.slideshow.FilePickerView();
+        view.getOutputsButton().hide();
+        view.setNode(node);
       } else {
-        if (node.isFilePicker()) {
-          view = new osparc.node.slideshow.FilePickerView();
-          view.getOutputsButton().hide();
-        } else {
-          view = new osparc.node.slideshow.NodeView();
-        }
+        view = new osparc.node.slideshow.NodeView();
         view.setNode(node);
       }
       this.__connectMaximizeEvents(node);
