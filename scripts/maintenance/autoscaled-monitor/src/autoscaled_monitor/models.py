@@ -143,7 +143,7 @@ class ResourceTrackerServiceRun:
     simcore_user_agent: str | None
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class TaskReconciliationRow:
     job_id: TaskId
     dask_state: TaskState
