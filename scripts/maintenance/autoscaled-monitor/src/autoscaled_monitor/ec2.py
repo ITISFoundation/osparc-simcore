@@ -1,7 +1,7 @@
-import json
-from typing import Final
+from typing import Any, Final
 
 import boto3
+import orjson
 from aiocache import cached
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
@@ -54,7 +54,7 @@ async def list_computational_instances_from_ec2(
             state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]
             == state.environment["WORKERS_EC2_INSTANCES_CUSTOM_TAGS"]
         ), "custom tags are different on primary and workers. TIP: adjust this code now"
-        custom_tags = json.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
+        custom_tags = orjson.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
     assert state.ec2_resource_clusters_keeper
     return await _list_running_ec2_instances(
         state.ec2_resource_clusters_keeper,
@@ -76,7 +76,7 @@ async def list_dynamic_instances_from_ec2(
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     custom_tags = {}
     if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
-        custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
+        custom_tags = orjson.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
     assert state.ec2_resource_autoscaling
     return await _list_running_ec2_instances(
         state.ec2_resource_autoscaling,
@@ -91,40 +91,41 @@ async def list_dynamic_instances_from_ec2(
 _DEFAULT_BASTION_NAME: Final[str] = "bastion-host"
 
 
-@cached()
-async def get_computational_bastion_instance(state: AppState) -> Instance:
-    assert state.ec2_resource_clusters_keeper  # nosec
-    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]  # nosec
+async def _get_bastion_instance(
+    ec2_resource: EC2ServiceResource,
+    key_name: str,
+) -> Instance:
     instances = await _list_running_ec2_instances(
-        state.ec2_resource_clusters_keeper,
-        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+        ec2_resource,
+        key_name,
         {},
         None,
         None,
         None,
     )
-
     possible_bastions = list(filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances))
     assert len(possible_bastions) == 1
     return possible_bastions[0]
+
+
+@cached()
+async def get_computational_bastion_instance(state: AppState) -> Instance:
+    assert state.ec2_resource_clusters_keeper  # nosec
+    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]  # nosec
+    return await _get_bastion_instance(
+        state.ec2_resource_clusters_keeper,
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+    )
 
 
 @cached()
 async def get_dynamic_bastion_instance(state: AppState) -> Instance:
     assert state.ec2_resource_autoscaling  # nosec
     assert state.environment["EC2_INSTANCES_KEY_NAME"]  # nosec
-    instances = await _list_running_ec2_instances(
+    return await _get_bastion_instance(
         state.ec2_resource_autoscaling,
         state.environment["EC2_INSTANCES_KEY_NAME"],
-        {},
-        None,
-        None,
-        None,
     )
-
-    possible_bastions = list(filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances))
-    assert len(possible_bastions) == 1
-    return possible_bastions[0]
 
 
 def cluster_keeper_region(state: AppState) -> str:
@@ -163,3 +164,31 @@ def autoscaling_ec2_client(state: AppState) -> EC2ServiceResource:
         aws_access_key_id=state.environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
         aws_secret_access_key=state.environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )
+
+
+# Cache per instance type string to avoid repeated API calls
+_instance_type_cache: dict[str, dict[str, Any]] = {}
+
+
+@cached()
+@to_async
+def _describe_instance_type(ec2_resource: EC2ServiceResource, instance_type: str) -> dict[str, Any]:
+    if instance_type in _instance_type_cache:
+        return _instance_type_cache[instance_type]
+    client = ec2_resource.meta.client
+    response = client.describe_instance_types(InstanceTypes=[instance_type])
+    info: dict[str, Any] = {}
+    if response["InstanceTypes"]:
+        it = response["InstanceTypes"][0]
+        info["vcpus"] = it.get("VCpuInfo", {}).get("DefaultVCpus", 0)
+        info["ram_mib"] = it.get("MemoryInfo", {}).get("SizeInMiB", 0)
+        gpu_info = it.get("GpuInfo", {})
+        gpus = gpu_info.get("Gpus", [])
+        info["gpu_count"] = sum(g.get("Count", 0) for g in gpus)
+        info["gpu_vram_mib"] = sum(g.get("MemoryInfo", {}).get("SizeInMiB", 0) * g.get("Count", 1) for g in gpus)
+    _instance_type_cache[instance_type] = info
+    return info
+
+
+async def get_instance_type_info(ec2_resource: EC2ServiceResource, instance_type: str) -> dict[str, Any]:
+    return await _describe_instance_type(ec2_resource, instance_type)
