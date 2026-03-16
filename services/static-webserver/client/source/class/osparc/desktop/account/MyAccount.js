@@ -136,7 +136,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       const title = this.tr("Settings");
       const iconSrc = "@FontAwesome5Solid/cogs/22";
       const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
-      if (generalPage.getChildrenCount()) {
+      if (generalPage.getChildrenCount() > 0) {
         // avoid adding the tab if there are no settings to show
         this.addTab(title, iconSrc, generalPage);
       }
