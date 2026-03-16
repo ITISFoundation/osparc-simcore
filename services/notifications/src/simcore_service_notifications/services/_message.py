@@ -8,8 +8,7 @@ from models_library.celery import (
     TaskName,
     TaskUUID,
 )
-from models_library.notifications import ChannelType, EmailMessage
-from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
+from models_library.notifications import ChannelType
 from models_library.notifications.errors import NotificationsUnsupportedChannelError
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
@@ -20,29 +19,11 @@ from servicelib.celery.task_manager import TaskManager
 from .._meta import APP_NAME
 from ..models.template import TemplateRef
 from ._template import TemplateService
+from .channel_handlers import for_channel
 
 _logger = logging.getLogger(__name__)
 
 _OWNER_METADATA = OwnerMetadata(owner=APP_NAME)
-
-
-def _validate_and_fan_out_email(message: dict[str, Any]) -> list[dict[str, Any]]:
-    """Validates an incoming email message and fans out into per-recipient celery payloads."""
-    email_msg = EmailMessage.model_validate(message)
-    content_dict = email_msg.content.model_dump()
-    from_dict = email_msg.from_.model_dump()
-
-    return [
-        CeleryEmailMessage.model_validate(
-            {
-                "channel": email_msg.channel,
-                "from": from_dict,
-                "to": recipient.model_dump(),
-                "content": content_dict,
-            }
-        ).model_dump(by_alias=True)
-        for recipient in email_msg.to
-    ]
 
 
 def _validate_and_prepare_messages(message: dict[str, Any]) -> list[dict[str, Any]]:
@@ -52,12 +33,14 @@ def _validate_and_prepare_messages(message: dict[str, Any]) -> list[dict[str, An
         NotificationsUnsupportedChannelError: If the channel is not supported.
         pydantic.ValidationError: If the message does not conform to the channel model.
     """
-    channel = message.get("channel")
-    match channel:
-        case ChannelType.email:
-            return _validate_and_fan_out_email(message)
-        case _:
-            raise NotificationsUnsupportedChannelError(channel=channel)
+    raw_channel = message.get("channel")
+    try:
+        channel = ChannelType(raw_channel)
+    except ValueError as exc:
+        raise NotificationsUnsupportedChannelError(channel=raw_channel) from exc
+
+    handler = for_channel(channel)
+    return handler.prepare_messages(message)
 
 
 @dataclass(frozen=True)
