@@ -43,7 +43,7 @@ async def _run(
         job_ids = [job_id for job_ids in the_cluster.task_states_to_tasks.values() for job_id in job_ids]
 
         async with db.db_engine(state) as engine:
-            computational_tasks = await db.get_computational_tasks_by_job_ids(engine, job_ids)
+            computational_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids)
             job_id_to_dask_state = await analysis.get_job_id_to_dask_state_from_cluster(the_cluster)
             task_to_dask_job: list[
                 tuple[ComputationalTask | None, DaskTask | None]

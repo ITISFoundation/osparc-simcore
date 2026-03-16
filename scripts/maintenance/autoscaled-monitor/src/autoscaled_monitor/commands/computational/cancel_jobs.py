@@ -35,7 +35,7 @@ async def _run(  # noqa: C901, PLR0912
 
     async with db.db_engine(state) as engine:
         # Fetch only the computational tasks that are actually on the cluster
-        computational_tasks = await db.get_computational_tasks_by_job_ids(engine, job_ids)
+        computational_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids)
 
         job_id_to_dask_state = await analysis.get_job_id_to_dask_state_from_cluster(the_cluster)
         task_to_dask_job: list[
