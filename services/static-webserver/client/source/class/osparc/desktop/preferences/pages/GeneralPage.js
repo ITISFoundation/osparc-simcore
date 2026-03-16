@@ -43,6 +43,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
   },
 
   members: {
+    getNChildren: function() {
+      return this._getChildren().length;
+    },
+
     __addCreditsIndicatorSettings: function() {
       const box = new osparc.widget.SectionBox(this.tr("Credits Indicator"));
 
