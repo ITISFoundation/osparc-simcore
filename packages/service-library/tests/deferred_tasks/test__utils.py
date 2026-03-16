@@ -9,7 +9,7 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from unittest.mock import Mock
 
 import pytest
-from faststream.broker.wrapper.call import HandlerCallWrapper
+from faststream._internal.endpoint.call_wrapper import HandlerCallWrapper
 from faststream.exceptions import NackMessage, RejectMessage
 from faststream.rabbit import (
     ExchangeType,
