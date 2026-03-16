@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ..models.content import for_channel
+from ..models.content import Content, for_channel
 from ..models.template import Template, TemplatePreview
 from ..repositories import TemplateRepository
 from ._renderer import Renderer
@@ -15,7 +15,7 @@ class JinjaRenderer(Renderer):
         self,
         template: Template,
         context: dict[str, Any],
-    ) -> TemplatePreview:
+    ) -> TemplatePreview[Content]:
         content = {}
         for render_part in template.parts:
             jinja_template = self.repository.get_jinja_template(template, render_part)

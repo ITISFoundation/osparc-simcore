@@ -81,8 +81,6 @@ class MessageService:
         message = {
             "channel": ref.channel,
             **envelope,
-            "content": preview.message_content.model_dump()
-            if hasattr(preview.message_content, "model_dump")
-            else preview.message_content,
+            "content": preview.message_content.model_dump(),
         }
         return await self.send_message(message=message)
