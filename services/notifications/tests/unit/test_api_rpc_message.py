@@ -1,11 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-from collections.abc import Awaitable, Callable
 from typing import Any
 
 import pytest
 from faker import Faker
-from fastapi import FastAPI
 from models_library.notifications import ChannelType, TemplateRef
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from models_library.notifications.errors import (
@@ -82,14 +80,9 @@ def email_envelope_multiple_recipients(faker: Faker) -> dict[str, Any]:
 
 
 async def test_send_message_single_recipient(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     single_recipient_email_message: dict,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     response = await send_message(
         rpc_client,
         message=single_recipient_email_message,
@@ -100,14 +93,9 @@ async def test_send_message_single_recipient(
 
 
 async def test_send_message_multiple_recipients(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     multi_recipient_email_message: dict,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     response = await send_message(
         rpc_client,
         message=multi_recipient_email_message,
@@ -118,15 +106,10 @@ async def test_send_message_multiple_recipients(
 
 
 async def test_send_message_from_template_with_empty_template(
-    mock_fastapi_app: FastAPI,
     fake_product_data: dict[str, Any],
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     email_envelope_single_recipient: dict[str, Any],
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     ref = TemplateRef(channel=ChannelType.email, template_name="empty")
     context = {
         "subject": "Test Email",
@@ -146,15 +129,10 @@ async def test_send_message_from_template_with_empty_template(
 
 
 async def test_send_message_from_template_with_multiple_recipients(
-    mock_fastapi_app: FastAPI,
     fake_product_data: dict[str, Any],
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     email_envelope_multiple_recipients: dict[str, Any],
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     ref = TemplateRef(channel=ChannelType.email, template_name="empty")
     context = {
         "subject": "Multi-recipient Test",
@@ -174,14 +152,9 @@ async def test_send_message_from_template_with_multiple_recipients(
 
 
 async def test_send_message_from_template_not_found(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     email_envelope_single_recipient: dict[str, Any],
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     ref = TemplateRef(channel=ChannelType.email, template_name="non_existent_template")
     context = {}
 
@@ -195,15 +168,10 @@ async def test_send_message_from_template_not_found(
 
 
 async def test_send_message_from_template_invalid_context(
-    mock_fastapi_app: FastAPI,
     fake_product_data: dict[str, Any],
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     email_envelope_single_recipient: dict[str, Any],
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     ref = TemplateRef(channel=ChannelType.email, template_name="account_approved")
     # Missing required fields 'user' and 'link'
     context = {
