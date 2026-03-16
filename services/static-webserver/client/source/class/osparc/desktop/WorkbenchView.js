@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       splitter.set({
         width: 2,
         height: 2,
-        backgroundColor: "workbench-view-splitter"
+        backgroundColor: "workbench-view-navbar"
       });
     },
 
