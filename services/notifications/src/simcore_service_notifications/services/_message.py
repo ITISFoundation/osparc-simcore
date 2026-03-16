@@ -53,20 +53,20 @@ class MessageService:
         *,
         message: dict[str, Any],
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
-        celery_messages = _validate_and_prepare_messages(message)
+        messages = _validate_and_prepare_messages(message)
 
-        if len(celery_messages) == 1:
+        if len(messages) == 1:
             task_uuid, task_name = await submit_send_message_task(
                 self.task_manager,
                 owner_metadata=_OWNER_METADATA,
-                message=celery_messages[0],
+                message=messages[0],
             )
             return task_uuid, task_name
 
         group_uuid, _, task_name = await submit_send_messages_task(
             self.task_manager,
             owner_metadata=_OWNER_METADATA,
-            messages=celery_messages,
+            messages=messages,
         )
         return group_uuid, task_name
 
