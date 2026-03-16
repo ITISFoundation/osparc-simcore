@@ -253,7 +253,7 @@ def get_job_id_to_dask_state_from_cluster(
     return job_id_to_dask_state
 
 
-async def get_db_task_to_dask_job(
+def get_db_task_to_dask_job(
     computational_tasks: list[ComputationalTask],
     job_id_to_dask_state: dict[TaskId, TaskState],
 ) -> list[tuple[ComputationalTask | None, DaskTask | None]]:

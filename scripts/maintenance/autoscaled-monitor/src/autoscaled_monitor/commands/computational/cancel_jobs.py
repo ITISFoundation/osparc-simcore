@@ -41,9 +41,9 @@ async def _run(  # noqa: C901, PLR0912
         computational_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids=job_ids)
 
         job_id_to_dask_state = analysis.get_job_id_to_dask_state_from_cluster(the_cluster)
-        task_to_dask_job: list[
-            tuple[ComputationalTask | None, DaskTask | None]
-        ] = await analysis.get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
+        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = analysis.get_db_task_to_dask_job(
+            computational_tasks, job_id_to_dask_state
+        )
 
         if not task_to_dask_job:
             rich.print("[red]nothing found![/red]")

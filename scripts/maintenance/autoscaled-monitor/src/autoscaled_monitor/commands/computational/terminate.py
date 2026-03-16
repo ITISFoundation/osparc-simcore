@@ -45,9 +45,9 @@ async def _run(
         async with db.db_engine(state) as engine:
             computational_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids=job_ids)
             job_id_to_dask_state = analysis.get_job_id_to_dask_state_from_cluster(the_cluster)
-            task_to_dask_job: list[
-                tuple[ComputationalTask | None, DaskTask | None]
-            ] = await analysis.get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
+            task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = analysis.get_db_task_to_dask_job(
+                computational_tasks, job_id_to_dask_state
+            )
             assert state.ssh_key_path  # nosec
             async with ssh.computational_bastion_connection(state) as bastion_conn:
                 await analysis.cancel_all_jobs(
