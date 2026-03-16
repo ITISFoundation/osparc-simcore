@@ -16,7 +16,7 @@ class SendMessageFromTemplateRequest(BaseModel):
     template_ref: TemplateRef
     context: dict[str, Any]
 
-    # GCR: add envelope here!
+    envelope: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)
 
