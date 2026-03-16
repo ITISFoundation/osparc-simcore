@@ -98,15 +98,18 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     }, this);
     const prevButton = this.__prevButton = prevNextButtons.getPreviousButton().set({
       alignX: "right",
-      alignY: "middle"
+      alignY: "middle",
+      marginLeft: 4,
     });
     const nextButton = this.__nextButton = prevNextButtons.getNextButton().set({
       alignX: "left",
-      alignY: "middle"
+      alignY: "middle",
+      marginRight: 4,
     });
     const runButton = this.__runButton = prevNextButtons.getRunButton().set({
       alignX: "left",
-      alignY: "middle"
+      alignY: "middle",
+      marginRight: 4,
     });
     mainView.add(prevButton);
     mainView.add(nextButton);
