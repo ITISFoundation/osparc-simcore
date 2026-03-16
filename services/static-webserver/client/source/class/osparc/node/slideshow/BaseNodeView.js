@@ -39,6 +39,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
   statics: {
     HEADER_HEIGHT: 32,
+    CARD_MARGIN: 6,
     BUTTONS_BACKGROUND_COLOR: "background-main-3",
 
     createSettingsGroupBox: function(label) {
@@ -49,7 +50,36 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         layout: new qx.ui.layout.VBox(10)
       });
       return settingsGroupBox;
-    }
+    },
+
+    styleView: function(node, view) {
+      view.getContentElement().setStyles({
+        "border-radius": "12px"
+      });
+      view.set({
+        maxWidth: node.isDynamic() ? null : 800,
+        margin: this.self().CARD_MARGIN
+      });
+      if (node.isParameter()) {
+        // view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
+        view.set({
+          // backgroundColor: "navbar-background",
+          padding: 6
+        });
+      } else {
+        view.getMainView().set({
+          // backgroundColor: "navbar-background",
+          padding: 6,
+          paddingTop: 0,
+          paddingBottom: 0
+        });
+      }
+      if (node.isFilePicker()) {
+        view.getMainView().set({
+          // backgroundColor: "navbar-background"
+        });
+      }
+    },
   },
 
   properties: {

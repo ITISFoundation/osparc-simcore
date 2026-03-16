@@ -137,10 +137,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     },
   },
 
-  statics: {
-    CARD_MARGIN: 6
-  },
-
   members: {
     __slideshowToolbar: null,
     __collapseWithUserMenu: null,
@@ -224,35 +220,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       }
     },
 
-    __styleView: function(node, view) {
-      view.getContentElement().setStyles({
-        "border-radius": "12px"
-      });
-      view.set({
-        maxWidth: node.isDynamic() ? null : 800,
-        margin: this.self().CARD_MARGIN
-      });
-      if (node.isParameter()) {
-        view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
-        view.set({
-          backgroundColor: "navbar-background",
-          padding: 6
-        });
-      } else {
-        view.getMainView().set({
-          backgroundColor: "navbar-background",
-          padding: 6,
-          paddingTop: 0,
-          paddingBottom: 0
-        });
-      }
-      if (node.isFilePicker()) {
-        view.getMainView().set({
-          backgroundColor: "navbar-background"
-        });
-      }
-    },
-
     __getNodeView: function(node) {
       let view;
       if (node.isParameter()) {
@@ -270,7 +237,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         view.setNode(node);
       }
       this.__connectMaximizeEvents(node);
-      this.__styleView(node, view);
+      osparc.node.slideshow.BaseNodeView.styleView(node, view);
       return view;
     },
 
@@ -352,7 +319,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       ].forEach(widget => widget.setVisibility(maximized ? "excluded" : "visible"));
 
       this.__nodeView.set({
-        margin: maximized ? 0 : this.self().CARD_MARGIN
+        margin: maximized ? 0 : osparc.node.slideshow.BaseNodeView.CARD_MARGIN
       });
     },
 
