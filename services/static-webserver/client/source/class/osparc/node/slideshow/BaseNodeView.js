@@ -200,9 +200,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     },
 
     __buildMainView: function() {
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-        separator: "separator-horizontal",
-      }));
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
@@ -220,6 +218,13 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       });
       this.__outputsBtn.bind("value", outputsLayout, "visibility", {
         converter: value => value ? "visible" : "excluded"
+      });
+      this.__outputsBtn.addListener("changeValue", e => {
+        const outputsVisible = e.getData();
+        const separatorStyle = "1px solid var(--qx-theme-background-main-3, #3d3d3d)";
+        this._settingsLayout.getContentElement().setStyles({
+          "border-right": outputsVisible ? separatorStyle : "none"
+        });
       });
       hBox.add(outputsLayout);
 
