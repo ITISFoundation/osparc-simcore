@@ -36,6 +36,7 @@ type Wildcard = Literal["*"]
 WILDCARD: Final[Wildcard] = "*"
 
 _UUID_KEY: Final[str] = "uuid"
+_TASK_UUID_ADAPTER: Final[TypeAdapter[TaskUUID]] = TypeAdapter(TaskUUID)
 
 
 class _TypeValidationModel(BaseModel):
@@ -129,7 +130,7 @@ class OwnerMetadata(BaseModel):
             if not isinstance(uuid_string, str):
                 msg = f"Invalid task_id format: {task_or_group_key}"
                 raise TypeError(msg)
-            return TypeAdapter(TaskUUID).validate_python(uuid_string)
+            return _TASK_UUID_ADAPTER.validate_python(uuid_string)
         except ValueError as err:
             msg = f"Invalid task_id format: {task_or_group_key}"
             raise ValueError(msg) from err
