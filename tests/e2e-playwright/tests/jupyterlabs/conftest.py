@@ -18,6 +18,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="large file size in human readable form",
     )
+    group.addoption(
+        "--rclone-stress-test",
+        action="store_true",
+        default=False,
+        help="enable rclone stress test",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -37,3 +43,9 @@ def large_file_size(request: pytest.FixtureRequest, large_file_block_size: ByteS
         f"{validated_file_size.human_readable()} must be larger than {large_file_block_size.human_readable()}!"
     )
     return validated_file_size
+
+
+@pytest.fixture(scope="session")
+def rclone_stress_test(request: pytest.FixtureRequest) -> bool:
+    value = request.config.getoption("--rclone-stress-test")
+    return TypeAdapter(bool).validate_python(value)

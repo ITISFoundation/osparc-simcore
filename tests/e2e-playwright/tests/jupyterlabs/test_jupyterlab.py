@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Final, Literal
 
+from helpers_rclone_stress import execute_rclone_stress
 from playwright.sync_api import Page, WebSocket
 from pydantic import AnyUrl, ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
@@ -66,12 +67,14 @@ def test_jupyterlab(
     large_file_block_size: ByteSize,
     product_url: AnyUrl,
     is_service_legacy: bool,
+    rclone_stress_test: bool,
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
     with (
         log_context(
             logging.INFO,
-            f"Waiting for {service_key} to be responsive (waiting for {_SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR)})",
+            f"Waiting for {service_key} to be responsive (waiting for "
+            f"{_SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR)})",
         ),
         page.expect_response(
             _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR),
@@ -146,6 +149,10 @@ def test_jupyterlab(
 
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)
+
+    if rclone_stress_test:
+        execute_rclone_stress(iframe)
+        return
 
     if service_key == "jupyter-ml-pytorch":
         print(f"skipping any more complicated stuff since this is {service_key=} which is different from the others")
