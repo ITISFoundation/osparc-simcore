@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from models_library.celery import (
     GroupUUID,
@@ -19,9 +19,7 @@ from servicelib.celery.task_manager import TaskManager
 
 from .._meta import APP_NAME
 from ..models.template import TemplateRef
-
-if TYPE_CHECKING:
-    from ._template import TemplateService
+from ._template import TemplateService
 
 _logger = logging.getLogger(__name__)
 
@@ -65,6 +63,7 @@ def _validate_and_prepare_messages(message: dict[str, Any]) -> list[dict[str, An
 @dataclass(frozen=True)
 class MessageService:
     task_manager: TaskManager
+    template_service: TemplateService
 
     async def send_message(
         self,
@@ -91,12 +90,11 @@ class MessageService:
     async def send_message_from_template(
         self,
         *,
-        template_service: "TemplateService",
         ref: TemplateRef,
         envelope: dict[str, Any],
         context: dict[str, Any],
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
-        preview = template_service.preview_template(ref=ref, context=context)
+        preview = self.template_service.preview_template(ref=ref, context=context)
         message = {
             "channel": ref.channel,
             **envelope,

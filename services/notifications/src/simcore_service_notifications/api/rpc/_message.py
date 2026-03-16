@@ -11,7 +11,7 @@ from models_library.notifications.rpc import (
 from servicelib.rabbitmq import RPCRouter
 
 from ...models.template import TemplateRef
-from .dependencies import get_message_service, get_template_service
+from .dependencies import get_message_service
 
 router = RPCRouter()
 
@@ -46,7 +46,6 @@ async def send_message_from_template(
 
     message_service = get_message_service(app)
     task_or_group_uuid, task_name = await message_service.send_message_from_template(
-        template_service=get_template_service(),
         ref=TemplateRef(**request.template_ref.model_dump()),
         envelope=request.envelope,
         context=request.context,
