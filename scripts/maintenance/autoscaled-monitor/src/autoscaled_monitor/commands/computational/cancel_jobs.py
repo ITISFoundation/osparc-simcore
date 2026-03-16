@@ -14,14 +14,14 @@ from ...models import AppState, ComputationalTask, DaskTask
 
 
 async def _run(  # noqa: C901, PLR0912
-    state: AppState,
+    run_state: AppState,
     user_id: int,
     wallet_id: int | None,
     *,
     abort_in_db: bool,
 ) -> None:
     # Load cluster first to extract job IDs for targeted lookup
-    computational_clusters = await load_computational_clusters(state, user_id, wallet_id)
+    computational_clusters = await load_computational_clusters(run_state, user_id, wallet_id)
 
     if computational_clusters:
         assert len(computational_clusters) == 1, (
@@ -33,7 +33,7 @@ async def _run(  # noqa: C901, PLR0912
         # Extract job_ids from cluster to fetch only relevant tasks
         job_ids = [job_id for job_ids in the_cluster.task_states_to_tasks.values() for job_id in job_ids]
 
-    async with db.db_engine(state) as engine:
+    async with db.db_engine(run_state) as engine:
         # Fetch only the computational tasks that are actually on the cluster
         computational_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids)
 
@@ -49,8 +49,8 @@ async def _run(  # noqa: C901, PLR0912
         rendering.print_computational_tasks(user_id, wallet_id, task_to_dask_job)
         rich.print(the_cluster.datasets)
 
-        assert state.ssh_key_path  # nosec
-        async with ssh.computational_bastion_connection(state) as bastion_conn:
+        assert run_state.ssh_key_path  # nosec
+        async with ssh.computational_bastion_connection(run_state) as bastion_conn:
             try:
                 if response := typer.prompt(
                     "Which dataset to cancel? (all: will cancel everything, 1-5: "
@@ -61,7 +61,7 @@ async def _run(  # noqa: C901, PLR0912
                         rich.print("[yellow]not cancelling anything[/yellow]")
                     elif response == "all":
                         await analysis.cancel_all_jobs(
-                            state,
+                            run_state,
                             the_cluster,
                             task_to_dask_job=task_to_dask_job,
                             abort_in_db=abort_in_db,
@@ -81,11 +81,11 @@ async def _run(  # noqa: C901, PLR0912
                                 comp_task, dask_task = task_to_dask_job[selected_index]
                                 if dask_task is not None and dask_task.state != "unknown":
                                     await dask.trigger_job_cancellation_in_scheduler(
-                                        state, the_cluster, dask_task.job_id, bastion_conn
+                                        run_state, the_cluster, dask_task.job_id, bastion_conn
                                     )
                                     if comp_task is None:
                                         await dask.remove_job_from_scheduler(
-                                            state, the_cluster, dask_task.job_id, bastion_conn
+                                            run_state, the_cluster, dask_task.job_id, bastion_conn
                                         )
 
                                 if comp_task is not None and abort_in_db:

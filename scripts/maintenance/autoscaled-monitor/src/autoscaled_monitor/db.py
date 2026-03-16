@@ -6,7 +6,6 @@ from typing import Any
 
 import rich
 import sqlalchemy as sa
-from aiocache import cached
 from pydantic import PostgresDsn, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -110,7 +109,6 @@ async def check_db_connection(state: AppState) -> bool:
     return False
 
 
-@cached()
 async def list_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list[str]) -> list[ComputationalTask]:
     """Fetch computational tasks by specific job IDs.
     Args:
@@ -153,7 +151,6 @@ async def list_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list
     ]
 
 
-@cached()
 async def list_resource_tracker_running_computational_services(
     engine: AsyncEngine,
 ) -> list[ResourceTrackerServiceRun]:
@@ -205,7 +202,6 @@ async def list_resource_tracker_running_computational_services(
     ]
 
 
-@cached()
 async def get_user_and_wallet_info(
     engine: AsyncEngine,
     user_id: int,
@@ -365,7 +361,6 @@ async def get_dynamic_service_extra_info(
     return info
 
 
-@cached()
 async def get_product_usd_per_credit(
     engine: AsyncEngine,
     product_name: str,
