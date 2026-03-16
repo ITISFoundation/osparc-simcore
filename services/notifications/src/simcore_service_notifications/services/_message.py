@@ -62,8 +62,8 @@ def _validate_and_prepare_messages(message: dict[str, Any]) -> list[dict[str, An
 
 @dataclass(frozen=True)
 class MessageService:
-    task_manager: TaskManager
     template_service: TemplateService
+    task_manager: TaskManager
 
     async def send_message(
         self,

@@ -26,4 +26,4 @@ def get_template_service() -> TemplateService:
 
 def get_message_service(app: FastAPI) -> MessageService:
     task_manager: TaskManager = app.state.task_manager
-    return MessageService(task_manager, get_template_service())
+    return MessageService(get_template_service(), task_manager)
