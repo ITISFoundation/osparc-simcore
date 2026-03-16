@@ -12,13 +12,7 @@ from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
-from models_library.notifications.rpc import (
-    EmailContact as RpcEmailContact,
-)
-from models_library.notifications.rpc import (
-    EmailEnvelope,
-    SendMessageResponse,
-)
+from models_library.notifications.rpc import SendMessageResponse
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message,
@@ -68,27 +62,23 @@ def multi_recipient_email_message(faker: Faker) -> dict:
 
 
 @pytest.fixture
-def email_envelope_single_recipient(faker: Faker) -> EmailEnvelope:
-    return EmailEnvelope(
-        **{
-            "from": RpcEmailContact(name="Sender", email=faker.email()),
-            "to": [RpcEmailContact(name="Recipient", email=faker.email())],
-        }
-    )
+def email_envelope_single_recipient(faker: Faker) -> dict[str, Any]:
+    return {
+        "from": {"name": "Sender", "email": faker.email()},
+        "to": {"name": "Recipient", "email": faker.email()},
+    }
 
 
 @pytest.fixture
-def email_envelope_multiple_recipients(faker: Faker) -> EmailEnvelope:
-    return EmailEnvelope(
-        **{
-            "from": RpcEmailContact(name="Sender", email=faker.email()),
-            "to": [
-                RpcEmailContact(name="First Recipient", email=faker.email()),
-                RpcEmailContact(name="Second Recipient", email=faker.email()),
-            ],
-            "reply_to": RpcEmailContact(name="Reply To", email=faker.email()),
-        }
-    )
+def email_envelope_multiple_recipients(faker: Faker) -> dict[str, Any]:
+    return {
+        "from": {"name": "Sender", "email": faker.email()},
+        "to": [
+            {"name": "First Recipient", "email": faker.email()},
+            {"name": "Second Recipient", "email": faker.email()},
+        ],
+        "reply_to": {"name": "Reply To", "email": faker.email()},
+    }
 
 
 async def test_send_message_single_recipient(
@@ -131,7 +121,7 @@ async def test_send_message_from_template_with_empty_template(
     mock_fastapi_app: FastAPI,
     fake_product_data: dict[str, Any],
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    email_envelope_single_recipient: EmailEnvelope,
+    email_envelope_single_recipient: dict[str, Any],
 ):
     assert mock_fastapi_app
 
@@ -159,7 +149,7 @@ async def test_send_message_from_template_with_multiple_recipients(
     mock_fastapi_app: FastAPI,
     fake_product_data: dict[str, Any],
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    email_envelope_multiple_recipients: EmailEnvelope,
+    email_envelope_multiple_recipients: dict[str, Any],
 ):
     assert mock_fastapi_app
 
@@ -186,7 +176,7 @@ async def test_send_message_from_template_with_multiple_recipients(
 async def test_send_message_from_template_not_found(
     mock_fastapi_app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    email_envelope_single_recipient: EmailEnvelope,
+    email_envelope_single_recipient: dict[str, Any],
 ):
     assert mock_fastapi_app
 
@@ -208,7 +198,7 @@ async def test_send_message_from_template_invalid_context(
     mock_fastapi_app: FastAPI,
     fake_product_data: dict[str, Any],
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    email_envelope_single_recipient: EmailEnvelope,
+    email_envelope_single_recipient: dict[str, Any],
 ):
     assert mock_fastapi_app
 

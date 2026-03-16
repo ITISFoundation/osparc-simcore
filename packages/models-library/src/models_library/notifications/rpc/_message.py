@@ -1,6 +1,6 @@
-from typing import Annotated, Any
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict
 
 from models_library.celery import GroupUUID, TaskUUID
 from models_library.notifications import TemplateRef
@@ -12,30 +12,10 @@ class SendMessageRequest(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
-class EmailContact(BaseModel):
-    name: str | None = None
-    email: EmailStr
-
-    model_config = ConfigDict(frozen=True)
-
-
-class EmailEnvelope(BaseModel):
-    from_: Annotated[EmailContact, Field(alias="from")]
-    to: list[EmailContact]
-    reply_to: EmailContact | None = None
-    cc: list[EmailContact] | None = None
-    bcc: list[EmailContact] | None = None
-
-    model_config = ConfigDict(
-        frozen=True,
-        populate_by_name=True,
-    )
-
-
 class SendMessageFromTemplateRequest(BaseModel):
     template_ref: TemplateRef
     context: dict[str, Any]
-    envelope: EmailEnvelope
+    envelope: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)
 

@@ -50,10 +50,9 @@ async def send_message_from_template(
         context=request.context,
     )
 
-    envelope_data = request.envelope.model_dump(by_alias=True)
     message = {
         "channel": request.template_ref.channel,
-        **envelope_data,
+        **request.envelope,
         "content": preview.message_content.model_dump()
         if hasattr(preview.message_content, "model_dump")
         else preview.message_content,

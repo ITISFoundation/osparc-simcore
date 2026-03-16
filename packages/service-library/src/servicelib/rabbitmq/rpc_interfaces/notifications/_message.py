@@ -4,7 +4,6 @@ from typing import Any
 from models_library.notifications import TemplateRef
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
-    EmailEnvelope,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
@@ -43,7 +42,7 @@ async def send_message_from_template(
     *,
     template_ref: TemplateRef,
     context: dict[str, Any],
-    envelope: EmailEnvelope,
+    envelope: dict[str, Any],
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
