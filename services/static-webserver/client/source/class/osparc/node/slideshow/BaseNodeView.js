@@ -26,20 +26,20 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
   construct: function() {
     this.base(arguments, "vertical");
 
+    this.set({
+      decorator: "border",
+    });
+
     this.setOffset(2);
     osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
     osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
-    this.__buildLayout();
-
-    this.set({
-      paddingBottom: 2
-    });
+    this.__buildLayout();;
   },
 
   statics: {
     HEADER_HEIGHT: 32,
-    CARD_MARGIN: 6,
+    CARD_MARGIN: 4,
     BUTTONS_BACKGROUND_COLOR: "background-main-3",
 
     createSettingsGroupBox: function(label) {
@@ -54,7 +54,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
     styleView: function(node, view) {
       view.getContentElement().setStyles({
-        "border-radius": "12px"
+        "border-radius": "4px"
       });
       view.set({
         maxWidth: node.isDynamic() ? null : 800,
@@ -129,7 +129,6 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         alignX: "center"
       })).set({
         padding: 6,
-        paddingTop: 0,
         height: this.self().HEADER_HEIGHT
       });
 
