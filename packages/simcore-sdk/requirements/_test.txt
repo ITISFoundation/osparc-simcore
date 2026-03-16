@@ -71,7 +71,7 @@ cffi==2.0.0
     # via cryptography
 cfn-lint==1.41.0
     # via moto
-charset-normalizer==3.4.5
+charset-normalizer==3.4.6
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -95,7 +95,7 @@ docker==7.1.0
     #   moto
 execnet==2.1.2
     # via pytest-xdist
-faker==40.8.0
+faker==40.11.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in

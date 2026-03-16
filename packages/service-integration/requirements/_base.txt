@@ -20,7 +20,7 @@ certifi==2026.2.25
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.4.5
+charset-normalizer==3.4.6
     # via requests
 click==8.3.1
     # via
@@ -96,7 +96,7 @@ pydantic==2.11.10
     #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.11.0
+pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in

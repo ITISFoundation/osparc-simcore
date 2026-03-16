@@ -88,7 +88,7 @@ fastapi==0.116.1
     #   fastapi-pagination
 fastapi-cli==0.0.24
     # via fastapi
-fastapi-cloud-cli==0.14.1
+fastapi-cloud-cli==0.15.0
     # via fastapi-cli
 fastapi-pagination==0.15.10
     # via -r requirements/_test.in
@@ -368,7 +368,7 @@ types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20260202
     # via -r requirements/_test.in
-types-openpyxl==3.1.5.20250919
+types-openpyxl==3.1.5.20260316
     # via -r requirements/_test.in
 types-passlib==1.7.7.20260211
     # via -r requirements/_test.in
@@ -398,7 +398,7 @@ urllib3==2.6.3
     #   docker
     #   requests
     #   sentry-sdk
-uvicorn==0.41.0
+uvicorn==0.42.0
     # via
     #   fastapi
     #   fastapi-cli

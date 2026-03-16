@@ -73,7 +73,7 @@ certifi==2026.2.25
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.5
+charset-normalizer==3.4.6
     # via requests
 click==8.3.1
     # via typer
@@ -85,7 +85,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 email-validator==2.3.0
     # via pydantic
-faker==40.8.0
+faker==40.11.0
     # via -r requirements/_test.in
 fast-depends==3.0.8
     # via faststream
@@ -316,7 +316,7 @@ pydantic==2.11.10
     #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.11.0
+pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in

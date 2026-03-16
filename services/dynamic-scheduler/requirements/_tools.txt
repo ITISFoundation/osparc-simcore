@@ -1,6 +1,6 @@
 astroid==4.0.4
     # via pylint
-black==26.3.0
+black==26.3.1
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -14,11 +14,11 @@ dill==0.4.1
     # via pylint
 distlib==0.4.0
     # via virtualenv
-filelock==3.25.1
+filelock==3.25.2
     # via
     #   python-discovery
     #   virtualenv
-identify==2.6.17
+identify==2.6.18
     # via pre-commit
 isort==8.0.1
     # via
@@ -70,7 +70,7 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pre-commit
-ruff==0.15.5
+ruff==0.15.6
     # via -r requirements/../../../requirements/devenv.txt
 tomlkit==0.14.0
     # via pylint

@@ -55,7 +55,7 @@ cffi==2.0.0
     # via cryptography
 cfn-lint==1.41.0
     # via moto
-charset-normalizer==3.4.5
+charset-normalizer==3.4.6
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -74,7 +74,7 @@ cryptography==46.0.5
     #   moto
 docker==7.1.0
     # via moto
-faker==40.8.0
+faker==40.11.0
     # via -r requirements/_test.in
 fastapi==0.135.1
     # via -r requirements/_test.in
@@ -300,7 +300,7 @@ types-awscrt==0.31.3
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-boto3==1.42.65
+types-boto3==1.42.68
     # via -r requirements/_test.in
 types-s3transfer==0.16.0
     # via

@@ -1,6 +1,6 @@
 astroid==4.0.4
     # via pylint
-black==26.3.0
+black==26.3.1
     # via -r requirements/../../../../requirements/devenv.txt
 build==1.4.0
     # via inotify
@@ -17,11 +17,11 @@ dill==0.4.1
     # via pylint
 distlib==0.4.0
     # via virtualenv
-filelock==3.25.1
+filelock==3.25.2
     # via
     #   python-discovery
     #   virtualenv
-identify==2.6.17
+identify==2.6.18
     # via pre-commit
 inotify==0.2.12
     # via -r requirements/_tools.in
@@ -80,7 +80,7 @@ pyyaml==6.0.3
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
-ruff==0.15.5
+ruff==0.15.6
     # via -r requirements/../../../../requirements/devenv.txt
 tomlkit==0.14.0
     # via pylint

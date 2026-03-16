@@ -22,11 +22,11 @@ certifi==2026.2.25
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.5
+charset-normalizer==3.4.6
     # via requests
 docker==7.1.0
     # via -r requirements/_test.in
-faker==40.8.0
+faker==40.11.0
     # via -r requirements/_test.in
 frozenlist==1.8.0
     # via

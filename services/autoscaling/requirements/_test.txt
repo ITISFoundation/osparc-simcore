@@ -75,7 +75,7 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==40.8.0
+faker==40.11.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
@@ -334,10 +334,6 @@ typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-tzdata==2025.2
-    # via
-    #   -c requirements/_base.txt
-    #   faker
 urllib3==2.6.3
     # via
     #   -c requirements/../../../requirements/constraints.txt

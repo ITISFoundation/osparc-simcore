@@ -16,7 +16,7 @@ cryptography==46.0.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   types-paramiko
-faker==40.8.0
+faker==40.11.0
     # via -r requirements/_test.in
 greenlet==3.3.2
     # via

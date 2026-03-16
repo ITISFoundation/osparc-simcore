@@ -11,12 +11,6 @@ attrs==25.4.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.2.25
-    # via
-    #   -c ../../requirements/constraints.txt
-    #   requests
-charset-normalizer==3.4.5
-    # via requests
 coverage==7.13.4
     # via
     #   -r requirements.in
@@ -26,19 +20,17 @@ frozenlist==1.8.0
     #   aiohttp
     #   aiosignal
 idna==3.11
-    # via
-    #   requests
-    #   yarl
+    # via yarl
 iniconfig==2.3.0
     # via pytest
 isodate==0.7.2
     # via openapi-core
-jsonschema==4.26.0
+jsonschema==4.24.1
     # via
     #   openapi-core
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.4
+jsonschema-path==0.4.5
     # via
     #   openapi-core
     #   openapi-spec-validator
@@ -56,17 +48,17 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-openapi-core==0.22.0
+openapi-core==0.23.0
     # via -r requirements.in
-openapi-schema-validator==0.6.3
+openapi-schema-validator==0.7.1
     # via
     #   openapi-core
     #   openapi-spec-validator
-openapi-spec-validator==0.7.2
+openapi-spec-validator==0.8.1
     # via openapi-core
 packaging==26.0
     # via pytest
-pathable==0.4.4
+pathable==0.5.0
     # via jsonschema-path
 pluggy==1.6.0
     # via
@@ -103,8 +95,6 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-requests==2.32.5
-    # via jsonschema-path
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rpds-py==0.30.0
@@ -117,10 +107,6 @@ termcolor==3.3.0
     # via pytest-sugar
 typing-extensions==4.15.0
     # via openapi-core
-urllib3==2.6.3
-    # via
-    #   -c ../../requirements/constraints.txt
-    #   requests
 werkzeug==3.1.6
     # via openapi-core
 yarl==1.23.0
