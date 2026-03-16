@@ -131,7 +131,8 @@ async def reconcile_computational_clusters(
     """Reconcile computational clusters with resource tracker and DB data."""
     result = ReconciliationResult()
     try:
-        result.tracker_runs = await db.list_resource_tracker_running_computational_services(engine)
+        user_wallet_pairs = [(cluster.primary.user_id, cluster.primary.wallet_id) for cluster in computational_clusters]
+        result.tracker_runs = await db.get_resource_tracker_for_user_wallet_pairs(engine, user_wallet_pairs)
 
         tracker_runs_by_key: dict[tuple[int, int | None], list[ResourceTrackerServiceRun]] = {}
         for _run in result.tracker_runs:

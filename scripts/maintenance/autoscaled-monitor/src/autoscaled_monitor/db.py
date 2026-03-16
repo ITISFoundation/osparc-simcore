@@ -151,10 +151,14 @@ async def list_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list
     ]
 
 
-async def list_resource_tracker_running_computational_services(
+async def get_resource_tracker_for_user_wallet_pairs(
     engine: AsyncEngine,
+    user_wallet_pairs: list[tuple[int, int | None]],
 ) -> list[ResourceTrackerServiceRun]:
-    """Return all RUNNING COMPUTATIONAL_SERVICE entries from resource_tracker_service_runs."""
+    """Fetch RUNNING COMPUTATIONAL_SERVICE entries for specific user/wallet pairs."""
+    if not user_wallet_pairs:
+        return []
+
     query = (
         sa.select(
             sa.column("service_run_id"),
@@ -176,6 +180,7 @@ async def list_resource_tracker_running_computational_services(
             sa.and_(
                 sa.column("service_run_status") == "RUNNING",
                 sa.column("service_type") == "COMPUTATIONAL_SERVICE",
+                sa.tuple_(sa.column("user_id"), sa.column("wallet_id")).in_(user_wallet_pairs),
             )
         )
     )
