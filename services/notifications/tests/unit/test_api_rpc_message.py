@@ -136,9 +136,9 @@ async def test_send_message_from_template_with_empty_template(
 
     response = await send_message_from_template(
         rpc_client,
+        envelope=email_envelope_single_recipient,
         template_ref=ref,
         context=context,
-        envelope=email_envelope_single_recipient,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
@@ -164,9 +164,9 @@ async def test_send_message_from_template_with_multiple_recipients(
 
     response = await send_message_from_template(
         rpc_client,
+        envelope=email_envelope_multiple_recipients,
         template_ref=ref,
         context=context,
-        envelope=email_envelope_multiple_recipients,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
@@ -188,9 +188,9 @@ async def test_send_message_from_template_not_found(
     with pytest.raises(NotificationsTemplateNotFoundError):
         await send_message_from_template(
             rpc_client,
+            envelope=email_envelope_single_recipient,
             template_ref=ref,
             context=context,
-            envelope=email_envelope_single_recipient,
         )
 
 
@@ -214,7 +214,7 @@ async def test_send_message_from_template_invalid_context(
     with pytest.raises(NotificationsTemplateContextValidationError):
         await send_message_from_template(
             rpc_client,
+            envelope=email_envelope_single_recipient,
             template_ref=ref,
             context=context,
-            envelope=email_envelope_single_recipient,
         )

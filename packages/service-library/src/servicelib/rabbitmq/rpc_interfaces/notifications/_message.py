@@ -40,17 +40,17 @@ async def send_message(
 async def send_message_from_template(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
+    envelope: dict[str, Any],
     template_ref: TemplateRef,
     context: dict[str, Any],
-    envelope: dict[str, Any],
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("send_message_from_template"),
         request=SendMessageFromTemplateRequest(
             template_ref=template_ref,
-            context=context,
             envelope=envelope,
+            context=context,
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec

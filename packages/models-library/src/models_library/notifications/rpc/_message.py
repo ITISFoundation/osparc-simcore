@@ -13,9 +13,11 @@ class SendMessageRequest(BaseModel):
 
 
 class SendMessageFromTemplateRequest(BaseModel):
+    envelope: dict[str, Any]
+
+    # fields used to generate the message content
     template_ref: TemplateRef
     context: dict[str, Any]
-    envelope: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)
 
