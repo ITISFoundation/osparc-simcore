@@ -1,8 +1,11 @@
 import logging
 from typing import Any
 
+from models_library.notifications import TemplateRef
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
+    EmailEnvelope,
+    SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
 )
@@ -28,6 +31,28 @@ async def send_message(
         NOTIFICATIONS_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("send_message"),
         request=SendMessageRequest(message=message),
+    )
+    assert isinstance(result, SendMessageResponse)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def send_message_from_template(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    template_ref: TemplateRef,
+    context: dict[str, Any],
+    envelope: EmailEnvelope,
+) -> SendMessageResponse:
+    result = await rabbitmq_rpc_client.request(
+        NOTIFICATIONS_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("send_message_from_template"),
+        request=SendMessageFromTemplateRequest(
+            template_ref=template_ref,
+            context=context,
+            envelope=envelope,
+        ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec
     return result
