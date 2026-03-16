@@ -159,28 +159,44 @@ async def list_resource_tracker_for_user_wallet_pairs(
     if not user_wallet_pairs:
         return []
 
+    rts = sa.table("resource_tracker_service_runs")
+
+    pairs_with_wallet = [(uid, wid) for uid, wid in user_wallet_pairs if wid is not None]
+    pairs_without_wallet = [uid for uid, wid in user_wallet_pairs if wid is None]
+
+    wallet_conditions = []
+    if pairs_with_wallet:
+        wallet_conditions.append(sa.tuple_(rts.c.user_id, rts.c.wallet_id).in_(pairs_with_wallet))
+    if pairs_without_wallet:
+        wallet_conditions.append(
+            sa.and_(
+                rts.c.user_id.in_(pairs_without_wallet),
+                rts.c.wallet_id.is_(None),
+            )
+        )
+
     query = (
         sa.select(
-            sa.column("service_run_id"),
-            sa.column("user_id"),
-            sa.column("wallet_id"),
-            sa.column("product_name"),
-            sa.column("project_id"),
-            sa.column("node_id"),
-            sa.column("service_key"),
-            sa.column("service_version"),
-            sa.column("started_at"),
-            sa.column("last_heartbeat_at"),
-            sa.column("missed_heartbeat_counter"),
-            sa.column("pricing_unit_cost"),
-            sa.column("simcore_user_agent"),
+            rts.c.service_run_id,
+            rts.c.user_id,
+            rts.c.wallet_id,
+            rts.c.product_name,
+            rts.c.project_id,
+            rts.c.node_id,
+            rts.c.service_key,
+            rts.c.service_version,
+            rts.c.started_at,
+            rts.c.last_heartbeat_at,
+            rts.c.missed_heartbeat_counter,
+            rts.c.pricing_unit_cost,
+            rts.c.simcore_user_agent,
         )
-        .select_from(sa.table("resource_tracker_service_runs"))
+        .select_from(rts)
         .where(
             sa.and_(
-                sa.column("service_run_status") == "RUNNING",
-                sa.column("service_type") == "COMPUTATIONAL_SERVICE",
-                sa.tuple_(sa.column("user_id"), sa.column("wallet_id")).in_(user_wallet_pairs),
+                rts.c.service_run_status == "RUNNING",
+                rts.c.service_type == "COMPUTATIONAL_SERVICE",
+                sa.or_(*wallet_conditions) if wallet_conditions else sa.false(),
             )
         )
     )
@@ -259,42 +275,37 @@ async def get_dynamic_service_extra_info(
         # Single optimized query: fetch RUT entries with user email and wallet name via JOINs
         # This replaces 3 separate queries with 1 JOIN operation
         rut_with_metadata = {}
+        _rts = sa.table("resource_tracker_service_runs")
+        _users = sa.table("users")
+        _wallets = sa.table("wallets")
         result = await conn.execute(
             sa.select(
-                sa.column("service_run_id"),
-                sa.column("user_id"),
-                sa.column("wallet_id"),
-                sa.column("product_name"),
-                sa.column("project_id"),
-                sa.column("node_id"),
-                sa.column("service_key"),
-                sa.column("service_version"),
-                sa.column("started_at"),
-                sa.column("last_heartbeat_at"),
-                sa.column("missed_heartbeat_counter"),
-                sa.column("pricing_unit_cost"),
-                sa.column("simcore_user_agent"),
-                sa.column("email"),  # from users table via LEFT JOIN
-                sa.column("name").label("wallet_name"),  # from wallets table via LEFT JOIN
+                _rts.c.service_run_id,
+                _rts.c.user_id,
+                _rts.c.wallet_id,
+                _rts.c.product_name,
+                _rts.c.project_id,
+                _rts.c.node_id,
+                _rts.c.service_key,
+                _rts.c.service_version,
+                _rts.c.started_at,
+                _rts.c.last_heartbeat_at,
+                _rts.c.missed_heartbeat_counter,
+                _rts.c.pricing_unit_cost,
+                _rts.c.simcore_user_agent,
+                _users.c.email,
+                _wallets.c.name.label("wallet_name"),
             )
             .select_from(
-                sa.table("resource_tracker_service_runs")
-                .join(
-                    sa.table("users"),
-                    sa.column("resource_tracker_service_runs.user_id") == sa.column("users.id"),
-                    isouter=True,
-                )
-                .join(
-                    sa.table("wallets"),
-                    sa.column("resource_tracker_service_runs.wallet_id") == sa.column("wallets.wallet_id"),
-                    isouter=True,
+                _rts.join(_users, _rts.c.user_id == _users.c.id, isouter=True).join(
+                    _wallets, _rts.c.wallet_id == _wallets.c.wallet_id, isouter=True
                 )
             )
             .where(
                 sa.and_(
-                    sa.column("service_type") == "DYNAMIC_SERVICE",
-                    sa.tuple_(sa.column("user_id"), sa.column("project_id"), sa.column("node_id")).in_(
-                        [(uid, pid, str(nid)) for uid, pid, nid in services]
+                    _rts.c.service_type == "DYNAMIC_SERVICE",
+                    sa.tuple_(_rts.c.user_id, _rts.c.project_id, _rts.c.node_id).in_(
+                        [(uid, pid, nid) for uid, pid, nid in services]
                     ),
                 )
             )
