@@ -5,7 +5,7 @@ from models_library.notifications.rpc import (
 )
 from servicelib.rabbitmq import RPCRouter
 
-from .dependencies import get_messages_service
+from .dependencies import get_message_service
 
 router = RPCRouter()
 
@@ -18,7 +18,7 @@ async def send_message(
 ) -> SendMessageResponse:
     assert app  # nosec
 
-    messages_service = get_messages_service(app)
+    messages_service = get_message_service(app)
     task_or_group_uuid, task_name = await messages_service.send_message(
         message=request.message,
     )
@@ -33,7 +33,7 @@ async def send_message_from_template(
 ) -> SendMessageResponse:
     assert app  # nosec
 
-    messages_service = get_messages_service(app)
+    messages_service = get_message_service(app)
     task_or_group_uuid, task_name = await messages_service.send_message(
         message=request.message,
     )
