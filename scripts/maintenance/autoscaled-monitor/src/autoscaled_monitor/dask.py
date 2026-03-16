@@ -43,44 +43,40 @@ async def dask_client(
             require_encryption=True,
         )
 
-    try:
-        async with contextlib.AsyncExitStack() as stack:
-            if instance.public_ip_address is not None:
-                url = AnyUrl(f"tls://{instance.public_ip_address}:{_SCHEDULER_PORT}")
+    async with contextlib.AsyncExitStack() as stack:
+        if instance.public_ip_address is not None:
+            url = AnyUrl(f"tls://{instance.public_ip_address}:{_SCHEDULER_PORT}")
+        else:
+            assert state.ssh_key_path  # nosec
+            assert state.environment  # nosec
+            if bastion_conn is not None:
+                host, port = await stack.enter_async_context(
+                    ssh_tunnel(
+                        ssh_host=instance.private_ip_address,
+                        username=SSH_USER_NAME,
+                        private_key_path=state.ssh_key_path,
+                        remote_bind_host=instance.private_ip_address,
+                        remote_bind_port=_SCHEDULER_PORT,
+                        bastion_conn=bastion_conn,
+                    )
+                )
             else:
-                assert state.ssh_key_path  # nosec
-                assert state.environment  # nosec
-                if bastion_conn is not None:
-                    host, port = await stack.enter_async_context(
-                        ssh_tunnel(
-                            ssh_host=instance.private_ip_address,
-                            username=SSH_USER_NAME,
-                            private_key_path=state.ssh_key_path,
-                            remote_bind_host=instance.private_ip_address,
-                            remote_bind_port=_SCHEDULER_PORT,
-                            bastion_conn=bastion_conn,
-                        )
+                bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
+                host, port = await stack.enter_async_context(
+                    ssh_tunnel(
+                        ssh_host=bastion_instance.public_dns_name,
+                        username=SSH_USER_NAME,
+                        private_key_path=state.ssh_key_path,
+                        remote_bind_host=instance.private_ip_address,
+                        remote_bind_port=_SCHEDULER_PORT,
+                        bastion_conn=None,
                     )
-                else:
-                    bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
-                    host, port = await stack.enter_async_context(
-                        ssh_tunnel(
-                            ssh_host=bastion_instance.public_dns_name,
-                            username=SSH_USER_NAME,
-                            private_key_path=state.ssh_key_path,
-                            remote_bind_host=instance.private_ip_address,
-                            remote_bind_port=_SCHEDULER_PORT,
-                            bastion_conn=None,
-                        )
-                    )
-                url = AnyUrl(f"tls://{host}:{port}")
-            client = await stack.enter_async_context(
-                distributed.Client(f"{url}", security=security, timeout="5", asynchronous=True)
-            )
-            yield client
-
-    finally:
-        pass
+                )
+            url = AnyUrl(f"tls://{host}:{port}")
+        client = await stack.enter_async_context(
+            distributed.Client(f"{url}", security=security, timeout="5", asynchronous=True)
+        )
+        yield client
 
 
 async def remove_job_from_scheduler(
@@ -206,7 +202,7 @@ async def get_scheduler_details(
     all_tasks: dict[TaskState, list[TaskId]] = {}
     task_resources: dict[TaskId, dict[str, Any]] = {}
     task_worker_states: dict[TaskId, str] = {}
-    try:
+    with contextlib.suppress(OSError, TypeError, asyncssh.Error, RuntimeError):
         async with dask_client(state, instance, bastion_conn) as client:
             assert client.scheduler  # nosec
             # NOTE: client.scheduler_info() is cached and limited to 5 workers for async clients.
@@ -218,8 +214,6 @@ async def get_scheduler_details(
             all_tasks = task_data["tasks_by_state"]
             task_resources = task_data["task_resources"]
             task_worker_states = task_data["task_worker_states"]
-    except (TimeoutError, OSError, TypeError, asyncssh.Error, RuntimeError):
-        pass  # scheduler not yet ready — caller handles empty defaults
 
     return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks, task_resources, task_worker_states
 
