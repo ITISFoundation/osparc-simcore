@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
   },
 
   members: {
-    getNChildren: function() {
+    getChildrenCount: function() {
       return this._getChildren().length;
     },
 
