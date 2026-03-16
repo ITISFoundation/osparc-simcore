@@ -64,11 +64,13 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         view.set({
           padding: 6
         });
+      } else if (node.isDynamic()) {
+        view.getMainView().set({
+          padding: 0
+        });
       } else {
         view.getMainView().set({
-          padding: 6,
-          paddingTop: 0,
-          paddingBottom: 0
+          padding: 6
         });
       }
     },
