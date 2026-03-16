@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from enum import StrEnum, auto
+from enum import auto
 from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeVar
 from uuid import UUID
 
@@ -135,12 +135,12 @@ class OwnerMetadata(BaseModel):
             raise ValueError(msg) from err
 
 
-class TaskState(StrEnum):
-    PENDING = "PENDING"
-    STARTED = "STARTED"
-    RETRY = "RETRY"
-    SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
+class TaskState(StrAutoEnum):
+    PENDING = auto()
+    STARTED = auto()
+    RETRY = auto()
+    SUCCESS = auto()
+    FAILURE = auto()
 
 
 TASK_DONE_STATES: Final[tuple[TaskState, ...]] = (
