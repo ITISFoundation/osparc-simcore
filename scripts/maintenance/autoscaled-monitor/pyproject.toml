@@ -2,6 +2,7 @@
 dependencies = [
   "arrow",
   "aiocache",
+  "asyncssh",
   "asyncpg",
   "black",
   "boto3",
@@ -11,16 +12,14 @@ dependencies = [
   "mypy_boto3_ec2",
   "types-boto3",
   "parse",
-  "paramiko<4",          # sshtunnel not yet compatible with paramiko 4
   "pydantic[email]",
-  "pylint",
   "python-dotenv",
   "typer",
   "rich",
   "sqlalchemy[asyncio]",
-  "sshtunnel",
   "ansible>=10.7.0",
   "lz4",
+  "orjson>=3.11.7",
 ]
 name = "autoscaled-monitor"
 version = "1.0.0"
@@ -32,4 +31,8 @@ readme = "README.md"
 requires-python = ">=3.13"
 
 [project.scripts]
-autoscaled-monitor = "autoscaled_monitor.cli:app"
+autoscaled-monitor = "autoscaled_monitor.main:app"
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
