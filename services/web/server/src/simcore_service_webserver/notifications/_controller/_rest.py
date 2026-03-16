@@ -26,7 +26,7 @@ routes = web.RouteTableDef()
 _notifications_prefix = f"/{API_VTAG}/notifications"
 
 
-def _create_async_job_href(request: web.Request, route: str, task_uuid: UUID) -> str:
+def _get_async_job_href(request: web.Request, route: str, task_uuid: UUID) -> str:
     task_id = f"{task_uuid}"
     path = f"{request.app.router[route].url_for(task_id=task_id)}"
     return f"{request.url.with_path(path)}"
@@ -56,9 +56,9 @@ async def send_message(request: web.Request) -> web.Response:
         TaskGet(
             task_id=f"{task_or_group_uuid}",
             task_name=task_name,
-            status_href=_create_async_job_href(request, "get_async_job_status", task_or_group_uuid),
-            abort_href=_create_async_job_href(request, "cancel_async_job", task_or_group_uuid),
-            result_href=_create_async_job_href(request, "get_async_job_result", task_or_group_uuid),
+            status_href=_get_async_job_href(request, "get_async_job_status", task_or_group_uuid),
+            abort_href=_get_async_job_href(request, "cancel_async_job", task_or_group_uuid),
+            result_href=_get_async_job_href(request, "get_async_job_result", task_or_group_uuid),
         ),
         status=status.HTTP_202_ACCEPTED,
     )
