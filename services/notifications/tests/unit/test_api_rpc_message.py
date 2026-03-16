@@ -4,12 +4,12 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.notifications import ChannelType, EmailMessage, TemplateRef
+from models_library.notifications import ChannelType, EmailMessage
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
-from models_library.notifications.rpc import SendMessageResponse
+from models_library.notifications.rpc import SendMessageResponse, TemplateRef
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message,
