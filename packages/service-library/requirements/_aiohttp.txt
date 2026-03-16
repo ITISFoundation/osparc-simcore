@@ -36,7 +36,7 @@ multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.37.0
+opentelemetry-api==1.40.0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
@@ -44,27 +44,27 @@ opentelemetry-api==1.37.0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.58b0
+opentelemetry-instrumentation==0.61b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-dbapi
-opentelemetry-instrumentation-aiohttp-client==0.58b0
+opentelemetry-instrumentation-aiohttp-client==0.61b0
     # via -r requirements/_aiohttp.in
-opentelemetry-instrumentation-aiohttp-server==0.58b0
+opentelemetry-instrumentation-aiohttp-server==0.61b0
     # via -r requirements/_aiohttp.in
-opentelemetry-instrumentation-aiopg==0.58b0
+opentelemetry-instrumentation-aiopg==0.61b0
     # via -r requirements/_aiohttp.in
-opentelemetry-instrumentation-dbapi==0.58b0
+opentelemetry-instrumentation-dbapi==0.61b0
     # via opentelemetry-instrumentation-aiopg
-opentelemetry-semantic-conventions==0.58b0
+opentelemetry-semantic-conventions==0.61b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-dbapi
-opentelemetry-util-http==0.58b0
+opentelemetry-util-http==0.61b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
