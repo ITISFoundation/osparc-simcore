@@ -159,7 +159,24 @@ async def list_resource_tracker_for_user_wallet_pairs(
     if not user_wallet_pairs:
         return []
 
-    rts = sa.table("resource_tracker_service_runs")
+    rts = sa.table(
+        "resource_tracker_service_runs",
+        sa.column("service_run_id"),
+        sa.column("user_id"),
+        sa.column("wallet_id"),
+        sa.column("product_name"),
+        sa.column("project_id"),
+        sa.column("node_id"),
+        sa.column("service_key"),
+        sa.column("service_version"),
+        sa.column("started_at"),
+        sa.column("last_heartbeat_at"),
+        sa.column("missed_heartbeat_counter"),
+        sa.column("pricing_unit_cost"),
+        sa.column("simcore_user_agent"),
+        sa.column("service_run_status"),
+        sa.column("service_type"),
+    )
 
     pairs_with_wallet = [(uid, wid) for uid, wid in user_wallet_pairs if wid is not None]
     pairs_without_wallet = [uid for uid, wid in user_wallet_pairs if wid is None]
@@ -275,9 +292,25 @@ async def get_dynamic_service_extra_info(
         # Single optimized query: fetch RUT entries with user email and wallet name via JOINs
         # This replaces 3 separate queries with 1 JOIN operation
         rut_with_metadata = {}
-        _rts = sa.table("resource_tracker_service_runs")
-        _users = sa.table("users")
-        _wallets = sa.table("wallets")
+        _rts = sa.table(
+            "resource_tracker_service_runs",
+            sa.column("service_run_id"),
+            sa.column("user_id"),
+            sa.column("wallet_id"),
+            sa.column("product_name"),
+            sa.column("project_id"),
+            sa.column("node_id"),
+            sa.column("service_key"),
+            sa.column("service_version"),
+            sa.column("started_at"),
+            sa.column("last_heartbeat_at"),
+            sa.column("missed_heartbeat_counter"),
+            sa.column("pricing_unit_cost"),
+            sa.column("simcore_user_agent"),
+            sa.column("service_type"),
+        )
+        _users = sa.table("users", sa.column("id"), sa.column("email"))
+        _wallets = sa.table("wallets", sa.column("wallet_id"), sa.column("name"))
         result = await conn.execute(
             sa.select(
                 _rts.c.service_run_id,

@@ -85,8 +85,8 @@ async def _run(  # noqa: C901, PLR0915
                     _console.log(f"[dim]  Dynamic extra info queries: {time.monotonic() - t2:.1f}s[/dim]")
         elif bool(computational_clusters) or bool(services):
             rich.print("[yellow]Warning: could not query DB.[/yellow]")
-    except Exception:  # pylint: disable=broad-exception-caught
-        rich.print("[yellow]Warning: could not query DB.[/yellow]")
+    except Exception as _exc:  # pylint: disable=broad-exception-caught
+        rich.print(f"[yellow]Warning: could not query DB: {_exc!r}[/yellow]")
     finally:
         await db_stack.aclose()
 
