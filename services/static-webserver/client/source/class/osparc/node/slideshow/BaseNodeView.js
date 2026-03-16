@@ -117,17 +117,17 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const header = this.__header = this.__buildHeader();
       layout.add(header);
 
-      const mainView = this.__buildMainView();
-      layout.add(mainView, {
-        flex: 1
-      });
-
       const progressBar = this.__progressBar = new qx.ui.core.Widget().set({
         visibility: "excluded",
         allowGrowX: true,
         height: 6
       });
       layout.add(progressBar);
+
+      const mainView = this.__buildMainView();
+      layout.add(mainView, {
+        flex: 1
+      });
 
       this.add(layout, 1);
     },
