@@ -39,6 +39,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
   statics: {
     HEADER_HEIGHT: 32,
+    BUTTONS_BACKGROUND_COLOR: "background-main-3",
 
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
@@ -115,7 +116,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         width: 110,
         label: this.tr("Inputs"),
         icon: "@FontAwesome5Solid/sign-in-alt/14",
-        backgroundColor: "background-main-4"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
       header.add(inputsStateBtn);
@@ -133,7 +134,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       header.add(infoBtn);
 
       const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
-        backgroundColor: "background-main-3"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       instructionsBtn.addListener("appear", () => this.__openInstructions(), this);
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
@@ -142,7 +143,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const startBtn = this.__nodeStartButton = new qx.ui.form.Button().set({
         label: this.tr("Start"),
         icon: "@FontAwesome5Solid/play/14",
-        backgroundColor: "background-main-4",
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR,
         visibility: "excluded"
       });
       header.add(startBtn);
@@ -150,13 +151,13 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const stopBtn = this.__nodeStopButton = new qx.ui.form.Button().set({
         label: this.tr("Stop"),
         icon: "@FontAwesome5Solid/stop/14",
-        backgroundColor: "background-main-4",
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR,
         visibility: "excluded"
       });
       header.add(stopBtn);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
-        backgroundColor: "background-main-4"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);
@@ -169,7 +170,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         width: 110,
         label: this.tr("Outputs"),
         icon: "@FontAwesome5Solid/sign-out-alt/14",
-        backgroundColor: "background-main-4"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
