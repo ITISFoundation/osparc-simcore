@@ -1,12 +1,12 @@
 import logging
 from typing import Any
 
-from models_library.notifications import TemplateRef
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
+    TemplateRef,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter, validate_call
