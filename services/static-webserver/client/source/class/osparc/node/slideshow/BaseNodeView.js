@@ -61,22 +61,14 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         margin: this.self().CARD_MARGIN
       });
       if (node.isParameter()) {
-        // view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
         view.set({
-          // backgroundColor: "navbar-background",
           padding: 6
         });
       } else {
         view.getMainView().set({
-          // backgroundColor: "navbar-background",
           padding: 6,
           paddingTop: 0,
           paddingBottom: 0
-        });
-      }
-      if (node.isFilePicker()) {
-        view.getMainView().set({
-          // backgroundColor: "navbar-background"
         });
       }
     },
@@ -213,9 +205,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const settingsBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
-      mainView.bind("backgroundColor", settingsBox, "backgroundColor");
-      mainView.bind("backgroundColor", settingsBox.getChildControl("frame"), "backgroundColor");
+      this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
 
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
@@ -227,8 +217,6 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         padding: 4,
         width: 280
       });
-      mainView.bind("backgroundColor", outputsLayout, "backgroundColor");
-      mainView.bind("backgroundColor", outputsLayout.getChildControl("frame"), "backgroundColor");
       this.__outputsBtn.bind("value", outputsLayout, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
