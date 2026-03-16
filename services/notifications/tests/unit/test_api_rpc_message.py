@@ -4,8 +4,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.notifications import ChannelType, TemplateRef
-from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
+from models_library.notifications import ChannelType, EmailMessage, TemplateRef
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -28,42 +27,39 @@ pytest_simcore_core_services_selection = [
 def single_recipient_email_message(faker: Faker) -> dict:
     return EmailMessage(
         **{
-            "from": EmailContact(name="Sender", email=faker.email()),
-            "to": EmailContact(name="Recipient", email=faker.email()),
-            "content": EmailContent(
-                subject="Test Subject",
-                body_text="Test body text",
-                body_html="<p>Test body html</p>",
-            ),
+            "from": {"name": "Sender", "email": faker.email()},
+            "to": [{"name": "Recipient", "email": faker.email()}],
+            "content": {
+                "subject": "Test Subject",
+                "body_text": "Test body text",
+                "body_html": "<p>Test body html</p>",
+            },
         }
     ).model_dump(by_alias=True)
 
 
 @pytest.fixture
 def multi_recipient_email_message(faker: Faker) -> dict:
-    return {
-        **EmailMessage(
-            **{
-                "from": EmailContact(name="Sender", email=faker.email()),
-                "to": EmailContact(name="First", email=faker.email()),
-                "content": EmailContent(
-                    subject="Test Subject",
-                    body_text="Test body text",
-                ),
-            }
-        ).model_dump(by_alias=True),
-        "to": [
-            EmailContact(name="First", email=faker.email()).model_dump(),
-            EmailContact(name="Second", email=faker.email()).model_dump(),
-        ],
-    }
+    return EmailMessage(
+        **{
+            "from": {"name": "Sender", "email": faker.email()},
+            "to": [
+                {"name": "First", "email": faker.email()},
+                {"name": "Second", "email": faker.email()},
+            ],
+            "content": {
+                "subject": "Test Subject",
+                "body_text": "Test body text",
+            },
+        }
+    ).model_dump(by_alias=True)
 
 
 @pytest.fixture
 def email_envelope_single_recipient(faker: Faker) -> dict[str, Any]:
     return {
         "from": {"name": "Sender", "email": faker.email()},
-        "to": {"name": "Recipient", "email": faker.email()},
+        "to": [{"name": "Recipient", "email": faker.email()}],
     }
 
 
@@ -75,7 +71,6 @@ def email_envelope_multiple_recipients(faker: Faker) -> dict[str, Any]:
             {"name": "First Recipient", "email": faker.email()},
             {"name": "Second Recipient", "email": faker.email()},
         ],
-        "reply_to": {"name": "Reply To", "email": faker.email()},
     }
 
 

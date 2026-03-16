@@ -24,8 +24,8 @@ async def send_message(
 ) -> SendMessageResponse:
     assert app  # nosec
 
-    messages_service = get_message_service(app)
-    task_or_group_uuid, task_name = await messages_service.send_message(
+    message_service = get_message_service(app)
+    task_or_group_uuid, task_name = await message_service.send_message(
         message=request.message,
     )
     return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)
@@ -44,22 +44,11 @@ async def send_message_from_template(
 ) -> SendMessageResponse:
     assert app  # nosec
 
-    template_service = get_template_service()
-    preview = template_service.preview_template(
+    message_service = get_message_service(app)
+    task_or_group_uuid, task_name = await message_service.send_message_from_template(
+        template_service=get_template_service(),
         ref=TemplateRef(**request.template_ref.model_dump()),
+        envelope=request.envelope,
         context=request.context,
-    )
-
-    message = {
-        "channel": request.template_ref.channel,
-        **request.envelope,
-        "content": preview.message_content.model_dump()
-        if hasattr(preview.message_content, "model_dump")
-        else preview.message_content,
-    }
-
-    messages_service = get_message_service(app)
-    task_or_group_uuid, task_name = await messages_service.send_message(
-        message=message,
     )
     return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)
