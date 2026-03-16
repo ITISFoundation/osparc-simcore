@@ -2,8 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from models_library.celery import GroupUUID, TaskUUID
-from models_library.notifications import TemplateRef
+from ...celery import GroupUUID, TaskUUID
+from ._template import TemplateRef
 
 
 class SendMessageRequest(BaseModel):
