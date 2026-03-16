@@ -1,0 +1,790 @@
+"""Rich table rendering and JSON output for autoscaled-monitor."""
+
+import datetime
+from pathlib import Path
+from typing import Any, Final
+
+import arrow
+import orjson
+import rich
+from mypy_boto3_ec2.service_resource import Instance
+from pydantic import ByteSize, TypeAdapter
+from rich.console import Group
+from rich.style import Style
+from rich.table import Column, Table
+
+from . import dask, utils
+from .models import (
+    ComputationalCluster,
+    ComputationalTask,
+    DaskTask,
+    DiskUsage,
+    DynamicInstance,
+    DynamicServiceExtraInfo,
+    TaskReconciliationRow,
+)
+
+_DISK_FREE_THRESHOLD: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("15Gib")
+
+# Cache for EC2 instance type info (shared across calls)
+_instance_type_cache: dict[str, dict[str, Any]] = {}
+
+
+def _get_instance_type_info(ec2_instance: Instance) -> dict[str, Any]:
+    itype = ec2_instance.instance_type
+    if itype in _instance_type_cache:
+        return _instance_type_cache[itype]
+    try:
+        client = ec2_instance.meta.client
+        response = client.describe_instance_types(InstanceTypes=[itype])
+        info: dict[str, Any] = {}
+        if response["InstanceTypes"]:
+            it = response["InstanceTypes"][0]
+            info["vcpus"] = it.get("VCpuInfo", {}).get("DefaultVCpus", 0)
+            info["ram_mib"] = it.get("MemoryInfo", {}).get("SizeInMiB", 0)
+            gpu_info = it.get("GpuInfo", {})
+            gpus = gpu_info.get("Gpus", [])
+            info["gpu_count"] = sum(g.get("Count", 0) for g in gpus)
+            info["gpu_vram_mib"] = sum(g.get("MemoryInfo", {}).get("SizeInMiB", 0) * g.get("Count", 1) for g in gpus)
+        _instance_type_cache[itype] = info
+        return info
+    except Exception:
+        return {}
+
+
+def _format_instance_resources(ec2_instance: Instance) -> list[str]:
+    info = _get_instance_type_info(ec2_instance)
+    if not info:
+        return []
+    lines: list[str] = []
+    vcpus = info.get("vcpus", 0)
+    ram_mib = info.get("ram_mib", 0)
+    gpu_count = info.get("gpu_count", 0)
+    gpu_vram_mib = info.get("gpu_vram_mib", 0)
+    if vcpus:
+        lines.append(f"CPUs: {vcpus}")
+    if ram_mib:
+        lines.append(f"RAM: {TypeAdapter(ByteSize).validate_python(ram_mib * 1024 * 1024).human_readable()}")
+    if gpu_count:
+        lines.append(f"GPUs: {gpu_count}")
+    if gpu_vram_mib:
+        lines.append(f"VRAM: {TypeAdapter(ByteSize).validate_python(gpu_vram_mib * 1024 * 1024).human_readable()}")
+    return lines
+
+
+def _format_disk_usage_lines(disk_usage: list[DiskUsage], *, indent: str = "") -> list[str]:
+    lines: list[str] = []
+    for du in disk_usage:
+        color_free = utils.color_encode_with_threshold(du.free.human_readable(), du.free, _DISK_FREE_THRESHOLD)
+        lines.append(f"{indent}{du.mount_point}: {color_free} / {du.total.human_readable()}")
+    return lines
+
+
+def create_graylog_permalinks(environment: dict[str, str | None], instance: Instance) -> str:
+    source_name = instance.private_ip_address.replace(".", "-")
+    time_span = int((arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)).total_seconds())
+    return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
+
+
+def format_cluster_identity(
+    user_id: int,
+    wallet_id: int | None,
+    *,
+    email: str | None,
+    wallet_name: str | None,
+    product_name: str | None,
+    is_bot: bool = False,
+) -> str:
+    wid = str(wallet_id) if wallet_id is not None else "n/a"
+    bot_prefix = "\U0001f916 " if is_bot else ""
+    identity = f"Cluster details for [bold cyan]{bot_prefix}UserID: {user_id}[/bold cyan]"
+    if email:
+        identity += f" [dim]({email})[/dim]"
+    identity += f", [bold yellow]WalletID: {wid}[/bold yellow]"
+    if wallet_name:
+        identity += f" [dim]({wallet_name})[/dim]"
+    if product_name:
+        identity += f" — Product: {product_name}"
+    return identity
+
+
+def format_resource_value(key: str, value: float | str | None) -> str:
+    if key in {"RAM", "VRAM"} and isinstance(value, (int, float)):
+        return TypeAdapter(ByteSize).validate_python(int(value)).human_readable()
+    if isinstance(value, float) and value == int(value):
+        return str(int(value))
+    return str(value)
+
+
+def format_comp_task_cell(row: TaskReconciliationRow) -> str:
+    if row.comp_task is None:
+        return "[red]\u274c n/a[/red]"
+    db_state = row.comp_task.state
+    if row.is_actively_executing and db_state != "RUNNING":
+        return f"[red]\u2705 {db_state}[/red]"
+    if db_state == "RUNNING":
+        return f"[green]\u2705 {db_state}[/green]"
+    return f"\u2705 {db_state}"
+
+
+def format_tracker_cells(
+    row: TaskReconciliationRow,
+    time_now: arrow.Arrow,
+    usd_per_credit: float | None,
+) -> tuple[str, str, str, str, str]:
+    """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text)."""
+    if row.tracker_run is None:
+        rut = "[red]\u274c n/a[/red]" if row.is_actively_executing else "[dim]\u274c n/a[/dim]"
+        return rut, "n/a", "n/a", "n/a", "n/a"
+    cost = row.tracker_run.pricing_unit_cost
+    rate = f"{cost:.1f}" if cost is not None else "n/a"
+    now_naive = time_now.datetime.replace(tzinfo=None)
+    elapsed_hours = (now_naive - row.tracker_run.started_at.replace(tzinfo=None)).total_seconds() / 3600
+    elapsed = f"{elapsed_hours:.1f}h"
+    total_credits = cost * elapsed_hours if cost is not None else None
+    total = f"{total_credits:.1f}" if total_credits is not None else "n/a"
+    usd = f"{total_credits * usd_per_credit:.2f}" if total_credits is not None and usd_per_credit is not None else "n/a"
+    return "[green]\u2705 RUNNING[/green]", rate, elapsed, total, usd
+
+
+STATE_STYLES: Final[dict[str, str]] = {
+    "executing": "green",
+    "long-running": "green",
+    "memory": "green",
+    "constrained": "yellow",
+    "queued": "cyan",
+    "ready": "cyan",
+    "waiting": "cyan",
+    "fetch": "dim",
+    "flight": "dim",
+    "cancelled": "red",
+    "error": "red",
+    "missing": "red",
+    "resumed": "yellow",
+}
+
+
+def build_cluster_tasks_table(  # noqa: C901
+    rows: list[TaskReconciliationRow],
+    *,
+    job_to_worker: dict[str, str] | None,
+    usd_per_credit: float | None,
+) -> Table | None:
+    if not rows:
+        return None
+
+    time_now = arrow.utcnow()
+
+    def _worker_sort_key(r: TaskReconciliationRow) -> tuple[int, str]:
+        label = (job_to_worker or {}).get(r.job_id, "")
+        try:
+            return (int(label.rsplit(None, 1)[-1]), r.job_id)
+        except (ValueError, IndexError):
+            return (999, r.job_id)
+
+    sorted_rows = sorted(rows, key=_worker_sort_key)
+
+    table = Table(
+        Column("Project/Node/Job", overflow="fold"),
+        Column("Service", overflow="fold"),
+        Column("Worker", justify="center"),
+        Column("Dask State", justify="center"),
+        Column("DB State", justify="center"),
+        Column("Required resources", overflow="fold"),
+        Column("Rate\n(\U0001f4b6/h)", justify="right"),
+        Column("Elapsed", justify="right"),
+        Column("Total\n(\U0001f4b6)", justify="right"),
+        Column("Total\n(\U0001f4b2)", justify="right"),
+        Column("Issues"),
+        padding=(0, 1),
+        expand=True,
+    )
+
+    for row in sorted_rows:
+        job_id_short = row.job_id[:36] + "\u2026" if len(row.job_id) > 37 else row.job_id  # noqa: PLR2004
+        if row.comp_task is not None:
+            id_cell = f"P: {row.comp_task.project_id}\nN: {row.comp_task.node_id}\nJ: {job_id_short}"
+            service_cell = f"{row.comp_task.service_name}:{row.comp_task.service_version}"
+        else:
+            id_cell = f"[red]J: {job_id_short}\n(ghost — no comp_task)[/red]"
+            service_cell = "[dim]n/a[/dim]"
+
+        if row.worker_state and row.worker_state != row.dask_state:
+            combined = f"{row.dask_state}\n{row.worker_state}"
+        else:
+            combined = row.dask_state
+
+        if row.is_actively_executing:
+            dask_state_text = f"[green]{combined}[/green]"
+        elif row.dask_state == "processing":
+            dask_state_text = f"[yellow]{combined}[/yellow]"
+        elif row.dask_state in {"erred", "not-in-dask"}:
+            dask_state_text = f"[red]{combined}[/red]"
+        else:
+            dask_state_text = combined
+
+        db_comp_tasks_text = format_comp_task_cell(row)
+
+        rut_text, rate_text, elapsed_str, total_text, usd_text = format_tracker_cells(row, time_now, usd_per_credit)
+
+        db_state_cell = f"comp_tasks: {db_comp_tasks_text}\nRUT: {rut_text}"
+
+        resources_text = (
+            "\n".join(f"{k}: {format_resource_value(k, v)}" for k, v in sorted(row.required_resources.items()))
+            if row.required_resources
+            else "[dim]n/a[/dim]"
+        )
+
+        # Missed heartbeats go into issues
+        all_issues = list(row.issues)
+        if row.tracker_run is not None and row.tracker_run.missed_heartbeat_counter > 0:
+            all_issues.append(f"missed heartbeats: {row.tracker_run.missed_heartbeat_counter}")
+        issue_text = "\n".join(f"[red]{i}[/red]" for i in all_issues) if all_issues else "[green]OK[/green]"
+        worker_text = (job_to_worker or {}).get(row.job_id, "[dim]n/a[/dim]")
+
+        table.add_row(
+            id_cell,
+            service_cell,
+            worker_text,
+            dask_state_text,
+            db_state_cell,
+            resources_text,
+            rate_text,
+            elapsed_str,
+            total_text,
+            usd_text,
+            issue_text,
+            end_section=True,
+        )
+
+    return table
+
+
+def build_worker_metrics_table(
+    metrics: dict[str, Any] | str,
+    graylog_link: str,
+) -> Table:
+    table = Table(
+        Column(""),
+        Column(""),
+        padding=(0, 1),
+        show_header=False,
+        box=None,
+        expand=True,
+    )
+    table.add_row("Graylog", graylog_link)
+    resources: dict[str, Any] = metrics.get("resources", {}) if isinstance(metrics, dict) else {}
+    if resources:
+        resources_str = " | ".join(f"{k}: {format_resource_value(k, v)}" for k, v in sorted(resources.items()))
+        table.add_row("Resources", resources_str)
+    return table
+
+
+def build_worker_tasks_table(
+    processing_jobs: list[str],
+    task_resources: dict[str, dict[str, Any]],
+    task_worker_states: dict[str, str],
+) -> Table | None:
+    if not processing_jobs:
+        return None
+    table = Table(
+        Column("Job ID", overflow="fold"),
+        Column("Worker State", justify="center"),
+        Column("Resources", overflow="fold"),
+        padding=(0, 1),
+        expand=True,
+    )
+
+    for job_id in processing_jobs:
+        resources = task_resources.get(job_id, {})
+        resources_text = (
+            " | ".join(f"{k}: {format_resource_value(k, v)}" for k, v in sorted(resources.items()))
+            if resources
+            else "[dim]n/a[/dim]"
+        )
+        state = task_worker_states.get(job_id, "processing")
+        color = STATE_STYLES.get(state, "dim")
+        table.add_row(job_id, f"[{color}]{state}[/{color}]", resources_text)
+    return table
+
+
+def build_cluster_links_table(
+    environment: dict[str, str | None],
+    cluster: ComputationalCluster,
+    dask_state_display: str,
+) -> Table:
+    table = Table(
+        Column(""),
+        Column(""),
+        padding=(0, 1),
+        show_header=False,
+        box=None,
+        expand=True,
+    )
+    ip = cluster.primary.ec2_instance.public_ip_address
+    table.add_row("Graylog", create_graylog_permalinks(environment, cluster.primary.ec2_instance))
+    table.add_row("Dask Scheduler", f"http://{ip}:8787 — {dask_state_display}")
+    table.add_row("Prometheus", f"http://{ip}:9090")
+    return table
+
+
+def build_job_to_worker(cluster: ComputationalCluster) -> dict[str, str]:
+    """Build a reverse mapping from job_id to human-readable worker label."""
+    job_to_worker: dict[str, str] = {}
+    for worker_name, job_ids in cluster.processing_jobs.items():
+        for i, w in enumerate(cluster.workers):
+            if w.dask_ip in worker_name:
+                for job_id in job_ids:
+                    job_to_worker[job_id] = f"Worker {i + 1}"
+                break
+    return job_to_worker
+
+
+def _format_dynamic_rut_cells(
+    extra: DynamicServiceExtraInfo | None,
+    service_created_at: datetime.datetime,
+    time_now: arrow.Arrow,
+) -> tuple[str, str, str, str, str]:
+    """Returns (rut_text, rate_text, elapsed_str, total_text, usd_text)."""
+    elapsed = utils.timedelta_formatting(time_now - service_created_at, color_code=True)
+    if extra is None or extra.tracker_run is None:
+        return "[red]\u274c n/a[/red]", "n/a", elapsed, "n/a", "n/a"
+    run = extra.tracker_run
+    cost = run.pricing_unit_cost
+    rate = f"{cost:.1f}" if cost is not None else "n/a"
+    now_naive = time_now.datetime.replace(tzinfo=None)
+    elapsed_hours = (now_naive - run.started_at.replace(tzinfo=None)).total_seconds() / 3600
+    total_credits = cost * elapsed_hours if cost is not None else None
+    total = f"{total_credits:.1f}" if total_credits is not None else "n/a"
+    usd = (
+        f"{total_credits * extra.usd_per_credit:.2f}"
+        if total_credits is not None and extra.usd_per_credit is not None
+        else "n/a"
+    )
+    return "[green]\u2705 RUNNING[/green]", rate, elapsed, total, usd
+
+
+def print_dynamic_instances(  # noqa: C901, PLR0912
+    instances: list[DynamicInstance],
+    environment: dict[str, str | None],
+    aws_region: str,
+    output: Path | None,
+    *,
+    service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] | None,
+) -> None:
+    time_now = arrow.utcnow()
+    table_title = f"dynamic autoscaled instances: {aws_region}"
+    table = Table(
+        Column("Instance"),
+        Column(
+            "Running services",
+            footer="[red]Intervention detection might show false positive"
+            " if in transient state, be careful and always double-check!![/red]",
+        ),
+        title=table_title,
+        show_footer=True,
+        padding=(0, 0),
+        title_style=Style(color="red", encircle=True),
+        expand=True,
+    )
+    for instance in instances:
+        service_table = "[i]n/a[/i]"
+        if instance.running_services:
+            service_table = Table(
+                "User",
+                "Wallet",
+                "ProductName",
+                Column("Project/Node", overflow="fold"),
+                "Service",
+                Column("Resource limits"),
+                Column("DB\nRUT", justify="center"),
+                Column("Rate\n(\U0001f4b6/h)", justify="right"),
+                Column("Elapsed", justify="right"),
+                Column("Total\n(\U0001f4b6)", justify="right"),
+                Column("Total\n(\U0001f4b2)", justify="right"),
+                "Issues",
+                expand=True,
+                padding=(0, 1),
+            )
+            for service in instance.running_services:
+                user_id_display = f"{service.user_id}"
+                if service.simcore_user_agent and service.simcore_user_agent.lower() != "undefined":
+                    user_id_display = f"\U0001f916 {service.user_id}"
+                extra = (service_extra_info or {}).get((service.project_id, service.node_id))
+                if extra:
+                    if extra.email:
+                        user_id_display += f"\n[dim]{extra.email}[/dim]"
+                    if extra.wallet_id is not None:
+                        wallet_display = f"{extra.wallet_id}"
+                        if extra.wallet_name:
+                            wallet_display += f"\n[dim]{extra.wallet_name}[/dim]"
+                    else:
+                        wallet_display = "[dim]n/a[/dim]"
+                else:
+                    wallet_display = "[dim]n/a[/dim]"
+                rut_text, rate_text, elapsed_text, total_text, usd_text = _format_dynamic_rut_cells(
+                    extra, service.created_at, time_now
+                )
+                issues = "[red]needs intervention[/red]" if service.needs_manual_intervention else "[green]OK[/green]"
+                resources_parts: list[str] = []
+                if service.nano_cpus > 0:
+                    resources_parts.append(f"CPU: {service.nano_cpus / 1e9:.1f}")
+                if service.memory > 0:
+                    resources_parts.append(
+                        f"RAM: {TypeAdapter(ByteSize).validate_python(service.memory).human_readable()}"
+                    )
+                resources_text = "\n".join(resources_parts) if resources_parts else "[dim]n/a[/dim]"
+                service_table.add_row(
+                    user_id_display,
+                    wallet_display,
+                    service.product_name,
+                    f"P: {service.project_id}\nN: {service.node_id}",
+                    f"{service.service_name}:{service.service_version}",
+                    resources_text,
+                    rut_text,
+                    rate_text,
+                    elapsed_text,
+                    total_text,
+                    usd_text,
+                    issues,
+                    end_section=True,
+                )
+        elif instance.is_warm_buffer:
+            service_table = "[dim]warm buffer - no services running[/dim]"
+
+        instance_info = "\n".join(
+            [
+                f"{utils.color_encode_with_state(instance.name, instance.ec2_instance)}",
+                f"ID: {instance.ec2_instance.instance_id}",
+                f"AMI: {instance.ec2_instance.image_id}",
+                f"Type: {instance.ec2_instance.instance_type}",
+                *_format_instance_resources(instance.ec2_instance),
+                f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
+                f"PublicIP: {instance.ec2_instance.public_ip_address}",
+                f"PrivateIP: {instance.ec2_instance.private_ip_address}",
+                *_format_disk_usage_lines(instance.disk_usage),
+            ]
+        )
+        if instance.is_warm_buffer:
+            instance_info = f"[dim]{instance_info}[/dim]"
+        graylog_line = f"Graylog: {create_graylog_permalinks(environment, instance.ec2_instance)}"
+        right_content = Group(graylog_line, service_table)
+        table.add_row(
+            instance_info,
+            right_content,
+            end_section=True,
+        )
+    if output:
+        with output.open("w") as fp:
+            rich.print(table, flush=True, file=fp)
+    else:
+        rich.print(table, flush=True)
+
+
+def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
+    clusters: list[ComputationalCluster],
+    environment: dict[str, str | None],
+    aws_region: str,
+    output: Path | None,
+    *,
+    cluster_task_rows: dict[tuple[int, int | None], list[TaskReconciliationRow]] | None,
+    cluster_extra_info: dict[
+        tuple[int, int | None], tuple[str | None, str | None, str | None, float | None, str | None]
+    ]
+    | None,
+    compact: bool,
+) -> None:
+    """Print computational clusters.
+
+    When compact=True, worker machine details (AMI, IPs, disk) are omitted —
+    only worker count and task-level info are shown. Used by the top-level summary.
+    """
+    time_now = arrow.utcnow()
+
+    for cluster in clusters:
+        cluster_worker_metrics = dask.get_worker_metrics(cluster.scheduler_info)
+        job_to_worker = build_job_to_worker(cluster)
+
+        extra = (cluster_extra_info or {}).get((cluster.primary.user_id, cluster.primary.wallet_id))
+        email, wallet_name, product_name, usd_per_credit, simcore_user_agent = (
+            extra if extra else (None, None, None, None, None)
+        )
+
+        is_bot = bool(simcore_user_agent and simcore_user_agent.lower() != "undefined")
+
+        color_encoded_heartbeat = (
+            utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat)
+            if cluster.primary.last_heartbeat
+            else "n/a"
+        )
+        col2_header = (
+            format_cluster_identity(
+                cluster.primary.user_id,
+                cluster.primary.wallet_id,
+                email=email,
+                wallet_name=wallet_name,
+                product_name=product_name,
+                is_bot=is_bot,
+            )
+            + f" — Heartbeat: {color_encoded_heartbeat}"
+        )
+
+        table_title = f"computational cluster: {aws_region}"
+        if product_name:
+            table_title += f" — {product_name}"
+
+        table = Table(
+            Column("Instance", justify="left", overflow="fold", ratio=1),
+            Column(
+                col2_header,
+                overflow="fold",
+                ratio=3,
+            ),
+            title=table_title,
+            padding=(0, 0),
+            title_style=Style(color="red", encircle=True),
+            expand=True,
+        )
+
+        color_encoded_up_time = utils.timedelta_formatting(
+            time_now - cluster.primary.ec2_instance.launch_time, color_code=True
+        )
+        dask_state_display = cluster.primary.dask_ip
+        if "Not Ready" in dask_state_display:
+            dask_state_display = f"[red]{dask_state_display}[/red]"
+        else:
+            dask_state_display = "[green]Ready[/green]"
+        primary_info = "\n".join(
+            [
+                f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
+                f"{cluster.primary.name}",
+                f"ID: {cluster.primary.ec2_instance.id}",
+                f"AMI: {cluster.primary.ec2_instance.image_id}",
+                f"Type: {cluster.primary.ec2_instance.instance_type}",
+                *_format_instance_resources(cluster.primary.ec2_instance),
+                f"Up: {color_encoded_up_time}",
+                f"PublicIP: {cluster.primary.ec2_instance.public_ip_address}",
+                f"PrivateIP: {cluster.primary.ec2_instance.private_ip_address}",
+                *_format_disk_usage_lines(cluster.primary.disk_usage),
+            ]
+        )
+        if cluster.primary.is_warm_buffer:
+            primary_info = f"[dim]{primary_info}[/dim]"
+
+        _tasks_table: Table | None = None
+        if not cluster.primary.is_warm_buffer and cluster_task_rows is not None:
+            _task_rows = cluster_task_rows.get((cluster.primary.user_id, cluster.primary.wallet_id))
+            if _task_rows:
+                _tasks_table = build_cluster_tasks_table(
+                    _task_rows,
+                    job_to_worker=job_to_worker,
+                    usd_per_credit=usd_per_credit,
+                )
+        cluster_links_table = build_cluster_links_table(environment, cluster, dask_state_display)
+        right_parts: list[object] = [cluster_links_table]
+        if _tasks_table is not None:
+            right_parts.append(_tasks_table)
+        right_content: object = Group(*right_parts)
+        table.add_row(primary_info, right_content)
+
+        if compact:
+            # In compact mode, just show worker count summary
+            if cluster.workers:
+                table.add_row()
+                table.add_row(
+                    f"  [italic]{len(cluster.workers)} worker(s)[/italic]",
+                    "",
+                )
+        else:
+            for index, worker in enumerate(cluster.workers):
+                worker_dask_metrics = next(
+                    (
+                        worker_metrics
+                        for worker_name, worker_metrics in cluster_worker_metrics.items()
+                        if worker.dask_ip in worker_name
+                    ),
+                    "no metrics???",
+                )
+                worker_processing_jobs = [
+                    job_id
+                    for worker_name, job_ids in cluster.processing_jobs.items()
+                    if worker.dask_ip in worker_name
+                    for job_id in job_ids
+                ]
+                table.add_row()
+                indent = "  "
+                worker_label = utils.color_encode_with_state(f"Worker {index + 1}", worker.ec2_instance)
+                worker_up = utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)
+                worker_info = "\n".join(
+                    [
+                        f"{indent}[italic]{worker_label}[/italic]",
+                        f"{indent}{worker.name}",
+                        f"{indent}ID: {worker.ec2_instance.id}",
+                        f"{indent}AMI: {worker.ec2_instance.image_id}",
+                        f"{indent}Type: {worker.ec2_instance.instance_type}",
+                        *[f"{indent}{line}" for line in _format_instance_resources(worker.ec2_instance)],
+                        f"{indent}Up: {worker_up}",
+                        f"{indent}PublicIP: {worker.ec2_instance.public_ip_address}",
+                        f"{indent}PrivateIP: {worker.ec2_instance.private_ip_address}",
+                        f"{indent}DaskWorkerIP: {worker.dask_ip}",
+                        *_format_disk_usage_lines(worker.disk_usage, indent=indent),
+                        "",
+                    ]
+                )
+                if worker.is_warm_buffer:
+                    worker_info = f"[dim]{worker_info}[/dim]"
+                worker_graylog = create_graylog_permalinks(environment, worker.ec2_instance)
+                metrics_table = build_worker_metrics_table(worker_dask_metrics, worker_graylog)
+                worker_tasks = build_worker_tasks_table(
+                    worker_processing_jobs, cluster.task_resources, cluster.task_worker_states
+                )
+                worker_right_parts: list[object] = [metrics_table]
+                if worker_tasks is not None:
+                    worker_right_parts.append(worker_tasks)
+                worker_right: object = Group(*worker_right_parts)
+                table.add_row(worker_info, worker_right)
+
+        if output:
+            with output.open("a") as fp:
+                rich.print(table, file=fp)
+        else:
+            rich.print(table)
+
+
+def print_computational_tasks(
+    user_id: int,
+    wallet_id: int | None,
+    tasks: list[tuple[ComputationalTask | None, DaskTask | None]],
+) -> None:
+    table = Table(
+        "index",
+        Column("Project/Node", overflow="fold"),
+        "Service",
+        "State in DB",
+        "State in Dask cluster",
+        title=f"{len(tasks)} Tasks running for {user_id=}/{wallet_id=}",
+        padding=(0, 1),
+        row_styles=["", "dim"],
+        title_style=Style(color="red", encircle=True),
+    )
+
+    for index, (db_task, dask_task) in enumerate(tasks):
+        if db_task:
+            id_cell = f"P: {db_task.project_id}\nN: {db_task.node_id}"
+            service_cell = f"{db_task.service_name}:{db_task.service_version}"
+            state_cell = f"{db_task.state}"
+        else:
+            id_cell = "[red][bold]intervention needed[/bold][/red]"
+            service_cell = ""
+            state_cell = ""
+        table.add_row(
+            f"{index}",
+            id_cell,
+            service_cell,
+            state_cell,
+            (dask_task.state if dask_task else "[orange]task not yet in cluster[/orange]"),
+        )
+
+    rich.print(table)
+
+
+def print_summary_as_json(
+    dynamic_instances: list[DynamicInstance],
+    computational_clusters: list[ComputationalCluster],
+    output: Path | None,
+    *,
+    cluster_task_rows: list[tuple[ComputationalCluster, list[TaskReconciliationRow]]] | None,
+) -> None:
+    result = {
+        "dynamic_instances": [
+            {
+                "name": instance.name,
+                "ec2_instance_id": instance.ec2_instance.instance_id,
+                "is_warm_buffer": instance.is_warm_buffer,
+                "running_services": [
+                    {
+                        "user_id": service.user_id,
+                        "project_id": service.project_id,
+                        "node_id": service.node_id,
+                        "service_name": service.service_name,
+                        "service_version": service.service_version,
+                        "product_name": service.product_name,
+                        "simcore_user_agent": service.simcore_user_agent,
+                        "created_at": service.created_at.isoformat(),
+                        "needs_manual_intervention": service.needs_manual_intervention,
+                    }
+                    for service in instance.running_services
+                ],
+                "disk_usage": [
+                    {"mount": du.mount_point, "free": du.free.human_readable(), "total": du.total.human_readable()}
+                    for du in instance.disk_usage
+                ],
+            }
+            for instance in dynamic_instances
+        ],
+        "computational_clusters": [
+            {
+                "primary": {
+                    "name": cluster.primary.name,
+                    "ec2_instance_id": cluster.primary.ec2_instance.instance_id,
+                    "is_warm_buffer": cluster.primary.is_warm_buffer,
+                    "user_id": cluster.primary.user_id,
+                    "wallet_id": cluster.primary.wallet_id,
+                    "disk_usage": [
+                        {"mount": du.mount_point, "free": du.free.human_readable(), "total": du.total.human_readable()}
+                        for du in cluster.primary.disk_usage
+                    ],
+                    "last_heartbeat": (
+                        cluster.primary.last_heartbeat.isoformat() if cluster.primary.last_heartbeat else "n/a"
+                    ),
+                },
+                "workers": [
+                    {
+                        "name": worker.name,
+                        "ec2_instance_id": worker.ec2_instance.instance_id,
+                        "is_warm_buffer": worker.is_warm_buffer,
+                        "disk_usage": [
+                            {
+                                "mount": du.mount_point,
+                                "free": du.free.human_readable(),
+                                "total": du.total.human_readable(),
+                            }
+                            for du in worker.disk_usage
+                        ],
+                    }
+                    for worker in cluster.workers
+                ],
+                "datasets": cluster.datasets,
+                "tasks": cluster.task_states_to_tasks,
+            }
+            for cluster in computational_clusters
+        ],
+        "cluster_task_reconciliation": [
+            {
+                "user_id": cluster.primary.user_id,
+                "wallet_id": cluster.primary.wallet_id,
+                "tasks": [
+                    {
+                        "job_id": row.job_id,
+                        "dask_state": row.dask_state,
+                        "in_comp_tasks": row.comp_task is not None,
+                        "db_state": row.comp_task.state if row.comp_task else None,
+                        "project_id": str(row.comp_task.project_id) if row.comp_task else None,
+                        "node_id": str(row.comp_task.node_id) if row.comp_task else None,
+                        "service_name": row.comp_task.service_name if row.comp_task else None,
+                        "service_version": row.comp_task.service_version if row.comp_task else None,
+                        "in_tracker": row.tracker_run is not None,
+                        "pricing_unit_cost": row.tracker_run.pricing_unit_cost if row.tracker_run else None,
+                        "issues": row.issues,
+                    }
+                    for row in task_rows
+                ],
+            }
+            for cluster, task_rows in (cluster_task_rows or [])
+        ],
+    }
+
+    if output:
+        output.write_text(orjson.dumps(result).decode())
+    else:
+        rich.print_json(orjson.dumps(result).decode())
