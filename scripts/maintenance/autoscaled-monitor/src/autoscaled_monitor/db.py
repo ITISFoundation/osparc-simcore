@@ -6,6 +6,7 @@ from typing import Any
 
 import rich
 import sqlalchemy as sa
+from aiocache import cached
 from pydantic import PostgresDsn, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -109,7 +110,15 @@ async def check_db_connection(state: AppState) -> bool:
     return False
 
 
-async def list_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list[str]) -> list[ComputationalTask]:
+def _cache_key_without_engine(*args: Any, **kwargs: Any) -> str:
+    # Skip args[0] (engine) and filter it from kwargs
+    filtered_args = args[1:]
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k != "engine"}
+    return str((filtered_args, filtered_kwargs))
+
+
+@cached(key_builder=_cache_key_without_engine)
+async def list_computational_tasks_by_job_ids(engine: AsyncEngine, *, job_ids: list[str]) -> list[ComputationalTask]:
     """Fetch computational tasks by specific job IDs.
     Args:
         engine: async DB engine
@@ -151,8 +160,10 @@ async def list_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list
     ]
 
 
+@cached(key_builder=_cache_key_without_engine)
 async def list_resource_tracker_for_user_wallet_pairs(
     engine: AsyncEngine,
+    *,
     user_wallet_pairs: list[tuple[int, int | None]],
 ) -> list[ResourceTrackerServiceRun]:
     """Fetch RUNNING COMPUTATIONAL_SERVICE entries for specific user/wallet pairs."""
@@ -240,8 +251,10 @@ async def list_resource_tracker_for_user_wallet_pairs(
     ]
 
 
+@cached(key_builder=_cache_key_without_engine)
 async def get_user_and_wallet_info(
     engine: AsyncEngine,
+    *,
     user_id: int,
     wallet_id: int | None,
 ) -> tuple[str | None, str | None, str | None]:
@@ -272,8 +285,10 @@ async def get_user_and_wallet_info(
     return email, wallet_name, product_name
 
 
+@cached(key_builder=_cache_key_without_engine)
 async def get_dynamic_service_extra_info(
     engine: AsyncEngine,
+    *,
     services: list[tuple[int, str, str]],
 ) -> dict[tuple[str, str], DynamicServiceExtraInfo]:
     """Resolve email, wallet and RUT info for dynamic services using optimized JOINs.
@@ -410,8 +425,10 @@ async def get_dynamic_service_extra_info(
     return info
 
 
+@cached(key_builder=_cache_key_without_engine)
 async def get_product_usd_per_credit(
     engine: AsyncEngine,
+    *,
     product_name: str,
 ) -> float | None:
     """Returns the latest usd_per_credit for the product, or None if not found."""

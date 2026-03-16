@@ -35,7 +35,7 @@ async def _run(
         try:
             with Console().status("[bold]Querying database for user/wallet info...[/bold]"):
                 async with db.db_engine(state) as engine:
-                    service_extra_info = await db.get_dynamic_service_extra_info(engine, services)
+                    service_extra_info = await db.get_dynamic_service_extra_info(engine, services=services)
         except Exception:  # pylint: disable=broad-exception-caught
             rich.print("[yellow]Warning: could not query DB for user/wallet info.[/yellow]")
 

@@ -81,7 +81,7 @@ async def _run(  # noqa: C901, PLR0915
                     _console.log(f"[dim]  Reconciliation queries: {time.monotonic() - t2:.1f}s[/dim]")
                 if services:
                     t2 = time.monotonic()
-                    service_extra_info = await db.get_dynamic_service_extra_info(db_engine, services)
+                    service_extra_info = await db.get_dynamic_service_extra_info(db_engine, services=services)
                     _console.log(f"[dim]  Dynamic extra info queries: {time.monotonic() - t2:.1f}s[/dim]")
         elif bool(computational_clusters) or bool(services):
             rich.print("[yellow]Warning: could not query DB.[/yellow]")

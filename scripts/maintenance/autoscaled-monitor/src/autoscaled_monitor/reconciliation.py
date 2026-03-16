@@ -132,7 +132,9 @@ async def reconcile_computational_clusters(
     result = ReconciliationResult()
     try:
         user_wallet_pairs = [(cluster.primary.user_id, cluster.primary.wallet_id) for cluster in computational_clusters]
-        result.tracker_runs = await db.list_resource_tracker_for_user_wallet_pairs(engine, user_wallet_pairs)
+        result.tracker_runs = await db.list_resource_tracker_for_user_wallet_pairs(
+            engine, user_wallet_pairs=user_wallet_pairs
+        )
 
         tracker_runs_by_key: dict[tuple[int, int | None], list[ResourceTrackerServiceRun]] = {}
         for _run in result.tracker_runs:
@@ -142,7 +144,7 @@ async def reconcile_computational_clusters(
             try:
                 # Extract job_ids from cluster for targeted lookup
                 job_ids = [job_id for job_ids in cluster.task_states_to_tasks.values() for job_id in job_ids]
-                comp_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids)
+                comp_tasks = await db.list_computational_tasks_by_job_ids(engine, job_ids=job_ids)
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 rich.print(
                     f"[yellow]Warning: could not fetch comp_tasks for user_id={cluster.primary.user_id}.[/yellow]{exc}"
@@ -156,7 +158,7 @@ async def reconcile_computational_clusters(
         for _cluster in computational_clusters:
             try:
                 _email, _wallet_name, _product_name = await db.get_user_and_wallet_info(
-                    engine, _cluster.primary.user_id, _cluster.primary.wallet_id
+                    engine, user_id=_cluster.primary.user_id, wallet_id=_cluster.primary.wallet_id
                 )
             except Exception:  # pylint: disable=broad-exception-caught
                 _email, _wallet_name, _product_name = None, None, None
@@ -167,7 +169,7 @@ async def reconcile_computational_clusters(
             _usd_per_credit: float | None = None
             if _product_name:
                 with contextlib.suppress(Exception):
-                    _usd_per_credit = await db.get_product_usd_per_credit(engine, _product_name)
+                    _usd_per_credit = await db.get_product_usd_per_credit(engine, product_name=_product_name)
             _simcore_user_agent: str | None = next(
                 (r.simcore_user_agent for r in _cluster_tracker if r.simcore_user_agent), None
             )
