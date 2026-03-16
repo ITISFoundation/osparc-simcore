@@ -1,12 +1,12 @@
 from fastapi import FastAPI
+from models_library.notifications.errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
 from models_library.notifications.rpc import (
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
-)
-from models_library.notifications_errors import (
-    NotificationsTemplateContextValidationError,
-    NotificationsTemplateNotFoundError,
 )
 from servicelib.rabbitmq import RPCRouter
 

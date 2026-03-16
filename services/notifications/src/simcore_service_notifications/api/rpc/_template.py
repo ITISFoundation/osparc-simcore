@@ -2,6 +2,10 @@ from dataclasses import asdict
 
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
+from models_library.notifications.errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
 from models_library.notifications.rpc import (
     PreviewTemplateRequest,
     PreviewTemplateResponse,
@@ -9,10 +13,6 @@ from models_library.notifications.rpc import (
 )
 from models_library.notifications.rpc import (
     TemplateRef as TemplateRefRpc,
-)
-from models_library.notifications_errors import (
-    NotificationsTemplateContextValidationError,
-    NotificationsTemplateNotFoundError,
 )
 from servicelib.rabbitmq import RPCRouter
 

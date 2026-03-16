@@ -6,7 +6,7 @@ from common_library.network import NO_REPLY_LOCAL, replace_email_parts
 from models_library.celery import GroupUUID, OwnerMetadata, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
-from models_library.notifications_errors import (
+from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
 )

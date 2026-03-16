@@ -8,16 +8,16 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.notifications import ChannelType, TemplateRef
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
+from models_library.notifications.errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
 from models_library.notifications.rpc import (
     EmailContact as RpcEmailContact,
 )
 from models_library.notifications.rpc import (
     EmailEnvelope,
     SendMessageResponse,
-)
-from models_library.notifications_errors import (
-    NotificationsTemplateContextValidationError,
-    NotificationsTemplateNotFoundError,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
