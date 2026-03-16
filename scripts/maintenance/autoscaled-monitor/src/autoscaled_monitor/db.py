@@ -151,7 +151,7 @@ async def list_computational_tasks_by_job_ids(engine: AsyncEngine, job_ids: list
     ]
 
 
-async def get_resource_tracker_for_user_wallet_pairs(
+async def list_resource_tracker_for_user_wallet_pairs(
     engine: AsyncEngine,
     user_wallet_pairs: list[tuple[int, int | None]],
 ) -> list[ResourceTrackerServiceRun]:
@@ -294,7 +294,7 @@ async def get_dynamic_service_extra_info(
                 sa.and_(
                     sa.column("service_type") == "DYNAMIC_SERVICE",
                     sa.tuple_(sa.column("user_id"), sa.column("project_id"), sa.column("node_id")).in_(
-                        [(pid, str(nid)) for uid, pid, nid in services]
+                        [(uid, pid, str(nid)) for uid, pid, nid in services]
                     ),
                 )
             )
