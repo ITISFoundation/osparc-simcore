@@ -380,6 +380,7 @@ def mocked_director_rest_api_base(
         assert_all_mocked=True,
     ) as respx_mock:
         # HEATHCHECK
+        assert openapi["paths"].get("/v0/")
         respx_mock.head("/", name="healthcheck").respond(
             status.HTTP_200_OK,
             json={
@@ -488,14 +489,14 @@ def mocked_director_rest_api(
             return None
 
     # LIST
-    assert openapi["paths"].get("/services")
+    assert openapi["paths"].get("/v0/services")
 
     respx_mock.get(path__regex=r"/services$", name="list_services").respond(
         status.HTTP_200_OK, json={"data": expected_director_rest_api_list_services}
     )
 
     # GET
-    assert openapi["paths"].get("/services/{service_key}/{service_version}")
+    assert openapi["paths"].get("/v0/services/{service_key}/{service_version}")
 
     @respx_mock.get(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
@@ -517,7 +518,7 @@ def mocked_director_rest_api(
         )
 
     # GET LABELS
-    assert openapi["paths"].get("/services/{service_key}/{service_version}/labels")
+    assert openapi["paths"].get("/v0/services/{service_key}/{service_version}/labels")
 
     @respx_mock.get(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",
