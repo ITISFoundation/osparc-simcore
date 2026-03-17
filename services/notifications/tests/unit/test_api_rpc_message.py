@@ -95,7 +95,7 @@ async def test_send_message_with_owner_metadata(
     single_recipient_email_message: dict,
     mocker: MockerFixture,
 ):
-    owner = OwnerMetadata.model_validate(
+    owner_metadata = OwnerMetadata.model_validate(
         {
             "owner": "webserver",
             "user_id": 42,
@@ -111,7 +111,7 @@ async def test_send_message_with_owner_metadata(
     response = await send_message(
         rpc_client,
         message=single_recipient_email_message,
-        owner_metadata=owner,
+        owner_metadata=owner_metadata,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
@@ -119,7 +119,7 @@ async def test_send_message_with_owner_metadata(
 
     spy.assert_awaited_once()
     call_kwargs = spy.call_args.kwargs
-    assert call_kwargs["owner_metadata"] == owner
+    assert call_kwargs["owner_metadata"] == owner_metadata
     assert call_kwargs["owner_metadata"].owner == "webserver"
     assert call_kwargs["owner_metadata"].model_dump()["user_id"] == 42
     assert call_kwargs["owner_metadata"].model_dump()["product_name"] == "osparc"
