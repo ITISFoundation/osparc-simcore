@@ -5,12 +5,11 @@ from typing import Final
 from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER
 from playwright.sync_api import FrameLocator, expect
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND
+from pytest_simcore.helpers.playwright import SECOND
 
 _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
 
 _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_code.py"
-_CELL_EXECUTION_TIMEOUT_MS: Final[int] = 5 * MINUTE
 
 
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
