@@ -206,8 +206,8 @@ def phase_5_listing_consistency() -> None:
     t0 = time.monotonic()
     all_files = list(BASE_DIR.rglob("*.bin"))
     listed_files = set(all_files)
-    remaining_files = {p for p in all_files if p.exists()}
-    missing = remaining_files - listed_files
+    existing_files = {p for p in all_files if p.exists()}
+    missing = existing_files - listed_files
     if missing:
         errors.append(f"LISTING INCONSISTENCY: {len(missing)} files exist but not listed")
     elapsed = time.monotonic() - t0
