@@ -541,9 +541,7 @@ opentelemetry-api==1.40.0
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-    #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
@@ -568,9 +566,7 @@ opentelemetry-instrumentation==0.61b0
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-    #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
@@ -584,15 +580,11 @@ opentelemetry-instrumentation-aiohttp-client==0.61b0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 opentelemetry-instrumentation-aiohttp-server==0.61b0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-opentelemetry-instrumentation-aiopg==0.61b0
-    # via -r requirements/_base.in
 opentelemetry-instrumentation-asyncpg==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-dbapi==0.61b0
-    # via opentelemetry-instrumentation-aiopg
 opentelemetry-instrumentation-httpx==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -631,7 +623,6 @@ opentelemetry-semantic-conventions==0.61b0
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-asyncpg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -1420,8 +1411,6 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-    #   opentelemetry-instrumentation-aiopg
-    #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 wsproto==1.2.0

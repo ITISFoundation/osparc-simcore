@@ -41,7 +41,6 @@ jinja_app_loader # email
 jsondiff
 msgpack
 openpyxl # excel
-opentelemetry-instrumentation-aiopg
 orjson  # json
 packaging
 passlib

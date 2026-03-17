@@ -34,12 +34,6 @@ try:
 except ImportError:
     HAS_BOTOCORE = False
 try:
-    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-
-    HAS_AIOPG = True
-except ImportError:
-    HAS_AIOPG = False
-try:
     from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
     HAS_ASYNCPG = True
@@ -141,13 +135,6 @@ def _startup(
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
-    if HAS_AIOPG:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
-        ):
-            AiopgInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_ASYNCPG:
         with log_context(
             _logger,
@@ -208,9 +195,6 @@ def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         AioHttpClientInstrumentor().uninstrument()
-    if HAS_AIOPG:
-        with log_catch(_logger, reraise=False):
-            AiopgInstrumentor().uninstrument()
     if HAS_ASYNCPG:
         with log_catch(_logger, reraise=False):
             AsyncPGInstrumentor().uninstrument()
