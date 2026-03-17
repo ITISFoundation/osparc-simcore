@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from models_library.celery import OwnerMetadata
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
     SendMessageFromTemplateRequest,
@@ -23,11 +24,15 @@ async def send_message(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     message: dict[str, Any],
+    owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("send_message"),
-        request=SendMessageRequest(message=message),
+        request=SendMessageRequest(
+            message=message,
+            owner_metadata=owner_metadata,
+        ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec
     return result
@@ -41,6 +46,7 @@ async def send_message_from_template(
     envelope: dict[str, Any],
     template_ref: TemplateRef,
     context: dict[str, Any],
+    owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
@@ -49,6 +55,7 @@ async def send_message_from_template(
             template_ref=template_ref,
             envelope=envelope,
             context=context,
+            owner_metadata=owner_metadata,
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec

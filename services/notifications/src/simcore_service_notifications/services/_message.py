@@ -54,20 +54,22 @@ class MessageService:
         self,
         *,
         message: dict[str, Any],
+        owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
+        resolved_owner = owner_metadata or _OWNER_METADATA
         messages = _validate_and_prepare_messages(message)
 
         if len(messages) == 1:
             task_uuid, task_name = await submit_send_message_task(
                 self.task_manager,
-                owner_metadata=_OWNER_METADATA,
+                owner_metadata=resolved_owner,
                 message=messages[0],
             )
             return task_uuid, task_name
 
         group_uuid, _, task_name = await submit_send_messages_task(
             self.task_manager,
-            owner_metadata=_OWNER_METADATA,
+            owner_metadata=resolved_owner,
             messages=messages,
         )
         return group_uuid, task_name
@@ -78,6 +80,7 @@ class MessageService:
         envelope: dict[str, Any],
         ref: TemplateRef,
         context: dict[str, Any],
+        owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         preview = self.template_service.preview_template(ref=ref, context=context)
         message = {
@@ -85,4 +88,7 @@ class MessageService:
             **envelope,
             "content": preview.message_content.model_dump(),
         }
-        return await self.send_message(message=message)
+        return await self.send_message(
+            message=message,
+            owner_metadata=owner_metadata,
+        )
