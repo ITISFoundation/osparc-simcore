@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import asdict
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -35,6 +35,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -128,6 +129,15 @@ async def mock_fastapi_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAP
 
     async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
+
+
+@pytest.fixture
+async def rpc_client(
+    mock_fastapi_app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    assert mock_fastapi_app
+    return await rabbitmq_rpc_client("notifications-test-client")
 
 
 @pytest.fixture

@@ -1,7 +1,7 @@
 from aiohttp import web
+from models_library.celery import TaskStreamItem
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import _URLType, paginate_stream_chunk
-from servicelib.celery.models import TaskStreamItem
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 

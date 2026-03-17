@@ -1,18 +1,16 @@
 # pylint: disable=unused-argument
-from collections.abc import Awaitable, Callable
 
 import pytest
-from fastapi import FastAPI
 from models_library.notifications import ChannelType, TemplateRef
-from models_library.notifications.rpc.template import (
-    PreviewTemplateResponse,
-)
-from models_library.notifications_errors import (
+from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from models_library.notifications.rpc import (
+    PreviewTemplateResponse,
+)
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template,
     search_templates,
 )
@@ -25,13 +23,8 @@ pytest_simcore_core_services_selection = [
 
 
 async def test_search_templates_by_channel(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     all_templates = await search_templates(rpc_client, channel=None, template_name=None)
     if all_templates:
         channel = ChannelType.email
@@ -43,13 +36,8 @@ async def test_search_templates_by_channel(
 
 
 async def test_search_templates_by_ref(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     all_templates = await search_templates(rpc_client, channel=None, template_name=None)
     if all_templates:
         channel = ChannelType.email
@@ -63,26 +51,16 @@ async def test_search_templates_by_ref(
 
 
 async def test_search_templates_non_existent(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     filtered = await search_templates(rpc_client, channel=None, template_name="non_existent_template")
     assert filtered == []
 
 
 async def test_preview_template_success(
-    mock_fastapi_app: FastAPI,
     fake_product_data: dict[str, str],
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     templates = await search_templates(rpc_client, channel=ChannelType.email, template_name="empty")
     assert len(templates) == 1
     template = templates[0]
@@ -99,13 +77,8 @@ async def test_preview_template_success(
 
 
 async def test_preview_template_not_found(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     ref = TemplateRef(
         channel=ChannelType.email,
         template_name="non_existent_template",
@@ -117,13 +90,8 @@ async def test_preview_template_not_found(
 
 
 async def test_preview_template_invalid_context(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
 ):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
     # Get available templates first
     templates = await search_templates(rpc_client, channel=None, template_name=None)
     if templates:
@@ -131,5 +99,5 @@ async def test_preview_template_invalid_context(
         ref = TemplateRef(**template.ref.model_dump())
         context = {"invalid_key": "invalid_value"}  # Invalid context
 
-        with pytest.raises((NotificationsTemplateContextValidationError, RPCServerError)):
+        with pytest.raises((NotificationsTemplateContextValidationError,)):
             await preview_template(rpc_client, ref=ref, context=context)

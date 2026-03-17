@@ -14,7 +14,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.celery.models import OwnerMetadata
+from models_library.celery import OwnerMetadata
 from servicelib.celery.task_manager import TaskManager
 
 from ..exceptions.service_errors_utils import service_exception_mapper
