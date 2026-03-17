@@ -29,7 +29,6 @@ aiohttp
 aiohttp_jinja2
 aiohttp_security
 aiohttp_session[secure]
-aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
 captcha
