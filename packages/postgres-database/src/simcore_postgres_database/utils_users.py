@@ -169,7 +169,8 @@ class UsersRepo:
                 )
             )
 
-            # Link ALL pre-registrations for this email to the user
+            # Link ALL pre-registrations for this email to the user and reconcile rows that are still pending review
+            # SEE https://github.com/ITISFoundation/private-issues/issues/492
             await conn.execute(
                 users_pre_registration_details.update()
                 .where(users_pre_registration_details.c.pre_email == new_user_email)
