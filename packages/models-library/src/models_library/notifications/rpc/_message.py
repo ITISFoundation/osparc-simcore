@@ -42,7 +42,7 @@ class SendMessageRequest(BaseModel):
                             },
                         },
                         "owner_metadata": {
-                            "user_id": "123",
+                            "user_id": 123,
                             "product_name": "osparc",
                             "owner": "notification-service",
                         },
@@ -102,7 +102,7 @@ class SendMessageFromTemplateRequest(BaseModel):
                             "link": "https://osparc.io",
                         },
                         "owner_metadata": {
-                            "user_id": "123",
+                            "user_id": 123,
                             "product_name": "osparc",
                             "owner": "notification-service",
                         },
