@@ -1,3 +1,7 @@
-from ._templates_service import TemplatesService
+from ._message import MessageService
+from ._template import TemplateService
 
-__all__: tuple[str, ...] = ("TemplatesService",)
+__all__: tuple[str, ...] = (
+    "MessageService",
+    "TemplateService",
+)

@@ -22,7 +22,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobError,
     JobMissingError,
 )
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, TaskKey
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskKey
 from servicelib.celery.task_manager import TaskManager
 from tenacity import (
     AsyncRetrying,

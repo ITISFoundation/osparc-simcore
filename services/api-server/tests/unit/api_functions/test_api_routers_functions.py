@@ -18,6 +18,7 @@ from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.celery import TaskKey
 from models_library.functions import (
     FunctionJobList,
     FunctionJobPatchRequest,
@@ -43,7 +44,6 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
 from servicelib.celery.app_server import BaseAppServer
-from servicelib.celery.models import TaskKey
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
