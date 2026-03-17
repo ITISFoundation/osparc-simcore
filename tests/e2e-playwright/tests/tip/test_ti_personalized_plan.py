@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
+import pytest
 from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
@@ -104,6 +105,9 @@ def test_personalized_classic_ti_plan(
     is_service_legacy: bool,
     playwright_test_results_dir: Path,
 ):
+    if is_product_lite:
+        pytest.skip("Personalized classic TI plan test is only applicable to full product.")
+
     with log_context(logging.INFO, "Checking there is no 'Access TIP' teaser"):
         # click to open and expand
         page.get_by_test_id("userMenuBtn").click()
