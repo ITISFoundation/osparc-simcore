@@ -15,5 +15,6 @@ exec docker run \
   --volume="/etc/group:/etc/group:ro" \
   --volume="/etc/passwd:/etc/passwd:ro" \
   --user="$(id --user "$USER")":"$(id --group "$USER")" \
-  --volume "$(pwd):/specs" \n  "tufin/oasdiff:feat-openapi-3.1-support" \
+  --volume "$(pwd):/specs" \
+  "tufin/oasdiff:feat-openapi-3.1-support" \
   "$@"
