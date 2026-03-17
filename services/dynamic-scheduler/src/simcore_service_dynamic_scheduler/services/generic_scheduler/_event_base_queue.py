@@ -6,6 +6,7 @@ from typing import Final
 
 from fastapi import FastAPI
 from faststream.exceptions import FastStreamException, RejectMessage
+from faststream.middlewares import AckPolicy
 from faststream.rabbit import RabbitExchange, RabbitQueue, RabbitRouter
 from faststream.rabbit.schemas.queue import QueueType, QuorumQueueArgs
 
@@ -82,7 +83,9 @@ class BaseEventQueue(ABC):
 
         # apply decorators
         handler = _stop_retry_for_unintended_errors(self.handler)
-        handler = self.router.subscriber(queue=self._queue, exchange=self.exchange, retry=True)(handler)
+        handler = self.router.subscriber(queue=self._queue, exchange=self.exchange, ack_policy=AckPolicy.NACK_ON_ERROR)(
+            handler
+        )
 
     @abstractmethod
     async def handler(self, **kwargs) -> None:
