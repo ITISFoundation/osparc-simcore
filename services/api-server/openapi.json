@@ -8888,8 +8888,7 @@
       },
       "GroupID": {
         "type": "integer",
-        "exclusiveMinimum": true,
-        "minimum": 0
+        "exclusiveMinimum": 0
       },
       "Groups": {
         "properties": {
