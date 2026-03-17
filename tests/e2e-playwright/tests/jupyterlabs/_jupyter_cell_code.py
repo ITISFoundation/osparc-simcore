@@ -8,7 +8,7 @@ import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Final, List  # noqa: UP035
+from typing import Final, List, Optional, Tuple  # noqa: UP035
 
 COMPLETE_MARKER: Final[str] = "✅ finished"
 _SECOND = 1000
@@ -68,7 +68,7 @@ def _check_errors() -> None:
 # ---------------------------------------------------------------------------
 # Phase 1 - Many small files (metadata storm)
 # ---------------------------------------------------------------------------
-def _create_small_file(index: int) -> str | None:
+def _create_small_file(index: int) -> Optional[str]:  # noqa: UP045
     target_dir = _random_nested_dir(BASE_DIR, MAX_DEPTH)
     target_dir.mkdir(parents=True, exist_ok=True)
     path = target_dir / f"small_{index:04d}.bin"
@@ -102,7 +102,7 @@ def phase_1_create_small_files() -> None:
 # ---------------------------------------------------------------------------
 # Phase 2 - Few large files written in chunks (throughput stress)
 # ---------------------------------------------------------------------------
-def _create_large_file(index: int) -> str | None:
+def _create_large_file(index: int) -> Optional[str]:  # noqa: UP045
     target_dir = _random_nested_dir(BASE_DIR, MAX_DEPTH)
     target_dir.mkdir(parents=True, exist_ok=True)
     path = target_dir / f"large_{index:04d}.bin"
@@ -212,7 +212,7 @@ def phase_5_listing_consistency() -> None:
 # ---------------------------------------------------------------------------
 # All phases - convenience list for programmatic access
 # ---------------------------------------------------------------------------
-ALL_PHASES: list[tuple[str, int]] = [
+ALL_PHASES: List[Tuple[str, int]] = [  # noqa: UP006
     (phase_1_create_small_files.__name__, 30 * _SECOND),
     (phase_2_create_large_files.__name__, 1 * _MINUTE),
     (phase_3_read_back_files.__name__, 30 * _SECOND),
