@@ -139,7 +139,20 @@ _SOURCE_COMMAND: Final[list[str]] = [
                 "source:path",
                 "destination:path",
             ],
-            id="edit-existing-edit-adding-remove",
+            id="remove-a-lot-in-a-row",
+        ),
+        pytest.param(
+            TypeAdapter(EditArguments).validate_python({}),
+            TypeAdapter(RemoveArguments).validate_python([["--config", 2], ["--transfers", 2]]),
+            [
+                "rclone",
+                "--buffer-size",
+                "0M",
+                "sync",
+                "source:path",
+                "destination:path",
+            ],
+            id="regression-remove-consecutive-arguments",
         ),
     ],
 )
