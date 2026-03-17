@@ -27,10 +27,12 @@ router = RPCRouter()
     )
 )
 async def preview_template(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     request: PreviewTemplateRequest,
 ) -> PreviewTemplateResponse:
+    assert app  # nosec
+
     service = get_notifications_templates_service()
 
     preview = service.preview_template(
@@ -46,7 +48,7 @@ async def preview_template(
 
 @router.expose()
 async def search_templates(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     channel: ChannelType | None,
     template_name: str | None,
@@ -55,7 +57,7 @@ async def search_templates(
     Searches for notification templates based on the specified channel and template name.
 
     Args:
-        _app: The FastAPI application instance.
+        app: The FastAPI application instance.
         channel: The channel type to filter templates. Use `None` to search across all channels.
         template_name: The name of the template to search for.
             Use wildcards (e.g., `*`, `?`) for partial matches. `None` searches for all templates.
@@ -63,6 +65,8 @@ async def search_templates(
     Returns:
         A list of notification template responses matching the search criteria.
     """
+    assert app  # nosec
+
     service = get_notifications_templates_service()
     templates = service.search_templates(channel=channel, template_name=template_name)
 

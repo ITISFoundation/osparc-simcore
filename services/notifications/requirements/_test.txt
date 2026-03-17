@@ -67,6 +67,10 @@ faker==37.8.0
     # via -r requirements/_test.in
 fakeredis==2.32.1
     # via -r requirements/_test.in
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -93,11 +97,19 @@ kombu==5.6.1
     #   -c requirements/_base.txt
     #   celery
     #   pytest-celery
+librt==0.8.1
+    # via mypy
+mypy==1.19.1
+    # via sqlalchemy
+mypy-extensions==1.1.0
+    # via mypy
 packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   kombu
     #   pytest
+pathspec==1.0.4
+    # via mypy
 pluggy==1.6.0
     # via
     #   pytest
@@ -163,10 +175,22 @@ sniffio==1.3.1
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via fakeredis
+sqlalchemy==1.4.54
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 tenacity==9.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
+typing-extensions==4.14.1
+    # via
+    #   -c requirements/_base.txt
+    #   mypy
+    #   sqlalchemy2-stubs
 tzdata==2025.2
     # via
     #   -c requirements/_base.txt
