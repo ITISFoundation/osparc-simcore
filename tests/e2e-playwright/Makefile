@@ -186,7 +186,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		echo "--service-key=jupyter-math" >> $@; \
 		read -p "Do you want to add a large file size [y/n]: " ADD_LARGE_FILE; \
 		if [ "$$ADD_LARGE_FILE" = "y" ]; then \
-		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
+			read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
 			echo "--large-file-size=$$LARGE_FILE_SIZE" >> $@; \
 		fi; \
 		read -p "Do you want to run the rclone stress test [y/n]: " RCLONE_STRESS; \
