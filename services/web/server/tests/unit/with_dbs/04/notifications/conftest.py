@@ -44,7 +44,6 @@ def mocked_notifications_rpc_client(
         autospec=True,
     )
 
-    # Mock the RPC interface functions
     mocker.patch(
         f"{_service.__name__}.remote_send_message",
         autospec=True,
