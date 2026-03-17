@@ -1,7 +1,7 @@
 from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Final, Literal
+from typing import Annotated, Final
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
@@ -27,7 +27,7 @@ type SearchArgument = str
 type EditArgument = str
 type ArgumentValue = str
 type ReplaceArgument = EditArgument | tuple[EditArgument, ArgumentValue]
-type ElementsToRemove = Annotated[Literal[1, 2], int]
+type ElementsToRemove = Annotated[NonNegativeInt, int]
 type EditArguments = dict[SearchArgument, ReplaceArgument]
 type RemoveArguments = list[tuple[SearchArgument, ElementsToRemove]]
 
