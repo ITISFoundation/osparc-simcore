@@ -118,6 +118,7 @@ def test_personalized_classic_ti_plan(
     node_ids: list[str] = list(project_data["workbench"])
 
     # count the number of elements with test id matching the pattern
+    # 0. File Picker with the test_data already uploaded (file-picker) - it is not exposed
     # 1. File Picker (file-picker)
     # 2. Personalizer (ti-pers (voila))
     # 3. Model Inspector (sim4life-modeling)
