@@ -131,11 +131,15 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       });
       return page;
     },
+
     __addGeneralSettings: function() {
       const title = this.tr("Settings");
       const iconSrc = "@FontAwesome5Solid/cogs/22";
       const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
-      this.addTab(title, iconSrc, generalPage);
+      if (generalPage.getChildrenCount() > 0) {
+        // avoid adding the tab if there are no settings to show
+        this.addTab(title, iconSrc, generalPage);
+      }
     },
 
     __addConfirmationSettings: function() {
