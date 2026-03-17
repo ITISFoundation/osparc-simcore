@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
 
 from ..constants import (
@@ -144,6 +144,12 @@ async def check_clusters(app: FastAPI) -> None:
     starting_instances = {
         instance for instance in disconnected_instances if _get_instance_last_heartbeat(instance) is None
     }
+    if starting_instances:
+        _logger.info(
+            "Found %d starting instances (no heartbeat set, awaiting deployment):  %s",
+            len(starting_instances),
+            f"{[(i.id, i.launch_time) for i in starting_instances]}",
+        )
     # remove instances that were starting for too long
     if terminateable_instances := await _find_terminateable_instances(app, starting_instances):
         _logger.warning(
@@ -182,28 +188,47 @@ async def check_clusters(app: FastAPI) -> None:
             )
             if c is True
         ]
+        # Log instances that failed SSM connection
+        ssm_failed_instances = [
+            i
+            for i, c in zip(
+                instances_in_need_of_deployment,
+                instances_in_need_of_deployment_ssm_connection_state,
+                strict=True,
+            )
+            if c is not True
+        ]
+        if ssm_failed_instances:
+            _logger.info(
+                "SSM connection not ready for %d instances (will retry next check): %s",
+                len(ssm_failed_instances),
+                f"{[(i.id, arrow.utcnow().datetime - i.launch_time) for i in ssm_failed_instances]}",
+            )
         started_instances_ready_for_command = ec2_connected_to_ssm_server
         if started_instances_ready_for_command:
-            # we need to send 1 command per machine here, as the user_id/wallet_id changes
-            for i in started_instances_ready_for_command:
-                ssm_command = await ssm_client.send_command(
-                    [i.id],
-                    command=create_deploy_cluster_stack_script(
-                        app_settings,
-                        cluster_machines_name_prefix=get_cluster_name(
+            with log_context(
+                _logger, logging.INFO, f"Deploying Docker stack to {len(started_instances_ready_for_command)} instances"
+            ):
+                # we need to send 1 command per machine here, as the user_id/wallet_id changes
+                for i in started_instances_ready_for_command:
+                    ssm_command = await ssm_client.send_command(
+                        [i.id],
+                        command=create_deploy_cluster_stack_script(
                             app_settings,
-                            user_id=user_id_from_instance_tags(i.tags),
-                            wallet_id=wallet_id_from_instance_tags(i.tags),
-                            is_manager=False,
+                            cluster_machines_name_prefix=get_cluster_name(
+                                app_settings,
+                                user_id=user_id_from_instance_tags(i.tags),
+                                wallet_id=wallet_id_from_instance_tags(i.tags),
+                                is_manager=False,
+                            ),
+                            additional_custom_tags={
+                                USER_ID_TAG_KEY: i.tags[USER_ID_TAG_KEY],
+                                WALLET_ID_TAG_KEY: i.tags[WALLET_ID_TAG_KEY],
+                                ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
+                            },
                         ),
-                        additional_custom_tags={
-                            USER_ID_TAG_KEY: i.tags[USER_ID_TAG_KEY],
-                            WALLET_ID_TAG_KEY: i.tags[WALLET_ID_TAG_KEY],
-                            ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
-                        },
-                    ),
-                    command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
-                )
+                        command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
+                    )
             await ec2_client.set_instances_tags(
                 started_instances_ready_for_command,
                 tags={
@@ -215,10 +240,22 @@ async def check_clusters(app: FastAPI) -> None:
 
     # the remaining instances are broken (they were at some point connected but now not anymore)
     broken_instances = disconnected_instances - starting_instances
-    if terminateable_instances := await _find_terminateable_instances(app, broken_instances):
-        _logger.error(
-            "The following clusters'primary EC2 were found as unresponsive "
-            "(TIP: there is something wrong here, please inform support) and will be terminated now: '%s",
-            f"{[i.id for i in terminateable_instances]}",
+    if broken_instances:
+        _logger.warning(
+            "Found %d broken instances (were connected but now disconnected): %s",
+            len(broken_instances),
+            f"{[(i.id, arrow.utcnow().datetime - i.launch_time) for i in broken_instances]}",
         )
+    if terminateable_instances := await _find_terminateable_instances(app, broken_instances):
+        # Log detailed diagnostics for each broken instance being terminated
+        for instance in terminateable_instances:
+            elapsed = arrow.utcnow().datetime - instance.launch_time
+            _logger.error(
+                "Terminating broken cluster instance: id=%s user_id=%s wallet_id=%s uptime=%s "
+                "(TIP: was connected but became unresponsive, please check logs for issues)",
+                instance.id,
+                instance.tags.get(USER_ID_TAG_KEY, "unknown"),
+                instance.tags.get(WALLET_ID_TAG_KEY, "unknown"),
+                f"{elapsed.total_seconds():.1f}s",
+            )
         await delete_clusters(app, instances=terminateable_instances)
