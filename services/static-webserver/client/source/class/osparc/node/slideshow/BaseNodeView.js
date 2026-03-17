@@ -34,7 +34,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
     osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
-    this.__buildLayout();;
+    this.__buildLayout();
   },
 
   statics: {
@@ -58,7 +58,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       });
       view.set({
         maxWidth: node.isDynamic() ? null : 800,
-        margin: this.self().CARD_MARGIN
+        margin: this.CARD_MARGIN,
       });
       if (node.isParameter()) {
         view.set({
