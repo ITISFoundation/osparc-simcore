@@ -1,6 +1,7 @@
 # NOTE: this code runs inside a JupyterLab with Python 3.9;
 # PEP 604 (X | Y) and PEP 585 (list[X]) are not available at runtime.
 
+import functools
 import hashlib
 import os
 import secrets
@@ -8,9 +9,10 @@ import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Final, List, Optional, Tuple  # noqa: UP035
+from typing import Callable, Final, List, Optional, Tuple  # noqa: UP035
 
 COMPLETE_MARKER: Final[str] = "✅ finished"
+FAIL_MARKER: Final[str] = "❌ error(s) detected"
 _SECOND = 1000
 _MINUTE = 60 * _SECOND
 
@@ -56,13 +58,21 @@ def _random_nested_dir(base: Path, max_depth: int) -> Path:
     return base.joinpath(*parts)
 
 
-def _check_errors() -> None:
-    if errors:
-        print(f"\n❌ {len(errors)} error(s) detected:")
-        for e in errors:
-            print(f"  • {e}")
-        msg = f"Stress test failed with {len(errors)} error(s)"
-        raise RuntimeError(msg)
+def _finalise_phase(func: Callable[[], None]) -> Callable[[], None]:
+    @functools.wraps(func)
+    def wrapper() -> None:
+        func()
+
+        print(COMPLETE_MARKER)
+
+        if errors:
+            print(f"\n{FAIL_MARKER} count={len(errors)}:")
+            for e in errors:
+                print(f"  • {e}")
+            msg = f"Stress test failed with {len(errors)} error(s)"
+            raise RuntimeError(msg)
+
+    return wrapper
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +94,7 @@ def _create_small_file(index: int) -> Optional[str]:  # noqa: UP045
     return None
 
 
+@_finalise_phase
 def phase_1_create_small_files() -> None:
     print(f"Phase 1: creating {NUM_SMALL_FILES} small files in parallel ...")
     t0 = time.monotonic()
@@ -95,8 +106,6 @@ def phase_1_create_small_files() -> None:
                 errors.append(err)
     elapsed = time.monotonic() - t0
     print(f"  ✓ {NUM_SMALL_FILES} small files created in {elapsed:.1f}s")
-    _check_errors()
-    print(COMPLETE_MARKER)
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +134,7 @@ def _create_large_file(index: int) -> Optional[str]:  # noqa: UP045
     return None
 
 
+@_finalise_phase
 def phase_2_create_large_files() -> None:
     print(
         f"Phase 2: creating {NUM_LARGE_FILES} large files "
@@ -139,13 +149,12 @@ def phase_2_create_large_files() -> None:
                 errors.append(err)
     elapsed = time.monotonic() - t0
     print(f"  ✓ {NUM_LARGE_FILES} large files created in {elapsed:.1f}s")
-    _check_errors()
-    print(COMPLETE_MARKER)
 
 
 # ---------------------------------------------------------------------------
 # Phase 3 - Read-back all files and verify integrity
 # ---------------------------------------------------------------------------
+@_finalise_phase
 def phase_3_read_back_files() -> None:
     print("Phase 3: reading back all files ...")
     t0 = time.monotonic()
@@ -159,13 +168,12 @@ def phase_3_read_back_files() -> None:
             errors.append(f"READ ERROR {p}: {exc}")
     elapsed = time.monotonic() - t0
     print(f"  ✓ {readable_count}/{len(all_files)} files readable in {elapsed:.1f}s")
-    _check_errors()
-    print(COMPLETE_MARKER)
 
 
 # ---------------------------------------------------------------------------
 # Phase 4 - Rename / move files (copy-on-S3 stress)
 # ---------------------------------------------------------------------------
+@_finalise_phase
 def phase_4_move_files() -> None:
     print("Phase 4: renaming / moving files ...")
     t0 = time.monotonic()
@@ -187,13 +195,12 @@ def phase_4_move_files() -> None:
             errors.append(f"MOVE ERROR {src} -> {dst}: {exc}")
     elapsed = time.monotonic() - t0
     print(f"  ✓ {move_count} files moved in {elapsed:.1f}s")
-    _check_errors()
-    print(COMPLETE_MARKER)
 
 
 # ---------------------------------------------------------------------------
 # Phase 5 - Directory listing consistency
 # ---------------------------------------------------------------------------
+@_finalise_phase
 def phase_5_listing_consistency() -> None:
     print("Phase 5: directory listing consistency ...")
     t0 = time.monotonic()
@@ -205,8 +212,6 @@ def phase_5_listing_consistency() -> None:
         errors.append(f"LISTING INCONSISTENCY: {len(missing)} files exist but not listed")
     elapsed = time.monotonic() - t0
     print(f"  ✓ listing check done in {elapsed:.1f}s ({len(listed_files)} files found)")
-    _check_errors()
-    print(COMPLETE_MARKER)
 
 
 # ---------------------------------------------------------------------------

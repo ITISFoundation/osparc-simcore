@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Final
 
-from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER
+from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER, FAIL_MARKER
 from playwright.sync_api import FrameLocator, expect
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import SECOND
@@ -21,6 +21,7 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
 
         output_locator = iframe.locator(".jp-OutputArea-output").last
         expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=timeout)
+        expect(output_locator).not_to_contain_text(FAIL_MARKER)
 
         # scroll the notebook so the latest output is visible
         output_locator.scroll_into_view_if_needed()
