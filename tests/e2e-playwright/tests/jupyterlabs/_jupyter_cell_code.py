@@ -1,20 +1,221 @@
+import hashlib
+import os
+import secrets
+import shutil
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+# NOTE: this code runs inside a JupyterLab with Python 3.9;
+# PEP 604 (X | Y) and PEP 585 (list[X]) are not available at runtime.
+from typing import Final, List  # noqa: UP035
+
+COMPLETE_MARKER: Final[str] = "✅ finished"
+_SECOND = 1000
+_MINUTE = 60 * _SECOND
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+_KB = 1024
+_MB = 1024 * _KB
+
+BASE_DIR: Final[Path] = Path.cwd() / "generated"
+MAX_DEPTH: Final[int] = 5
+NUM_SMALL_FILES: Final[int] = 1_000
+SMALL_FILE_MIN_BYTES: Final[int] = 1 * _KB
+SMALL_FILE_MAX_BYTES: Final[int] = 8 * _KB
+
+NUM_LARGE_FILES: Final[int] = 100
+LARGE_FILE_MIN_BYTES: Final[int] = 5 * _MB
+LARGE_FILE_MAX_BYTES: Final[int] = 20 * _MB
+LARGE_FILE_WRITE_CHUNK: Final[int] = 1 * _MB
+PARALLEL_WORKERS: Final[int] = 8
+
+FILES_TO_MOVE: Final[int] = int(0.1 * (NUM_SMALL_FILES + NUM_LARGE_FILES))
+
+errors: List[str] = []  # noqa: UP006
 
 
-def _code_to_go_in_the_cell():
-    # NOTE: here will come all the code
-    # -geenerate some files in next to the notebook
-    # have them be generated in small chunks
-    # have them read
-    # have them moved around
-    # a lot of little files + a few big files
-    # generation goes in parallle
-    # folder structure is a mix of ifles inside the `generated` folder and it must have a max depth of 5 folders deep
-    #
-    print("For now I am done")
+def _random_bytes(size: int) -> bytes:
+    return os.urandom(size)
 
-    for i in range(5):
-        print(f"Sleeping... {i + 1}/5")
-        time.sleep(1)
 
-    print("done sleeping, now I am really done")
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _random_nested_dir(base: Path, max_depth: int) -> Path:
+    """Return a random directory path under *base* with depth in [1, max_depth]."""
+    depth = secrets.randbelow(max_depth) + 1
+    parts = [f"d{secrets.randbelow(4)}" for _ in range(depth)]
+    return base.joinpath(*parts)
+
+
+def _check_errors() -> None:
+    if errors:
+        print(f"\n❌ {len(errors)} error(s) detected:")
+        for e in errors:
+            print(f"  • {e}")
+        msg = f"Stress test failed with {len(errors)} error(s)"
+        raise RuntimeError(msg)
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 - Many small files (metadata storm)
+# ---------------------------------------------------------------------------
+def _create_small_file(index: int) -> str | None:
+    target_dir = _random_nested_dir(BASE_DIR, MAX_DEPTH)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    path = target_dir / f"small_{index:04d}.bin"
+    size = SMALL_FILE_MIN_BYTES + secrets.randbelow(SMALL_FILE_MAX_BYTES - SMALL_FILE_MIN_BYTES + 1)
+    data = _random_bytes(size)
+    expected_hash = hashlib.sha256(data).hexdigest()
+    path.write_bytes(data)
+
+    # read-after-write consistency check
+    actual_hash = _sha256(path)
+    if actual_hash != expected_hash:
+        return f"HASH MISMATCH (small) {path}: expected={expected_hash} actual={actual_hash}"
+    return None
+
+
+def phase_1_create_small_files() -> None:
+    print(f"Phase 1: creating {NUM_SMALL_FILES} small files in parallel ...")
+    t0 = time.monotonic()
+    with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as pool:
+        futures = {pool.submit(_create_small_file, i): i for i in range(NUM_SMALL_FILES)}
+        for fut in as_completed(futures):
+            err = fut.result()
+            if err:
+                errors.append(err)
+    elapsed = time.monotonic() - t0
+    print(f"  ✓ {NUM_SMALL_FILES} small files created in {elapsed:.1f}s")
+    _check_errors()
+    print(COMPLETE_MARKER)
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 - Few large files written in chunks (throughput stress)
+# ---------------------------------------------------------------------------
+def _create_large_file(index: int) -> str | None:
+    target_dir = _random_nested_dir(BASE_DIR, MAX_DEPTH)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    path = target_dir / f"large_{index:04d}.bin"
+    total_size = LARGE_FILE_MIN_BYTES + secrets.randbelow(LARGE_FILE_MAX_BYTES - LARGE_FILE_MIN_BYTES + 1)
+    h = hashlib.sha256()
+    written = 0
+    with path.open("wb") as f:
+        while written < total_size:
+            chunk_size = min(LARGE_FILE_WRITE_CHUNK, total_size - written)
+            chunk = _random_bytes(chunk_size)
+            f.write(chunk)
+            h.update(chunk)
+            written += chunk_size
+    expected_hash = h.hexdigest()
+
+    # read-after-write consistency check
+    actual_hash = _sha256(path)
+    if actual_hash != expected_hash:
+        return f"HASH MISMATCH (large) {path}: expected={expected_hash} actual={actual_hash}"
+    return None
+
+
+def phase_2_create_large_files() -> None:
+    print(
+        f"Phase 2: creating {NUM_LARGE_FILES} large files "
+        f"({LARGE_FILE_MIN_BYTES // 1024 // 1024}-{LARGE_FILE_MAX_BYTES // 1024 // 1024} MiB each) ..."
+    )
+    t0 = time.monotonic()
+    with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as pool:
+        futures = {pool.submit(_create_large_file, i): i for i in range(NUM_LARGE_FILES)}
+        for fut in as_completed(futures):
+            err = fut.result()
+            if err:
+                errors.append(err)
+    elapsed = time.monotonic() - t0
+    print(f"  ✓ {NUM_LARGE_FILES} large files created in {elapsed:.1f}s")
+    _check_errors()
+    print(COMPLETE_MARKER)
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 - Read-back all files and verify integrity
+# ---------------------------------------------------------------------------
+def phase_3_read_back_files() -> None:
+    print("Phase 3: reading back all files ...")
+    t0 = time.monotonic()
+    all_files = list(BASE_DIR.rglob("*.bin"))
+    readable_count = 0
+    for p in all_files:
+        try:
+            _ = p.read_bytes()
+            readable_count += 1
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            errors.append(f"READ ERROR {p}: {exc}")
+    elapsed = time.monotonic() - t0
+    print(f"  ✓ {readable_count}/{len(all_files)} files readable in {elapsed:.1f}s")
+    _check_errors()
+    print(COMPLETE_MARKER)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 - Rename / move files (copy-on-S3 stress)
+# ---------------------------------------------------------------------------
+def phase_4_move_files() -> None:
+    print("Phase 4: renaming / moving files ...")
+    t0 = time.monotonic()
+    all_files = list(BASE_DIR.rglob("*.bin"))
+    move_count = 0
+    files_to_move = secrets.SystemRandom().sample(all_files, min(len(all_files), FILES_TO_MOVE))
+    for src in files_to_move:
+        dst_dir = _random_nested_dir(BASE_DIR, MAX_DEPTH)
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        dst = dst_dir / f"moved_{src.name}"
+        try:
+            original_hash = _sha256(src)
+            shutil.move(str(src), str(dst))
+            moved_hash = _sha256(dst)
+            if original_hash != moved_hash:
+                errors.append(f"HASH MISMATCH after move {src} -> {dst}")
+            move_count += 1
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            errors.append(f"MOVE ERROR {src} -> {dst}: {exc}")
+    elapsed = time.monotonic() - t0
+    print(f"  ✓ {move_count} files moved in {elapsed:.1f}s")
+    _check_errors()
+    print(COMPLETE_MARKER)
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 - Directory listing consistency
+# ---------------------------------------------------------------------------
+def phase_5_listing_consistency() -> None:
+    print("Phase 5: directory listing consistency ...")
+    t0 = time.monotonic()
+    all_files = list(BASE_DIR.rglob("*.bin"))
+    listed_files = set(all_files)
+    remaining_files = {p for p in all_files if p.exists()}
+    missing = remaining_files - listed_files
+    if missing:
+        errors.append(f"LISTING INCONSISTENCY: {len(missing)} files exist but not listed")
+    elapsed = time.monotonic() - t0
+    print(f"  ✓ listing check done in {elapsed:.1f}s ({len(listed_files)} files found)")
+    _check_errors()
+    print(COMPLETE_MARKER)
+
+
+# ---------------------------------------------------------------------------
+# All phases - convenience list for programmatic access
+# ---------------------------------------------------------------------------
+ALL_PHASES: list[tuple[str, int]] = [
+    (phase_1_create_small_files.__name__, 30 * _SECOND),
+    (phase_2_create_large_files.__name__, 1 * _MINUTE),
+    (phase_3_read_back_files.__name__, 30 * _SECOND),
+    (phase_4_move_files.__name__, 1 * _MINUTE),
+    (phase_5_listing_consistency.__name__, 30 * _SECOND),
+]
