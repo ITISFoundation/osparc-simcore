@@ -12730,6 +12730,12 @@ components:
           description: The primary gid of the user who trashed
         owner:
           $ref: '#/components/schemas/GroupID'
+        workspaceId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: 0
+          - type: 'null'
+          title: Workspaceid
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
       type: object
@@ -12952,8 +12958,7 @@ components:
       title: GroupGetBase
     GroupID:
       type: integer
-      exclusiveMinimum: true
-      minimum: 0
+      exclusiveMinimum: 0
     GroupUpdate:
       properties:
         label:
@@ -15564,8 +15569,7 @@ components:
       title: PricingUnitGet
     PrimaryGroupID:
       type: integer
-      exclusiveMinimum: true
-      minimum: 1
+      exclusiveMinimum: 1
     ProductGet:
       properties:
         name:
