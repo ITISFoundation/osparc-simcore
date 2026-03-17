@@ -12,6 +12,7 @@ from typing import Any, Final
 import sqlalchemy as sa
 from common_library.users_enums import AccountRequestStatus
 from sqlalchemy import Column
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine.result import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
@@ -202,7 +203,7 @@ class UsersRepo:
                             _reconciles,
                             sa.func.coalesce(
                                 users_pre_registration_details.c.extras,
-                                sa.cast(sa.literal({}), sa.JSON),
+                                sa.cast(sa.literal({}), postgresql.JSONB),
                             ).concat(
                                 sa.func.jsonb_build_object(
                                     "recovery",
@@ -219,7 +220,7 @@ class UsersRepo:
                                         ),
                                         "executed_at",
                                         sa.func.to_char(
-                                            sa.func.now(),
+                                            sa.func.timezone("UTC", sa.func.now()),
                                             'YYYY-MM-DD"T"HH24:MI:SS"Z"',
                                         ),
                                         "notes",

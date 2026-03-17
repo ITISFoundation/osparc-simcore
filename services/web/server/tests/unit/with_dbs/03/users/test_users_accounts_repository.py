@@ -13,7 +13,7 @@ from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
 from models_library.users import UserID
-from simcore_postgres_database.models.groups import groups, user_to_groups
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
@@ -476,7 +476,7 @@ async def test_create_pre_registration_auto_approves_if_existing_user_in_request
                 .values(
                     name=f"product-group-{product_name}-{existing_user_id}",
                     description=f"Product group for {product_name}",
-                    type="STANDARD",
+                    type=GroupType.STANDARD,
                 )
                 .returning(groups.c.gid)
             )
