@@ -203,7 +203,7 @@ class UsersRepo:
                             _reconciles,
                             sa.func.coalesce(
                                 users_pre_registration_details.c.extras,
-                                sa.cast(sa.literal({}), postgresql.JSONB),
+                                sa.cast(sa.text("'{}'"), postgresql.JSONB),
                             ).concat(
                                 sa.func.jsonb_build_object(
                                     "recovery",
