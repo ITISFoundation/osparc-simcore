@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_catch
 from servicelib.utils import limited_gather
 
 from ..constants import (
@@ -113,7 +113,7 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
     return terminateable_instances.union(worker_instances)
 
 
-async def check_clusters(app: FastAPI) -> None:
+async def check_clusters(app: FastAPI) -> None:  # noqa: C901
     primary_instances = await get_all_clusters(app)
 
     connected_instances = {
@@ -206,11 +206,10 @@ async def check_clusters(app: FastAPI) -> None:
             )
         started_instances_ready_for_command = ec2_connected_to_ssm_server
         if started_instances_ready_for_command:
-            with log_context(
-                _logger, logging.INFO, f"Deploying Docker stack to {len(started_instances_ready_for_command)} instances"
-            ):
-                # we need to send 1 command per machine here, as the user_id/wallet_id changes
-                for i in started_instances_ready_for_command:
+            # we need to send 1 command per machine here, as the user_id/wallet_id changes
+            # NOTE: each instance is handled independently so a failure on one does not block the others
+            for i in started_instances_ready_for_command:
+                with log_catch(_logger, reraise=False):
                     ssm_command = await ssm_client.send_command(
                         [i.id],
                         command=create_deploy_cluster_stack_script(
@@ -229,14 +228,14 @@ async def check_clusters(app: FastAPI) -> None:
                         ),
                         command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
                     )
-            await ec2_client.set_instances_tags(
-                started_instances_ready_for_command,
-                tags={
-                    DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
-                        ssm_command.command_id
-                    ),
-                },
-            )
+                    await ec2_client.set_instances_tags(
+                        [i],
+                        tags={
+                            DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+                                ssm_command.command_id
+                            ),
+                        },
+                    )
 
     # the remaining instances are broken (they were at some point connected but now not anymore)
     broken_instances = disconnected_instances - starting_instances
