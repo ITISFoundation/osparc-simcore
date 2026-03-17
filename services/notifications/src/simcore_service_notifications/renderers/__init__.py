@@ -1,7 +1,7 @@
-from ._jinja_renderer import JinjaNotificationsRenderer
+from ._jinja_renderer import JinjaRenderer
 from ._renderer import Renderer
 
 __all__: tuple[str, ...] = (
-    "JinjaNotificationsRenderer",
+    "JinjaRenderer",
     "Renderer",
 )

@@ -23,12 +23,12 @@ from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 

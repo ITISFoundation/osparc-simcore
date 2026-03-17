@@ -5,9 +5,9 @@ from celery_library.worker.app_server import get_app_server
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
 )
+from models_library.celery import TaskKey
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
-from servicelib.celery.models import TaskKey
 from servicelib.logging_utils import log_context
 
 from ...dsm import get_dsm_provider

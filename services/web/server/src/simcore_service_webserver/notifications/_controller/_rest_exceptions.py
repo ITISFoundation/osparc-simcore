@@ -1,5 +1,5 @@
 from common_library.user_messages import user_message
-from models_library.notifications_errors import (
+from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
