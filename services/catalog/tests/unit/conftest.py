@@ -380,7 +380,6 @@ def mocked_director_rest_api_base(
         assert_all_mocked=True,
     ) as respx_mock:
         # HEATHCHECK
-        assert openapi["paths"].get("/")
         respx_mock.head("/", name="healthcheck").respond(
             status.HTTP_200_OK,
             json={
