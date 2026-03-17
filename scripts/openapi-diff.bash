@@ -16,5 +16,5 @@ exec docker run \
   --volume="/etc/passwd:/etc/passwd:ro" \
   --user="$(id --user "$USER")":"$(id --group "$USER")" \
   --volume "$(pwd):/specs" \
-  tufin/oasdiff:latest \
+  tufin/oasdiff:stable \
   "$@"
