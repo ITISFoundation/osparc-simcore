@@ -10,12 +10,12 @@ from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from models_library.celery import TaskState, TaskUUID
+from models_library.celery import TaskStatus as CeleryTaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import TaskState, TaskUUID
-from servicelib.celery.models import TaskStatus as CeleryTaskStatus
 from simcore_service_api_server.api.routes import tasks as task_routes
 from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
 

@@ -66,26 +66,26 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-opentelemetry-api==1.37.0
+opentelemetry-api==1.40.0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.58b0
+opentelemetry-instrumentation==0.61b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-asgi==0.58b0
+opentelemetry-instrumentation-asgi==0.61b0
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-fastapi==0.58b0
+opentelemetry-instrumentation-fastapi==0.61b0
     # via -r requirements/_fastapi.in
-opentelemetry-semantic-conventions==0.58b0
+opentelemetry-semantic-conventions==0.61b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
-opentelemetry-util-http==0.58b0
+opentelemetry-util-http==0.61b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi

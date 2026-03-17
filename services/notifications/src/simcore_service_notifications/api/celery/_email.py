@@ -6,12 +6,12 @@ from email.headerregistry import Address
 from celery import (  # type: ignore[import-untyped]
     Task,
 )
+from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from notifications_library._email import (
     compose_email,
     create_email_session,
 )
-from servicelib.celery.models import TaskKey
 from servicelib.logging_utils import log_context
 from settings_library.email import SMTPSettings
 

@@ -6,9 +6,9 @@ from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.celery.task_manager import TaskManager
 
 from ..exceptions.service_errors_utils import service_exception_mapper
