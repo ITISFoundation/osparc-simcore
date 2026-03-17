@@ -1,3 +1,6 @@
+# NOTE: this code runs inside a JupyterLab with Python 3.9;
+# PEP 604 (X | Y) and PEP 585 (list[X]) are not available at runtime.
+
 import hashlib
 import os
 import secrets
@@ -5,9 +8,6 @@ import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-
-# NOTE: this code runs inside a JupyterLab with Python 3.9;
-# PEP 604 (X | Y) and PEP 585 (list[X]) are not available at runtime.
 from typing import Final, List  # noqa: UP035
 
 COMPLETE_MARKER: Final[str] = "✅ finished"
