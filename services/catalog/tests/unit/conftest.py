@@ -372,7 +372,7 @@ def mocked_director_rest_api_base(
 
     # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
     openapi = director_rest_openapi_specs
-    assert Version(openapi["info"]["version"]) == Version("0.1.0")
+    assert Version(openapi["info"]["version"]) == Version("1.0.0")
 
     with respx.mock(
         base_url=app_settings.CATALOG_DIRECTOR.base_url,  # NOTE: it include v0/
@@ -387,8 +387,8 @@ def mocked_director_rest_api_base(
                 "data": {
                     "name": "simcore-service-director",
                     "status": "SERVICE_RUNNING",
-                    "api_version": "0.1.0",
-                    "version": "0.1.0",
+                    "api_version": "1.0.0",
+                    "version": "1.0.0",
                 }
             },
         )
