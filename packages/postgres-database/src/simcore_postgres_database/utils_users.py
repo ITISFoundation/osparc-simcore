@@ -171,36 +171,64 @@ class UsersRepo:
 
             # Link ALL pre-registrations for this email to the user and reconcile rows that are still pending review
             # SEE https://github.com/ITISFoundation/private-issues/issues/492
+            _is_pending = users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING
+            _reconciles = _is_pending & user_has_access_to_pre_reg_product
+
             await conn.execute(
                 users_pre_registration_details.update()
                 .where(users_pre_registration_details.c.pre_email == new_user_email)
                 .values(
                     user_id=new_user_id,
                     account_request_status=sa.case(
-                        (
-                            (users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING)
-                            & user_has_access_to_pre_reg_product,
-                            AccountRequestStatus.APPROVED,
-                        ),
+                        (_reconciles, AccountRequestStatus.APPROVED),
                         else_=users_pre_registration_details.c.account_request_status,
                     ),
                     account_request_reviewed_by=sa.case(
                         (
-                            (users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING)
-                            & user_has_access_to_pre_reg_product
-                            & users_pre_registration_details.c.account_request_reviewed_by.is_(None),
+                            _reconciles & users_pre_registration_details.c.account_request_reviewed_by.is_(None),
                             users_pre_registration_details.c.created_by,
                         ),
                         else_=users_pre_registration_details.c.account_request_reviewed_by,
                     ),
                     account_request_reviewed_at=sa.case(
                         (
-                            (users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING)
-                            & user_has_access_to_pre_reg_product
-                            & users_pre_registration_details.c.account_request_reviewed_at.is_(None),
+                            _reconciles & users_pre_registration_details.c.account_request_reviewed_at.is_(None),
                             sa.func.now(),
                         ),
                         else_=users_pre_registration_details.c.account_request_reviewed_at,
+                    ),
+                    extras=sa.case(
+                        (
+                            _reconciles,
+                            sa.func.coalesce(
+                                users_pre_registration_details.c.extras,
+                                sa.cast(sa.literal({}), sa.JSON),
+                            ).concat(
+                                sa.func.jsonb_build_object(
+                                    "recovery",
+                                    sa.func.jsonb_build_object(
+                                        "source",
+                                        "runtime:link_and_update_user_from_pre_registration",
+                                        "confidence",
+                                        sa.case(
+                                            (
+                                                users_pre_registration_details.c.created_by.is_not(None),
+                                                "high",
+                                            ),
+                                            else_="medium",
+                                        ),
+                                        "executed_at",
+                                        sa.func.to_char(
+                                            sa.func.now(),
+                                            'YYYY-MM-DD"T"HH24:MI:SS"Z"',
+                                        ),
+                                        "notes",
+                                        "Auto-reconciled on user registration: user has product access",
+                                    ),
+                                )
+                            ),
+                        ),
+                        else_=users_pre_registration_details.c.extras,
                     ),
                 )
             )
