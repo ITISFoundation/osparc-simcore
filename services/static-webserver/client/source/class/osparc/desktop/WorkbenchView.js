@@ -42,13 +42,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     decorateSplitter: function(splitter) {
       splitter.set({
         width: 2,
-        backgroundColor: "workbench-view-splitter"
+        height: 2,
+        backgroundColor: "workbench-view-navbar"
       });
     },
 
     decorateSlider: function(slider) {
       slider.set({
         width: 2,
+        height: 2,
         backgroundColor: "visual-blue",
         opacity: 1
       });

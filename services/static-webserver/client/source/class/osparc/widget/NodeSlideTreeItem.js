@@ -58,7 +58,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
       this.addLabel();
       const label = this.getChildControl("label");
       if (label) {
-        label.setMaxWidth(200);
+        label.setMaxWidth(190);
         // override the one set in osparc-theme
         label.setPaddingTop(0);
       }

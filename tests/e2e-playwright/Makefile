@@ -160,10 +160,11 @@ SLEEPERS_INPUT_FILE := .e2e-playwright-sleepers-env.txt
 S4L_INPUT_FILE := .e2e-playwright-sim4life-env.txt
 JUPYTER_LAB_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
 CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
+PERSONALIZED_TIP_INPUT_FILE := .e2e-playwright-personalizedtip-env.txt
 RSM_INPUT_FILE := .e2e-playwright-rsm-env.txt
 
 # Prompt the user for input and store it into variables
-$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(RSM_INPUT_FILE):
+$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(RSM_INPUT_FILE):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
 	read -p "Is the product lite [y/n]: " IS_LITE; \
@@ -241,6 +242,9 @@ test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE) ## run ju
 test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_INPUT_FILE) ## run classic tip test and cache settings
 	@$(call run_test, $(CLASSIC_TIP_INPUT_FILE), tests/tip/test_ti_plan.py)
 
+test-personalized-tip-anywhere: _check_venv_active $(PERSONALIZED_TIP_INPUT_FILE) ## run personalized tip test and cache settings
+	@$(call run_test, $(PERSONALIZED_TIP_INPUT_FILE), tests/tip/test_ti_personalized_plan.py)
+
 test-response-surface-modeling-anywhere: _check_venv_active $(RSM_INPUT_FILE) ## run response surface modeling test and cache settings
 	@$(call run_test, $(RSM_INPUT_FILE), tests/metamodeling/test_response_surface_modeling.py)
 
@@ -266,4 +270,4 @@ define run_test_on_chrome
 endef
 
 clean:
-	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE)
+	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE)
