@@ -158,12 +158,13 @@ test-guided-tours-dev: _check_venv_active ## runs guided tours test on local dep
 # Define the files where user input will be saved
 SLEEPERS_INPUT_FILE := .e2e-playwright-sleepers-env.txt
 S4L_INPUT_FILE := .e2e-playwright-sim4life-env.txt
+S4L_TEMPLATE_INPUT_FILE := .e2e-playwright-sim4life-template-env.txt
 JUPYTER_LAB_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
 CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
 RSM_INPUT_FILE := .e2e-playwright-rsm-env.txt
 
 # Prompt the user for input and store it into variables
-$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(RSM_INPUT_FILE):
+$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(S4L_TEMPLATE_INPUT_FILE) $(RSM_INPUT_FILE):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
 	read -p "Is the product lite [y/n]: " IS_LITE; \
@@ -182,8 +183,16 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		echo "--autoscaled" >> $@; \
 	fi; \
 	if [ "$@" = "$(JUPYTER_LAB_INPUT_FILE)" ]; then \
+		echo "--service-key=jupyter-math" >> $@; \
+		read -p "Do you want to add a large file size [y/n]: " ADD_LARGE_FILE; \
+		if [ "$$ADD_LARGE_FILE" = "y" ]; then \
 		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
-		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
+			echo "--large-file-size=$$LARGE_FILE_SIZE" >> $@; \
+		fi; \
+		read -p "Do you want to run the rclone stress test [y/n]: " RCLONE_STRESS; \
+		if [ "$$RCLONE_STRESS" = "y" ]; then \
+			echo "--rclone-stress-test" >> $@; \
+		fi; \
 		read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
 			if [ -z "$$SERVICE_VERSION" ]; then \
 				echo "No service version specified, using default."; \
@@ -209,6 +218,9 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 				echo "--service-version=$$SERVICE_VERSION" >> $@; \
 			fi; \
 		fi; \
+	elif [ "$@" = "$(S4L_TEMPLATE_INPUT_FILE)" ]; then \
+		read -p "Enter the template id: " TEMPLATE_ID; \
+		echo "--template-id=$$TEMPLATE_ID" >> $@; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
@@ -234,6 +246,9 @@ test-sleepers-anywhere: _check_venv_active $(SLEEPERS_INPUT_FILE) ## run sleeper
 
 test-s4l-anywhere: _check_venv_active $(S4L_INPUT_FILE) ## run s4l test and cache settings
 	@$(call run_test_on_chrome, $(S4L_INPUT_FILE), tests/sim4life/test_sim4life.py)
+
+test-s4l-template-anywhere: _check_venv_active $(S4L_TEMPLATE_INPUT_FILE) ## run s4l-template test and cache settings
+	@$(call run_test_on_chrome, $(S4L_TEMPLATE_INPUT_FILE), tests/sim4life/test_template.py)
 
 test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE) ## run jupyterlab test and cache settings
 	@$(call run_test, $(JUPYTER_LAB_INPUT_FILE), tests/jupyterlabs/test_jupyterlab.py)
@@ -266,4 +281,4 @@ define run_test_on_chrome
 endef
 
 clean:
-	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE)
+	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(S4L_TEMPLATE_INPUT_FILE) $(RSM_INPUT_FILE)
