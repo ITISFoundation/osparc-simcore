@@ -14,8 +14,6 @@ from typing import Any, NamedTuple
 from unittest import mock
 from uuid import UUID, uuid4
 
-import aiopg
-import aiopg.sa
 import pytest
 import redis.asyncio as aioredis
 import socketio
@@ -65,6 +63,7 @@ from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 log = logging.getLogger(__name__)
@@ -126,7 +125,8 @@ async def director_v2_service_mock(
     )
 
     # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
-    # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined at different locations?? not sure..
+    # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined
+    # at different locations?? not sure..
     # anyway I think this should disappear once the garbage collector moves to its own micro-service
     with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
         mock.get(
@@ -340,8 +340,8 @@ async def invite_user_to_group(client: TestClient, owner, invitee, group):
     )
 
 
-async def change_user_role(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict, role: UserRole) -> None:
-    async with aiopg_engine.acquire() as conn:
+async def change_user_role(asyncpg_engine: AsyncEngine, user: UserInfoDict, role: UserRole) -> None:
+    async with asyncpg_engine.begin() as conn:
         await conn.execute(users.update().where(users.c.id == int(user["id"])).values(role=role.value))
 
 
@@ -390,14 +390,14 @@ async def disconnect_user_from_socketio(client: TestClient, sio_connection_data:
             assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
-async def assert_users_count(aiopg_engine: aiopg.sa.Engine, expected_users: int) -> None:
-    async with aiopg_engine.acquire() as conn:
+async def assert_users_count(asyncpg_engine: AsyncEngine, expected_users: int) -> None:
+    async with asyncpg_engine.connect() as conn:
         users_count = await conn.scalar(select(func.count()).select_from(users))
         assert users_count == expected_users
 
 
-async def assert_projects_count(aiopg_engine: aiopg.sa.Engine, expected_projects: int) -> None:
-    async with aiopg_engine.acquire() as conn:
+async def assert_projects_count(asyncpg_engine: AsyncEngine, expected_projects: int) -> None:
+    async with asyncpg_engine.connect() as conn:
         projects_count = await conn.scalar(select(func.count()).select_from(projects))
         assert projects_count == expected_projects
 
@@ -408,26 +408,26 @@ def assert_dicts_match_by_common_keys(first_dict, second_dict) -> None:
         assert first_dict[key] == second_dict[key], key
 
 
-async def fetch_user_from_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict) -> UserInfoDict | None:
+async def fetch_user_from_db(asyncpg_engine: AsyncEngine, user: UserInfoDict) -> UserInfoDict | None:
     """returns a user from the db"""
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.connect() as conn:
         user_result = await conn.execute(users.select().where(users.c.id == user["id"]))
-        result = await user_result.first()
+        result = user_result.first()
         if result is None:
             return None
-        return UserInfoDict(**dict(result))
+        return UserInfoDict(**dict(result._mapping))  # noqa: SLF001
 
 
-async def fetch_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: dict) -> dict[str, Any]:
-    async with aiopg_engine.acquire() as conn:
+async def fetch_project_from_db(asyncpg_engine: AsyncEngine, user_project: dict) -> dict[str, Any]:
+    async with asyncpg_engine.connect() as conn:
         project_result = await conn.execute(projects.select().where(projects.c.uuid == user_project["uuid"]))
-        result = await project_result.first()
+        result = project_result.first()
         assert result
-        return dict(result)
+        return dict(result._mapping)  # noqa: SLF001
 
 
-async def assert_user_in_db(aiopg_engine: aiopg.sa.Engine, logged_user: UserInfoDict) -> None:
-    user = await fetch_user_from_db(aiopg_engine, logged_user)
+async def assert_user_in_db(asyncpg_engine: AsyncEngine, logged_user: UserInfoDict) -> None:
+    user = await fetch_user_from_db(asyncpg_engine, logged_user)
     assert user
     user_as_dict = dict(user)
 
@@ -438,8 +438,8 @@ async def assert_user_in_db(aiopg_engine: aiopg.sa.Engine, logged_user: UserInfo
     assert_dicts_match_by_common_keys(user_as_dict, logged_user)
 
 
-async def assert_user_not_in_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict) -> None:
-    user_db = await fetch_user_from_db(aiopg_engine, user)
+async def assert_user_not_in_db(asyncpg_engine: AsyncEngine, user: UserInfoDict) -> None:
+    user_db = await fetch_user_from_db(asyncpg_engine, user)
     assert user_db is None
 
 
@@ -447,8 +447,8 @@ def _enum_to_value(d):
     return {k: (v.value if isinstance(v, Enum) else v) for k, v in d.items()}
 
 
-async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: dict) -> None:
-    project = await fetch_project_from_db(aiopg_engine, user_project)
+async def assert_project_in_db(asyncpg_engine: AsyncEngine, user_project: dict) -> None:
+    project = await fetch_project_from_db(asyncpg_engine, user_project)
     assert project
     project_as_dict = _enum_to_value(dict(project))
 
@@ -456,24 +456,24 @@ async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: dict
 
 
 async def assert_user_is_owner_of_project(
-    aiopg_engine: aiopg.sa.Engine, owner_user: UserInfoDict, owner_project: dict
+    asyncpg_engine: AsyncEngine, owner_user: UserInfoDict, owner_project: dict
 ) -> None:
-    user = await fetch_user_from_db(aiopg_engine, owner_user)
+    user = await fetch_user_from_db(asyncpg_engine, owner_user)
     assert user
 
-    project = await fetch_project_from_db(aiopg_engine, owner_project)
+    project = await fetch_project_from_db(asyncpg_engine, owner_project)
     assert project
 
     assert user["id"] == project["prj_owner"]
 
 
 async def assert_one_owner_for_project(
-    aiopg_engine: aiopg.sa.Engine, project: dict, possible_owners: list[UserInfoDict]
+    asyncpg_engine: AsyncEngine, project: dict, possible_owners: list[UserInfoDict]
 ) -> None:
-    q_owners = [await fetch_user_from_db(aiopg_engine, owner) for owner in possible_owners]
+    q_owners = [await fetch_user_from_db(asyncpg_engine, owner) for owner in possible_owners]
     assert all(q_owners)
 
-    q_project = await fetch_project_from_db(aiopg_engine, project)
+    q_project = await fetch_project_from_db(asyncpg_engine, project)
     assert q_project
 
     assert q_project["prj_owner"] in {user["id"] for user in q_owners if user}
@@ -483,7 +483,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     disable_garbage_collector_task: None,
     client: TestClient,
     create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -498,15 +498,15 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
         tests_data_dir,
         exit_stack=exit_stack,
     )
-    await assert_users_count(aiopg_engine, 1)
-    await assert_projects_count(aiopg_engine, 1)
+    await assert_users_count(asyncpg_engine, 1)
+    await assert_projects_count(asyncpg_engine, 1)
 
     await connect_to_socketio(client, logged_guest_user, create_socketio_connection)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(app=client.app)
 
-    await assert_user_in_db(aiopg_engine, logged_guest_user)
-    await assert_project_in_db(aiopg_engine, empty_guest_user_project)
+    await assert_user_in_db(asyncpg_engine, logged_guest_user)
+    await assert_project_in_db(asyncpg_engine, empty_guest_user_project)
 
 
 @pytest.mark.flaky(max_runs=3)
@@ -514,7 +514,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     client: TestClient,
     create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -529,16 +529,16 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
         tests_data_dir,
         exit_stack=exit_stack,
     )
-    await assert_users_count(aiopg_engine, 1)
-    await assert_projects_count(aiopg_engine, 1)
+    await assert_users_count(asyncpg_engine, 1)
+    await assert_projects_count(asyncpg_engine, 1)
 
     sio_connection_data = await connect_to_socketio(client, logged_guest_user, create_socketio_connection)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(app=client.app)
 
     # check user and project are still in the DB
-    await assert_user_in_db(aiopg_engine, logged_guest_user)
-    await assert_project_in_db(aiopg_engine, empty_guest_user_project)
+    await assert_user_in_db(asyncpg_engine, logged_guest_user)
+    await assert_project_in_db(asyncpg_engine, empty_guest_user_project)
 
     await disconnect_user_from_socketio(client, sio_connection_data)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
@@ -552,11 +552,11 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     assert not delete_tasks or all(t.done() for t in delete_tasks)
 
     # check user and project are no longer in the DB
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.connect() as conn:
         user_result = await conn.execute(users.select())
-        user = await user_result.first()
+        user = user_result.first()
         project_result = await conn.execute(projects.select())
-        project = await project_result.first()
+        project = project_result.first()
 
         assert project is None
         assert user is None
@@ -565,7 +565,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     client: TestClient,
     create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     fake_project: dict,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -592,15 +592,15 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
     async def assert_projects_and_users_are_present() -> None:
         # check user and projects and templates are still in the DB
-        await assert_user_in_db(aiopg_engine, logged_user)
+        await assert_user_in_db(asyncpg_engine, logged_user)
         for project in user_projects:
-            await assert_project_in_db(aiopg_engine, project)
+            await assert_project_in_db(asyncpg_engine, project)
         for template in user_template_projects:
-            await assert_project_in_db(aiopg_engine, template)
+            await assert_project_in_db(asyncpg_engine, template)
 
-    await assert_users_count(aiopg_engine, 1)
+    await assert_users_count(asyncpg_engine, 1)
     expected_count = number_of_projects + number_of_templates
-    await assert_projects_count(aiopg_engine, expected_count)
+    await assert_projects_count(asyncpg_engine, expected_count)
 
     # connect the user and wait for gc
     sio_connection_data = await connect_to_socketio(client, logged_user, create_socketio_connection)
@@ -616,7 +616,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
 async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -647,22 +647,22 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     )
 
     # mark u1 as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
 
-    await assert_users_count(aiopg_engine, 3)
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     await asyncio.sleep(2 * WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
-    await assert_user_not_in_db(aiopg_engine, u1)
-    await assert_one_owner_for_project(aiopg_engine, project, [u2, u3])
+    await assert_user_not_in_db(asyncpg_engine, u1)
+    await assert_one_owner_for_project(asyncpg_engine, project, [u2, u3])
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -676,9 +676,9 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     u2 = await login_user(client, exit_stack=exit_stack)
     u3 = await login_user(client, exit_stack=exit_stack)
 
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
     assert q_u2
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
     assert q_u3
 
     # u1 creates project and shares it with g1
@@ -695,22 +695,22 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     )
 
     # mark u1 as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
 
-    await assert_users_count(aiopg_engine, 3)
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
-    await assert_user_not_in_db(aiopg_engine, u1)
-    await assert_one_owner_for_project(aiopg_engine, project, [u2, u3])
+    await assert_user_not_in_db(asyncpg_engine, u1)
+    await assert_one_owner_for_project(asyncpg_engine, project, [u2, u3])
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -743,22 +743,22 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     )
 
     # mark u1 as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
 
-    await assert_users_count(aiopg_engine, 3)
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
-    await assert_user_not_in_db(aiopg_engine, u1)
-    await assert_one_owner_for_project(aiopg_engine, project, [u2, u3])
+    await assert_user_not_in_db(asyncpg_engine, u1)
+    await assert_one_owner_for_project(asyncpg_engine, project, [u2, u3])
 
     # find new owner and mark hims as GUEST
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
-    q_project = await fetch_project_from_db(aiopg_engine, project)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
+    q_project = await fetch_project_from_db(asyncpg_engine, project)
 
     new_owner = None
     remaining_others = []
@@ -771,19 +771,19 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
     assert new_owner is not None  # expected to a new owner between the 2 other users
     # mark new owner as guest
-    await change_user_role(aiopg_engine, new_owner, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, new_owner, UserRole.GUEST)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: the new_owner will be deleted and one of the remaining_others will be the new owner
-    await assert_user_not_in_db(aiopg_engine, new_owner)
-    await assert_one_owner_for_project(aiopg_engine, project, remaining_others)
+    await assert_user_not_in_db(asyncpg_engine, new_owner)
+    await assert_one_owner_for_project(asyncpg_engine, project, remaining_others)
 
 
 async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_last_and_all_is_removed(
     disable_garbage_collector_task: None,
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -819,23 +819,23 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     )
 
     # mark u1 as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
 
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_users_count(aiopg_engine, 3)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
     await gc_core.collect_garbage(app=client.app)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
-    await assert_one_owner_for_project(aiopg_engine, project, [u2, u3])
-    await assert_user_not_in_db(aiopg_engine, u1)
+    await assert_one_owner_for_project(asyncpg_engine, project, [u2, u3])
+    await assert_user_not_in_db(asyncpg_engine, u1)
 
     # find new owner and mark hims as GUEST
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
-    q_project = await fetch_project_from_db(aiopg_engine, project)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
+    q_project = await fetch_project_from_db(asyncpg_engine, project)
     assert q_project
 
     new_owner: UserInfoDict | None = None
@@ -849,31 +849,31 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
 
     assert new_owner is not None  # expected to a new owner between the 2 other users
     # mark new owner as guest
-    await change_user_role(aiopg_engine, new_owner, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, new_owner, UserRole.GUEST)
 
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
     await gc_core.collect_garbage(app=client.app)
 
     # expected outcome: the new_owner will be deleted and one of the remaining_others will be the new owner
-    await assert_one_owner_for_project(aiopg_engine, project, remaining_users)
-    await assert_user_not_in_db(aiopg_engine, new_owner)
+    await assert_one_owner_for_project(asyncpg_engine, project, remaining_users)
+    await assert_user_not_in_db(asyncpg_engine, new_owner)
 
     # only 1 user is left as the owner mark him as GUEST
     for user in remaining_users:
         # mark new owner as guest
-        await change_user_role(aiopg_engine, user, UserRole.GUEST)
+        await change_user_role(asyncpg_engine, user, UserRole.GUEST)
 
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
     await gc_core.collect_garbage(app=client.app)
 
     # expected outcome: the last user will be removed and the project will be removed
-    await assert_projects_count(aiopg_engine, 0)
-    await assert_users_count(aiopg_engine, 0)
+    await assert_projects_count(asyncpg_engine, 0)
+    await assert_users_count(asyncpg_engine, 0)
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -889,9 +889,9 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     u2 = await login_user(client, exit_stack=exit_stack)
     u3 = await login_user(client, exit_stack=exit_stack)
 
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
     assert q_u2
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
     assert q_u3
 
     # u1 creates project and shares it with g1
@@ -908,22 +908,22 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     )
 
     # mark u1 as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
 
-    await assert_users_count(aiopg_engine, 3)
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
-    await assert_user_not_in_db(aiopg_engine, u1)
-    await assert_one_owner_for_project(aiopg_engine, project, [u2, u3])
+    await assert_user_not_in_db(asyncpg_engine, u1)
+    await assert_one_owner_for_project(asyncpg_engine, project, [u2, u3])
 
     # find new owner and mark hims as GUEST
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
-    q_project = await fetch_project_from_db(aiopg_engine, project)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
+    q_project = await fetch_project_from_db(asyncpg_engine, project)
 
     new_owner = None
     remaining_others = []
@@ -936,20 +936,20 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
     assert new_owner is not None  # expected to a new owner between the 2 other users
     # mark new owner as guest
-    await change_user_role(aiopg_engine, new_owner, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, new_owner, UserRole.GUEST)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: the new_owner will be deleted and one of the remainint_others will be the new owner
-    await assert_user_not_in_db(aiopg_engine, new_owner)
-    await assert_one_owner_for_project(aiopg_engine, project, remaining_others)
-    await assert_users_count(aiopg_engine, 1)
-    await assert_projects_count(aiopg_engine, 1)
+    await assert_user_not_in_db(asyncpg_engine, new_owner)
+    await assert_one_owner_for_project(asyncpg_engine, project, remaining_others)
+    await assert_users_count(asyncpg_engine, 1)
+    await assert_projects_count(asyncpg_engine, 1)
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -967,9 +967,9 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     u2 = await login_user(client, exit_stack=exit_stack)
     u3 = await login_user(client, exit_stack=exit_stack)
 
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
     assert q_u2
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
     assert q_u3
 
     # u1 creates project and shares it with g1
@@ -986,22 +986,22 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     )
 
     # mark u1 as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
 
-    await assert_users_count(aiopg_engine, 3)
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
-    await assert_user_not_in_db(aiopg_engine, u1)
-    await assert_one_owner_for_project(aiopg_engine, project, [u2, u3])
+    await assert_user_not_in_db(asyncpg_engine, u1)
+    await assert_one_owner_for_project(asyncpg_engine, project, [u2, u3])
 
     # find new owner and mark hims as GUEST
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
-    q_project = await fetch_project_from_db(aiopg_engine, project)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
+    q_project = await fetch_project_from_db(asyncpg_engine, project)
 
     new_owner = None
     remaining_others = []
@@ -1014,31 +1014,31 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
 
     assert new_owner is not None  # expected to a new owner between the 2 other users
     # mark new owner as guest
-    await change_user_role(aiopg_engine, new_owner, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, new_owner, UserRole.GUEST)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: the new_owner will be deleted and one of the remaining_others will be the new owner
-    await assert_user_not_in_db(aiopg_engine, new_owner)
-    await assert_one_owner_for_project(aiopg_engine, project, remaining_others)
-    await assert_users_count(aiopg_engine, 1)
-    await assert_projects_count(aiopg_engine, 1)
+    await assert_user_not_in_db(asyncpg_engine, new_owner)
+    await assert_one_owner_for_project(asyncpg_engine, project, remaining_others)
+    await assert_users_count(asyncpg_engine, 1)
+    await assert_projects_count(asyncpg_engine, 1)
 
     # only 1 user is left as the owner mark him as GUEST
     for user in remaining_others:
         # mark new owner as guest
-        await change_user_role(aiopg_engine, user, UserRole.GUEST)
+        await change_user_role(asyncpg_engine, user, UserRole.GUEST)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: the last user will be removed and the project will be removed
-    await assert_users_count(aiopg_engine, 0)
-    await assert_projects_count(aiopg_engine, 0)
+    await assert_users_count(asyncpg_engine, 0)
+    await assert_projects_count(asyncpg_engine, 0)
 
 
 async def test_t10_owner_and_all_shared_users_marked_as_guests(
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -1056,8 +1056,8 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     u2 = await login_user(client, exit_stack=exit_stack)
     u3 = await login_user(client, exit_stack=exit_stack)
 
-    q_u2 = await fetch_user_from_db(aiopg_engine, u2)
-    q_u3 = await fetch_user_from_db(aiopg_engine, u3)
+    q_u2 = await fetch_user_from_db(asyncpg_engine, u2)
+    q_u3 = await fetch_user_from_db(asyncpg_engine, u3)
     assert q_u2
     assert q_u3
 
@@ -1075,23 +1075,23 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     )
 
     # mark all users as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
-    await change_user_role(aiopg_engine, u2, UserRole.GUEST)
-    await change_user_role(aiopg_engine, u3, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u2, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u3, UserRole.GUEST)
 
-    await assert_users_count(aiopg_engine, 3)
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
-    await assert_users_count(aiopg_engine, 0)
-    await assert_projects_count(aiopg_engine, 0)
+    await assert_users_count(asyncpg_engine, 0)
+    await assert_projects_count(asyncpg_engine, 0)
 
 
 async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     client: TestClient,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
     tests_data_dir: Path,
     osparc_product_name: str,
     exit_stack: contextlib.AsyncExitStack,
@@ -1122,16 +1122,16 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     )
 
     # mark all users as guest
-    await change_user_role(aiopg_engine, u1, UserRole.GUEST)
-    await change_user_role(aiopg_engine, u2, UserRole.GUEST)
-    await change_user_role(aiopg_engine, u3, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u1, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u2, UserRole.GUEST)
+    await change_user_role(asyncpg_engine, u3, UserRole.GUEST)
 
-    await assert_users_count(aiopg_engine, 3)
-    await assert_projects_count(aiopg_engine, 1)
-    await assert_user_is_owner_of_project(aiopg_engine, u1, project)
+    await assert_users_count(asyncpg_engine, 3)
+    await assert_projects_count(asyncpg_engine, 1)
+    await assert_user_is_owner_of_project(asyncpg_engine, u1, project)
 
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
     await gc_core.collect_garbage(app=client.app)
 
-    await assert_users_count(aiopg_engine, 0)  # <-- MD: this is where the test fails
-    await assert_projects_count(aiopg_engine, 0)
+    await assert_users_count(asyncpg_engine, 0)  # <-- MD: this is where the test fails
+    await assert_projects_count(asyncpg_engine, 0)

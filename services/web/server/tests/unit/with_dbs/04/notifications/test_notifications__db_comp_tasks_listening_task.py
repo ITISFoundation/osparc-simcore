@@ -21,7 +21,7 @@ import simcore_service_webserver
 import simcore_service_webserver.db_listener
 import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from common_library.async_tools import delayed_start
 from faker import Faker
 from models_library.projects import ProjectAtDB
@@ -206,7 +206,8 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
     # Assert the spy was called with the correct task_id
     if params.expected_calls:
         assert any(call.args[1] == updated_task_id for call in spied_get_changed_comp_task_row.call_args_list), (
-            f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
+            f"_get_changed_comp_task_row was not called with task_id={updated_task_id}."
+            f" Calls: {spied_get_changed_comp_task_row.call_args_list}"
         )
     else:
         spied_get_changed_comp_task_row.assert_not_called()
@@ -226,7 +227,7 @@ async def mock_dynamic_service_rpc(
     """
     Mocks the dynamic service RPC calls to avoid actual service calls during tests.
     """
-    import servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services
+    import servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services  # noqa: PLC0415
 
     return mocker.patch.object(
         servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services,

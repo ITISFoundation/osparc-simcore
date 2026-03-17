@@ -5,7 +5,6 @@
 
 from pathlib import Path
 
-import aiopg.sa
 import sqlalchemy as sa
 import yaml
 from aiohttp.test_utils import TestServer
@@ -13,7 +12,7 @@ from simcore_service_webserver.application_settings import (
     ApplicationSettings,
     get_application_settings,
 )
-from simcore_service_webserver.db import _aiopg, _asyncpg
+from simcore_service_webserver.db import _asyncpg
 from simcore_service_webserver.db.plugin import (
     is_service_enabled,
     is_service_responsive,
@@ -21,7 +20,7 @@ from simcore_service_webserver.db.plugin import (
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-async def test_all_pg_engines_in_app(web_server: TestServer):
+async def test_asyncpg_engine_in_app(web_server: TestServer):
     app = web_server.app
     assert app
 
@@ -29,27 +28,17 @@ async def test_all_pg_engines_in_app(web_server: TestServer):
     assert settings.WEBSERVER_DB
     assert settings.WEBSERVER_DB.POSTGRES_CLIENT_NAME
 
-    # (1) aiopg engine  (deprecated)
-    aiopg_engine = _aiopg.get_database_engine(app)
-    assert aiopg_engine
-    assert isinstance(aiopg_engine, aiopg.sa.Engine)
-
-    # (2) asyncpg engine via sqlalchemy.ext.asyncio  (new)
     asyncpg_engine: AsyncEngine = _asyncpg.get_async_engine(app)
     assert asyncpg_engine
     assert isinstance(asyncpg_engine, AsyncEngine)
 
-    # they ALL point to the SAME database
-    assert aiopg_engine.dsn
     assert asyncpg_engine.url
 
     query = sa.text('SELECT "version_num" FROM "alembic_version"')
 
     async with asyncpg_engine.connect() as conn:
-        result_asyncpg = (await conn.execute(query)).scalar_one_or_none()
-
-    async with aiopg_engine.acquire() as conn:
-        result_aiopg = await (await conn.execute(query)).scalar()
+        result = (await conn.execute(query)).scalar_one_or_none()
+    assert result is not None
 
 
 def test_uses_same_postgres_version(docker_compose_file: Path, osparc_simcore_root_dir: Path):
