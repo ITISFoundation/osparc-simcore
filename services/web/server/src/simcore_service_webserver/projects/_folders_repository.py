@@ -8,12 +8,15 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
-from simcore_postgres_database.utils_repos import transaction_context
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from sqlalchemy import func, literal_column
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_asyncpg_engine, get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 
 _logger = logging.getLogger(__name__)
 
@@ -38,7 +41,7 @@ async def insert_project_to_folder(
     folder_id: FolderID,
     private_workspace_user_id_or_none: UserID | None,
 ) -> ProjectToFolderDB:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(
             projects_to_folders.insert()
             .values(
@@ -50,7 +53,7 @@ async def insert_project_to_folder(
             )
             .returning(literal_column("*"))
         )
-        row = await result.first()
+        row = result.first()
         return ProjectToFolderDB.model_validate(row)
 
 
@@ -71,9 +74,9 @@ async def get_project_to_folder(
         & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
     )
 
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.first()
         if row is None:
             return None
         return ProjectToFolderDB.model_validate(row)
@@ -85,7 +88,7 @@ async def delete_project_to_folder(
     folder_id: FolderID,
     private_workspace_user_id_or_none: UserID | None,
 ) -> None:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
         await conn.execute(
             projects_to_folders.delete().where(
                 (projects_to_folders.c.project_uuid == f"{project_id}")

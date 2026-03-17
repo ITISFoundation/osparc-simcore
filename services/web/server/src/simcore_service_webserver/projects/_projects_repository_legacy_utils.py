@@ -3,11 +3,9 @@ from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID, ProjectType
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
@@ -22,6 +20,8 @@ from simcore_postgres_database.webserver_models import (
     projects,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import Row
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
@@ -103,7 +103,7 @@ def convert_to_schema_names(project_database_data: Mapping, user_email: str, **k
     return converted_args
 
 
-def assemble_array_groups(user_groups: list[RowProxy]) -> str:
+def assemble_array_groups(user_groups: list[Row]) -> str:
     return (
         "array[]::text[]"
         if len(user_groups) == 0
@@ -113,15 +113,15 @@ def assemble_array_groups(user_groups: list[RowProxy]) -> str:
 
 class BaseProjectDB:
     @classmethod
-    async def _get_everyone_group(cls, conn: SAConnection) -> RowProxy:
+    async def _get_everyone_group(cls, conn: AsyncConnection) -> Row:
         result = await conn.execute(sa.select(groups).where(groups.c.type == GroupType.EVERYONE))
-        row = await result.first()
+        row = result.first()
         assert row is not None  # nosec
-        return cast(RowProxy, row)  # mypy: not sure why this cast is necessary
+        return row
 
     @classmethod
-    async def _list_user_groups(cls, conn: SAConnection, user_id: int) -> list[RowProxy]:
-        user_groups = []
+    async def _list_user_groups(cls, conn: AsyncConnection, user_id: int) -> list[Row]:
+        user_groups: list[Row] = []
 
         if user_id == ANY_USER_ID_SENTINEL:
             everyone_group = await cls._get_everyone_group(conn)
@@ -131,11 +131,11 @@ class BaseProjectDB:
             result = await conn.execute(
                 sa.select(groups).select_from(groups.join(user_to_groups)).where(user_to_groups.c.uid == user_id)
             )
-            user_groups = await result.fetchall() or []
+            user_groups = list(result.fetchall())
         return user_groups
 
     @staticmethod
-    async def _get_user_email(conn: SAConnection, user_id: int | None) -> str:
+    async def _get_user_email(conn: AsyncConnection, user_id: int | None) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
         email = await conn.scalar(sa.select(users.c.email).where(users.c.id == user_id))
@@ -143,7 +143,7 @@ class BaseProjectDB:
         return email or "Unknown"
 
     @staticmethod
-    async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
+    async def _get_user_primary_group_gid(conn: AsyncConnection, user_id: int) -> int:
         primary_gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.id == str(user_id)))
         if not primary_gid:
             raise UserNotFoundError(user_id=user_id)
@@ -151,13 +151,14 @@ class BaseProjectDB:
         return primary_gid
 
     @staticmethod
-    async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
+    async def _get_tags_by_project(conn: AsyncConnection, project_id: str) -> list:
         query = sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_id)
-        return [row.tag_id async for row in conn.execute(query)]
+        result = await conn.execute(query)
+        return [row.tag_id for row in result]
 
     @staticmethod
     async def _upsert_tags_in_project(
-        conn: SAConnection,
+        conn: AsyncConnection,
         project_index_id: int,
         project_uuid: ProjectID,
         project_tags: list[int],
@@ -175,7 +176,7 @@ class BaseProjectDB:
 
     async def _get_project(
         self,
-        connection: SAConnection,
+        connection: AsyncConnection,
         project_uuid: str,
         *,
         exclude_foreign: list[str] | None = None,
@@ -235,7 +236,7 @@ class BaseProjectDB:
             await connection.execute(blocking_query)
 
         result = await connection.execute(query)
-        project_row = await result.first()
+        project_row = result.one_or_none()
 
         if not project_row:
             raise ProjectNotFoundError(
@@ -243,7 +244,7 @@ class BaseProjectDB:
                 search_context=f"{only_templates=}, {only_published=}",
             )
 
-        project: dict[str, Any] = dict(project_row.items())
+        project: dict[str, Any] = dict(project_row._mapping.items())
 
         if "tags" not in exclude_foreign:
             tags = await self._get_tags_by_project(connection, project_id=project_row.id)
