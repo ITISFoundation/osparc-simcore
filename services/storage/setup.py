@@ -46,7 +46,7 @@ SETUP = {
     "tests_require": TEST_REQUIREMENTS,
     "package_data": {
         "": [
-            "api/v0/openapi.yaml",
+            "api/v0/openapi.json",
             "api/v0/schemas/*.json",
         ],
     },
