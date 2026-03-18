@@ -12,9 +12,6 @@ from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
 )
-from models_library.notifications.rpc import (
-    EmailMessage as NotificationsEmailMessage,
-)
 from models_library.notifications.rpc import TemplateRef as RpcTemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -33,7 +30,16 @@ from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent, EmailMessage, Template, TemplatePreview, TemplateRef
+from ._models import (
+    Contact,
+    EmailContact,
+    EmailContent,
+    EmailEnvelope,
+    EmailMessage,
+    Template,
+    TemplatePreview,
+    TemplateRef,
+)
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -104,8 +110,10 @@ async def _create_email_message(
 
     return EmailMessage(
         channel=Channel.email,
-        from_=from_contact,
-        to=to_contacts,
+        envelope=EmailEnvelope(
+            from_=from_contact,
+            to=to_contacts,
+        ),
         content=email_content,
     )
 
@@ -167,7 +175,7 @@ async def send_message(
 
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
-        message=NotificationsEmailMessage.model_validate(message.model_dump(by_alias=True)),
+        message=message,
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,

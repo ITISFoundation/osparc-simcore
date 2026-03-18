@@ -16,13 +16,15 @@ class EmailContent(BaseModel):
     body_text: str | None = None
 
 
-class EmailEnvelope:
+class EmailEnvelope(BaseModel):
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
 
 
-class EmailMessage(EmailEnvelope):
+class EmailMessage(BaseModel):
     channel: Channel = Channel.email
+
+    envelope: EmailEnvelope
     content: EmailContent
 
 

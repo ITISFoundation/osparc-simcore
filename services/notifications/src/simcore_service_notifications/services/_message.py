@@ -74,9 +74,7 @@ class MessageService:
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         preview = self.template_service.preview_template(ref=ref, context=context)
         message = EmailMessage(
-            channel=ref.channel,
-            from_=envelope.from_,
-            to=envelope.to,
+            envelope=envelope,
             content=preview.message_content.model_dump(),
         )
         return await self.send_message(
