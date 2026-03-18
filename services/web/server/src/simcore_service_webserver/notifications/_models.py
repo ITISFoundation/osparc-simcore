@@ -2,7 +2,7 @@ from email.utils import parseaddr
 from typing import Annotated, Self
 
 from common_library.network import replace_email_parts
-from models_library.notifications import ChannelType
+from models_library.notifications import ChannelType, TemplateRef
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -90,6 +90,20 @@ class EmailMessage(BaseModel):
         validate_by_alias=True,
         validate_by_name=True,
     )
+
+
+class TemplatePreview(BaseModel):
+    ref: TemplateRef
+    message_content: dict
+
+    model_config = ConfigDict(frozen=True)
+
+
+class Template(BaseModel):
+    ref: TemplateRef
+    context_schema: dict
+
+    model_config = ConfigDict(frozen=True)
 
 
 type Contact = EmailContact

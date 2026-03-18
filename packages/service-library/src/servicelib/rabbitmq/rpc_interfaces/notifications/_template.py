@@ -8,9 +8,6 @@ from models_library.notifications.rpc import (
     PreviewTemplateResponse,
     SearchTemplatesResponse,
 )
-from models_library.notifications.rpc import (
-    TemplateRef as TemplateRefRpc,
-)
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter, validate_call
 
@@ -32,7 +29,7 @@ async def preview_template(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("preview_template"),
         request=PreviewTemplateRequest(
-            ref=TemplateRefRpc(**ref.model_dump()),
+            ref=ref,
             context=context,
         ),
     )

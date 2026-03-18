@@ -7,8 +7,6 @@ from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
     ChannelType,
-    Template,
-    TemplatePreview,
     TemplateRef,
 )
 from models_library.notifications import (
@@ -35,7 +33,7 @@ from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent, EmailMessage
+from ._models import Contact, EmailContact, EmailContent, EmailMessage, Template, TemplatePreview
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -123,13 +121,12 @@ async def preview_template(
 
     enriched_context = {**context, "product": asdict(product_data)}
 
-    preview = await remote_preview_template(
+    rpc_response = await remote_preview_template(
         get_rabbitmq_rpc_client(app),
         ref=ref,
         context=enriched_context,
     )
-
-    return TemplatePreview(**preview.model_dump())
+    return TemplatePreview(**rpc_response.model_dump())
 
 
 async def search_templates(
@@ -138,13 +135,12 @@ async def search_templates(
     channel: str | None = None,
     template_name: str | None = None,
 ) -> list[Template]:
-    templates = await remote_search_templates(
+    rpc_response = await remote_search_templates(
         get_rabbitmq_rpc_client(app),
         channel=channel,
         template_name=template_name,
     )
-
-    return [Template(**template.model_dump()) for template in templates]
+    return [Template(**t.model_dump()) for t in rpc_response]
 
 
 async def send_message(
