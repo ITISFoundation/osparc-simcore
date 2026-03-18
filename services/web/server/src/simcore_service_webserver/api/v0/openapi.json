@@ -21809,9 +21809,7 @@
       "MyPhoneRegister": {
         "properties": {
           "phone": {
-            "type": "string",
-            "format": "phone",
-            "title": "Phone",
+            "$ref": "#/components/schemas/PhoneNumberStr",
             "description": "Phone number to register"
           }
         },
@@ -24125,6 +24123,10 @@
         ],
         "title": "PhoneConfirmationBody"
       },
+      "PhoneNumberStr": {
+        "type": "string",
+        "format": "phone"
+      },
       "PipelineDetails": {
         "properties": {
           "adjacency_list": {
@@ -26014,9 +26016,7 @@
             "$ref": "#/components/schemas/LowerCaseEmailStr"
           },
           "phone": {
-            "type": "string",
-            "format": "phone",
-            "title": "Phone",
+            "$ref": "#/components/schemas/PhoneNumberStr",
             "description": "Phone number E.164, needed on the deployments with 2FA"
           }
         },
@@ -29188,14 +29188,12 @@
           "phone": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "phone"
+                "$ref": "#/components/schemas/PhoneNumberStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Phone"
+            ]
           },
           "address": {
             "type": "string",
