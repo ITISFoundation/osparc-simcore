@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any, ClassVar, Literal
 
 import sqlalchemy as sa
-from models_library.projects import ProjectID, ProjectType
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
@@ -241,12 +241,12 @@ class BaseProjectDB:
             )
             .where(
                 (projects.c.uuid == f"{project_uuid}")
-                & (projects.c.type == f"{ProjectType.TEMPLATE.value}" if only_templates else True)
+                & (projects.c.type == ProjectTypeDB.TEMPLATE if only_templates else True)
             )
         )
 
         if only_published:
-            query = query.where(projects.c.published == "true")
+            query = query.where(projects.c.published.is_(True))
 
         if for_update:
             # NOTE: It seems that blocking this row in the database is necessary;
