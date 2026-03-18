@@ -25,3 +25,7 @@ class RunAlreadyExistsError(_BasePSchedulerError):
 
 class StepNotInFailedError(_BasePSchedulerError):
     msg_template: str = f"step_id='{{step_id}}' was not found or it's state!='{StepState.FAILED}'"
+
+
+class WorkflowNotRegisteredError(_BasePSchedulerError):
+    msg_template: str = "Workflow '{workflow_name}' not found in registry. Current entries: {registered_workflows}"

@@ -4,6 +4,7 @@ import networkx as nx
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ._abc import BaseStep
+from ._errors import WorkflowNotRegisteredError
 from ._lifecycle_protocol import SupportsLifecycle
 from ._models import DagNodeUniqueReference, InDataKeys, KeyConfig, StepsSequence, WorkflowDefinition, WorkflowName
 
@@ -97,37 +98,35 @@ class WorkflowRegistry(SingletonInAppStateMixin, SupportsLifecycle):
     app_state_name: str = "p_scheduler_workflow_registry"
 
     def __init__(self) -> None:
-        self._workflows: dict[WorkflowName, WorkflowDefinition] = {}
         self._dag_step_sequences: dict[WorkflowName, StepsSequence] = {}
         self._mapping_step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]] = {}
 
     def register_workflow(self, name: WorkflowName, definition: WorkflowDefinition) -> None:
-        self._workflows[name] = definition
+        step_references_to_types = _get_step_references_to_types(definition)
+        step_sequence = _get_step_sequence(definition)
+
+        for key in step_references_to_types:
+            if key in self._mapping_step_references_to_types:
+                msg = (
+                    f"{key=} already registered in {self._mapping_step_references_to_types}. "
+                    f"Ensure name of the {BaseStep.__class__.__name__} is unique."
+                )
+                raise ValueError(msg)
+        _validate_step_sequences(step_sequence, step_references_to_types, definition.initial_context)
+
+        self._dag_step_sequences[name] = step_sequence
+        self._mapping_step_references_to_types.update(step_references_to_types)
 
     def get_workflow_steps_sequence(self, name: WorkflowName) -> StepsSequence:
+        if name not in self._dag_step_sequences:
+            raise WorkflowNotRegisteredError(
+                workflow_name=name, registered_workflows=list(self._dag_step_sequences.keys())
+            )
         return self._dag_step_sequences[name]
 
     def get_base_step(self, dag_node_name: DagNodeUniqueReference) -> type[BaseStep]:
         return self._mapping_step_references_to_types[dag_node_name]
 
-    async def setup(self) -> None:
-        for name, definition in self._workflows.items():
-            step_references_to_types = _get_step_references_to_types(definition)
-            step_sequence = _get_step_sequence(definition)
-
-            for key in step_references_to_types:
-                if key in self._mapping_step_references_to_types:
-                    msg = (
-                        f"{key=} already registered in {self._mapping_step_references_to_types}. "
-                        f"Ensure name of the {BaseStep.__class__.__name__} is unique."
-                    )
-                    raise ValueError(msg)
-            _validate_step_sequences(step_sequence, step_references_to_types, definition.initial_context)
-
-            self._dag_step_sequences[name] = step_sequence
-            self._mapping_step_references_to_types.update(step_references_to_types)
-
     async def shutdown(self) -> None:
-        self._workflows.clear()
         self._dag_step_sequences.clear()
         self._mapping_step_references_to_types.clear()

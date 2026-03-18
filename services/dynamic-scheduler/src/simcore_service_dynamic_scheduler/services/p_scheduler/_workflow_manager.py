@@ -1,6 +1,5 @@
 import logging
 from functools import cached_property
-from typing import Final
 
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import DynamicServiceStart, DynamicServiceStop
@@ -14,11 +13,9 @@ from ._errors import NoRunFoundError, RunNotWaitingManualInterventionError, Step
 from ._models import Run, Step, StepFailHistory, StepId
 from ._notifications import NotificationsManager
 from ._repositories import RunsRepository, StepFailHistoryRepository, StepsRepository, UserRequestsRepository
+from ._workflow_name_resolver import get_workflow_name_from_node_id
 
 _logger = logging.getLogger(__name__)
-
-_START: Final[str] = "START"
-_STOP: Final[str] = "STOP"
 
 
 class UnexpectedWorkflowManagerError(Exception): ...
@@ -45,7 +42,7 @@ async def _validate_workflow_creation_preconditions(
     runs_repo: RunsRepository,
     user_requests_repo: UserRequestsRepository,
     payload_type: type[DynamicServiceStart] | type[DynamicServiceStop],
-) -> UserRequest:
+) -> None:
     user_request = await _ensure_user_request(user_requests_repo, node_id)
 
     query_run = await runs_repo.get_run_from_node_id(node_id)
@@ -53,13 +50,12 @@ async def _validate_workflow_creation_preconditions(
         msg = f"A {query_run=} was found for {node_id=}"
         raise UnexpectedWorkflowManagerError(msg)
 
-    method_name = _START if payload_type is DynamicServiceStart else _STOP
-
     if not isinstance(user_request.payload, payload_type):
-        msg = f"Wrong {method_name} payload for node_id={node_id} with user_request={user_request}"
+        msg = (
+            f"Wrong payload={user_request.payload} for node_id={node_id} with user_request={user_request}. "
+            f"Expected payload_type={payload_type.__name__}"
+        )
         raise UnexpectedWorkflowManagerError(msg)
-
-    return user_request
 
 
 class WorkflowManager(SingletonInAppStateMixin):
@@ -95,8 +91,9 @@ class WorkflowManager(SingletonInAppStateMixin):
             user_requests_repo=self.user_requests_repo,
             payload_type=DynamicServiceStart,
         )
-        created_run = await self.runs_repo.create_from_start_request(node_id)
-        _logger.debug("Added %s workflow for '%s': %s", _START, node_id, created_run)
+        workflow_name = await get_workflow_name_from_node_id(self.app, node_id)
+        created_run = await self.runs_repo.create_from_start_request(node_id, workflow_name)
+        _logger.debug("Added workflow='%s' for '%s': %s", workflow_name, node_id, created_run)
 
     async def add_stop_workflow(self, node_id: NodeID) -> None:
         await _validate_workflow_creation_preconditions(
@@ -105,8 +102,9 @@ class WorkflowManager(SingletonInAppStateMixin):
             user_requests_repo=self.user_requests_repo,
             payload_type=DynamicServiceStop,
         )
-        created_run = await self.runs_repo.create_from_stop_request(node_id)
-        _logger.debug("Added %s workflow for '%s': %s", _STOP, node_id, created_run)
+        workflow_name = await get_workflow_name_from_node_id(self.app, node_id)
+        created_run = await self.runs_repo.create_from_stop_request(node_id, workflow_name)
+        _logger.debug("Added workflow='%s' for '%s': %s", workflow_name, node_id, created_run)
 
     async def cancel_workflow(self, node_id: NodeID) -> None:
         await _ensure_user_request(self.user_requests_repo, node_id)
