@@ -207,7 +207,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "tag" && chip.id === tagId);
           if (!chipFound) {
             const tag = osparc.store.Tags.getInstance().getTag(tagId);
-            this.__addChip("tag", tagId, tag.getName());
+            const label = tag ? tag.getName() : tagId;
+            this.__addChip("tag", tagId, label);
           }
         });
       }
