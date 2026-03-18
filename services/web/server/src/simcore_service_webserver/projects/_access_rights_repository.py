@@ -48,7 +48,7 @@ def published_project_read_condition(
     return typing_cast(
         ColumnElement[Boolean],
         sa.and_(
-            project_type_column == ProjectType.TEMPLATE.value,
+            project_type_column == ProjectType.TEMPLATE,
             project_published_column.is_(True),
             sa.exists(
                 sa.select(sa.literal(1))

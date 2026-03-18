@@ -260,12 +260,8 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
-                "type": (
-                    ProjectType.TEMPLATE.value if (force_as_template or user_id is None) else ProjectType.STANDARD.value
-                ),
-                "template_type": (
-                    ProjectTemplateType.TEMPLATE.value if (force_as_template or user_id is None) else None
-                ),
+                "type": (ProjectType.TEMPLATE if (force_as_template or user_id is None) else ProjectType.STANDARD),
+                "template_type": (ProjectTemplateType.TEMPLATE if (force_as_template or user_id is None) else None),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,
                 # NOTE: this is very bad and leads to very weird conversions.
@@ -456,10 +452,10 @@ class ProjectDBAPI(BaseProjectDB):
         attributes_filters: list[ColumnElement] = []
 
         if filter_by_project_type is not None:
-            attributes_filters.append(projects.c.type == filter_by_project_type.value)
+            attributes_filters.append(projects.c.type == filter_by_project_type)
 
         if filter_by_template_type is not None:
-            attributes_filters.append(projects.c.template_type == filter_by_template_type.value)
+            attributes_filters.append(projects.c.template_type == filter_by_template_type)
 
         if filter_hidden is not None:
             attributes_filters.append(projects.c.hidden.is_(filter_hidden))
@@ -626,7 +622,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def list_projects_uuids(self, user_id: int) -> list[str]:
         async with self.engine.connect() as conn:
             result = await conn.execute(sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id))
-            return [row[projects.c.uuid] for row in result]
+            return [row["uuid"] for row in result.mappings()]
 
     async def get_project_dict_and_type(
         self,
@@ -1193,9 +1189,9 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
         async with self.engine.connect() as conn:
             result = await conn.execute(sa.select(projects.c.type).where(projects.c.uuid == f"{project_uuid}"))
-            row = result.first()
+            row = result.mappings().one_or_none()
             if row:
-                return ProjectType(row[projects.c.type])
+                return ProjectType(row["type"])
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
 
