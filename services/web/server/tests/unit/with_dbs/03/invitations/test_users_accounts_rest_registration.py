@@ -41,6 +41,7 @@ from pytest_simcore.helpers.webserver_login import (
 from pytest_simcore.helpers.webserver_users import NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -178,15 +179,30 @@ def account_request_form(
 async def pre_registration_details_db_cleanup(
     client: TestClient,
 ) -> AsyncGenerator[None]:
-    """Fixture to clean up all pre-registration details after test"""
+    """Fixture to clean up pre-registration details AND orphan users created during tests."""
 
     assert client.app
+    engine = get_asyncpg_engine(client.app)
+
+    # Snapshot user IDs before the test body runs
+    async with engine.connect() as conn:
+        result = await conn.execute(sa.select(users.c.id))
+        user_ids_before = {row.id for row in result}
 
     yield
 
-    # Tear down - clean up the pre-registration details table
-    async with get_asyncpg_engine(client.app).connect() as conn:
+    # Tear down
+    async with engine.connect() as conn:
+        # 1. Clean pre-registration details
         await conn.execute(sa.delete(users_pre_registration_details))
+
+        # 2. Remove users created during the test body (orphans from create_user / new_user calls)
+        result = await conn.execute(sa.select(users.c.id))
+        user_ids_after = {row.id for row in result}
+        orphan_ids = user_ids_after - user_ids_before
+        if orphan_ids:
+            await conn.execute(sa.delete(users).where(users.c.id.in_(orphan_ids)))
+
         await conn.commit()
 
 
