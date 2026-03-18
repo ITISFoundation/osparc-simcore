@@ -114,8 +114,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   events: {
     "filterChanged": "qx.event.type.Data",
-    "changeSelectedTags": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
+    "changeSelectedTags": "qx.event.type.Data",
     "changeAppType": "qx.event.type.Data",
     "resetButtonPressed": "qx.event.type.Event",
   },
@@ -185,21 +185,21 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.resetFilters();
 
       // then add those that are new
-      if (filterData["tags"]) {
-        filterData["tags"].forEach(tagId => {
-          const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "tag" && chip.id === tagId);
-          if (!chipFound) {
-            const tag = osparc.store.Tags.getInstance().getTagById(tagId);
-            this.__addChip("tag", tagId, tag.getName());
-          }
-        });
-      }
       if (filterData["sharedWith"]) {
         const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "shared-with" && chip.id === filterData["sharedWith"]["id"]);
         if (!chipFound) {
           const option = this.self().getSharedWithOptions(this.__resourceType).find(opt => opt.id === filterData["sharedWith"]["id"]);
           this.__addChip("shared-with", filterData["sharedWith"]["id"], option ? option.label : filterData["sharedWith"]["id"]);
         }
+      }
+      if (filterData["tags"]) {
+        filterData["tags"]["id"].forEach(tagId => {
+          const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "tag" && chip.id === tagId);
+          if (!chipFound) {
+            const tag = osparc.store.Tags.getInstance().getTag(tagId);
+            this.__addChip("tag", tagId, tag.getName());
+          }
+        });
       }
       if (filterData["appType"]) {
         const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "app-type" && chip.id === filterData["appType"]["id"]);

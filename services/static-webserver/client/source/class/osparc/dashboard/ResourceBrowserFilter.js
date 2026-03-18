@@ -52,8 +52,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     "trashStudyRequested": "qx.event.type.Data",
     "trashFolderRequested": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
-    "changeAppType": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
+    "changeAppType": "qx.event.type.Data",
   },
 
   members: {
@@ -541,7 +541,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       this.__tagButtons.forEach(btn => {
         btn.setValue(Boolean(
           filterData["tags"] &&
-          filterData["tags"].includes(btn.id)
+          filterData["tags"]["id"] &&
+          filterData["tags"]["id"].includes(btn.id)
         ));
       });
 
