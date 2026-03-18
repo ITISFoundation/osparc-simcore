@@ -25,16 +25,18 @@ class SendMessageRequest(BaseModel):
                     {
                         "message": {
                             "channel": "email",
-                            "from": {
-                                "name": "osparc support",
-                                "email": "support@osparc.io",
+                            "envelope": {
+                                "from": {
+                                    "name": "osparc support",
+                                    "email": "support@osparc.io",
+                                },
+                                "to": [
+                                    {
+                                        "name": "John Doe",
+                                        "email": "john@example.com",
+                                    }
+                                ],
                             },
-                            "to": [
-                                {
-                                    "name": "John Doe",
-                                    "email": "john@example.com",
-                                }
-                            ],
                             "content": {
                                 "subject": "Welcome!",
                                 "body_html": "<p>Welcome to osparc!</p>",
