@@ -370,13 +370,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __addTagToFilterData: function(tagId) {
-      const selectedTagIds = this.getActiveFilters()["tags"] || [];
+      const selectedTagIds = this.getActiveFilters()["tags"] ? this.getActiveFilters()["tags"]["id"] : [];
       selectedTagIds.push(tagId);
       this.fireDataEvent("changeSelectedTags", selectedTagIds);
     },
 
     __removeTagFromFilterData: function(tagId) {
-      const selectedTagIds = this.getActiveFilters()["tags"] || [];
+      const selectedTagIds = this.getActiveFilters()["tags"] ? this.getActiveFilters()["tags"]["id"] : [];
       const newSelectedTagIds = selectedTagIds.filter(id => id !== tagId);
       this.fireDataEvent("changeSelectedTags", newSelectedTagIds);
     },
