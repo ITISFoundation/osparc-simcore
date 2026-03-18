@@ -17,11 +17,11 @@ cloudpickle==3.1.2
     # via
     #   dask
     #   distributed
-dask==2026.1.2
+dask==2026.3.0
     # via
     #   -r requirements/_base.in
     #   distributed
-distributed==2026.1.2
+distributed==2026.3.0
     # via dask
 dnspython==2.8.0
     # via email-validator

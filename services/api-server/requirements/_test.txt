@@ -48,11 +48,11 @@ billiard==4.2.1
     # via
     #   -c requirements/_base.txt
     #   celery
-boto3==1.42.68
+boto3==1.42.70
     # via
     #   aws-sam-translator
     #   moto
-botocore==1.42.68
+botocore==1.42.70
     # via
     #   aws-xray-sdk
     #   boto3
@@ -105,7 +105,7 @@ click-repl==0.3.0
     # via
     #   -c requirements/_base.txt
     #   celery
-coverage==7.13.4
+coverage==7.13.5
     # via pytest-cov
 cryptography==44.0.0
     # via
@@ -280,7 +280,7 @@ psutil==6.1.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-pyasn1==0.6.2
+pyasn1==0.6.3
     # via
     #   python-jose
     #   rsa
@@ -412,7 +412,7 @@ types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
 types-awscrt==0.31.3
     # via botocore-stubs
-types-boto3==1.42.68
+types-boto3==1.42.70
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20260202
     # via -r requirements/_test.in

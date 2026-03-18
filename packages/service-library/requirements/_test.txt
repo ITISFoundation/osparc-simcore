@@ -31,7 +31,7 @@ attrs==25.4.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-botocore==1.42.68
+botocore==1.42.70
     # via -r requirements/_test.in
 certifi==2026.2.25
     # via
@@ -45,7 +45,7 @@ charset-normalizer==3.4.6
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.13.4
+coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov

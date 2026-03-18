@@ -47,7 +47,7 @@ charset-normalizer==3.4.1
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.13.4
+coverage==7.13.5
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in

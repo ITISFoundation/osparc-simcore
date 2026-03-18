@@ -84,7 +84,7 @@ ruff==0.15.6
     # via -r requirements/../../../../requirements/devenv.txt
 tomlkit==0.14.0
     # via pylint
-types-cachetools==6.2.0.20251022
+types-cachetools==6.2.0.20260317
     # via -r requirements/_tools.in
 typing-extensions==4.14.1
     # via
