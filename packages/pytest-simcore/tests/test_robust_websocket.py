@@ -6,6 +6,7 @@
 
 import json
 import logging
+import subprocess
 from threading import Thread
 
 import pytest
@@ -68,7 +69,12 @@ def real_page() -> Page:
         browser.close()
 
 
-def test_robust_websocket_with_socketio(real_page: Page, fastapi_server: str):
+@pytest.fixture(scope="session")
+def download_playwright_browser() -> None:
+    subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
+
+
+def test_robust_websocket_with_socketio(download_playwright_browser: None, real_page: Page, fastapi_server: str):
     # Connect to the FastAPI server
     server_url = f"{fastapi_server}"
     real_page.goto(f"{fastapi_server}")  # Simulate visiting the server
@@ -101,8 +107,9 @@ def test_robust_websocket_with_socketio(real_page: Page, fastapi_server: str):
         robust_ws = RobustWebSocket(page=real_page, ws=websocket)
 
         # Test sending and receiving messages
-        real_page.evaluate("window.ws.send('Hello')")  # Send a message via WebSocket
+        real_page.wait_for_function("() => window.ws && window.ws.connected === true")
         with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
+            real_page.evaluate("window.ws.send('Hello')")  # Send a message via WebSocket
             raw_response = frame_received_event.value
             # Decode the socket.io message format
             assert raw_response.startswith("42"), "Invalid socket.io message format"
@@ -126,8 +133,9 @@ def test_robust_websocket_with_socketio(real_page: Page, fastapi_server: str):
             real_page.wait_for_timeout(2000)  # Wait for 2 seconds to simulate network downtime
 
         # Test sending and receiving messages after automatic reconnection
-        real_page.evaluate("window.ws.send('Reconnected')")  # Send a message
+        real_page.wait_for_function("() => window.ws && window.ws.connected === true")
         with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
+            real_page.evaluate("window.ws.send('Reconnected')")  # Send a message
             raw_response = frame_received_event.value
             # Decode the socket.io message format
             assert raw_response.startswith("42"), "Invalid socket.io message format"
@@ -136,4 +144,4 @@ def test_robust_websocket_with_socketio(real_page: Page, fastapi_server: str):
             response = decoded_message[1]
         assert response == "Echo: Reconnected"
 
-        assert robust_ws._num_reconnections == 2, "Expected 2 restarts due to network issues"
+        assert robust_ws._num_reconnections == 2, "Expected 2 restarts due to network issues"  # noqa: SLF001

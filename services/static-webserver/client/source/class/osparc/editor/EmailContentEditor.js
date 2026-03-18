@@ -61,6 +61,12 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
       nullable: true,
       apply: "__applyTemplateEmail",
     },
+
+    contentReady: {
+      check: "Boolean",
+      init: false,
+      event: "changeContentReady"
+    },
   },
 
   members: {
@@ -120,7 +126,7 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
             this.__quillInstance = htmlEditorWrapper.initializeEditor(editorId, control.getUserData("quillOptions"));
             // Set initial content if already loaded
             if (this.__initialContent && this.__quillInstance) {
-              htmlEditorWrapper.setHTML(this.__quillInstance, this.__initialContent);
+              this.__setInitialContent();
             }
           }, this);
 
@@ -165,10 +171,16 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
 
         // Update Quill editor if already initialized
         if (this.__quillInstance) {
-          const htmlEditorWrapper = osparc.wrapper.HtmlEditor.getInstance();
-          htmlEditorWrapper.setHTML(this.__quillInstance, this.__initialContent);
+          this.__setInitialContent();
         }
       }
+    },
+
+    __setInitialContent: function() {
+      const htmlEditorWrapper = osparc.wrapper.HtmlEditor.getInstance();
+      htmlEditorWrapper.setHTML(this.__quillInstance, this.__initialContent);
+
+      this.setContentReady(true);
     },
 
     __composePreview: function() {
@@ -225,6 +237,21 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
           backgroundColor: isActive ? "fab-background" : "background-main-2",
         });
       });
+    },
+
+    isPreviewActive: function() {
+      return this.getSelection()[0] === this.getChildControl("preview-page");
+    },
+
+    makePreviewActive: function() {
+      // make sure quillInstance and content are initialized before switching to preview
+      if (this.isContentReady()) {
+        this.setSelection([this.getChildControl("preview-page")]);
+      } else {
+        this.addListenerOnce("changeContentReady", () => {
+          this.setSelection([this.getChildControl("preview-page")]);
+        }, this);
+      }
     },
   }
 });

@@ -333,5 +333,12 @@ products = sa.Table(
         nullable=True,
         doc="Fogbugz project ID to assign support case",
     ),
+    sa.Column(
+        "studies_dispatcher_enabled",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.false(),
+        doc="If True, this product allows anonymous/guest access to published studies via the studies dispatcher",
+    ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

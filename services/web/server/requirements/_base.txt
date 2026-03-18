@@ -89,9 +89,9 @@ aiohttp==3.12.12
     #   aiohttp-jinja2
     #   aiohttp-security
     #   aiohttp-session
-aiohttp-jinja2==1.5
+aiohttp-jinja2==1.6
     # via -r requirements/_base.in
-aiohttp-security==0.4.0
+aiohttp-security==0.5.0
     # via -r requirements/_base.in
 aiohttp-session==2.11.0
     # via -r requirements/_base.in
@@ -287,9 +287,9 @@ exceptiongroup==1.3.1
     # via celery
 faker==19.6.1
     # via -r requirements/_base.in
-fast-depends==2.4.12
+fast-depends==3.0.8
     # via faststream
-faststream==0.5.31
+faststream==0.6.7
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -536,7 +536,7 @@ multidict==6.1.0
     #   yarl
 openpyxl==3.0.9
     # via -r requirements/_base.in
-opentelemetry-api==1.34.1
+opentelemetry-api==1.40.0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -556,20 +556,20 @@ opentelemetry-api==1.34.1
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.34.1
+opentelemetry-exporter-otlp==1.40.0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.34.1
+opentelemetry-exporter-otlp-proto-common==1.40.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.34.1
+opentelemetry-exporter-otlp-proto-grpc==1.40.0
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.34.1
+opentelemetry-exporter-otlp-proto-http==1.40.0
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.55b1
+opentelemetry-instrumentation==0.61b0
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
@@ -581,59 +581,59 @@ opentelemetry-instrumentation==0.55b1
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-aio-pika==0.55b1
+opentelemetry-instrumentation-aio-pika==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-aiohttp-client==0.55b1
+opentelemetry-instrumentation-aiohttp-client==0.61b0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-opentelemetry-instrumentation-aiohttp-server==0.55b1
+opentelemetry-instrumentation-aiohttp-server==0.61b0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-opentelemetry-instrumentation-aiopg==0.55b1
+opentelemetry-instrumentation-aiopg==0.61b0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/_base.in
-opentelemetry-instrumentation-asyncpg==0.55b1
+opentelemetry-instrumentation-asyncpg==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-dbapi==0.55b1
+opentelemetry-instrumentation-dbapi==0.61b0
     # via opentelemetry-instrumentation-aiopg
-opentelemetry-instrumentation-httpx==0.55b1
+opentelemetry-instrumentation-httpx==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-logging==0.55b1
+opentelemetry-instrumentation-logging==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-redis==0.55b1
+opentelemetry-instrumentation-redis==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.55b1
+opentelemetry-instrumentation-requests==0.61b0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-proto==1.34.1
+opentelemetry-proto==1.40.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.34.1
+opentelemetry-sdk==1.40.0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.55b1
+opentelemetry-semantic-conventions==0.61b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
@@ -644,7 +644,7 @@ opentelemetry-semantic-conventions==0.55b1
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.55b1
+opentelemetry-util-http==0.61b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
@@ -1341,6 +1341,7 @@ typing-extensions==4.14.1
     # via
     #   aiodebug
     #   aiodocker
+    #   fast-depends
     #   faststream
     #   flexcache
     #   flexparser

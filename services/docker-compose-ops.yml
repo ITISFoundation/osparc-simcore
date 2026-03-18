@@ -30,6 +30,24 @@ services:
       - "18080:8080"
     networks:
       - simcore_default
+
+  flower:
+    # Celery task monitoring UI — https://flower.readthedocs.io
+    image: mher/flower:2.0.1
+    init: true
+    environment:
+      CELERY_BROKER_URL: amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}//
+    ports:
+      - "5555:5555"
+    networks:
+      - simcore_default
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5555/"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   jaeger:
     image: jaegertracing/all-in-one:1.47
     networks:
@@ -51,6 +69,25 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
+
+  mailpit:
+    # Fake SMTP server with web UI — https://mailpit.axllent.org
+    image: axllent/mailpit:v1.29.3
+    init: true
+    command:
+      - --smtp-auth-accept-any
+      - --smtp-auth-allow-insecure
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - simcore_default
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8025/"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
@@ -97,6 +134,7 @@ services:
     user: redis
     networks:
       - simcore_default
+
   opentelemetry-collector:
     image: otel/opentelemetry-collector-contrib:0.105.0
     volumes:

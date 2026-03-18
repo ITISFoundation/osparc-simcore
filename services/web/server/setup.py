@@ -49,7 +49,7 @@ SETUP = {
     "include_package_data": True,
     "package_data": {
         "": [
-            "api/v0/openapi.yaml",
+            "api/v0/openapi.json",
             "api/v0/schemas/*.json",
             "templates/**/*.jinja2",
         ]

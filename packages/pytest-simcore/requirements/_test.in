@@ -1,0 +1,31 @@
+#
+# Specifies dependencies required to run 'pytest-simcore'
+#
+--constraint ../../../requirements/constraints.txt
+
+
+aiodocker
+arrow
+coverage
+docker
+faker
+fastapi
+orjson
+playwright
+pydantic
+pydantic-extra-types
+pytest
+pytest-asyncio
+pytest-cov
+pytest-icdiff
+pytest-instafail
+pytest-mock
+pytest-runner
+pytest-sugar
+python-dotenv
+python-socketio
+pyyaml
+sqlalchemy[mypy]
+tenacity
+types-aiofiles
+uvicorn

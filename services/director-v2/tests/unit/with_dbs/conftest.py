@@ -272,7 +272,9 @@ async def publish_project(
                 project_id=f"{created_project.uuid}",
                 dag_adjacency_list=fake_workbench_adjacency,
             ),
-            tasks=await create_tasks_from_project(user=user, project=created_project, state=StateType.PUBLISHED),
+            tasks=await create_tasks_from_project(
+                user=user, project=created_project, state=StateType.PUBLISHED, job_id=None
+            ),
         )
 
     return _

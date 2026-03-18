@@ -19,14 +19,14 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from pydantic import NonNegativeFloat
-from servicelib.celery.models import (
+from models_library.celery import (
     OwnerMetadata,
     TaskState,
     TaskStatus,
     TaskStreamItem,
     TaskUUID,
 )
+from pydantic import NonNegativeFloat
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 
@@ -43,9 +43,9 @@ async def cancel_task(
     task_uuid: TaskUUID,
 ):
     try:
-        await task_manager.cancel_task(
+        await task_manager.cancel(
             owner_metadata=owner_metadata,
-            task_uuid=task_uuid,
+            task_or_group_uuid=task_uuid,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc

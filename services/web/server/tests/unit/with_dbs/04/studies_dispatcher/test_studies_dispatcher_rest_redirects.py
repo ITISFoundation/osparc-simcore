@@ -12,21 +12,15 @@ from unittest import mock
 
 import pytest
 from aiohttp import ClientResponse, ClientSession
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 from common_library.users_enums import UserRole
 from models_library.projects_state import ProjectShareState, ProjectStatus
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._models import ViewerInfo
 from yarl import URL
@@ -34,35 +28,6 @@ from yarl import URL
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    rabbit_service: RabbitSettings,
-) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
-    )
-
-
-@pytest.fixture
-def web_server(
-    redis_service: RedisSettings,
-    rabbit_service: RabbitSettings,
-    web_server: TestServer,
-    # Add dependencies to ensure database is populated before app starts
-    services_metadata_in_db: list[dict],
-    services_consume_filetypes_in_db: list[dict],
-    services_access_rights_in_db: list[dict],
-) -> TestServer:
-    #
-    # Extends web_server to start redis_service and ensure DB is populated
-    #
-    print("Redis service started with settings: ", redis_service.model_dump_json(indent=1))
-    return web_server
 
 
 @pytest.fixture(autouse=True)
@@ -231,7 +196,9 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     return client.app.router["get_redirection_to_viewer"].url_for().with_query({k: f"{v}" for k, v in query.items()})
 
 
+@pytest.mark.parametrize("studies_dispatcher_enabled", [True], indirect=True)
 async def test_dispatch_study_anonymously(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     redirect_url: URL,
@@ -240,6 +207,8 @@ async def test_dispatch_study_anonymously(
     storage_subsystem_mock,
     mocks_on_projects_api,
 ):
+    assert studies_dispatcher_enabled, "This test requires studies_dispatcher_enabled=True"
+
     assert client.app
     mock_client_director_v2_func = mocker.patch(
         "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
@@ -295,6 +264,7 @@ async def test_dispatch_study_anonymously(
 )
 async def test_dispatch_logged_in_user(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    studies_dispatcher_enabled: bool,
     client: TestClient,
     redirect_url: URL,
     redirect_type: str,
@@ -369,7 +339,10 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     return message, status_code
 
 
-async def test_viewer_redirect_with_file_type_errors(client: TestClient):
+async def test_viewer_redirect_with_file_type_errors(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+):
     assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
@@ -395,7 +368,10 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
     assert "link" in message.lower()
 
 
-async def test_viewer_redirect_with_client_errors(client: TestClient):
+async def test_viewer_redirect_with_client_errors(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+):
     assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
@@ -422,7 +398,11 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
 
 
 @pytest.mark.parametrize("missing_parameter", ["file_type", "file_size", "download_link"])
-async def test_missing_file_param(client: TestClient, missing_parameter: str):
+async def test_missing_file_param(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    missing_parameter: str,
+):
     assert client.app
 
     query = {
@@ -443,3 +423,35 @@ async def test_missing_file_param(client: TestClient, missing_parameter: str):
 
     message, status_code = assert_error_in_fragment(response)
     assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got {message=}"
+
+
+@pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
+async def test_dispatch_study_anonymously_with_dispatcher_disabled(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+):
+    """
+    Test that accessing /view endpoint returns 404 when studies_dispatcher_enabled is False.
+
+    When the product has studies_dispatcher_enabled=False, the dispatcher feature
+    should be completely disabled, and accessing the /view endpoint should result
+    in a direct 404 response.
+    """
+    assert client.app
+
+    query = {
+        "file_type": "CSV",
+        "file_size": 1,
+        "viewer_key": "simcore/services/dynamic/raw-graphs",
+        "viewer_version": "2.11.1",
+        "download_link": urllib.parse.quote(
+            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
+        ),
+    }
+
+    redirect_url = client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
+    response = await client.get(f"{redirect_url}")
+
+    assert response.status == status.HTTP_404_NOT_FOUND, (
+        f"Expected 404 when studies_dispatcher_enabled=False, got {response.status}"
+    )

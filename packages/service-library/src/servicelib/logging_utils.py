@@ -484,7 +484,7 @@ def _log_after_call(
     )
 
 
-F = TypeVar("F", bound=Callable[..., Any])
+Func = TypeVar("Func", bound=Callable[..., Any])
 
 
 def log_decorator(
@@ -493,7 +493,7 @@ def log_decorator(
     *,
     exc_info: bool = True,
     exc_stack_info: bool = True,
-) -> Callable[[F], F]:
+) -> Callable[[Func], Func]:
     """Logs the decorated function:
     - *before* its called
         - input parameters
@@ -503,7 +503,7 @@ def log_decorator(
     """
     logger_obj = logger or _logger
 
-    def _decorator(func_or_coro: F) -> F:
+    def _decorator(func_or_coro: Func) -> Func:
         _log_exc_kwargs = LogExceptionsKwargsDict(
             logger=logger_obj,
             level=level,

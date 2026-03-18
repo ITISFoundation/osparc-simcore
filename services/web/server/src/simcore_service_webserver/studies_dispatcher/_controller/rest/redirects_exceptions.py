@@ -92,6 +92,10 @@ def handle_errors_with_error_page(handler: Handler):
         try:
             return await handler(request)
 
+        except web.HTTPNotFound:
+            # Pass through 404 to allow dispatcher-disabled responses
+            raise
+
         except (web.HTTPRedirection, web.HTTPSuccessful):
             # NOTE: that response is a redirection that is reraised and not returned
             raise
@@ -134,7 +138,8 @@ def handle_errors_with_error_page(handler: Handler):
                 request,
                 err,
                 message=user_message(
-                    "The link you provided is invalid because it doesn't contain valid information related to data or a service. "
+                    "The link you provided is invalid because it doesn't contain valid "
+                    "information related to data or a service. "
                     "Please check the link and make sure it is correct.",
                     _version=1,
                 ),

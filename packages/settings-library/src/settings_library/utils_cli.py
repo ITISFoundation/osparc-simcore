@@ -1,3 +1,6 @@
+"""ruff noqa: C901, FBT001, FBT002, FBT003"""
+
+# ruff: noqa: C901, FBT001, FBT002, FBT003
 import logging
 import os
 from collections.abc import Callable
@@ -45,19 +48,20 @@ def print_as_envfile(
             if compact:
                 value = json_dumps(
                     model_dump_with_secrets(value, show_secrets=show_secrets, **pydantic_export_options)
-                )  # flat
-            else:
-                if verbose:
-                    typer.echo(f"\n# --- {name} --- ")
-                print_as_envfile(
-                    value,
-                    compact=False,
-                    verbose=verbose,
-                    show_secrets=show_secrets,
-                    **pydantic_export_options,
-                )
+                )  # flat, wrap in single quotes so bash preserves double quotes
+                typer.echo(f"{name}='{value}'")
                 continue
-        elif show_secrets and hasattr(value, "get_secret_value"):
+            if verbose:
+                typer.echo(f"\n# --- {name} --- ")
+            print_as_envfile(
+                value,
+                compact=False,
+                verbose=verbose,
+                show_secrets=show_secrets,
+                **pydantic_export_options,
+            )
+            continue
+        if show_secrets and hasattr(value, "get_secret_value"):
             value = value.get_secret_value()
 
         if verbose and field.description:
@@ -66,7 +70,10 @@ def print_as_envfile(
             value = value.value
         elif isinstance(value, dict | list):
             # Serialize complex objects as JSON to ensure they can be parsed correctly
+            # Wrap in single quotes so bash preserves the double quotes when sourcing
             value = json_dumps(value)
+            typer.echo(f"{name}='{value}'")
+            continue
         typer.echo(f"{name}={value}")
 
 
@@ -170,7 +177,7 @@ def create_settings_command(
 
 
 def create_version_callback(application_version: str) -> Callable:
-    def _version_callback(value: bool):  # noqa: FBT001
+    def _version_callback(value: bool):
         if value:
             rich.print(application_version)
             raise typer.Exit

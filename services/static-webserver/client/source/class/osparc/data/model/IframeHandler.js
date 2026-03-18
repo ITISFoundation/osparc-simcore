@@ -89,6 +89,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __unresponsiveRetries: null,
     __stopRequestingStatus: null,
     __retriesLeft: null,
+    __nodeStateFallbackTimer: null,
 
     checkState: function() {
       this.getNode().getStatus().getProgressSequence()
@@ -96,9 +97,11 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
       this.__unresponsiveRetries = 5;
       this.__nodeState();
+      this.__startNodeStateFallbackPolling();
     },
 
     stopIframe: function() {
+      this.__stopNodeStateFallbackPolling();
       this.getNode().getStatus().getProgressSequence()
         .resetSequence();
 
@@ -168,6 +171,27 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       this.self().evalShowToolbar(lockedPage, this.getStudy());
       this.bind("node", lockedPage, "node");
       this.setLockedPage(lockedPage);
+    },
+
+    /**
+     * Safety net: periodically polls the backend for node state via REST.
+     * This covers cases where the backend fails to push state updates (e.g. the
+     * "running" notification is lost), which would otherwise leave the frontend
+     * stuck and never trigger __waitForServiceReady.
+     */
+    __startNodeStateFallbackPolling: function() {
+      this.__stopNodeStateFallbackPolling();
+      this.__nodeStateFallbackTimer = new qx.event.Timer(10000);
+      this.__nodeStateFallbackTimer.addListener("interval", () => this.__nodeState(), this);
+      this.__nodeStateFallbackTimer.start();
+    },
+
+    __stopNodeStateFallbackPolling: function() {
+      if (this.__nodeStateFallbackTimer) {
+        this.__nodeStateFallbackTimer.stop();
+        this.__nodeStateFallbackTimer.dispose();
+        this.__nodeStateFallbackTimer = null;
+      }
     },
 
     __nodeState: function() {
@@ -281,6 +305,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             srvUrl &&
             srvUrl !== node.getServiceUrl() // if it's already connected, do not restart the connection process
           ) {
+            this.__stopNodeStateFallbackPolling();
             this.__statusInteractiveChanged("connecting", node.getStatus().getInteractive());
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
@@ -378,6 +403,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       }
 
       if (status === "ready") {
+        this.__stopNodeStateFallbackPolling();
         const msg = `Service ${node.getLabel()} ${status}`;
         const msgData = {
           nodeId: node.getNodeId(),
@@ -392,6 +418,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           node.callRetrieveInputs();
         }
       } else if (["idle", "failed", "stopping"].includes(status) && oldStatus) {
+        this.__stopNodeStateFallbackPolling();
         const msg = `Service ${node.getLabel()} ${status}`;
         const msgData = {
           nodeId: node.getNodeId(),

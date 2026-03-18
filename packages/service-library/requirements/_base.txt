@@ -58,9 +58,9 @@ dnspython==2.8.0
     # via email-validator
 email-validator==2.3.0
     # via pydantic
-fast-depends==2.4.12
+fast-depends==3.0.8
     # via faststream
-faststream==0.5.48
+faststream==0.6.7
     # via -r requirements/_base.in
 frozenlist==1.7.0
     # via
@@ -114,7 +114,7 @@ multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.37.0
+opentelemetry-api==1.40.0
     # via
     #   -r requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -128,17 +128,17 @@ opentelemetry-api==1.37.0
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.37.0
+opentelemetry-exporter-otlp==1.40.0
     # via -r requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.37.0
+opentelemetry-exporter-otlp-proto-common==1.40.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.37.0
+opentelemetry-exporter-otlp-proto-grpc==1.40.0
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.37.0
+opentelemetry-exporter-otlp-proto-http==1.40.0
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.58b0
+opentelemetry-instrumentation==0.61b0
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asyncpg
@@ -146,29 +146,29 @@ opentelemetry-instrumentation==0.58b0
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-aio-pika==0.58b0
+opentelemetry-instrumentation-aio-pika==0.61b0
     # via -r requirements/_base.in
-opentelemetry-instrumentation-asyncpg==0.58b0
+opentelemetry-instrumentation-asyncpg==0.61b0
     # via -r requirements/_base.in
-opentelemetry-instrumentation-httpx==0.58b0
+opentelemetry-instrumentation-httpx==0.61b0
     # via -r requirements/_base.in
-opentelemetry-instrumentation-logging==0.58b0
+opentelemetry-instrumentation-logging==0.61b0
     # via -r requirements/_base.in
-opentelemetry-instrumentation-redis==0.58b0
+opentelemetry-instrumentation-redis==0.61b0
     # via -r requirements/_base.in
-opentelemetry-instrumentation-requests==0.58b0
+opentelemetry-instrumentation-requests==0.61b0
     # via -r requirements/_base.in
-opentelemetry-proto==1.37.0
+opentelemetry-proto==1.40.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.37.0
+opentelemetry-sdk==1.40.0
     # via
     #   -r requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.58b0
+opentelemetry-semantic-conventions==0.61b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asyncpg
@@ -176,7 +176,7 @@ opentelemetry-semantic-conventions==0.58b0
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.58b0
+opentelemetry-util-http==0.61b0
     # via
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
@@ -316,6 +316,7 @@ types-python-dateutil==2.9.0.20250822
 typing-extensions==4.15.0
     # via
     #   aiodebug
+    #   fast-depends
     #   faststream
     #   grpcio
     #   opentelemetry-api
