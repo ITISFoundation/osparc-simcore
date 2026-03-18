@@ -7,12 +7,12 @@ import pydantic
 import pytest
 from common_library.json_serialization import json_dumps
 from faker import Faker
-from pydantic import StringConstraints, TypeAdapter
-from servicelib.celery.models import (
+from models_library.celery import (
     OwnerMetadata,
     TaskUUID,
     Wildcard,
 )
+from pydantic import StringConstraints, TypeAdapter
 
 _faker = Faker()
 

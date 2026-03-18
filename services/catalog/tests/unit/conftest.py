@@ -7,6 +7,7 @@
 
 
 import hashlib
+import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -17,7 +18,6 @@ import pytest
 import respx
 import simcore_service_catalog
 import simcore_service_catalog.core.events
-import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -290,9 +290,9 @@ def director_rest_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
     openapi_path = (
-        osparc_simcore_services_dir / "director" / "src" / "simcore_service_director" / "api" / "v0" / "openapi.yaml"
+        osparc_simcore_services_dir / "director" / "src" / "simcore_service_director" / "api" / "v0" / "openapi.json"
     )
-    return yaml.safe_load(openapi_path.read_text())
+    return json.loads(openapi_path.read_text())
 
 
 @pytest.fixture
@@ -372,7 +372,7 @@ def mocked_director_rest_api_base(
 
     # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
     openapi = director_rest_openapi_specs
-    assert Version(openapi["info"]["version"]) == Version("0.1.0")
+    assert Version(openapi["info"]["version"]) == Version("1.0.0")
 
     with respx.mock(
         base_url=app_settings.CATALOG_DIRECTOR.base_url,  # NOTE: it include v0/
@@ -387,8 +387,8 @@ def mocked_director_rest_api_base(
                 "data": {
                     "name": "simcore-service-director",
                     "status": "SERVICE_RUNNING",
-                    "api_version": "0.1.0",
-                    "version": "0.1.0",
+                    "api_version": "1.0.0",
+                    "version": "1.0.0",
                 }
             },
         )
@@ -400,20 +400,37 @@ def mocked_director_rest_api_base(
 def get_mocked_service_labels() -> Callable[[str, str], dict]:
     def _(service_key: str, service_version: str, *, include_org_labels: bool = True) -> dict:
         base_labels = {
-            "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
+            "io.simcore.authors": (
+                '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}'
+            ),
             "io.simcore.contact": '{"contact": "john@acme.com"}',
             "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
-            "io.simcore.inputs": '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", "description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": {"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}',
+            "io.simcore.inputs": (
+                '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", '
+                '"description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": '
+                '{"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}'
+            ),
             "io.simcore.integration-version": '{"integration-version": "1.0.0"}',
             "io.simcore.key": '{"key": "xxxxx"}'.replace("xxxxx", service_key),
             "io.simcore.name": '{"name": "Autonomous Nervous System Network model"}',
-            "io.simcore.outputs": '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", "description": "Output of simulation of Autonomous Nervous System Network model", "type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": {"displayOrder": 2.0, "label": "Stimulation parameters", "description": "stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", "fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}',
+            "io.simcore.outputs": (
+                '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", '
+                '"description": "Output of simulation of Autonomous Nervous System Network model", '
+                '"type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": '
+                '{"displayOrder": 2.0, "label": "Stimulation parameters", "description": '
+                '"stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", '
+                '"fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}'
+            ),
             "io.simcore.thumbnail": '{"thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png"}',
             "io.simcore.type": '{"type": "computational"}',
             "io.simcore.version": '{"version": "xxxxx"}'.replace("xxxxx", service_version),
             "maintainer": "johnsmith",
             "simcore.service.restart-policy": "no-restart",
-            "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000, "MemoryBytes": 4194304}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
+            "simcore.service.settings": (
+                '[{"name": "Resources", "type": "Resources", "value": '
+                '{"Limits": {"NanoCPUs": 1000000000, "MemoryBytes": 4194304}, "Reservations": '
+                '{"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]'
+            ),
         }
 
         if include_org_labels:
@@ -472,14 +489,14 @@ def mocked_director_rest_api(
             return None
 
     # LIST
-    assert openapi["paths"].get("/services")
+    assert openapi["paths"].get("/v0/services")
 
     respx_mock.get(path__regex=r"/services$", name="list_services").respond(
         status.HTTP_200_OK, json={"data": expected_director_rest_api_list_services}
     )
 
     # GET
-    assert openapi["paths"].get("/services/{service_key}/{service_version}")
+    assert openapi["paths"].get("/v0/services/{service_key}/{service_version}")
 
     @respx_mock.get(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
@@ -501,7 +518,7 @@ def mocked_director_rest_api(
         )
 
     # GET LABELS
-    assert openapi["paths"].get("/services/{service_key}/{service_version}/labels")
+    assert openapi["paths"].get("/v0/services/{service_key}/{service_version}/labels")
 
     @respx_mock.get(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",

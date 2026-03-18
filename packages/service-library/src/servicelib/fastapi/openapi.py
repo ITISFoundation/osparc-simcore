@@ -88,20 +88,10 @@ def _patch_node_properties(key: str, node: dict):
 
     # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
     if node_type := node.get("type"):
-        # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
-        if key == "exclusiveMinimum":
-            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
-            node["minimum"] = cast_to_python(node[key])
-            node["exclusiveMinimum"] = True
-
-        elif key == "exclusiveMaximum":
-            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
-            node["maximum"] = cast_to_python(node[key])
-            node["exclusiveMaximum"] = True
-
-        elif key in ("minimum", "maximum"):
+        if key in ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"):
             # NOTE: Security Audit Report:
-            #   The property in question requires a value of the type integer, but the value you have defined does not match this.
+            #   The property in question requires a value of the type integer,
+            #   but the value you have defined does not match this.
             #   SEE https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#dataTypeFormat
             cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
             node[key] = cast_to_python(node[key])

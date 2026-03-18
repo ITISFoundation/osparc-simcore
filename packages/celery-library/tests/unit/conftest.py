@@ -1,6 +1,6 @@
 import pytest
+from models_library.celery import OwnerMetadata
 from models_library.users import UserID
-from servicelib.celery.models import OwnerMetadata
 
 
 class MyOwnerMetadata(OwnerMetadata):

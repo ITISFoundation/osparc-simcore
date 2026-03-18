@@ -15,10 +15,10 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
+from models_library.celery import TaskState, TaskUUID
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
 
 from ...exceptions.backend_errors import CeleryTaskNotFoundError

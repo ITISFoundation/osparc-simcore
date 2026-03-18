@@ -8,6 +8,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
+from models_library.celery import OwnerMetadata
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     get_long_running_manager,
@@ -19,7 +20,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import (
     create_data_response,
 )
-from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
 
 from ..._meta import API_VTAG

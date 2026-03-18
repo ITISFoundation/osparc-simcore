@@ -9,9 +9,7 @@ from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from celery.result import GroupResult  # type: ignore[import-untyped]
 from celery.utils.time import rate as celery_rate  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
-from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter
-from servicelib.celery.models import (
+from models_library.celery import (
     TASK_DONE_STATES,
     ExecutorType,
     GroupExecutionMetadata,
@@ -29,6 +27,8 @@ from servicelib.celery.models import (
     TaskStreamItem,
     TaskUUID,
 )
+from models_library.progress_bar import ProgressReport
+from pydantic import TypeAdapter
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings

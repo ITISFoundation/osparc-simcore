@@ -36,6 +36,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
@@ -54,7 +55,6 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
