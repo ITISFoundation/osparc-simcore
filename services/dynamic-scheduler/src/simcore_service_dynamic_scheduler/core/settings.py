@@ -117,45 +117,45 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
 
 class PSchedulerSettings(BaseCustomSettings):
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_PERIODIC_CHECKS_INTERVAL: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_RECONCILIATION_MANAGER_PERIODIC_CHECKS_INTERVAL: Annotated[
         datetime.timedelta,
         Field(description=("interval at which to check if a reconciliation is required")),
     ] = datetime.timedelta(seconds=30)
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_RECONCILIATION_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION: Annotated[
         datetime.timedelta,
         Field(description=("Used to compute consumer count")),
     ] = datetime.timedelta(microseconds=200)
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_QUEUE_MAX_BURST: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_RECONCILIATION_MANAGER_QUEUE_MAX_BURST: Annotated[
         NonNegativeInt,
         Field(description=("Also used to compute consumer count")),
     ] = 20
 
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_CHECK_FOR_STEPS_INTERVAL: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_CHECK_FOR_STEPS_INTERVAL: Annotated[
         datetime.timedelta,
         Field(description=("Interval for checking for steps in the worker manager")),
     ] = datetime.timedelta(seconds=30)
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_HEARTBEAT_INTERVAL: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_HEARTBEAT_INTERVAL: Annotated[
         datetime.timedelta,
         Field(description=("Interval at which workers send heartbeats")),
     ] = datetime.timedelta(seconds=10)
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION: Annotated[
         datetime.timedelta,
         Field(description=("Used to compute the consumer count")),
     ] = datetime.timedelta(seconds=10)
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_QUEUE_MAX_BURST: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_QUEUE_MAX_BURST: Annotated[
         NonNegativeInt,
         Field(description=("Also used to compute the consumer count")),
     ] = 100
 
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_STATUS_TTL: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_STATUS_MANAGER_STATUS_TTL: Annotated[
         datetime.timedelta,
         Field(description=("Time-to-live for statuses in the status manager")),
     ] = datetime.timedelta(seconds=10)
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_UPDATE_STATUSES_INTERVAL: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_STATUS_MANAGER_UPDATE_STATUSES_INTERVAL: Annotated[
         datetime.timedelta,
         Field(description=("Controls how often the status manager updates the statuses of the steps and services")),
     ] = datetime.timedelta(seconds=5)
-    DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_MAX_PARALLEL_UPDATES: Annotated[
+    DYNAMIC_SCHEDULER_P_SCHEDULER_STATUS_MANAGER_MAX_PARALLEL_UPDATES: Annotated[
         NonNegativeInt,
         Field(description=("Maximum number of parallel status updates in the status manager")),
     ] = 10

@@ -27,23 +27,23 @@ async def p_scheduler_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     reconciliaiton_manager = ReconciliationManager(
         app,
-        periodic_checks_interval=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_PERIODIC_CHECKS_INTERVAL,
-        queue_consumer_expected_runtime_duration=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION,
-        queue_max_burst=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_QUEUE_MAX_BURST,
+        periodic_checks_interval=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_RECONCILIATION_MANAGER_PERIODIC_CHECKS_INTERVAL,
+        queue_consumer_expected_runtime_duration=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_RECONCILIATION_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION,
+        queue_max_burst=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_RECONCILIATION_MANAGER_QUEUE_MAX_BURST,
     )
     worker_manager = WorkerManager(
         app,
-        check_for_steps_interval=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_CHECK_FOR_STEPS_INTERVAL,
-        heartbeat_interval=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_HEARTBEAT_INTERVAL,
-        queue_consumer_expected_runtime_duration=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION,
-        queue_max_burst=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_QUEUE_MAX_BURST,
+        check_for_steps_interval=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_CHECK_FOR_STEPS_INTERVAL,
+        heartbeat_interval=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_HEARTBEAT_INTERVAL,
+        queue_consumer_expected_runtime_duration=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION,
+        queue_max_burst=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_WORKER_MANAGER_QUEUE_MAX_BURST,
     )
 
     status_manager = StatusManager(
         app,
-        status_ttl=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_STATUS_TTL,
-        update_statuses_interval=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_UPDATE_STATUSES_INTERVAL,
-        max_parallel_updates=settings.DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_MAX_PARALLEL_UPDATES,
+        status_ttl=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_STATUS_MANAGER_STATUS_TTL,
+        update_statuses_interval=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_STATUS_MANAGER_UPDATE_STATUSES_INTERVAL,
+        max_parallel_updates=settings.DYNAMIC_SCHEDULER_P_SCHEDULER_STATUS_MANAGER_MAX_PARALLEL_UPDATES,
     )
 
     notifications_manager = NotificationsManager(app)
