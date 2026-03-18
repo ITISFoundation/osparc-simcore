@@ -10,31 +10,21 @@ class EmailContact(BaseModel):
     email: EmailStr
 
 
-class EmailMessageContent(BaseModel):
+class EmailContent(BaseModel):
     subject: Annotated[str, Field(min_length=1, max_length=998)]
     body_html: str | None = None
     body_text: str | None = None
 
 
-class Message(BaseModel):
-    channel: Channel
-
-
-class EmailEnvelope(Message):
-    channel: Channel = Channel.email
+class EmailEnvelope:
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
 
 
 class EmailMessage(EmailEnvelope):
     channel: Channel = Channel.email
-    content: EmailMessageContent
+    content: EmailContent
 
 
-# Union of all channel-specific envelope types.
-# Extend this as new channels are added (e.g. SmsEnvelope | ...).
 type Envelope = EmailEnvelope
-
-# Union of all channel-specific message types (envelope + content).
-# Extend this as new channels are added (e.g. EmailMessage | SmsMessage | ...).
 type Message = EmailMessage
