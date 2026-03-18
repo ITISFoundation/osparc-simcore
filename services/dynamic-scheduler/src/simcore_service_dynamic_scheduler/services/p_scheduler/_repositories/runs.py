@@ -1,5 +1,3 @@
-from typing import Final
-
 import sqlalchemy as sa
 import sqlalchemy.exc
 from models_library.projects_nodes_io import NodeID
@@ -10,9 +8,6 @@ from sqlalchemy.engine.row import Row
 from ...base_repository import BaseRepository
 from .._errors import RunAlreadyExistsError
 from .._models import Run, RunId, WorkflowName
-
-_START_WORKFLOW: Final[WorkflowName] = "START"
-_STOP_WORKFLOW: Final[WorkflowName] = "STOP"
 
 
 def _row_to_run(row: Row) -> Run:
@@ -62,13 +57,13 @@ class RunsRepository(BaseRepository):
             row = result.one()
         return _row_to_run(row)
 
-    async def create_from_start_request(self, node_id: NodeID) -> Run:
+    async def create_from_start_request(self, node_id: NodeID, workflow_name: WorkflowName) -> Run:
         """raises RunAlreadyExistsError"""
-        return await self._create_run(node_id=node_id, workflow_name=_START_WORKFLOW, is_reverting=False)
+        return await self._create_run(node_id=node_id, workflow_name=workflow_name, is_reverting=False)
 
-    async def create_from_stop_request(self, node_id: NodeID) -> Run:
+    async def create_from_stop_request(self, node_id: NodeID, workflow_name: WorkflowName) -> Run:
         """raises RunAlreadyExistsError"""
-        return await self._create_run(node_id=node_id, workflow_name=_STOP_WORKFLOW, is_reverting=True)
+        return await self._create_run(node_id=node_id, workflow_name=workflow_name, is_reverting=True)
 
     async def cancel_run(self, run_id: RunId) -> None:
         # NOTE: does not raise if run_id does not exist
