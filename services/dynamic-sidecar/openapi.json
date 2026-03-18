@@ -917,8 +917,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": true,
-                "minimum": 0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -1340,10 +1339,9 @@
         "properties": {
           "minHeight": {
             "type": "integer",
-            "exclusiveMinimum": true,
+            "exclusiveMinimum": 0,
             "title": "Minheight",
-            "description": "minimum Height of the textarea",
-            "minimum": 0
+            "description": "minimum Height of the textarea"
           }
         },
         "additionalProperties": false,

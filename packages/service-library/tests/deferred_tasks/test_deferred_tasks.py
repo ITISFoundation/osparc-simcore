@@ -10,7 +10,7 @@ import sys
 from collections.abc import AsyncIterable, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, AsyncExitStack, suppress
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import psutil
 import pytest
@@ -97,7 +97,7 @@ async def _tcp_command(
     host: str = "localhost",
     port: int,
     read_chunk_size: int = 10000,
-    timeout: NonNegativeFloat = 10,
+    timeout: NonNegativeFloat = 10,  # noqa: ASYNC109
 ) -> Any:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -136,7 +136,7 @@ class _RemoteProcessLifecycleManager:
         self.redis_service = redis_service
         self.max_workers = max_workers
 
-    async def __aenter__(self) -> "_RemoteProcessLifecycleManager":
+    async def __aenter__(self) -> Self:
         await self.start()
         return self
 
@@ -198,7 +198,7 @@ async def _assert_has_entries(
     list_name: str,
     *,
     count: NonNegativeInt,
-    timeout: float = 10,
+    timeout: float = 10,  # noqa: ASYNC109
     all_managers_have_some_entries: bool = False,
 ) -> None:
     async for attempt in AsyncRetrying(
@@ -305,7 +305,11 @@ async def test_workflow_with_outages_in_process_running_deferred_manager(
             managers,
             "get-results",
             count=deferred_tasks_to_start,
-            all_managers_have_some_entries=True,
+            # NOTE: with proper message acknowledgement (AckPolicy.NACK_ON_ERROR),
+            # when a process is stopped, its unacked messages are requeued to other
+            # processes. A restarted manager may have zero results if all tasks were
+            # already processed by other running managers.
+            all_managers_have_some_entries=remote_processes == 1,
         )
 
 
