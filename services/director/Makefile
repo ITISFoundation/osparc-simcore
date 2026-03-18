@@ -5,7 +5,7 @@ include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
 .PHONY: openapi-specs
-openapi-specs: .env ## generates openapi specs file under src/simcore_service_director/api/vX/openapi.yaml
+openapi-specs: .env ## generates openapi specs file under src/simcore_service_director/api/vX/openapi.json
 	# generating openapi specs file (need to have the environment set for this)
 	@set -o allexport; \
 	source .env; \
