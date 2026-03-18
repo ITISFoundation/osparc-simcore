@@ -107,6 +107,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   events: {
     "filterChanged": "qx.event.type.Data",
+    "changeAppType": "qx.event.type.Data",
     "resetButtonPressed": "qx.event.type.Event",
   },
 
@@ -166,6 +167,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.getChildControl("active-filters");
       this.getChildControl("text-field");
       this.getChildControl("reset-button");
+    },
+
+    filterChanged: function(filterData) {
+      console.log("Filter changed: ", filterData);
     },
 
     __buildFiltersMenu: function() {
@@ -308,7 +313,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           alignX: "center",
         });
         serviceTypeMenu.add(serviceTypeButton);
-        serviceTypeButton.addListener("execute", () => this.__addChip("app-type", serviceId, serviceType.label), this);
+        serviceTypeButton.addListener("execute", () => this.fireDataEvent("changeAppType", {
+          appType: serviceId,
+          label: serviceType.label
+        }), this);
       });
 
       // hypertools filter
@@ -320,7 +328,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         });
       osparc.utils.Utils.replaceIconWithThumbnail(hypertoolTypeButton, osparc.data.model.StudyUI.HYPERTOOL_ICON, 18);
       serviceTypeMenu.add(hypertoolTypeButton);
-      hypertoolTypeButton.addListener("execute", () => this.__addChip("app-type", "hypertool", "Hypertools"), this);
+      hypertoolTypeButton.addListener("execute", () => this.fireDataEvent("changeAppType", {
+        appType: "hypertool",
+        label: "Hypertools"
+      }), this);
     },
 
     addTagActiveFilter: function(tag) {

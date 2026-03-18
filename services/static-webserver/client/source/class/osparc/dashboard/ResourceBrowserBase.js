@@ -86,6 +86,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       event: "changeMultiSelection",
       apply: "_applyMultiSelection"
     },
+
+    activeFilters: {
+      check: "Object",
+      init: null,
+      nullable: true,
+      event: "changeActiveFilters",
+    },
   },
 
   events: {
@@ -294,6 +301,20 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
 
+      this._searchBarFilter.addListener("changeAppType", e => {
+        const appData = e.getData();
+        if (appData) {
+          this.__addFilter("appType", appData.appType, appData.label);
+        } else {
+          this.__removeFilter("appType");
+        }
+      }, this);
+
+      this.addListener("changeActiveFilters", e => {
+        const activeFilters = e.getData();
+        this._searchBarFilter.filterChanged(activeFilters);
+      });
+
       this._addToLayout(searchBarFilter);
     },
 
@@ -486,9 +507,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         // this._searchBarFilter.setAppTypeActiveFilter(appType.appType, appType.label);
       }, this);
 
+      /*
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
         resourceFilter.filterChanged(filterData);
+      });
+      */
+
+      this.addListener("changeActiveFilters", e => {
+        const activeFilters = e.getData();
+        resourceFilter.filterChanged(activeFilters);
       });
 
       this._leftFilters.add(resourceFilter, {
@@ -497,22 +525,24 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     __addFilter: function(filterName, filterId, filterLabel) {
+      // clone the active filters to trigger the change event
+      const activeFilters = osparc.utils.Utils.deepCloneObject(this.getActiveFilters() || {});
       if (filterName && filterId) {
-        const activeFilters = this.getActiveFilters() || {};
         activeFilters[filterName] = {
           id: filterId,
           label: filterLabel
         };
-        this.setActiveFilters(activeFilters);
       }
+      this.setActiveFilters(activeFilters);
     },
 
     __removeFilter: function(filterName) {
-      const activeFilters = this.getActiveFilters() || {};
+      // clone the active filters to trigger the change event
+      const activeFilters = osparc.utils.Utils.deepCloneObject(this.getActiveFilters() || {});
       if (filterName in activeFilters) {
         delete activeFilters[filterName];
-        this.setActiveFilters(activeFilters);
       }
+      this.setActiveFilters(activeFilters);
     },
 
     /**

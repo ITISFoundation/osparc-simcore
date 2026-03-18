@@ -513,22 +513,29 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     /* /SERVICE TYPE */
 
     filterChanged: function(filterData) {
-      if ("sharedWith" in filterData) {
-        const foundBtn = this.__sharedWithButtons.find(btn => btn.id === filterData["sharedWith"]);
-        if (foundBtn) {
-          foundBtn.setValue(true);
-        }
-      }
-      if ("tags" in filterData) {
-        this.__tagButtons.forEach(btn => {
-          btn.setValue(filterData["tags"].includes(btn.id));
-        });
-      }
-      if ("appType" in filterData) {
-        this.__appTypeButtons.forEach(btn => {
-          btn.setValue(filterData["appType"] === btn.appType);
-        });
-      }
+      console.log("Filter changed: ", filterData);
+      this.__sharedWithButtons.forEach(btn => {
+        btn.setValue(
+          filterData &&
+          filterData["sharedWith"] &&
+          filterData["sharedWith"] === btn.id
+        );
+      });
+      this.__tagButtons.forEach(btn => {
+        btn.setValue(
+          filterData &&
+          filterData["tags"] &&
+          filterData["tags"].includes(btn.id)
+        );
+      });
+      this.__appTypeButtons.forEach(btn => {
+        btn.setValue(
+          filterData &&
+          filterData["appType"] &&
+          filterData["appType"]["id"] &&
+          filterData["appType"]["id"] === btn.appType
+        );
+      });
     }
   }
 });
