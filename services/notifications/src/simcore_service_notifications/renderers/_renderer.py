@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ..models.preview import TemplatePreview
-from ..models.template import Template
+from ..models.content import Content
+from ..models.template import Template, TemplatePreview
 
 
 class Renderer(ABC):
@@ -11,4 +11,4 @@ class Renderer(ABC):
         self,
         template: Template,
         context: dict[str, Any],
-    ) -> TemplatePreview: ...
+    ) -> TemplatePreview[Content]: ...

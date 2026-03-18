@@ -12,11 +12,11 @@ from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.celery import OwnerMetadata
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
 from pytest_mock import MockType
-from servicelib.celery.models import OwnerMetadata
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
