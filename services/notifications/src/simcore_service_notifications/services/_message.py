@@ -8,9 +8,7 @@ from models_library.celery import (
     TaskName,
     TaskUUID,
 )
-from models_library.notifications import ChannelType
-from models_library.notifications.errors import NotificationsUnsupportedChannelError
-from pydantic import TypeAdapter
+from models_library.notifications import EmailEnvelope, EmailMessage
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
     submit_send_messages_task,
@@ -27,21 +25,13 @@ _logger = logging.getLogger(__name__)
 _OWNER_METADATA = OwnerMetadata(owner=APP_NAME)
 
 
-def _validate_and_prepare_messages(message: dict[str, Any]) -> list[dict[str, Any]]:
-    """Validates incoming message and returns channel-specific celery payloads.
+def _prepare_celery_messages(message: EmailMessage) -> list[dict[str, Any]]:
+    """Dispatches to channel handler to fan out into per-recipient celery payloads.
 
     Raises:
         NotificationsUnsupportedChannelError: If the channel is not supported.
-        pydantic.ValidationError: If the message does not conform to the channel model.
     """
-    raw_channel = message.get("channel")
-
-    try:
-        channel = TypeAdapter(ChannelType).validate_python(raw_channel)
-    except ValueError as exc:
-        raise NotificationsUnsupportedChannelError(channel=raw_channel) from exc
-
-    handler = for_channel(channel)
+    handler = for_channel(message.channel)
     return handler.prepare_messages(message)
 
 
@@ -53,11 +43,11 @@ class MessageService:
     async def send_message(
         self,
         *,
-        message: dict[str, Any],
+        message: EmailMessage,
         owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         resolved_owner = owner_metadata or _OWNER_METADATA
-        messages = _validate_and_prepare_messages(message)
+        messages = _prepare_celery_messages(message)
 
         if len(messages) == 1:
             task_uuid, task_name = await submit_send_message_task(
@@ -77,17 +67,18 @@ class MessageService:
     async def send_message_from_template(
         self,
         *,
-        envelope: dict[str, Any],
+        envelope: EmailEnvelope,
         ref: TemplateRef,
         context: dict[str, Any],
         owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         preview = self.template_service.preview_template(ref=ref, context=context)
-        message = {
-            "channel": ref.channel,
-            **envelope,
-            "content": preview.message_content.model_dump(),
-        }
+        message = EmailMessage(
+            channel=ref.channel,
+            from_=envelope.from_,
+            to=envelope.to,
+            content=preview.message_content.model_dump(),
+        )
         return await self.send_message(
             message=message,
             owner_metadata=owner_metadata,

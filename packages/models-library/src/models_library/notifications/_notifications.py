@@ -38,10 +38,14 @@ class NotificationsMessage(BaseModel):
     channel: ChannelType
 
 
-class EmailMessage(NotificationsMessage):
+class EmailEnvelope(NotificationsMessage):
     channel: ChannelType = ChannelType.email
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
+
+
+class EmailMessage(EmailEnvelope):
+    channel: ChannelType = ChannelType.email
     content: EmailMessageContent
 
 

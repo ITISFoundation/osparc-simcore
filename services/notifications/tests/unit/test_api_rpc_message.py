@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.celery import OwnerMetadata
-from models_library.notifications import ChannelType, EmailMessage
+from models_library.notifications import ChannelType, EmailEnvelope, EmailMessage
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -27,7 +27,7 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def single_recipient_email_message(faker: Faker) -> dict:
+def single_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
         **{
             "from": {"name": "Sender", "email": faker.email()},
@@ -38,11 +38,11 @@ def single_recipient_email_message(faker: Faker) -> dict:
                 "body_html": "<p>Test body html</p>",
             },
         }
-    ).model_dump(by_alias=True)
+    )
 
 
 @pytest.fixture
-def multi_recipient_email_message(faker: Faker) -> dict:
+def multi_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
         **{
             "from": {"name": "Sender", "email": faker.email()},
@@ -55,31 +55,35 @@ def multi_recipient_email_message(faker: Faker) -> dict:
                 "body_text": "Test body text",
             },
         }
-    ).model_dump(by_alias=True)
+    )
 
 
 @pytest.fixture
-def email_envelope_single_recipient(faker: Faker) -> dict[str, Any]:
-    return {
-        "from": {"name": "Sender", "email": faker.email()},
-        "to": [{"name": "Recipient", "email": faker.email()}],
-    }
+def email_envelope_single_recipient(faker: Faker) -> EmailEnvelope:
+    return EmailEnvelope(
+        **{
+            "from": {"name": "Sender", "email": faker.email()},
+            "to": [{"name": "Recipient", "email": faker.email()}],
+        }
+    )
 
 
 @pytest.fixture
-def email_envelope_multiple_recipients(faker: Faker) -> dict[str, Any]:
-    return {
-        "from": {"name": "Sender", "email": faker.email()},
-        "to": [
-            {"name": "First Recipient", "email": faker.email()},
-            {"name": "Second Recipient", "email": faker.email()},
-        ],
-    }
+def email_envelope_multiple_recipients(faker: Faker) -> EmailEnvelope:
+    return EmailEnvelope(
+        **{
+            "from": {"name": "Sender", "email": faker.email()},
+            "to": [
+                {"name": "First Recipient", "email": faker.email()},
+                {"name": "Second Recipient", "email": faker.email()},
+            ],
+        }
+    )
 
 
 async def test_send_message_single_recipient(
     rpc_client: RabbitMQRPCClient,
-    single_recipient_email_message: dict,
+    single_recipient_email_message: EmailMessage,
 ):
     response = await send_message(
         rpc_client,
@@ -92,7 +96,7 @@ async def test_send_message_single_recipient(
 
 async def test_send_message_with_owner_metadata(
     rpc_client: RabbitMQRPCClient,
-    single_recipient_email_message: dict,
+    single_recipient_email_message: EmailMessage,
     mocker: MockerFixture,
 ):
     owner_metadata = OwnerMetadata.model_validate(
@@ -127,7 +131,7 @@ async def test_send_message_with_owner_metadata(
 
 async def test_send_message_multiple_recipients(
     rpc_client: RabbitMQRPCClient,
-    multi_recipient_email_message: dict,
+    multi_recipient_email_message: EmailMessage,
 ):
     response = await send_message(
         rpc_client,
@@ -141,7 +145,7 @@ async def test_send_message_multiple_recipients(
 async def test_send_message_from_template_with_empty_template(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
-    email_envelope_single_recipient: dict[str, Any],
+    email_envelope_single_recipient: EmailEnvelope,
 ):
     ref = TemplateRef(channel=ChannelType.email, template_name="empty")
     context = {
@@ -164,7 +168,7 @@ async def test_send_message_from_template_with_empty_template(
 async def test_send_message_from_template_with_multiple_recipients(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
-    email_envelope_multiple_recipients: dict[str, Any],
+    email_envelope_multiple_recipients: EmailEnvelope,
 ):
     ref = TemplateRef(channel=ChannelType.email, template_name="empty")
     context = {
@@ -186,7 +190,7 @@ async def test_send_message_from_template_with_multiple_recipients(
 
 async def test_send_message_from_template_not_found(
     rpc_client: RabbitMQRPCClient,
-    email_envelope_single_recipient: dict[str, Any],
+    email_envelope_single_recipient: EmailEnvelope,
 ):
     ref = TemplateRef(channel=ChannelType.email, template_name="non_existent_template")
     context = {}
@@ -203,7 +207,7 @@ async def test_send_message_from_template_not_found(
 async def test_send_message_from_template_invalid_context(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
-    email_envelope_single_recipient: dict[str, Any],
+    email_envelope_single_recipient: EmailEnvelope,
 ):
     ref = TemplateRef(channel=ChannelType.email, template_name="account_approved")
     # Missing required fields 'user' and 'link'

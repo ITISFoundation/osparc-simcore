@@ -77,7 +77,7 @@ class EmailMessage(BaseModel):
     channel: ChannelType = ChannelType.email
 
     from_: Annotated[EmailContact, Field(alias="from")]
-    to: EmailContact
+    to: list[EmailContact]
     reply_to: EmailContact | None = None
     bcc: EmailContact | None = None
 

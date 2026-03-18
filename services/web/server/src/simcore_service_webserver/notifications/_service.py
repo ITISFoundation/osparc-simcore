@@ -3,9 +3,17 @@ from typing import Any
 
 from aiohttp import web
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
-from models_library.celery import GroupUUID, OwnerMetadata, TaskName, TaskUUID
+from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
-from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
+from models_library.notifications import (
+    ChannelType,
+    Template,
+    TemplatePreview,
+    TemplateRef,
+)
+from models_library.notifications import (
+    EmailMessage as NotificationsEmailMessage,
+)
 from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
@@ -27,7 +35,7 @@ from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent
+from ._models import Contact, EmailContact, EmailContent, EmailMessage
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -64,7 +72,7 @@ async def _create_email_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
-) -> dict[str, Any]:
+) -> EmailMessage:
     """Build a single email message dict with all recipients.
 
     Returns a dict matching models_library.notifications.EmailMessage shape
@@ -96,12 +104,12 @@ async def _create_email_message(
 
     email_content = EmailContent(**content)
 
-    return {
-        "channel": ChannelType.email,
-        "from": from_contact.model_dump(),
-        "to": [c.model_dump() for c in to_contacts],
-        "content": email_content.model_dump(),
-    }
+    return EmailMessage(
+        channel=ChannelType.email,
+        from_=from_contact,
+        to=to_contacts,
+        content=email_content,
+    )
 
 
 async def preview_template(
@@ -161,17 +169,13 @@ async def send_message(
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
-    owner_metadata = OwnerMetadata.model_validate(
-        WebServerOwnerMetadata(
-            user_id=user_id,
-            product_name=product_name,
-        ).model_dump()
-    )
-
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
-        message=message,
-        owner_metadata=owner_metadata,
+        message=NotificationsEmailMessage.model_validate(message.model_dump(by_alias=True)),
+        owner_metadata=WebServerOwnerMetadata(
+            user_id=user_id,
+            product_name=product_name,
+        ),
     )
 
     return response.task_or_group_uuid, response.task_name
