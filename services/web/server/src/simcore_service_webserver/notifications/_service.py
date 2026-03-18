@@ -177,7 +177,7 @@ async def send_message(
 
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
-        message=TypeAdapter(RpcMessage).validate_python(message),
+        message=TypeAdapter(RpcMessage).validate_python(message.model_dump()),
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,
