@@ -136,6 +136,11 @@ qx.Class.define("osparc.po.EmailEditor", {
       }, this);
     },
 
+    clearRecipients: function() {
+      this.__selectedGroupIds = [];
+      this.__updateRecipientsChips();
+    },
+
     __updateRecipientsChips: function() {
       const chipsContainer = this.getChildControl("recipients-chips");
       chipsContainer.removeAll();

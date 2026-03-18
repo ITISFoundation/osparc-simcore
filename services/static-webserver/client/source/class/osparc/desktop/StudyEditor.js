@@ -246,9 +246,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.initStudy();
 
-      if (osparc.product.Utils.hasIdlingTrackerEnabled()) {
-        this.__startIdlingTracker();
-      }
+      this.__startIdlingTracker();
 
       // Count dynamic services.
       // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
