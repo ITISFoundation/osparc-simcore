@@ -520,12 +520,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           filterData["sharedWith"]["id"] === btn.id
         ));
       });
+      // if there no sharedWith filter, select "show-all"
+      if (this.__sharedWithButtons.every(btn => !btn.getValue())) {
+        const showAllBtn = this.__sharedWithButtons.find(btn => btn.id === "show-all");
+        if (showAllBtn) {
+          showAllBtn.setValue(true);
+        }
+      }
+
       this.__tagButtons.forEach(btn => {
         btn.setValue(Boolean(
           filterData["tags"] &&
           filterData["tags"].includes(btn.id)
         ));
       });
+
       this.__appTypeButtons.forEach(btn => {
         btn.setValue(Boolean(
           filterData["appType"] &&
