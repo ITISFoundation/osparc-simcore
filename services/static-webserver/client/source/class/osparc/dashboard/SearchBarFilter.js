@@ -181,12 +181,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             }
             break;
           case "shared-with":
-            if (filterData["sharedWith"] !== chip.id) {
+            if (filterData["sharedWith"]["id"] !== chip.id) {
               activeFilter.remove(chip);
             }
             break;
           case "app-type":
-            if (filterData["appType"] !== chip.id) {
+            if (filterData["appType"]["id"] !== chip.id) {
               activeFilter.remove(chip);
             }
             break;
@@ -204,19 +204,19 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         });
       }
       if (filterData["sharedWith"]) {
-        const chipFound = activeFilter.getChildren().find(chip => chip.type === "shared-with" && chip.id === filterData["sharedWith"]);
+        const chipFound = activeFilter.getChildren().find(chip => chip.type === "shared-with" && chip.id === filterData["sharedWith"]["id"]);
         if (!chipFound) {
-          const option = this.self().getSharedWithOptions(this.__resourceType).find(opt => opt.id === filterData["sharedWith"]);
-          this.__addChip("shared-with", filterData["sharedWith"], option ? option.label : filterData["sharedWith"]);
+          const option = this.self().getSharedWithOptions(this.__resourceType).find(opt => opt.id === filterData["sharedWith"]["id"]);
+          this.__addChip("shared-with", filterData["sharedWith"]["id"], option ? option.label : filterData["sharedWith"]["id"]);
         }
       }
       if (filterData["appType"]) {
-        const chipFound = activeFilter.getChildren().find(chip => chip.type === "app-type" && chip.id === filterData["appType"]);
+        const chipFound = activeFilter.getChildren().find(chip => chip.type === "app-type" && chip.id === filterData["appType"]["id"]);
         if (!chipFound) {
           const serviceTypes = osparc.service.Utils.TYPES;
-          const appTypeInfo = serviceTypes[filterData["appType"]];
-          const label = appTypeInfo ? appTypeInfo.label : filterData["appType"];
-          this.__addChip("app-type", filterData["appType"], label);
+          const appTypeInfo = serviceTypes[filterData["appType"]["id"]];
+          const label = appTypeInfo ? appTypeInfo.label : filterData["appType"]["id"];
+          this.__addChip("app-type", filterData["appType"]["id"], label);
         }
       }
     },

@@ -515,24 +515,24 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     filterChanged: function(filterData) {
       console.log("Filter changed: ", filterData);
       this.__sharedWithButtons.forEach(btn => {
-        btn.setValue(
+        btn.setValue(Boolean(
           filterData["sharedWith"] &&
           filterData["sharedWith"] === btn.id
-        );
+        ));
       });
       this.__tagButtons.forEach(btn => {
-        btn.setValue(
+        btn.setValue(Boolean(
           filterData["tags"] &&
           filterData["tags"].includes(btn.id)
-        );
+        ));
       });
       this.__appTypeButtons.forEach(btn => {
-        btn.setValue(
+        btn.setValue(Boolean(
           filterData["appType"] &&
           filterData["appType"]["id"] &&
           filterData["appType"]["id"] === btn.appType
-        );
+        ));
       });
-    }
+    },
   }
 });
