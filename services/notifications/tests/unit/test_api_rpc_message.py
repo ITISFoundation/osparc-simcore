@@ -10,7 +10,14 @@ from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
-from models_library.notifications.rpc import EmailEnvelope, EmailMessage, SendMessageResponse, TemplateRef
+from models_library.notifications.rpc import (
+    EmailContact,
+    EmailContent,
+    EmailEnvelope,
+    EmailMessage,
+    SendMessageResponse,
+    TemplateRef,
+)
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
@@ -29,32 +36,33 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture
 def single_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
-        **{
-            "from": {"name": "Sender", "email": faker.email()},
-            "to": [{"name": "Recipient", "email": faker.email()}],
-            "content": {
-                "subject": "Test Subject",
-                "body_text": "Test body text",
-                "body_html": "<p>Test body html</p>",
-            },
-        }
+        envelope=EmailEnvelope(
+            from_=EmailContact(name="Sender", email=faker.email()),
+            to=[EmailContact(name="Recipient", email=faker.email())],
+        ),
+        content=EmailContent(
+            subject="Test Subject",
+            body_text="Test body text",
+            body_html="<p>Test body html</p>",
+        ),
     )
 
 
 @pytest.fixture
 def multi_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
-        **{
-            "from": {"name": "Sender", "email": faker.email()},
-            "to": [
-                {"name": "First", "email": faker.email()},
-                {"name": "Second", "email": faker.email()},
+        envelope=EmailEnvelope(
+            from_=EmailContact(name="Sender", email=faker.email()),
+            to=[
+                EmailContact(name="First", email=faker.email()),
+                EmailContact(name="Second", email=faker.email()),
             ],
-            "content": {
-                "subject": "Test Subject",
-                "body_text": "Test body text",
-            },
-        }
+        ),
+        content=EmailContent(
+            subject="Test Subject",
+            body_text="Test body text",
+            body_html="<p>Test body html</p>",
+        ),
     )
 
 

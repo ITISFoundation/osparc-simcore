@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from .. import Channel
 
@@ -19,6 +19,12 @@ class EmailContent(BaseModel):
 class EmailEnvelope(BaseModel):
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
+
+    model_config = ConfigDict(
+        frozen=True,
+        validate_by_alias=True,
+        validate_by_name=True,
+    )
 
 
 class EmailMessage(BaseModel):
