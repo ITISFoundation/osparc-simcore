@@ -42,8 +42,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     "trashStudyRequested": "qx.event.type.Data",
     "trashFolderRequested": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
-    "changeSelectedTags": "qx.event.type.Data",
     "changeAppType": "qx.event.type.Data",
+    "changeSelectedTags": "qx.event.type.Data",
   },
 
   members: {
@@ -497,10 +497,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         radioGroup.add(btn);
         btn.addListener("execute", () => {
           const checked = btn.getValue();
-          this.fireDataEvent("changeAppType", {
-            appType: checked ? btn.appType : null,
-            label: checked ? btn.getLabel() : null
-          });
+          if (checked) {
+            this.fireDataEvent("changeAppType", {
+              appType: btn.appType,
+              label: btn.getLabel()
+            });
+          } else {
+            this.fireDataEvent("changeAppType", null);
+          }
         }, this);
       });
 

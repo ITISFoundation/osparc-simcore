@@ -477,8 +477,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }, this);
 
       resourceFilter.addListener("changeAppType", e => {
-        const appType = e.getData();
-        this._searchBarFilter.setAppTypeActiveFilter(appType.appType, appType.label);
+        const appData = e.getData();
+        if (appData) {
+          this.__addFilter("appType", appData.appType, appData.label);
+        } else {
+          this.__removeFilter("appType");
+        }
+        // this._searchBarFilter.setAppTypeActiveFilter(appType.appType, appType.label);
       }, this);
 
       this._searchBarFilter.addListener("filterChanged", e => {
@@ -489,6 +494,25 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._leftFilters.add(resourceFilter, {
         flex: 1
       });
+    },
+
+    __addFilter: function(filterName, filterId, filterLabel) {
+      if (filterName && filterId) {
+        const activeFilters = this.getActiveFilters() || {};
+        activeFilters[filterName] = {
+          id: filterId,
+          label: filterLabel
+        };
+        this.setActiveFilters(activeFilters);
+      }
+    },
+
+    __removeFilter: function(filterName) {
+      const activeFilters = this.getActiveFilters() || {};
+      if (filterName in activeFilters) {
+        delete activeFilters[filterName];
+        this.setActiveFilters(activeFilters);
+      }
     },
 
     /**
