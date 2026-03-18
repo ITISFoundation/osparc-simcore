@@ -75,7 +75,7 @@ from tenacity.retry import retry_if_exception_type
 from ..application_settings import get_application_settings
 from ..db.plugin import get_asyncpg_engine
 from ..models import ClientSessionID
-from ..utils import now_str
+from ..utils import now
 from ._access_rights_repository import published_project_read_condition
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository import PROJECT_DB_COLS
@@ -270,8 +270,8 @@ class ProjectDBAPI(BaseProjectDB):
                 "hidden": hidden,
                 # NOTE: this is very bad and leads to very weird conversions.
                 # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
-                "creation_date": now_str(),
-                "last_change_date": now_str(),
+                "creation_date": now(),
+                "last_change_date": now(),
                 "product_name": product_name,
             }
         )
@@ -715,7 +715,7 @@ class ProjectDBAPI(BaseProjectDB):
             .where(
                 (user_to_groups.c.uid == user_id)
                 & (project_to_groups.c.project_uuid == f"{project_uuid}")
-                & (project_to_groups.c.read == "true")
+                & (project_to_groups.c.read.is_(True))
             )
             .group_by(user_to_groups.c.uid)
         )
@@ -751,7 +751,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .values(
                     prj_owner=new_project_owner,
                     access_rights=new_project_access_rights,
-                    last_change_date=now_str(),
+                    last_change_date=now(),
                 )
                 .where(projects.c.uuid == project_uuid)
             )
@@ -924,7 +924,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
             # update timestamps
-            new_project_data["lastChangeDate"] = now_str()
+            new_project_data["lastChangeDate"] = now()
 
             result = await db_connection.execute(
                 projects.update()
@@ -1121,7 +1121,7 @@ class ProjectDBAPI(BaseProjectDB):
                 project["tags"].remove(tag_id)
             return convert_to_schema_names(project, user_email)
 
-    async def get_tags_by_project(self, project_id: str) -> list[int]:
+    async def get_tags_by_project(self, project_id: int) -> list[int]:
         async with self.engine.connect() as conn:
             query = sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_id)
             result = await conn.execute(query)

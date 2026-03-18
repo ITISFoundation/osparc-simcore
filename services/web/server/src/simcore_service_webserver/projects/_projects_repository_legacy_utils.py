@@ -144,14 +144,14 @@ class BaseProjectDB:
 
     @staticmethod
     async def _get_user_primary_group_gid(conn: AsyncConnection, user_id: int) -> int:
-        primary_gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.id == str(user_id)))
+        primary_gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.id == user_id))
         if not primary_gid:
             raise UserNotFoundError(user_id=user_id)
         assert isinstance(primary_gid, int)
         return primary_gid
 
     @staticmethod
-    async def _get_tags_by_project(conn: AsyncConnection, project_id: str) -> list:
+    async def _get_tags_by_project(conn: AsyncConnection, project_id: int) -> list:
         query = sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_id)
         result = await conn.execute(query)
         return [row.tag_id for row in result]

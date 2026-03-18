@@ -53,7 +53,7 @@ async def insert_project_to_folder(
             )
             .returning(literal_column("*"))
         )
-        row = result.first()
+        row = result.mappings().one()
         return ProjectToFolderDB.model_validate(row)
 
 
@@ -76,7 +76,7 @@ async def get_project_to_folder(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        row = result.first()
+        row = result.mappings().one_or_none()
         if row is None:
             return None
         return ProjectToFolderDB.model_validate(row)
