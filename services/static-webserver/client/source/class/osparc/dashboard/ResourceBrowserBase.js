@@ -328,6 +328,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         }
       }, this);
 
+      this._searchBarFilter.addListener("resetButtonPressed", () => {
+        this.setActiveFilters({});
+      }, this);
+
       this.bind("activeFilters", searchBarFilter, "activeFilters");
 
       this._addToLayout(searchBarFilter);

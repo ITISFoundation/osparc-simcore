@@ -174,7 +174,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             alignY: "middle",
             opacity: 0.7
           });
-          control.addListener("execute", () => this.resetButtonPressed(), this);
+          control.addListener("execute", () => this.fireEvent("resetButtonPressed"), this);
           this._add(control);
           break;
       }
@@ -409,9 +409,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       searchBarFilterExtended.set({
         width: bounds.width,
       });
-      searchBarFilterExtended.addListener("resetButtonPressed", () => {
-        this.resetButtonPressed();
-      }, this);
+      searchBarFilterExtended.addListener("resetButtonPressed", () => this.fireEvent("resetButtonPressed"), this);
       return searchBarFilterExtended;
     },
 
@@ -447,12 +445,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     resetFilters: function() {
       this.__removeChips();
       this.getChildControl("text-field").resetValue();
-    },
-
-    resetButtonPressed: function() {
-      this.resetFilters();
-      this._filterChange(this.self().getInitialFilterData());
-      this.fireEvent("resetButtonPressed");
     },
 
     getFilterData: function() {
