@@ -1,6 +1,6 @@
 from typing import Any, Final
 
-from ..models import (
+from models_library.celery import (
     GroupExecutionMetadata,
     GroupTaskExecutionMetadata,
     GroupUUID,
@@ -9,6 +9,7 @@ from ..models import (
     TaskName,
     TaskUUID,
 )
+
 from ..task_manager import TaskManager
 
 NOTIFICATIONS_SERVICE_QUEUE_NAME: Final[str] = "notifications"
