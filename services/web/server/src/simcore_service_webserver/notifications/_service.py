@@ -12,6 +12,7 @@ from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
 )
+from models_library.notifications.rpc import EmailMessage as RpcEmailMessage
 from models_library.notifications.rpc import TemplateRef as RpcTemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -175,7 +176,7 @@ async def send_message(
 
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
-        message=message,
+        message=RpcEmailMessage(**message.model_dump()),
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,
