@@ -2,9 +2,10 @@ import logging
 from typing import Any
 
 from models_library.celery import OwnerMetadata
-from models_library.notifications import EmailEnvelope, EmailMessage
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
+    EmailEnvelope,
+    EmailMessage,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,

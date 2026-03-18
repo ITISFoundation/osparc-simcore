@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ...celery import GroupUUID, OwnerMetadata, TaskUUID
-from .._notifications import EmailEnvelope, EmailMessage
+from ._email import EmailEnvelope, EmailMessage
 from ._template import TemplateRef
 
 

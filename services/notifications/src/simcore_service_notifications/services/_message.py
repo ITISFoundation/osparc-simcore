@@ -8,7 +8,7 @@ from models_library.celery import (
     TaskName,
     TaskUUID,
 )
-from models_library.notifications import EmailEnvelope, EmailMessage
+from models_library.notifications.rpc import EmailEnvelope, EmailMessage
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
     submit_send_messages_task,

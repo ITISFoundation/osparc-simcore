@@ -5,12 +5,12 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.celery import OwnerMetadata
-from models_library.notifications import ChannelType, EmailEnvelope, EmailMessage
+from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
-from models_library.notifications.rpc import SendMessageResponse, TemplateRef
+from models_library.notifications.rpc import EmailEnvelope, EmailMessage, SendMessageResponse, TemplateRef
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
@@ -147,7 +147,7 @@ async def test_send_message_from_template_with_empty_template(
     rpc_client: RabbitMQRPCClient,
     email_envelope_single_recipient: EmailEnvelope,
 ):
-    ref = TemplateRef(channel=ChannelType.email, template_name="empty")
+    ref = TemplateRef(channel=Channel.email, template_name="empty")
     context = {
         "subject": "Test Email",
         "body": "This is a test email.",
@@ -170,7 +170,7 @@ async def test_send_message_from_template_with_multiple_recipients(
     rpc_client: RabbitMQRPCClient,
     email_envelope_multiple_recipients: EmailEnvelope,
 ):
-    ref = TemplateRef(channel=ChannelType.email, template_name="empty")
+    ref = TemplateRef(channel=Channel.email, template_name="empty")
     context = {
         "subject": "Multi-recipient Test",
         "body": "Sent to multiple recipients.",
@@ -192,7 +192,7 @@ async def test_send_message_from_template_not_found(
     rpc_client: RabbitMQRPCClient,
     email_envelope_single_recipient: EmailEnvelope,
 ):
-    ref = TemplateRef(channel=ChannelType.email, template_name="non_existent_template")
+    ref = TemplateRef(channel=Channel.email, template_name="non_existent_template")
     context = {}
 
     with pytest.raises(NotificationsTemplateNotFoundError):
@@ -209,7 +209,7 @@ async def test_send_message_from_template_invalid_context(
     rpc_client: RabbitMQRPCClient,
     email_envelope_single_recipient: EmailEnvelope,
 ):
-    ref = TemplateRef(channel=ChannelType.email, template_name="account_approved")
+    ref = TemplateRef(channel=Channel.email, template_name="account_approved")
     # Missing required fields 'user' and 'link'
     context = {
         "invalid_key": "invalid_value",

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from models_library.notifications._notifications import NotificationsMessage
+from models_library.notifications.rpc import Message
 
 
 class ChannelHandler(ABC):
@@ -9,5 +9,5 @@ class ChannelHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def prepare_messages(message: NotificationsMessage) -> list[dict[str, Any]]:
+    def prepare_messages(message: Message) -> list[dict[str, Any]]:
         """Fan out a message model into per-recipient celery payloads."""

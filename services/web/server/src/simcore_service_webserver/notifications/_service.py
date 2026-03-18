@@ -6,15 +6,14 @@ from common_library.network import NO_REPLY_LOCAL, replace_email_parts
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
-    ChannelType,
-    TemplateRef,
-)
-from models_library.notifications import (
-    EmailMessage as NotificationsEmailMessage,
+    Channel,
 )
 from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
+)
+from models_library.notifications.rpc import (
+    EmailMessage as NotificationsEmailMessage,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -33,7 +32,7 @@ from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent, EmailMessage, Template, TemplatePreview
+from ._models import Contact, EmailContact, EmailContent, EmailMessage, Template, TemplatePreview, TemplateRef
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -103,7 +102,7 @@ async def _create_email_message(
     email_content = EmailContent(**content)
 
     return EmailMessage(
-        channel=ChannelType.email,
+        channel=Channel.email,
         from_=from_contact,
         to=to_contacts,
         content=email_content,
@@ -148,13 +147,13 @@ async def send_message(
     *,
     user_id: UserID,
     product_name: ProductName,
-    channel: ChannelType,
+    channel: Channel,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
 ) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
-        case ChannelType.email:
+        case Channel.email:
             message = await _create_email_message(
                 app,
                 product_name=product_name,

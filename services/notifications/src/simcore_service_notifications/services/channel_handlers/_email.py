@@ -1,7 +1,7 @@
 from typing import Any
 
-from models_library.notifications import EmailMessage
 from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
+from models_library.notifications.rpc import EmailMessage
 
 from ._base import ChannelHandler
 

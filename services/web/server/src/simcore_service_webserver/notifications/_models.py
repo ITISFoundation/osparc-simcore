@@ -2,8 +2,17 @@ from email.utils import parseaddr
 from typing import Annotated, Self
 
 from common_library.network import replace_email_parts
-from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications import Channel, TemplateName
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class TemplateRef(BaseModel):
+    channel: Channel
+    template_name: TemplateName
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
 
 class EmailContact(BaseModel):
@@ -74,7 +83,7 @@ class EmailContent(BaseModel):
 
 
 class EmailMessage(BaseModel):
-    channel: ChannelType = ChannelType.email
+    channel: Channel = Channel.email
 
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
