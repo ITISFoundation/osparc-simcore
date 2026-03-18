@@ -27,6 +27,6 @@ def get_engine_state(app: web.Application) -> dict[str, Any]:
         return {}
     engine = _asyncpg.get_async_engine(app)
     return {
-        "checkedin": engine.pool.checkedin(),  # type: ignore[union-attr]
-        "checkedout": engine.pool.checkedout(),  # type: ignore[union-attr]
+        "checkedin": engine.pool.checkedin(),  # type: ignore[attr-defined]
+        "checkedout": engine.pool.checkedout(),  # type: ignore[attr-defined]
     }

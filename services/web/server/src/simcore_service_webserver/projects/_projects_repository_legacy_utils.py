@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID, ProjectType
@@ -47,9 +47,9 @@ ANY_USER_ID_SENTINEL = -1
 
 class ProjectAccessRights(Enum):
     # NOTE: PC->SAN: enum with dict as values is unual. need to review
-    OWNER = {"read": True, "write": True, "delete": True}
-    COLLABORATOR = {"read": True, "write": True, "delete": False}
-    VIEWER = {"read": True, "write": False, "delete": False}
+    OWNER: ClassVar = {"read": True, "write": True, "delete": True}
+    COLLABORATOR: ClassVar = {"read": True, "write": True, "delete": False}
+    VIEWER: ClassVar = {"read": True, "write": False, "delete": False}
 
 
 def create_project_access_rights(gid: int, access: ProjectAccessRights) -> dict[str, dict[str, bool]]:
@@ -230,13 +230,14 @@ class BaseProjectDB:
             query = query.where(projects.c.published == "true")
 
         if for_update:
-            # NOTE: It seems that blocking this row in the database is necessary; otherwise, there are some concurrency issues.
-            # As the WITH FOR UPDATE clause cannot be used with the GROUP BY clause, I have added a separate query for that.
+            # NOTE: It seems that blocking this row in the database is necessary;
+            # otherwise, there are some concurrency issues. As the WITH FOR UPDATE
+            # clause cannot be used with the GROUP BY clause, I have added a separate query for that.
             blocking_query = (sa.select(projects).where(projects.c.uuid == f"{project_uuid}")).with_for_update()
             await connection.execute(blocking_query)
 
         result = await connection.execute(query)
-        project_row = result.one_or_none()
+        project_row = result.mappings().one_or_none()
 
         if not project_row:
             raise ProjectNotFoundError(
@@ -244,10 +245,10 @@ class BaseProjectDB:
                 search_context=f"{only_templates=}, {only_published=}",
             )
 
-        project: dict[str, Any] = dict(project_row._mapping.items())
+        project: dict[str, Any] = dict(project_row)
 
         if "tags" not in exclude_foreign:
-            tags = await self._get_tags_by_project(connection, project_id=project_row.id)
+            tags = await self._get_tags_by_project(connection, project_id=project_row["id"])
             project["tags"] = tags
 
         return project

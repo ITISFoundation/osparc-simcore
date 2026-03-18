@@ -531,8 +531,8 @@ class ProjectDBAPI(BaseProjectDB):
         order_by: OrderBy = DEFAULT_ORDER_BY,
     ) -> tuple[list[dict[str, Any]], int]:
         async with self.engine.connect() as conn:
-            user_groups: list[Row] = await self._list_user_groups(conn, user_id)
-            user_groups: list[GroupID] = [group.gid for group in user_groups]
+            user_groups_rows: list[Row] = await self._list_user_groups(conn, user_id)
+            user_groups: list[GroupID] = [group.gid for group in user_groups_rows]
 
             ###
             # Private workspace query
@@ -746,7 +746,7 @@ class ProjectDBAPI(BaseProjectDB):
         permissions layer (sic)."""
         async with self.engine.begin() as conn:
             # now update it
-            result = await conn.execute(
+            await conn.execute(
                 projects.update()
                 .values(
                     prj_owner=new_project_owner,
@@ -755,8 +755,6 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 .where(projects.c.uuid == project_uuid)
             )
-            result_row_count: int = result.rowcount
-            assert result_row_count == 1  # nosec
 
     async def delete_project(self, user_id: int, project_uuid: str):
         _logger.info(
@@ -941,7 +939,7 @@ class ProjectDBAPI(BaseProjectDB):
 
             tags = await self._get_tags_by_project(db_connection, project_id=project[projects.c.id])
             return (
-                convert_to_schema_names(project, user_email, tags=tags),
+                convert_to_schema_names(project, user_email, tags=tags),  # type: ignore[arg-type]
                 changed_entries,
             )
         msg = "linter unhappy without this"

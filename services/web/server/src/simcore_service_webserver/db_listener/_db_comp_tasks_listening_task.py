@@ -148,7 +148,7 @@ async def _listen(app: web.Application) -> NoReturn:
     try:
         # Use asyncpg's native connection.add_listener(channel, callback) for event-driven notifications
         # (replaces polling — more efficient)
-        await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_notification)
+        await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_notification)  # type: ignore[arg-type]
         try:
             while True:
                 try:
@@ -167,7 +167,7 @@ async def _listen(app: web.Application) -> NoReturn:
                 await _handle_db_notification(app, payload, engine)
         finally:
             if not asyncpg_conn.is_closed():
-                await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_notification)
+                await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_notification)  # type: ignore[arg-type]
     finally:
         if not asyncpg_conn.is_closed():
             await asyncpg_conn.close()

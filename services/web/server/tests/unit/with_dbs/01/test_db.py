@@ -62,5 +62,5 @@ async def test_get_engine_state(web_server: TestServer):
     app = web_server.app
     state = get_engine_state(app)
     assert isinstance(state, dict)
-    assert "checkedin" in state
-    assert "checkedout" in state
+    assert state["checkedin"] == 1
+    assert state["checkedout"] == 0
