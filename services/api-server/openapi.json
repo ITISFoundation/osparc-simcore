@@ -8888,8 +8888,7 @@
       },
       "GroupID": {
         "type": "integer",
-        "exclusiveMinimum": true,
-        "minimum": 0
+        "exclusiveMinimum": 0
       },
       "Groups": {
         "properties": {
@@ -9411,9 +9410,8 @@
         "properties": {
           "number_of_seats": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Number Of Seats",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Number Of Seats"
           },
           "service_run_id": {
             "type": "string",
@@ -9450,15 +9448,13 @@
           },
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "product_name": {
             "type": "string",
@@ -9533,9 +9529,8 @@
           },
           "pricing_plan_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Plan Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Plan Id"
           },
           "is_hidden_on_market": {
             "type": "boolean",
@@ -10514,9 +10509,8 @@
         "properties": {
           "pricingUnitId": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricingunitid",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricingunitid"
           },
           "unitName": {
             "type": "string",
@@ -10573,9 +10567,8 @@
           },
           "id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Id"
           },
           "login": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -11885,9 +11878,8 @@
         "properties": {
           "pricingPlanId": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricingplanid",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricingplanid"
           },
           "displayName": {
             "type": "string",
@@ -12493,9 +12485,8 @@
         "properties": {
           "number": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Number",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Number"
           },
           "e_tag": {
             "type": "string",
@@ -12673,9 +12664,8 @@
         "properties": {
           "walletId": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Walletid",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Walletid"
           },
           "name": {
             "type": "string",

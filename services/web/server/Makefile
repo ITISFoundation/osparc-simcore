@@ -13,7 +13,7 @@ requirements: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-APP_OPENAPI_RELPATH=src/$(PY_PACKAGE_NAME)/api/v0/openapi.yaml
+APP_OPENAPI_RELPATH=src/$(PY_PACKAGE_NAME)/api/v0/openapi.json
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications

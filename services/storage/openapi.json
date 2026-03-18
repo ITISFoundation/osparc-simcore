@@ -62,9 +62,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -115,9 +114,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -187,9 +185,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -260,9 +257,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -378,9 +374,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -476,9 +471,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -555,9 +549,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -689,9 +682,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -753,9 +745,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -817,9 +808,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -907,9 +897,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -969,9 +958,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -1033,9 +1021,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1150,9 +1137,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1203,9 +1189,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -1256,9 +1241,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1310,9 +1294,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -2210,8 +2193,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": true,
-                "minimum": 0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -2585,9 +2567,8 @@
         "properties": {
           "number": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Number",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Number"
           },
           "e_tag": {
             "type": "string",

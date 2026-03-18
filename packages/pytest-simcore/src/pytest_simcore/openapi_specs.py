@@ -37,7 +37,7 @@ def _load(file: Path, base_uri: str = "") -> dict:
     match file.suffix:
         case ".yaml" | ".yml":
             loaded = yaml.safe_load(file.read_text())
-        case "json":
+        case ".json":
             loaded = json.loads(file.read_text())
         case _:
             msg = f"Expect yaml or json, got {file.suffix}"
