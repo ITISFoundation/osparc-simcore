@@ -93,7 +93,7 @@ email-validator==2.1.1
     # via
     #   fastapi
     #   pydantic
-fast-depends==2.4.12
+fast-depends==3.0.8
     # via faststream
 fastapi==0.116.1
     # via
@@ -108,7 +108,7 @@ fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 fastapi-pagination==0.14.0
     # via -r requirements/_base.in
-faststream==0.5.31
+faststream==0.6.7
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
     # via
@@ -519,6 +519,7 @@ typing-extensions==4.14.1
     # via
     #   aiodebug
     #   aiodocker
+    #   fast-depends
     #   fastapi
     #   fastapi-pagination
     #   faststream

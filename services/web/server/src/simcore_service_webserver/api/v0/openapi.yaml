@@ -13857,9 +13857,7 @@ components:
     MyPhoneRegister:
       properties:
         phone:
-          type: string
-          format: phone
-          title: Phone
+          $ref: '#/components/schemas/PhoneNumberStr'
           description: Phone number to register
       type: object
       required:
@@ -15388,6 +15386,9 @@ components:
       - phone
       - code
       title: PhoneConfirmationBody
+    PhoneNumberStr:
+      type: string
+      format: phone
     PipelineDetails:
       properties:
         adjacency_list:
@@ -16640,9 +16641,7 @@ components:
         email:
           $ref: '#/components/schemas/LowerCaseEmailStr'
         phone:
-          type: string
-          format: phone
-          title: Phone
+          $ref: '#/components/schemas/PhoneNumberStr'
           description: Phone number E.164, needed on the deployments with 2FA
       additionalProperties: false
       type: object
@@ -18752,10 +18751,8 @@ components:
           description: company, university, ...
         phone:
           anyOf:
-          - type: string
-            format: phone
+          - $ref: '#/components/schemas/PhoneNumberStr'
           - type: 'null'
-          title: Phone
         address:
           type: string
           title: Address

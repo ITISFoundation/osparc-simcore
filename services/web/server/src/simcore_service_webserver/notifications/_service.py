@@ -3,20 +3,20 @@ from typing import Any
 
 from aiohttp import web
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
+from models_library.celery import GroupUUID, OwnerMetadata, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
-from models_library.notifications_errors import (
+from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.async_jobs.notifications import submit_send_message_task, submit_send_messages_task
-from servicelib.celery.models import GroupUUID, OwnerMetadata, TaskName, TaskUUID
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template as remote_preview_template,
 )
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     search_templates as remote_search_templates,
 )
 

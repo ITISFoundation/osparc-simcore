@@ -19,6 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     PresignedLink,
 )
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata
 from models_library.generics import Envelope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -26,7 +27,6 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.logging_utils import log_context
 from yarl import URL
 

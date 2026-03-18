@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api.celery.tasks import (
     send_email_message,
