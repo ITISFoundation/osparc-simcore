@@ -112,7 +112,7 @@ def overwrite_command(source_command: list[str], *, edit: EditArguments, remove:
     """
     new_command = deepcopy(source_command)
 
-    index_search: dict[str, int] = {cmd: idx for idx, cmd in enumerate(source_command)}
+    index_search: dict[str, int] = {cmd: idx for idx, cmd in enumerate(new_command)}
 
     for search_entry, option_entry in edit.items():
         if search_entry in index_search:
@@ -137,6 +137,7 @@ def overwrite_command(source_command: list[str], *, edit: EditArguments, remove:
             idx = index_search[search_entry]
 
             del new_command[idx : idx + elements_to_remove]
+            index_search = {cmd: idx for idx, cmd in enumerate(new_command)}
         else:
             _logger.warning(
                 "cannot remove entry='%s' as it does not exist in command='%s'",
