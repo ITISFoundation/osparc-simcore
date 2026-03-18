@@ -20,9 +20,7 @@ from celery_library.task import register_task
 from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
-from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter
-from servicelib.celery.models import (
+from models_library.celery import (
     TASK_DONE_STATES,
     GroupExecutionMetadata,
     GroupTaskExecutionMetadata,
@@ -35,6 +33,8 @@ from servicelib.celery.models import (
     TaskUUID,
     Wildcard,
 )
+from models_library.progress_bar import ProgressReport
+from pydantic import TypeAdapter
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from tenacity import (

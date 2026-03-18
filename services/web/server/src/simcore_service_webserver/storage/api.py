@@ -19,6 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     PresignedLink,
 )
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata
 from models_library.generics import Envelope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -26,7 +27,6 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.logging_utils import log_context
 from yarl import URL
 
@@ -136,7 +136,7 @@ async def _delete(session, target_url):
 
 
 async def delete_data_folders_of_project(app, project_id, user_id):
-    # SEE api/specs/storage/v0/openapi.yaml
+    # SEE api/specs/storage/v0/openapi.json
     session, api_endpoint = _get_storage_client(app)
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id)
 
@@ -144,7 +144,7 @@ async def delete_data_folders_of_project(app, project_id, user_id):
 
 
 async def delete_data_folders_of_project_node(app, project_id: str, node_id: str, user_id: UserID):
-    # SEE api/specs/storage/v0/openapi.yaml
+    # SEE api/specs/storage/v0/openapi.json
     session, api_endpoint = _get_storage_client(app)
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id, node_id=node_id)
 

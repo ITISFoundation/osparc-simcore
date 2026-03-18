@@ -24,6 +24,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
+from models_library.celery import TaskExecutionMetadata, TaskKey
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
@@ -52,7 +53,6 @@ from models_library.users import UserID
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
-from servicelib.celery.models import TaskExecutionMetadata, TaskKey
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,

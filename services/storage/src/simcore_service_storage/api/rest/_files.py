@@ -15,12 +15,12 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     SoftCopyBody,
 )
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskUUID
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from yarl import URL

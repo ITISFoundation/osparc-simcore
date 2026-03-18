@@ -4,13 +4,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import pytest
 import starlette.routing
 from fastapi.applications import FastAPI
 from fastapi.routing import APIRouter
-from openapi_spec_validator.exceptions import (
-    OpenAPISpecValidatorError,  # pylint: disable=no-name-in-module
-)
 from openapi_spec_validator.shortcuts import (
     get_validator_cls,  # pylint: disable=no-name-in-module
 )
@@ -32,21 +28,18 @@ def test_naming_operation_id(app: FastAPI):
             assert isinstance(route, starlette.routing.Route)
 
 
-@pytest.mark.xfail(reason="fastapi unresolved issue. Waiting for review of new OAS update by PC")
 def test_exclusive_min_openapi_issue(app: FastAPI):
-    # Tests patched issues is still unresolved https://github.com/tiangolo/fastapi/issues/240
-    # When this test fails, remove patch
-    # NOTE: With the latest update of openapi_spec_validator, now passes validation 3.1 but
-    # does not seem resolved. It was moved to https://github.com/tiangolo/fastapi/discussions/9140
-    with pytest.raises(OpenAPISpecValidatorError):
-        specs = app.openapi()
-        openapi_validator_cls = get_validator_cls(specs)
-        openapi_validator_cls(specs)
+    # SEE https://github.com/tiangolo/fastapi/issues/240
+    # FastAPI 0.100+ with Pydantic v2 now generates valid OAS 3.1 exclusiveMinimum/Maximum as numbers
+    specs = app.openapi()
+    openapi_validator_cls = get_validator_cls(specs)
+    openapi_validator_cls(specs)
 
 
 def test_overriding_openapi_method(app: FastAPI):
     assert not hasattr(app, "_original_openapi")
-    # assert app.openapi.__doc__ is None # PC why was this set to check that it is none? it's coming from the base fastapi application and now they provide some docs
+    # assert app.openapi.__doc__ is None # PC why was this set to check that it is none?
+    # it's coming from the base fastapi application and now they provide some docs
 
     override_fastapi_openapi_method(app)
 
@@ -61,17 +54,16 @@ def test_overriding_openapi_method(app: FastAPI):
     openapi_validator_cls = get_validator_cls(openapi)
     openapi_validator_cls(openapi)
 
-    # NOTE: https://github.com/tiangolo/fastapi/issues/240 now passes validation 3.1 but
-    # does not seem resolved. It was moved to https://github.com/tiangolo/fastapi/discussions/9140
+    # SEE https://github.com/tiangolo/fastapi/issues/240
+    # Pydantic v2 generates OAS 3.1 compliant exclusiveMinimum/Maximum as numbers
     params = openapi["paths"]["/data"]["get"]["parameters"]
     assert params == [
         {
             "required": True,
             "schema": {
                 "title": "X",
-                "exclusiveMinimum": True,
+                "exclusiveMinimum": 0.0,
                 "type": "number",
-                "minimum": 0.0,
             },
             "name": "x",
             "in": "query",
@@ -80,11 +72,9 @@ def test_overriding_openapi_method(app: FastAPI):
             "required": True,
             "schema": {
                 "title": "Y",
-                "exclusiveMaximum": True,
-                "exclusiveMinimum": True,
+                "exclusiveMaximum": 4,
+                "exclusiveMinimum": 3,
                 "type": "integer",
-                "maximum": 4,
-                "minimum": 3,
             },
             "name": "y",
             "in": "query",

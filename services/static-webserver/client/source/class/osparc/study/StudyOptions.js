@@ -190,18 +190,18 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           this.getChildControl("advanced-layout").add(control);
           break;
-        case "tiers-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-            minHeight: 40,
-          });
-          const scroll = new qx.ui.container.Scroll();
-          this.getChildControl("tiers-checkbox").bind("value", scroll, "visibility", {
+        case "tiers-container":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("tiers-checkbox").bind("value", control, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
           });
-          scroll.add(control);
-          this.getChildControl("advanced-layout").add(scroll, {
+          this.getChildControl("advanced-layout").add(control, {
             flex: 1
           });
+          break;
+        case "tiers-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this.getChildControl("tiers-container").add(control);
           break;
         }
         case "loading-units-spinner":
@@ -217,14 +217,13 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "study-pricing-units": {
           control = new osparc.study.StudyPricingUnits();
           const loadingImage = this.getChildControl("loading-units-spinner");
-          const unitsBoxesLayout = this.getChildControl("tiers-layout");
           const unitsLoading = () => {
             loadingImage.show();
-            unitsBoxesLayout.exclude();
+            control.exclude();
           };
           const unitsReady = () => {
             loadingImage.exclude();
-            unitsBoxesLayout.show();
+            control.show();
             control.getNodePricingUnits().forEach(nodePricingUnits => {
               this.bind("patchStudy", nodePricingUnits, "patchNode");
             });
@@ -232,7 +231,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           unitsLoading();
           control.addListener("loadingUnits", () => unitsLoading());
           control.addListener("unitsReady", () => unitsReady());
-          unitsBoxesLayout.add(control);
+          this.getChildControl("tiers-layout").add(control);
           break;
         }
         case "buttons-layout":
@@ -416,6 +415,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __addTierSelector: function() {
+      this.getChildControl("tiers-checkbox");
       this.getChildControl("study-pricing-units");
     },
 

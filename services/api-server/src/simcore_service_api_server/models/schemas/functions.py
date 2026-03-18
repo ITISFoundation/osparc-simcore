@@ -3,9 +3,9 @@
 from enum import StrEnum
 from typing import Annotated, Final
 
+from models_library.celery import TaskState
 from models_library.functions import FunctionID, FunctionJobCollectionID, FunctionJobID
 from pydantic import BaseModel, ConfigDict, Field
-from servicelib.celery.models import TaskState
 
 _JOB_TASK_RUN_STATUS_PREFIX: Final[str] = "JOB_TASK_RUN_STATUS_"
 

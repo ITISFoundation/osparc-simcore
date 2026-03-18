@@ -266,12 +266,6 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     // All products except oSPARC
-    hasIdlingTrackerEnabled: function() {
-      const product = this.getProductName();
-      return product !== "osparc";
-    },
-
-    // All products except oSPARC
     showLicenseExtra: function() {
       const product = this.getProductName();
       return product !== "osparc";
