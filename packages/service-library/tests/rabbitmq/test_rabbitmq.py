@@ -14,7 +14,7 @@ from unittest import mock
 import aio_pika
 import pytest
 from faker import Faker
-from pydantic import NonPositiveFloat
+from pydantic import PositiveFloat
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import (
     BIND_TO_ALL_TOPICS,
@@ -690,7 +690,7 @@ async def test_unsubscribe_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    idempotent_attempts: NonPositiveFloat,
+    idempotent_attempts: PositiveFloat,
 ):
     exchange_name = f"{random_exchange_name()}"
     client = create_rabbitmq_client("consumer")
