@@ -172,26 +172,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       console.log("Filter changed: ", filterData);
 
       const activeFilter = this.getChildControl("active-filters");
+
       // first remove those that are not active anymore
-      activeFilter.getChildren().forEach(chip => {
-        switch (chip.type) {
-          case "tag":
-            if (!filterData["tags"].includes(chip.id)) {
-              activeFilter.remove(chip);
-            }
-            break;
-          case "shared-with":
-            if (filterData["sharedWith"]["id"] !== chip.id) {
-              activeFilter.remove(chip);
-            }
-            break;
-          case "app-type":
-            if (filterData["appType"]["id"] !== chip.id) {
-              activeFilter.remove(chip);
-            }
-            break;
-        }
-      });
+      this.resetFilters();
 
       // then add those that are new
       if (filterData["tags"]) {
@@ -424,7 +407,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         return;
       }
       const chip = this.self().createChip(type, id, label);
-      chip.addListener("execute", () => this.__removeChip(type, id), this);
+      chip.addListener("execute", () => {
+        switch (type) {
+          case "app-type":
+            this.fireDataEvent("changeAppType", null);
+            break;
+          case "shared-with":
+            this.fireDataEvent("changeSharedWith", null);
+            break;
+        }
+      }, this);
       activeFilter.add(chip);
       this.__filter();
     },
