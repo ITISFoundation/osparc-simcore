@@ -24,7 +24,7 @@ from models_library.api_schemas_webserver.users import (
     UserAccountPreviewRejectionGet,
 )
 from models_library.groups import AccessRightsDict
-from models_library.notifications import Channel, TemplateRef
+from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
@@ -47,7 +47,7 @@ from simcore_postgres_database.models.users_details import (
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.models import PhoneNumberStr
-from simcore_service_webserver.notifications._models import TemplatePreview
+from simcore_service_webserver.notifications._models import TemplatePreview, TemplateRef
 
 
 @pytest.fixture
