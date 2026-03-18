@@ -1,6 +1,6 @@
 import logging
 
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services import ServiceOutput
 from pydantic import TypeAdapter
@@ -69,5 +69,19 @@ async def detach_container_from_network(
         TypeAdapter(RPCMethodName).validate_python("detach_container_from_network"),
         container_id=container_id,
         network_id=network_id,
+    )
+    assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def notify_path_change(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, path: StorageFileID, recursive: bool
+) -> None:
+    rpc_namespace = get_rpc_namespace(node_id)
+    result = await rabbitmq_rpc_client.request(
+        rpc_namespace,
+        TypeAdapter(RPCMethodName).validate_python("notify_path_change"),
+        path=path,
+        recursive=recursive,
     )
     assert result is None  # nosec

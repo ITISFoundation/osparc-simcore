@@ -7511,6 +7511,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CursorPage_TypeVar_Customized_PathMetaDataGet_'
+  /v0/storage/locations/{location_id}/paths/{path}:notifyChange:
+    post:
+      tags:
+      - storage
+      summary: Notify Path Change
+      description: triggers a reload of the files from S3 for a given directory
+      operationId: notify_path_change
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          format: path
+          title: Path
+      responses:
+        '204':
+          description: Successful Response
   /v0/storage/locations/{location_id}/paths/{path}:size:
     post:
       tags:
@@ -7687,8 +7711,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       responses:
         '200':
           description: Successful Response
@@ -7717,8 +7740,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       - name: link_type
         in: query
         required: false
@@ -7749,8 +7771,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       - name: file_size
         in: query
         required: true
@@ -7802,8 +7823,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       responses:
         '204':
           description: Successful Response
@@ -7827,8 +7847,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       responses:
         '204':
           description: Successful Response
@@ -7850,8 +7869,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       requestBody:
         required: true
         content:
@@ -7883,8 +7901,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       - name: future_id
         in: path
         required: true
@@ -17023,6 +17040,11 @@ components:
             modern=V2).Since legacy services do not have this label it defaults to
             V0.
           default: V0
+        data_mounting_enabled:
+          type: boolean
+          title: Data Mounting Enabled
+          description: True if data mounting is enabled
+          default: false
         service_host:
           type: string
           title: Service Host
@@ -17856,6 +17878,8 @@ components:
       - loop_tasks
       - top_tracemalloc
       title: StatusDiagnosticsGet
+    StorageFileIDStr:
+      type: string
     Structure:
       properties:
         key:
