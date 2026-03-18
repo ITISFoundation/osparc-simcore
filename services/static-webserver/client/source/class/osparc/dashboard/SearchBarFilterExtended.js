@@ -110,7 +110,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this.self().decorateListItem(control.getChildControl("atom"));
           const searchBarFilter = this.getChildControl("search-bar-filter");
-          searchBarFilter._addAt(control, 3); //"search-icon", "active-filters", "text-field", "reset-button"
+          searchBarFilter._addAt(control, 3); //"search-icon", "active-filter-chips", "text-field", "reset-button"
           break;
         }
         case "my-projects-button": {
@@ -238,14 +238,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       });
 
       // Set initial state based on the provided initFilterData
-      const activeFilters = searchBarFilter.getChildControl("active-filters");
+      const activeFilterChips = searchBarFilter.getChildControl("active-filter-chips");
       const textField = searchBarFilter.getChildControl("text-field");
       if ("sharedWith" in this.__initFilterData && this.__initFilterData["sharedWith"]) {
         const sharedWithOptions = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
         const optionsFound = sharedWithOptions.find(option => option.id === this.__initFilterData["sharedWith"]);
         if (optionsFound) {
           const chip = osparc.dashboard.SearchBarFilter.createChip("sharedWith", optionsFound.id, optionsFound.label);
-          activeFilters.add(chip);
+          activeFilterChips.add(chip);
         }
       }
       if ("tags" in this.__initFilterData && this.__initFilterData["tags"]) {
@@ -254,7 +254,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           const tagFound = tags.find(tag => tag.getTagId() === tagId);
           if (tagFound) {
             const chip = osparc.dashboard.SearchBarFilter.createChip("tag", tagId, tagFound.getName());
-            activeFilters.add(chip);
+            activeFilterChips.add(chip);
           }
         });
       }

@@ -128,7 +128,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           });
           this._add(control);
           break;
-        case "active-filters":
+        case "active-filter-chips":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
           this._add(control);
           break;
@@ -164,15 +164,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     __buildLayout: function() {
       this.getChildControl("search-icon");
-      this.getChildControl("active-filters");
+      this.getChildControl("active-filter-chips");
       this.getChildControl("text-field");
       this.getChildControl("reset-button");
     },
 
     filterChanged: function(filterData) {
-      console.log("Filter changed: ", filterData);
-
-      const activeFilter = this.getChildControl("active-filters");
+      const activeFilterChips = this.getChildControl("active-filter-chips");
 
       // first remove those that are not active anymore
       this.resetFilters();
@@ -180,7 +178,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       // then add those that are new
       if (filterData["tags"]) {
         filterData["tags"].forEach(tagId => {
-          const chipFound = activeFilter.getChildren().find(chip => chip.type === "tag" && chip.id === tagId);
+          const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "tag" && chip.id === tagId);
           if (!chipFound) {
             const tag = osparc.store.Tags.getInstance().getTagById(tagId);
             this.__addChip("tag", tagId, tag.getName());
@@ -188,14 +186,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         });
       }
       if (filterData["sharedWith"]) {
-        const chipFound = activeFilter.getChildren().find(chip => chip.type === "shared-with" && chip.id === filterData["sharedWith"]["id"]);
+        const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "shared-with" && chip.id === filterData["sharedWith"]["id"]);
         if (!chipFound) {
           const option = this.self().getSharedWithOptions(this.__resourceType).find(opt => opt.id === filterData["sharedWith"]["id"]);
           this.__addChip("shared-with", filterData["sharedWith"]["id"], option ? option.label : filterData["sharedWith"]["id"]);
         }
       }
       if (filterData["appType"]) {
-        const chipFound = activeFilter.getChildren().find(chip => chip.type === "app-type" && chip.id === filterData["appType"]["id"]);
+        const chipFound = activeFilterChips.getChildren().find(chip => chip.type === "app-type" && chip.id === filterData["appType"]["id"]);
         if (!chipFound) {
           const serviceTypes = osparc.service.Utils.TYPES;
           const appTypeInfo = serviceTypes[filterData["appType"]["id"]];
@@ -203,6 +201,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           this.__addChip("app-type", filterData["appType"]["id"], label);
         }
       }
+      this.__filter();
     },
 
     __buildFiltersMenu: function() {
@@ -413,7 +412,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __addChip: function(type, id, label) {
-      const activeFilter = this.getChildControl("active-filters");
+      const activeFilter = this.getChildControl("active-filter-chips");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
       if (chipFound) {
         return;
@@ -430,20 +429,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         }
       }, this);
       activeFilter.add(chip);
-      this.__filter();
     },
 
     __removeChip: function(type, id) {
-      const activeFilter = this.getChildControl("active-filters");
+      const activeFilter = this.getChildControl("active-filter-chips");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
       if (chipFound) {
         activeFilter.remove(chipFound);
-        this.__filter();
       }
     },
 
     __removeChips: function(type) {
-      const activeFilter = this.getChildControl("active-filters");
+      const activeFilter = this.getChildControl("active-filter-chips");
       if (type) {
         const chipsFounds = activeFilter.getChildren().filter(chip => chip.type === type);
         for (let i=chipsFounds.length-1; i>=0; i--) {
@@ -469,7 +466,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const filterData = this.self().getInitialFilterData();
       const textFilter = this.getTextFilterValue();
       filterData["text"] = textFilter ? textFilter : "";
-      this.getChildControl("active-filters").getChildren().forEach(chip => {
+      this.getChildControl("active-filter-chips").getChildren().forEach(chip => {
         switch (chip.type) {
           case "tag":
             filterData.tags.push(chip.id);
