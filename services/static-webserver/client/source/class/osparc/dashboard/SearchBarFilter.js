@@ -106,6 +106,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   events: {
     "filterChanged": "qx.event.type.Data",
+    "changeSharedWith": "qx.event.type.Data",
     "changeAppType": "qx.event.type.Data",
     "resetButtonPressed": "qx.event.type.Event",
   },
@@ -300,7 +301,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       options.forEach((option, idx) => {
         const button = new qx.ui.menu.RadioButton(option.label);
         sharedWithMenu.add(button);
-        button.addListener("execute", () => this.setSharedWithActiveFilter(option.id, option.label), this);
+        button.addListener("execute", () => {
+          this.fireDataEvent("changeSharedWith", {
+            id: option.id,
+            label: option.label
+          });
+        }, this);
         sharedWithRadioGroup.add(button);
         // preselect show-all
         if (idx === 0) {
@@ -326,10 +332,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           alignX: "center",
         });
         serviceTypeMenu.add(serviceTypeButton);
-        serviceTypeButton.addListener("execute", () => this.fireDataEvent("changeAppType", {
-          appType: serviceId,
-          label: serviceType.label
-        }), this);
+        serviceTypeButton.addListener("execute", () => {
+          this.fireDataEvent("changeAppType", {
+            id: serviceId,
+            label: serviceType.label
+          });
+        }, this);
       });
 
       // hypertools filter
@@ -341,12 +349,15 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         });
       osparc.utils.Utils.replaceIconWithThumbnail(hypertoolTypeButton, osparc.data.model.StudyUI.HYPERTOOL_ICON, 18);
       serviceTypeMenu.add(hypertoolTypeButton);
-      hypertoolTypeButton.addListener("execute", () => this.fireDataEvent("changeAppType", {
-        appType: "hypertool",
-        label: "Hypertools"
-      }), this);
+      hypertoolTypeButton.addListener("execute", () => {
+        this.fireDataEvent("changeAppType", {
+          id: "hypertool",
+          label: "Hypertools"
+        });
+      }, this);
     },
 
+    /* OM TODO
     addTagActiveFilter: function(tag) {
       this.__addChip("tag", tag.getTagId(), tag.getName());
     },
@@ -380,6 +391,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         this.__filter();
       }
     },
+    */
 
     // this widget pops up a larger widget with all filters visible
     // and lets users search between projects, templates, public projects and, eventually, files
@@ -409,11 +421,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chip = this.self().createChip(type, id, label);
       chip.addListener("execute", () => {
         switch (type) {
-          case "app-type":
-            this.fireDataEvent("changeAppType", null);
-            break;
           case "shared-with":
             this.fireDataEvent("changeSharedWith", null);
+            break;
+          case "app-type":
+            this.fireDataEvent("changeAppType", null);
             break;
         }
       }, this);

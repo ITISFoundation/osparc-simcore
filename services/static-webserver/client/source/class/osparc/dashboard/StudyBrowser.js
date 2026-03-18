@@ -1384,10 +1384,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.getChildControl("text-field").setValue(filterData);
             break;
           case "sharedWith":
-            this._searchBarFilter.setSharedWithActiveFilter(filterData.id, filterData.label);
+            // OM TODO
+            // this._searchBarFilter.setSharedWithActiveFilter(filterData.id, filterData.label);
             break;
           case "tag":
-            this._searchBarFilter.addTagActiveFilter(filterData);
+            // OM TODO
+            // this._searchBarFilter.addTagActiveFilter(filterData);
             break;
         }
         // then update the search context this will trigger the search

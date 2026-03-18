@@ -301,10 +301,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
 
+      this._searchBarFilter.addListener("changeSharedWith", e => {
+        const sharedWithData = e.getData();
+        if (sharedWithData) {
+          this.__addFilter("sharedWith", sharedWithData.id, sharedWithData.label);
+        } else {
+          this.__removeFilter("sharedWith");
+        }
+      }, this);
       this._searchBarFilter.addListener("changeAppType", e => {
-        const appData = e.getData();
-        if (appData) {
-          this.__addFilter("appType", appData.appType, appData.label);
+        const appTypeData = e.getData();
+        if (appTypeData) {
+          this.__addFilter("appType", appTypeData.id, appTypeData.label);
         } else {
           this.__removeFilter("appType");
         }
@@ -489,14 +497,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       resourceFilter.addListener("changeSharedWith", e => {
         const sharedWith = e.getData();
-        this.__addFilter("sharedWith", sharedWith.id, sharedWith.label);
-        // this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
+        if (sharedWith) {
+          this.__addFilter("sharedWith", sharedWith.id, sharedWith.label);
+        } else {
+          this.__removeFilter("sharedWith");
+        }
       }, this);
 
       resourceFilter.addListener("changeSelectedTags", e => {
         const selectedTagIds = e.getData();
         this.__addFilter("tags", selectedTagIds, null);
-        // this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
       }, this);
 
       resourceFilter.addListener("changeAppType", e => {
@@ -506,15 +516,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         } else {
           this.__removeFilter("appType");
         }
-        // this._searchBarFilter.setAppTypeActiveFilter(appType.appType, appType.label);
       }, this);
-
-      /*
-      this._searchBarFilter.addListener("filterChanged", e => {
-        const filterData = e.getData();
-        resourceFilter.filterChanged(filterData);
-      });
-      */
 
       this.addListener("changeActiveFilters", e => {
         const activeFilters = e.getData();
