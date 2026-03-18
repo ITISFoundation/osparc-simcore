@@ -287,7 +287,9 @@ class ProjectDBAPI(BaseProjectDB):
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
-        insert_values.setdefault("workspace_id", None)
+        insert_values["workspace_id"] = (
+            int(insert_values["workspace_id"]) if insert_values.get("workspace_id") is not None else None
+        )
 
         # must be valid uuid
         try:
@@ -932,12 +934,12 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects.c.id == current_project[projects.c.id.key])
                 .returning(literal_column("*"))
             )
-            project = result.fetchone()
+            project = result.mappings().fetchone()
             assert project  # nosec
 
-            user_email = await self._get_user_email(db_connection, project.prj_owner)
+            user_email = await self._get_user_email(db_connection, project["prj_owner"])
 
-            tags = await self._get_tags_by_project(db_connection, project_id=project[projects.c.id])
+            tags = await self._get_tags_by_project(db_connection, project_id=project["id"])
             return (
                 convert_to_schema_names(project, user_email, tags=tags),  # type: ignore[arg-type]
                 changed_entries,

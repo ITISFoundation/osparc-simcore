@@ -15,11 +15,11 @@ from uuid import UUID, uuid5
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.exc
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects_nodes_io import NodeID, NodeIDStr
-from psycopg2.errors import UniqueViolation
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import log_client_in
@@ -291,7 +291,8 @@ async def test_insert_project_to_db(
     )
     await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
-    with pytest.raises(UniqueViolation):
+
+    with pytest.raises(sqlalchemy.exc.IntegrityError):
         await insert_project_in_db(
             fake_project,
             user_id=logged_user["id"],

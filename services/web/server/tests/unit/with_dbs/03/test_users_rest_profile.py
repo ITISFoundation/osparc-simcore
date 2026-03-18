@@ -21,7 +21,6 @@ from models_library.api_schemas_webserver.users import (
     MyProfileRestGet,
 )
 from models_library.groups import AccessRightsDict
-from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -392,6 +391,8 @@ async def test_get_profile_with_failing_db_connection(
     - https://github.com/ITISFoundation/osparc-simcore/issues/880
     - https://github.com/ITISFoundation/osparc-simcore/pull/1160
     """
+    from psycopg2 import OperationalError  # noqa: PLC0415
+
     assert client.app
 
     url = client.app.router["get_my_profile"].url_for()
