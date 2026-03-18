@@ -15,6 +15,7 @@ from models_library.notifications.errors import (
 from models_library.notifications.rpc import (
     EmailMessage as NotificationsEmailMessage,
 )
+from models_library.notifications.rpc import TemplateRef as RpcTemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
@@ -122,7 +123,7 @@ async def preview_template(
 
     rpc_response = await remote_preview_template(
         get_rabbitmq_rpc_client(app),
-        ref=ref,
+        ref=RpcTemplateRef(**ref.model_dump()),
         context=enriched_context,
     )
     return TemplatePreview(**rpc_response.model_dump())
