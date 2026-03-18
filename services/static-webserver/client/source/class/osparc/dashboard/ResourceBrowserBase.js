@@ -489,12 +489,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       resourceFilter.addListener("changeSharedWith", e => {
         const sharedWith = e.getData();
-        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
+        this.__addFilter("sharedWith", sharedWith.id, sharedWith.label);
+        // this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
 
       resourceFilter.addListener("changeSelectedTags", e => {
         const selectedTagIds = e.getData();
-        this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
+        this.__addFilter("tags", selectedTagIds, null);
+        // this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
       }, this);
 
       resourceFilter.addListener("changeAppType", e => {
