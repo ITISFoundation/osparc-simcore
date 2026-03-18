@@ -301,6 +301,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
 
+      this._searchBarFilter.addListener("changeSelectedTags", e => {
+        const selectedTagIds = e.getData();
+        if (selectedTagIds.length > 0) {
+          this.__addFilter("tags", selectedTagIds, null);
+        } else {
+          this.__removeFilter("tags");
+        }
+      }, this);
+
       this._searchBarFilter.addListener("changeSharedWith", e => {
         const sharedWithData = e.getData();
         if (sharedWithData) {
@@ -309,6 +318,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this.__removeFilter("sharedWith");
         }
       }, this);
+
       this._searchBarFilter.addListener("changeAppType", e => {
         const appTypeData = e.getData();
         if (appTypeData) {
@@ -503,7 +513,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       resourceFilter.addListener("changeSelectedTags", e => {
         const selectedTagIds = e.getData();
-        this.__addFilter("tags", selectedTagIds, null);
+        if (selectedTagIds.length > 0) {
+          this.__addFilter("tags", selectedTagIds, null);
+        } else {
+          this.__removeFilter("tags");
+        }
       }, this);
 
       resourceFilter.addListener("changeAppType", e => {

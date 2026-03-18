@@ -114,7 +114,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   events: {
     "filterChanged": "qx.event.type.Data",
-    "changeTags": "qx.event.type.Data",
+    "changeSelectedTags": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
     "changeAppType": "qx.event.type.Data",
     "resetButtonPressed": "qx.event.type.Event",
@@ -297,8 +297,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           tagButton.getChildControl("icon").setTextColor(tag.getColor());
           tagsMenu.add(tagButton);
           tagButton.addListener("execute", () => {
-            // this.addTagActiveFilter(tag)
-            this.fireDataEvent("changeTags", tag.getTagId());
+            const selectedTagIds = this.getActiveFilters()["tags"] || [];
+            selectedTagIds.push(tag.getTagId());
+            this.fireDataEvent("changeSelectedTags", selectedTagIds);
           }, this);
         });
         menuButton.setMenu(tagsMenu);
@@ -432,6 +433,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chip = this.self().createChip(type, id, label);
       chip.addListener("execute", () => {
         switch (type) {
+          case "tag":
+            const selectedTagIds = this.getActiveFilters()["tags"] || [];
+            const newSelectedTagIds = selectedTagIds.filter(tagId => tagId !== id);
+            this.fireDataEvent("changeSelectedTags", newSelectedTagIds);
+            break;
           case "shared-with":
             this.fireDataEvent("changeSharedWith", null);
             break;
