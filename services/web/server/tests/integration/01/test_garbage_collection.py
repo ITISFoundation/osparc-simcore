@@ -412,18 +412,18 @@ async def fetch_user_from_db(asyncpg_engine: AsyncEngine, user: UserInfoDict) ->
     """returns a user from the db"""
     async with asyncpg_engine.connect() as conn:
         user_result = await conn.execute(users.select().where(users.c.id == user["id"]))
-        result = user_result.first()
-        if result is None:
+        row = user_result.mappings().one_or_none()
+        if row is None:
             return None
-        return UserInfoDict(**dict(result._mapping))  # noqa: SLF001
+        return UserInfoDict(**row)
 
 
 async def fetch_project_from_db(asyncpg_engine: AsyncEngine, user_project: dict) -> dict[str, Any]:
     async with asyncpg_engine.connect() as conn:
         project_result = await conn.execute(projects.select().where(projects.c.uuid == user_project["uuid"]))
-        result = project_result.first()
-        assert result
-        return dict(result._mapping)  # noqa: SLF001
+        row = project_result.mappings().one()
+        assert row
+        return dict(**row)
 
 
 async def assert_user_in_db(asyncpg_engine: AsyncEngine, logged_user: UserInfoDict) -> None:

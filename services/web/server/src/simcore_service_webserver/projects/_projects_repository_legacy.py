@@ -176,10 +176,10 @@ class ProjectDBAPI(BaseProjectDB):
                                 .values(**insert_values)
                                 .returning(*[c for c in projects.columns if c.name not in ["hidden", "published"]])
                             )
-                            row: Row | None = result.fetchone()
+                            row = result.mappings().fetchone()
                             assert row  # nosec
 
-                            selected_values = ProjectDict(row._mapping.items())
+                            selected_values = ProjectDict(row)
                             project_index = selected_values.pop("id")
 
                         except IntegrityError as err:
@@ -607,14 +607,14 @@ class ProjectDBAPI(BaseProjectDB):
 
             prjs_output = []
             result = await conn.execute(combined_query.offset(offset).limit(limit))
-            for row in result:
+            for row in result.mappings():
                 # NOTE: Historically, projects were returned as a dictionary. I have created a model that
                 # validates the DB row, but this model includes some default values inside the Workbench Node model.
                 # Therefore, if we use this model, it will return those default values, which is not backward-compatible
                 # with the frontend. The frontend would need to check and adapt how it handles default values in
                 # Workbench nodes, which are currently not returned if not set in the DB.
                 ProjectListAtDB.model_validate(row)
-                prjs_output.append(dict(row._mapping.items()))
+                prjs_output.append(dict(row))
 
             return (
                 prjs_output,
