@@ -17,12 +17,12 @@ from redis.backoff import ExponentialBackoff
 
 from ..background_task import periodic
 from ..logging_utils import log_catch, log_context
-from ..redis import handle_redis_returns_union_types
 from ._constants import (
     DEFAULT_DECODE_RESPONSES,
     DEFAULT_HEALTH_CHECK_INTERVAL,
     DEFAULT_LOCK_TTL,
 )
+from ._utils import handle_redis_returns_union_types
 
 _logger = logging.getLogger(__name__)
 
