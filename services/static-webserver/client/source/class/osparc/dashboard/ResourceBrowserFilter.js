@@ -33,6 +33,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     this.__buildLayout();
   },
 
+  properties: {
+    activeFilters: {
+      check: "Object",
+      init: {},
+      nullable: false,
+      event: "changeActiveFilters",
+      apply: "__applyActiveFilters",
+    },
+  },
+
   events: {
     "templatesContext": "qx.event.type.Event",
     "publicTemplatesContext": "qx.event.type.Event",
@@ -512,7 +522,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     },
     /* /SERVICE TYPE */
 
-    filterChanged: function(filterData) {
+    __applyActiveFilters: function(filterData) {
       this.__sharedWithButtons.forEach(btn => {
         btn.setValue(Boolean(
           filterData["sharedWith"] &&

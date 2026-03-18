@@ -318,10 +318,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         }
       }, this);
 
-      this.addListener("changeActiveFilters", e => {
-        const activeFilters = e.getData();
-        this._searchBarFilter.filterChanged(activeFilters);
-      });
+      this.bind("activeFilters", searchBarFilter, "activeFilters");
 
       this._addToLayout(searchBarFilter);
     },
@@ -518,10 +515,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         }
       }, this);
 
-      this.addListener("changeActiveFilters", e => {
-        const activeFilters = e.getData();
-        resourceFilter.filterChanged(activeFilters);
-      });
+      this.bind("activeFilters", resourceFilter, "activeFilters");
 
       this._leftFilters.add(resourceFilter, {
         flex: 1

@@ -47,7 +47,15 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       check: "Boolean",
       init: true,
       event: "changeShowFilterMenu",
-    }
+    },
+
+    activeFilters: {
+      check: "Object",
+      init: {},
+      nullable: false,
+      event: "changeActiveFilters",
+      apply: "__applyActiveFilters",
+    },
   },
 
   statics: {
@@ -106,6 +114,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   events: {
     "filterChanged": "qx.event.type.Data",
+    "changeTags": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
     "changeAppType": "qx.event.type.Data",
     "resetButtonPressed": "qx.event.type.Event",
@@ -169,7 +178,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.getChildControl("reset-button");
     },
 
-    filterChanged: function(filterData) {
+    __applyActiveFilters: function(filterData) {
       const activeFilterChips = this.getChildControl("active-filter-chips");
 
       // first remove those that are not active anymore
@@ -287,7 +296,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.getColor());
           tagsMenu.add(tagButton);
-          tagButton.addListener("execute", () => this.addTagActiveFilter(tag), this);
+          tagButton.addListener("execute", () => {
+            // this.addTagActiveFilter(tag)
+            this.fireDataEvent("changeTags", tag.getTagId());
+          }, this);
         });
         menuButton.setMenu(tagsMenu);
       }
