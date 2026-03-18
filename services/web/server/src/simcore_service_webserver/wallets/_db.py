@@ -45,7 +45,7 @@ async def create_wallet(
             )
             .returning(literal_column("*"))
         )
-        row = result.one()
+        row = result.mappings().one()
         return WalletDB.model_validate(row)
 
 
@@ -96,7 +96,7 @@ async def list_wallets_for_user(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        rows = result.fetchall()
+        rows = result.mappings().fetchall()
         return [UserWalletDB.model_validate(row) for row in rows]
 
 
@@ -150,7 +150,7 @@ async def get_wallet_for_user(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        row = result.one_or_none()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletAccessForbiddenError(
                 details=f"User does not have access to the wallet {wallet_id}. Or wallet does not exist.",
@@ -178,7 +178,7 @@ async def get_wallet(app: web.Application, wallet_id: WalletID, product_name: Pr
     )
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        row = result.one_or_none()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletNotFoundError(details=f"Wallet {wallet_id} not found.")
         return WalletDB.model_validate(row)
@@ -206,7 +206,7 @@ async def update_wallet(
             .where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
             .returning(literal_column("*"))
         )
-        row = result.one_or_none()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletNotFoundError(details=f"Wallet {wallet_id} not found.")
         return WalletDB.model_validate(row)

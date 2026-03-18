@@ -56,7 +56,7 @@ async def create_wallet_group(
             )
             .returning(literal_column("*"))
         )
-        row = result.first()
+        row = result.mappings().one()
         return WalletGroupGetDB.model_validate(row)
 
 
@@ -79,7 +79,7 @@ async def list_wallet_groups(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        rows = result.fetchall()
+        rows = result.mappings().fetchall()
         return TypeAdapter(list[WalletGroupGetDB]).validate_python(rows)
 
 
@@ -103,7 +103,7 @@ async def get_wallet_group(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        row = result.first()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletGroupNotFoundError(details=f"Wallet {wallet_id} group {group_id} not found")
         return WalletGroupGetDB.model_validate(row)
@@ -129,7 +129,7 @@ async def update_wallet_group(
             .where((wallet_to_groups.c.wallet_id == wallet_id) & (wallet_to_groups.c.gid == group_id))
             .returning(literal_column("*"))
         )
-        row = result.first()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletGroupNotFoundError(details=f"Wallet {wallet_id} group {group_id} not found")
         return WalletGroupGetDB.model_validate(row)
