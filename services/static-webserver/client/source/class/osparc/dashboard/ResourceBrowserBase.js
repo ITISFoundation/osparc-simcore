@@ -89,8 +89,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     activeFilters: {
       check: "Object",
-      init: null,
-      nullable: true,
+      init: {},
+      nullable: false,
       event: "changeActiveFilters",
     },
   },

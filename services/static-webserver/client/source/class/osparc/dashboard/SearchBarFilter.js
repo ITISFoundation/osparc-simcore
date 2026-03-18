@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     getInitialFilterData: function() {
       return {
         tags: [],
-        classifiers: [],
         sharedWith: null,
         appType: null,
         text: ""
@@ -171,6 +170,55 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     filterChanged: function(filterData) {
       console.log("Filter changed: ", filterData);
+
+      const activeFilter = this.getChildControl("active-filters");
+      // first remove those that are not active anymore
+      activeFilter.getChildren().forEach(chip => {
+        switch (chip.type) {
+          case "tag":
+            if (!filterData["tags"].includes(chip.id)) {
+              activeFilter.remove(chip);
+            }
+            break;
+          case "shared-with":
+            if (filterData["sharedWith"] !== chip.id) {
+              activeFilter.remove(chip);
+            }
+            break;
+          case "app-type":
+            if (filterData["appType"] !== chip.id) {
+              activeFilter.remove(chip);
+            }
+            break;
+        }
+      });
+
+      // then add those that are new
+      if (filterData["tags"]) {
+        filterData["tags"].forEach(tagId => {
+          const chipFound = activeFilter.getChildren().find(chip => chip.type === "tag" && chip.id === tagId);
+          if (!chipFound) {
+            const tag = osparc.store.Tags.getInstance().getTagById(tagId);
+            this.__addChip("tag", tagId, tag.getName());
+          }
+        });
+      }
+      if (filterData["sharedWith"]) {
+        const chipFound = activeFilter.getChildren().find(chip => chip.type === "shared-with" && chip.id === filterData["sharedWith"]);
+        if (!chipFound) {
+          const option = this.self().getSharedWithOptions(this.__resourceType).find(opt => opt.id === filterData["sharedWith"]);
+          this.__addChip("shared-with", filterData["sharedWith"], option ? option.label : filterData["sharedWith"]);
+        }
+      }
+      if (filterData["appType"]) {
+        const chipFound = activeFilter.getChildren().find(chip => chip.type === "app-type" && chip.id === filterData["appType"]);
+        if (!chipFound) {
+          const serviceTypes = osparc.service.Utils.TYPES;
+          const appTypeInfo = serviceTypes[filterData["appType"]];
+          const label = appTypeInfo ? appTypeInfo.label : filterData["appType"];
+          this.__addChip("app-type", filterData["appType"], label);
+        }
+      }
     },
 
     __buildFiltersMenu: function() {
@@ -189,10 +237,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
         this.__addTags(tagsButton);
         menu.add(tagsButton);
-
-        const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"), "@FontAwesome5Solid/search/12");
-        this.__addClassifiers(classifiersButton);
-        menu.add(classifiersButton);
       }
 
       if (this.__resourceType === "service") {
@@ -281,20 +325,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         }
       });
       menuButton.setMenu(sharedWithMenu);
-    },
-
-    __addClassifiers: function(menuButton) {
-      const classifiers = osparc.store.Store.getInstance().getClassifiers();
-      menuButton.setVisibility(classifiers && classifiers.length ? "visible" : "excluded");
-      if (classifiers && classifiers.length) {
-        const classifiersMenu = new qx.ui.menu.Menu();
-        classifiers.forEach(classifier => {
-          const classifierButton = new qx.ui.menu.Button(classifier.display_name);
-          classifiersMenu.add(classifierButton);
-          classifierButton.addListener("execute", () => this.__addChip("classifier", classifier.classifier, classifier.display_name), this);
-        });
-        menuButton.setMenu(classifiersMenu);
-      }
     },
 
     __addAppTypes: function(menuButton) {
@@ -439,9 +469,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         switch (chip.type) {
           case "tag":
             filterData.tags.push(chip.id);
-            break;
-          case "classifier":
-            filterData.classifiers.push(chip.id);
             break;
           case "shared-with":
             filterData.sharedWith = chip.id === "show-all" ? null : chip.id;

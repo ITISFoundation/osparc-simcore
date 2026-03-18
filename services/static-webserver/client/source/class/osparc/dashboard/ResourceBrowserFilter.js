@@ -516,21 +516,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       console.log("Filter changed: ", filterData);
       this.__sharedWithButtons.forEach(btn => {
         btn.setValue(
-          filterData &&
           filterData["sharedWith"] &&
           filterData["sharedWith"] === btn.id
         );
       });
       this.__tagButtons.forEach(btn => {
         btn.setValue(
-          filterData &&
           filterData["tags"] &&
           filterData["tags"].includes(btn.id)
         );
       });
       this.__appTypeButtons.forEach(btn => {
         btn.setValue(
-          filterData &&
           filterData["appType"] &&
           filterData["appType"]["id"] &&
           filterData["appType"]["id"] === btn.appType
