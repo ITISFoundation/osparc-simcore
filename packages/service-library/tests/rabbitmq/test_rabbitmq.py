@@ -14,6 +14,7 @@ from unittest import mock
 import aio_pika
 import pytest
 from faker import Faker
+from pydantic import NonPositiveFloat
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import (
     BIND_TO_ALL_TOPICS,
@@ -173,7 +174,8 @@ async def _assert_message_received(
     ):
         with attempt:
             print(
-                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, "
+                f"{attempt.retry_state.idle_for}]"
             )
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
@@ -185,7 +187,8 @@ async def _assert_message_received(
                 assert expected_message
                 mocked_message_parser.assert_any_call(expected_message.message.encode())
             print(
-                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, "
+                f"{attempt.retry_state.idle_for}]"
             )
 
 
@@ -598,7 +601,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
 
     # we should get no messages since no one was subscribed
-    queue_name, consumer_tag = await consumer.subscribe(exchange_name, mocked_message_parser, topics=[])
+    queue_name, _ = await consumer.subscribe(exchange_name, mocked_message_parser, topics=[])
     await _assert_message_received(mocked_message_parser, 0)
 
     # now we should also not get anything since we are not interested in any topic
@@ -681,18 +684,22 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
         await client.subscribe(exchange_name, mocked_message_parser, topics=[])
 
 
+@pytest.mark.parametrize("idempotent_attempts", [10])
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_unsubscribe_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
+    idempotent_attempts: NonPositiveFloat,
 ):
     exchange_name = f"{random_exchange_name()}"
     client = create_rabbitmq_client("consumer")
     queue_name, consumer_tag = await client.subscribe(exchange_name, mocked_message_parser, exclusive_queue=False)
+
     # Unsubscribe just a consumer, the queue will be still there
-    await client.unsubscribe_consumer(queue_name, consumer_tag)
+    for _ in range(idempotent_attempts):
+        await client.unsubscribe_consumer(queue_name, consumer_tag)
+
     # Unsubscribe the queue
-    await client.unsubscribe(queue_name)
-    with pytest.raises(aio_pika.exceptions.ChannelNotFoundEntity):
+    for _ in range(idempotent_attempts):
         await client.unsubscribe(queue_name)
