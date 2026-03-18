@@ -3,13 +3,13 @@ from typing import Final, Literal
 
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.storage import PathToExport
-from models_library.products import ProductName
-from models_library.users import UserID
-
-from ...models import (
+from models_library.celery import (
     OwnerMetadata,
     TaskExecutionMetadata,
 )
+from models_library.products import ProductName
+from models_library.users import UserID
+
 from ...task_manager import TaskManager
 
 EXPORT_DATA_TASK_NAME: Final[str] = "export_data"

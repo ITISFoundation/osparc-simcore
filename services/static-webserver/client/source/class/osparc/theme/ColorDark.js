@@ -140,7 +140,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
     // OSPARC
     "workbench-start-hint": "#505050",
     "workbench-view-navbar": "c00",
-    "workbench-view-splitter": "#000000",
 
     "node-background": "rgba(113, 157, 181, 0.5)",
     "node-selected-background": "strong-main",

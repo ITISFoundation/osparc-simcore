@@ -357,9 +357,10 @@ def log_in_and_out(
     store_browser_context: bool,
     context: BrowserContext,
 ) -> Iterator[RobustWebSocket]:
+    _browser_info = f"{browser.browser_type.name}:{browser.version}({browser.browser_type.executable_path})"
     with log_context(
         logging.INFO,
-        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {browser.browser_type.name}:{browser.version}({browser.browser_type.executable_path})",
+        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {_browser_info}",
     ):
         response = page.goto(f"{product_url}")
         assert response
@@ -457,8 +458,83 @@ def _select_service_version(page: Page, *, version: str) -> None:
         page.get_by_label("Version").select_option(version)
 
 
+def _open_project(  # noqa: C901
+    *,
+    page: Page,
+    log_in_and_out: RobustWebSocket,
+    is_product_billable: bool,
+    expected_states: tuple[RunningState, ...],
+    press_open: bool,
+    template_id: str | None,
+    service_version: str | None,
+    timeout: int,
+) -> dict[str, Any]:
+    """Handles clicking open, waiting for responses, and returning project data."""
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+
+    with log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND):
+        with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND) as response_info:
+            open_with_resources_clicked = False
+            # Project detail view pop-ups shows
+            if press_open:
+                open_button = page.get_by_test_id("openResource")
+                if template_id is not None:
+                    if is_product_billable:
+                        open_button.click()
+                        open_button = _open_with_resources(page, click_it=False)
+                    # it returns a Long Running Task
+                    with page.expect_response(re.compile(rf"/projects\?from_study\={template_id}")) as lrt:
+                        open_button.click()
+                    open_with_resources_clicked = True
+                    lrt_data = lrt.value.json()
+                    lrt_data = lrt_data["data"]
+                    with log_context(
+                        logging.INFO,
+                        "Copying template data",
+                    ) as copying_logger:
+                        # From the long running tasks response's urls, only their path is relevant
+                        def url_to_path(url):
+                            return urllib.parse.urlparse(url).path
+
+                        def wait_for_done(response):
+                            if url_to_path(response.url) == url_to_path(lrt_data["status_href"]):
+                                resp_data = response.json()
+                                resp_data = resp_data["data"]
+                                assert "task_progress" in resp_data
+                                task_progress = resp_data["task_progress"]
+                                copying_logger.logger.info(
+                                    "task progress: %s %s",
+                                    task_progress["percent"],
+                                    task_progress["message"],
+                                )
+                                return False
+                            if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
+                                copying_logger.logger.info("project created")
+                                return response.status == 201
+                            return False
+
+                        with page.expect_response(wait_for_done, timeout=timeout):
+                            # if the above calls go to fast, this test could fail
+                            # not expected in the sim4life context though
+                            ...
+                else:
+                    if service_version is not None:
+                        _select_service_version(page, version=service_version)
+                    open_button.click()
+                    if is_product_billable:
+                        _open_with_resources(page, click_it=True)
+                        open_with_resources_clicked = True
+            if is_product_billable and not open_with_resources_clicked:
+                _open_with_resources(page, click_it=True)
+
+        assert response_info.value.ok, f"{response_info.value.json()}"
+    project_data = response_info.value.json()
+    assert project_data
+    return project_data
+
+
 @pytest.fixture
-def create_new_project_and_delete(  # noqa: C901, PLR0915
+def create_new_project_and_delete(
     page: Page,
     log_in_and_out: RobustWebSocket,
     is_product_billable: bool,
@@ -470,14 +546,13 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
     """
     created_project_uuids = []
 
-    def _(  # noqa: C901
+    def _(
         expected_states: tuple[RunningState, ...],
         press_open: bool,
         template_id: str | None,
         service_version: str | None,
     ) -> dict[str, Any]:
         with log_context(logging.INFO, f"Open project in {product_url=} as {is_product_billable=}") as ctx:
-            waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             timeout = (
                 _OPENING_TUTORIAL_MAX_WAIT_TIME if template_id is not None else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
             )
@@ -491,66 +566,18 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                 expected_states,
             )
 
-            with log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND):
-                with page.expect_response(
-                    re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND
-                ) as response_info:
-                    open_with_resources_clicked = False
-                    # Project detail view pop-ups shows
-                    if press_open:
-                        open_button = page.get_by_test_id("openResource")
-                        if template_id is not None:
-                            if is_product_billable:
-                                open_button.click()
-                                open_button = _open_with_resources(page, click_it=False)
-                            # it returns a Long Running Task
-                            with page.expect_response(re.compile(rf"/projects\?from_study\={template_id}")) as lrt:
-                                open_button.click()
-                            open_with_resources_clicked = True
-                            lrt_data = lrt.value.json()
-                            lrt_data = lrt_data["data"]
-                            with log_context(
-                                logging.INFO,
-                                "Copying template data",
-                            ) as copying_logger:
-                                # From the long running tasks response's urls, only their path is relevant
-                                def url_to_path(url):
-                                    return urllib.parse.urlparse(url).path
-
-                                def wait_for_done(response):
-                                    if url_to_path(response.url) == url_to_path(lrt_data["status_href"]):
-                                        resp_data = response.json()
-                                        resp_data = resp_data["data"]
-                                        assert "task_progress" in resp_data
-                                        task_progress = resp_data["task_progress"]
-                                        copying_logger.logger.info(
-                                            "task progress: %s %s",
-                                            task_progress["percent"],
-                                            task_progress["message"],
-                                        )
-                                        return False
-                                    if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
-                                        copying_logger.logger.info("project created")
-                                        return response.status == 201
-                                    return False
-
-                                with page.expect_response(wait_for_done, timeout=timeout):
-                                    # if the above calls go to fast, this test could fail
-                                    # not expected in the sim4life context though
-                                    ...
-                        else:
-                            if service_version is not None:
-                                _select_service_version(page, version=service_version)
-                            open_button.click()
-                            if is_product_billable:
-                                _open_with_resources(page, click_it=True)
-                                open_with_resources_clicked = True
-                    if is_product_billable and not open_with_resources_clicked:
-                        _open_with_resources(page, click_it=True)
-
-                assert response_info.value.ok, f"{response_info.value.json()}"
-            project_data = response_info.value.json()
+            project_data = _open_project(
+                page=page,
+                log_in_and_out=log_in_and_out,
+                is_product_billable=is_product_billable,
+                expected_states=expected_states,
+                press_open=press_open,
+                template_id=template_id,
+                service_version=service_version,
+                timeout=timeout,
+            )
             assert project_data
+
             project_uuid = project_data["data"]["uuid"]
             ctx.logger.info("%s", f"{project_uuid=}")
             ctx.logger.info(
@@ -568,7 +595,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
         if page.get_by_test_id("dashboardBtn").is_visible():
             with ExitStack() as stack:
                 for project_uuid in created_project_uuids:
-                    ctx = stack.enter_context(log_context(logging.INFO, f"Wait for closed project {project_uuid=}"))
+                    stack.enter_context(log_context(logging.INFO, f"Wait for closed project {project_uuid=}"))
                     stack.enter_context(
                         log_in_and_out.expect_event(
                             "framereceived",
@@ -640,7 +667,8 @@ def find_and_start_service_in_dashboard(
             _textbox = page.get_by_test_id("searchBarFilter-textField-service")
             _textbox.fill(service_name)
             _textbox.press("Enter")
-            test_id = f"serviceBrowserListItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}"
+            _svc = "dynamic" if service_type is ServiceType.DYNAMIC else "comp"
+            test_id = f"serviceBrowserListItem_simcore/services/{_svc}"
             if service_key_prefix:
                 test_id = f"{test_id}/{service_key_prefix}"
             test_id = f"{test_id}/{service_name}"
@@ -703,7 +731,7 @@ def create_project_from_service_dashboard(
         # press_open=True, template_id=None, service_version=service_version
         return create_new_project_and_delete(
             expected_states,
-            True,
+            True,  # noqa: FBT003
             None,
             service_version,
         )
