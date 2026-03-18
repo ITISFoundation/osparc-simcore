@@ -25,9 +25,7 @@ async def create_token_in_db(engine, **data):
 
     async with engine.begin() as conn:
         stmt = tokens.insert().values(**params)
-        result = await conn.execute(stmt)
-        row = result.first()
-        return dict(row._mapping)  # noqa: SLF001
+        await conn.execute(stmt)
 
 
 async def get_token_from_db(engine, *, token_id=None, user_id=None, token_service=None, token_data=None):
@@ -40,8 +38,8 @@ async def get_token_from_db(engine, *, token_id=None, user_id=None, token_servic
         )
         stmt = sa.select(tokens).where(expr)
         result = await conn.execute(stmt)
-        row = result.first()
-        return dict(row._mapping) if row else None  # noqa: SLF001
+        row = result.mappings().one_or_none()
+        return dict(row) if row else None
 
 
 async def delete_token_from_db(engine, *, token_id):
