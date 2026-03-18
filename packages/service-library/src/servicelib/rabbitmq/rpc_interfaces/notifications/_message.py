@@ -32,7 +32,7 @@ async def send_message(
         TypeAdapter(RPCMethodName).validate_python("send_message"),
         request=SendMessageRequest(
             message=message,
-            owner_metadata=owner_metadata,
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec
@@ -56,7 +56,7 @@ async def send_message_from_template(
             template_ref=template_ref,
             envelope=envelope,
             context=context,
-            owner_metadata=owner_metadata,
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec
