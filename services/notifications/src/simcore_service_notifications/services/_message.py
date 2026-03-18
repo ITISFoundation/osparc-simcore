@@ -8,7 +8,7 @@ from models_library.celery import (
     TaskName,
     TaskUUID,
 )
-from models_library.notifications.rpc import EmailEnvelope, EmailMessage
+from models_library.notifications.rpc import EmailMessage, Envelope, Message
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
     submit_send_messages_task,
@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
 _OWNER_METADATA = OwnerMetadata(owner=APP_NAME)
 
 
-def _prepare_celery_messages(message: EmailMessage) -> list[dict[str, Any]]:
+def _prepare_celery_messages(message: Message) -> list[dict[str, Any]]:
     """Dispatches to channel handler to fan out into per-recipient celery payloads.
 
     Raises:
@@ -43,7 +43,7 @@ class MessageService:
     async def send_message(
         self,
         *,
-        message: EmailMessage,
+        message: Message,
         owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         resolved_owner = owner_metadata or _OWNER_METADATA
@@ -67,7 +67,7 @@ class MessageService:
     async def send_message_from_template(
         self,
         *,
-        envelope: EmailEnvelope,
+        envelope: Envelope,
         ref: TemplateRef,
         context: dict[str, Any],
         owner_metadata: OwnerMetadata | None = None,

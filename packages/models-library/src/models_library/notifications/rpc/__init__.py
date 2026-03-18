@@ -8,6 +8,7 @@ from ._email import (
     EmailEnvelope,
     EmailMessage,
     EmailMessageContent,
+    Envelope,
     Message,
 )
 from ._message import (
@@ -29,6 +30,8 @@ __all__: tuple[str, ...] = (
     "EmailEnvelope",
     "EmailMessage",
     "EmailMessageContent",
+    "Envelope",
+    "Message",
     "Message",
     "PreviewTemplateRequest",
     "PreviewTemplateResponse",

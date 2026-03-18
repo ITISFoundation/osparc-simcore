@@ -4,8 +4,8 @@ from typing import Any
 from models_library.celery import OwnerMetadata
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
-    EmailEnvelope,
-    EmailMessage,
+    Envelope,
+    Message,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
 async def send_message(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    message: EmailMessage,
+    message: Message,
     owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
@@ -45,7 +45,7 @@ async def send_message(
 async def send_message_from_template(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    envelope: EmailEnvelope,
+    envelope: Envelope,
     template_ref: TemplateRef,
     context: dict[str, Any],
     owner_metadata: OwnerMetadata | None = None,

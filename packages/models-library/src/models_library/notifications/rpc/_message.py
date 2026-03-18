@@ -4,13 +4,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ...celery import GroupUUID, OwnerMetadata, TaskUUID
-from ._email import EmailEnvelope, EmailMessage
+from ._email import Envelope, Message
 from ._template import TemplateRef
 
 
 class SendMessageRequest(BaseModel):
     message: Annotated[
-        EmailMessage,
+        Message,
         Field(
             description="Channel-specific message payload (e.g. EmailMessage for email).",
         ),
@@ -56,7 +56,7 @@ class SendMessageRequest(BaseModel):
 
 class SendMessageFromTemplateRequest(BaseModel):
     envelope: Annotated[
-        EmailEnvelope,
+        Envelope,
         Field(
             description="Channel-specific envelope (addressing info). "
             "Does NOT include message content, which is generated from the template.",

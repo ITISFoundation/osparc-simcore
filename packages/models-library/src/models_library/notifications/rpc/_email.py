@@ -29,3 +29,12 @@ class EmailEnvelope(Message):
 class EmailMessage(EmailEnvelope):
     channel: Channel = Channel.email
     content: EmailMessageContent
+
+
+# Union of all channel-specific envelope types.
+# Extend this as new channels are added (e.g. SmsEnvelope | ...).
+type Envelope = EmailEnvelope
+
+# Union of all channel-specific message types (envelope + content).
+# Extend this as new channels are added (e.g. EmailMessage | SmsMessage | ...).
+type Message = EmailMessage
