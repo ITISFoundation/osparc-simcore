@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from contextlib import suppress
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
@@ -14,7 +14,7 @@ from servicelib.utils import logged_gather
 
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..catalog import catalog_service
-from ..db import plugin
+from ..db import db_service
 from ..director_v2 import director_v2_service
 from ..login.decorators import login_required
 from ..resource_usage._client import is_resource_usage_tracking_service_responsive
@@ -61,7 +61,7 @@ async def get_app_diagnostics(request: web.Request):
 @login_required
 @permission_required("diagnostics.read")
 async def get_app_status(request: web.Request):
-    SERVICES = (
+    service_names: Final = (
         "postgres",
         "storage",
         "director_v2",
@@ -90,7 +90,7 @@ async def get_app_status(request: web.Request):
         {
             "app_name": APP_NAME,
             "version": API_VERSION,
-            "services": {name: {"healthy": False} for name in SERVICES},
+            "services": {name: {"healthy": False} for name in service_names},
             "sessions": {"main": _get_client_session_info()},
             # hyperlinks
             "url": _get_url_for("get_app_status"),
@@ -102,8 +102,8 @@ async def get_app_status(request: web.Request):
 
     async def _check_pg():
         check.services["postgres"] = {
-            "healthy": await plugin.is_service_responsive(request.app),
-            "pool": plugin.get_engine_state(request.app),
+            "healthy": await db_service.is_service_responsive(request.app),
+            "pool": db_service.get_engine_state(request.app),
         }
 
     async def _check_storage():

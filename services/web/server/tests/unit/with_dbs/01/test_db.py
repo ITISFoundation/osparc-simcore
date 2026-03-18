@@ -13,7 +13,8 @@ from simcore_service_webserver.application_settings import (
     get_application_settings,
 )
 from simcore_service_webserver.db import _asyncpg
-from simcore_service_webserver.db.plugin import (
+from simcore_service_webserver.db.db_service import (
+    get_engine_state,
     is_service_enabled,
     is_service_responsive,
 )
@@ -55,3 +56,11 @@ async def test_responsive(web_server: TestServer):
     app = web_server.app
     assert is_service_enabled(app)
     assert await is_service_responsive(app)
+
+
+async def test_get_engine_state(web_server: TestServer):
+    app = web_server.app
+    state = get_engine_state(app)
+    assert isinstance(state, dict)
+    assert "checkedin" in state
+    assert "checkedout" in state
