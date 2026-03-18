@@ -36,8 +36,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__buildLayout();
 
     this.__buildFiltersMenu();
-
-    this.__attachEventHandlers();
+    osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
 
     this.__currentFilter = null;
   },
@@ -152,6 +151,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           control.getContentElement().setStyles({
             "border-bottom": "none"
           });
+          control.addListener("tap", () => this.__showFilterMenu(), this);
+          control.addListener("deactivate", () => this.__hideFilterMenu(), this);
+          control.addListener("keypress", e => {
+            if (e.getKeyIdentifier() === "Enter") {
+              this.__filter();
+            } else {
+              this.__hideFilterMenu();
+            }
+          }, this);
+          control.addListener("focusout", () => this.__filter(), this);
           this._add(control, {
             flex: 1
           });
@@ -165,6 +174,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             alignY: "middle",
             opacity: 0.7
           });
+          control.addListener("execute", () => this.resetButtonPressed(), this);
           this._add(control);
           break;
       }
@@ -210,6 +220,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           this.__addChip("app-type", filterData["appType"]["id"], label);
         }
       }
+      if (filterData["text"]) {
+        this.getChildControl("text-field").setValue(filterData["text"]);
+      }
       this.__filter();
     },
 
@@ -236,25 +249,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         this.__addAppTypes(appTypeButton);
         menu.add(appTypeButton);
       }
-    },
-
-    __attachEventHandlers: function() {
-      const textField = this.getChildControl("text-field");
-      textField.addListener("tap", () => this.__showFilterMenu(), this);
-      textField.addListener("deactivate", () => this.__hideFilterMenu(), this);
-      textField.addListener("keypress", e => {
-        if (e.getKeyIdentifier() === "Enter") {
-          this.__filter();
-        } else {
-          this.__hideFilterMenu();
-        }
-      }, this);
-      textField.addListener("focusout", () => this.__filter(), this);
-
-      const resetButton = this.getChildControl("reset-button");
-      resetButton.addListener("execute", () => this.resetButtonPressed(), this);
-
-      osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
 
     getTextFilterValue: function() {
@@ -445,24 +439,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       activeFilter.add(chip);
     },
 
-    __removeChip: function(type, id) {
+    __removeChips: function() {
       const activeFilter = this.getChildControl("active-filter-chips");
-      const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
-      if (chipFound) {
-        activeFilter.remove(chipFound);
-      }
-    },
-
-    __removeChips: function(type) {
-      const activeFilter = this.getChildControl("active-filter-chips");
-      if (type) {
-        const chipsFounds = activeFilter.getChildren().filter(chip => chip.type === type);
-        for (let i=chipsFounds.length-1; i>=0; i--) {
-          activeFilter.remove(chipsFounds[i]);
-        }
-      } else {
-        activeFilter.removeAll();
-      }
+      activeFilter.removeAll();
     },
 
     resetFilters: function() {
