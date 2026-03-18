@@ -941,7 +941,7 @@ class ProjectDBAPI(BaseProjectDB):
 
             tags = await self._get_tags_by_project(db_connection, project_id=project["id"])
             return (
-                convert_to_schema_names(project, user_email, tags=tags),  # type: ignore[arg-type]
+                convert_to_schema_names(project, user_email, tags=tags),
                 changed_entries,
             )
         msg = "linter unhappy without this"

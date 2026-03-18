@@ -653,7 +653,7 @@ async def test_get_node_ids_from_project(db_api: ProjectDBAPI, some_projects_and
 
 
 @pytest.mark.parametrize("user_role", [UserRole.ANONYMOUS])  # worst case
-@pytest.mark.parametrize("access_rights", [x.value for x in ProjectAccessRights])
+@pytest.mark.parametrize("access_rights", [x.value for x in ProjectAccessRights.all()])
 async def test_has_permission(
     faker: Faker,
     logged_user: dict[str, Any],

@@ -126,7 +126,7 @@ def group_id(faker: Faker) -> GroupID:
     return faker.pyint(min_value=1)
 
 
-@pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
+@pytest.mark.parametrize("project_access_rights", ProjectAccessRights.all())
 def test_project_access_rights_creation(group_id: int, project_access_rights: ProjectAccessRights):
     git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
     assert str(group_id) in git_to_access_rights

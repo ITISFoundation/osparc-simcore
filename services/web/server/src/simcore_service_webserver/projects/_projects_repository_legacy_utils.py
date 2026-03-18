@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import Mapping
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Any, ClassVar, Literal
 
 import sqlalchemy as sa
@@ -45,11 +47,28 @@ PermissionStr = Literal["read", "write", "delete"]
 ANY_USER_ID_SENTINEL = -1
 
 
-class ProjectAccessRights(Enum):
-    # NOTE: PC->SAN: enum with dict as values is unual. need to review
-    OWNER: ClassVar = {"read": True, "write": True, "delete": True}
-    COLLABORATOR: ClassVar = {"read": True, "write": True, "delete": False}
-    VIEWER: ClassVar = {"read": True, "write": False, "delete": False}
+@dataclass(frozen=True)
+class ProjectAccessRights:
+    read: bool
+    write: bool
+    delete: bool
+
+    OWNER: ClassVar[ProjectAccessRights]
+    COLLABORATOR: ClassVar[ProjectAccessRights]
+    VIEWER: ClassVar[ProjectAccessRights]
+
+    @property
+    def value(self) -> dict[str, bool]:
+        return {"read": self.read, "write": self.write, "delete": self.delete}
+
+    @classmethod
+    def all(cls) -> tuple[ProjectAccessRights, ...]:
+        return (cls.OWNER, cls.COLLABORATOR, cls.VIEWER)
+
+
+ProjectAccessRights.OWNER = ProjectAccessRights(read=True, write=True, delete=True)
+ProjectAccessRights.COLLABORATOR = ProjectAccessRights(read=True, write=True, delete=False)
+ProjectAccessRights.VIEWER = ProjectAccessRights(read=True, write=False, delete=False)
 
 
 def create_project_access_rights(gid: int, access: ProjectAccessRights) -> dict[str, dict[str, bool]]:
