@@ -175,14 +175,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterClassifiers: function(checks, classifiers) {
-      if (classifiers && classifiers.length) {
-        const includesAll = classifiers.every(classifier => checks.includes(classifier));
-        return !includesAll;
-      }
-      return false;
-    },
-
     populateShareIcon: function(shareIcon, accessRights) {
       const gids = Object.keys(accessRights).map(key => parseInt(key));
 
@@ -1229,11 +1221,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterAppType(resourceType, resourceData, appType);
     },
 
-    _filterClassifiers: function(classifiers) {
-      const checks = this.getClassifiers();
-      return this.self().filterClassifiers(checks, classifiers);
-    },
-
     __curateFilterId: function(filterId) {
       if (this.isPropertyInitialized("resourceType")) {
         switch (this.getResourceType()) {
@@ -1266,9 +1253,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (this.__filterAppType(data.appType)) {
         return true;
       }
-      if (this._filterClassifiers(data.classifiers)) {
-        return true;
-      }
       return false;
     },
 
@@ -1285,9 +1269,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if ("appType" in data) {
-        return true;
-      }
-      if (data.classifiers && data.classifiers.length) {
         return true;
       }
       return false;
