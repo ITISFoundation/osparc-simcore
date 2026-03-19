@@ -19,3 +19,7 @@ class NotificationsUnsupportedChannelError(BaseNotificationsError):
 
 class NotificationsNoActiveRecipientsError(BaseNotificationsError):
     msg_template = "No active recipients selected."
+
+
+class NotificationsTooManyRecipientsError(BaseNotificationsError):
+    msg_template = "Too many recipients selected ({num_recipients}). Maximum allowed is {max_recipients}."
