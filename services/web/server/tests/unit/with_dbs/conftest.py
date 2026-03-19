@@ -174,6 +174,9 @@ def app_environment(
                 # affects PostgresSettings.POSTGRES_CLIENT_NAME
                 "HOSTNAME": "wb-test_host.0",
                 "WEBSERVER_RPC_NAMESPACE": service_name,
+                # Explicitly disabled for tests (reenable specifically in tests that need it)
+                "WEBSERVER_CHATBOT": "null",
+                "WEBSERVER_FOGBUGZ": "null",
             },
         )
     )
