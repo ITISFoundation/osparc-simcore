@@ -182,11 +182,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __resourceModel: null,
     __widgets: null,
     __infoPage: null,
+    __billingSettings: null,
     __servicesUpdatePage: null,
+    __servicesBootOptionsPage: null,
     __conversationsPage: null,
     __permissionsPage: null,
     __tagsPage: null,
-    __billingSettings: null,
     __classifiersPage: null,
     __qualityPage: null,
 
@@ -550,10 +551,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
         this.__addToolbarButtons(page);
 
-        if (resourceData["resourceType"] === "study") {
-          const enabled = osparc.study.Utils.canEnableBillingOptions(resourceData);
-          page.setEnabled(enabled);
-        }
+        this.__evaluateBillingSettings();
 
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
@@ -809,9 +807,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addToolbarButtons(page);
 
-      const studyData = this.__resourceData;
-      const enabled = osparc.study.Utils.canEnableServiceUpdates(studyData);
-      page.setEnabled(enabled);
+      this.__evaluateServicesUpdate();
 
       const lazyLoadContent = () => {
         const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
@@ -842,12 +838,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const id = "ServicesBootOptions";
       const title = this.tr("Boot Options");
       const iconSrc = "@FontAwesome5Solid/play-circle/22";
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__servicesBootOptionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addToolbarButtons(page);
 
-      const studyData = this.__resourceData;
-      const enabled = osparc.study.Utils.canEnableServiceBootOptions(studyData);
-      page.setEnabled(enabled);
+      this.__evaluateServiceBootOptions();
 
       const lazyLoadContent = () => {
         const servicesBootOpts = new osparc.metadata.ServicesInStudyBootOpts(resourceData);
@@ -1034,12 +1028,43 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __studyStateChanged: function(state) {
       this.__resourceData.state = osparc.utils.Utils.deepCloneObject(state);
+      this.__evaluateOpenButtons();
+      this.__evaluateBillingSettings();
+      this.__evaluateServicesUpdate();
+      this.__evaluateServiceBootOptions();
+    },
+
+    __evaluateOpenButtons: function() {
       this.getChildControl("tabs-view").getChildren().forEach(page => {
         if (page.openButton) {
           const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(this.__resourceData);
           page.openButton.setLabel(openText);
         }
       });
+    },
+
+    __evaluateBillingSettings: function() {
+      if (this.__billingSettings && this.__resourceData["resourceType"] === "study") {
+        const resourceData = this.__resourceData;
+        const enabled = osparc.study.Utils.canEnableBillingOptions(resourceData);
+        this.__billingSettings.setEnabled(enabled);
+      }
+    },
+
+    __evaluateServicesUpdate: function() {
+      if (this.__servicesUpdatePage) {
+        const resourceData = this.__resourceData;
+        const enabled = osparc.study.Utils.canEnableServiceUpdates(resourceData);
+        this.__servicesUpdatePage.setEnabled(enabled);
+      }
+    },
+
+    __evaluateServiceBootOptions: function() {
+      if (this.__servicesBootOptionsPage) {
+        const resourceData = this.__resourceData;
+        const enabled = osparc.study.Utils.canEnableServiceBootOptions(resourceData);
+        this.__servicesBootOptionsPage.setEnabled(enabled);
+      }
     },
 
     // overridden
