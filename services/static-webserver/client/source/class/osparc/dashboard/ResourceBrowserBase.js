@@ -329,7 +329,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }, this);
 
       this._searchBarFilter.addListener("resetButtonPressed", () => {
-        this.setActiveFilters({});
+        this.__resetFilters();
       }, this);
 
       this.bind("activeFilters", searchBarFilter, "activeFilters");
@@ -558,6 +558,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       if (filterName in activeFilters) {
         delete activeFilters[filterName];
       }
+      this.setActiveFilters(activeFilters);
+    },
+
+    __resetFilters: function() {
+      const activeFilters = {};
       this.setActiveFilters(activeFilters);
     },
 
