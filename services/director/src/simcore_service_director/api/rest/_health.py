@@ -8,7 +8,7 @@ router = APIRouter()
 @router.api_route(
     "/",
     methods=["GET", "HEAD"],
-    include_in_schema=False,
+    include_in_schema=True,
     response_class=PlainTextResponse,
 )
 async def health_check() -> str:
