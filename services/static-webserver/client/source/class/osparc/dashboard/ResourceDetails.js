@@ -166,13 +166,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         wrap: true,
       });
     },
-
-    disableIfInUse: function(resourceData, widget) {
-      if (resourceData["resourceType"] === "study") {
-        // disable if it's being used
-        widget.setEnabled(!osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"]).length);
-      }
-    },
   },
 
   properties: {
@@ -558,13 +551,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__addToolbarButtons(page);
 
         if (resourceData["resourceType"] === "study") {
-          const canBeOpened = osparc.study.Utils.canShowBillingOptions(resourceData);
+          const canBeOpened = osparc.study.Utils.canEnableBillingOptions(resourceData);
           page.setEnabled(canBeOpened);
         }
 
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
-          this.self().disableIfInUse(resourceData, billingSettings);
           billingSettings.addListener("debtPaid", () => {
             page.payDebtButton.set({
               visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
@@ -818,12 +810,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addToolbarButtons(page);
 
       const studyData = this.__resourceData;
-      const enabled = osparc.study.Utils.canShowServiceUpdates(studyData);
+      const enabled = osparc.study.Utils.canEnableServiceUpdates(studyData);
       page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
         const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
-        this.self().disableIfInUse(resourceData, servicesUpdate);
         servicesUpdate.addListener("updateService", e => {
           const updatedData = e.getData();
           this.__fireUpdateEvent(resourceData, updatedData);
@@ -855,12 +846,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addToolbarButtons(page);
 
       const studyData = this.__resourceData;
-      const enabled = osparc.study.Utils.canShowServiceBootOptions(studyData);
+      const enabled = osparc.study.Utils.canEnableServiceBootOptions(studyData);
       page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
         const servicesBootOpts = new osparc.metadata.ServicesInStudyBootOpts(resourceData);
-        this.self().disableIfInUse(resourceData, servicesBootOpts);
         servicesBootOpts.addListener("updateService", e => {
           const updatedData = e.getData();
           this.__fireUpdateEvent(resourceData, updatedData);
