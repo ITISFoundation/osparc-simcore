@@ -32,6 +32,7 @@ _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 )
 _S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
 _S4L_COPY_WORKSPACE_TIME: Final[int] = 60 * SECOND
+_S4L_USER_INTERACTION_WAIT_TIME: Final[int] = int(1.5 * MINUTE)
 
 
 @dataclass(kw_only=True)
@@ -168,7 +169,7 @@ def interact_with_s4l(page: Page, s4l_iframe: FrameLocator) -> None:
     # Wait until grid is shown
     # NOTE: the startup screen should disappear very fast after the websocket was acquired
     with log_context(logging.INFO, "Interact with S4l"):
-        s4l_iframe.get_by_test_id("tree-item-Grid").nth(0).click()
+        s4l_iframe.get_by_test_id("tree-item-Grid").nth(0).click(timeout=_S4L_USER_INTERACTION_WAIT_TIME)
     page.wait_for_timeout(3000)
 
 
