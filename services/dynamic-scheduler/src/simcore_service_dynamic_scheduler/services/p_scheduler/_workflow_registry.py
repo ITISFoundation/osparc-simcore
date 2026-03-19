@@ -1,12 +1,19 @@
 import itertools
+from enum import auto
 
 import networkx as nx
+from models_library.utils.enums import StrAutoEnum
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ._abc import BaseStep
 from ._errors import WorkflowNotRegisteredError
 from ._lifecycle_protocol import SupportsLifecycle
 from ._models import DagNodeUniqueReference, InDataKeys, KeyConfig, StepsSequence, WorkflowDefinition, WorkflowName
+
+
+class _Phase(StrAutoEnum):
+    APPLY = auto()
+    REVERT = auto()
 
 
 def _get_step_sequence(definition: WorkflowDefinition) -> StepsSequence:
@@ -36,13 +43,18 @@ def _get_step_references_to_types(definition: WorkflowDefinition) -> dict[DagNod
 
 
 def _check_no_parallel_steps_write_same_key(
-    step_sequences: StepsSequence, step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]], *, phase: str
+    step_sequences: StepsSequence,
+    step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]],
+    *,
+    phase: _Phase,
 ) -> None:
     for step_sequence in step_sequences:
         current_outputs: set[str] = set()
         for step in step_sequence:
             step_class = step_references_to_types[step]
-            outputs = step_class.apply_provides_outputs() if phase == "APPLY" else step_class.revert_provides_outputs()
+            outputs = (
+                step_class.apply_provides_outputs() if phase == _Phase.APPLY else step_class.revert_provides_outputs()
+            )
             for key_config in outputs:
                 if key_config.name in current_outputs:
                     msg = (
@@ -54,7 +66,7 @@ def _check_no_parallel_steps_write_same_key(
 
 
 def _check_requests_inputs_present(
-    in_data_keys: InDataKeys, step: DagNodeUniqueReference, sequence_context: set[str], *, phase: str
+    in_data_keys: InDataKeys, step: DagNodeUniqueReference, sequence_context: set[str], *, phase: _Phase
 ) -> None:
     for key_config in in_data_keys:
         if key_config.name not in sequence_context and key_config.optional is False:
@@ -67,8 +79,8 @@ def _validate_step_sequences(
     step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]],
     initial_context: set[KeyConfig],
 ) -> None:
-    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="APPLY")
-    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="REVERT")
+    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase=_Phase.APPLY)
+    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase=_Phase.REVERT)
 
     sequence_context: set[str] = set()
     for key_config in initial_context:
@@ -83,8 +95,12 @@ def _validate_step_sequences(
         for step in sequence:
             step_class = step_references_to_types[step]
 
-            _check_requests_inputs_present(step_class.apply_requests_inputs(), step, sequence_context, phase="APPLY")
-            _check_requests_inputs_present(step_class.revert_requests_inputs(), step, sequence_context, phase="REVERT")
+            _check_requests_inputs_present(
+                step_class.apply_requests_inputs(), step, sequence_context, phase=_Phase.APPLY
+            )
+            _check_requests_inputs_present(
+                step_class.revert_requests_inputs(), step, sequence_context, phase=_Phase.REVERT
+            )
 
             # add APPLY and REVERT outputs
             for key_config in itertools.chain(
