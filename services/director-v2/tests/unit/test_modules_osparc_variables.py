@@ -30,6 +30,10 @@ from simcore_postgres_database.models.services_environments import VENDOR_SECRET
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules.osparc_variables import substitutions
+from simcore_service_director_v2.modules.osparc_variables._errors import (
+    OsparcVariableResolveError,
+    OsparcVariableResolveTimeoutError,
+)
 from simcore_service_director_v2.modules.osparc_variables.substitutions import (
     _NEW_ENVIRONMENTS,
     OsparcSessionVariablesTable,
@@ -38,6 +42,7 @@ from simcore_service_director_v2.modules.osparc_variables.substitutions import (
     substitute_vendor_secrets_in_specs,
 )
 from simcore_service_director_v2.utils.osparc_variables import (
+    _HANDLERS_TIMEOUT,
     ContextDict,
     OsparcVariablesTable,
     factory_context_getter,
@@ -296,3 +301,74 @@ def test_auto_inject_environments_are_registered():
     auto_injected_osparc_variables = {_.lstrip("$") for _ in _NEW_ENVIRONMENTS.values()}
 
     assert auto_injected_osparc_variables.issubset(registered_osparc_variables)
+
+
+# ---- resolve error wrapping tests (covers TODO: test timeout error handling) ----
+
+
+async def test_resolve_variables_wraps_timeout_in_typed_error():
+    async def _slow_handler(app: FastAPI) -> str:
+        await asyncio.sleep(9999)
+        return "done"
+
+    table = OsparcVariablesTable()
+    table.register({"OSPARC_VARIABLE_SLOW": factory_handler(_slow_handler)})
+
+    context: ContextDict = {"app": FastAPI()}
+
+    with pytest.raises(OsparcVariableResolveTimeoutError) as exc_info:
+        await resolve_variables_from_context(table.copy(), context)
+
+    exc = exc_info.value
+    assert exc.variable_key == "OSPARC_VARIABLE_SLOW"
+    assert exc.timeout_seconds == _HANDLERS_TIMEOUT
+    assert exc.handler_name.endswith("_slow_handler")
+    assert exc.coroutine_name.endswith("_slow_handler")
+    assert isinstance(exc.__cause__, TimeoutError)
+    ctx = exc.error_context()
+    assert ctx["variable_key"] == "OSPARC_VARIABLE_SLOW"
+    assert ctx["handler_name"].endswith("_slow_handler")
+    assert ctx["coroutine_name"].endswith("_slow_handler")
+    assert ctx["timeout_seconds"] == _HANDLERS_TIMEOUT
+
+
+async def test_resolve_variables_wraps_generic_exception_in_typed_error():
+    async def _broken_handler(app: FastAPI) -> str:
+        msg = "something went wrong"
+        raise RuntimeError(msg)
+
+    table = OsparcVariablesTable()
+    table.register({"OSPARC_VARIABLE_BROKEN": factory_handler(_broken_handler)})
+
+    context: ContextDict = {"app": FastAPI()}
+
+    with pytest.raises(OsparcVariableResolveError) as exc_info:
+        await resolve_variables_from_context(table.copy(), context)
+
+    exc = exc_info.value
+    # must be the base class, NOT the timeout subclass
+    assert type(exc) is OsparcVariableResolveError
+    assert exc.variable_key == "OSPARC_VARIABLE_BROKEN"
+    assert exc.handler_name.endswith("_broken_handler")
+    assert exc.coroutine_name.endswith("_broken_handler")
+    assert isinstance(exc.__cause__, RuntimeError)
+
+
+async def test_resolve_variables_sync_values_unaffected_when_handler_fails():
+    async def _broken_handler(app: FastAPI) -> str:
+        msg = "failure"
+        raise RuntimeError(msg)
+
+    table = OsparcVariablesTable()
+    table.register(
+        {
+            "OSPARC_VARIABLE_SYNC": factory_context_getter("my_value"),
+            "OSPARC_VARIABLE_BROKEN": factory_handler(_broken_handler),
+        }
+    )
+
+    context: ContextDict = {"app": FastAPI(), "my_value": "hello"}
+
+    # The sync value resolution itself is fine; the async handler fails and raises
+    with pytest.raises(OsparcVariableResolveError):
+        await resolve_variables_from_context(table.copy(), context)
