@@ -1403,7 +1403,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _backToContext: function() {
       let backToContext = null;
-      // the other filter types follow a different filter path
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
