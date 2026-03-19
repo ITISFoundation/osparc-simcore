@@ -277,7 +277,7 @@ async def user_project_with_num_dynamic_services(
     async with AsyncExitStack() as stack:
 
         async def _creator(num_dyn_services: int) -> ProjectDict:
-            assert num_dyn_services <= 30, "to avoid too long test execution time"
+            assert num_dyn_services <= 50, "to avoid too long test execution time"
 
             project_data = {
                 "workbench": {

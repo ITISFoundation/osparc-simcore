@@ -113,6 +113,8 @@ DEFAULT_ORDER_BY = OrderBy(field=IDStr("last_change_date"), direction=OrderDirec
 
 
 class ProjectDBAPI(BaseProjectDB):
+    MAX_NUMBER_OF_NODES_PER_PROJECT: Final = 50
+
     def __init__(self, app: web.Application) -> None:
         self._app = app
         self._engine: AsyncEngine | None = None
@@ -286,6 +288,14 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values["workspace_id"] = (
             int(insert_values["workspace_id"]) if insert_values.get("workspace_id") is not None else None
         )
+
+        num_nodes = len(insert_values.get("workbench", {}))
+        if num_nodes > self.MAX_NUMBER_OF_NODES_PER_PROJECT:
+            msg = (
+                f"The number of nodes in a project cannot exceed {self.MAX_NUMBER_OF_NODES_PER_PROJECT},"
+                f" requested {num_nodes}"
+            )
+            raise ValueError(msg)
 
         # must be valid uuid
         try:
