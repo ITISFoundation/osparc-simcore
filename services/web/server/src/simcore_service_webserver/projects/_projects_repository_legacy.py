@@ -113,7 +113,7 @@ DEFAULT_ORDER_BY = OrderBy(field=IDStr("last_change_date"), direction=OrderDirec
 
 
 class ProjectDBAPI(BaseProjectDB):
-    MAX_NUMBER_OF_NODES_PER_PROJECT: Final = 50
+    MAX_NUMBER_OF_NODES_PER_PROJECT: Final = 301
 
     def __init__(self, app: web.Application) -> None:
         self._app = app
