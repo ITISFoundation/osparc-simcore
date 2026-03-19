@@ -248,25 +248,38 @@ def test_response_surface_modeling(  # noqa: PLR0915
         if EXPECTED_MOGA_KEY in local_service_key.lower():
             with log_context(logging.INFO, "Filling the output parameters..."):
                 output_plus_button = service_iframe.locator('[mmux-testid="add-output-var-btn"]')
-
+                output_plus_button.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
                 output_plus_button.click()
 
                 output_confirm_button = service_iframe.locator('[mmux-testid="confirm-add-output-btn"]')
+                output_confirm_button.wait_for(state="visible", timeout=30 * SECOND)
                 output_confirm_button.click()
 
         # Click the next button
         with log_context(logging.INFO, "Clicking Next to go to the next step..."):
-            service_iframe.locator('[mmux-testid="next-button"]').click()
+            next_button = service_iframe.locator('[mmux-testid="next-button"]')
+            next_button.wait_for(state="visible", timeout=30 * SECOND)
+            next_button.click()
 
         with log_context(logging.INFO, "Starting the sampling..."):
-            service_iframe.locator('[mmux-testid="extend-sampling-btn"]').click()
-            service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]').click()
+            extend_sampling_btn = service_iframe.locator('[mmux-testid="extend-sampling-btn"]')
+            extend_sampling_btn.wait_for(state="visible", timeout=30 * SECOND)
+            extend_sampling_btn.click()
+
+            new_sampling_btn = service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]')
+            new_sampling_btn.wait_for(state="visible", timeout=30 * SECOND)
+            new_sampling_btn.click()
+
             samplingInput = service_iframe.locator(
                 '[mmux-testid="lhs-number-of-sampling-points-input"] input[type="number"]'
             )
+            samplingInput.wait_for(state="visible", timeout=30 * SECOND)
             samplingInput.fill("40")
             samplingInput.press("Enter")
-            service_iframe.locator('[mmux-testid="run-sampling-btn"]').click()
+
+            run_sampling_btn = service_iframe.locator('[mmux-testid="run-sampling-btn"]')
+            run_sampling_btn.wait_for(state="visible", timeout=30 * SECOND)
+            run_sampling_btn.click()
 
         with log_context(logging.INFO, "Waiting for the sampling to launch..."):
             toast = service_iframe.locator("div.Toastify__toast").filter(
@@ -292,9 +305,13 @@ def test_response_surface_modeling(  # noqa: PLR0915
             while not all_completed(service_iframe):
                 logging.info("⏳ Waiting for all status cells to be completed...")
                 page.wait_for_timeout(3000)
-                service_iframe.locator('[mmux-testid="refresh-job-collections-btn"]').click()
+                refresh_btn = service_iframe.locator('[mmux-testid="refresh-job-collections-btn"]')
+                refresh_btn.wait_for(state="visible", timeout=30 * SECOND)
+                refresh_btn.click()
 
-            service_iframe.locator('[mmux-testid="select-all-successful-jobs-btn"]  ').click()
+            select_all_btn = service_iframe.locator('[mmux-testid="select-all-successful-jobs-btn"]')
+            select_all_btn.wait_for(state="visible", timeout=30 * SECOND)
+            select_all_btn.click()
 
             plotly_graph = service_iframe.locator(".js-plotly-plot")
             plotly_graph.wait_for(state="visible", timeout=300000)
