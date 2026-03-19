@@ -12,6 +12,7 @@ required fields in postgres_database.models tables or pydantic models.
 NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
 """
 
+import hashlib
 import itertools
 import json
 from collections.abc import Callable
@@ -50,20 +51,7 @@ def random_phone_number(fake: Faker = DEFAULT_FAKER) -> str:
 
 
 def _compute_hash(password: str) -> str:
-    try:
-        # 'passlib' will be used only if already installed.
-        # This way we do not force all modules to install
-        # it only for testing.
-        import passlib.hash  # noqa: PLC0415
-
-        return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
-
-    except ImportError:
-        # if 'passlib' is not installed, we will use a library
-        # from the python distribution for convenience
-        import hashlib  # noqa: PLC0415
-
-        return hashlib.sha224(password.encode("ascii")).hexdigest()
+    return hashlib.sha224(password.encode("ascii")).hexdigest()
 
 
 DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
