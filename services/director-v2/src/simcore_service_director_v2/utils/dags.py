@@ -2,7 +2,7 @@ import contextlib
 import datetime
 import logging
 from copy import deepcopy
-from typing import Any, cast
+from typing import Any
 
 import arrow
 import networkx as nx
@@ -167,7 +167,7 @@ async def create_minimal_computational_graph_based_on_selection(
             if force_restart and graph_data[f"{node}"]["node_class"] is NodeClass.COMPUTATIONAL:
                 minimal_nodes_selection.add(f"{node}")
 
-    return cast(nx.DiGraph, complete_dag.subgraph(minimal_nodes_selection))
+    return complete_dag.subgraph(minimal_nodes_selection)
 
 
 def compute_pipeline_started_timestamp(
