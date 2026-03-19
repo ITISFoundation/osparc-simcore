@@ -5,7 +5,7 @@ applyTo: '**/test*.py,**/conftest.py,**/pytest_simcore/**/*.py'
 
 ## Coding Instructions for Python Tests in This Repository
 
-This is a multi-project monorepo with two main groups of projects in the folders [`packages`](../../packages/) and in [`services`](../../services/) . Each project has its own folder with a standard structure (`src/`, `tests/`, etc.). Test ixtures and helpers shared across projects live in [`pytest-simcore`](../../packages/pytest-simcore) , a shared pytest plugin.
+This is a multi-project monorepo with two main groups of projects in the folders [`packages`](../../packages/) and in [`services`](../../services/) . Each project has its own folder with a standard structure (`src/`, `tests/`, etc.). Test fixtures and helpers shared across projects live in [`pytest-simcore`](../../packages/pytest-simcore) , a shared pytest plugin.
 
 ### General
 
