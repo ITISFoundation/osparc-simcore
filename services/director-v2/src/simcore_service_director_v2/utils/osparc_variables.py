@@ -98,17 +98,9 @@ def _get_handler_name(handler: Callable[..., Any]) -> str:
     return getattr(handler, "__qualname__", getattr(handler, "__name__", type(handler).__name__))
 
 
-def _get_coroutine_name(coro: Coroutine[Any, Any, Any]) -> str:
-    coro_code = getattr(coro, "cr_code", None)
-    if coro_code is not None:
-        return getattr(coro_code, "co_qualname", coro_code.co_name)
-    return type(coro).__name__
-
-
 async def _resolve_one(
     key: str,
     handler_name: str,
-    coroutine_name: str,
     coro: Coroutine[Any, Any, Any],
     *,
     timeout_seconds: float,
@@ -119,14 +111,14 @@ async def _resolve_one(
         raise OsparcVariableResolveTimeoutError(
             variable_key=key,
             handler_name=handler_name,
-            coroutine_name=coroutine_name,
+            coroutine_name=coro.__name__,
             timeout_seconds=timeout_seconds,
         ) from exc
     except Exception as exc:
         raise OsparcVariableResolveError(
             variable_key=key,
             handler_name=handler_name,
-            coroutine_name=coroutine_name,
+            coroutine_name=coro.__name__,
         ) from exc
 
 
@@ -166,7 +158,6 @@ async def resolve_variables_from_context(
             coros[key] = _resolve_one(
                 key,
                 _get_handler_name(handler),
-                _get_coroutine_name(coro),
                 asyncio.wait_for(coro, timeout=_HANDLERS_TIMEOUT),
                 timeout_seconds=_HANDLERS_TIMEOUT,
             )

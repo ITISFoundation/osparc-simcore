@@ -26,7 +26,6 @@ from servicelib.logging_utils import log_context
 
 from ...utils.db import get_repository
 from ...utils.osparc_variables import (
-    ContextDict,
     OsparcVariablesTable,
     resolve_variables_from_context,
 )
@@ -191,16 +190,16 @@ async def resolve_and_substitute_session_variables_in_model[TBaseModel: BaseMode
         table = OsparcSessionVariablesTable.get_from_app_state(app)
         identifiers = await resolve_variables_from_context(
             table.copy(),
-            context=ContextDict(
-                app=app,
-                user_id=user_id,
-                product_name=product_name,
-                project_id=project_id,
-                node_id=node_id,
-                run_id=service_run_id,
-                wallet_id=wallet_id,
-                api_server_base_url=product_api_base_url,
-            ),
+            context={
+                "app": app,
+                "user_id": user_id,
+                "product_name": product_name,
+                "project_id": project_id,
+                "node_id": node_id,
+                "run_id": service_run_id,
+                "wallet_id": wallet_id,
+                "api_server_base_url": product_api_base_url,
+            },
         )
         _logger.debug("replacing with the identifiers=%s", identifiers)
         result = replace_osparc_variable_identifier(model, identifiers)
@@ -237,16 +236,16 @@ async def resolve_and_substitute_session_variables_in_specs(
         if identifiers_to_replace:
             environs = await resolve_variables_from_context(
                 table.copy(include=identifiers_to_replace),
-                context=ContextDict(
-                    app=app,
-                    user_id=user_id,
-                    product_name=product_name,
-                    project_id=project_id,
-                    node_id=node_id,
-                    run_id=service_run_id,
-                    wallet_id=wallet_id,
-                    api_server_base_url=product_api_base_url,
-                ),
+                context={
+                    "app": app,
+                    "user_id": user_id,
+                    "product_name": product_name,
+                    "project_id": project_id,
+                    "node_id": node_id,
+                    "run_id": service_run_id,
+                    "wallet_id": wallet_id,
+                    "api_server_base_url": product_api_base_url,
+                },
             )
 
             resolver.set_substitutions(mappings=environs)
