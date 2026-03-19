@@ -92,6 +92,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       init: {},
       nullable: false,
       event: "changeActiveFilters",
+      apply: "__applyActiveFilters",
     },
   },
 
@@ -328,8 +329,26 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         }
       }, this);
 
+      this._searchBarFilter.addListener("changeText", e => {
+        const textFilterValue = e.getData();
+        if (textFilterValue) {
+          this.__addFilter("text", textFilterValue, null);
+        } else {
+          this.__removeFilter("text");
+        }
+      }, this);
+
+      this._searchBarFilter.addListener("searchContextChanged", e => {
+        const searchContext = e.getData();
+        this._changeContext(searchContext);
+      }, this);
+
       this._searchBarFilter.addListener("resetButtonPressed", () => {
-        this.__resetFilters();
+        this._resetFilters();
+        // and bring back to the default context
+        if (this._resourceType === "study") {
+          this._backToContext();
+        }
       }, this);
 
       this.bind("activeFilters", searchBarFilter, "activeFilters");
@@ -561,9 +580,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.setActiveFilters(activeFilters);
     },
 
-    __resetFilters: function() {
+    _resetFilters: function() {
       const activeFilters = {};
       this.setActiveFilters(activeFilters);
+    },
+
+    __applyActiveFilters: function(value, old) {
+      if (JSON.stringify(value) !== JSON.stringify(old)) {
+        const curatedFilters = {};
+        curatedFilters.tags = value.tags ? value["tags"]["id"] : [];
+        curatedFilters.sharedWith = value.sharedWith ? value["sharedWith"]["id"] : null;
+        curatedFilters.appType = value.appType ? value["appType"]["id"] : null;
+        curatedFilters.text = value.text ? value["text"]["id"] : "";
+        // this will trigger the UIFilter's mechanism to filter the shown cards
+        this._searchBarFilter._filterChange(curatedFilters);
+      }
     },
 
     /**

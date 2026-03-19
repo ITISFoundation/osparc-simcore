@@ -37,8 +37,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     this.__buildFiltersMenu();
     osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
-
-    this.__currentFilter = null;
   },
 
   properties: {
@@ -112,17 +110,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   },
 
   events: {
-    "filterChanged": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
     "changeAppType": "qx.event.type.Data",
+    "changeText": "qx.event.type.Data",
+    "searchContextChanged": "qx.event.type.Data",
     "resetButtonPressed": "qx.event.type.Event",
   },
 
   members: {
     __resourceType: null,
-    __currentFilter: null,
     __filtersMenu: null,
+    __searchBarFilterExtended: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -155,12 +154,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           control.addListener("deactivate", () => this.__hideFilterMenu(), this);
           control.addListener("keypress", e => {
             if (e.getKeyIdentifier() === "Enter") {
-              this.__filter();
+              this.__filterText();
             } else {
               this.__hideFilterMenu();
             }
           }, this);
-          control.addListener("focusout", () => this.__filter(), this);
+          control.addListener("focusout", () => {
+            // call filter only if the SearchBarFilterExtended is not open,
+            // to avoid filtering twice when the user clicks on the filter menu buttons
+            if (!this.__searchBarFilterExtended || !this.__searchBarFilterExtended.isVisible()) {
+              this.__filterText();
+            }
+          }, this);
           this._add(control, {
             flex: 1
           });
@@ -222,9 +227,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         }
       }
       if (filterData["text"]) {
-        this.getChildControl("text-field").setValue(filterData["text"]);
+        this.getChildControl("text-field").setValue(filterData["text"]["id"]);
       }
-      this.__filter();
     },
 
     __buildFiltersMenu: function() {
@@ -403,7 +407,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     // and lets users search between projects, templates, public projects and, eventually, files
     popUpSearchBarFilter: function() {
       const initFilterData = this.getFilterData();
-      const searchBarFilterExtended = new osparc.dashboard.SearchBarFilterExtended(this.__resourceType, initFilterData);
+      const searchBarFilterExtended = this.__searchBarFilterExtended = new osparc.dashboard.SearchBarFilterExtended(this.__resourceType, initFilterData);
       const bounds = osparc.utils.Utils.getBounds(this);
       searchBarFilterExtended.setLayoutProperties({
         left: bounds.left,
@@ -412,7 +416,38 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       searchBarFilterExtended.set({
         width: bounds.width,
       });
-      searchBarFilterExtended.addListener("resetButtonPressed", () => this.fireEvent("resetButtonPressed"), this);
+      searchBarFilterExtended.addListener("filterExtendedChanged", e => {
+        const changedData = e.getData();
+        // first update the filters
+        const filterType = changedData["filterType"];
+        const filterData = changedData["filterData"];
+        switch (filterType) {
+          case "text":
+            this.getChildControl("text-field").setValue(filterData);
+            this.__filterText();
+            break;
+          case "sharedWith":
+            this.setSharedWithActiveFilter(filterData.id, filterData.label);
+            break;
+          case "tag":
+            this.addTagActiveFilter(filterData);
+            break;
+        }
+        // then update the search context this will trigger the search
+        const searchContext = changedData["searchContext"];
+        if ([
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
+        ].includes(searchContext)) {
+          this.fireDataEvent("searchContextChanged", searchContext);
+        }
+      });
+      searchBarFilterExtended.addListener("resetButtonPressed", () => {
+        this.fireEvent("resetButtonPressed");
+      }, this);
       return searchBarFilterExtended;
     },
 
@@ -445,6 +480,20 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       activeFilter.removeAll();
     },
 
+    __filterText: function() {
+      const textFilterValue = this.getTextFilterValue();
+      // if text is shorter than 3 chars, ignore
+      if (textFilterValue && textFilterValue.length > 0 && textFilterValue.length < 3) {
+        osparc.FlashMessenger.logAs(this.tr("Please enter at least 3 characters to search."), "INFO");
+        return;
+      }
+      if (textFilterValue) {
+        this.fireDataEvent("changeText", textFilterValue);
+      } else {
+        this.fireDataEvent("changeText", null);
+      }
+    },
+
     resetFilters: function() {
       this.__removeChips();
       this.getChildControl("text-field").resetValue();
@@ -469,19 +518,5 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
       return filterData;
     },
-
-    __filter: function() {
-      const filterData = this.getFilterData();
-      // if text is shorter than 3 chars, ignore
-      if (filterData["text"].length > 0 && filterData["text"].length < 3) {
-        osparc.FlashMessenger.logAs(this.tr("Please enter at least 3 characters to search."), "INFO");
-        return;
-      }
-      if (JSON.stringify(this.__currentFilter) !== JSON.stringify(filterData)) {
-        this.__currentFilter = filterData;
-        this.fireDataEvent("filterChanged", filterData);
-        this._filterChange(filterData);
-      }
-    }
   }
 });

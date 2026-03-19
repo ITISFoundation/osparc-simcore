@@ -1373,34 +1373,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       searchBarFilterExtended.set({
         currentContext: curatedContext,
       });
-      searchBarFilterExtended.addListener("filterExtendedChanged", e => {
-        const changedData = e.getData();
-        // first update the filters
-        const filterType = changedData["filterType"];
-        const filterData = changedData["filterData"];
-        switch (filterType) {
-          case "text":
-            this._searchBarFilter.getChildControl("text-field").setValue(filterData);
-            break;
-          case "sharedWith":
-            this._searchBarFilter.setSharedWithActiveFilter(filterData.id, filterData.label);
-            break;
-          case "tag":
-            this._searchBarFilter.addTagActiveFilter(filterData);
-            break;
-        }
-        // then update the search context this will trigger the search
-        const searchContext = changedData["searchContext"];
-        if ([
-          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
-          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
-          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
-          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
-          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
-        ].includes(searchContext)) {
-          this._changeContext(searchContext);
-        }
-      });
     },
 
     __connectContexts: function() {
@@ -1427,74 +1399,39 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourceFilter.addListener("publicTemplatesContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES));
       this._resourceFilter.addListener("functionsContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS));
       this._resourceFilter.addListener("trashContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.TRASH));
-
-      this._searchBarFilter.addListener("filterChanged", e => {
-        const filterData = e.getData();
-        this.__filterChanged(filterData);
-      });
     },
 
-    __filterChanged: function(filterData) {
-      let searchContext = null;
+    _backToContext: function() {
       let backToContext = null;
-      const isTextSearchContext = filterData && filterData.text;
       // the other filter types follow a different filter path
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
-          if (isTextSearchContext) {
-            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
-          } else {
-            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
-          }
+          backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          if (isTextSearchContext) {
-            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES;
-          } else {
-            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES;
-          }
+          backToContext = osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES;
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-          if (isTextSearchContext) {
-            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES;
-          } else {
-            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES;
-          }
+          backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES;
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
-          if (isTextSearchContext) {
-            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS;
-          } else {
-            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS;
-          }
+          backToContext = osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS;
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-          if (isTextSearchContext) {
-            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES;
-          } else {
-            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
-          }
+          backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
           break;
         default:
-          if (isTextSearchContext) {
-            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
-          } else {
-            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
-          }
+          backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
           break;
       }
-      if (searchContext) {
-        this._changeContext(searchContext);
-      } else if (backToContext) {
-        const workspaceId = this.getCurrentWorkspaceId();
-        const folderId = this.getCurrentFolderId();
-        this._changeContext(backToContext, workspaceId, folderId);
-      }
+      const workspaceId = this.getCurrentWorkspaceId();
+      const folderId = this.getCurrentFolderId();
+      this._changeContext(backToContext, workspaceId, folderId);
     },
 
     _changeContext: function(context, workspaceId = null, folderId = null) {
@@ -1517,6 +1454,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       ) {
         // context and text search didn't change
         return;
+      }
+
+      if (!context.includes("search")) {
+        this._resetFilters();
       }
 
       osparc.store.Store.getInstance().setStudyBrowserContext(context);
