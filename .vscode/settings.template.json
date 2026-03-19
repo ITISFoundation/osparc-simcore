@@ -68,5 +68,71 @@
   ],
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
-  "shellcheck.enableQuickFix": true
+  "shellcheck.enableQuickFix": true,
+  "chat.tools.terminal.sandbox.enabled": true,
+  "chat.tools.terminal.sandbox.linuxFileSystem": {
+    "allowWrite": ["."],
+    "denyRead": [
+      "~/.ssh",
+      "~/.gnupg",
+      "~/.aws",
+      "~/.kube",
+      "~/.docker/config.json",
+      "~/.netrc",
+      "~/.npmrc",
+      "~/.pypirc",
+      "~/.gitconfig",
+      "~/.config/op",
+      "~/.config/gh",
+      "~/.local/share/keyrings",
+      "~/.bash_history",
+      "~/.zsh_history",
+      "/etc/passwd",
+      "/etc/shadow",
+      "/etc/ssl/private"
+    ],
+    "denyWrite": [
+      "~/.ssh",
+      "~/.gnupg",
+      "~/.aws",
+      "~/.kube",
+      "~/.gitconfig",
+      "/etc/passwd",
+      "/etc/shadow",
+      "/etc/ssl/private"
+    ]
+  },
+
+  "chat.tools.terminal.sandbox.macFileSystem": {
+    "allowWrite": ["."],
+    "denyRead": [
+      "~/.ssh",
+      "~/.gnupg",
+      "~/.aws",
+      "~/.kube",
+      "~/.docker/config.json",
+      "~/.netrc",
+      "~/.npmrc",
+      "~/.pypirc",
+      "~/.gitconfig",
+      "~/.config/op",
+      "~/.config/gh",
+      "~/Library/Keychains",
+      "~/Library/Application Support/1Password",
+      "~/Library/Application Support/com.agilebits.onepassword7",
+      "~/.bash_history",
+      "~/.zsh_history",
+      "/etc/master.passwd",
+      "/etc/ssl/private"
+    ],
+    "denyWrite": [
+      "~/.ssh",
+      "~/.gnupg",
+      "~/.aws",
+      "~/.kube",
+      "~/.gitconfig",
+      "/etc/master.passwd",
+      "/etc/ssl/private"
+    ]
+  }
 }
