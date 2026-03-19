@@ -20,6 +20,7 @@ from models_library.api_schemas_webserver.notifications import (
     TemplatePreviewGet,
 )
 from models_library.notifications import ChannelType
+from models_library.notifications.errors import NotificationsTooManyRecipientsError
 from models_library.notifications.rpc import (
     PreviewTemplateResponse,
     SearchTemplatesResponse,
@@ -223,6 +224,37 @@ async def test_send_message_with_different_inputs(
             assert not error
             task = TaskGet.model_validate(data)
             assert task.task_id
+
+
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
+async def test_send_message_too_many_recipients(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
+    mocker: MockerFixture,
+):
+    """Test that send_message returns 400 when too many recipients are provided"""
+    assert client.app
+    url = client.app.router["send_message"].url_for()
+
+    mocked_notifications_rpc_client.patch(
+        f"{_service.__name__}.remote_send_message",
+        side_effect=NotificationsTooManyRecipientsError(num_recipients=100, max_recipients=50),
+    )
+
+    async with create_test_users(1, None) as users:
+        body = {
+            "channel": "email",
+            "groupIds": [users[0]["primary_gid"]],
+            "content": fake_email_content,
+        }
+
+        response = await client.post(url.path, json=body)
+        _, error = await assert_status(response, status.HTTP_400_BAD_REQUEST)
+        assert error
+        assert "Too many recipients" in error["message"]
 
 
 @pytest.mark.parametrize(
