@@ -13,6 +13,7 @@ from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import fake_pipeline, fake_task_factory
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 fake_task = fake_task_factory(first_internal_id=1)
@@ -57,7 +58,7 @@ async def test_unique_project_node_pairs(engine: AsyncEngine):
         )
         assert json.loads(task_inputs) == {}
 
-        with pytest.raises(sa.exc.IntegrityError, match="project_node_uniqueness"):
+        with pytest.raises(IntegrityError, match="project_node_uniqueness"):
             #
             # psycopg2.errors.UniqueViolation:
             #   duplicate key value violates unique constraint "project_node_uniqueness" ...

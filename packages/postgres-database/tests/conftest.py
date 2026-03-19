@@ -32,6 +32,7 @@ from simcore_postgres_database.webserver_models import (
     users,
 )
 from sqlalchemy.engine.row import RowMapping
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 pytest_plugins = [
@@ -100,7 +101,7 @@ def is_postgres_responsive(dsn) -> bool:
         engine = sa.create_engine(dsn)
         conn = engine.connect()
         conn.close()
-    except sa.exc.OperationalError:  # type: ignore
+    except OperationalError:
         return False
     return True
 

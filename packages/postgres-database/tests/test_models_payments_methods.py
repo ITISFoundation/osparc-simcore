@@ -16,6 +16,7 @@ from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -48,7 +49,7 @@ async def test_create_payment_method(
 
         # unique payment_method_id - should fail in a separate transaction
         async with asyncpg_engine.begin() as connection:
-            with pytest.raises(sa.exc.IntegrityError) as err_info:
+            with pytest.raises(IntegrityError) as err_info:
                 await connection.execute(payments_methods.insert().values(**init_values))
             assert "payment_method_id" in str(err_info.value)
 

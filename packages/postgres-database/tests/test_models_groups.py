@@ -6,7 +6,6 @@
 from collections.abc import Callable
 
 import pytest
-import sqlalchemy as sa
 from pytest_simcore.helpers import postgres_users
 from simcore_postgres_database.webserver_models import (
     GroupType,
@@ -16,6 +15,7 @@ from simcore_postgres_database.webserver_models import (
 )
 from sqlalchemy import func, literal_column, select
 from sqlalchemy.engine.row import RowMapping
+from sqlalchemy.exc import IntegrityError, InternalError, ResourceClosedError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 
@@ -27,7 +27,7 @@ async def test_user_group_uniqueness(
     rory_group = await create_fake_group(asyncpg_connection, name="Rory Storm and the Hurricanes")
     ringo = await create_fake_user(asyncpg_connection, name="Ringo", group=rory_group)
     # test unique user/group pair
-    with pytest.raises(sa.exc.IntegrityError, match="user_to_groups_uid_gid_key"):
+    with pytest.raises(IntegrityError, match="user_to_groups_uid_gid_key"):
         await asyncpg_connection.execute(user_to_groups.insert().values(uid=ringo["id"], gid=rory_group["gid"]))
 
     # Checks implementation of simcore_service_webserver/groups_api.py:get_group_from_gid
@@ -37,7 +37,7 @@ async def test_user_group_uniqueness(
     assert the_one is not None
     assert the_one["type"]
 
-    with pytest.raises(sa.exc.ResourceClosedError):
+    with pytest.raises(ResourceClosedError):
         res.fetchone()
 
 
@@ -52,7 +52,7 @@ async def test_all_group(
     all_group_gid = result.mappings().one()["gid"]
     assert all_group_gid == 1  # it's the first group so it gets a 1
     # try removing the all group
-    with pytest.raises(sa.exc.InternalError):
+    with pytest.raises(InternalError):
         await asyncpg_connection.execute(groups.delete().where(groups.c.gid == all_group_gid))
 
     # check adding a user is automatically added to the all group
@@ -66,7 +66,7 @@ async def test_all_group(
     assert user_to_groups_row["gid"] == all_group_gid
 
     # try removing the all group
-    with pytest.raises(sa.exc.InternalError):
+    with pytest.raises(InternalError):
         await asyncpg_connection.execute(groups.delete().where(groups.c.gid == all_group_gid))
 
     # remove the user now
@@ -106,7 +106,7 @@ async def test_own_group(
     assert relations_count == 2  # own group + all group
 
     # try removing the primary group
-    with pytest.raises(sa.exc.IntegrityError):
+    with pytest.raises(IntegrityError):
         await asyncpg_connection.execute(groups.delete().where(groups.c.gid == user["primary_gid"]))
 
     # now remove the users should remove the primary group

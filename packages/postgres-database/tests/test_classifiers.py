@@ -12,6 +12,7 @@ from pytest_simcore.helpers.faker_factories import random_group
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
 from sqlalchemy import func, literal_column
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -54,7 +55,7 @@ async def test_operations_on_group_classifiers(asyncpg_engine: AsyncEngine, clas
 
         # Cannot add more than one classifier's bundle to the same group
         # pylint: disable=no-member
-        with pytest.raises(sa.exc.IntegrityError, match="unique"):
+        with pytest.raises(IntegrityError, match="unique"):
             await conn.execute(group_classifiers.insert().values(bundle={}, gid=gid))
 
         # deleting a group deletes the classifier
