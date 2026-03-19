@@ -138,12 +138,8 @@ async def test_constraints(connection: AsyncConnection):
         services_meta_data.delete().where(services_meta_data.c.key == "simcore/services/dynamic/sim4life")
     )
 
-    stmt = (
-        sa.select(
-            sa.func.count(services_consume_filetypes.c.service_key).label("num_services"),
-        )
-        .where(services_consume_filetypes.c.filetype == "DCM")
-        .scalar_subquery()
-    )
+    stmt = sa.select(
+        sa.func.count(services_consume_filetypes.c.service_key).label("num_services"),
+    ).where(services_consume_filetypes.c.filetype == "DCM")
     num_services = await connection.scalar(stmt)
     assert num_services == 0

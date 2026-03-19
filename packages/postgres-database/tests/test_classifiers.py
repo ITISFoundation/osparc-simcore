@@ -45,8 +45,8 @@ async def test_operations_on_group_classifiers(asyncpg_engine: AsyncEngine, clas
         row = result.mappings().first()
 
         assert row
-        assert row[group_classifiers.c.gid] == gid
-        assert row[group_classifiers.c.bundle] == classifiers_bundle
+        assert row["gid"] == gid
+        assert row["bundle"] == classifiers_bundle
 
         # get bundle in one query
         bundle = await conn.scalar(sa.select(group_classifiers.c.bundle).where(group_classifiers.c.gid == gid))
