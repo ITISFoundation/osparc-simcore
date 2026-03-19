@@ -277,6 +277,8 @@ async def user_project_with_num_dynamic_services(
     async with AsyncExitStack() as stack:
 
         async def _creator(num_dyn_services: int) -> ProjectDict:
+            assert num_dyn_services <= 30, "to avoid too long test execution time"
+
             project_data = {
                 "workbench": {
                     faker.uuid4(): {
@@ -287,6 +289,7 @@ async def user_project_with_num_dynamic_services(
                     for _ in range(num_dyn_services)
                 }
             }
+
             project = await stack.enter_async_context(
                 NewProject(
                     project_data,
@@ -294,7 +297,7 @@ async def user_project_with_num_dynamic_services(
                     user_id=logged_user["id"],
                     product_name=osparc_product_name,
                     tests_data_dir=tests_data_dir,
-                )
+                ),
             )
             print("-----> added project", project["name"])
             assert "workbench" in project
@@ -414,7 +417,8 @@ def workbench_db_column() -> dict[str, Any]:
             "outputs": {
                 "output_1": {
                     "store": 0,
-                    "path": "e08316a8-5afc-11ed-bab7-02420a00002b/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
+                    "path": "e08316a8-5afc-11ed-bab7-02420a00002b/"
+                    "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
                     "eTag": "1679091c5a880faf6fb5e6087eb1b2dc",
                 },
                 "output_2": 6,
