@@ -1,14 +1,14 @@
 import asyncio
 import inspect
 from collections.abc import Callable
-from typing import Any, Final, NamedTuple, TypeAlias
+from typing import Any, Final, NamedTuple
 
 from models_library.utils.specs_substitution import SubstitutionValue
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 
-ContextDict: TypeAlias = dict[str, Any]
-ContextGetter: TypeAlias = Callable[[ContextDict], Any]
+type ContextDict = dict[str, Any]
+type ContextGetter = Callable[[ContextDict], Any]
 
 
 class CaptureError(ValueError): ...
@@ -86,7 +86,7 @@ class OsparcVariablesTable:
         return {k: self._variables_getters[k] for k in selection}
 
 
-_HANDLERS_TIMEOUT: Final[NonNegativeInt] = 4
+_HANDLERS_TIMEOUT: Final[NonNegativeInt] = 10
 
 
 async def resolve_variables_from_context(
@@ -129,8 +129,7 @@ async def resolve_variables_from_context(
         *coros.values(),
         max_concurrency=0 if resolve_in_parallel else 1,
     )
-    for handler_key, handler_value in zip(coros.keys(), values, strict=True):
-        environs[handler_key] = handler_value
+    environs.update(zip(coros.keys(), values, strict=True))
 
     assert set(environs.keys()) == set(variables_getters.keys())  # nosec
     return environs
