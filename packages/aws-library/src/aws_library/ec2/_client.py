@@ -1,3 +1,4 @@
+import base64
 import contextlib
 import logging
 from collections.abc import Iterable, Sequence
@@ -356,10 +357,15 @@ class SimcoreEC2API:
             if change_startup_script is not None:
                 # modify user data on stopped instances before starting
                 # use run_on_every_boot=True so the script executes on every restart (e.g., warm buffer activation)
+                # NOTE: modify_instance_attribute requires base64-encoded user data
+                # (unlike run_instances which handles encoding automatically)
+                encoded_user_data = base64.b64encode(
+                    compose_user_data(change_startup_script, run_on_every_boot=True).encode()
+                ).decode()
                 for instance_id in instance_ids:
                     await self.client.modify_instance_attribute(
                         InstanceId=instance_id,
-                        UserData={"Value": compose_user_data(change_startup_script, run_on_every_boot=True)},
+                        UserData={"Value": encoded_user_data},
                     )
             await self.client.start_instances(InstanceIds=instance_ids)
             # wait for the instance to be in a pending state

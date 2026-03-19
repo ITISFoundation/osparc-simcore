@@ -63,7 +63,7 @@ class OsparcUserBase(FastHttpUser):
 
 
 @events.init_command_line_parser.add_listener
-def _(parser: LocustArgumentParser) -> None:
+def __add_cli_args(parser: LocustArgumentParser) -> None:
     parser.add_argument(
         "--requires-login",
         action="store_true",
@@ -73,7 +73,7 @@ def _(parser: LocustArgumentParser) -> None:
 
 
 @events.init.add_listener
-def _(environment: Environment, **_kwargs: Any) -> None:
+def __log_parsed_options(environment: Environment, **_kwargs: Any) -> None:
     # Only log the parsed options, as the full environment is not JSON serializable
     options_dict: dict[str, Any] = vars(environment.parsed_options)
     _logger.debug("Testing environment options: %s", json.dumps(options_dict, indent=2))
