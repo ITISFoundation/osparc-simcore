@@ -2669,7 +2669,6 @@ async def test_variable_resolution_timeout_while_starting_tasks_sets_waiting_for
     mocked_start_tasks.side_effect = OsparcVariableResolveTimeoutError(
         variable_key="OSPARC_VARIABLE_API_SECRET",
         handler_name="request_api_secret",
-        coroutine_name="request_api_secret",
         timeout_seconds=10,
     )
 
@@ -2727,7 +2726,6 @@ async def test_variable_resolution_error_while_starting_tasks_fails_ready_tasks(
     mocked_start_tasks.side_effect = OsparcVariableResolveError(
         variable_key="OSPARC_VARIABLE_API_SECRET",
         handler_name="request_api_secret",
-        coroutine_name="request_api_secret",
     )
 
     with pytest.raises(OsparcVariableResolveError):

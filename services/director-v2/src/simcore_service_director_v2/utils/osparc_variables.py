@@ -111,14 +111,12 @@ async def _resolve_one(
         raise OsparcVariableResolveTimeoutError(
             variable_key=key,
             handler_name=handler_name,
-            coroutine_name=coro.__name__,
             timeout_seconds=timeout_seconds,
         ) from exc
     except Exception as exc:
         raise OsparcVariableResolveError(
             variable_key=key,
             handler_name=handler_name,
-            coroutine_name=coro.__name__,
         ) from exc
 
 

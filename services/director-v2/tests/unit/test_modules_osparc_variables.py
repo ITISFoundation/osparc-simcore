@@ -323,12 +323,10 @@ async def test_resolve_variables_wraps_timeout_in_typed_error():
     assert exc.variable_key == "OSPARC_VARIABLE_SLOW"
     assert exc.timeout_seconds == _HANDLERS_TIMEOUT
     assert exc.handler_name.endswith("_slow_handler")
-    assert exc.coroutine_name.endswith("_slow_handler")
     assert isinstance(exc.__cause__, TimeoutError)
     ctx = exc.error_context()
     assert ctx["variable_key"] == "OSPARC_VARIABLE_SLOW"
     assert ctx["handler_name"].endswith("_slow_handler")
-    assert ctx["coroutine_name"].endswith("_slow_handler")
     assert ctx["timeout_seconds"] == _HANDLERS_TIMEOUT
 
 
@@ -350,7 +348,6 @@ async def test_resolve_variables_wraps_generic_exception_in_typed_error():
     assert type(exc) is OsparcVariableResolveError
     assert exc.variable_key == "OSPARC_VARIABLE_BROKEN"
     assert exc.handler_name.endswith("_broken_handler")
-    assert exc.coroutine_name.endswith("_broken_handler")
     assert isinstance(exc.__cause__, RuntimeError)
 
 
