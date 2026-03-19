@@ -69,6 +69,7 @@
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true,
+  "chat.autopilot.enabled": false,
   "chat.tools.terminal.sandbox.enabled": true,
   "chat.tools.terminal.sandbox.linuxFileSystem": {
     "allowWrite": ["."],
