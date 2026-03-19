@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
-from pact.v3 import Verifier
+from pact import Verifier
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from simcore_service_api_server._meta import API_VERSION
