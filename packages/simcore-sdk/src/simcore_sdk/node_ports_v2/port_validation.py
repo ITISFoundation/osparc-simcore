@@ -48,24 +48,23 @@ class PortUnitError(OsparcErrorMixin, ValueError):
 
 # These functions are embedded in a Pydantic validator callback so
 # IMO i think it is justified to create a global singleton in memory
-# for the units registry. This acts as a cache and its livetime span
+# for the units registry. This acts as a cache and its lifetime span
 # is the same as the service itself.
-_THE_UNIT_REGISTRY = UnitRegistry()
+_THE_UNIT_REGISTRY: UnitRegistry = UnitRegistry()
 UNIT_SUB_PATTERN = re.compile(r"[-\s]")
 
 
-def _normalize_unit(unit):
+def _normalize_unit(unit: str) -> str:
     return re.sub(UNIT_SUB_PATTERN, "", unit)
 
 
-def _validate_port_value(value, content_schema: JsonSchemaDict):
+def _validate_port_value(value: Any, content_schema: JsonSchemaDict) -> Any:
     """validates value against json-schema and replaces defaults"""
-    v = jsonschema_validate_data(
+    return jsonschema_validate_data(
         instance=value,
         schema=content_schema,
         return_with_default=True,
     )
-    return v
 
 
 def _validate_port_unit(
@@ -80,10 +79,11 @@ def _validate_port_unit(
         unit = _normalize_unit(unit)
 
         if content_schema["type"] == "object":
-            #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
-            #  unit = "MHz" <-- we have implementd this
-            #  unit = "MHz,mm"
-            raise NotImplementedError("Units for objects are still not implemented")
+            #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}  # noqa: E501, ERA001
+            #  unit = "MHz" <-- we have implemented this
+            #  unit = "MHz,mm"  # noqa: ERA001
+            msg = "Units for objects are still not implemented"
+            raise NotImplementedError(msg)
 
     expected_unit = content_schema.get("x_unit")
     if expected_unit:
@@ -105,9 +105,10 @@ def validate_port_content(
     """A port content is all datasets injected to a given port. Currently only
     'value' and 'unit' but it will be extended to more meta info semantics
 
-    The value (i.e. input parameter or output result) is evaluated with task computations and transformed into some outputs
-    The rest (currently only units, but in the future other metadata semantics) must also be evaluated and transfomed into
-    metadata in the outputs (e.g. output units, etc)
+    The value (i.e. input parameter or output result) is evaluated with task computations and transformed into some
+    outputs
+    The rest (currently only units, but in the future other metadata semantics) must also be evaluated and transformed
+    into metadata in the outputs (e.g. output units, etc)
 
     value is resolved dataset defined in content_schema
     unit is a part of the meta-data and specs can be encoded in content_schema under the x_unit field property
