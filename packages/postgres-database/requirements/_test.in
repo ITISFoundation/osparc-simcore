@@ -9,7 +9,6 @@
 --constraint _base.txt
 --constraint _migration.txt
 
-aiopg[sa]
 arrow
 coverage
 faker

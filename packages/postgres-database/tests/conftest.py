@@ -4,19 +4,14 @@
 # pylint: disable=unused-variable
 
 import uuid
-import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator
 from pathlib import Path
 
-import aiopg.sa
 import pytest
 import simcore_postgres_database.cli
 import sqlalchemy as sa
 import sqlalchemy.engine
 import yaml
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.engine import Engine
-from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools, postgres_users
 from pytest_simcore.helpers.faker_factories import (
@@ -36,7 +31,7 @@ from simcore_postgres_database.webserver_models import (
     user_to_groups,
     users,
 )
-from sqlalchemy.engine.row import Row
+from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 pytest_plugins = [
@@ -112,7 +107,7 @@ def is_postgres_responsive(dsn) -> bool:
 
 @pytest.fixture(scope="session")
 def db_metadata() -> sa.MetaData:
-    from simcore_postgres_database.models.base import metadata
+    from simcore_postgres_database.models.base import metadata  # noqa: PLC0415
 
     return metadata
 
@@ -160,40 +155,7 @@ def pg_sa_engine(
 
 
 @pytest.fixture
-async def aiopg_engine(
-    pg_sa_engine: sqlalchemy.engine.Engine,
-    postgres_service: str,
-) -> AsyncIterator[Engine]:
-    """
-    Return an aiopg.sa engine connected to a responsive and migrated pg database
-    """
-    # first start sync
-    assert pg_sa_engine.url.database
-    assert postgres_service.endswith(pg_sa_engine.url.database)
-
-    warnings.warn(
-        "The 'aiopg_engine' is deprecated since we are replacing `aiopg` library by `sqlalchemy.ext.asyncio`."
-        "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529. "
-        "Please use 'asyncpg_engine' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    async with aiopg.sa.create_engine(
-        dsn=f"{postgres_service}?application_name=aiopg_engine",
-    ) as aiopg_sa_engine:
-        yield aiopg_sa_engine
-
-
-@pytest.fixture
-async def connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
-    """Returns an aiopg.sa connection from an engine to a fully furnished and ready pg database"""
-    async with aiopg_engine.acquire() as _conn:
-        yield _conn
-
-
-@pytest.fixture
-async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
+async def asyncpg_engine(
     is_pdb_enabled: bool,
     pg_sa_engine: sqlalchemy.engine.Engine,
     _make_asyncpg_engine: Callable[[bool], AsyncEngine],
@@ -207,21 +169,14 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     await _apg_engine.dispose()
 
 
-@pytest.fixture(params=["aiopg", "asyncpg"])
-async def connection_factory(
-    request: pytest.FixtureRequest,
-    aiopg_engine: Engine,
+@pytest.fixture
+async def asyncpg_connection(
     asyncpg_engine: AsyncEngine,
-) -> AsyncIterator[SAConnection | AsyncConnection]:
-    """Returns an aiopg.sa connection or an asyncpg connection from an engine to a fully furnished and ready pg database"""
-    if request.param == "aiopg":
-        async with aiopg_engine.acquire() as conn:
-            yield conn
-    else:
-        async with asyncpg_engine.connect() as conn:
-            # NOTE: this is the default in aiopg so we use the same here to make the tests run
-            await conn.execution_options(isolation_level="AUTOCOMMIT")
-            yield conn
+) -> AsyncIterator[AsyncConnection]:
+    """Returns an asyncpg connection from an engine to a fully furnished and ready pg database"""
+    async with asyncpg_engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+        yield conn
 
 
 #
@@ -234,15 +189,15 @@ def create_fake_group(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callabl
     """factory to create standard group"""
     created_ids = []
 
-    async def _creator(conn: SAConnection, **overrides) -> RowProxy:
+    async def _creator(conn: AsyncConnection, **overrides) -> RowMapping:
         if "type" not in overrides:
             overrides["type"] = GroupType.STANDARD
-        result: ResultProxy = await conn.execute(
+        result = await conn.execute(
             groups.insert().values(**random_group(**overrides)).returning(sa.literal_column("*"))
         )
-        group = await result.fetchone()
+        group = result.mappings().one()
         assert group
-        created_ids.append(group.gid)
+        created_ids.append(group["gid"])
         return group
 
     yield _creator
@@ -258,7 +213,7 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
 
     created_ids = []
 
-    async def _creator(conn: SAConnection, group: RowProxy | None = None, **overrides) -> RowProxy:
+    async def _creator(conn: AsyncConnection, group: RowMapping | None = None, **overrides) -> RowMapping:
         user_id = await postgres_users.insert_user_and_secrets(
             conn,
             **overrides,
@@ -269,14 +224,13 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
         # insert primary_gid column
         r = await conn.execute(users.select().where(users.c.id == user_id))
         assert r.rowcount == 1
-        user = await r.first()
-        assert user
+        user = r.mappings().one()
 
-        created_ids.append(user.id)
+        created_ids.append(user["id"])
 
         if group:
-            assert group.type == GroupType.STANDARD.name
-            result = await conn.execute(user_to_groups.insert().values(uid=user.id, gid=group.gid))
+            assert group["type"] == GroupType.STANDARD.name
+            result = await conn.execute(user_to_groups.insert().values(uid=user["id"], gid=group["gid"]))
             assert result
         return user
 
@@ -289,28 +243,28 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
 
 @pytest.fixture
 async def create_fake_project(
-    aiopg_engine: Engine,
-) -> AsyncIterator[Callable[..., Awaitable[RowProxy]]]:
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[RowMapping]]]:
     created_project_uuids = []
 
-    async def _creator(conn, user: RowProxy, product: RowProxy, **overrides) -> RowProxy:
-        prj_to_insert = random_project(prj_owner=user.id, product_name=product.name, **overrides)
+    async def _creator(conn: AsyncConnection, user: RowMapping, product: RowMapping, **overrides) -> RowMapping:
+        prj_to_insert = random_project(prj_owner=user["id"], product_name=product["name"], **overrides)
         result = await conn.execute(projects.insert().values(**prj_to_insert).returning(projects))
         assert result
-        new_project = await result.first()
+        new_project = result.mappings().one()
         assert new_project
-        created_project_uuids.append(new_project.uuid)
+        created_project_uuids.append(new_project["uuid"])
         return new_project
 
     yield _creator
 
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.begin() as conn:
         await conn.execute(projects.delete().where(projects.c.uuid.in_(created_project_uuids)))
 
 
 @pytest.fixture
-async def create_fake_projects_node(
-    connection: aiopg.sa.connection.SAConnection,
+def create_fake_projects_node(
+    asyncpg_engine: AsyncEngine,
     faker: Faker,
 ) -> Callable[[uuid.UUID], Awaitable[ProjectNode]]:
     async def _creator(project_uuid: uuid.UUID) -> ProjectNode:
@@ -322,7 +276,9 @@ async def create_fake_projects_node(
             label=faker.pystr(),
         )
         repo = ProjectNodesRepo(project_uuid=project_uuid)
-        created_nodes = await repo.add(connection, nodes=[fake_node])
+        async with asyncpg_engine.connect() as conn:
+            await conn.execution_options(isolation_level="AUTOCOMMIT")
+            created_nodes = await repo.add(conn, nodes=[fake_node])
         assert created_nodes
         return created_nodes[0]
 
@@ -332,10 +288,10 @@ async def create_fake_projects_node(
 @pytest.fixture
 async def create_fake_product(
     asyncpg_engine: AsyncEngine,
-) -> AsyncIterator[Callable[[str], Awaitable[Row]]]:
+) -> AsyncIterator[Callable[[str], Awaitable[RowMapping]]]:
     created_product_names = set()
 
-    async def _creator(product_name: str) -> Row:
+    async def _creator(product_name: str) -> RowMapping:
         async with asyncpg_engine.begin() as connection:
             result = await connection.execute(
                 sa.insert(products)
@@ -343,8 +299,8 @@ async def create_fake_product(
                 .returning(sa.literal_column("*"))
             )
             assert result
-            row = result.one()
-        created_product_names.add(row.name)
+            row = result.mappings().one()
+        created_product_names.add(row["name"])
         return row
 
     yield _creator

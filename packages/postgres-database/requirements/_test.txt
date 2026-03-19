@@ -1,10 +1,6 @@
-aiopg==1.4.0
-    # via -r requirements/_test.in
 arrow==1.4.0
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via aiopg
-attrs==25.4.0
+attrs==26.1.0
     # via pytest-docker
 cffi==2.0.0
     # via cryptography
@@ -39,11 +35,6 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-psycopg2-binary==2.9.11
-    # via
-    #   -c requirements/_base.txt
-    #   aiopg
-    #   sqlalchemy
 pycparser==3.0
     # via cffi
 pygments==2.19.2
@@ -79,7 +70,6 @@ sqlalchemy==1.4.54
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   -r requirements/_test.in
-    #   aiopg
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 types-docker==7.1.0.20260109

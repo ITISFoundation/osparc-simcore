@@ -6,14 +6,13 @@
 import json
 from pathlib import Path
 
-import psycopg2.errors
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
 from pytest_simcore.helpers.faker_factories import random_group
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
 from sqlalchemy import func, literal_column
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -30,9 +29,11 @@ def classifiers_bundle(web_client_resource_folder: Path) -> dict:
     return json.loads(bundle_path.read_text())
 
 
-async def test_operations_on_group_classifiers(aiopg_engine: Engine, classifiers_bundle: dict):
+async def test_operations_on_group_classifiers(asyncpg_engine: AsyncEngine, classifiers_bundle: dict):
     # NOTE: mostly for TDD
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+
         # creates a group
         stmt = groups.insert().values(**random_group(name="MyGroup")).returning(groups.c.gid)
         gid = await conn.scalar(stmt)
@@ -40,7 +41,7 @@ async def test_operations_on_group_classifiers(aiopg_engine: Engine, classifiers
         # adds classifiers to a group
         stmt = group_classifiers.insert().values(bundle=classifiers_bundle, gid=gid).returning(literal_column("*"))
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.mappings().first()
 
         assert row
         assert row[group_classifiers.c.gid] == gid
@@ -53,7 +54,7 @@ async def test_operations_on_group_classifiers(aiopg_engine: Engine, classifiers
 
         # Cannot add more than one classifier's bundle to the same group
         # pylint: disable=no-member
-        with pytest.raises(psycopg2.errors.UniqueViolation):
+        with pytest.raises(sa.exc.IntegrityError, match="unique"):
             await conn.execute(group_classifiers.insert().values(bundle={}, gid=gid))
 
         # deleting a group deletes the classifier

@@ -70,7 +70,8 @@ async def connection(aiopg_engine: sa.engine.Engine, connection: SAConnection, m
 
 async def test_check_constraint(connection: SAConnection):
     stmt_create_services_consume_filetypes = sa.text(
-        'INSERT INTO "services_consume_filetypes" ("service_key", "service_version", "service_display_name", "service_input_port", "filetype", "preference_order", "is_guest_allowed") VALUES'
+        'INSERT INTO "services_consume_filetypes" ("service_key", "service_version", "service_display_name", '
+        '"service_input_port", "filetype", "preference_order", "is_guest_allowed") VALUES'
         "('simcore/services/dynamic/bio-formats-web',	'1.0.20',	'bio-formats',	'input_1',	'PNG',	0, '1'),"
         "('simcore/services/dynamic/raw-graphs',	'2.11.20',	'RAWGraphs',	'input_1',	'lowerUpper',	0, '1');"
     )
