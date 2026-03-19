@@ -18,6 +18,7 @@ NOTE: services/web/server/tests/conftest.py is pre-loaded
 import json
 import logging
 import sys
+from collections.abc import AsyncIterable
 from copy import deepcopy
 from pathlib import Path
 from string import Template
@@ -29,6 +30,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.docker import get_service_published_port
 from simcore_service_webserver.application_settings_utils import AppConfigDict
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -123,7 +125,7 @@ def _default_app_config_for_integration_tests(
     #
     # Instead, the variables have to be defined here ------------
     test_environ["SMTP_USERNAME"] = "None"
-    test_environ["SMTP_PASSWORD"] = "None"
+    test_environ["SMTP_PASSWORD"] = "None"  # noqa: S105
     test_environ["SMTP_PROTOCOL"] = "UNENCRYPTED"
     test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
@@ -176,3 +178,37 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture(scope="session")
 def osparc_product_name() -> str:
     return "osparc"
+
+
+@pytest.fixture
+async def asyncpg_engine(webserver_environ: dict[str, str], is_pdb_enabled: bool) -> AsyncIterable[AsyncEngine]:
+    """Creates an async PostgreSQL engine connected to the postgres service in docker_stack
+
+    Uses connection parameters from webserver_environ which are configured
+    to connect from the host to the swarm's postgres service
+    """
+    # Extract postgres connection parameters from environment
+    postgres_host = webserver_environ.get("POSTGRES_HOST", "localhost")
+    postgres_port = int(webserver_environ.get("POSTGRES_PORT", 5432))
+    postgres_user = webserver_environ.get("POSTGRES_USER", "postgres")
+    postgres_password = webserver_environ.get("POSTGRES_PASSWORD", "postgres")
+    postgres_db = webserver_environ.get("POSTGRES_DB", "postgres")
+
+    dsn = f"postgresql+asyncpg://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
+
+    minsize = 1
+    maxsize = 10
+
+    engine: AsyncEngine = create_async_engine(
+        dsn,
+        pool_size=minsize,
+        max_overflow=maxsize - minsize,
+        connect_args={"server_settings": {"application_name": "webserver_tests_integration:asyncpg_engine"}},
+        pool_pre_ping=True,
+        future=True,
+        echo=is_pdb_enabled,
+    )
+
+    yield engine
+
+    await engine.dispose()
