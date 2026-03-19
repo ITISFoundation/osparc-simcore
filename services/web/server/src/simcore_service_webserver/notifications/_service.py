@@ -43,6 +43,9 @@ from ._models import (
     TemplateRef,
 )
 
+_RPC_MESSAGE_ADAPTER = TypeAdapter(RpcMessage)
+_RPC_TEMPLATE_REF_ADAPTER = TypeAdapter(RpcTemplateRef)
+
 
 def _get_user_display_name(user: dict) -> str:
     first_name = user.get("first_name") or ""
@@ -133,7 +136,7 @@ async def preview_template(
 
     rpc_response = await remote_preview_template(
         get_rabbitmq_rpc_client(app),
-        ref=RpcTemplateRef(**ref.model_dump()),
+        ref=_RPC_TEMPLATE_REF_ADAPTER.validate_python(ref.model_dump()),
         context=enriched_context,
     )
     return TemplatePreview(**rpc_response.model_dump())
@@ -150,7 +153,7 @@ async def search_templates(
         channel=channel,
         template_name=template_name,
     )
-    return [Template(**t.model_dump()) for t in rpc_response]
+    return [Template(**_RPC_MESSAGE_ADAPTER.validate_python(t.model_dump())) for t in rpc_response]
 
 
 async def send_message(
@@ -177,7 +180,7 @@ async def send_message(
 
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
-        message=TypeAdapter(RpcMessage).validate_python(message.model_dump()),
+        message=_RPC_MESSAGE_ADAPTER.validate_python(message.model_dump()),
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,
