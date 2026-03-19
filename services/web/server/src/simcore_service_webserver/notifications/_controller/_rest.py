@@ -15,7 +15,6 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as, parse_
 from servicelib.aiohttp.rest_responses import create_data_response
 
 from ..._meta import API_VTAG
-from ...application_settings_utils import requires_dev_feature_enabled
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...security.decorators import permission_required
@@ -35,7 +34,6 @@ def _get_async_job_href(request: web.Request, route: str, task_uuid: UUID) -> st
 @routes.post(f"{_notifications_prefix}/messages:send", name="send_message")
 @login_required
 @permission_required("notification.message.send")
-@requires_dev_feature_enabled
 @handle_notifications_exceptions
 async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
