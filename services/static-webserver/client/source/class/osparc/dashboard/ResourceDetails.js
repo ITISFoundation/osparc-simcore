@@ -551,8 +551,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__addToolbarButtons(page);
 
         if (resourceData["resourceType"] === "study") {
-          const canBeOpened = osparc.study.Utils.canEnableBillingOptions(resourceData);
-          page.setEnabled(canBeOpened);
+          const enabled = osparc.study.Utils.canEnableBillingOptions(resourceData);
+          page.setEnabled(enabled);
         }
 
         const lazyLoadContent = () => {
