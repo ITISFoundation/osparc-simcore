@@ -85,7 +85,6 @@ wrapt==1.17.3
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-    #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-dbapi
 yarl==1.23.0
     # via aiohttp
