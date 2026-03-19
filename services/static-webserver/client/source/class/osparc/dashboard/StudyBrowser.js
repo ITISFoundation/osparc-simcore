@@ -1374,10 +1374,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         currentContext: curatedContext,
       });
       searchBarFilterExtended.addListener("filterExtendedChanged", e => {
-        const data = e.getData();
+        const changedData = e.getData();
         // first update the filters
-        const filterType = data["filterType"];
-        const filterData = data["filterData"];
+        const filterType = changedData["filterType"];
+        const filterData = changedData["filterData"];
         switch (filterType) {
           case "text":
             this._searchBarFilter.getChildControl("text-field").setValue(filterData);
@@ -1390,7 +1390,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             break;
         }
         // then update the search context this will trigger the search
-        const searchContext = data["searchContext"];
+        const searchContext = changedData["searchContext"];
         if ([
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
