@@ -1373,7 +1373,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       searchBarFilterExtended.set({
         currentContext: curatedContext,
       });
-      searchBarFilterExtended.addListener("filterChanged", e => {
+      searchBarFilterExtended.addListener("filterExtendedChanged", e => {
         const data = e.getData();
         // first update the filters
         const filterType = data["filterType"];

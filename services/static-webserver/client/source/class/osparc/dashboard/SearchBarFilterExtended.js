@@ -43,7 +43,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   },
 
   events: {
-    "filterChanged": "qx.event.type.Data",
+    "filterExtendedChanged": "qx.event.type.Data",
     "resetButtonPressed": "qx.event.type.Event",
   },
 
@@ -332,7 +332,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       if (filterType === "text" && filterData.length < 3) {
         return;
       }
-      this.fireDataEvent("filterChanged", {
+      this.fireDataEvent("filterExtendedChanged", {
         searchContext: this.getCurrentContext(),
         filterType,
         filterData,
