@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -22,9 +22,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNonUniqueNodeFoundError,
     ProjectNodesRepo,
 )
-from simcore_postgres_database.utils_repos import (
-    pass_or_acquire_connection,
-)
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
@@ -36,10 +34,8 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 
-F = TypeVar("F", bound=Callable[..., Awaitable[Any]])
 
-
-def _handle_projects_metadata_exceptions(fct: F) -> F:
+def _handle_projects_metadata_exceptions[F: Callable[..., Awaitable[Any]]](fct: F) -> F:
     """Transforms project errors -> http errors"""
 
     @functools.wraps(fct)
@@ -110,7 +106,7 @@ async def set_project_custom_metadata(
     Raises:
         ProjectNotFoundError
     """
-    async with pass_or_acquire_connection(engine) as connection:
+    async with transaction_context(engine) as connection:
         metadata = await utils_projects_metadata.set_project_custom_metadata(
             connection,
             project_uuid=project_uuid,
@@ -143,13 +139,12 @@ async def set_project_ancestors(
         ProjectInvalidUsageError
         ValidationError: illegal metadata format in the database
     """
+    if parent_project_uuid and (parent_project_uuid == project_uuid):
+        # this is not allowed!
+        msg = "Project cannot be parent of itself"
+        raise ProjectInvalidUsageError(msg)
 
-    async with pass_or_acquire_connection(engine) as connection:
-        if parent_project_uuid and (parent_project_uuid == project_uuid):
-            # this is not allowed!
-            msg = "Project cannot be parent of itself"
-            raise ProjectInvalidUsageError(msg)
-
+    async with transaction_context(engine) as connection:
         await utils_projects_metadata.set_project_ancestors(
             connection,
             project_uuid=project_uuid,
