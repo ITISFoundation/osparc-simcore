@@ -39,7 +39,7 @@ _logger = logging.getLogger(__name__)
 TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
 
-async def substitute_vendor_secrets_in_model(
+async def substitute_vendor_secrets_in_model[TBaseModel: BaseModel](
     app: FastAPI,
     model: TBaseModel,
     *,
@@ -168,7 +168,7 @@ def auto_inject_environments(
     return compose_spec
 
 
-async def resolve_and_substitute_session_variables_in_model(
+async def resolve_and_substitute_session_variables_in_model[TBaseModel: BaseModel](
     app: FastAPI,
     model: TBaseModel,
     *,
@@ -258,10 +258,12 @@ async def resolve_and_substitute_session_variables_in_specs(
 
 def setup(app: FastAPI):
     """
-    **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
+    **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs
+      (e.g. docker-compose).
         - **vendor secrets**: information set by a vendor on the platform. e.g. a vendor service license
         - **session variables**: some session information as "current user email" or the "current product name"
-        - **lifespan variables**: produced before a service is started and cleaned up after it finishes (e.g. API tokens )
+        - **lifespan variables**: produced before a service is started and cleaned up after it finishes
+        (e.g. API tokens)
     """
     app.add_event_handler("startup", functools.partial(OsparcSessionVariablesTable.create, app))
 
