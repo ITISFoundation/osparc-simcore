@@ -2,7 +2,6 @@
 
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
@@ -13,7 +12,6 @@ from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     PageLimitInt,
 )
-from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter
 
@@ -81,15 +79,3 @@ class ProjectsRpcApi(BaseRpcApi):
                 job_parent_resource_name=job_parent_resource_name,
             ),
         )
-
-    async def get_node_service_key_version(
-        self, *, project_id: ProjectID, node_id: NodeID
-    ) -> tuple[ServiceKey, ServiceVersion]:
-        """Get the service key and version for a project node."""
-        result = await self._rpc_client.request(
-            self._namespace,
-            "get_node_service_key_version",
-            project_id=project_id,
-            node_id=node_id,
-        )
-        return TypeAdapter(tuple[ServiceKey, ServiceVersion]).validate_python(result)
