@@ -148,7 +148,6 @@ async def _handle_starting_clusters(app: FastAPI, starting_instances: set[EC2Ins
     )
 
     # terminate instances that have been starting for too long
-    terminateable_instances: set[EC2InstanceData] = set()
     if terminateable_instances := await _find_terminateable_instances(app, starting_instances):
         for instance in terminateable_instances:
             elapsed = arrow.utcnow().datetime - instance.launch_time
