@@ -27,7 +27,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
   members: {
     __sortBy: null,
-    __serviceSubmissionHelper: null,
 
     // overridden
     initResources: function() {
