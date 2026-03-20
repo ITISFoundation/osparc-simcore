@@ -4,7 +4,6 @@ from collections.abc import Callable, Coroutine
 from typing import Any, Final, NamedTuple
 
 from models_library.utils.specs_substitution import SubstitutionValue
-from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 
 from ..modules.osparc_variables._errors import (
@@ -91,7 +90,7 @@ class OsparcVariablesTable:
         return {k: self._variables_getters[k] for k in selection}
 
 
-_HANDLERS_TIMEOUT: Final[NonNegativeInt] = 10
+_HANDLERS_TIMEOUT: Final[float] = 10
 
 
 def _get_handler_name(handler: Callable[..., Any]) -> str:

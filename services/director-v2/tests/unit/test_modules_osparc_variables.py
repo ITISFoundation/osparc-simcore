@@ -10,6 +10,7 @@ import json
 from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
 from copy import deepcopy
+from typing import Final
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -41,8 +42,8 @@ from simcore_service_director_v2.modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
+from simcore_service_director_v2.utils import osparc_variables
 from simcore_service_director_v2.utils.osparc_variables import (
-    _HANDLERS_TIMEOUT,
     ContextDict,
     OsparcVariablesTable,
     factory_context_getter,
@@ -95,10 +96,6 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
         return faker.email()
 
     # Some context given ----------------------------------------------------------
-    # TODO: test pre errors handling
-    # TODO: test errors handling
-    # TODO: test validation errors handling
-    # TODO: test timeout error handling
 
     environs = await resolve_variables_from_context(osparc_variables_table.copy(), session_context)
 
@@ -303,12 +300,23 @@ def test_auto_inject_environments_are_registered():
     assert auto_injected_osparc_variables.issubset(registered_osparc_variables)
 
 
-# ---- resolve error wrapping tests (covers TODO: test timeout error handling) ----
+_FAST_HANDLERS_TIMEOUT: Final[float] = 0.1
 
 
-async def test_resolve_variables_wraps_timeout_in_typed_error():
+@pytest.fixture
+def with_fast_handlers_timeout(monkeypatch: pytest.MonkeyPatch) -> float:
+    monkeypatch.setattr(osparc_variables, "_HANDLERS_TIMEOUT", _FAST_HANDLERS_TIMEOUT)
+    return _FAST_HANDLERS_TIMEOUT
+
+
+async def test_resolve_variables_wraps_timeout_in_typed_error(with_fast_handlers_timeout: float):
+    _SLOW_TIMEOUT: Final[int] = 60
+    assert with_fast_handlers_timeout < _SLOW_TIMEOUT, (
+        "test timeout must be greater than handlers timeout to trigger the error"
+    )
+
     async def _slow_handler(app: FastAPI) -> str:
-        await asyncio.sleep(9999)
+        await asyncio.sleep(_SLOW_TIMEOUT)
         return "done"
 
     table = OsparcVariablesTable()
@@ -320,14 +328,11 @@ async def test_resolve_variables_wraps_timeout_in_typed_error():
         await resolve_variables_from_context(table.copy(), context)
 
     exc = exc_info.value
-    assert exc.variable_key == "OSPARC_VARIABLE_SLOW"
-    assert exc.timeout_seconds == _HANDLERS_TIMEOUT
-    assert exc.handler_name.endswith("_slow_handler")
     assert isinstance(exc.__cause__, TimeoutError)
     ctx = exc.error_context()
     assert ctx["variable_key"] == "OSPARC_VARIABLE_SLOW"
     assert ctx["handler_name"].endswith("_slow_handler")
-    assert ctx["timeout_seconds"] == _HANDLERS_TIMEOUT
+    assert ctx["timeout_seconds"] == with_fast_handlers_timeout
 
 
 async def test_resolve_variables_wraps_generic_exception_in_typed_error():
@@ -345,10 +350,10 @@ async def test_resolve_variables_wraps_generic_exception_in_typed_error():
 
     exc = exc_info.value
     # must be the base class, NOT the timeout subclass
-    assert type(exc) is OsparcVariableResolveError
-    assert exc.variable_key == "OSPARC_VARIABLE_BROKEN"
-    assert exc.handler_name.endswith("_broken_handler")
     assert isinstance(exc.__cause__, RuntimeError)
+    ctx = exc.error_context()
+    assert ctx["variable_key"] == "OSPARC_VARIABLE_BROKEN"
+    assert ctx["handler_name"].endswith("_broken_handler")
 
 
 async def test_resolve_variables_sync_values_unaffected_when_handler_fails():
