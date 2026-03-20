@@ -1,5 +1,6 @@
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceKey, ServiceVersion
 from simcore_postgres_database.utils_projects_nodes import ProjectNode, ProjectNodesRepo
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
@@ -24,3 +25,9 @@ async def get_project_nodes(app: web.Application, *, project_uuid: ProjectID) ->
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         return await repo.list(conn)
+
+
+async def get_node_service_key_version(app: web.Application, *, project_id: ProjectID, node_id: NodeID) -> ProjectNode:
+    repo = ProjectNodesRepo(project_uuid=project_id)
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
+        return await repo.get(conn, node_id=node_id)

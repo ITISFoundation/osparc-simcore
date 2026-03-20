@@ -1,7 +1,8 @@
 """projects management subsystem
 
 A project is a document defining a osparc study
-It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
+It contains metadata about the study (e.g. name, description, owner, etc)
+and a workbench section that describes the study pipeline
 """
 
 import logging
@@ -18,6 +19,7 @@ from ._controller import (
     metadata_rest,
     nodes_pricing_unit_rest,
     nodes_rest,
+    nodes_rpc,
     ports_rest,
     projects_rest,
     projects_rpc,
@@ -64,6 +66,7 @@ def setup_projects(app: web.Application) -> bool:
     setup_rabbitmq(app)
     if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(projects_rpc.register_rpc_routes_on_startup)
+        app.on_startup.append(nodes_rpc.register_rpc_routes_on_startup)
 
     # setup REST-controllers
     app.router.add_routes(projects_states_rest.routes)

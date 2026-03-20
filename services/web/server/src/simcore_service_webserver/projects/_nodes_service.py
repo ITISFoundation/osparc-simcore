@@ -82,6 +82,13 @@ async def get_project_nodes(app: web.Application, *, project_uuid: ProjectID) ->
     return await _nodes_repository.get_project_nodes(app, project_uuid=project_uuid)
 
 
+async def get_node_service_key_version(
+    app: web.Application, *, project_id: ProjectID, node_id: NodeID
+) -> tuple[ServiceKey, ServiceVersion]:
+    project_node = await _nodes_repository.get_node_service_key_version(app, project_id=project_id, node_id=node_id)
+    return (project_node.key, project_node.version)
+
+
 #
 # PREVIEWS
 #

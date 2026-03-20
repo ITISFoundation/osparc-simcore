@@ -7,17 +7,14 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from .api_keys import ApiKeysRpcApi
 from .functions import FunctionsRpcApi
 from .licenses import LicensesRpcApi
+from .nodes import NodesRpcApi
 from .projects import ProjectsRpcApi
 
 
 class WebServerRpcClient:
     """Main RPC client for webserver services."""
 
-    def __init__(
-        self,
-        rpc_client: RabbitMQRPCClient,
-        namespace: RPCNamespace,
-    ):
+    def __init__(self, rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
         self._rpc_client = rpc_client
         self._namespace = namespace
 
@@ -26,6 +23,7 @@ class WebServerRpcClient:
         self.licenses = LicensesRpcApi(rpc_client, namespace)
         self.functions = FunctionsRpcApi(rpc_client, namespace)
         self.api_keys = ApiKeysRpcApi(rpc_client, namespace)
+        self.nodes = NodesRpcApi(rpc_client, namespace)
 
     @property
     def namespace(self) -> RPCNamespace:
