@@ -2642,7 +2642,7 @@ async def test_getting_task_result_raises_s3_invalid_path_fails_task_immediately
     )
 
 
-@pytest.mark.acceptance_test("resolver timeout while starting tasks should retry")
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-issues/issues/2018")
 async def test_variable_resolution_timeout_while_starting_tasks_sets_waiting_for_cluster(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
@@ -2654,6 +2654,7 @@ async def test_variable_resolution_timeout_while_starting_tasks_sets_waiting_for
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
     fake_collection_run_id: CollectionRunID,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     run_in_db, published_tasks = await _assert_start_pipeline(
         initialized_app,
@@ -2669,7 +2670,7 @@ async def test_variable_resolution_timeout_while_starting_tasks_sets_waiting_for
     mocked_start_tasks.side_effect = OsparcVariableResolveTimeoutError(
         variable_key="OSPARC_VARIABLE_API_SECRET",
         handler_name="request_api_secret",
-        timeout_seconds=10,
+        timeout_seconds=faker.pyfloat(min_value=1),
     )
 
     await scheduler_api.apply(
@@ -2699,7 +2700,7 @@ async def test_variable_resolution_timeout_while_starting_tasks_sets_waiting_for
     )
 
 
-@pytest.mark.acceptance_test("non-timeout resolver errors while starting tasks should fail")
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-issues/issues/2018")
 async def test_variable_resolution_error_while_starting_tasks_fails_ready_tasks(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
