@@ -79,7 +79,7 @@ async def get_project_nodes_services(
 
 
 async def get_project_nodes(app: web.Application, *, project_uuid: ProjectID) -> list[ProjectNode]:
-    return await _nodes_repository.get_project_nodes(app, project_uuid=project_uuid)
+    return await _nodes_repository.get_project_nodes(app, project_id=project_uuid)
 
 
 async def get_node_service_key_version(
