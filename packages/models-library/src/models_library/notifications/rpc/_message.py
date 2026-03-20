@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ...celery import GroupUUID, OwnerMetadata, TaskUUID
-from ._email import Envelope, Message
+from ._email import Addressing, Message
 from ._template import TemplateRef
 
 
@@ -25,7 +25,7 @@ class SendMessageRequest(BaseModel):
                     {
                         "message": {
                             "channel": "email",
-                            "envelope": {
+                            "addressing": {
                                 "from": {
                                     "name": "osparc support",
                                     "email": "support@osparc.io",
@@ -57,10 +57,10 @@ class SendMessageRequest(BaseModel):
 
 
 class SendMessageFromTemplateRequest(BaseModel):
-    envelope: Annotated[
-        Envelope,
+    addressing: Annotated[
+        Addressing,
         Field(
-            description="Channel-specific envelope (addressing info). "
+            description="Channel-specific addressing info. "
             "Does NOT include message content, which is generated from the template.",
         ),
     ]
@@ -81,7 +81,7 @@ class SendMessageFromTemplateRequest(BaseModel):
             {
                 "examples": [
                     {
-                        "envelope": {
+                        "addressing": {
                             "channel": "email",
                             "from": {
                                 "name": "osparc support",
