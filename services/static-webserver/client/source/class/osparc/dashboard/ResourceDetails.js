@@ -187,6 +187,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __servicesBootOptionsPage: null,
     __conversationsPage: null,
     __permissionsPage: null,
+    __publishPage: null,
+    __templatePage: null,
     __tagsPage: null,
     __classifiersPage: null,
     __qualityPage: null,
@@ -889,11 +891,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const id = "Publish";
         const iconSrc = "@FontAwesome5Solid/globe/22";
         const title = this.tr("Publish");
-        const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+        const page = this.__publishPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
 
-        const studyData = this.__resourceData;
-        const enabled = osparc.study.Utils.canBeDuplicated(studyData);
-        page.setEnabled(enabled);
+        this.__evaluatePublish();
 
         const lazyLoadContent = () => {
           const makeItPublic = true;
@@ -928,11 +928,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const id = "Template";
         const iconSrc = "@FontAwesome5Solid/copy/22";
         const title = this.tr("Template");
-        const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+        const page = this.__templatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
 
-        const studyData = this.__resourceData;
-        const enabled = osparc.study.Utils.canBeDuplicated(studyData);
-        page.setEnabled(enabled);
+        this.__evaluateTemplate();
 
         const lazyLoadContent = () => {
           const makeItPublic = false;
@@ -1032,6 +1030,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__evaluateBillingSettings();
       this.__evaluateServicesUpdate();
       this.__evaluateServiceBootOptions();
+      this.__evaluatePublish();
+      this.__evaluateTemplate();
     },
 
     __evaluateOpenButtons: function() {
@@ -1064,6 +1064,22 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const resourceData = this.__resourceData;
         const enabled = osparc.study.Utils.canEnableServiceBootOptions(resourceData);
         this.__servicesBootOptionsPage.setEnabled(enabled);
+      }
+    },
+
+    __evaluatePublish: function() {
+      if (this.__publishPage) {
+        const resourceData = this.__resourceData;
+        const enabled = osparc.study.Utils.canBeDuplicated(resourceData);
+        this.__publishPage.setEnabled(enabled);
+      }
+    },
+
+    __evaluateTemplate: function() {
+      if (this.__templatePage) {
+        const resourceData = this.__resourceData;
+        const enabled = osparc.study.Utils.canBeDuplicated(resourceData);
+        this.__templatePage.setEnabled(enabled);
       }
     },
 
