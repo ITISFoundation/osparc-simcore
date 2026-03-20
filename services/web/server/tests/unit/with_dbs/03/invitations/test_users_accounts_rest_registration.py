@@ -24,7 +24,7 @@ from models_library.api_schemas_webserver.users import (
     UserAccountPreviewRejectionGet,
 )
 from models_library.groups import AccessRightsDict
-from models_library.notifications import ChannelType, TemplatePreview, TemplateRef
+from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
@@ -48,6 +48,7 @@ from simcore_postgres_database.models.users_details import (
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.models import PhoneNumberStr
+from simcore_service_webserver.notifications._models import TemplatePreview, TemplateRef
 
 
 @pytest.fixture
@@ -525,7 +526,7 @@ async def test_reject_user_account(
     mock_notifications_send_message.assert_called_once()
     call_kwargs = mock_notifications_send_message.call_args.kwargs
     assert call_kwargs["product_name"] == product_name
-    assert call_kwargs["channel"] == ChannelType.email
+    assert call_kwargs["channel"] == Channel.email
 
     # 5. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
@@ -637,7 +638,7 @@ async def test_approve_user_account_with_full_invitation_details(
         mock_notifications_send_message.assert_called_once()
         call_kwargs = mock_notifications_send_message.call_args.kwargs
         assert call_kwargs["product_name"] == product_name
-        assert call_kwargs["channel"] == ChannelType.email
+        assert call_kwargs["channel"] == Channel.email
 
     # 5. Verify the user account status and invitation data in extras
     resp = await client.get(
@@ -866,7 +867,7 @@ def mock_notifications_preview_template(mocker: MockerFixture) -> AsyncMock:
                 body_parts.append(f"<p>Extra credits: ${extra_credits}</p>")
             body_parts.append(f'<p><a href="{invitation_url}">Accept Invitation</a></p>')
             return TemplatePreview(
-                ref=TemplateRef(channel=ChannelType.email, template_name="account_approved"),
+                ref=TemplateRef(channel=Channel.email, template_name="account_approved"),
                 message_content={
                     "subject": "Your account request has been accepted",
                     "body_html": "\n".join(body_parts),
@@ -875,7 +876,7 @@ def mock_notifications_preview_template(mocker: MockerFixture) -> AsyncMock:
             )
         if ref.template_name == "account_rejected":
             return TemplatePreview(
-                ref=TemplateRef(channel=ChannelType.email, template_name="account_rejected"),
+                ref=TemplateRef(channel=Channel.email, template_name="account_rejected"),
                 message_content={
                     "subject": "Your account request has been denied",
                     "body_html": (

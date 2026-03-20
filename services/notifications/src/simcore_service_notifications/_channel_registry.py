@@ -1,6 +1,6 @@
 from typing import Any
 
-from models_library.notifications import ChannelType
+from models_library.notifications import Channel
 from models_library.notifications.errors import NotificationsUnsupportedChannelError
 
 
@@ -13,11 +13,11 @@ class ChannelRegistry[V]:
 
     def __init__(
         self,
-        entries: dict[ChannelType, V],
+        entries: dict[Channel, V],
     ) -> None:
-        self._entries: dict[ChannelType, V] = dict(entries)
+        self._entries: dict[Channel, V] = dict(entries)
 
-    def get(self, channel: ChannelType) -> V:
+    def get(self, channel: Channel) -> V:
         """Retrieve the value for *channel*.
 
         Raises:

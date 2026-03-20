@@ -19,7 +19,7 @@ from models_library.api_schemas_webserver.notifications import (
     TemplateGet,
     TemplatePreviewGet,
 )
-from models_library.notifications import ChannelType
+from models_library.notifications import Channel
 from models_library.notifications.rpc import (
     PreviewTemplateResponse,
     SearchTemplatesResponse,
@@ -41,7 +41,7 @@ def fake_template_preview_response(faker: Faker) -> PreviewTemplateResponse:
     """Create a fake template preview response"""
     return PreviewTemplateResponse(
         ref=TemplateRef(
-            channel=ChannelType.email,
+            channel=Channel.email,
             template_name="test_template",
         ),
         message_content={
@@ -57,7 +57,7 @@ def fake_template_response(faker: Faker) -> SearchTemplatesResponse:
     """Create a fake template response"""
     return SearchTemplatesResponse(
         ref=TemplateRef(
-            channel=ChannelType.email,
+            channel=Channel.email,
             template_name="test_template",
         ),
         context_schema={
@@ -303,7 +303,7 @@ async def test_preview_template_success(
 
     # Validate response structure
     preview = TemplatePreviewGet.model_validate(data)
-    assert preview.ref.channel == ChannelType.email
+    assert preview.ref.channel == Channel.email
     assert preview.ref.template_name == "test_template"
     assert preview.message_content
 
@@ -324,7 +324,7 @@ async def test_preview_template_enriches_context_with_product_data(
         f"{_service.__name__}.remote_preview_template",
         return_value=PreviewTemplateResponse(
             ref=TemplateRef(
-                channel=ChannelType.email,
+                channel=Channel.email,
                 template_name="test",
             ),
             message_content={"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
@@ -411,7 +411,7 @@ async def test_search_templates_no_filters(
     # Validate response structure
     templates = TypeAdapter(list[TemplateGet]).validate_python(data)
     assert len(templates) == 1
-    assert templates[0].ref.channel == ChannelType.email
+    assert templates[0].ref.channel == Channel.email
     assert templates[0].ref.template_name == "test_template"
     assert templates[0].context_schema
 

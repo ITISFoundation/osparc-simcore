@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from jinja2 import Environment
 from jinja2 import Template as JinjaTemplate
-from models_library.notifications import ChannelType, TemplateName
+from models_library.notifications import Channel, TemplateName
 from pydantic import TypeAdapter
 
 # NOTE: The following import triggers decorator-based registration
@@ -142,7 +142,7 @@ class FileTemplateRepository(TemplateRepository):
 
             if key not in templates_dict:
                 template_ref = TemplateRef(
-                    channel=ChannelType(channel_str),
+                    channel=Channel(channel_str),
                     template_name=TypeAdapter(TemplateName).validate_python(template_name_str),
                 )
                 templates_dict[key] = _build_template(template_ref)
