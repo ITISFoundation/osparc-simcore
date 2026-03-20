@@ -67,7 +67,7 @@ def multi_recipient_email_message(faker: Faker) -> EmailMessage:
 
 
 @pytest.fixture
-def email_envelope_single_recipient(faker: Faker) -> EmailAddressing:
+def email_addressing_single_recipient(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
         **{
             "from": {"name": "Sender", "email": faker.email()},
@@ -153,7 +153,7 @@ async def test_send_message_multiple_recipients(
 async def test_send_message_from_template_with_empty_template(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
-    email_envelope_single_recipient: EmailAddressing,
+    email_addressing_single_recipient: EmailAddressing,
 ):
     ref = TemplateRef(channel=Channel.email, template_name="empty")
     context = {
@@ -164,7 +164,7 @@ async def test_send_message_from_template_with_empty_template(
 
     response = await send_message_from_template(
         rpc_client,
-        envelope=email_envelope_single_recipient,
+        addressing=email_addressing_single_recipient,
         template_ref=ref,
         context=context,
     )
@@ -176,7 +176,7 @@ async def test_send_message_from_template_with_empty_template(
 async def test_send_message_from_template_with_multiple_recipients(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
-    email_envelope_multiple_recipients: EmailAddressing,
+    email_addressing_multiple_recipients: EmailAddressing,
 ):
     ref = TemplateRef(channel=Channel.email, template_name="empty")
     context = {
@@ -187,7 +187,7 @@ async def test_send_message_from_template_with_multiple_recipients(
 
     response = await send_message_from_template(
         rpc_client,
-        envelope=email_envelope_multiple_recipients,
+        addressing=email_addressing_multiple_recipients,
         template_ref=ref,
         context=context,
     )
@@ -198,7 +198,7 @@ async def test_send_message_from_template_with_multiple_recipients(
 
 async def test_send_message_from_template_not_found(
     rpc_client: RabbitMQRPCClient,
-    email_envelope_single_recipient: EmailAddressing,
+    email_addressing_single_recipient: EmailAddressing,
 ):
     ref = TemplateRef(channel=Channel.email, template_name="non_existent_template")
     context = {}
@@ -206,7 +206,7 @@ async def test_send_message_from_template_not_found(
     with pytest.raises(NotificationsTemplateNotFoundError):
         await send_message_from_template(
             rpc_client,
-            envelope=email_envelope_single_recipient,
+            addressing=email_addressing_single_recipient,
             template_ref=ref,
             context=context,
         )
@@ -215,7 +215,7 @@ async def test_send_message_from_template_not_found(
 async def test_send_message_from_template_invalid_context(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
-    email_envelope_single_recipient: EmailAddressing,
+    email_addressing_single_recipient: EmailAddressing,
 ):
     ref = TemplateRef(channel=Channel.email, template_name="account_approved")
     # Missing required fields 'user' and 'link'
@@ -227,7 +227,7 @@ async def test_send_message_from_template_invalid_context(
     with pytest.raises(NotificationsTemplateContextValidationError):
         await send_message_from_template(
             rpc_client,
-            envelope=email_envelope_single_recipient,
+            addressing=email_addressing_single_recipient,
             template_ref=ref,
             context=context,
         )
