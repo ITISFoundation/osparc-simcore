@@ -53,16 +53,16 @@ from simcore_service_director_v2.utils.osparc_variables import (
 
 @pytest.fixture
 def session_context(faker: Faker) -> ContextDict:
-    return ContextDict(
-        app=FastAPI(),
-        service_key=TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/foo"),
-        service_version=TypeAdapter(ServiceVersion).validate_python("1.2.3"),
-        compose_spec=generate_fake_docker_compose(faker),
-        product_name=faker.word(),
-        project_id=faker.uuid4(),
-        user_id=faker.pyint(),
-        node_id=faker.uuid4(),
-    )
+    return {
+        "app": FastAPI(),
+        "service_key": TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/foo"),
+        "service_version": TypeAdapter(ServiceVersion).validate_python("1.2.3"),
+        "compose_spec": generate_fake_docker_compose(faker),
+        "product_name": faker.word(),
+        "project_id": faker.uuid4(),
+        "user_id": faker.pyint(),
+        "node_id": faker.uuid4(),
+    }
 
 
 @pytest.mark.acceptance_test
