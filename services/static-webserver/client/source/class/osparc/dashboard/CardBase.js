@@ -812,6 +812,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (pipelineState) {
         this.__applyPipelineState(pipelineState);
       }
+
+      this.evaluateMenuButtons();
     },
 
     __applyDebt: function(debt) {
