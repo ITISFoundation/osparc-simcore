@@ -1,5 +1,5 @@
 from dataclasses import asdict
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
@@ -43,8 +43,8 @@ from ._models import (
     TemplateRef,
 )
 
-_RPC_MESSAGE_ADAPTER = TypeAdapter(RpcMessage)
-_RPC_TEMPLATE_REF_ADAPTER = TypeAdapter(RpcTemplateRef)
+_RPC_MESSAGE_ADAPTER: Final[TypeAdapter[RpcMessage]] = TypeAdapter(RpcMessage)
+_RPC_TEMPLATE_REF_ADAPTER: Final[TypeAdapter[RpcTemplateRef]] = TypeAdapter(RpcTemplateRef)
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -153,7 +153,7 @@ async def search_templates(
         channel=channel,
         template_name=template_name,
     )
-    return [Template(**_RPC_MESSAGE_ADAPTER.validate_python(t.model_dump())) for t in rpc_response]
+    return [Template(**_RPC_MESSAGE_ADAPTER.validate_python(t.model_dump()).model_dump()) for t in rpc_response]
 
 
 async def send_message(
