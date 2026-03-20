@@ -254,7 +254,7 @@ async def test_send_message_too_many_recipients(
         response = await client.post(url.path, json=body)
         _, error = await assert_status(response, status.HTTP_400_BAD_REQUEST)
         assert error
-        assert "Too many recipients" in error["message"]
+        assert "The number of recipients" in error["message"]
 
 
 @pytest.mark.parametrize(
