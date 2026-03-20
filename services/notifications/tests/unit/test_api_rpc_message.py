@@ -77,7 +77,7 @@ def email_addressing_single_recipient(faker: Faker) -> EmailAddressing:
 
 
 @pytest.fixture
-def email_envelope_multiple_recipients(faker: Faker) -> EmailAddressing:
+def email_addressing_multiple_recipients(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
         **{
             "from": {"name": "Sender", "email": faker.email()},
