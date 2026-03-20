@@ -4,7 +4,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-from .. import ChannelType
+from .. import Channel
 
 
 class EmailContact(BaseModel):
@@ -38,7 +38,7 @@ class EmailContent(BaseModel):
 
 
 class EmailMessage(BaseModel):
-    channel: ChannelType = ChannelType.email
+    channel: Channel = Channel.email
 
     # Envelope fields
     from_: Annotated[EmailContact, Field(alias="from")]

@@ -6,7 +6,7 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
-from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt
@@ -14,7 +14,7 @@ from pydantic import PositiveInt
 from ..db.plugin import get_asyncpg_engine
 from ..invitations import api as invitations_service
 from ..notifications import notifications_service
-from ..notifications._models import EmailContact
+from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval
@@ -281,7 +281,7 @@ async def approve_user_account(
             app,
             user_id=reviewer_id,
             product_name=product_name,
-            channel=ChannelType.email,
+            channel=Channel.email,
             group_ids=None,
             external_contacts=[EmailContact(email=pre_registration_email)],
             content=message_content,
@@ -337,7 +337,7 @@ async def reject_user_account(
             app,
             user_id=reviewer_id,
             product_name=product_name,
-            channel=ChannelType.email,
+            channel=Channel.email,
             group_ids=None,
             external_contacts=[EmailContact(email=pre_registration_email)],
             content=message_content,
@@ -390,7 +390,7 @@ async def preview_approval_user_account(
         app=app,
         product_name=product_name,
         ref=TemplateRef(
-            channel=ChannelType.email,
+            channel=Channel.email,
             template_name="account_approved",
         ),
         context={
