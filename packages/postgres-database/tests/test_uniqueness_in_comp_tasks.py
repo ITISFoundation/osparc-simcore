@@ -51,8 +51,4 @@ async def test_unique_project_node_pairs(asyncpg_connection: AsyncConnection):
     assert json.loads(task_inputs) == {}
 
     with pytest.raises(IntegrityError, match="project_node_uniqueness"):
-        #
-        # psycopg2.errors.UniqueViolation:
-        #   duplicate key value violates unique constraint "project_node_uniqueness" ...
-        #
         await conn.execute(comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N1")))
