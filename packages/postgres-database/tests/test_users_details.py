@@ -248,7 +248,7 @@ async def test_create_and_link_user_from_pre_registration(
     pre_registered_user: tuple[str, dict[str, Any]],
 ):
     """Test that a user can be created from a pre-registration link and is linked properly."""
-    pre_email, _ = pre_registered_user
+    pre_email, pre_registration_data = pre_registered_user
 
     # Invitation link is clicked and the user is created and linked to the pre-registration
     async with transaction_context(asyncpg_engine) as connection:
@@ -270,12 +270,18 @@ async def test_create_and_link_user_from_pre_registration(
     # Verify the user was created and linked
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         result = await connection.execute(
-            sa.select(users_pre_registration_details.c.user_id).where(
-                users_pre_registration_details.c.pre_email == pre_email
-            )
+            sa.select(
+                users_pre_registration_details.c.user_id,
+                users_pre_registration_details.c.account_request_status,
+                users_pre_registration_details.c.account_request_reviewed_by,
+                users_pre_registration_details.c.account_request_reviewed_at,
+            ).where(users_pre_registration_details.c.pre_email == pre_email)
         )
-        user_id = result.scalar()
-        assert user_id == new_user.id
+        pre_registration = result.one()
+        assert pre_registration.user_id == new_user.id
+        assert pre_registration.account_request_status == AccountRequestStatus.PENDING
+        assert pre_registration.account_request_reviewed_by == pre_registration_data["account_request_reviewed_by"]
+        assert pre_registration.account_request_reviewed_at is None
 
 
 @pytest.mark.acceptance_test(

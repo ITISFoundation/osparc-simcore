@@ -41,6 +41,7 @@ from pytest_simcore.helpers.webserver_login import (
 from pytest_simcore.helpers.webserver_users import NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -178,15 +179,30 @@ def account_request_form(
 async def pre_registration_details_db_cleanup(
     client: TestClient,
 ) -> AsyncGenerator[None]:
-    """Fixture to clean up all pre-registration details after test"""
+    """Fixture to clean up pre-registration details AND orphan users created during tests."""
 
     assert client.app
+    engine = get_asyncpg_engine(client.app)
+
+    # Snapshot user IDs before the test body runs
+    async with engine.connect() as conn:
+        result = await conn.execute(sa.select(users.c.id))
+        user_ids_before = {row.id for row in result}
 
     yield
 
-    # Tear down - clean up the pre-registration details table
-    async with get_asyncpg_engine(client.app).connect() as conn:
+    # Tear down
+    async with engine.connect() as conn:
+        # 1. Clean pre-registration details
         await conn.execute(sa.delete(users_pre_registration_details))
+
+        # 2. Remove users created during the test body (orphans from create_user / new_user calls)
+        result = await conn.execute(sa.select(users.c.id))
+        user_ids_after = {row.id for row in result}
+        orphan_ids = user_ids_after - user_ids_before
+        if orphan_ids:
+            await conn.execute(sa.delete(users).where(users.c.id.in_(orphan_ids)))
+
         await conn.commit()
 
 
@@ -1228,3 +1244,100 @@ async def test_access_rights_on_preview_rejection(
     else:
         # Authorized roles pass access control; may fail for other reasons (e.g. user not found)
         assert resp.status not in {status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN}
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_create_user_auto_approves_pre_registration_with_recovery_metadata(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+):
+    """Test that link_and_update_user_from_pre_registration auto-reconciles PENDING
+    pre-registrations when the user has product access, and writes recovery metadata
+    into extras.
+
+    SETUP:
+    - Pre-register a user via API (PENDING, with form extras)
+    - Create a new user with that email
+    - Add user to the product group
+    - Call link_and_update_user_from_pre_registration
+
+    EXPECTED:
+    - Pre-registration status -> APPROVED
+    - user_id linked
+    - extras.recovery has source, confidence, executed_at, notes
+    - Original form extras preserved
+    """
+    assert client.app
+
+    test_email = account_request_form["email"]
+
+    # 1. Pre-register via API -> creates PENDING record with form extras
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=account_request_form,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    pre_reg_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert pre_reg_data["email"] == test_email
+
+    # 2. Create user + add to product group + link pre-registration
+    # (simulating the real registration flow order: create user, add to group, then link)
+    from simcore_postgres_database.utils_users import UsersRepo  # noqa: PLC0415
+
+    engine = get_asyncpg_engine(client.app)
+    repo = UsersRepo(engine)
+
+    from simcore_service_webserver.security import security_service  # noqa: PLC0415
+
+    new_user = await repo.new_user(
+        email=test_email,
+        password_hash=security_service.encrypt_password(DEFAULT_TEST_PASSWORD),
+        status=UserStatus.ACTIVE,
+        expires_at=None,
+    )
+
+    # Add user to product group (before link_and_update so reconciliation can trigger)
+    from simcore_service_webserver.groups import _groups_repository  # noqa: PLC0415
+
+    await _groups_repository.auto_add_user_to_product_group(
+        client.app,
+        user_id=new_user.id,
+        product_name=product_name,
+    )
+
+    # 3. Link and reconcile
+    await repo.link_and_update_user_from_pre_registration(
+        new_user_id=new_user.id,
+        new_user_email=new_user.email,
+    )
+
+    # 4. Verify via API
+    resp = await client.get(
+        "/v0/admin/user-accounts:search",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+
+    user_data = found[0]
+    assert user_data["accountRequestStatus"] == "APPROVED"
+    assert user_data["registered"] is True
+
+    # 5. Verify recovery metadata in extras
+    extras = user_data.get("extras", {})
+    assert "recovery" in extras, f"Expected 'recovery' key in extras, got: {extras}"
+    recovery = extras["recovery"]
+    assert recovery["source"] == "runtime:link_and_update_user_from_pre_registration"
+    assert recovery["confidence"] in ("high", "medium")
+    assert recovery["executed_at"] is not None
+    assert "auto-reconciled" in recovery["notes"].lower()
+
+    # 6. Verify original form extras are preserved (not overwritten)
+    assert "application" in extras or "description" in extras or "privacyPolicy" in extras
