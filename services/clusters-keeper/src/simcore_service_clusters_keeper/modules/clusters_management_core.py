@@ -129,7 +129,7 @@ async def _heartbeat_connected_clusters(app: FastAPI, connected_instances: set[E
             # silenced and handled next cycle
             if await is_scheduler_busy(get_scheduler_url(instance), get_scheduler_auth(app)):
                 _logger.info("%s is running tasks", _log_instance(instance))
-            await set_instance_heartbeat(app, instance=instance)
+                await set_instance_heartbeat(app, instance=instance)
 
 
 async def _terminate_idle_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
