@@ -3,7 +3,7 @@
 
 import pytest
 from jinja2 import Environment
-from models_library.notifications import ChannelType, TemplateName
+from models_library.notifications import Channel, TemplateName
 from pydantic import TypeAdapter
 from simcore_service_notifications.models.template import TemplateRef
 from simcore_service_notifications.repositories import (
@@ -22,7 +22,7 @@ def template_repository(mock_jinja_env: Environment) -> TemplateRepository:
 def test_template_path_prefix() -> None:
     """Test generating template path prefix."""
     ref = TemplateRef(
-        channel=ChannelType.email,
+        channel=Channel.email,
         template_name=TypeAdapter(TemplateName).validate_python("welcome"),
     )
     prefix = template_path_prefix(ref)
@@ -41,10 +41,10 @@ def test_search_templates_by_channel(
     template_repository: TemplateRepository,
 ) -> None:
     """Test searching templates by channel."""
-    templates = template_repository.search_templates(channel=ChannelType.email)
+    templates = template_repository.search_templates(channel=Channel.email)
     assert isinstance(templates, list)
     if templates:
-        assert all(t.ref.channel == ChannelType.email for t in templates)
+        assert all(t.ref.channel == Channel.email for t in templates)
 
 
 def test_search_templates_by_template_name(
@@ -104,12 +104,12 @@ def test_search_templates_combined_filters_channel_and_name(
 ) -> None:
     """Test searching templates with channel and name filters."""
     templates = template_repository.search_templates(
-        channel=ChannelType.email,
+        channel=Channel.email,
         template_name="*",
     )
     assert isinstance(templates, list)
     if templates:
-        assert all(t.ref.channel == ChannelType.email for t in templates)
+        assert all(t.ref.channel == Channel.email for t in templates)
 
 
 def test_search_templates_combined_filters_all(
@@ -117,13 +117,13 @@ def test_search_templates_combined_filters_all(
 ) -> None:
     """Test searching templates with all filters combined."""
     templates = template_repository.search_templates(
-        channel=ChannelType.email,
+        channel=Channel.email,
         template_name="*",
         part="*",
     )
     assert isinstance(templates, list)
     if templates:
-        assert all(t.ref.channel == ChannelType.email for t in templates)
+        assert all(t.ref.channel == Channel.email for t in templates)
 
 
 def test_search_templates_no_duplicates(
@@ -139,7 +139,7 @@ def test_search_templates_returns_template_objects(
     template_repository: TemplateRepository,
 ) -> None:
     """Test that search_templates returns proper template objects with all attributes."""
-    templates = template_repository.search_templates(channel=ChannelType.email)
+    templates = template_repository.search_templates(channel=Channel.email)
     if templates:
         template = templates[0]
         assert hasattr(template, "ref")
@@ -155,6 +155,6 @@ def test_search_templates_invalid_channel_returns_empty(
 ) -> None:
     """Test that filtering by non-existent channel returns empty list."""
     # Note: ChannelType only has 'email' as defined in models
-    templates = template_repository.search_templates(channel=ChannelType.email)
+    templates = template_repository.search_templates(channel=Channel.email)
     # Should either find templates or return empty list without error
     assert isinstance(templates, list)

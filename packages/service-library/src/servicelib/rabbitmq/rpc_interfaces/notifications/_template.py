@@ -1,15 +1,12 @@
 import logging
 from typing import Any
 
-from models_library.notifications import TemplateRef
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
     PreviewTemplateRequest,
     PreviewTemplateResponse,
     SearchTemplatesResponse,
-)
-from models_library.notifications.rpc import (
-    TemplateRef as TemplateRefRpc,
+    TemplateRef,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter, validate_call
@@ -32,7 +29,7 @@ async def preview_template(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("preview_template"),
         request=PreviewTemplateRequest(
-            ref=TemplateRefRpc(**ref.model_dump()),
+            ref=ref,
             context=context,
         ),
     )
