@@ -15,13 +15,6 @@
 
 ************************************************************************ */
 
-/**
- * @asset(form/service.json)
- * @asset(form/service-data.json)
- * @ignore(Headers)
- * @ignore(fetch)
- */
-
 qx.Class.define("osparc.dashboard.AppBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
@@ -34,6 +27,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
   members: {
     __sortBy: null,
+    __serviceSubmissionHelper: null,
 
     // overridden
     initResources: function() {
@@ -142,7 +136,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       this._createSearchBar();
       this._createResourcesLayout("servicesList");
 
-      this.__addNewServiceButtons();
+      this.__serviceSubmissionHelper = new osparc.dashboard.ServiceSubmissionDeprecated(this._toolbar);
       this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
@@ -186,81 +180,5 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         menu.add(openButton);
       }
     },
-
-    __addNewServiceButtons: function() {
-      const platformName = osparc.store.StaticInfo.getPlatformName();
-      const hasRights = osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll");
-      if (platformName === "dev") {
-        const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
-        testDataButton.addListener("execute", () => {
-          osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
-            .then(data => {
-              this.__displayServiceSubmissionForm(data);
-            });
-        });
-        this._toolbar.add(testDataButton);
-      }
-
-      const addServiceButton = new qx.ui.form.Button(this.tr("Submit new app"), "@FontAwesome5Solid/plus-circle/14");
-      addServiceButton.set({
-        appearance: "form-button-outlined",
-        visibility: hasRights ? "visible" : "excluded"
-      });
-      addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
-      this._toolbar.add(addServiceButton);
-    },
-
-    __displayServiceSubmissionForm: function(formData) {
-      const addServiceWindow = new osparc.ui.window.Window(this.tr("Submit a new app")).set({
-        modal: true,
-        autoDestroy: true,
-        showMinimize: false,
-        allowMinimize: false,
-        centerOnAppear: true,
-        layout: new qx.ui.layout.Grow(),
-        width: 600,
-        height: 660
-      });
-      const scroll = new qx.ui.container.Scroll();
-      addServiceWindow.add(scroll);
-      const form = new osparc.form.json.JsonSchemaForm("/resource/form/service.json", formData);
-      form.addListener("ready", () => {
-        addServiceWindow.open();
-      });
-      form.addListener("submit", e => {
-        const data = e.getData();
-        const headers = new Headers();
-        headers.append("Accept", "application/json");
-        const body = new FormData();
-        body.append("metadata", new Blob([JSON.stringify(data.json)], {
-          type: "application/json"
-        }));
-        if (data.files && data.files.length) {
-          const size = data.files[0].size;
-          const maxSize = 10 * 1000 * 1000; // 10 MB
-          if (size > maxSize) {
-            osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
-            return;
-          }
-          body.append("attachment", data.files[0], data.files[0].name);
-        }
-        form.setFetching(true);
-        fetch("/v0/publications/service-submission", {
-          method: "POST",
-          headers,
-          body
-        })
-          .then(resp => {
-            if (resp.ok) {
-              osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
-              addServiceWindow.close();
-            } else {
-              osparc.FlashMessenger.logAs(`A problem occurred while processing your data: ${resp.statusText}`, "ERROR");
-            }
-          })
-          .finally(() => form.setFetching(false));
-      });
-      scroll.add(form);
-    }
   }
 });
