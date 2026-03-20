@@ -9,10 +9,12 @@ etc
 NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
 required fields in postgres_database.models tables or pydantic models.
 
-NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
+IMPORTANT: in order to reduce coupling, please do import `simcore_postgres_database`
+and any other third-party dependencies (exception faker and arrow) inside of the functions
+and append ` # noqa: PLC0415`
+
 """
 
-import hashlib
 import itertools
 import json
 from collections.abc import Callable
@@ -50,12 +52,7 @@ def random_phone_number(fake: Faker = DEFAULT_FAKER) -> str:
     return phone[: -len(tail)] + tail  # ensure phone keeps its length
 
 
-def _compute_hash(password: str) -> str:
-    return hashlib.sha224(password.encode("ascii")).hexdigest()
-
-
 DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
-_DEFAULT_HASH = _compute_hash(DEFAULT_TEST_PASSWORD)
 
 
 def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
@@ -77,6 +74,12 @@ def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     return data
 
 
+def _compute_hash(password: str) -> str:
+    import passlib.hash  # noqa: PLC0415
+
+    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
+
 def random_user_secrets(
     fake: Faker = DEFAULT_FAKER,
     *,
@@ -93,7 +96,7 @@ def random_user_secrets(
 
     data = {
         "user_id": user_id,
-        "password_hash": _DEFAULT_HASH,
+        "password_hash": _compute_hash(DEFAULT_TEST_PASSWORD),
     }
     assert set(data.keys()).issubset({c.name for c in users_secrets.columns})
 
