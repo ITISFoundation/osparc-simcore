@@ -1,5 +1,5 @@
 from email.utils import parseaddr
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from common_library.network import replace_email_parts
 from models_library.notifications import Channel, TemplateName
@@ -82,7 +82,7 @@ class EmailContent(BaseModel):
     )
 
 
-class EmailEnvelope(BaseModel):
+class EmailAddressing(BaseModel):
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
     reply_to: EmailContact | None = None
@@ -100,7 +100,7 @@ class EmailEnvelope(BaseModel):
 class EmailMessage(BaseModel):
     channel: Channel = Channel.email
 
-    envelope: EmailEnvelope
+    addressing: EmailAddressing
     content: EmailContent
 
     model_config = ConfigDict(
@@ -110,7 +110,7 @@ class EmailMessage(BaseModel):
 
 class TemplatePreview(BaseModel):
     ref: TemplateRef
-    message_content: dict
+    message_content: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)
 

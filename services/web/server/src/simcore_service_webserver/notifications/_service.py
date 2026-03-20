@@ -34,9 +34,9 @@ from ..users import users_service
 from ._helpers import get_product_data
 from ._models import (
     Contact,
+    EmailAddressing,
     EmailContact,
     EmailContent,
-    EmailEnvelope,
     EmailMessage,
     Template,
     TemplatePreview,
@@ -115,7 +115,7 @@ async def _create_email_message(
 
     return EmailMessage(
         channel=Channel.email,
-        envelope=EmailEnvelope(
+        addressing=EmailAddressing(
             from_=from_contact,
             to=to_contacts,
         ),
