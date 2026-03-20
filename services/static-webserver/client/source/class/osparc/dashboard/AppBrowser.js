@@ -136,7 +136,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       this._createSearchBar();
       this._createResourcesLayout("servicesList");
 
-      this.__serviceSubmissionHelper = new osparc.dashboard.ServiceSubmissionDeprecated(this._toolbar);
       this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });

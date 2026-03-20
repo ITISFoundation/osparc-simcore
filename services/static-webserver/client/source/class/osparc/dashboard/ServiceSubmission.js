@@ -22,7 +22,7 @@
  * @ignore(fetch)
  * @deprecated Service submission is deprecated and will be removed in a future release.
  */
-qx.Class.define("osparc.dashboard.ServiceSubmissionDeprecated", {
+qx.Class.define("osparc.dashboard.ServiceSubmission", {
   extend: qx.core.Object,
 
   construct: function(toolbar) {
