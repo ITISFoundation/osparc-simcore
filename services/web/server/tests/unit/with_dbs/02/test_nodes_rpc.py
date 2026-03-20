@@ -11,6 +11,7 @@ import pytest
 from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -22,7 +23,6 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
 )
-from simcore_service_webserver.projects._crud_api_create import NodeID
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
