@@ -9,6 +9,7 @@ from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
+    NotificationsTooManyRecipientsError,
 )
 from models_library.notifications.rpc import (
     EmailAddressing,
@@ -230,4 +231,28 @@ async def test_send_message_from_template_invalid_context(
             addressing=email_addressing_single_recipient,
             template_ref=ref,
             context=context,
+        )
+
+
+async def test_send_message_too_many_recipients(
+    rpc_client: RabbitMQRPCClient,
+    faker: Faker,
+):
+    too_many_recipients = [EmailContact(name=f"Recipient {i}", email=faker.email()) for i in range(21)]
+    message = EmailMessage(
+        addressing=EmailAddressing(
+            from_=EmailContact(name="Sender", email=faker.email()),
+            to=too_many_recipients,
+        ),
+        content=EmailContent(
+            subject="Test Subject",
+            body_text="Test body text",
+            body_html="<p>Test body html</p>",
+        ),
+    )
+
+    with pytest.raises(NotificationsTooManyRecipientsError):
+        await send_message(
+            rpc_client,
+            message=message,
         )
