@@ -8,6 +8,9 @@ from models_library.celery import (
     TaskName,
     TaskUUID,
 )
+from models_library.notifications.errors import (
+    NotificationsTooManyRecipientsError,
+)
 from models_library.notifications.rpc import Addressing, EmailMessage, Message
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
@@ -16,6 +19,7 @@ from servicelib.celery.async_jobs.notifications import (
 from servicelib.celery.task_manager import TaskManager
 
 from .._meta import APP_NAME
+from ..core.settings import ApplicationSettings
 from ..models.template import TemplateRef
 from ._template import TemplateService
 from .channel_handlers import for_channel
@@ -39,6 +43,7 @@ def _prepare_celery_messages(message: Message) -> list[dict[str, Any]]:
 class MessageService:
     template_service: TemplateService
     task_manager: TaskManager
+    settings: ApplicationSettings
 
     async def send_message(
         self,
@@ -49,13 +54,21 @@ class MessageService:
         resolved_owner = owner_metadata or _OWNER_METADATA
         messages = _prepare_celery_messages(message)
 
-        if len(messages) == 1:
+        num_recipients = len(messages)
+        if num_recipients == 1:
             task_uuid, task_name = await submit_send_message_task(
                 self.task_manager,
                 owner_metadata=resolved_owner,
                 message=messages[0],
             )
             return task_uuid, task_name
+
+        max_recipients = self.settings.NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE
+        if num_recipients > max_recipients:
+            raise NotificationsTooManyRecipientsError(
+                num_recipients=num_recipients,
+                max_recipients=max_recipients,
+            )
 
         group_uuid, _, task_name = await submit_send_messages_task(
             self.task_manager,

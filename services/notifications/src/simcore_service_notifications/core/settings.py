@@ -83,6 +83,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     NOTIFICATIONS_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
 
+    NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
+        int,
+        Field(description="Maximum number of recipients per email message"),
+    ] = 20
+
     NOTIFICATIONS_EMAIL_RATE_LIMIT: Annotated[
         str,
         Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
