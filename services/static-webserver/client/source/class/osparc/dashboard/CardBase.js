@@ -812,6 +812,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (pipelineState) {
         this.__applyPipelineState(pipelineState);
       }
+
+      this.evaluateMenuButtons();
     },
 
     __applyDebt: function(debt) {
@@ -1044,7 +1046,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
         const billingSettingsButton = menuButtons.find(menuBtn => "billingSettingsButton" in menuBtn);
         if (billingSettingsButton) {
-          billingSettingsButton.setEnabled(osparc.study.Utils.canShowBillingOptions(resourceData));
+          billingSettingsButton.setEnabled(osparc.study.Utils.canEnableBillingOptions(resourceData));
         }
         const moveToButton = menuButtons.find(menuBtn => "moveToButton" in menuBtn);
         if (moveToButton) {
