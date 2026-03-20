@@ -253,37 +253,36 @@ def test_response_surface_modeling(  # noqa: PLR0915
                 output_plus_button.click(timeout=30 * SECOND)
 
                 output_confirm_button = service_iframe.locator('[mmux-testid="confirm-add-output-btn"]')
-                output_confirm_button.wait_for(state="visible", timeout=30 * SECOND)
+                output_confirm_button.wait_for(state="visible")
                 output_confirm_button.click(timeout=30 * SECOND)
 
         # Click the next button
         with log_context(logging.INFO, "Clicking Next to go to the next step..."):
             next_button = service_iframe.locator('[mmux-testid="next-button"]')
-            next_button.wait_for(state="visible", timeout=30 * SECOND)
             next_button.scroll_into_view_if_needed()
             next_button.click(timeout=30 * SECOND)
 
         with log_context(logging.INFO, "Starting the sampling..."):
             extend_sampling_btn = service_iframe.locator('[mmux-testid="extend-sampling-btn"]')
-            extend_sampling_btn.wait_for(state="visible", timeout=30 * SECOND)
+            extend_sampling_btn.wait_for(state="visible")
             extend_sampling_btn.scroll_into_view_if_needed()
             extend_sampling_btn.click(timeout=30 * SECOND)
 
             new_sampling_btn = service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]')
-            new_sampling_btn.wait_for(state="visible", timeout=30 * SECOND)
+            new_sampling_btn.wait_for(state="visible")
             new_sampling_btn.scroll_into_view_if_needed()
             new_sampling_btn.click(timeout=30 * SECOND)
 
             samplingInput = service_iframe.locator(
                 '[mmux-testid="lhs-number-of-sampling-points-input"] input[type="number"]'
             )
-            samplingInput.wait_for(state="visible", timeout=30 * SECOND)
+            samplingInput.wait_for(state="visible")
             samplingInput.scroll_into_view_if_needed()
             samplingInput.fill("40")
             samplingInput.press("Enter")
 
             run_sampling_btn = service_iframe.locator('[mmux-testid="run-sampling-btn"]')
-            run_sampling_btn.wait_for(state="visible", timeout=30 * SECOND)
+            run_sampling_btn.wait_for(state="visible")
             run_sampling_btn.scroll_into_view_if_needed()
             run_sampling_btn.click(timeout=30 * SECOND)
 
