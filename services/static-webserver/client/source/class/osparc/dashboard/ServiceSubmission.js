@@ -20,7 +20,7 @@
  * @asset(form/service-data.json)
  * @ignore(Headers)
  * @ignore(fetch)
- * @deprecated Service submission is deprecated and will be removed in a future release.
+ * @deprecated Service submission is deprecated but the fetchJSON -> JsonSchemaForm might still be used for inspiration.
  */
 qx.Class.define("osparc.dashboard.ServiceSubmission", {
   extend: qx.core.Object,
