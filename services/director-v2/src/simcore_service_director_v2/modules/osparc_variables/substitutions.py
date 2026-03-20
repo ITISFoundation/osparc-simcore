@@ -3,7 +3,7 @@
 import functools
 import logging
 from copy import deepcopy
-from typing import Any, Final, TypeVar
+from typing import Any, Final
 
 from fastapi import FastAPI
 from models_library.osparc_variable_identifier import (
@@ -34,8 +34,6 @@ from ._api_auth import create_user_api_key, create_user_api_secret
 from ._user import request_user_email, request_user_role
 
 _logger = logging.getLogger(__name__)
-
-TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
 
 async def substitute_vendor_secrets_in_model[TBaseModel: BaseModel](
