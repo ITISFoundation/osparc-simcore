@@ -4,11 +4,11 @@ from pydantic import TypeAdapter
 
 from ...rabbitmq_basic_types import RPCNamespace
 from ._email import (
+    Addressing,
+    EmailAddressing,
     EmailContact,
     EmailContent,
-    EmailEnvelope,
     EmailMessage,
-    Envelope,
     Message,
 )
 from ._message import (
@@ -26,12 +26,11 @@ from ._template import (
 NOTIFICATIONS_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(RPCNamespace).validate_python("notifications")
 
 __all__: tuple[str, ...] = (
+    "Addressing",
+    "EmailAddressing",
     "EmailContact",
     "EmailContent",
-    "EmailEnvelope",
     "EmailMessage",
-    "Envelope",
-    "Message",
     "Message",
     "PreviewTemplateRequest",
     "PreviewTemplateResponse",

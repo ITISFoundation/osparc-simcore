@@ -12,7 +12,7 @@ class EmailChannelHandler(ChannelHandler):
     @staticmethod
     def prepare_messages(message: EmailMessage) -> list[dict[str, Any]]:
         content_dict = message.content.model_dump()
-        from_dict = message.envelope.from_.model_dump()
+        from_dict = message.addressing.from_.model_dump()
 
         return [
             CeleryEmailMessage.model_validate(
@@ -23,5 +23,5 @@ class EmailChannelHandler(ChannelHandler):
                     "content": content_dict,
                 }
             ).model_dump(by_alias=True)
-            for recipient in message.envelope.to
+            for recipient in message.addressing.to
         ]
