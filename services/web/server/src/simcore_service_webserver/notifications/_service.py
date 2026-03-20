@@ -153,7 +153,7 @@ async def search_templates(
         channel=channel,
         template_name=template_name,
     )
-    return [Template(**_RPC_MESSAGE_ADAPTER.validate_python(t.model_dump()).model_dump()) for t in rpc_response]
+    return [Template(**t.model_dump()) for t in rpc_response]
 
 
 async def send_message(
