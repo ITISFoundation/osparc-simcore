@@ -47,8 +47,9 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     NotificationsTooManyRecipientsError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
         user_message(
-            "Too many recipients selected ({num_recipients}). Maximum allowed is {max_recipients}.",
-            _version=1,
+            "The number of recipients ({num_recipients}) exceeds the maximum of {max_recipients}. "
+            "Please reduce the number of recipients and try again.",
+            _version=2,
         ),
     ),
 }

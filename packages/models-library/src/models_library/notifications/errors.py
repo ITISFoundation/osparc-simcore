@@ -22,4 +22,7 @@ class NotificationsNoActiveRecipientsError(BaseNotificationsError):
 
 
 class NotificationsTooManyRecipientsError(BaseNotificationsError):
-    msg_template = "Too many recipients selected ({num_recipients}). Maximum allowed is {max_recipients}."
+    msg_template = (
+        "The number of recipients ({num_recipients}) exceeds the allowed maximum of {max_recipients}. "
+        "Please reduce the number of recipients and try again."
+    )
