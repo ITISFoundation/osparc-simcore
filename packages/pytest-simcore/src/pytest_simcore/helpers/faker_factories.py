@@ -75,9 +75,16 @@ def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
 
 
 def _compute_hash(password: str) -> str:
-    import passlib.hash  # noqa: PLC0415
+    try:
+        import passlib.hash  # noqa: PLC0415
 
-    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+        return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
+    except ImportError:
+        # fallback to a simple hash if passlib is not available, but it should be enough for testing purposes
+        import hashlib  # noqa: PLC0415
+
+        return hashlib.sha256(password.encode()).hexdigest()
 
 
 def random_user_secrets(
