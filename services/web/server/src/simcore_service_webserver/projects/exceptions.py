@@ -27,6 +27,15 @@ class BaseProjectError(WebServerBaseError):
 class ProjectInvalidUsageError(BaseProjectError): ...
 
 
+class ProjectTooManyNodesError(ProjectInvalidUsageError):
+    msg_template = "The number of nodes in a project cannot exceed {max_num_nodes}, requested {requested_num_nodes}"
+
+    def __init__(self, *, max_num_nodes: int, requested_num_nodes: int, **ctx):
+        super().__init__(**ctx)
+        self.max_num_nodes = max_num_nodes
+        self.requested_num_nodes = requested_num_nodes
+
+
 class ProjectOwnerNotFoundInTheProjectAccessRightsError(BaseProjectError):
     msg_template = "Project owner gid with required permissions was not found in the project access rights"
 
@@ -144,7 +153,10 @@ class ParentProjectNotFoundError(BaseProjectError):
 
 
 class ProjectStartsTooManyDynamicNodesError(BaseProjectError):
-    msg_template = "The maximal amount of concurrently running dynamic services was reached. Please manually stop a service and retry."
+    msg_template = (
+        "The maximal amount of concurrently running dynamic services was reached. "
+        "Please manually stop a service and retry."
+    )
 
     def __init__(self, *, user_id: UserID, project_uuid: ProjectID, **ctx):
         super().__init__(**ctx)
@@ -163,7 +175,10 @@ class ProjectTooManyProjectOpenedError(BaseProjectError):
 
 
 class ProjectTooManyUserSessionsError(BaseProjectError):
-    msg_template = "You cannot open more than {max_num_sessions} session(s) for the same project at once. Please close another session and retry."
+    msg_template = (
+        "You cannot open more than {max_num_sessions} session(s) for the same project at once."
+        " Please close another session and retry."
+    )
 
     def __init__(self, *, max_num_sessions: int, **ctx):
         super().__init__(**ctx)
@@ -253,7 +268,7 @@ class ClustersKeeperNotAvailableError(BaseProjectError):
     """Clusters-keeper service is not available"""
 
 
-class InvalidInputValue(WebServerBaseError):
+class InvalidInputValueError(WebServerBaseError):
     msg_template = "Invalid value for input '{node_id}': {message} for value={value}"
 
 
@@ -262,11 +277,18 @@ class ProjectGroupNotFoundError(BaseProjectError):
 
 
 class ProjectInDebtCanNotChangeWalletError(BaseProjectError):
-    msg_template = "Unable to change the credit account linked to the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative."
+    msg_template = (
+        "Unable to change the credit account linked to the project. "
+        "The project is embargoed because the last transaction of {debt_amount} resulted in the credit account"
+        " going negative."
+    )
 
 
 class ProjectInDebtCanNotOpenError(BaseProjectError):
-    msg_template = "Unable to open the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative."
+    msg_template = (
+        "Unable to open the project. The project is embargoed because the last transaction"
+        " of {debt_amount} resulted in the credit account going negative."
+    )
 
 
 class ProjectWalletPendingTransactionError(BaseProjectError):

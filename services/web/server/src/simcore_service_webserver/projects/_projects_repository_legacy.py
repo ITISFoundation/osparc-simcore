@@ -93,6 +93,7 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
+    ProjectTooManyNodesError,
 )
 from .models import (
     ProjectDBGet,
@@ -253,6 +254,7 @@ class ProjectDBAPI(BaseProjectDB):
         invalid uuid will raise an exception.
 
         :raises ProjectInvalidRightsError: assigning project to an unregistered user
+        :raises ProjectTooManyNodesError: project workbench exceeds supported node limit
         :raises ValidationError
         :return: inserted project
         """
@@ -291,11 +293,10 @@ class ProjectDBAPI(BaseProjectDB):
 
         num_nodes = len(insert_values.get("workbench", {}))
         if num_nodes > self.MAX_NUMBER_OF_NODES_PER_PROJECT:
-            msg = (
-                f"The number of nodes in a project cannot exceed {self.MAX_NUMBER_OF_NODES_PER_PROJECT},"
-                f" requested {num_nodes}"
+            raise ProjectTooManyNodesError(
+                max_num_nodes=self.MAX_NUMBER_OF_NODES_PER_PROJECT,
+                requested_num_nodes=num_nodes,
             )
-            raise ValueError(msg)
 
         # must be valid uuid
         try:
