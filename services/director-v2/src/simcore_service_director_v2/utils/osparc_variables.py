@@ -97,7 +97,7 @@ def _get_handler_name(handler: Callable[..., Any]) -> str:
     return getattr(handler, "__qualname__", getattr(handler, "__name__", type(handler).__name__))
 
 
-async def _resolve_one(
+async def _resolve_one_variable_with_timeout(
     key: str,
     handler_name: str,
     coro: Coroutine[Any, Any, Any],
@@ -105,7 +105,7 @@ async def _resolve_one(
     timeout_seconds: float,
 ) -> Any:
     try:
-        return await coro
+        return await asyncio.wait_for(coro, timeout=timeout_seconds)
     except TimeoutError as exc:
         raise OsparcVariableResolveTimeoutError(
             variable_key=key,
@@ -152,10 +152,10 @@ async def resolve_variables_from_context(
         if isinstance(value, RequestTuple):
             handler, kwargs = value
             coro = handler(**kwargs)
-            coros[key] = _resolve_one(
+            coros[key] = _resolve_one_variable_with_timeout(
                 key,
                 _get_handler_name(handler),
-                asyncio.wait_for(coro, timeout=_HANDLERS_TIMEOUT),
+                coro,
                 timeout_seconds=_HANDLERS_TIMEOUT,
             )
         else:
