@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from models_library.notifications import Channel
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from simcore_postgres_database.utils_users import UsersRepo
@@ -10,6 +11,8 @@ from simcore_postgres_database.utils_users import UsersRepo
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
 from ....exception_handling import create_error_context_from_request
+from ....notifications._models import EmailContact as NotifEmailContact
+from ....notifications._service import send_message_from_template
 from ....products import products_web
 from ....products.models import Product
 from ....users import users_service
@@ -168,40 +171,39 @@ async def initiate_reset_password(request: web.Request):
     if ok:
         assert user  # nosec
 
-        try:
-            # Confirmation token that includes code to `complete_reset_password`.
-            # Recreated if non-existent or expired  (Guideline #2)
-            confirmation_service = get_confirmation_service(request.app)
-            confirmation = await confirmation_service.get_or_create_confirmation_without_data(
-                user_id=user["id"], action="RESET_PASSWORD"
-            )
+        # Confirmation token that includes code to `complete_reset_password`.
+        # Recreated if non-existent or expired  (Guideline #2)
+        confirmation_service = get_confirmation_service(request.app)
+        confirmation = await confirmation_service.get_or_create_confirmation_without_data(
+            user_id=user["id"], action="RESET_PASSWORD"
+        )
 
-            # Produce a link so that the front-end can hit `complete_reset_password`
-            link = _confirmation_web.make_confirmation_link(request, confirmation.code)
+        # Produce a link so that the front-end can hit `complete_reset_password`
+        link = _confirmation_web.make_confirmation_link(request, confirmation.code)
 
-            # primary reset email with a URL and the normal instructions.
-            await send_email_from_template(
-                request,
-                from_=product.support_email,
-                to=request_body.email,
-                template=await get_template_path(request, "reset_password_email.jinja2"),
-                context={
-                    "name": user.get("first_name") or user["name"],
-                    "host": request.host,
-                    "link": link,
-                    # NOTE: Guideline #3
-                    "product": product,
-                },
-            )
-        except Exception as err:  # pylint: disable=broad-except
-            _logger.exception(
-                **create_troubleshooting_log_kwargs(
-                    "Unable to send email",
-                    error=err,
-                    error_context=_get_error_context(user),
+        # primary reset email with a URL and the normal instructions.
+        await send_message_from_template(
+            request.app,
+            user_id=user["id"],
+            product_name=product.name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[
+                NotifEmailContact(
+                    name=user.get("first_name") or user["name"],
+                    email=request_body.email,
                 )
-            )
-            raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
+            ],
+            template_name="reset_password",
+            context={
+                "user": {
+                    "first_name": user.get("first_name"),
+                    "user_name": user["name"],
+                },
+                "host": request.host,
+                "link": link,
+            },
+        )
 
     # NOTE: Always same response: guideline #1
     return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
