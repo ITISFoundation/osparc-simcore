@@ -11,8 +11,8 @@ from simcore_postgres_database.utils_users import UsersRepo
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
 from ....exception_handling import create_error_context_from_request
+from ....notifications import notifications_service
 from ....notifications._models import EmailContact as NotifEmailContact
-from ....notifications._service import send_message_from_template
 from ....products import products_web
 from ....products.models import Product
 from ....users import users_service
@@ -186,7 +186,7 @@ async def initiate_reset_password(request: web.Request):
         link = _confirmation_web.make_confirmation_link(request, confirmation.code)
 
     if user:
-        await send_message_from_template(
+        await notifications_service.send_message_from_template(
             request.app,
             user_id=user["id"],
             product_name=product.name,
