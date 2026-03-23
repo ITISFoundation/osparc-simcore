@@ -2,7 +2,6 @@ from typing import cast as typing_cast
 
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.engine import Engine
 from models_library.groups import EVERYONE_GROUP_ID, GroupID
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.users import UserID
@@ -16,7 +15,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
 )
 from simcore_postgres_database.webserver_models import ProjectType
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import ColumnElement
 from sqlalchemy.types import Boolean
 
@@ -24,8 +23,8 @@ from ..db.plugin import get_asyncpg_engine
 from .exceptions import ProjectNotFoundError
 
 
-async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
-    async with engine.acquire() as connection:
+async def get_project_owner(engine: AsyncEngine, project_uuid: ProjectID) -> UserID:
+    async with pass_or_acquire_connection(engine) as connection:
         stmt = sa.select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}")
 
         owner_id = await connection.scalar(stmt)
@@ -49,7 +48,7 @@ def published_project_read_condition(
     return typing_cast(
         ColumnElement[Boolean],
         sa.and_(
-            project_type_column == ProjectType.TEMPLATE.value,
+            project_type_column == ProjectType.TEMPLATE,
             project_published_column.is_(True),
             sa.exists(
                 sa.select(sa.literal(1))

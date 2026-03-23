@@ -1,5 +1,5 @@
 from dataclasses import asdict
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
@@ -34,14 +34,17 @@ from ..users import users_service
 from ._helpers import get_product_data
 from ._models import (
     Contact,
+    EmailAddressing,
     EmailContact,
     EmailContent,
-    EmailEnvelope,
     EmailMessage,
     Template,
     TemplatePreview,
     TemplateRef,
 )
+
+_RPC_MESSAGE_ADAPTER: Final[TypeAdapter[RpcMessage]] = TypeAdapter(RpcMessage)
+_RPC_TEMPLATE_REF_ADAPTER: Final[TypeAdapter[RpcTemplateRef]] = TypeAdapter(RpcTemplateRef)
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -112,7 +115,7 @@ async def _create_email_message(
 
     return EmailMessage(
         channel=Channel.email,
-        envelope=EmailEnvelope(
+        addressing=EmailAddressing(
             from_=from_contact,
             to=to_contacts,
         ),
@@ -133,7 +136,7 @@ async def preview_template(
 
     rpc_response = await remote_preview_template(
         get_rabbitmq_rpc_client(app),
-        ref=RpcTemplateRef(**ref.model_dump()),
+        ref=_RPC_TEMPLATE_REF_ADAPTER.validate_python(ref.model_dump()),
         context=enriched_context,
     )
     return TemplatePreview(**rpc_response.model_dump())
@@ -177,7 +180,7 @@ async def send_message(
 
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
-        message=TypeAdapter(RpcMessage).validate_python(message.model_dump()),
+        message=_RPC_MESSAGE_ADAPTER.validate_python(message.model_dump()),
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,

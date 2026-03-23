@@ -16,13 +16,11 @@ from unittest.mock import patch
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole
 from models_library.api_schemas_webserver.users import (
     MyProfileRestGet,
 )
 from models_library.groups import AccessRightsDict
-from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -97,7 +95,7 @@ async def test_access_update_profile(
 @pytest.fixture
 def product(client: TestClient, osparc_product_name: str) -> Product:
     assert client.app
-    from simcore_service_webserver.products import products_service
+    from simcore_service_webserver.products import products_service  # noqa: PLC0415
 
     return products_service.get_product(client.app, osparc_product_name)
 
@@ -178,7 +176,7 @@ async def test_get_profile_user_in_support_group(
     product: Product,
 ):
     assert client.app
-    from simcore_service_webserver.groups import _groups_repository
+    from simcore_service_webserver.groups import _groups_repository  # noqa: PLC0415
 
     # Now add user to support group with read-only access
     await _groups_repository.add_new_user_in_group(
@@ -393,17 +391,17 @@ async def test_get_profile_with_failing_db_connection(
     - https://github.com/ITISFoundation/osparc-simcore/issues/880
     - https://github.com/ITISFoundation/osparc-simcore/pull/1160
     """
+    from psycopg2 import OperationalError  # noqa: PLC0415
+
     assert client.app
 
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
     with (
-        patch.object(SAConnection, "execute") as mock_sa_execute,
         patch.object(AsyncConnection, "execute") as mock_async_execute,
     ):
         # Emulates a database connection failure
-        mock_sa_execute.side_effect = OperationalError("MOCK: server closed the connection unexpectedly")
         mock_async_execute.side_effect = SQLAlchemyOperationalError(
             statement="MOCK statement",
             params=(),
@@ -424,11 +422,11 @@ async def user_pre_registration(
 ) -> AsyncIterator[int]:
     """Creates pre-registration data for the logged user and yields the pre-registration ID.
     Automatically cleans up after the test."""
-    from simcore_postgres_database.models.users_details import (
+    from simcore_postgres_database.models.users_details import (  # noqa: PLC0415
         users_pre_registration_details,
     )
-    from simcore_service_webserver.db.plugin import get_asyncpg_engine
-    from simcore_service_webserver.users._accounts_repository import (
+    from simcore_service_webserver.db.plugin import get_asyncpg_engine  # noqa: PLC0415
+    from simcore_service_webserver.users._accounts_repository import (  # noqa: PLC0415
         create_user_pre_registration,
     )
 
@@ -531,8 +529,8 @@ async def test_get_profile_user_without_pre_registration(
     """Test getting profile of a user that does not have pre-registration data"""
     assert client.app
 
-    from simcore_service_webserver.db.plugin import get_asyncpg_engine
-    from simcore_service_webserver.users._accounts_repository import (
+    from simcore_service_webserver.db.plugin import get_asyncpg_engine  # noqa: PLC0415
+    from simcore_service_webserver.users._accounts_repository import (  # noqa: PLC0415
         search_merged_pre_and_registered_users,
     )
 

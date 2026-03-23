@@ -15,7 +15,6 @@ from models_library.groups import GroupAtDB, GroupID
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services import (
@@ -32,6 +31,7 @@ from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 
 from ..models.services_db import (
     ReleaseDBGet,
@@ -651,7 +651,7 @@ class ServicesRepository(BaseRepository):
                 async with self.db_engine.begin() as conn:
                     result = await conn.execute(on_update_stmt)
                     assert result  # nosec
-            except ForeignKeyViolation:
+            except IntegrityError:
                 _logger.warning(
                     "The service %s:%s is missing from services_meta_data",
                     rights.key,
@@ -683,7 +683,8 @@ class ServicesRepository(BaseRepository):
         """returns the service specifications for service 'key:version' and for 'groups'
             returns None if nothing found
 
-        :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned, defaults to False
+        :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned,
+        defaults to False
         """
         _logger.debug("getting specifications from db for %s", f"{key}:{version} for {groups=}")
         gid_to_group_map = {group.gid: group for group in groups}

@@ -16,7 +16,7 @@ class EmailContent(BaseModel):
     body_text: str | None = None
 
 
-class EmailEnvelope(BaseModel):
+class EmailAddressing(BaseModel):
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
 
@@ -30,9 +30,9 @@ class EmailEnvelope(BaseModel):
 class EmailMessage(BaseModel):
     channel: Channel = Channel.email
 
-    envelope: EmailEnvelope
+    addressing: EmailAddressing
     content: EmailContent
 
 
-type Envelope = EmailEnvelope
+type Addressing = EmailAddressing
 type Message = EmailMessage

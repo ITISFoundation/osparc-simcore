@@ -557,7 +557,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     faker: Faker,
 ):
     assert client.app
-    project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
+    project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3, max_value=50))
     all_service_uuids = list(project["workbench"])
     mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
@@ -708,7 +708,7 @@ async def test_start_node(
 ):
     assert client.app
     project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3)
+        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3, max_value=50)
     )
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
@@ -742,7 +742,7 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
 ):
     assert client.app
     project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3)
+        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3, max_value=50)
     )
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
@@ -862,7 +862,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     faker: Faker,
 ):
     assert client.app
-    project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
+    project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3, max_value=50))
     all_service_uuids = list(project["workbench"])
     mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
@@ -938,7 +938,7 @@ async def test_stop_node(
 ):
     assert client.app
     project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3)
+        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3, max_value=50)
     )
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected

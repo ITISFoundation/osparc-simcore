@@ -24,7 +24,9 @@ DAY: int = 24 * HOUR  # sec
 
 
 def now() -> datetime:
-    return datetime.utcnow()
+    utc_now = datetime.utcnow()
+    # Truncate to millisecond precision to match format_datetime's timespec="milliseconds"
+    return utc_now.replace(microsecond=utc_now.microsecond // 1000 * 1000)
 
 
 def format_datetime(snapshot: datetime) -> str:

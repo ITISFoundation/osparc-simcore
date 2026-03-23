@@ -4,7 +4,7 @@ from typing import Any
 from models_library.celery import OwnerMetadata
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
-    Envelope,
+    Addressing,
     Message,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
@@ -45,7 +45,7 @@ async def send_message(
 async def send_message_from_template(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    envelope: Envelope,
+    addressing: Addressing,
     template_ref: TemplateRef,
     context: dict[str, Any],
     owner_metadata: OwnerMetadata | None = None,
@@ -55,7 +55,7 @@ async def send_message_from_template(
         TypeAdapter(RPCMethodName).validate_python("send_message_from_template"),
         request=SendMessageFromTemplateRequest(
             template_ref=template_ref,
-            envelope=envelope,
+            addressing=addressing,
             context=context,
             owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
         ),

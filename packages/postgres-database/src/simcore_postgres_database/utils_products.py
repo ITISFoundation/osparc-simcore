@@ -33,10 +33,6 @@ async def get_product_group_id_or_none(connection: AsyncConnection, product_name
 
 
 async def get_or_create_product_group(conn: AsyncConnection, product_name: str) -> _GroupID:
-    #
-    # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
-    #       coexist
-    #
     group_id: int | None = await conn.scalar(
         sa.select(products.c.group_id).where(products.c.name == product_name).with_for_update(read=True)
         # a `FOR SHARE` lock: locks changes in the product until transaction is done.
