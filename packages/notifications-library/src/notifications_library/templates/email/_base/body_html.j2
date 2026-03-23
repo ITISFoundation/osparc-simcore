@@ -71,7 +71,7 @@
         <table width="600" border="0" cellpadding="20" cellspacing="0" style="{{ email_container_style }}">
           <tr>
             <td style="{{ header_style }}">
-              <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
+              <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #ffffff; padding: 4px; border-radius: 4px;">
                 <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px; border: 0; display: block;">
               </a>
             </td>
