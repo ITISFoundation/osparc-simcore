@@ -58,13 +58,25 @@ pytest tests/unit/test_<name>.py::test_function_name -v
 
 # Run all unit tests:
 pytest tests/unit/ -v
-
-# Using Makefile targets (these handle pytest flags for CI/dev):
-make test-unit
-make test-integration
 ```
 
+> **Warning**: Do **not** use `make test-unit` / `make test-integration` — these targets include `--pdb`, which drops into an interactive debugger on failure and will block execution.
+
 Use `--keep-docker-up` flag when running integration tests to keep docker containers up between sessions.
+
+### Step 4b: Static analysis (optional but recommended)
+
+Before or after running tests, verify the project passes static analysis from the project directory:
+
+```bash
+# Type checking with mypy:
+make mypy
+
+# Linting with pylint:
+make pylint
+```
+
+These are fast checks that can catch issues without running the full test suite. Run them after making code changes to confirm correctness.
 
 ### Step 5: Troubleshooting
 
@@ -83,6 +95,7 @@ Then retry from Step 2.
 |---------|---------|-----|
 | Skipping `make install-dev` | `ModuleNotFoundError` | Run `make install-dev` in the project directory |
 | Running pytest from workspace root | Wrong test discovery or missing conftest | `cd` to the specific project first |
+| Using `make test-unit` / `make test-integration` | Execution blocks on first test failure (`--pdb`) | Use `pytest tests/unit/ -v` directly |
 | Venv not activated | `command not found` or wrong Python | `source .venv/bin/activate` (create it first with `make devenv` at repo root if missing) |
 | Stale docker containers | Port conflicts, connection errors | `make down leave` from workspace root |
 
