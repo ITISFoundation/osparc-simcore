@@ -28,6 +28,7 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
 
     this.__quillInstance = null;
     this.__initialContent = "";
+    this.__darkModeToggle = null;
 
     // Initialize HtmlEditor wrapper
     osparc.wrapper.HtmlEditor.getInstance().init()
@@ -91,7 +92,7 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
           });
           this.add(control);
           break;
-        case "preview-page":
+        case "preview-page": {
           control = new qx.ui.tabview.Page(this.tr("Preview")).set({
             layout: new qx.ui.layout.VBox()
           });
@@ -107,8 +108,30 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
               "border-bottom-right-radius": "0px"
             });
           });
+
+          // Dark mode simulation toolbar
+          const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
+            alignY: "middle"
+          })).set({
+            padding: [4, 8],
+          });
+          const darkLabel = new qx.ui.basic.Label(this.tr("Simulate dark mode:")).set({
+            alignY: "middle"
+          });
+          const darkToggle = new qx.ui.form.CheckBox();
+          darkToggle.addListener("changeValue", () => {
+            if (this.isPreviewActive()) {
+              this.__composePreview();
+            }
+          }, this);
+          this.__darkModeToggle = darkToggle;
+          toolbar.add(darkLabel);
+          toolbar.add(darkToggle);
+          control.add(toolbar);
+
           this.add(control);
           break;
+        }
         case "email-editor": {
           const editorId = "email-html-editor-" + Date.now();
           const htmlEditorWrapper = osparc.wrapper.HtmlEditor.getInstance();
@@ -191,7 +214,8 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
         return;
       }
 
-      const previewHtml = this.composeWholeHtml();
+      const isDarkMode = this.__darkModeToggle && this.__darkModeToggle.getValue();
+      const previewHtml = this.composeWholeHtml(isDarkMode);
       // Use data URL to set HTML content in iframe
       const dataUrl = "data:text/html;charset=utf-8," + encodeURIComponent(previewHtml);
       previewEmail.setSource(dataUrl);
@@ -203,7 +227,11 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
      *
      * @returns {String} The complete HTML email as a string.
      */
-    composeWholeHtml: function() {
+    /**
+     * @param {Boolean} [simulateDark=false] - When true, injects CSS that mimics
+     *   a dark-mode email client so the preview reflects dark-theme rendering.
+     */
+    composeWholeHtml: function(simulateDark) {
       const templateHtml = this.getTemplateEmail();
       if (!templateHtml) return "";
 
@@ -215,6 +243,22 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
       const contentContainer = doc.querySelector(".content");
       if (contentContainer) {
         contentContainer.innerHTML = contentHtml;
+      }
+
+      if (simulateDark) {
+        // Telling the document it lives in a dark-mode environment causes the
+        // browser to evaluate all @media (prefers-color-scheme: dark) rules
+        // inside the iframe naturally — no CSS duplication needed.
+        const colorSchemeMeta = doc.createElement("meta");
+        colorSchemeMeta.setAttribute("name", "color-scheme");
+        colorSchemeMeta.setAttribute("content", "dark");
+        doc.head.appendChild(colorSchemeMeta);
+
+        // Simulate the email client's dark canvas — the only thing the email
+        // template itself doesn't declare (that's the client app's job).
+        const clientDarkStyle = doc.createElement("style");
+        clientDarkStyle.textContent = "body { background-color: #1a1a1a !important; }";
+        doc.head.appendChild(clientDarkStyle);
       }
 
       return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
