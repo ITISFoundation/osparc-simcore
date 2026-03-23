@@ -12,7 +12,7 @@
           "operations"
         ],
         "summary": "Health Check",
-        "operationId": "health_check__head",
+        "operationId": "health_check__get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -31,7 +31,7 @@
           "operations"
         ],
         "summary": "Health Check",
-        "operationId": "health_check__head",
+        "operationId": "health_check__get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -52,7 +52,7 @@
           "operations"
         ],
         "summary": "Health Check",
-        "operationId": "health_check_v0__head",
+        "operationId": "health_check_v0__get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -71,7 +71,7 @@
           "operations"
         ],
         "summary": "Health Check",
-        "operationId": "health_check_v0__head",
+        "operationId": "health_check_v0__get",
         "responses": {
           "200": {
             "description": "Successful Response",
