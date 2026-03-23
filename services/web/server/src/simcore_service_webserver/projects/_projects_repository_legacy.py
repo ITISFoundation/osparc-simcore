@@ -1107,7 +1107,7 @@ class ProjectDBAPI(BaseProjectDB):
                     projects_tags.insert().values(
                         project_id=project["id"],
                         tag_id=tag_id,
-                        project_uuid_for_rut=project["uuid"],
+                        project_uuid_for_rut=f"{project['uuid']}",
                     )
                 )
                 project_tags.append(tag_id)
