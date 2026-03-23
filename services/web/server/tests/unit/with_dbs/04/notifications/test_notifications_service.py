@@ -242,7 +242,7 @@ async def test_send_message_from_template_unsupported_channel(
     ]
 
     # Simulate a hypothetical unsupported channel value
-    unsupported_channel = "sms"
+    unsupported_channel = "pigeon"
 
     with pytest.raises(NotificationsUnsupportedChannelError):
         await send_message_from_template(
