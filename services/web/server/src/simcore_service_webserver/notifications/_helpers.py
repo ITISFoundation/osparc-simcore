@@ -31,10 +31,11 @@ def get_product_data(
     )
 
     # Extract UI information from product.vendor.ui (optional)
+    vendor_ui = product.vendor.get("ui", {}) if product.vendor else {}
     ui_data = ProductUIData(
-        logo_url=(product.vendor.get("ui", {}).get("logo_url") if product.vendor else None),
-        logo_url_dark=(product.vendor.get("ui", {}).get("logo_url_dark") if product.vendor else None),
-        strong_color=(product.vendor.get("ui", {}).get("strong_color") if product.vendor else None),
+        logo_url=vendor_ui.get("logo_url"),
+        logo_url_dark=vendor_ui.get("logo_url_dark") or vendor_ui.get("logo_url"),
+        strong_color=vendor_ui.get("strong_color"),
     )
 
     homepage_url = product.vendor.get("url") if product.vendor else None
