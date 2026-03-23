@@ -1,7 +1,5 @@
 """
 Helpers on asyncpg specific for aiohttp
-
-SEE migration aiopg->asyncpg https://github.com/ITISFoundation/osparc-simcore/issues/4529
 """
 
 import logging

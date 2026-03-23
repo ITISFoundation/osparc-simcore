@@ -27,7 +27,7 @@ from models_library.utils.services_io import JsonSchemaDict, get_service_io_json
 from pydantic import ConfigDict, ValidationError
 
 from ..director_v2.director_v2_service import get_batch_tasks_outputs
-from .exceptions import InvalidInputValue
+from .exceptions import InvalidInputValueError
 
 
 @dataclass(frozen=True)
@@ -139,7 +139,7 @@ def set_inputs_in_project(workbench: dict[NodeID, Node], update: dict[NodeID, An
                 if schema := port.get_schema():
                     jsonschema_validate_data(value, schema)
             except JsonSchemaValidationError as err:
-                raise InvalidInputValue(node_id=node_id, message=err.message, value=value) from err
+                raise InvalidInputValueError(node_id=node_id, message=err.message, value=value) from err
 
             workbench[node_id].outputs = output
             modified.add(node_id)

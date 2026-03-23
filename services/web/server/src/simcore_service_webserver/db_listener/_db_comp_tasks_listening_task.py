@@ -7,11 +7,10 @@ import asyncio
 import datetime
 import logging
 from collections.abc import AsyncIterator
-from typing import Final, NoReturn, cast
+from typing import Final, NoReturn
 
+import asyncpg
 from aiohttp import web
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -20,9 +19,12 @@ from pydantic.types import PositiveInt
 from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
+from sqlalchemy.engine import Row
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
+from ..db.settings import get_plugin_settings
 from ..projects import _projects_service, exceptions
 from ..projects.nodes_utils import update_node_outputs
 from ._models import CompTaskNotificationPayload
@@ -32,10 +34,10 @@ _LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
 _logger = logging.getLogger(__name__)
 
 
-async def _get_project_owner(conn: SAConnection, project_uuid: ProjectID) -> PositiveInt:
-    the_project_owner: PositiveInt | None = await conn.scalar(
-        select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}")
-    )
+async def _get_project_owner(conn: AsyncConnection, project_uuid: ProjectID) -> PositiveInt:
+    the_project_owner: PositiveInt | None = (
+        await conn.execute(select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}"))
+    ).scalar_one_or_none()
     if not the_project_owner:
         raise exceptions.ProjectOwnerNotFoundError(project_uuid=project_uuid)
     return the_project_owner
@@ -63,17 +65,19 @@ async def _update_project_state(
     await _projects_service.notify_project_state_update(app, project)
 
 
-async def _get_changed_comp_task_row(conn: SAConnection, task_id: PositiveInt) -> RowProxy | None:
+async def _get_changed_comp_task_row(conn: AsyncConnection, task_id: PositiveInt) -> Row | None:
     result = await conn.execute(select(comp_tasks).where(comp_tasks.c.task_id == task_id))
-    return cast(RowProxy | None, await result.fetchone())
+    return result.fetchone()
 
 
 async def _handle_db_notification(
-    app: web.Application, payload: CompTaskNotificationPayload, conn: SAConnection
+    app: web.Application, payload: CompTaskNotificationPayload, engine: AsyncEngine
 ) -> None:
     try:
-        the_project_owner = await _get_project_owner(conn, payload.project_id)
-        changed_row = await _get_changed_comp_task_row(conn, payload.task_id)
+        async with engine.connect() as conn:
+            the_project_owner = await _get_project_owner(conn, payload.project_id)
+            changed_row = await _get_changed_comp_task_row(conn, payload.task_id)
+
         if not changed_row:
             _logger.warning(
                 "No comp_tasks row found for project_id=%s node_id=%s",
@@ -124,26 +128,49 @@ async def _handle_db_notification(
 
 
 async def _listen(app: web.Application) -> NoReturn:
-    listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    db_engine = get_database_engine_legacy(app)
-    async with db_engine.acquire() as conn:
-        assert conn.connection  # nosec
-        await conn.execute(listen_query)
+    engine = get_asyncpg_engine(app)
+    settings = get_plugin_settings(app)
 
-        while True:
-            # NOTE: instead of using await get() we check first if the connection was closed
-            # since aiopg does not reset the await in such a case (if DB was restarted or so)
-            # see aiopg issue: https://github.com/aio-libs/aiopg/pull/559#issuecomment-826813082
-            if conn.closed:
-                msg = "connection with database is closed!"
-                raise ConnectionError(msg)
-            if conn.connection.notifies.empty():
-                await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
-                continue
-            notification = conn.connection.notifies.get_nowait()
-            payload = CompTaskNotificationPayload.model_validate_json(notification.payload)
-            _logger.debug("received update from database: %s", f"{payload=}")
-            await _handle_db_notification(app, payload, conn)
+    # Use a dedicated raw asyncpg connection for LISTEN/NOTIFY.
+    # SQLAlchemy's connection wrapper does not support asyncpg's callback-based
+    # notification delivery, so we create a standalone asyncpg connection.
+    notifications: asyncio.Queue[str] = asyncio.Queue()
+
+    def _on_notification(
+        _conn: object,
+        _pid: int,
+        _channel: str,
+        payload: str,
+    ) -> None:
+        notifications.put_nowait(payload)
+
+    asyncpg_conn = await asyncpg.connect(dsn=settings.dsn)
+    try:
+        # Use asyncpg's native connection.add_listener(channel, callback) for event-driven notifications
+        # (replaces polling — more efficient)
+        await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_notification)  # type: ignore[arg-type]
+        try:
+            while True:
+                try:
+                    raw_payload = await asyncio.wait_for(
+                        notifications.get(),
+                        timeout=_LISTENING_TASK_BASE_SLEEPING_TIME_S,
+                    )
+                except TimeoutError:
+                    if asyncpg_conn.is_closed():
+                        msg = "connection with database is closed!"
+                        raise ConnectionError(msg) from None
+                    continue
+
+                payload = CompTaskNotificationPayload.model_validate_json(raw_payload)
+                _logger.debug("received update from database: %s", f"{payload=}")
+                await _handle_db_notification(app, payload, engine)
+        finally:
+            if not asyncpg_conn.is_closed():
+                await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_notification)  # type: ignore[arg-type]
+    finally:
+        if not asyncpg_conn.is_closed():
+            await asyncpg_conn.close()
 
 
 async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
