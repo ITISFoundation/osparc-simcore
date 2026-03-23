@@ -12,7 +12,7 @@ from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
 from ....exception_handling import create_error_context_from_request
 from ....notifications import notifications_service
-from ....notifications._models import EmailContact as NotifEmailContact
+from ....notifications.models import EmailContact
 from ....products import products_web
 from ....products.models import Product
 from ....users import users_service
@@ -193,7 +193,7 @@ async def initiate_reset_password(request: web.Request):
             channel=Channel.email,
             group_ids=None,
             external_contacts=[
-                NotifEmailContact(
+                EmailContact(
                     name=user.get("first_name") or user["name"],
                     email=request_body.email,
                 )
