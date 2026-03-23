@@ -9,12 +9,9 @@ from ._base import BaseRpcApi
 
 
 class NodesRpcApi(BaseRpcApi):
-    """RPC client for node-related operations."""
-
     async def get_node_service_key_version(
         self, *, project_id: ProjectID, node_id: NodeID
     ) -> tuple[ServiceKey, ServiceVersion]:
-        """Get the service key and version for a project node."""
         result = await self._rpc_client.request(
             self._namespace,
             "get_node_service_key_version",
