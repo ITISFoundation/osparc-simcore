@@ -1,5 +1,6 @@
 {%- set default_strong_color = "rgb(131, 0, 191)" -%}
 {%- set default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg" -%}
+{%- set default_logo_dark = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" -%}
 {%- set default_homepage = "https://osparc.io/" -%}
 
 {# Styles #}
@@ -33,8 +34,8 @@
 #}
 {%- set footer_share_icon_svgs = {
   "facebook": '<img src="https://cdn.simpleicons.org/facebook/white" alt="Facebook" width="16" height="16" border="0" style="display: block; border: 0;">',
-  "twitter": '<img src="https://cdn.simpleicons.org/x/white" alt="Twitter" width="14" height="14" border="0" style="display: block; border: 0; padding-top: 1px">',
-  "linkedin": '<img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" width="16" height="16" border="0" style="display: block; border: 0; maring-top=-2px">'
+  "twitter": '<img src="https://cdn.simpleicons.org/x/white" alt="Twitter" width="14" height="14" border="0" style="display: block; border: 0; padding-top: 1px;">',
+  "linkedin": '<img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" width="16" height="16" border="0" style="display: block; border: 0;">'
 } -%}
 {%- set footer_company_text_style = "margin: 4px 0; color: #bbbbbb; font-size: 12px;" -%}
 {%- set footer_links_separator_style = "margin: 0 8px; color: #bbbbbb;" -%}
@@ -55,6 +56,13 @@
   .content p:first-child {
     margin-top: 0 !important;
   }
+  .logo-light { display: block !important; }
+  .logo-dark  { display: none  !important; }
+  @media (prefers-color-scheme: dark) {
+    .logo-light { display: none  !important; }
+    .logo-dark  { display: block !important; }
+    .footer-icon-btn { background-color: #bbbbbb !important; }
+  }
 {%- endset -%}
 
 <!DOCTYPE html>
@@ -72,7 +80,8 @@
           <tr>
             <td style="{{ header_style }}">
               <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
-                <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px; border: 0; display: block;">
+                <img class="logo-light" src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px; border: 0; display: block;">
+                <img class="logo-dark" src="{{ product.ui.logo_url_dark | default(default_logo_dark) }}" alt="Logo" style="height: 40px; border: 0; display: none;">
               </a>
             </td>
           </tr>
@@ -99,7 +108,7 @@
                   {% set social_key = social_name | lower %}
                   {% set social_icon = footer_social_icon_svgs.get(social_key) %}
                   <td style="{{ footer_social_td_style }}">
-                    <a href="{{ social_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_social_link_style }}" title="{{ social_name }}">
+                    <a href="{{ social_url }}" target="_blank" rel="noopener noreferrer" class="footer-icon-btn" style="{{ footer_social_link_style }}" title="{{ social_name }}">
                       <span style="{{ footer_social_icon_wrapper_style }}">
                         {% if social_icon %}
                           {{ social_icon | safe }}
@@ -125,7 +134,7 @@
                   {% set share_key = share_name | lower %}
                   {% set share_icon = footer_share_icon_svgs.get(share_key) %}
                   <td style="{{ footer_share_td_style }}">
-                    <a href="{{ share_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_share_link_style }}" title="{{ share_name }}">
+                    <a href="{{ share_url }}" target="_blank" rel="noopener noreferrer" class="footer-icon-btn" style="{{ footer_share_link_style }}" title="{{ share_name }}">
                       <span style="{{ footer_share_icon_wrapper_style }}">
                         {% if share_icon %}
                           {{ share_icon | safe }}
