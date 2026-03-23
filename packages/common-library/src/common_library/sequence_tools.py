@@ -10,6 +10,16 @@ def interleave_by_key[T](
 
     Groups items by *key*, then round-robins across groups (largest first)
     to maximise the gap between consecutive items with the same key.
+
+    Example::
+
+        >>> interleave_by_key(
+        ...     ['a@gmail.com', 'b@gmail.com', 'c@gmail.com', 'd@yahoo.com', 'e@yahoo.com'],
+        ...     key=lambda e: e.split('@')[1],
+        ... )
+        ['a@gmail.com', 'd@yahoo.com', 'b@gmail.com', 'e@yahoo.com', 'c@gmail.com']
+
+    The three gmail addresses are spread apart with yahoo addresses interleaved between them.
     """
     if len(items) <= 2:  # noqa: PLR2004
         return list(items)
