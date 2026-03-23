@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 from aiohttp.client_exceptions import ClientResponseError
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from aiohttp.test_utils import TestClient
 from aiohttp.web_exceptions import HTTPNotFound
 from faker import Faker
@@ -137,3 +138,58 @@ async def test_clone_invalid_project_responds_not_found(
         await _request_clone_project(client, url)
 
     assert err_info.value.status == HTTPNotFound.status_code
+
+
+@pytest.mark.parametrize(
+    "running_service_kind",
+    [
+        pytest.param("dynamic", id="dynamic-service-running"),
+        pytest.param("computational", id="computational-service-running"),
+    ],
+)
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_clone_project_fails_when_services_are_running(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    mock_catalog_service_api_responses: None,
+    project_db_cleaner: None,
+    mocked_dynamic_services_interface: dict[str, Any],
+    mocker,
+    running_service_kind: str,
+):
+    assert client.app
+
+    if running_service_kind == "dynamic":
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
+            DynamicServiceGet(
+                published_port=4000,
+                service_uuid="4a36e823-f6f2-4bc2-b11a-42bb6287e604",
+                service_key="simcore/services/dynamic/3d-viewer",
+                service_version="1.0.0",
+                service_host="http://example.test",
+                service_port=4000,
+                service_state="running",
+                user_id=logged_user["id"],
+                project_id=user_project["uuid"],
+                node_uuid=next(iter(user_project["workbench"])),
+            )
+        ]
+    else:
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.director_v2_service.is_pipeline_running",
+            autospec=True,
+            return_value=True,
+        )
+
+    url = client.app.router["clone_project"].url_for(project_id=user_project["uuid"])
+
+    with pytest.raises(ClientResponseError) as err_info:
+        await _request_clone_project(client, url)
+
+    assert err_info.value.status == status.HTTP_409_CONFLICT
+    storage_subsystem_mock.copy_data_folders_from_project.assert_not_called()

@@ -14,8 +14,6 @@ from models_library.workspaces import WorkspaceID
 from servicelib.utils import fire_and_forget_task
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
-from ..director_v2 import director_v2_service
-from ..dynamic_scheduler import api as dynamic_scheduler_service
 from . import _crud_api_read, _projects_repository, _projects_service, _projects_service_delete
 from ._access_rights_service import check_user_project_permission
 from .exceptions import (
@@ -27,17 +25,6 @@ from .exceptions import (
 from .models import ProjectDict, ProjectPatchInternalExtended, ProjectTypeAPI
 
 _logger = logging.getLogger(__name__)
-
-
-async def _is_project_running(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    project_id: ProjectID,
-) -> bool:
-    return bool(await director_v2_service.is_pipeline_running(app, user_id=user_id, project_id=project_id)) or bool(
-        await dynamic_scheduler_service.list_dynamic_services(app, user_id=user_id, project_id=project_id)
-    )
 
 
 async def trash_project(
@@ -72,7 +59,7 @@ async def trash_project(
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
 
-    elif await _is_project_running(app, user_id=user_id, project_id=project_id):
+    elif await _projects_service.is_project_running(app, user_id=user_id, project_id=project_id):
         raise ProjectRunningConflictError(
             project_uuid=project_id,
             user_id=user_id,

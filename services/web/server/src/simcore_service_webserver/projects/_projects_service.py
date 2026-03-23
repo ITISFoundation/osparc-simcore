@@ -1801,6 +1801,17 @@ async def _get_project_share_state(
     )
 
 
+async def is_project_running(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+) -> bool:
+    return bool(await director_v2_service.is_pipeline_running(app, user_id=user_id, project_id=project_id)) or bool(
+        await dynamic_scheduler_service.list_dynamic_services(app, user_id=user_id, project_id=project_id)
+    )
+
+
 async def add_project_states_for_user(
     *,
     user_id: int,

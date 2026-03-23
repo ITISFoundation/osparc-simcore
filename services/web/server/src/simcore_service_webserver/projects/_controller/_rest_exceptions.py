@@ -34,6 +34,7 @@ from ..exceptions import (
     InsufficientRoleForProjectTemplateTypeUpdateError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
+    ProjectCopyRunningConflictError,
     ProjectDeleteError,
     ProjectGroupNotFoundError,
     ProjectInDebtCanNotChangeWalletError,
@@ -87,6 +88,13 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message(
             "Unable to complete deletion of project '{project_uuid}': {details}",
+            _version=1,
+        ),
+    ),
+    ProjectCopyRunningConflictError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "Unable to copy this project because one or more dynamic or computational services are currently running. Please stop all running services and try again.",
             _version=1,
         ),
     ),

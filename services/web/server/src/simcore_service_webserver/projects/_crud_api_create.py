@@ -48,6 +48,7 @@ from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ParentNodeNotFoundError,
     ParentProjectNotFoundError,
+    ProjectCopyRunningConflictError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
@@ -79,6 +80,13 @@ async def _prepare_project_copy(
     deep_copy: bool,
     task_progress: TaskProgress,
 ) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
+    if await _projects_service.is_project_running(app, user_id=user_id, project_id=src_project_uuid):
+        raise ProjectCopyRunningConflictError(
+            project_uuid=src_project_uuid,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
     source_project = await _projects_service.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",

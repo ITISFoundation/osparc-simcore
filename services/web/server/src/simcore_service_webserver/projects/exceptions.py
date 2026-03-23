@@ -104,6 +104,12 @@ class ProjectRunningConflictError(ProjectTrashError):
     msg_template = "Cannot trash running project '{project_uuid}' except if forced option is on"
 
 
+class ProjectCopyRunningConflictError(BaseProjectError):
+    msg_template = (
+        "Cannot copy project '{project_uuid}' while dynamic or computational services are running"
+    )
+
+
 class ProjectNotTrashedError(ProjectTrashError):
     msg_template = "Cannot delete project {project_uuid} since it was not trashed first: {details}"
 

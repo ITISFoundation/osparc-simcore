@@ -7,7 +7,11 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 from unittest.mock import MagicMock
+
 from urllib.parse import urlparse
+
+from aiohttp.client_exceptions import ClientResponseError
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -26,6 +30,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from servicelib.long_running_tasks.models import TaskGet
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -315,3 +320,66 @@ async def test_copying_too_large_project_returns_422(
         copy_data=False,
         as_template=True,
     )
+
+
+async def _request_create_project_copy(client: TestClient, project_uuid: str) -> dict[str, Any]:
+    create_url = client.app.router["create_project"].url_for().with_query(from_study=project_uuid)
+    data = None
+    async for long_running_task in long_running_task_request(
+        client.session, url=client.make_url(create_url.path_qs), json={}, client_timeout=30
+    ):
+        if long_running_task.done():
+            data = await long_running_task.result()
+
+    assert data is not None
+    return data
+
+
+@pytest.mark.parametrize(
+    "running_service_kind",
+    [
+        pytest.param("dynamic", id="dynamic-service-running"),
+        pytest.param("computational", id="computational-service-running"),
+    ],
+)
+@pytest.mark.parametrize(*_standard_user_role_response())
+async def test_copying_project_with_running_services_returns_409(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    expected: ExpectedResponse,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    project_db_cleaner: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocker,
+    running_service_kind: str,
+):
+    assert client.app
+
+    if running_service_kind == "dynamic":
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
+            DynamicServiceGet(
+                published_port=4000,
+                service_uuid="4a36e823-f6f2-4bc2-b11a-42bb6287e604",
+                service_key="simcore/services/dynamic/3d-viewer",
+                service_version="1.0.0",
+                service_host="http://example.test",
+                service_port=4000,
+                service_state="running",
+                user_id=logged_user["id"],
+                project_id=user_project["uuid"],
+                node_uuid=next(iter(user_project["workbench"])),
+            )
+        ]
+    else:
+        mocker.patch(
+            "simcore_service_webserver.projects._projects_service.director_v2_service.is_pipeline_running",
+            autospec=True,
+            return_value=True,
+        )
+
+    with pytest.raises(ClientResponseError) as err_info:
+        await _request_create_project_copy(client, user_project["uuid"])
+
+    assert err_info.value.status == expected.conflict
+    storage_subsystem_mock.copy_data_folders_from_project.assert_not_called()
