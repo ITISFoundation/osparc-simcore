@@ -31,8 +31,7 @@ This is a multi-project monorepo with two main groups of projects in the folders
 
 ## How to Run Tests
 
-- Make sure the workspace's venv is activated: `source .venv/bin/activate`
-- Change to the package or service you want to test, e.g. `cd services/web/server`
-- Install the package in editable mode using `make install-dev` (also installs test dependencies)
-- Run tests using `pytest` or `make test-*` targets from the package/service `Makefile` (e.g. `make test-unit`, `make test-integration`)
-- Troubleshooting: previous tests may have left docker containers running; from the workspace directory, run `make down leave` to leave the swarm
+See the [`run-python-tests`](../skills/run-python-tests/SKILL.md) skill for the full step-by-step procedure.
+
+---
+*Last updated: 2026-03-23*
