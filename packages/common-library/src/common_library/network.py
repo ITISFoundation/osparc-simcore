@@ -38,6 +38,18 @@ def redact_url(url: str) -> str:
     )
 
 
+def extract_email_domain(email: str) -> str:
+    """Return the domain part of an email address.
+
+    Handles both plain addresses and formatted ones like ``Name <user@domain.com>``.
+    """
+    _, addr = parseaddr(email)
+    if not addr or "@" not in addr:
+        msg = f"Invalid email address: {email}"
+        raise ValueError(msg)
+    return addr.rsplit("@", 1)[1]
+
+
 def replace_email_parts(original_email: str, new_local: str, new_display_name: str | None = None) -> str:
     """
     Replace the local part and optionally the display name of an email string.
@@ -55,12 +67,7 @@ def replace_email_parts(original_email: str, new_local: str, new_display_name: s
         Transformed email, e.g., "No Reply <no-reply@example.com>"
     """
     name, addr = parseaddr(original_email)
-
-    try:
-        _, domain = addr.split("@")
-    except ValueError as exc:
-        msg = f"Invalid email address: {addr}"
-        raise ValueError(msg) from exc
+    domain = extract_email_domain(addr)
 
     # Determine display name: use provided value, auto-generate, or empty
     if new_display_name is not None:
