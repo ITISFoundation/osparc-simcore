@@ -148,7 +148,6 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         GPG_KEY=123456789123456789
         HOME=/home/scu
         HOSTNAME=osparc-master-55-master-simcore_master_webserver-1
-        IS_CONTAINER_CONTEXT=Yes
         LANG=C.UTF-8
         PATH=/home/scu/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         PWD=/home/scu

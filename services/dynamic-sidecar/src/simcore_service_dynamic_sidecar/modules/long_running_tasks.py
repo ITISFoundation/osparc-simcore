@@ -499,7 +499,7 @@ async def pull_user_services_input_ports(
                     settings.DY_SIDECAR_NODE_ID,
                 ),
             )
-    await post_sidecar_log_message(app, "Finished pulling inputs", log_level=logging.INFO)
+    await post_sidecar_log_message(app, f"Finished pulling inputs: {port_keys}", log_level=logging.INFO)
     await progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
 

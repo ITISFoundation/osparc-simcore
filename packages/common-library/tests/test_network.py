@@ -1,5 +1,10 @@
 import pytest
-from common_library.network import is_ip_address, redact_url, replace_email_parts
+from common_library.network import (
+    extract_email_domain,
+    is_ip_address,
+    redact_url,
+    replace_email_parts,
+)
 
 
 @pytest.mark.parametrize(
@@ -128,6 +133,23 @@ def test_replace_email_local_with_custom_display_name():
     new_display_name = "Custom Name"
     expected = "Custom Name <no-reply@example.com>"
     assert replace_email_parts(email, new_local, new_display_name) == expected
+
+
+@pytest.mark.parametrize(
+    "email, expected_domain",
+    [
+        ("user@example.com", "example.com"),
+        ("user@sub.domain.org", "sub.domain.org"),
+        ("name+tag@gmail.com", "gmail.com"),
+    ],
+)
+def test_extract_email_domain(email: str, expected_domain: str):
+    assert extract_email_domain(email) == expected_domain
+
+
+def test_extract_email_domain_invalid():
+    with pytest.raises(ValueError, match="Invalid email address"):
+        extract_email_domain("no-at-sign")
 
 
 def test_replace_email_local_with_empty_custom_display_name():

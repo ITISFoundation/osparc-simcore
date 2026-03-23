@@ -45,6 +45,7 @@ from ..exceptions import (
     ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
+    ProjectTooManyNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
     ProjectTypeAndTemplateIncompatibilityError,
@@ -120,6 +121,13 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         user_message("The project cannot be used in this way.", _version=1),
     ),
+    ProjectTooManyNodesError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "The project cannot contain more than {max_num_nodes} nodes. Requested: {requested_num_nodes}.",
+            _version=1,
+        ),
+    ),
     ProjectNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("Project {project_uuid} could not be found.", _version=1),
@@ -141,7 +149,8 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectStartsTooManyDynamicNodesError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "The maximum number of concurrently running dynamic services has been reached. Please manually stop a service and retry.",
+            "The maximum number of concurrently running dynamic services has been reached. "
+            "Please manually stop a service and retry.",
             _version=1,
         ),
     ),
@@ -155,21 +164,25 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectTooManyUserSessionsError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "You cannot open more than {max_num_sessions} session(s) for the same project at once. Please close another session and retry.",
+            "You cannot open more than {max_num_sessions} session(s) for the same project at once."
+            " Please close another session and retry.",
             _version=1,
         ),
     ),
     ProjectInDebtCanNotChangeWalletError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
         user_message(
-            "Unable to change the credit account linked to the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative.",
+            "Unable to change the credit account linked to the project."
+            " The project is embargoed because the last transaction of {debt_amount} resulted "
+            "in the credit account going negative.",
             _version=1,
         ),
     ),
     ProjectInDebtCanNotOpenError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
         user_message(
-            "Unable to open the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative.",
+            "Unable to open the project. The project is embargoed because the last transaction of {debt_amount}"
+            " resulted in the credit account going negative.",
             _version=1,
         ),
     ),

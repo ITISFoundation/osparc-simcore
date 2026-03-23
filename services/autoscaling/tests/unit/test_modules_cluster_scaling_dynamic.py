@@ -1273,6 +1273,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     with_disabled_hot_buffers: EnvVarsDict,
+    with_10_max_instances: EnvVarsDict,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,

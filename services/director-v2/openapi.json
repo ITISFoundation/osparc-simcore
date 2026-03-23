@@ -135,9 +135,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -289,9 +288,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -358,9 +356,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -460,8 +457,7 @@
               "anyOf": [
                 {
                   "type": "integer",
-                  "exclusiveMinimum": true,
-                  "minimum": 0
+                  "exclusiveMinimum": 0
                 },
                 {
                   "type": "null"
@@ -1265,9 +1261,8 @@
         "properties": {
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -1376,9 +1371,8 @@
         "properties": {
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "force": {
             "anyOf": [
@@ -1432,8 +1426,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": true,
-                "minimum": 0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -1520,9 +1513,8 @@
         "properties": {
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           }
         },
         "type": "object",
@@ -1704,10 +1696,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "oneOf": [
@@ -1790,9 +1780,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -2115,6 +2104,10 @@
           "is_inactive": "false"
         }
       },
+      "GroupID": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
       "HTTPValidationError": {
         "properties": {
           "errors": {
@@ -2367,10 +2360,8 @@
               "anyOf": [
                 {
                   "type": "integer",
-                  "exclusiveMaximum": true,
-                  "exclusiveMinimum": true,
-                  "maximum": 65535,
-                  "minimum": 0
+                  "exclusiveMaximum": 65535,
+                  "exclusiveMinimum": 0
                 },
                 {
                   "oneOf": [
@@ -2416,9 +2407,7 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "integer",
-                  "exclusiveMinimum": true,
-                  "minimum": 0
+                  "$ref": "#/components/schemas/GroupID"
                 },
                 "type": "array"
               },
@@ -2654,21 +2643,18 @@
         "properties": {
           "pricing_plan_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Plan Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Plan Id"
           },
           "pricing_unit_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Unit Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Unit Id"
           },
           "pricing_unit_cost_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Unit Cost Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Unit Cost Id"
           }
         },
         "type": "object",
@@ -2787,9 +2773,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -2826,21 +2811,17 @@
           },
           "service_port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Service Port",
-            "description": "the service swarm internal port",
-            "maximum": 65535,
-            "minimum": 0
+            "description": "the service swarm internal port"
           },
           "published_port": {
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -3019,9 +3000,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -3051,13 +3031,11 @@
           },
           "port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Port",
             "description": "dynamic-sidecar port",
-            "default": 8000,
-            "maximum": 65535,
-            "minimum": 0
+            "default": 8000
           },
           "dynamic_sidecar": {
             "$ref": "#/components/schemas/DynamicSidecar",
@@ -3080,13 +3058,11 @@
           },
           "service_port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Service Port",
             "description": "port where the service is exposed defined by the service; NOTE: temporary default because it will be changed once the service is started, this value is fetched from the service start spec",
-            "default": 65534,
-            "maximum": 65535,
-            "minimum": 0
+            "default": 65534
           },
           "service_resources": {
             "type": "object",
@@ -3117,10 +3093,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -3282,6 +3256,21 @@
             ],
             "title": "Close Requested At",
             "description": "moment in which the process of stopping the service was requested"
+          },
+          "request_trace_carrier": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Trace Carrier",
+            "description": "W3C traceparent and tracestate headers from the originating request for span linking"
           }
         },
         "type": "object",
@@ -3445,9 +3434,8 @@
         "properties": {
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "wallet_name": {
             "type": "string",
@@ -3477,9 +3465,8 @@
         "properties": {
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "wallet_name": {
             "type": "string",
@@ -3504,10 +3491,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "oneOf": [
@@ -3528,10 +3513,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "oneOf": [

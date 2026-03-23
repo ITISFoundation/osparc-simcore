@@ -16,7 +16,7 @@ from models_library.api_schemas_webserver.users import (
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
 )
-from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications import Channel
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import TypeAdapter
@@ -32,6 +32,7 @@ from ...._meta import API_VTAG
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
 from ....notifications import notifications_service
+from ....notifications._models import TemplateRef
 from ....security.decorators import (
     group_or_role_permission_required,
     permission_required,
@@ -271,7 +272,7 @@ async def preview_rejection_user_account(request: web.Request) -> web.Response:
         app=request.app,
         product_name=req_ctx.product_name,
         ref=TemplateRef(
-            channel=ChannelType.email,
+            channel=Channel.email,
             template_name="account_rejected",
         ),
         context={

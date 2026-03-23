@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, model_validator
 from models_library.groups import GroupID
 
 from ..api_schemas_webserver._base import InputSchema, OutputSchema
-from ..notifications import ChannelType, TemplateName
+from ..notifications import Channel, TemplateName
 
 #
 # Email Message
@@ -52,12 +52,12 @@ type MessageContentGet = EmailMessageContentGet
 class SearchTemplatesQueryParams(BaseModel):
     """Search for templates based on channel and/or template name."""
 
-    channel: ChannelType | None = None
+    channel: Channel | None = None
     template_name: str | None = None
 
 
 class _TemplateRefMixin(BaseModel):
-    channel: ChannelType
+    channel: Channel
     template_name: TemplateName
 
 
@@ -89,6 +89,6 @@ class TemplateMessageBody(InputSchema):
 
 
 class MessageBody(InputSchema):
-    channel: ChannelType
+    channel: Channel
     group_ids: list[GroupID] | None = None
     content: MessageContent

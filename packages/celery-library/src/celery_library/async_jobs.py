@@ -19,7 +19,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskState
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 from tenacity import (
@@ -116,9 +116,9 @@ async def get_job_status(
     job_id: AsyncJobId,
 ) -> AsyncJobStatus:
     try:
-        task_status = await task_manager.get_task_status(
+        task_status = await task_manager.get_status(
             owner_metadata=owner_metadata,
-            task_uuid=job_id,
+            task_or_group_uuid=job_id,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
@@ -151,7 +151,7 @@ async def list_jobs(
 async def submit_job(
     task_manager: TaskManager,
     *,
-    execution_metadata: ExecutionMetadata,
+    execution_metadata: TaskExecutionMetadata,
     owner_metadata: OwnerMetadata,
     **kwargs,
 ) -> AsyncJobGet:
@@ -256,7 +256,7 @@ async def wait_and_get_job_result(
 async def submit_job_and_wait(
     task_manager: TaskManager,
     *,
-    execution_metadata: ExecutionMetadata,
+    execution_metadata: TaskExecutionMetadata,
     owner_metadata: OwnerMetadata,
     stop_after: datetime.timedelta,
     **kwargs,

@@ -36,12 +36,12 @@ class OsparcErrorMixin(PydanticErrorMixin):
             c.__name__
             for c in cls.__mro__[:-1]
             if c.__name__
-            not in (
+            not in {
                 "PydanticErrorMixin",
                 "OsparcErrorMixin",
                 "Exception",
                 "BaseException",
-            )
+            }
         ]
         return ".".join(reversed(relevant_classes))
 

@@ -72,7 +72,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
-    slideshowToolbar.addListener("slidesStop", () => this.getStudy().getUi().setMode("pipeline"), this);
+    slideshowToolbar.addListener("slidesStop", () => {
+      this.getStudy().getUi().setMode("pipeline");
+      if (this.__nodeView) {
+        this.__nodeView.closeInstructionsWindow();
+      }
+    }, this);
     this._add(slideshowToolbar);
 
     const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
@@ -93,15 +98,18 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     }, this);
     const prevButton = this.__prevButton = prevNextButtons.getPreviousButton().set({
       alignX: "right",
-      alignY: "middle"
+      alignY: "middle",
+      marginLeft: 4,
     });
     const nextButton = this.__nextButton = prevNextButtons.getNextButton().set({
       alignX: "left",
-      alignY: "middle"
+      alignY: "middle",
+      marginRight: 4,
     });
     const runButton = this.__runButton = prevNextButtons.getRunButton().set({
       alignX: "left",
-      alignY: "middle"
+      alignY: "middle",
+      marginRight: 4,
     });
     mainView.add(prevButton);
     mainView.add(nextButton);
@@ -130,10 +138,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       apply: "__applyMaximized",
       event: "changeMaximized"
     },
-  },
-
-  statics: {
-    CARD_MARGIN: 6
   },
 
   members: {
@@ -219,35 +223,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       }
     },
 
-    __styleView: function(node, view) {
-      view.getContentElement().setStyles({
-        "border-radius": "12px"
-      });
-      view.set({
-        maxWidth: node.isDynamic() ? null : 800,
-        margin: this.self().CARD_MARGIN
-      });
-      if (node.isParameter()) {
-        view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
-        view.set({
-          backgroundColor: "navbar-background",
-          padding: 6
-        });
-      } else {
-        view.getMainView().set({
-          backgroundColor: "navbar-background",
-          padding: 6,
-          paddingTop: 0,
-          paddingBottom: 0
-        });
-      }
-      if (node.isFilePicker()) {
-        view.getMainView().set({
-          backgroundColor: "navbar-background"
-        });
-      }
-    },
-
     __getNodeView: function(node) {
       let view;
       if (node.isParameter()) {
@@ -255,17 +230,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         const renderer = new osparc.node.ParameterEditor(node);
         renderer.buildForm(false);
         view.add(renderer);
+      } else if (node.isFilePicker()) {
+        view = new osparc.node.slideshow.FilePickerView();
+        view.getOutputsButton().hide();
+        view.setNode(node);
       } else {
-        if (node.isFilePicker()) {
-          view = new osparc.node.slideshow.FilePickerView();
-          view.getOutputsButton().hide();
-        } else {
-          view = new osparc.node.slideshow.NodeView();
-        }
+        view = new osparc.node.slideshow.NodeView();
         view.setNode(node);
       }
       this.__connectMaximizeEvents(node);
-      this.__styleView(node, view);
+      osparc.node.slideshow.BaseNodeView.styleView(node, view);
       return view;
     },
 
@@ -294,11 +268,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__prevNextButtons.setNode(node);
 
         if (view) {
-          if (this.__nodeView && this.__nodeView.getInstructionsWindow()) {
-            this.__nodeView.getInstructionsWindow().close();
-          }
-          if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
-            this.__mainView.remove(this.__nodeView);
+          if (this.__nodeView) {
+            this.__nodeView.closeInstructionsWindow();
+            if (this.__mainView.getChildren().includes(this.__nodeView)) {
+              this.__mainView.remove(this.__nodeView);
+            }
           }
           this.__mainView.addAt(view, 1, {
             flex: 1
@@ -347,7 +321,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       ].forEach(widget => widget.setVisibility(maximized ? "excluded" : "visible"));
 
       this.__nodeView.set({
-        margin: maximized ? 0 : this.self().CARD_MARGIN
+        margin: maximized ? 0 : osparc.node.slideshow.BaseNodeView.CARD_MARGIN
       });
     },
 

@@ -28,28 +28,27 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
 
     this.getChildControl("instructions");
 
-    this.__tree = this.getChildControl("tree");
+    const tree = this.getChildControl("tree");
 
-    const disable = this.getChildControl("disable");
-    disable.addListener("execute", () => this.__disableSlides(), this);
-    const enable = this.getChildControl("save-button");
-    enable.addListener("execute", () => this.__saveSlides(), this);
+    const disableAppModeButton = this.getChildControl("disable");
+    disableAppModeButton.addListener("execute", () => this.__disableSlides(), this);
+
+    const closeButton = this.getChildControl("close-button");
+    closeButton.addListener("execute", () => this.fireEvent("close"), this);
 
     const model = this.__initRoot();
-    this.__tree.setModel(model);
-
+    tree.setModel(model);
     this.__initTree();
     this.__initData();
   },
 
   events: {
     "changeSelectedNode": "qx.event.type.Data",
-    "finished": "qx.event.type.Event"
+    "close": "qx.event.type.Event",
   },
 
   members: {
     __study: null,
-    __tree: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -70,7 +69,14 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           break;
         }
         case "tree":
-          control = this.__buildTree();
+          control = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+            hideRoot: true,
+            decorator: "service-tree",
+            openMode: "none",
+            contentPadding: 0,
+            padding: 0,
+            backgroundColor: "transparent",
+          });
           this._add(control, {
             flex: 1
           });
@@ -82,7 +88,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           this._add(control);
           break;
         case "disable": {
-          control = new qx.ui.form.Button(this.tr("Disable")).set({
+          control = new qx.ui.form.Button(this.tr("Disable App Mode")).set({
             allowGrowX: false,
             appearance: "no-shadow-button"
           });
@@ -90,8 +96,8 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           buttons.add(control);
           break;
         }
-        case "save-button": {
-          control = new qx.ui.form.Button(this.tr("Save")).set({
+        case "close-button": {
+          control = new qx.ui.form.Button(this.tr("Close")).set({
             allowGrowX: false,
             appearance: "no-shadow-button"
           });
@@ -102,18 +108,6 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       }
 
       return control || this.base(arguments, id);
-    },
-
-    __buildTree: function() {
-      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-        hideRoot: true,
-        decorator: "service-tree",
-        openMode: "none",
-        contentPadding: 0,
-        padding: 0,
-        backgroundColor: "background-main-2"
-      });
-      return tree;
     },
 
     __initRoot: function() {
@@ -129,7 +123,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     },
 
     __initTree: function() {
-      this.__tree.setDelegate({
+      this.getChildControl("tree").setDelegate({
         createItem: () => new osparc.widget.NodeSlideTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
@@ -139,10 +133,10 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           c.bindProperty("instructions", "instructions", null, item, id);
         },
         configureItem: item => {
-          item.addListener("showNode", () => this.__itemActioned(item, "show"), this);
-          item.addListener("hideNode", () => this.__itemActioned(item, "hide"), this);
-          item.addListener("moveUp", () => this.__itemActioned(item, "moveUp"), this);
-          item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
+          item.addListener("showNode", () => this.__stepUpdated(item, "show"), this);
+          item.addListener("hideNode", () => this.__stepUpdated(item, "hide"), this);
+          item.addListener("moveUp", () => this.__stepUpdated(item, "moveUp"), this);
+          item.addListener("moveDown", () => this.__stepUpdated(item, "moveDown"), this);
           item.addListener("saveInstructions", e => this.__saveInstructions(item, e.getData()), this);
           item.addListener("tap", () => this.fireDataEvent("changeSelectedNode", item.getNodeId()), this);
         },
@@ -186,28 +180,30 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     __initData: function() {
       const topLevelNodes = this.__study.getWorkbench().getNodes();
 
-      this.__tree.getModel().getChildren().removeAll();
+      const tree = this.getChildControl("tree");
+      tree.getModel().getChildren().removeAll();
       const allChildren = this.__convertToModel(topLevelNodes);
-      this.__tree.getModel().setChildren(qx.data.marshal.Json.createModel(allChildren));
+      tree.getModel().setChildren(qx.data.marshal.Json.createModel(allChildren));
 
-      this.__tree.refresh();
+      tree.refresh();
     },
 
     changeSelectedNode: function(nodeId) {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const tree = this.getChildControl("tree");
+      const children = tree.getModel().getChildren().toArray();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
         const item = children[idx];
-        this.__tree.setSelection(new qx.data.Array([item]));
+        tree.setSelection(new qx.data.Array([item]));
         // show by default
         if (item.getPosition() === -1) {
-          this.__show(item);
-          this.__tree.refresh();
+          this.__stepUpdated(item, "show");
         }
       }
     },
 
-    __itemActioned: function(item, action) {
+    __stepUpdated: function(item, action) {
+      const itemMdl = item.getModel ? item.getModel() : item;
       let fnct;
       switch (action) {
         case "show":
@@ -223,13 +219,17 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
           fnct = this.__moveDown;
           break;
       }
-      if (fnct.call(this, item.getModel())) {
-        this.__tree.refresh();
+      if (fnct) {
+        const changed = fnct.call(this, itemMdl);
+        if (changed) {
+          this.getChildControl("tree").refresh();
+          this.__saveSlides();
+        }
       }
     },
 
     __getVisibleItems: function() {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const children = this.getChildControl("tree").getModel().getChildren().toArray();
       return children.filter(elem => elem.getPosition() !== -1);
     },
 
@@ -253,7 +253,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     },
 
     __moveUp: function(itemMdl) {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const children = this.getChildControl("tree").getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
@@ -273,7 +273,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     },
 
     __moveDown: function(itemMdl) {
-      const children = this.__tree.getModel().getChildren().toArray();
+      const children = this.getChildControl("tree").getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
@@ -292,6 +292,12 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       return false;
     },
 
+    __saveSlides: function() {
+      const slideshow = this.__serialize();
+      this.__study.getUi().getSlideshow().setData(slideshow);
+      this.__study.getUi().getSlideshow().fireEvent("changeSlideshow");
+    },
+
     __saveInstructions: function(item, instructions) {
       const itemMdl = item.getModel();
       itemMdl.setInstructions(instructions);
@@ -299,11 +305,12 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       // save instructions
       const nodeId = itemMdl.getNodeId();
       this.__study.getUi().getSlideshow().setInstructions(nodeId, instructions);
+      this.__study.getUi().getSlideshow().fireEvent("changeSlideshow");
     },
 
     __serialize: function() {
       const slideshow = {};
-      const model = this.__tree.getModel();
+      const model = this.getChildControl("tree").getModel();
       const children = model.getChildren().toArray();
       children.forEach(child => {
         slideshow[child.getNodeId()] = {
@@ -314,19 +321,12 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       return slideshow;
     },
 
-    __saveSlides: function() {
-      const slideshow = this.__serialize();
-      this.__study.getUi().getSlideshow().setData(slideshow);
-      this.fireEvent("finished");
-    },
-
     __disableSlides: function() {
       this.__getVisibleItems().forEach(item => {
         item.setPosition(-1);
       });
-      const slideshow = this.__serialize();
-      this.__study.getUi().getSlideshow().setData(slideshow);
-      this.fireEvent("finished");
+      this.__saveSlides();
+      this.fireEvent("close");
     }
   }
 });

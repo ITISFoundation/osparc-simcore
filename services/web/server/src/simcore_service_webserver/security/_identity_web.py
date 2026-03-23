@@ -1,11 +1,9 @@
-from typing import TypeAlias
-
 from aiohttp import web
-from aiohttp_security.api import forget, remember  # type: ignore[import-untyped]
+from aiohttp_security.api import forget, remember
 from models_library.emails import LowerCaseEmailStr
 
-# Identification *string* for an autheticated user
-IdentityStr: TypeAlias = str
+# Identification *string* for an authenticated user
+type IdentityStr = str
 
 
 async def remember_identity(

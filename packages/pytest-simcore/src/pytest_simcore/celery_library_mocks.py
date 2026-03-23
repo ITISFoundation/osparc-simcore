@@ -4,9 +4,9 @@ from collections.abc import Callable
 
 import pytest
 from faker import Faker
+from models_library.celery import TaskStatus, TaskUUID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import TaskStatus, TaskUUID
 from servicelib.celery.task_manager import Task, TaskManager
 
 _faker = Faker()

@@ -127,7 +127,8 @@ class Product(BaseModel):
         ProductLoginSettingsDict,
         Field(
             description="Product customization of login settings. "
-            "Note that these are NOT the final plugin settings but those are obtained from login.settings.get_plugin_settings",
+            "Note that these are NOT the final plugin settings but those are "
+            "obtained from login.settings.get_plugin_settings",
         ),
     ]
 
@@ -157,6 +158,14 @@ class Product(BaseModel):
         int | None,
         Field(description="Support assigned Fogbugz project ID, None if disabled"),
     ] = None
+
+    studies_dispatcher_enabled: Annotated[
+        bool,
+        Field(
+            description="If True, this product allows anonymous/guest access to "
+            "published studies via the studies dispatcher"
+        ),
+    ] = False
 
     is_payment_enabled: Annotated[
         bool,

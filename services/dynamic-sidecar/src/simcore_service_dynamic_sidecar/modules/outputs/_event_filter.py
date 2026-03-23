@@ -70,10 +70,10 @@ class EventFilter:
     def __init__(
         self,
         outputs_manager: OutputsManager,
-        delay_policy: BaseDelayPolicy = DefaultDelayPolicy(),
+        delay_policy: BaseDelayPolicy | None = None,
     ):
         self.outputs_manager = outputs_manager
-        self.delay_policy = delay_policy
+        self.delay_policy = DefaultDelayPolicy() if delay_policy is None else delay_policy
 
         self._incoming_events_queue: Queue[PortEvent] = Queue()
         self._task_incoming_event_ingestion: Task | None = None
@@ -145,7 +145,7 @@ class EventFilter:
             await asyncio.get_event_loop().run_in_executor(pool, self._worker_blocking_event_emitter)
 
     async def _worker_upload_events(self) -> None:
-        """enqueues uploads for port  `port_key`"""
+        """enqueues uploads for port `port_key`"""
         while True:
             port_key: str | None = await self._upload_events_queue.get()
             if port_key is None:

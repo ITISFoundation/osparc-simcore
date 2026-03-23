@@ -1,8 +1,9 @@
 from common_library.user_messages import user_message
-from models_library.notifications_errors import (
+from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
+    NotificationsTooManyRecipientsError,
     NotificationsUnsupportedChannelError,
 )
 from servicelib.aiohttp import status
@@ -41,6 +42,14 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         user_message(
             "Notification channel '{channel}' is not supported.",
             _version=1,
+        ),
+    ),
+    NotificationsTooManyRecipientsError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "The number of recipients ({num_recipients}) exceeds the maximum of {max_recipients}. "
+            "Please reduce the number of recipients and try again.",
+            _version=2,
         ),
     ),
 }

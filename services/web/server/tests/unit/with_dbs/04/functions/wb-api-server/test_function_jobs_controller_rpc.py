@@ -11,6 +11,7 @@ from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_webserver.functions import ProjectFunctionJob
+from models_library.celery import TaskKey
 from models_library.functions import (
     Function,
     FunctionClass,
@@ -35,7 +36,6 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.webserver_users import UserInfoDict
-from servicelib.celery.models import TaskKey
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
 pytest_simcore_core_services_selection = ["rabbit"]

@@ -10,6 +10,7 @@ from .models import (
     TaskContext,
     TaskId,
     TaskStatus,
+    TaskUniqueness,
 )
 
 _logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ async def start_task(
     long_running_manager: "LongRunningManager",
     *,
     registered_task_name: RegisteredTaskName,
-    unique: bool = False,
+    uniqueness: TaskUniqueness = TaskUniqueness.NONE,
     task_context: TaskContext | None = None,
     task_name: str | None = None,
     fire_and_forget: bool = False,
@@ -34,7 +35,7 @@ async def start_task(
 ) -> TaskId:
     return await long_running_manager.tasks_manager.start_task(
         registered_task_name,
-        unique=unique,
+        uniqueness=uniqueness,
         task_context=task_context,
         task_name=task_name,
         fire_and_forget=fire_and_forget,

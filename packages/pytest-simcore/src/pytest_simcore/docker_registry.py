@@ -239,6 +239,24 @@ def docker_registry_image_injector(
     return inject_image
 
 
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+def existing_docker_registry_image_injector(
+    node_meta_schema: dict,
+) -> Callable[[str, str, str, str | None], Awaitable[dict[str, Any]]]:
+    def inject_image(
+        docker_registry: str, source_image_repo: str, source_image_tag: str, owner_email: str | None = None
+    ):
+        return _pull_push_service(
+            source_image_repo,
+            source_image_tag,
+            docker_registry,
+            node_meta_schema,
+            owner_email,
+        )
+
+    return inject_image
+
+
 @pytest.fixture
 async def osparc_service(
     docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str

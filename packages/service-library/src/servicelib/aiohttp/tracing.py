@@ -1,36 +1,25 @@
 """Adds aiohttp middleware for tracing using opentelemetry instrumentation."""
 
 import logging
-import time
 from collections.abc import AsyncIterator, Callable
 from typing import Final
 
 from aiohttp import web
-from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
 from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
     AioHttpClientInstrumentor,
 )
-from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
-    _parse_active_request_count_attrs,
-    _parse_duration_attrs,
-    collect_request_attributes,
-    get_default_span_details,
-    getter,
-    meter,
-    set_status_code,
-)
-from opentelemetry.propagate import extract
+from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor, create_aiohttp_middleware
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.semconv.metrics import MetricInstruments
+from opentelemetry.trace import get_current_span
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import TracingConfig, get_trace_info_headers
+from ..tracing import TracingConfig, create_standard_attributes, get_trace_info_headers
 
 _logger = logging.getLogger(__name__)
 
@@ -44,12 +33,6 @@ try:
     HAS_BOTOCORE = True
 except ImportError:
     HAS_BOTOCORE = False
-try:
-    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-
-    HAS_AIOPG = True
-except ImportError:
-    HAS_AIOPG = False
 try:
     from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
@@ -71,69 +54,22 @@ try:
 except ImportError:
     HAS_AIO_PIKA = False
 
-APP_OPENTELEMETRY_INSTRUMENTOR_KEY: Final = web.AppKey("APP_OPENTELEMETRY_INSTRUMENTOR_KEY", dict[str, object])
 
+def _collect_custom_request_attributes(request: web.Request) -> dict[str, str]:
+    """Collect custom attributes from the request for tracing.
 
-@web.middleware
-async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler):
-    """Middleware extracted from opentelemetry-python-contrib aiohttp-server instrumentation.
-
-    Adapted to allow passing the tracer provider via the app instead of using the global object.
-
-    Original source:
-    https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/
-    instrumentation/opentelemetry-instrumentation-aiohttp-server/
-    src/opentelemetry/instrumentation/aiohttp_server/__init__.py
-
-    Licensed under:
-    https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/LICENSE
-
-    NOTE: A fix was merged (https://github.com/open-telemetry/opentelemetry-python-contrib/pull/3819)
-    and should be used once released.
+    Extracts user_id and project_id from request context if available.
+    These are typically set by authentication middleware and route parameters.
     """
 
-    span_name, additional_attributes = get_default_span_details(request)
-
-    req_attrs = collect_request_attributes(request)
-    duration_attrs = _parse_duration_attrs(req_attrs)
-    active_requests_count_attrs = _parse_active_request_count_attrs(req_attrs)
-
-    duration_histogram = meter.create_histogram(
-        name=MetricInstruments.HTTP_SERVER_DURATION,
-        unit="ms",
-        description="Measures the duration of inbound HTTP requests.",
+    # Extract project_id from URL path if it matches project routes
+    # Pattern: /v0/projects/{project_id} or /v0/projects/{project_id}:action
+    # Extract node_id from URL path if it matches node routes
+    # Pattern: /v0/projects/{project_id}/nodes/{node_id}
+    return create_standard_attributes(
+        project_id=request.match_info.get("project_id"),
+        node_id=request.match_info.get("node_id"),
     )
-
-    active_requests_counter = meter.create_up_down_counter(
-        name=MetricInstruments.HTTP_SERVER_ACTIVE_REQUESTS,
-        unit="requests",
-        description="measures the number of concurrent HTTP requests those are currently in flight",
-    )
-    tracing_config = request.app[TRACING_CONFIG_KEY]
-    assert isinstance(tracing_config, TracingConfig)  # nosec
-    assert tracing_config.tracer_provider  # nosec
-    tracer = tracing_config.tracer_provider.get_tracer(__name__)
-    with tracer.start_as_current_span(
-        span_name,
-        context=extract(request, getter=getter),
-        kind=trace.SpanKind.SERVER,
-    ) as span:
-        attributes = collect_request_attributes(request)
-        attributes.update(additional_attributes)
-        span.set_attributes(attributes)
-        start = time.perf_counter()
-        active_requests_counter.add(1, active_requests_count_attrs)
-        try:
-            resp = await handler(request)
-            set_status_code(span, resp.status)
-        except web.HTTPException as ex:
-            set_status_code(span, ex.status_code)
-            raise
-        finally:
-            duration = max((time.perf_counter() - start) * 1000, 0)
-            duration_histogram.record(duration, duration_attrs)
-            active_requests_counter.add(-1, active_requests_count_attrs)
-        return resp
 
 
 def _create_span_processor(tracing_destination: str) -> SpanProcessor:
@@ -181,37 +117,24 @@ def _startup(
 
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
+
     # Instrument aiohttp server
-    # Explanation for custom middleware call DK 10/2024:
-    # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling
-    # `AioHttpServerInstrumentor().instrument()`. This call monkeypatches __init__()
-    # of aiohttp's web.application() to inject the tracing middleware.
-    #
-    # In simcore, we want to switch tracing on or off using the simcore-settings-library.
-    # The simcore-settings library depends on web.application() to exist (hen-and-egg problem).
-    # At instrumentation config time, web.application already exists and __init__() won't run.
-    #
-    # Since the monkeypatched __init__ from opentelemetry-autoinstrumentation-library only adds
-    # a middleware (4 lines), we execute this "missed call" directly in the following line:
     if add_response_trace_id_header:
         app.middlewares.insert(0, response_trace_id_header_middleware)
-    app.middlewares.insert(0, aiohttp_server_opentelemetry_middleware)
-    # Reference: github.com/open-telemetry/opentelemetry-python-contrib/blob/eccb05c808a7d797ef/
-    # instrumentation/opentelemetry-instrumentation-aiohttp-server/__init__.py#L246
-    # For reference, the above statement was written for:
-    # - osparc-simcore 1.77.x
-    # - opentelemetry-api==1.27.0
-    # - opentelemetry-instrumentation==0.48b0
+
+    app.middlewares.insert(0, add_custom_request_attributes_to_span_middleware)
+
+    # NOTE: AioHttpServerInstrumentor().instrument() initializes module-level globals
+    # (e.g. _excluded_urls, metrics) that create_aiohttp_middleware's inner _middleware
+    # depends on. However, instrument() also replaces aiohttp.web.Application with a
+    # subclass, which breaks isinstance() checks for apps created before instrumentation
+    # (e.g. swagger_ui's handler matching).
+    AioHttpServerInstrumentor().instrument(tracer_provider=tracer_provider)
+    AioHttpServerInstrumentor().uninstrument(tracer_provider=tracer_provider)
+    app.middlewares.insert(0, create_aiohttp_middleware(tracer_provider=tracer_provider))
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
-    if HAS_AIOPG:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
-        ):
-            AiopgInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_ASYNCPG:
         with log_context(
             _logger,
@@ -256,13 +179,22 @@ async def response_trace_id_header_middleware(request: web.Request, handler):
     return response
 
 
+@web.middleware
+async def add_custom_request_attributes_to_span_middleware(request: web.Request, handler):
+    """Adds custom request attributes to the active OpenTelemetry span."""
+    response = await handler(request)
+
+    span = get_current_span()
+    if span.is_recording():
+        span.set_attributes(_collect_custom_request_attributes(request))
+
+    return response
+
+
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         AioHttpClientInstrumentor().uninstrument()
-    if HAS_AIOPG:
-        with log_catch(_logger, reraise=False):
-            AiopgInstrumentor().uninstrument()
     if HAS_ASYNCPG:
         with log_catch(_logger, reraise=False):
             AsyncPGInstrumentor().uninstrument()

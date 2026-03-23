@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from typing import Any, cast
 
-import arrow
 import sqlalchemy as sa
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
@@ -25,7 +24,7 @@ from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClien
 from .....utils.computations import to_node_class
 from .....utils.db import RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
-from ...tables import NodeClass, StateType, comp_run_snapshot_tasks, comp_tasks
+from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks
 from .._base import BaseRepository
 from . import _utils
 
@@ -184,7 +183,11 @@ class CompTasksRepository(BaseRepository):
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model(exclude={"created", "modified"}))
 
                 exclusion_rule = {"state", "progress"} if comp_task_db.node_id not in published_nodes else set()
-                update_values = {"progress": None} if comp_task_db.node_id in published_nodes else {}
+                update_values = (
+                    {"progress": None, "job_id": None, "start": None, "end": None, "errors": None}
+                    if comp_task_db.node_id in published_nodes
+                    else {}
+                )
 
                 if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
                     exclusion_rule.add("outputs")
@@ -231,44 +234,6 @@ class CompTasksRepository(BaseRepository):
 
                 row = result.one()
                 return CompTaskAtDB.model_validate(row)
-
-    async def mark_project_published_waiting_for_cluster_tasks_as_aborted(
-        self, project_id: ProjectID, run_id: PositiveInt
-    ) -> None:
-        # block all pending tasks, so the sidecars stop taking them
-        async with self.db_engine.begin() as conn:
-            await conn.execute(
-                sa.update(comp_tasks)
-                .where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-                    & (
-                        (comp_tasks.c.state == StateType.PUBLISHED)
-                        | (comp_tasks.c.state == StateType.WAITING_FOR_CLUSTER)
-                    )
-                )
-                .values(state=StateType.ABORTED, progress=1.0, end=arrow.utcnow().datetime)
-            )
-            # Sync with comp_run_snapshot_tasks table
-            await conn.execute(
-                sa.update(comp_run_snapshot_tasks)
-                .where(
-                    (comp_run_snapshot_tasks.c.run_id == run_id)
-                    & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
-                    & (comp_run_snapshot_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-                    & (
-                        (comp_run_snapshot_tasks.c.state == StateType.PUBLISHED)
-                        | (comp_run_snapshot_tasks.c.state == StateType.WAITING_FOR_CLUSTER)
-                    )
-                )
-                .values(
-                    state=StateType.ABORTED,
-                    progress=1.0,
-                    end=arrow.utcnow().datetime,
-                )
-            )
-
-        _logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
     async def update_project_task_job_id(
         self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, job_id: str

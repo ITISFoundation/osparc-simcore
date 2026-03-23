@@ -1,34 +1,50 @@
 from dataclasses import asdict
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
-from celery_library.async_jobs import submit_job
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
-from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
+from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
-from models_library.notifications import ChannelType, TemplatePreview, TemplateRef
-from models_library.notifications_errors import (
+from models_library.notifications import (
+    Channel,
+)
+from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
 )
+from models_library.notifications.rpc import Message as RpcMessage
+from models_library.notifications.rpc import TemplateRef as RpcTemplateRef
 from models_library.products import ProductName
-from models_library.rpc.notifications.template import (
-    TemplatePreviewRpcRequest,
-    TemplateRefRpc,
-)
 from models_library.users import UserID
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from pydantic import TypeAdapter
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template as remote_preview_template,
 )
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
+    search_templates as remote_search_templates,
+)
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
+    send_message as remote_send_message,
+)
 
-from ..celery import get_task_manager
 from ..models import WebServerOwnerMetadata
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent, EmailNotificationMessage
+from ._models import (
+    Contact,
+    EmailAddressing,
+    EmailContact,
+    EmailContent,
+    EmailMessage,
+    Template,
+    TemplatePreview,
+    TemplateRef,
+)
+
+_RPC_MESSAGE_ADAPTER: Final[TypeAdapter[RpcMessage]] = TypeAdapter(RpcMessage)
+_RPC_TEMPLATE_REF_ADAPTER: Final[TypeAdapter[RpcTemplateRef]] = TypeAdapter(RpcTemplateRef)
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -65,40 +81,44 @@ async def _create_email_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
-) -> EmailNotificationMessage:
+) -> EmailMessage:
+    """Build a single email message dict with all recipients.
+
+    Returns a dict matching models_library.notifications.EmailMessage shape
+    (to: list[EmailContact]) for the RPC interface.
+
+    Raises:
+        NotificationsNoActiveRecipientsError: If no active recipients found.
+    """
     product = products_service.get_product(app, product_name)
 
-    from_ = EmailContact(
-        email=replace_email_parts(product.support_email, new_local=NO_REPLY_LOCAL),
+    from_contact = EmailContact(
+        name=f"{product.display_name} Support",
+        email=replace_email_parts(
+            product.support_email,
+            new_local=NO_REPLY_LOCAL,
+        ),
     )
 
-    to: list[EmailContact] = []
+    to_contacts: list[EmailContact] = []
 
     if group_ids:
-        to = await _collect_active_recipients(app, group_ids=group_ids)
+        to_contacts = await _collect_active_recipients(app, group_ids=group_ids)
 
     if external_contacts:
-        to.extend(external_contacts)
+        to_contacts.extend(external_contacts)
 
-    if not to:
+    if not to_contacts:
         raise NotificationsNoActiveRecipientsError
 
     email_content = EmailContent(**content)
 
-    if len(to) == 1:
-        # single recipient, no Bcc
-        return EmailNotificationMessage(from_=from_, to=to, content=email_content)
-
-    # multiple recipients, use Bcc
-    return EmailNotificationMessage(
-        from_=from_,
-        to=[
-            # send to original 'from' but as no-reply
-            from_.replace(
-                new_local=NO_REPLY_LOCAL,
-            ),
-        ],
-        bcc=to,
+    return EmailMessage(
+        channel=Channel.email,
+        addressing=EmailAddressing(
+            from_=from_contact,
+            to=to_contacts,
+        ),
         content=email_content,
     )
 
@@ -114,17 +134,26 @@ async def preview_template(
 
     enriched_context = {**context, "product": asdict(product_data)}
 
-    request = TemplatePreviewRpcRequest(
-        ref=TemplateRefRpc(**ref.model_dump()),
+    rpc_response = await remote_preview_template(
+        get_rabbitmq_rpc_client(app),
+        ref=_RPC_TEMPLATE_REF_ADAPTER.validate_python(ref.model_dump()),
         context=enriched_context,
     )
+    return TemplatePreview(**rpc_response.model_dump())
 
-    preview = await remote_preview_template(
+
+async def search_templates(
+    app: web.Application,
+    *,
+    channel: str | None = None,
+    template_name: str | None = None,
+) -> list[Template]:
+    rpc_response = await remote_search_templates(
         get_rabbitmq_rpc_client(app),
-        request=request,
+        channel=channel,
+        template_name=template_name,
     )
-
-    return TemplatePreview(**preview.model_dump())
+    return [Template(**t.model_dump()) for t in rpc_response]
 
 
 async def send_message(
@@ -132,13 +161,13 @@ async def send_message(
     *,
     user_id: UserID,
     product_name: ProductName,
-    channel: ChannelType,
+    channel: Channel,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
-) -> AsyncJobGet:
+) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
-        case ChannelType.email:
+        case Channel.email:
             message = await _create_email_message(
                 app,
                 product_name=product_name,
@@ -149,14 +178,13 @@ async def send_message(
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
-    return await submit_job(
-        get_task_manager(app),
-        execution_metadata=ExecutionMetadata(name=f"send_{channel}", queue="notifications"),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=user_id,
-                product_name=product_name,
-            ).model_dump()
+    response = await remote_send_message(
+        get_rabbitmq_rpc_client(app),
+        message=_RPC_MESSAGE_ADAPTER.validate_python(message.model_dump()),
+        owner_metadata=WebServerOwnerMetadata(
+            user_id=user_id,
+            product_name=product_name,
         ),
-        message=message.model_dump(),
     )
+
+    return response.task_or_group_uuid, response.task_name

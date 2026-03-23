@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
-from models_library.notifications import ChannelType, TemplateName
+from models_library.notifications import Channel, TemplateName
 from pydantic import BaseModel
 from pydantic.json_schema import SkipJsonSchema
 
@@ -12,7 +12,7 @@ class BaseTemplateContext(BaseModel):
     product: SkipJsonSchema[dict[str, Any]]
 
 
-_TEMPLATE_CONTEXT_REGISTRY: dict[tuple[ChannelType, TemplateName], type[BaseTemplateContext]] = {}
+_TEMPLATE_CONTEXT_REGISTRY: dict[tuple[Channel, TemplateName], type[BaseTemplateContext]] = {}
 
 C = TypeVar("C", bound=type[BaseTemplateContext])
 
@@ -23,7 +23,7 @@ class TemplateRef:
     Uniquely identifies a template in the system.
     """
 
-    channel: ChannelType
+    channel: Channel
     template_name: TemplateName
 
 
@@ -35,8 +35,14 @@ class Template(ABC):
     parts: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class TemplatePreview[C]:
+    template_ref: TemplateRef
+    message_content: C
+
+
 def register_template_context(
-    channel: ChannelType,
+    channel: Channel,
     template_name: TemplateName,
 ) -> Callable[[C], C]:
     """Decorator to register a template context model.
@@ -66,7 +72,7 @@ def register_template_context(
 
 
 def get_template_context_model(
-    channel: ChannelType,
+    channel: Channel,
     template_name: TemplateName,
 ) -> type[BaseTemplateContext]:
     return _TEMPLATE_CONTEXT_REGISTRY.get((channel, template_name), BaseTemplateContext)

@@ -21,6 +21,8 @@ qx.Class.define("osparc.support.SupportCenter", {
   construct: function() {
     this.base(arguments, "support-center");
 
+    osparc.utils.Utils.setIdToWidget(this, "supportCenterWindow");
+
     this.getChildControl("title").set({
       textAlign: "center",
     });
@@ -56,7 +58,7 @@ qx.Class.define("osparc.support.SupportCenter", {
     REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
     getMaxHeight: function() {
-      // height: max 80% of screen, or WINDOW_HEIGHTpx
+      // height: max 80% of screen, or WINDOW_HEIGHT px
       const clientHeight = document.documentElement.clientHeight;
       return Math.min(osparc.support.SupportCenter.WINDOW_HEIGHT, parseInt(clientHeight * 0.8));
     },

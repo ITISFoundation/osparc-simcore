@@ -138,7 +138,8 @@ qx.Theme.define("osparc.theme.Decoration", {
     "service-tree": {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
-        width: 0
+        width: 0,
+        radius: 4
       }
     },
 

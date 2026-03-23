@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import asdict
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -14,8 +14,8 @@ from celery import Celery
 from celery.contrib.testing.worker import start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery.worker import WorkController
-from celery_library.backends.redis import RedisTaskStore
-from celery_library.task_manager import CeleryTaskManager
+from celery_library import CeleryTaskManager
+from celery_library.backends import RedisTaskStore
 from celery_library.types import register_celery_types
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
@@ -35,6 +35,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -131,6 +132,15 @@ async def mock_fastapi_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAP
 
 
 @pytest.fixture
+async def rpc_client(
+    mock_fastapi_app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    assert mock_fastapi_app
+    return await rabbitmq_rpc_client("notifications-test-client")
+
+
+@pytest.fixture
 def test_client(mock_fastapi_app: FastAPI) -> TestClient:
     return TestClient(mock_fastapi_app)
 
@@ -178,7 +188,7 @@ def mock_celery_worker(
     shutdown_wrapper = _worker_shutdown_wrapper(celery_app)
     worker_shutdown.connect(shutdown_wrapper, weak=False)
 
-    register_worker_tasks(celery_app)
+    register_worker_tasks(ApplicationSettings.create_from_envs(), celery_app)
 
     with start_worker(
         celery_app,

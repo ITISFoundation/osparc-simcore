@@ -104,7 +104,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           });
           control.addListener("execute", () => {
             const invitationUrlField = this.getChildControl("invitation-url");
-            osparc.utils.Utils.copyToClipboard(invitationUrlField.getValue());
+            osparc.utils.Utils.copyTextToClipboard(invitationUrlField.getValue());
           }, this);
           this.getChildControl("invitation-url-container").add(control);
           break;
@@ -196,6 +196,9 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailEditor = this.getChildControl("email-editor");
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       emailContentEditor.setTemplateEmail(value);
+
+      // show the preview by default
+      emailContentEditor.makePreviewActive();
     },
 
     __sendEmailClicked: function() {
@@ -209,11 +212,10 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       }
 
       // if the user is not in the preview page, force them there so they can see the final email before sending
-      const previewPage = emailEditor.getChildControl("email-content-editor-and-preview").getChildControl("preview-page");
-      if (!previewPage.isVisible()) {
-        const tabView = previewPage.getLayoutParent().getLayoutParent();
-        tabView.setSelection([previewPage]);
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      if (!emailContentEditor.isPreviewActive()) {
         osparc.FlashMessenger.logAs(this.tr("Please preview the email before sending"), "WARNING");
+        emailContentEditor.makePreviewActive();
         return;
       }
 

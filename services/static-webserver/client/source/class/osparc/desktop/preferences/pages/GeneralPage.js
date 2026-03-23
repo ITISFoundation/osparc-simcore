@@ -37,14 +37,16 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this.__addInactivitySetting();
     }
 
-    // this.__addJobConcurrencySetting();
-
     if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
       this.__addS4LUserPrivacySettings();
     }
   },
 
   members: {
+    getChildrenCount: function() {
+      return this._getChildren().length;
+    },
+
     __addCreditsIndicatorSettings: function() {
       const box = new osparc.widget.SectionBox(this.tr("Credits Indicator"));
 
@@ -114,24 +116,6 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
       box.add(new qx.ui.form.renderer.Single(form));
 
-      this._add(box);
-    },
-
-    __addJobConcurrencySetting: function() {
-      const box = new osparc.widget.SectionBox(this.tr("Job Concurrency"));
-      const form = new qx.ui.form.Form();
-      const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
-        minimum: 1,
-        maximum: 10,
-        singleStep: 1,
-        allowGrowX: false,
-        enabled: false
-      });
-      const preferences = osparc.Preferences.getInstance();
-      preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
-      jobConcurrencySpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
-      form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
-      box.add(new qx.ui.form.renderer.Single(form));
       this._add(box);
     },
 

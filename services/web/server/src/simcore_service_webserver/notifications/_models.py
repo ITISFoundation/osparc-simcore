@@ -1,9 +1,18 @@
 from email.utils import parseaddr
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from common_library.network import replace_email_parts
-from models_library.notifications import ChannelType
+from models_library.notifications import Channel, TemplateName
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class TemplateRef(BaseModel):
+    channel: Channel
+    template_name: TemplateName
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
 
 class EmailContact(BaseModel):
@@ -65,7 +74,7 @@ class EmailAttachment(BaseModel):
 
 class EmailContent(BaseModel):
     subject: str
-    body_text: str
+    body_text: str | None = None
     body_html: str | None = None
 
     model_config = ConfigDict(
@@ -73,15 +82,11 @@ class EmailContent(BaseModel):
     )
 
 
-class EmailNotificationMessage(BaseModel):
-    channel: ChannelType = ChannelType.email
-
+class EmailAddressing(BaseModel):
     from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
     reply_to: EmailContact | None = None
-    bcc: list[EmailContact] | None = None
-
-    content: EmailContent
+    bcc: EmailContact | None = None
 
     attachments: list[EmailAttachment] | None = None
 
@@ -92,5 +97,30 @@ class EmailNotificationMessage(BaseModel):
     )
 
 
-# Clearly indicates the channel-specific contact info
+class EmailMessage(BaseModel):
+    channel: Channel = Channel.email
+
+    addressing: EmailAddressing
+    content: EmailContent
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+
+class TemplatePreview(BaseModel):
+    ref: TemplateRef
+    message_content: dict[str, Any]
+
+    model_config = ConfigDict(frozen=True)
+
+
+class Template(BaseModel):
+    ref: TemplateRef
+    context_schema: dict
+
+    model_config = ConfigDict(frozen=True)
+
+
 type Contact = EmailContact
+type Message = EmailMessage

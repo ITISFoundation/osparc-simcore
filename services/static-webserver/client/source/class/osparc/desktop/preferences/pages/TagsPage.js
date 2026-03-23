@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
       // New tag Button
       const addTagButton = new qx.ui.form.Button().set({
-        appearance: "form-button-outlined",
+        appearance: "strong-button",
         label: this.tr("New Tag"),
         icon: "@FontAwesome5Solid/plus/14"
       });

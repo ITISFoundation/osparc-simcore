@@ -3,15 +3,17 @@
 # pylint: disable=unused-variable
 
 
+import uuid
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.notifications.rpc import SendMessageResponse
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
-from simcore_service_webserver.notifications._controller import _rest
+from simcore_service_webserver.notifications import _service
 
 
 @pytest.fixture
@@ -38,8 +40,17 @@ def mocked_notifications_rpc_client(
 
     # Mock the RPC interface functions
     mocker.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         autospec=True,
+    )
+
+    mocker.patch(
+        f"{_service.__name__}.remote_send_message",
+        autospec=True,
+        return_value=SendMessageResponse(
+            task_or_group_uuid=uuid.uuid4(),
+            task_name="send_message",
+        ),
     )
 
     return mocker
