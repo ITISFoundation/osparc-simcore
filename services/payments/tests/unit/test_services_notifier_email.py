@@ -94,8 +94,8 @@ def mocked_get_invoice_pdf_response(
 
 @pytest.fixture
 def transaction(faker: Faker, successful_transaction: dict[str, Any]) -> PaymentsTransactionsDB:
-    kwargs = {k: successful_transaction[k] for k in PaymentsTransactionsDB.model_fields if k in successful_transaction}
-    return PaymentsTransactionsDB(**kwargs)
+    valid_keys = successful_transaction.keys() & PaymentsTransactionsDB.model_fields.keys()
+    return PaymentsTransactionsDB(**{k: successful_transaction[k] for k in valid_keys})
 
 
 async def test_send_email_workflow(
