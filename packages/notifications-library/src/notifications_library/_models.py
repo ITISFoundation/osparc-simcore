@@ -32,7 +32,10 @@ class SharerData:
 @dataclass(frozen=True)
 class ProductUIData:
     logo_url: str | None = (
-        None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html  # noqa: E501
+        None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg" in base.html  # noqa: E501
+    )
+    logo_url_dark: str | None = (
+        None  # default_logo_dark = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html  # noqa: E501
     )
     strong_color: str | None = None  # default_strong_color = "rgb(131, 0, 191)" in base.html
 

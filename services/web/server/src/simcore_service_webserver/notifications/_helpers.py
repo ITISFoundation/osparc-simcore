@@ -33,6 +33,7 @@ def get_product_data(
     # Extract UI information from product.vendor.ui (optional)
     ui_data = ProductUIData(
         logo_url=(product.vendor.get("ui", {}).get("logo_url") if product.vendor else None),
+        logo_url_dark=(product.vendor.get("ui", {}).get("logo_url_dark") if product.vendor else None),
         strong_color=(product.vendor.get("ui", {}).get("strong_color") if product.vendor else None),
     )
 

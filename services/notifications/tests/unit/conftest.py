@@ -256,6 +256,7 @@ def fake_product_data(faker: Faker) -> dict[str, Any]:
             homepage_url=faker.url(),
             ui=ProductUIData(
                 logo_url=faker.image_url(),
+                logo_url_dark=faker.image_url(),
                 strong_color=faker.color_name(),
             ),
             footer=footer_data,

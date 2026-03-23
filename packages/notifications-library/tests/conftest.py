@@ -69,6 +69,7 @@ def product_data(
 
     product_ui = ProductUIData(
         logo_url=vendor_ui.get("logo_url"),
+        logo_url_dark=vendor_ui.get("logo_url_dark"),
         strong_color=vendor_ui.get("strong_color"),
     )
 
