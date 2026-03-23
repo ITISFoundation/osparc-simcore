@@ -72,14 +72,15 @@ qx.Class.define("osparc.dashboard.ServiceSubmission", {
       const scroll = new qx.ui.container.Scroll();
       addServiceWindow.add(scroll);
 
-      const deprecatedMsg = qx.locale.Manager.tr("Service submission is deprecated and will be removed in a future release.");
-      osparc.FlashMessenger.logAs(deprecatedMsg, "WARNING");
-
       const form = new osparc.form.json.JsonSchemaForm("/resource/form/service.json", formData);
       form.addListener("ready", () => {
         addServiceWindow.open();
       });
       form.addListener("submit", e => {
+        const deprecatedMsg = qx.locale.Manager.tr("Service submission is deprecated.");
+        osparc.FlashMessenger.logAs(deprecatedMsg, "WARNING");
+        return;
+
         const data = e.getData();
         const headers = new Headers();
         headers.append("Accept", "application/json");
