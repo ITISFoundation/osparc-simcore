@@ -5,13 +5,11 @@ from typing import Any
 import asyncpg  # type: ignore[import-untyped]
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
-from common_library.async_tools import maybe_await
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ._protocols import DBConnection
-from .aiopg_errors import ForeignKeyViolation
 from .models.projects import projects
 from .models.projects_metadata import projects_metadata
 from .utils_aiosqlalchemy import map_db_exception
@@ -62,7 +60,7 @@ class ProjectMetadata(BaseModel):
 #
 
 
-async def get(connection: DBConnection, project_uuid: uuid.UUID) -> ProjectMetadata:
+async def get(connection: AsyncConnection, project_uuid: uuid.UUID) -> ProjectMetadata:
     """
     Raises:
         DBProjectNotFoundError: project not found
@@ -91,7 +89,7 @@ async def get(connection: DBConnection, project_uuid: uuid.UUID) -> ProjectMetad
         .where(projects.c.uuid == f"{project_uuid}")
     )
     result = await connection.execute(get_stmt)
-    row = await maybe_await(result.first())
+    row = result.mappings().one_or_none()
     if row is None:
         raise DBProjectNotFoundError(project_uuid=project_uuid)
     return ProjectMetadata.model_validate(row)
@@ -110,17 +108,15 @@ def _check_valid_ancestors_combination(
         raise DBProjectInvalidAncestorsError
 
 
-async def _project_has_any_child(connection: DBConnection, project_uuid: uuid.UUID) -> bool:
+async def _project_has_any_child(connection: AsyncConnection, project_uuid: uuid.UUID) -> bool:
     get_stmt = sa.select(projects_metadata.c.project_uuid).where(
         projects_metadata.c.parent_project_uuid == f"{project_uuid}"
     )
-    if await connection.scalar(get_stmt) is not None:
-        return True
-    return False
+    return await connection.scalar(get_stmt) is not None
 
 
 async def _compute_root_parent_from_parent(
-    connection: DBConnection,
+    connection: AsyncConnection,
     *,
     project_uuid: uuid.UUID,
     parent_project_uuid: uuid.UUID | None,
@@ -147,7 +143,7 @@ async def _compute_root_parent_from_parent(
 
 
 async def set_project_ancestors(
-    connection: DBConnection,
+    connection: AsyncConnection,
     *,
     project_uuid: uuid.UUID,
     parent_project_uuid: uuid.UUID | None,
@@ -189,16 +185,9 @@ async def set_project_ancestors(
 
     try:
         result = await connection.execute(upsert_stmt)
-        row = await maybe_await(result.first())
-        assert row  # nosec
+        row = result.mappings().one()
         return ProjectMetadata.model_validate(row)
 
-    except ForeignKeyViolation as err:
-        assert err.pgerror is not None  # nosec  # noqa: PT017
-        if "fk_projects_metadata_parent_node_id" in err.pgerror:
-            raise DBProjectInvalidParentNodeError(project_uuid=project_uuid, parent_node_id=parent_node_id) from err
-
-        raise DBProjectNotFoundError(project_uuid=project_uuid) from err
     except sa_exc.IntegrityError as exc:
         if "fk_projects_metadata_parent_node_id" in exc.args[0]:
             raise map_db_exception(
@@ -227,7 +216,7 @@ async def set_project_ancestors(
 
 
 async def set_project_custom_metadata(
-    connection: DBConnection,
+    connection: AsyncConnection,
     *,
     project_uuid: uuid.UUID,
     custom_metadata: dict[str, Any],
@@ -244,12 +233,9 @@ async def set_project_custom_metadata(
 
     try:
         result = await connection.execute(upsert_stmt)
-        row = await maybe_await(result.first())
-        assert row  # nosec
+        row = result.mappings().one()
         return ProjectMetadata.model_validate(row)
 
-    except ForeignKeyViolation as err:
-        raise DBProjectNotFoundError(project_uuid=project_uuid) from err
     except sa_exc.IntegrityError as exc:
         raise map_db_exception(
             exc,

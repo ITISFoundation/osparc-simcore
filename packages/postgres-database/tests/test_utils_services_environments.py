@@ -4,10 +4,10 @@
 # pylint: disable=unused-variable
 
 import random
-from typing import Any, NamedTuple, TypeAlias
+from collections.abc import AsyncIterator
+from typing import Any, NamedTuple
 
 import pytest
-from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.models.services_environments import (
@@ -15,6 +15,7 @@ from simcore_postgres_database.models.services_environments import (
     services_vendor_secrets,
 )
 from simcore_postgres_database.utils_services_environments import get_vendor_secrets
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.fixture
@@ -27,22 +28,22 @@ class ExpectedSecrets(NamedTuple):
     new_secrets: dict[str, Any]
 
 
-MappedExpectedSecretes: TypeAlias = dict[str, ExpectedSecrets]
+type MappedExpectedSecretes = dict[str, ExpectedSecrets]
 
 
 @pytest.fixture
-async def product_name(connection: SAConnection) -> str:
+async def product_name(asyncpg_connection: AsyncConnection) -> AsyncIterator[str]:
     a_product_name = "a_prod"
-    await connection.execute(
+    await asyncpg_connection.execute(
         products.insert().values(name=a_product_name, host_regex="", base_url="http://example.com")
     )
     yield a_product_name
-    await connection.execute(products.delete())
+    await asyncpg_connection.execute(products.delete())
 
 
 @pytest.fixture
 async def expected_secrets(
-    connection: SAConnection, vendor_services: list[str], product_name: str
+    asyncpg_connection: AsyncConnection, vendor_services: list[str], product_name: str
 ) -> MappedExpectedSecretes:
     expected_secrets: MappedExpectedSecretes = {}
     for k, vendor_service in enumerate(vendor_services):
@@ -64,7 +65,7 @@ async def expected_secrets(
         expected_secrets[vendor_service] = ExpectedSecrets(old_secrets, new_secrets)
 
         # 'other-service'
-        await connection.execute(
+        await asyncpg_connection.execute(
             services_meta_data.insert().values(
                 key=f"{vendor_service}_other",
                 version="1.0.0",
@@ -81,7 +82,7 @@ async def expected_secrets(
             ("1.0.0", "This has new_secrets"),  # defined new_secrets
             ("1.2.0", "Latest version inherits new_secrets"),
         ]:
-            await connection.execute(
+            await asyncpg_connection.execute(
                 services_meta_data.insert().values(
                     key=vendor_service,
                     version=version,
@@ -90,7 +91,7 @@ async def expected_secrets(
                 )
             )
 
-        await connection.execute(
+        await asyncpg_connection.execute(
             services_vendor_secrets.insert().values(
                 service_key=vendor_service,
                 service_base_version="0.0.2",
@@ -99,7 +100,7 @@ async def expected_secrets(
             )
         )
 
-        await connection.execute(
+        await asyncpg_connection.execute(
             # a vendor exposes these environs to its services to everybody
             services_vendor_secrets.insert().values(
                 service_key=vendor_service,
@@ -120,7 +121,7 @@ def test_vendor_secret_prefix_must_end_with_underscore():
 
 
 async def test_get_latest_service_vendor_secrets(
-    connection: SAConnection,
+    asyncpg_connection: AsyncConnection,
     vendor_services: list[str],
     expected_secrets: MappedExpectedSecretes,
     product_name: str,
@@ -128,7 +129,7 @@ async def test_get_latest_service_vendor_secrets(
     # latest i.e. 1.2.0
     for vendor_service in vendor_services:
         assert (
-            await get_vendor_secrets(connection, product_name, vendor_service)
+            await get_vendor_secrets(asyncpg_connection, product_name, vendor_service)
             == expected_secrets[vendor_service].new_secrets
         )
 
@@ -144,7 +145,7 @@ async def test_get_latest_service_vendor_secrets(
     ],
 )
 async def test_get_service_vendor_secrets(
-    connection: SAConnection,
+    asyncpg_connection: AsyncConnection,
     vendor_services: list[str],
     expected_secrets: MappedExpectedSecretes,
     service_version: str,
@@ -168,4 +169,4 @@ async def test_get_service_vendor_secrets(
             case _:
                 pytest.fail(f"{expected_result} not considered")
 
-        assert await get_vendor_secrets(connection, product_name, vendor_service, service_version) == expected
+        assert await get_vendor_secrets(asyncpg_connection, product_name, vendor_service, service_version) == expected

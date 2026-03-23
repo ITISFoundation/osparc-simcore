@@ -44,7 +44,7 @@ def _generate_random_chars(length: int = MIN_USERNAME_LEN) -> str:
 
 
 def _generate_username_from_email(email: str) -> str:
-    username = email.split("@")[0]
+    username = email.split("@", maxsplit=1)[0]
 
     # Remove any non-alphanumeric characters and convert to lowercase
     username = re.sub(r"[^a-zA-Z0-9]", "", username).lower()

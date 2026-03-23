@@ -1,26 +1,18 @@
 import datetime
 import logging
-import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, fields
 from typing import Any
 
 import sqlalchemy as sa
-from common_library.async_tools import maybe_await
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ._protocols import DBConnection
 from .models.groups import GroupType, groups, user_to_groups
 from .models.groups_extra_properties import groups_extra_properties
 from .utils_models import FromRowMixin
 from .utils_repos import pass_or_acquire_connection
 
 _logger = logging.getLogger(__name__)
-
-_WARNING_FMSG = (
-    f"{__name__}.{{}} uses aiopg which has been deprecated in this repo. Use {{}} instead. "
-    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529"
-)
 
 
 class GroupExtraPropertiesError(Exception): ...
@@ -148,26 +140,16 @@ class GroupExtraPropertiesRepo:
 
     @staticmethod
     async def get_aggregated_properties_for_user(
-        connection: DBConnection,
+        connection: AsyncConnection,
         *,
         user_id: int,
         product_name: str,
     ) -> GroupExtraProperties:
-        warnings.warn(
-            _WARNING_FMSG.format(
-                "get_aggregated_properties_for_user",
-                "get_aggregated_properties_for_user_v2",
-            ),
-            DeprecationWarning,
-            stacklevel=1,
-        )
-
         list_stmt = _list_table_entries_ordered_by_group_type_stmt(user_id=user_id, product_name=product_name)
 
         result = await connection.execute(sa.select(list_stmt).order_by(list_stmt.c.type_order))
         assert result  # nosec
 
-        rows = await maybe_await(result.fetchall())
-        assert isinstance(rows, list)  # nosec
+        rows = result.mappings().all()
 
         return GroupExtraPropertiesRepo._aggregate(rows, user_id, product_name, GroupExtraProperties.from_row)

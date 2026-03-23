@@ -31,7 +31,7 @@ from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.db.plugin import get_database_engine_legacy
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.products._service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -125,10 +125,10 @@ async def test_tags_to_studies(
 @pytest.fixture
 async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
     assert client.app
-    engine = get_database_engine_legacy(client.app)
+    engine = get_asyncpg_engine(client.app)
     assert engine
 
-    async with engine.acquire() as conn:
+    async with engine.begin() as conn:
         tag_id = await create_tag(
             conn,
             name="TG",
@@ -140,8 +140,9 @@ async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
             delete=False,
         )
 
-        yield tag_id
+    yield tag_id
 
+    async with engine.begin() as conn:
         await delete_tag(conn, tag_id=tag_id)
 
 

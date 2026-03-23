@@ -57,7 +57,7 @@ async def create(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = result.one_or_none()
+        row = result.mappings().one_or_none()
         if row is None:
             raise ConversationErrorNotFoundError(conversation_id=conversation_id)
 

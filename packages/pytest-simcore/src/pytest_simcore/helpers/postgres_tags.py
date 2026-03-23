@@ -4,13 +4,13 @@
 # pylint: disable=too-many-arguments
 
 
-from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.tags import tags
 from simcore_postgres_database.models.tags_access_rights import tags_access_rights
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 async def create_tag_access(
-    conn: SAConnection,
+    conn: AsyncConnection,
     *,
     tag_id,
     group_id,
@@ -25,7 +25,7 @@ async def create_tag_access(
 
 
 async def create_tag(
-    conn: SAConnection,
+    conn: AsyncConnection,
     *,
     name,
     description,
@@ -44,5 +44,5 @@ async def create_tag(
     return tag_id
 
 
-async def delete_tag(conn: SAConnection, tag_id: int):
+async def delete_tag(conn: AsyncConnection, tag_id: int):
     await conn.execute(tags.delete().where(tags.c.id == tag_id))

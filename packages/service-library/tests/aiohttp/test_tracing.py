@@ -114,13 +114,6 @@ def manage_package(request):
                 "opentelemetry.instrumentation.botocore",
             ),
         ),
-        (
-            ("http://opentelemetry-collector", "4318", 1.0),
-            (
-                "opentelemetry-instrumentation-aiopg",
-                "opentelemetry.instrumentation.aiopg",
-            ),
-        ),
     ],
     indirect=True,
 )
