@@ -33,8 +33,8 @@
 #}
 {%- set footer_share_icon_svgs = {
   "facebook": '<img src="https://cdn.simpleicons.org/facebook/white" alt="Facebook" width="16" height="16" border="0" style="display: block; border: 0;">',
-  "twitter": '<img src="https://cdn.simpleicons.org/x/white" alt="Twitter" width="14" height="14" border="0" style="display: block; border: 0; padding-top: 1px">',
-  "linkedin": '<img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" width="16" height="16" border="0" style="display: block; border: 0; maring-top=-2px">'
+  "twitter": '<img src="https://cdn.simpleicons.org/x/white" alt="Twitter" width="14" height="14" border="0" style="display: block; border: 0; padding-top: 1px;">',
+  "linkedin": '<img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" width="16" height="16" border="0" style="display: block; border: 0;">'
 } -%}
 {%- set footer_company_text_style = "margin: 4px 0; color: #bbbbbb; font-size: 12px;" -%}
 {%- set footer_links_separator_style = "margin: 0 8px; color: #bbbbbb;" -%}
@@ -71,7 +71,7 @@
         <table width="600" border="0" cellpadding="20" cellspacing="0" style="{{ email_container_style }}">
           <tr>
             <td style="{{ header_style }}">
-              <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
+              <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #ffffff; padding: 4px; border-radius: 8px;">
                 <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px; border: 0; display: block;">
               </a>
             </td>
