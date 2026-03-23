@@ -116,6 +116,7 @@ async def initiate_reset_password(request: web.Request):
         return ctx
 
     ok = True
+    failure_reason: str | None = None
 
     # CHECK user exists
     user = await _auth_service.get_user_or_none(request.app, email=request_body.email)
@@ -151,6 +152,7 @@ async def initiate_reset_password(request: web.Request):
                 )
             )
             ok = False
+            failure_reason = "Your account is not in an active state. Please contact support."
 
     if ok:
         assert user  # nosec
@@ -167,7 +169,9 @@ async def initiate_reset_password(request: web.Request):
                 )
             )
             ok = False
+            failure_reason = "You do not have access to this platform. Please contact support."
 
+    link: str | None = None
     if ok:
         assert user  # nosec
 
@@ -181,7 +185,7 @@ async def initiate_reset_password(request: web.Request):
         # Produce a link so that the front-end can hit `complete_reset_password`
         link = _confirmation_web.make_confirmation_link(request, confirmation.code)
 
-        # primary reset email with a URL and the normal instructions.
+    if user:
         await send_message_from_template(
             request.app,
             user_id=user["id"],
@@ -201,7 +205,9 @@ async def initiate_reset_password(request: web.Request):
                     "user_name": user["name"],
                 },
                 "host": request.host,
+                "success": ok,
                 "link": link,
+                "reason": failure_reason,
             },
         )
 

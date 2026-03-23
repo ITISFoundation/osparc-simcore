@@ -15,4 +15,6 @@ class User(BaseModel):
 class ResetPasswordTemplateContext(BaseTemplateContext):
     user: User
     host: str
-    link: HttpUrl
+    success: bool
+    link: HttpUrl | None = None
+    reason: str | None = None
