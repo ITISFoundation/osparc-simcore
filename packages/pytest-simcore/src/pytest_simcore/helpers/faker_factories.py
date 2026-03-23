@@ -314,6 +314,7 @@ def random_product(
             address=fake.address().replace("\n", ". "),
             ui=VendorUI(
                 logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
+                logo_url_dark="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg",
                 strong_color=fake.color(),
             ),
         ),

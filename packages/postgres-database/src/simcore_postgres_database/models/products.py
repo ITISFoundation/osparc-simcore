@@ -33,6 +33,7 @@ from .users import users
 
 class VendorUI(TypedDict, total=True):
     logo_url: str  # vendor logo url
+    logo_url_dark: str  # vendor logo url for dark mode
     strong_color: str  # vendor main color
 
 

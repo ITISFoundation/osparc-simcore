@@ -40,6 +40,7 @@ def test_all_products_models_examples(model_cls: type[BaseModel], example_name: 
         if model_instance.vendor and "ui" in model_instance.vendor:
             assert model_instance.vendor["ui"]["strong_color"]
             assert model_instance.vendor["ui"]["logo_url"]
+            assert model_instance.vendor["ui"]["logo_url_dark"]
 
 
 def test_product_to_static():
@@ -65,6 +66,7 @@ def test_product_to_static():
             "invitation_form": True,
             "ui": {
                 "logo_url": "https://acme.com/logo",
+                "logo_url_dark": "https://acme.com/logo-dark",
                 "strong_color": "#123456",
             },
         },
