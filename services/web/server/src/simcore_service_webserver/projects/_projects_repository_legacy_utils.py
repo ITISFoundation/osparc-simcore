@@ -188,7 +188,7 @@ class BaseProjectDB:
                 .values(
                     project_id=project_index_id,
                     tag_id=tag_id,
-                    project_uuid_for_rut=project_uuid,
+                    project_uuid_for_rut=f"{project_uuid}",
                 )
                 .on_conflict_do_nothing()
             )
