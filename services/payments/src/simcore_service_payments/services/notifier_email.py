@@ -80,7 +80,7 @@ The credits have been added to your {{ product.display_name }} account, and you 
 <p>Best Regards,</p>
 <p>The <i>{{ product.display_name }}</i> Team</p>
 {% endblock %}
-"""
+"""  # noqa: E501
 
 _NOTIFY_PAYMENTS_TXT = """
 Dear {{ user.first_name }},
@@ -93,7 +93,7 @@ Please don't hesitate to contact us at {{ product.support_email }} if you need f
 
 Best Regards,
 The {{ product.display_name }} Team
-"""
+"""  # noqa: E501
 
 
 _NOTIFY_PAYMENTS_SUBJECT = (
@@ -146,6 +146,8 @@ def retry_if_status_code(response):
 exception_retry_condition = retry_if_exception_type((httpx.ConnectError, httpx.ReadTimeout))
 result_retry_condition = retry_if_result(retry_if_status_code)
 
+_INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(10.0)
+
 
 @retry(
     retry=exception_retry_condition | result_retry_condition,
@@ -154,7 +156,7 @@ result_retry_condition = retry_if_result(retry_if_status_code)
     reraise=True,
 )
 async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
-    async with httpx.AsyncClient(follow_redirects=True) as client:
+    async with httpx.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
         _response = await client.get(invoice_pdf)
         _response.raise_for_status()
     return _response
@@ -233,6 +235,23 @@ async def _create_user_email(
                 filename=file_name,
                 maintype=main_type,
                 subtype=sub_type,
+            )
+
+        except httpx.ReadTimeout as exc:
+            timeout_info = exc.request.extensions.get("timeout", "unknown")
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "ReadTimeout fetching invoice PDF. Email sent w/o attached pdf invoice",
+                    error=exc,
+                    error_context={
+                        "url": str(exc.request.url),
+                        "timeout": timeout_info,
+                        "user": user,
+                        "payment": payment,
+                        "product": product,
+                    },
+                    tip="Consider increasing _INVOICE_PDF_TIMEOUT if this happens frequently",
+                )
             )
 
         except Exception as exc:  # pylint: disable=broad-exception-caught
