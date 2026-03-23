@@ -4,7 +4,9 @@
 
 
 import json
+import uuid
 from collections.abc import AsyncIterable, Iterator
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
@@ -157,6 +159,18 @@ def mocked_email_core_remove_comments(mocker: MockerFixture):
         "simcore_service_webserver.email._core._remove_comments",
         autospec=True,
         side_effect=_do_not_remove_comments,
+    )
+
+
+@pytest.fixture
+def mocked_notifications_service_send_message_from_template(
+    mocker: MockerFixture,
+) -> AsyncMock:
+    """Mocks the notifications service RPC call since WEBSERVER_NOTIFICATIONS is disabled."""
+    return mocker.patch(
+        "simcore_service_webserver.notifications.notifications_service.send_message_from_template",
+        autospec=True,
+        return_value=(uuid.uuid4(), "send_message_from_template"),
     )
 
 

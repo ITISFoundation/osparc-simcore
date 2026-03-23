@@ -26,7 +26,7 @@ from simcore_service_webserver.login.constants import (
     MSG_USER_EXPIRED,
 )
 from simcore_service_webserver.login.settings import LoginOptions
-from simcore_service_webserver.users import users_service as users_service
+from simcore_service_webserver.users import users_service
 from yarl import URL
 
 #
@@ -45,6 +45,7 @@ async def client(
     app_products_names: list[ProductName],
     disabled_setup_garbage_collector: MockType,
     mocked_email_core_remove_comments: None,
+    mocked_notifications_service_send_message_from_template: MockType,
     # fixtures above must run before `web_server`
     web_server: TestServer,
 ) -> TestClient:

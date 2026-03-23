@@ -7,6 +7,7 @@
 import random
 import sys
 import textwrap
+import uuid
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -38,6 +39,7 @@ from celery_library.async_jobs import (
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.notifications.rpc._message import SendMessageResponse
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
@@ -76,6 +78,7 @@ from simcore_service_webserver.constants import (
     INDEX_RESOURCE_NAME,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.notifications import notifications_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
@@ -864,3 +867,19 @@ async def latest_osparc_price(
     assert usd is not None
     assert usd != all_product_prices["osparc"]
     return Decimal(usd)
+
+
+@pytest.fixture
+def mocked_send_message_from_template_rpc(
+    mocker: MockerFixture,
+) -> SendMessageResponse:
+    fake_response = SendMessageResponse(
+        task_or_group_uuid=uuid.uuid4(),
+        task_name="send_message_from_template",
+    )
+    mocker.patch(
+        f"{notifications_service.__name__}.remote_send_message_from_template",
+        autospec=True,
+        return_value=fake_response,
+    )
+    return fake_response
