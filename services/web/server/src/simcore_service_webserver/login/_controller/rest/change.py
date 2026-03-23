@@ -152,7 +152,7 @@ async def initiate_reset_password(request: web.Request):
                 )
             )
             ok = False
-            failure_reason = "Your account is not in an active state. Please contact support."
+            failure_reason = "Your account is not active. Please contact support."
 
     if ok:
         assert user  # nosec
