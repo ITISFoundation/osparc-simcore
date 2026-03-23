@@ -268,7 +268,6 @@ sortedcontainers==2.4.0
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_aiohttp.txt
     #   -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy

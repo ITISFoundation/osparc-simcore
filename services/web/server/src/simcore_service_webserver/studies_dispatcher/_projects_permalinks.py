@@ -11,7 +11,7 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import ProjectType, projects
 from yarl import URL
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
 from ..projects.projects_permalink_service import (
     ProjectPermalink,
@@ -82,8 +82,8 @@ async def permalink_factory(
 
     """
     # NOTE: next iterations will mobe this as part of the project repository pattern
-    engine = get_database_engine_legacy(app)
-    async with engine.acquire() as conn:
+    engine = get_asyncpg_engine(app)
+    async with engine.connect() as conn:
         access_rights_subquery = (
             sa.select(
                 project_to_groups.c.project_uuid,
@@ -114,7 +114,7 @@ async def permalink_factory(
             .where(projects.c.uuid == f"{project_uuid}")
         )
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.one_or_none()
         if not row:
             raise ProjectNotFoundError(project_uuid=project_uuid)
 

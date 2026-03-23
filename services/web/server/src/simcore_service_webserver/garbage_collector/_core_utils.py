@@ -5,7 +5,6 @@ from aiohttp import web
 from models_library.groups import Group, GroupID, GroupType
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
 from sqlalchemy.exc import DatabaseError
 
 from ..groups.api import get_group_by_gid
@@ -101,7 +100,7 @@ async def get_new_project_owner_gid(
     # the primary group contains the users which which the project was directly shared
     if len(primary_groups) > 0:
         # fetch directly from the direct users with which the project is shared with
-        new_project_owner_gid = int(list(primary_groups.keys())[0])
+        new_project_owner_gid = int(next(iter(primary_groups.keys())))
     # fallback to the groups search if the user does not exist
     if len(standard_groups) > 0 and new_project_owner_gid is None:
         new_project_owner_gid = await _fetch_new_project_owner_from_groups(
@@ -172,7 +171,6 @@ async def replace_current_owner(
         )
 
     except (
-        AiopgDatabaseError,
         DatabaseError,
         ProjectNotFoundError,
         UserNotFoundError,

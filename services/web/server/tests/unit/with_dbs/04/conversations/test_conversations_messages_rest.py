@@ -394,7 +394,7 @@ async def test_conversation_messages_nonexistent_resources(
     )
 
     # Import the exception that should be raised
-    from simcore_service_webserver.conversations.errors import (
+    from simcore_service_webserver.conversations.errors import (  # noqa: PLC0415
         ConversationErrorNotFoundError,
     )
 
@@ -434,7 +434,11 @@ async def test_conversation_messages_nonexistent_resources(
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
-        {"FOGBUGZ_API_TOKEN": "token-12345", "FOGBUGZ_URL": "http://test.com"},
+        {
+            "FOGBUGZ_API_TOKEN": "token-12345",
+            "FOGBUGZ_URL": "http://test.com",
+            "WEBSERVER_FOGBUGZ": "{}",
+        },
     )
 
 
