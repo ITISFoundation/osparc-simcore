@@ -11,7 +11,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from models_library.products import ProductName
 from pytest_mock import MockType
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
+from pytest_simcore.helpers.webserver_login import NewUser, parse_test_marks
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.utils_secrets import generate_password
@@ -56,7 +56,7 @@ async def client(
 async def test_two_steps_action_confirmation_workflow(
     client: TestClient,
     login_options: LoginOptions,
-    capsys: pytest.CaptureFixture,
+    mocked_notifications_service_send_message_from_template: MockType,
     caplog: pytest.LogCaptureFixture,
 ):
     assert client.app
@@ -72,9 +72,12 @@ async def test_two_steps_action_confirmation_workflow(
         assert response.url.path == reset_url.path
         await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
-        # Email is printed in the out
-        out, _ = capsys.readouterr()
-        confirmation_url = parse_link(out)
+        # Extract confirmation link from notification service mock call
+        mocked_notifications_service_send_message_from_template.assert_called_once()
+        notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
+        assert notification_context["success"] is True
+        assert notification_context["link"] is not None
+        confirmation_url = URL(notification_context["link"]).path
         code = URL(confirmation_url).parts[-1]
 
         # Emulates USER clicks on email's link
