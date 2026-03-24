@@ -262,9 +262,10 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __populatePendingUsersLayout: function() {
+      const params = {};
       Promise.all([
-        osparc.data.Resources.fetch("poUsers", "getPendingUsers"),
-        osparc.data.Resources.fetch("poUsers", "getReviewedUsers")
+        osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getPendingUsers"),
+        osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getReviewedUsers"),
       ])
         .then(resps => {
           const pendingUsers = resps[0];
