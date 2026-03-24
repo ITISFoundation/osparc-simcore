@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
+from models_library.notifications.rpc import SendMessageResponse
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -120,8 +121,9 @@ async def test_2fa_code_operations(client: TestClient):
 
 
 @pytest.mark.acceptance_test
-async def test_workflow_register_and_login_with_2fa(
+async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     client: TestClient,
+    mocked_send_message_from_template_rpc: SendMessageResponse,
     confirmation_repository: ConfirmationRepository,
     capsys: pytest.CaptureFixture,
     user_email: str,

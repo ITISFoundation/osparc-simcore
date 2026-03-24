@@ -25,6 +25,7 @@ from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,
 )
 from simcore_service_webserver.login._confirmation_web import _url_for_confirmation
+from simcore_service_webserver.login._controller.rest import registration
 from simcore_service_webserver.login.constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
     MSG_LOGGED_IN,
@@ -153,7 +154,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
+        f"{registration.__name__}.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
