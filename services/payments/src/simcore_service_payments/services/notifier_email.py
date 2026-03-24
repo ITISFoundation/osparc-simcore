@@ -73,19 +73,26 @@ _NOTIFY_PAYMENTS_HTML = """
 
 {% block content %}
 <p>Dear {{ user.first_name }},</p>
-<p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
-The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
+<p>
+    We are delighted to confirm the successful processing of your payment of
+    <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of
+    <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
+    The credits have been added to your {{ product.display_name }} account, and you are all set to
+    utilize them.
+</p>
 <p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a>.</p>
 <p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
 <p>Best Regards,</p>
 <p>The <i>{{ product.display_name }}</i> Team</p>
 {% endblock %}
-"""  # noqa: E501
+"""
 
 _NOTIFY_PAYMENTS_TXT = """
 Dear {{ user.first_name }},
 
-We are delighted to confirm the successful processing of your payment of {{ payment.price_dollars }} USD for the purchase of {{ payment.osparc_credits }} credits. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.
+We are delighted to confirm the successful processing of your payment of {{ payment.price_dollars }} USD
+for the purchase of {{ payment.osparc_credits }} credits. The credits have been added to your
+{{ product.display_name }} account, and you are all set to utilize them.
 
 For more details you can view or download your receipt: {{ payment.invoice_url }}.
 
@@ -93,7 +100,7 @@ Please don't hesitate to contact us at {{ product.support_email }} if you need f
 
 Best Regards,
 The {{ product.display_name }} Team
-"""  # noqa: E501
+"""
 
 
 _NOTIFY_PAYMENTS_SUBJECT = (
