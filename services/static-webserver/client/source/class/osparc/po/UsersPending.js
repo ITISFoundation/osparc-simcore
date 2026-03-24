@@ -121,6 +121,13 @@ qx.Class.define("osparc.po.UsersPending", {
           });
           this.getChildControl("header-layout").add(control);
           break;
+        case "loading-spinner":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26").set({
+            padding: 6
+          });
+          control.getContentElement().addClass("rotate");
+          this._add(control);
+          break;
         case "pending-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control, {
@@ -140,6 +147,7 @@ qx.Class.define("osparc.po.UsersPending", {
     _buildLayout: function() {
       this.getChildControl("reload-button");
       this.getChildControl("intro-text");
+      this.getChildControl("loading-spinner");
       this.getChildControl("pending-users-container");
       this.__addHeader();
       this.__populatePendingUsersLayout();
@@ -262,12 +270,15 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __populatePendingUsersLayout: function() {
+      this.getChildControl("loading-spinner").show();
+
       const params = {};
       Promise.all([
         osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getPendingUsers"),
         osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getReviewedUsers"),
       ])
         .then(resps => {
+          this.getChildControl("loading-spinner").exclude();
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
           const sortByDate = (a, b) => {
@@ -281,7 +292,10 @@ qx.Class.define("osparc.po.UsersPending", {
           reviewedUsers.sort(sortByDate);
           this.__addRows(pendingUsers.concat(reviewedUsers));
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          this.getChildControl("loading-spinner").exclude();
+        });
     },
 
     __reload: function() {
