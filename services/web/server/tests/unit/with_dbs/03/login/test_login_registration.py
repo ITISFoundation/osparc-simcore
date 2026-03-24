@@ -5,17 +5,17 @@
 
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
+from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.users import MyProfileRestGet
-from models_library.notifications.rpc import SendMessageResponse
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_error, assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser, parse_link
+from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
@@ -36,6 +36,7 @@ from simcore_service_webserver.login.settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
+from yarl import URL
 
 
 @pytest.fixture
@@ -54,7 +55,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 
 async def test_register_entrypoint(
     client: TestClient,
-    mocked_send_message_from_template_rpc: SendMessageResponse,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
     user_email: str,
     user_password: str,
     cleanup_db_tables: None,
@@ -299,12 +300,10 @@ async def test_registration_without_confirmation(
 
 async def test_registration_with_confirmation(
     client: TestClient,
-    mocked_send_message_from_template_rpc: SendMessageResponse,
-    capsys: pytest.CaptureFixture,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
     mocker: MockerFixture,
     user_email: str,
     user_password: str,
-    mocked_email_core_remove_comments: None,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -340,10 +339,12 @@ async def test_registration_with_confirmation(
 
     assert "verification link" in data["message"]
 
-    # retrieves sent link by email (see monkeypatch of email in conftest.py)
-    out, _ = capsys.readouterr()
-    confirmation_url = parse_link(out)
-    assert "/auth/confirmation/" in str(confirmation_url)
+    # retrieves sent link from notification service mock
+    mocked_notifications_service_send_message_from_template.assert_called_once()
+    notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
+    assert notification_context["link"] is not None
+    confirmation_url = URL(notification_context["link"]).path
+    assert "/auth/confirmation/" in f"{confirmation_url}"
     response = await client.get(confirmation_url)
     text = await response.text()
 
