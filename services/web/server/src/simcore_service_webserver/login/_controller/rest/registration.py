@@ -5,6 +5,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from models_library.notifications import Channel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -13,6 +14,8 @@ from simcore_postgres_database.models.users import UserStatus
 from ...._meta import API_VTAG
 from ....groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ....invitations.api import is_service_invitation_code
+from ....notifications import notifications_service
+from ....notifications.models import EmailContact
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import (
@@ -30,7 +33,6 @@ from ... import (
     _security_service,
     _twofa_service,
 )
-from ..._emails_service import get_template_path, send_email_from_template
 from ..._invitations_service import (
     ConfirmedInvitationData,
     check_and_consume_invitation,
@@ -208,21 +210,27 @@ async def register(request: web.Request):
             data=invitation.model_dump_json() if invitation else None,
         )
 
-        try:
-            email_confirmation_url = _confirmation_web.make_confirmation_link(request, _confirmation.code)
-            email_template_path = await get_template_path(request, "registration_email.jinja2")
+        email_confirmation_url = _confirmation_web.make_confirmation_link(request, _confirmation.code)
 
-            await send_email_from_template(
-                request,
-                from_=product.support_email,
-                to=registration.email,
-                template=email_template_path,
+        try:
+            await notifications_service.send_message_from_template(
+                request.app,
+                user_id=user["id"],
+                product_name=product.name,
+                channel=Channel.email,
+                group_ids=None,
+                external_contacts=[
+                    EmailContact(
+                        name=user.get("first_name") or user["name"],
+                        email=registration.email,
+                    )
+                ],
+                template_name="registered",
                 context={
                     "host": request.host,
-                    "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
+                    "link": email_confirmation_url,
                     "name": user.get("first_name") or user["name"],
                     "support_email": product.support_email,
-                    "product": product,
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
