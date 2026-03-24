@@ -25,6 +25,7 @@ from simcore_service_webserver.login._confirmation_repository import (
 )
 from simcore_service_webserver.login._confirmation_service import ConfirmationService
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
+from simcore_service_webserver.notifications import notifications_service
 
 
 @pytest.fixture
@@ -168,7 +169,7 @@ def mocked_notifications_service_send_message_from_template(
 ) -> AsyncMock:
     """Mocks the notifications service RPC call since WEBSERVER_NOTIFICATIONS is disabled."""
     return mocker.patch(
-        "simcore_service_webserver.notifications.notifications_service.send_message_from_template",
+        f"{notifications_service.__name__}.send_message_from_template",
         autospec=True,
         return_value=(uuid.uuid4(), "send_message_from_template"),
     )
