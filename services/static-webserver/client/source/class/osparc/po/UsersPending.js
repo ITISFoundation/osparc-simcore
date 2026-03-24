@@ -137,7 +137,6 @@ qx.Class.define("osparc.po.UsersPending", {
             minWidth: 300,
           });
           control.getChildControl("textfield").setPlaceholder(this.tr("Filter by Name, Email or Status"));
-          this._add(control);
           const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
           qx.event.message.Bus.getInstance().subscribe(msgName, this.__onFilterChange, this);
           this._add(control);
