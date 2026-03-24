@@ -299,6 +299,7 @@ async def test_registration_without_confirmation(
 
 async def test_registration_with_confirmation(
     client: TestClient,
+    mocked_send_message_from_template_rpc: SendMessageResponse,
     capsys: pytest.CaptureFixture,
     mocker: MockerFixture,
     user_email: str,
