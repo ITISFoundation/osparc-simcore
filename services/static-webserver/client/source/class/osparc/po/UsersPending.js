@@ -97,9 +97,9 @@ qx.Class.define("osparc.po.UsersPending", {
   },
 
   members: {
-    __textFilter: null,
     __currentFilterText: "",
     __pendingUsers: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -131,6 +131,18 @@ qx.Class.define("osparc.po.UsersPending", {
           control.getContentElement().addClass("rotate");
           this._add(control);
           break;
+        case "filter-users": {
+          const filterGroupId = "pendingUsersLayout";
+          control = new osparc.filter.TextFilter("text", filterGroupId).set({
+            minWidth: 300,
+          });
+          control.getChildControl("textfield").setPlaceholder(this.tr("Filter by Name, Email or Status"));
+          this._add(control);
+          const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
+          qx.event.message.Bus.getInstance().subscribe(msgName, this.__onFilterChange, this);
+          this._add(control);
+          break;
+        }
         case "pending-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control, {
@@ -152,20 +164,6 @@ qx.Class.define("osparc.po.UsersPending", {
       this.getChildControl("intro-text");
       this.getChildControl("loading-spinner");
       this.__populatePendingUsersLayout();
-    },
-
-    __addFilter: function() {
-      if (this.__textFilter) {
-        return;
-      }
-
-      const filterGroupId = "pendingUsersLayout";
-      const filter = this.__textFilter = new osparc.filter.TextFilter("text", filterGroupId);
-      filter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name, email or status"));
-      this.getChildControl("header-layout").add(filter);
-
-      const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
-      qx.event.message.Bus.getInstance().subscribe(msgName, this.__onFilterChange, this);
     },
 
     __addHeader: function() {
@@ -286,6 +284,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
     __populatePendingUsersLayout: function() {
       this.getChildControl("loading-spinner").show();
+      this.getChildControl("filter-users").exclude();
 
       const params = {};
       Promise.all([
@@ -293,8 +292,7 @@ qx.Class.define("osparc.po.UsersPending", {
         osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getReviewedUsers"),
       ])
         .then(resps => {
-          this.getChildControl("loading-spinner").exclude();
-          this.__addFilter();
+          this.getChildControl("filter-users").show();
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
           const sortByDate = (a, b) => {
@@ -309,10 +307,8 @@ qx.Class.define("osparc.po.UsersPending", {
           this.__pendingUsers = pendingUsers.concat(reviewedUsers);
           this.__renderPendingUsers();
         })
-        .catch(err => {
-          osparc.FlashMessenger.logError(err);
-          this.getChildControl("loading-spinner").exclude();
-        });
+        .catch(err => osparc.FlashMessenger.logError(err))
+        .finally(() => this.getChildControl("loading-spinner").exclude());
     },
 
     __reload: function() {
