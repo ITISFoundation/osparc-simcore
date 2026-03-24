@@ -10,6 +10,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.users import MyProfileRestGet
+from models_library.notifications.rpc import SendMessageResponse
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_error, assert_status
@@ -53,6 +54,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 
 async def test_register_entrypoint(
     client: TestClient,
+    mocked_send_message_from_template_rpc: SendMessageResponse,
     user_email: str,
     user_password: str,
     cleanup_db_tables: None,
