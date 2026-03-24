@@ -5,7 +5,7 @@ from aiocache import cached  # type: ignore[import-untyped]
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import PositiveInt
 
-_MINIMUM_R_CONE_VERSION_PARTS: Final[PositiveInt] = 2
+_MINIMUM_R_CLONE_VERSION_PARTS: Final[PositiveInt] = 2
 
 
 class _BaseRCloneError(OsparcErrorMixin, RuntimeError):
@@ -44,7 +44,7 @@ async def get_r_clone_version() -> str:
 
     first_line = stdout_text.splitlines()[0].strip()
     parts = first_line.split()
-    if len(parts) < _MINIMUM_R_CONE_VERSION_PARTS:
+    if len(parts) < _MINIMUM_R_CLONE_VERSION_PARTS:
         raise RCloneVersionParseError(first_line=first_line)
 
     return parts[1].lstrip("v")

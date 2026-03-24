@@ -87,7 +87,7 @@ def state_list_dirs():
 def state_save(*, enable_rabbitmq: Annotated[bool, typer.Option(help="allows to disable rabbitmq setup")] = True):
     """Saves the state, usually workspace directory
 
-    NOTE: if rabbimq is causing issues it's possible to disable the setup (not necessary for this command)
+    NOTE: if rabbitmq is causing issues it's possible to disable the setup (not necessary for this command)
     """
 
     async def _async_save_state() -> None:
@@ -112,7 +112,7 @@ def state_save(*, enable_rabbitmq: Annotated[bool, typer.Option(help="allows to 
 def outputs_push(*, enable_rabbitmq: Annotated[bool, typer.Option(help="allows to disable rabbitmq setup")] = True):
     """Pushes the output ports
 
-    NOTE: if rabbimq is causing issues it's possible to disable the setup (not necessary for this command)
+    NOTE: if rabbitmq is causing issues it's possible to disable the setup (not necessary for this command)
     """
 
     async def _async_outputs_push() -> None:

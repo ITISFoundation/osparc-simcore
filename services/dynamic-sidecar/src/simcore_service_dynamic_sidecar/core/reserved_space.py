@@ -13,7 +13,9 @@ _RESERVED_DISK_SPACE_NAME: Final[Path] = Path(
 _DEFAULT_CHUNK_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8k")
 
 
-def _ensure_random_binary_file(file_path: Path, total_size: ByteSize, *, chunk_size: ByteSize = _DEFAULT_CHUNK_SIZE):
+def _ensure_random_binary_file(
+    file_path: Path, total_size: ByteSize, *, chunk_size: ByteSize = _DEFAULT_CHUNK_SIZE
+) -> None:
     if file_path.exists() and file_path.stat().st_size == total_size:
         return
 
