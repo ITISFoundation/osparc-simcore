@@ -29,10 +29,12 @@ from simcore_service_payments.services.notifier_email import (
     EmailProvider,
     _create_email_session,
     _create_user_email,
+    _get_invoice_pdf,
     _PaymentData,
     _ProductData,
     _UserData,
 )
+from tenacity.wait import wait_none
 
 
 @pytest.fixture
@@ -138,8 +140,8 @@ async def test_send_email_workflow(
     payment_data = _PaymentData(
         price_dollars=f"{transaction.price_dollars:.2f}",
         osparc_credits=f"{transaction.osparc_credits:.2f}",
-        invoice_url=transaction.invoice_url,
-        invoice_pdf_url=transaction.invoice_pdf_url,
+        invoice_url=str(transaction.invoice_url),
+        invoice_pdf_url=str(transaction.invoice_pdf_url),
     )
 
     msg = await _create_user_email(env, user_data, payment_data, product_data)
@@ -237,8 +239,8 @@ async def test_create_user_email_logs_timeout_and_url_on_read_timeout(
     payment_data = _PaymentData(
         price_dollars=f"{transaction.price_dollars:.2f}",
         osparc_credits=f"{transaction.osparc_credits:.2f}",
-        invoice_url=transaction.invoice_url,
-        invoice_pdf_url=transaction.invoice_pdf_url,
+        invoice_url=str(transaction.invoice_url),
+        invoice_pdf_url=str(transaction.invoice_pdf_url),
     )
 
     with caplog.at_level(logging.ERROR):
@@ -260,3 +262,34 @@ async def test_create_user_email_logs_timeout_and_url_on_read_timeout(
     assert "ReadTimeout fetching invoice PDF" in caplog.text
     assert str(invoice_pdf_url) in caplog.text
     assert "timeout" in caplog.text.lower()
+
+
+async def test_get_invoice_pdf_retries_on_retryable_http_status(
+    transaction: PaymentsTransactionsDB,
+    respx_mock: respx.MockRouter,
+    mocker: MockerFixture,
+):
+    invoice_pdf_url = transaction.invoice_pdf_url
+    assert invoice_pdf_url
+
+    request = httpx.Request("GET", str(invoice_pdf_url))
+    route = respx_mock.get(str(invoice_pdf_url)).mock(
+        side_effect=[
+            httpx.Response(status.HTTP_503_SERVICE_UNAVAILABLE, request=request),
+            httpx.Response(
+                status.HTTP_200_OK,
+                content=b"%PDF-1.4",
+                headers={
+                    "Content-Type": "application/pdf",
+                    "Content-Disposition": 'attachment; filename="test-attachment.pdf"',
+                },
+                request=request,
+            ),
+        ]
+    )
+    mocker.patch.object(_get_invoice_pdf.retry, "wait", new=wait_none())
+
+    response = await _get_invoice_pdf(str(invoice_pdf_url))
+
+    assert response.status_code == status.HTTP_200_OK
+    assert route.call_count == 2
