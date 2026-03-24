@@ -729,7 +729,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         })
         .catch(err => {
           const errStatus = err.status;
-          if (errStatus == "409") {
+          if (errStatus === 409) {
             osparc.FlashMessenger.logError(err);
             const msg = osparc.FlashMessenger.extractMessage(err);
             this.getStudyLogger().error(null, msg);
