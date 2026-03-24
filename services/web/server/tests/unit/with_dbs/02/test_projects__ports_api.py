@@ -10,7 +10,7 @@ import pytest
 from models_library.projects_nodes import Node, NodeID
 from models_library.utils.json_schema import jsonschema_validate_schema
 from simcore_service_webserver.projects._ports_service import (
-    InvalidInputValue,
+    InvalidInputValueError,
     _get_outputs_in_workbench,
     get_project_inputs,
     iter_project_ports,
@@ -50,7 +50,7 @@ def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
         input_2: False,
     }
 
-    with pytest.raises(InvalidInputValue):
+    with pytest.raises(InvalidInputValueError):
         set_inputs_in_project(workbench=workbench, update={input_2: "THIS SHOULD HAVE BEEN A BOOL"})
 
 

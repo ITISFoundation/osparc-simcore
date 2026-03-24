@@ -21,6 +21,7 @@ import yaml
 from common_library.json_serialization import json_loads
 from docker.errors import APIError
 from docker.models.containers import Container
+from docker.models.images import Image
 
 _FOLDER_NAMES = ["input", "output"]
 
@@ -42,7 +43,7 @@ def docker_image_key(docker_client: docker.DockerClient, project_name: str) -> s
 
 
 @pytest.fixture
-def docker_image(docker_client: docker.DockerClient, docker_image_key: str) -> docker.models.images.Image:
+def docker_image(docker_client: docker.DockerClient, docker_image_key: str) -> Image:
     docker_image = docker_client.images.get(docker_image_key)
     assert docker_image
     return docker_image
@@ -270,7 +271,7 @@ def assert_container_runs(
             assert (host_folders["output"] / filename_to_look_for).exists()
 
 
-def assert_docker_io_simcore_labels_against_files(docker_image: docker.models.images.Image, metadata_labels: dict):
+def assert_docker_io_simcore_labels_against_files(docker_image: Image, metadata_labels: dict):
     image_labels = docker_image.labels
     io_simcore_labels = convert_to_simcore_labels(image_labels)
     # check files are identical
@@ -279,9 +280,7 @@ def assert_docker_io_simcore_labels_against_files(docker_image: docker.models.im
         assert value == metadata_labels[key]
 
 
-def assert_validate_docker_io_simcore_labels(
-    docker_image: docker.models.images.Image, osparc_service_labels_jsonschema: dict
-):
+def assert_validate_docker_io_simcore_labels(docker_image: Image, osparc_service_labels_jsonschema: dict):
     image_labels = docker_image.labels
     # get io labels
     io_simcore_labels = convert_to_simcore_labels(image_labels)

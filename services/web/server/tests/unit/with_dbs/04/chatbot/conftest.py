@@ -31,6 +31,7 @@ def app_environment(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "WEBSERVER_CHATBOT": "{}",
             "CHATBOT_HOST": "chatbot",
             "CHATBOT_PORT": "8000",
         },

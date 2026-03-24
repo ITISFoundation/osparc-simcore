@@ -91,6 +91,10 @@ from simcore_service_director_v2.modules.dask_client import (
     DaskJobID,
     PublishedComputationTask,
 )
+from simcore_service_director_v2.modules.osparc_variables._errors import (
+    OsparcVariableResolveError,
+    OsparcVariableResolveTimeoutError,
+)
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -2634,5 +2638,134 @@ async def test_getting_task_result_raises_s3_invalid_path_fails_task_immediately
         where_statement=and_(
             comp_runs.c.user_id == running_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{running_project.project.uuid}",
+        ),
+    )
+
+
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-issues/issues/2018")
+async def test_variable_resolution_timeout_while_starting_tasks_sets_waiting_for_cluster(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    run_in_db, published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
+    )
+    ready_to_start_tasks = [published_tasks[1], published_tasks[3]]
+
+    mocked_start_tasks = mocker.patch.object(scheduler_api, "_start_tasks", new=mocker.AsyncMock())
+    mocked_start_tasks.side_effect = OsparcVariableResolveTimeoutError(
+        variable_key="OSPARC_VARIABLE_API_SECRET",
+        handler_name="request_api_secret",
+        timeout_seconds=faker.pyfloat(min_value=1),
+    )
+
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+
+    mocked_start_tasks.assert_awaited_once()
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[task.node_id for task in ready_to_start_tasks],
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_processing_state_has_job_id=False,
+        expected_progress=None,
+        run_id=run_in_db.run_id,
+    )
+
+
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-issues/issues/2018")
+async def test_variable_resolution_error_while_starting_tasks_fails_ready_tasks(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
+    mocker: MockerFixture,
+):
+    run_in_db, published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
+    )
+    ready_to_start_tasks = [published_tasks[1], published_tasks[3]]
+
+    mocked_start_tasks = mocker.patch.object(scheduler_api, "_start_tasks", new=mocker.AsyncMock())
+    mocked_start_tasks.side_effect = OsparcVariableResolveError(
+        variable_key="OSPARC_VARIABLE_API_SECRET",
+        handler_name="request_api_secret",
+    )
+
+    with pytest.raises(OsparcVariableResolveError):
+        await scheduler_api.apply(
+            user_id=run_in_db.user_id,
+            project_id=run_in_db.project_uuid,
+            iteration=run_in_db.iteration,
+        )
+
+    mocked_start_tasks.assert_awaited_once()
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PUBLISHED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[task.node_id for task in ready_to_start_tasks],
+        expected_state=RunningState.FAILED,
+        expected_progress=1.0,
+        run_id=run_in_db.run_id,
+    )
+
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
         ),
     )

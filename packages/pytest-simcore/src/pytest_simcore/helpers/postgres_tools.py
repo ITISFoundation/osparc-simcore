@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 
 import simcore_postgres_database.cli
 import sqlalchemy as sa
-from psycopg2 import OperationalError
+import sqlalchemy.exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
@@ -79,7 +79,7 @@ def is_postgres_responsive(url) -> bool:
         sync_engine = sa.create_engine(url)
         conn = sync_engine.connect()
         conn.close()
-    except OperationalError:
+    except sqlalchemy.exc.OperationalError:
         return False
     return True
 

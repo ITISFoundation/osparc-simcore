@@ -162,7 +162,6 @@ class PaymentsTransactionsRepo(BaseRepository):
             )  # newest first
 
             if offset is not None:
-                # psycopg2.errors.InvalidRowCountInResultOffsetClause: OFFSET must not be negative
                 stmt = stmt.offset(offset)
 
             if limit is not None:

@@ -10,6 +10,7 @@ router = APIRouter()
     methods=["GET", "HEAD"],
     include_in_schema=True,
     response_class=PlainTextResponse,
+    operation_id="health_check",
 )
 async def health_check() -> str:
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!

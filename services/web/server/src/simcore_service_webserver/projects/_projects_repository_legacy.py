@@ -12,8 +12,6 @@ from uuid import uuid1
 
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import Engine
-from aiopg.sa.result import ResultProxy, RowProxy
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
@@ -40,7 +38,6 @@ from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -67,16 +64,18 @@ from simcore_postgres_database.webserver_models import (
 from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import Result, Row
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, and_
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
-from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
-
 from ..application_settings import get_application_settings
+from ..db.plugin import get_asyncpg_engine
 from ..models import ClientSessionID
-from ..utils import now_str
+from ..utils import now
 from ._access_rights_repository import published_project_read_condition
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository import PROJECT_DB_COLS
@@ -94,6 +93,7 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
+    ProjectTooManyNodesError,
 )
 from .models import (
     ProjectDBGet,
@@ -114,13 +114,15 @@ DEFAULT_ORDER_BY = OrderBy(field=IDStr("last_change_date"), direction=OrderDirec
 
 
 class ProjectDBAPI(BaseProjectDB):
+    MAX_NUMBER_OF_NODES_PER_PROJECT: Final = 301
+
     def __init__(self, app: web.Application) -> None:
         self._app = app
-        self._engine = cast(Engine, app.get(APP_AIOPG_ENGINE_KEY))
+        self._engine: AsyncEngine | None = None
 
     def _init_engine(self) -> None:
         # Delays creation of engine because it setup_db does it on_startup
-        self._engine = cast(Engine, self._app.get(APP_AIOPG_ENGINE_KEY))
+        self._engine = get_asyncpg_engine(self._app)
         if self._engine is None:
             msg = "Database subsystem was not initialized"
             raise ValueError(msg)
@@ -138,7 +140,7 @@ class ProjectDBAPI(BaseProjectDB):
         return cls.get_from_app_context(app)
 
     @property
-    def engine(self) -> Engine:
+    def engine(self) -> AsyncEngine:
         # lazy evaluation
         if self._engine is None:
             self._init_engine()
@@ -155,12 +157,16 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> ProjectDict:
         # Atomic transaction to insert project and update relations
         #  - Retries insert if UUID collision
-        def _reraise_if_not_unique_uuid_error(err: UniqueViolation):
-            if err.diag.constraint_name != "projects_uuid_key" or force_project_uuid:
+        def _reraise_if_not_unique_uuid_error(err: IntegrityError):
+            orig = err.orig
+            constraint_name = getattr(getattr(orig, "diag", None), "constraint_name", None) or (
+                "projects_uuid_key" if "projects_uuid_key" in str(err) else None
+            )
+            if constraint_name != "projects_uuid_key" or force_project_uuid:
                 raise err
 
         selected_values: ProjectDict = {}
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
                 with attempt:
                     async with conn.begin():
@@ -168,18 +174,18 @@ class ProjectDBAPI(BaseProjectDB):
                         project_uuid = ProjectID(f"{insert_values['uuid']}")
 
                         try:
-                            result: ResultProxy = await conn.execute(
+                            result: Result = await conn.execute(
                                 projects.insert()
                                 .values(**insert_values)
                                 .returning(*[c for c in projects.columns if c.name not in ["hidden", "published"]])
                             )
-                            row: RowProxy | None = await result.fetchone()
+                            row = result.mappings().fetchone()
                             assert row  # nosec
 
-                            selected_values = ProjectDict(row.items())
+                            selected_values = ProjectDict(row)
                             project_index = selected_values.pop("id")
 
-                        except UniqueViolation as err:
+                        except IntegrityError as err:
                             _reraise_if_not_unique_uuid_error(err)
 
                             # Tries new uuid
@@ -248,6 +254,7 @@ class ProjectDBAPI(BaseProjectDB):
         invalid uuid will raise an exception.
 
         :raises ProjectInvalidRightsError: assigning project to an unregistered user
+        :raises ProjectTooManyNodesError: project workbench exceeds supported node limit
         :raises ValidationError
         :return: inserted project
         """
@@ -257,25 +264,21 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
-                "type": (
-                    ProjectType.TEMPLATE.value if (force_as_template or user_id is None) else ProjectType.STANDARD.value
-                ),
-                "template_type": (
-                    ProjectTemplateType.TEMPLATE.value if (force_as_template or user_id is None) else None
-                ),
+                "type": (ProjectType.TEMPLATE if (force_as_template or user_id is None) else ProjectType.STANDARD),
+                "template_type": (ProjectTemplateType.TEMPLATE if (force_as_template or user_id is None) else None),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,
                 # NOTE: this is very bad and leads to very weird conversions.
                 # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
-                "creation_date": now_str(),
-                "last_change_date": now_str(),
+                "creation_date": now(),
+                "last_change_date": now(),
                 "product_name": product_name,
             }
         )
 
         # validate access_rights. are the gids valid? also ensure prj_owner is in there
         if user_id:
-            async with self.engine.acquire() as conn:
+            async with self.engine.connect() as conn:
                 primary_gid = await self._get_user_primary_group_gid(conn, user_id=user_id)
             insert_values.setdefault("access_rights", {})
             insert_values["access_rights"].update(create_project_access_rights(primary_gid, ProjectAccessRights.OWNER))
@@ -284,7 +287,16 @@ class ProjectDBAPI(BaseProjectDB):
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
-        insert_values.setdefault("workspace_id", None)
+        insert_values["workspace_id"] = (
+            int(insert_values["workspace_id"]) if insert_values.get("workspace_id") is not None else None
+        )
+
+        num_nodes = len(insert_values.get("workbench", {}))
+        if num_nodes > self.MAX_NUMBER_OF_NODES_PER_PROJECT:
+            raise ProjectTooManyNodesError(
+                max_num_nodes=self.MAX_NUMBER_OF_NODES_PER_PROJECT,
+                requested_num_nodes=num_nodes,
+            )
 
         # must be valid uuid
         try:
@@ -301,7 +313,7 @@ class ProjectDBAPI(BaseProjectDB):
             project_nodes=project_nodes,
         )
 
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
 
@@ -451,10 +463,10 @@ class ProjectDBAPI(BaseProjectDB):
         attributes_filters: list[ColumnElement] = []
 
         if filter_by_project_type is not None:
-            attributes_filters.append(projects.c.type == filter_by_project_type.value)
+            attributes_filters.append(projects.c.type == filter_by_project_type)
 
         if filter_by_template_type is not None:
-            attributes_filters.append(projects.c.template_type == filter_by_template_type.value)
+            attributes_filters.append(projects.c.template_type == filter_by_template_type)
 
         if filter_hidden is not None:
             attributes_filters.append(projects.c.hidden.is_(filter_hidden))
@@ -527,9 +539,9 @@ class ProjectDBAPI(BaseProjectDB):
         # order
         order_by: OrderBy = DEFAULT_ORDER_BY,
     ) -> tuple[list[dict[str, Any]], int]:
-        async with self.engine.acquire() as conn:
-            user_groups_proxy: list[RowProxy] = await self._list_user_groups(conn, user_id)
-            user_groups: list[GroupID] = [group.gid for group in user_groups_proxy]
+        async with self.engine.connect() as conn:
+            user_groups_rows: list[Row] = await self._list_user_groups(conn, user_id)
+            user_groups: list[GroupID] = [group.gid for group in user_groups_rows]
 
             ###
             # Private workspace query
@@ -603,14 +615,15 @@ class ProjectDBAPI(BaseProjectDB):
                 )
 
             prjs_output = []
-            async for row in conn.execute(combined_query.offset(offset).limit(limit)):
+            result = await conn.execute(combined_query.offset(offset).limit(limit))
+            for row in result.mappings():
                 # NOTE: Historically, projects were returned as a dictionary. I have created a model that
                 # validates the DB row, but this model includes some default values inside the Workbench Node model.
                 # Therefore, if we use this model, it will return those default values, which is not backward-compatible
                 # with the frontend. The frontend would need to check and adapt how it handles default values in
                 # Workbench nodes, which are currently not returned if not set in the DB.
                 ProjectListAtDB.model_validate(row)
-                prjs_output.append(dict(row.items()))
+                prjs_output.append(dict(row))
 
             return (
                 prjs_output,
@@ -618,11 +631,9 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
     async def list_projects_uuids(self, user_id: int) -> list[str]:
-        async with self.engine.acquire() as conn:
-            return [
-                row[projects.c.uuid]
-                async for row in conn.execute(sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id))
-            ]
+        async with self.engine.connect() as conn:
+            result = await conn.execute(sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id))
+            return [row["uuid"] for row in result.mappings()]
 
     async def get_project_dict_and_type(
         self,
@@ -635,7 +646,7 @@ class ProjectDBAPI(BaseProjectDB):
         This is a legacy function that retrieves the project resource along with additional adjustments.
         The `get_project_db` function is now recommended for use when interacting with the projects DB layer.
         """
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             project = await self._get_project(
                 conn,
                 project_uuid,
@@ -651,14 +662,14 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
     async def get_project_db(self, project_uuid: ProjectID) -> ProjectDBGet:
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.execute(
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
                 ).where(projects.c.uuid == f"{project_uuid}")
             )
-            row = await result.fetchone()
+            row = result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDBGet.model_validate(row)
@@ -666,7 +677,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_user_specific_project_data_db(
         self, project_uuid: ProjectID, private_workspace_user_id_or_none: UserID | None
     ) -> UserSpecificProjectDataDBGet:
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.execute(
                 sa.select(
                     *PROJECT_DB_COLS,
@@ -684,7 +695,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 .where(projects.c.uuid == f"{project_uuid}")
             )
-            row = await result.fetchone()
+            row = result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return UserSpecificProjectDataDBGet.model_validate(row)
@@ -713,22 +724,22 @@ class ProjectDBAPI(BaseProjectDB):
             .where(
                 (user_to_groups.c.uid == user_id)
                 & (project_to_groups.c.project_uuid == f"{project_uuid}")
-                & (project_to_groups.c.read == "true")
+                & (project_to_groups.c.read.is_(True))
             )
             .group_by(user_to_groups.c.uid)
         )
 
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.execute(stmt)
-            row = await result.fetchone()
+            row = result.fetchone()
             if row is None:
                 raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
             return UserProjectAccessRightsDB.model_validate(row)
 
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.execute(sa.select(projects.c.product_name).where(projects.c.uuid == f"{project_uuid}"))
-            row = await result.fetchone()
+            row = result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return cast(str, row[0])
@@ -742,19 +753,17 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> None:
         """The garbage collector needs to alter the row without passing through the
         permissions layer (sic)."""
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             # now update it
-            result: ResultProxy = await conn.execute(
+            await conn.execute(
                 projects.update()
                 .values(
                     prj_owner=new_project_owner,
                     access_rights=new_project_access_rights,
-                    last_change_date=now_str(),
+                    last_change_date=now(),
                 )
                 .where(projects.c.uuid == project_uuid)
             )
-            result_row_count: int = result.rowcount
-            assert result_row_count == 1  # nosec
 
     async def delete_project(self, user_id: int, project_uuid: str):
         _logger.info(
@@ -763,7 +772,7 @@ class ProjectDBAPI(BaseProjectDB):
             f"{user_id}",
         )
 
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.begin() as conn:
             await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.delete().where(projects.c.uuid == project_uuid)
@@ -850,7 +859,7 @@ class ProjectDBAPI(BaseProjectDB):
         """
 
         # Get user's primary group ID for notification
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             user_primary_gid = await self._get_user_primary_group_gid(conn, user_id)
 
         # Update the workbench
@@ -907,7 +916,7 @@ class ProjectDBAPI(BaseProjectDB):
                     extra=get_log_record_extra(user_id=user_id),
                 )
             )
-            db_connection = await stack.enter_async_context(self.engine.acquire())
+            db_connection = await stack.enter_async_context(self.engine.connect())
             await stack.enter_async_context(db_connection.begin())
 
             current_project: dict = await self._get_project(
@@ -924,7 +933,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
             # update timestamps
-            new_project_data["lastChangeDate"] = now_str()
+            new_project_data["lastChangeDate"] = now()
 
             result = await db_connection.execute(
                 projects.update()
@@ -932,12 +941,12 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects.c.id == current_project[projects.c.id.key])
                 .returning(literal_column("*"))
             )
-            project = await result.fetchone()
+            project = result.mappings().fetchone()
             assert project  # nosec
 
-            user_email = await self._get_user_email(db_connection, project.prj_owner)
+            user_email = await self._get_user_email(db_connection, project["prj_owner"])
 
-            tags = await self._get_tags_by_project(db_connection, project_id=project[projects.c.id])
+            tags = await self._get_tags_by_project(db_connection, project_id=project["id"])
             return (
                 convert_to_schema_names(project, user_email, tags=tags),
                 changed_entries,
@@ -961,7 +970,7 @@ class ProjectDBAPI(BaseProjectDB):
             ),
         }
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             await project_nodes_repo.add(conn, nodes=[node])
         await self._update_project_workbench_with_lock_and_notify(
             partial_workbench_data,
@@ -990,7 +999,7 @@ class ProjectDBAPI(BaseProjectDB):
             client_session_id=client_session_id,
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             await project_nodes_repo.delete(conn, node_id=node_id)
 
     async def get_project_node(
@@ -1001,7 +1010,7 @@ class ProjectDBAPI(BaseProjectDB):
         node_id: NodeID,
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             return await project_nodes_repo.get(conn, node_id=node_id)
 
     async def update_project_node(
@@ -1015,7 +1024,7 @@ class ProjectDBAPI(BaseProjectDB):
         **values,
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             if check_update_allowed:
                 user_extra_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
                     conn, user_id=user_id, product_name=product_name
@@ -1027,12 +1036,12 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             return await project_nodes_repo.list(conn)
 
     async def node_id_exists(self, node_id: NodeID) -> bool:
         """Returns True if the node id exists in any of the available projects"""
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             num_entries = await conn.scalar(
                 sa.select(func.count()).select_from(projects_nodes).where(projects_nodes.c.node_id == f"{node_id}")
             )
@@ -1043,7 +1052,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def list_node_ids_in_project(self, project_uuid: ProjectID) -> set[NodeID]:
         """Returns a set containing all the node_ids from project with project_uuid"""
         repo = ProjectNodesRepo(project_uuid=project_uuid)
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             list_of_nodes = await repo.list(conn)
         return {node.node_id for node in list_of_nodes}
 
@@ -1057,7 +1066,7 @@ class ProjectDBAPI(BaseProjectDB):
         node_uuid: NodeID,
     ) -> PricingPlanAndUnitIdsTuple | None:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             output = await project_nodes_repo.get_project_node_pricing_unit_id(conn, node_uuid=node_uuid)
             if output:
                 pricing_plan_id, pricing_unit_id = output
@@ -1071,7 +1080,7 @@ class ProjectDBAPI(BaseProjectDB):
         pricing_plan_id: PricingPlanId,
         pricing_unit_id: PricingUnitId,
     ) -> None:
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
             await project_nodes_repo.connect_pricing_unit_to_project_node(
                 conn,
@@ -1086,7 +1095,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> ProjectDict:
         """Creates a tag and associates it to this project"""
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             project = await self._get_project(conn, project_uuid=project_uuid, exclude_foreign=None)
             user_email = await self._get_user_email(conn, user_id)
 
@@ -1098,7 +1107,7 @@ class ProjectDBAPI(BaseProjectDB):
                     projects_tags.insert().values(
                         project_id=project["id"],
                         tag_id=tag_id,
-                        project_uuid_for_rut=project["uuid"],
+                        project_uuid_for_rut=f"{project['uuid']}",
                     )
                 )
                 project_tags.append(tag_id)
@@ -1106,7 +1115,7 @@ class ProjectDBAPI(BaseProjectDB):
             return convert_to_schema_names(project, user_email)
 
     async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> ProjectDict:
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             project = await self._get_project(conn, project_uuid)
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
@@ -1116,15 +1125,16 @@ class ProjectDBAPI(BaseProjectDB):
                     projects_tags.c.tag_id == tag_id,
                 )
             )
-            async with conn.execute(query):
-                if tag_id in project["tags"]:
-                    project["tags"].remove(tag_id)
-                return convert_to_schema_names(project, user_email)
+            await conn.execute(query)
+            if tag_id in project["tags"]:
+                project["tags"].remove(tag_id)
+            return convert_to_schema_names(project, user_email)
 
-    async def get_tags_by_project(self, project_id: str) -> list[int]:
-        async with self.engine.acquire() as conn:
+    async def get_tags_by_project(self, project_id: int) -> list[int]:
+        async with self.engine.connect() as conn:
             query = sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_id)
-            return [row.tag_id async for row in conn.execute(query)]
+            result = await conn.execute(query)
+            return [row.tag_id for row in result]
 
     #
     # Project Wallet
@@ -1134,7 +1144,7 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         project_uuid: ProjectID,
     ) -> WalletDB | None:
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.execute(
                 sa.select(
                     wallets.c.wallet_id,
@@ -1149,7 +1159,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .select_from(projects_to_wallet.join(wallets, projects_to_wallet.c.wallet_id == wallets.c.wallet_id))
                 .where(projects_to_wallet.c.project_uuid == f"{project_uuid}")
             )
-            row = await result.fetchone()
+            row = result.mappings().one_or_none()
             return WalletDB.model_validate(row) if row else None
 
     async def connect_wallet_to_project(
@@ -1157,7 +1167,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectID,
         wallet_id: WalletID,
     ) -> None:
-        async with self.engine.acquire() as conn:
+        async with self.engine.begin() as conn:
             insert_stmt = pg_insert(projects_to_wallet).values(
                 project_uuid=f"{project_uuid}",
                 wallet_id=wallet_id,
@@ -1179,7 +1189,7 @@ class ProjectDBAPI(BaseProjectDB):
     # Project HIDDEN column
     #
     async def is_hidden(self, project_uuid: ProjectID) -> bool:
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.scalar(sa.select(projects.c.hidden).where(projects.c.uuid == f"{project_uuid}"))
         return bool(result)
 
@@ -1188,11 +1198,11 @@ class ProjectDBAPI(BaseProjectDB):
     #
 
     async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
-        async with self.engine.acquire() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.execute(sa.select(projects.c.type).where(projects.c.uuid == f"{project_uuid}"))
-            row = await result.first()
+            row = result.mappings().one_or_none()
             if row:
-                return ProjectType(row[projects.c.type])
+                return ProjectType(row["type"])
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
 

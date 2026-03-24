@@ -22,6 +22,7 @@ from ._constants import (
     DEFAULT_HEALTH_CHECK_INTERVAL,
     DEFAULT_LOCK_TTL,
 )
+from ._utils import handle_redis_returns_union_types
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ _HEALTHCHECK_TIMEOUT_S: Final[float] = 3.0
     reraise=True,
 )
 async def wait_till_redis_is_responsive(client: aioredis.Redis) -> None:
-    if not await client.ping():
+    if not await handle_redis_returns_union_types(client.ping()):
         raise tenacity.TryAgain
 
 
@@ -112,7 +113,9 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            await asyncio.wait_for(self._client.ping(), timeout=_HEALTHCHECK_TIMEOUT_S)
+            await asyncio.wait_for(
+                handle_redis_returns_union_types(self._client.ping()), timeout=_HEALTHCHECK_TIMEOUT_S
+            )
             return True
 
         return False

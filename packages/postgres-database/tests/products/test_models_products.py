@@ -75,7 +75,6 @@ async def test_jinja2_templates_table(asyncpg_engine: AsyncEngine, osparc_simcor
                 "base_url": "https://tis.com",
             },
         ]:
-            #  aiopg doesn't support executemany!!
             await conn.execute(
                 pg_insert(products)
                 .values(**params)

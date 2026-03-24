@@ -9,7 +9,10 @@ etc
 NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
 required fields in postgres_database.models tables or pydantic models.
 
-NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
+IMPORTANT: in order to reduce coupling, please do import `simcore_postgres_database`
+and any other third-party dependencies (exception faker and arrow) inside of the functions
+and append ` # noqa: PLC0415`
+
 """
 
 import itertools
@@ -67,7 +70,6 @@ def _compute_hash(password: str) -> str:
 
 
 DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
-_DEFAULT_HASH = _compute_hash(DEFAULT_TEST_PASSWORD)
 
 
 def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
@@ -89,6 +91,19 @@ def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     return data
 
 
+def _compute_hash(password: str) -> str:
+    try:
+        import passlib.hash  # noqa: PLC0415
+
+        return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
+    except ImportError:
+        # fallback to a simple hash if passlib is not available, but it should be enough for testing purposes
+        import hashlib  # noqa: PLC0415
+
+        return hashlib.sha256(password.encode()).hexdigest()
+
+
 def random_user_secrets(
     fake: Faker = DEFAULT_FAKER,
     *,
@@ -105,7 +120,7 @@ def random_user_secrets(
 
     data = {
         "user_id": user_id,
-        "password_hash": _DEFAULT_HASH,
+        "password_hash": _compute_hash(DEFAULT_TEST_PASSWORD),
     }
     assert set(data.keys()).issubset({c.name for c in users_secrets.columns})
 
@@ -258,9 +273,9 @@ def fake_task_factory(
     def fake_task(**overrides) -> dict[str, Any]:
         t0 = arrow.utcnow().datetime
         data = {
-            "project_id": uuid4(),
-            "node_id": uuid4(),
-            "job_id": uuid4(),
+            "project_id": str(uuid4()),
+            "node_id": str(uuid4()),
+            "job_id": str(uuid4()),
             "internal_id": next(_index_in_sequence),
             "schema": json.dumps({}),
             "inputs": json.dumps({}),
