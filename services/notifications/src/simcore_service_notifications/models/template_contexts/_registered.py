@@ -15,4 +15,4 @@ class User(BaseModel):
 class RegisteredTemplateContext(BaseTemplateContext):
     user: User
     host: str
-    link: HttpUrl | None = None
+    link: HttpUrl
