@@ -384,6 +384,7 @@ async def test_set_run_result(
     assert created.result is not RunningState.PENDING
     assert created.ended is None
 
+    # Transition to a new state: last_result_changed should be set
     updated = await CompRunsRepository(sqlalchemy_async_engine).set_run_result(
         user_id=created.user_id,
         project_id=created.project_uuid,
@@ -395,7 +396,23 @@ async def test_set_run_result(
     assert updated != created
     assert updated.result is RunningState.PENDING
     assert updated.ended is None
+    assert updated.last_result_changed is not None
+    last_result_changed_after_pending = updated.last_result_changed
 
+    # Write the SAME state again: last_result_changed must NOT change, but modified does
+    updated_same = await CompRunsRepository(sqlalchemy_async_engine).set_run_result(
+        user_id=created.user_id,
+        project_id=created.project_uuid,
+        iteration=created.iteration,
+        result_state=RunningState.PENDING,
+        final_state=False,
+    )
+    assert updated_same
+    assert updated_same.result is RunningState.PENDING
+    assert updated_same.last_result_changed == last_result_changed_after_pending
+    assert updated_same.modified >= updated.modified
+
+    # Transition to a different state: last_result_changed should update
     final_updated = await CompRunsRepository(sqlalchemy_async_engine).set_run_result(
         user_id=created.user_id,
         project_id=created.project_uuid,
@@ -404,9 +421,11 @@ async def test_set_run_result(
         final_state=True,
     )
     assert final_updated
-    assert final_updated != updated
+    assert final_updated != updated_same
     assert final_updated.result is RunningState.ABORTED
     assert final_updated.ended is not None
+    assert final_updated.last_result_changed is not None
+    assert final_updated.last_result_changed >= last_result_changed_after_pending
 
 
 async def test_mark_for_cancellation(
