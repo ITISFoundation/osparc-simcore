@@ -207,6 +207,9 @@ async def test_start_empty_computation_returns_200(
         product_api_base_url=osparc_product_api_base_url,
     )
     assert computation is not None
+    assert computation.started is None
+    assert computation.state is RunningState.NOT_STARTED
+    assert computation.stopped is None
 
 
 @dataclass
@@ -483,7 +486,7 @@ async def test_run_partial_computation(
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
     # pipeline is up-to-date, returns 200 (nothing started)
-    await create_pipeline(
+    new_task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
@@ -496,6 +499,8 @@ async def test_run_partial_computation(
             if index in params.subgraph_elements
         ],
     )
+    assert new_task_out is not None
+    assert new_task_out == task_out
 
     # force run it this time.
     # the task are up-to-date but we force run them
@@ -592,7 +597,7 @@ async def test_run_computation(
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 200 cause everything is up-to-date (nothing started)
-    await create_pipeline(
+    new_task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
@@ -600,6 +605,8 @@ async def test_run_computation(
         product_name=osparc_product_name,
         product_api_base_url=osparc_product_api_base_url,
     )
+    assert new_task_out is not None
+    assert new_task_out == task_out
 
     # now force run again
     # the task are up-to-date but we force run them
@@ -873,6 +880,9 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         product_api_base_url=osparc_product_api_base_url,
     )
     assert computation is not None
+    assert computation.started is None
+    assert computation.state is RunningState.NOT_STARTED
+    assert computation.stopped is None
 
     # still this pipeline shall be creatable if we do not want to start it
     await create_pipeline(
