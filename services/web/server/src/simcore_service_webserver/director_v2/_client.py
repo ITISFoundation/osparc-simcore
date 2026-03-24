@@ -19,7 +19,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, TypeAdapter
 
-from ._client_base import _make_request, request_director_v2
+from ._client_base import request_director_v2
 from .settings import DirectorV2Settings, get_client_session, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class DirectorV2RestClient:
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
     async def get_computation(self, project_id: ProjectID, user_id: UserID) -> DirectorV2ComputationGet:
-        computation_task_out = await request_director_v2(
+        computation_task_out, _ = await request_director_v2(
             self._app,
             "GET",
             (self._settings.base_url / "computations" / f"{project_id}").with_query(user_id=int(user_id)),
@@ -67,21 +67,18 @@ class DirectorV2RestClient:
         product_api_base_url: str,
         **options,
     ) -> tuple[str, int]:
-        session = get_client_session(self._app)
-        computation_task_out, response_status = await _make_request(
-            session,
+        computation_task_out, response_status = await request_director_v2(
+            self._app,
             "POST",
-            None,
-            DirectorV2ComputationCreate(
+            self._settings.base_url / "computations",
+            expected_status={web.HTTPOk, web.HTTPCreated},
+            data=DirectorV2ComputationCreate(
                 user_id=user_id,
                 project_id=project_id,
                 product_name=product_name,
                 product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(product_api_base_url),
                 **options,
             ).model_dump(mode="json", exclude_unset=True),
-            {web.HTTPOk, web.HTTPCreated},
-            None,
-            self._settings.base_url / "computations",
         )
         assert isinstance(computation_task_out, dict)  # nosec
         computation_task_out_id: str = computation_task_out["id"]
@@ -94,7 +91,7 @@ class DirectorV2RestClient:
             self._settings.base_url / "computations" / f"{project_id}:stop",
             expected_status=web.HTTPAccepted,
             data={"user_id": user_id},
-        )
+        )  # status code ignored
 
 
 DIRECTOR_V2_CLIENT_APPKEY: Final = web.AppKey("DIRECTOR_V2_CLIENT", DirectorV2RestClient)

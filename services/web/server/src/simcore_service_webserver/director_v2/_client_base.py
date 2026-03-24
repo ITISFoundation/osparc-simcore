@@ -79,7 +79,7 @@ async def request_director_v2(
     data: Any | None = None,
     on_error: _StatusToExceptionMapping | None = None,
     **kwargs,
-) -> DataBody | str:
+) -> tuple[DataBody | str, int]:
     """
     helper to make requests to director-v2 API
     SEE OAS in services/director-v2/openapi.json
@@ -88,10 +88,10 @@ async def request_director_v2(
     on_error = on_error or {}
 
     try:
-        payload, _response_status = await _make_request(
+        payload, response_status = await _make_request(
             session, method, headers, data, expected_status, on_error, url, **kwargs
         )
-        return payload
+        return payload, response_status
 
     except TimeoutError as err:
         raise DirectorV2ServiceError(
@@ -106,3 +106,7 @@ async def request_director_v2(
             details=f"request to director-v2 service unexpected error {err}",
             url=url,
         ) from err
+
+    # NOTE: unreachable but makes mypy happy
+    msg = "Unexpected state"
+    raise RuntimeError(msg)
