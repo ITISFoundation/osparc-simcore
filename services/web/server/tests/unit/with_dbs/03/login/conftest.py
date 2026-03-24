@@ -167,7 +167,6 @@ def mocked_email_core_remove_comments(mocker: MockerFixture):
 def mocked_notifications_service_send_message_from_template(
     mocker: MockerFixture,
 ) -> AsyncMock:
-    """Mocks the notifications service RPC call since WEBSERVER_NOTIFICATIONS is disabled."""
     return mocker.patch(
         f"{notifications_service.__name__}.send_message_from_template",
         autospec=True,
