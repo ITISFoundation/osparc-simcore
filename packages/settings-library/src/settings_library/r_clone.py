@@ -108,14 +108,6 @@ class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: Annotated[S3Settings, Field(json_schema_extra={"auto_default_from_env": True})]
     R_CLONE_PROVIDER: S3Provider
 
-    R_CLONE_VERSION: Annotated[
-        str | None,
-        Field(
-            pattern=r"^\d+\.\d+\.\d+$",
-            description="version of rclone for the container image",
-        ),
-    ] = None
-
     R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: SimcoreSDKMountSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )

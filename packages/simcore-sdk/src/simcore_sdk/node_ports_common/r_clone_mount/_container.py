@@ -13,6 +13,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import NonNegativeInt
 from servicelib.file_utils import disk_usage
+from servicelib.r_clone_utils import get_r_clone_version
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
 from tenacity import (
     before_sleep_log,
@@ -217,7 +218,6 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         # ensure nothing was left from previous runs
         await self.delegate.remove_container(self._r_clone_container_name)
 
-        assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
         await _docker_utils.create_r_clone_container(
             self.delegate,
@@ -232,7 +232,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                 rc_user=self.rc_user,
                 rc_password=self.rc_password,
             ),
-            r_clone_version=self.r_clone_settings.R_CLONE_VERSION,
+            r_clone_version=await get_r_clone_version(),
             rc_port=self.rc_port,
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
