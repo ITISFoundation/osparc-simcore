@@ -513,12 +513,19 @@ class CompRunsRepository(BaseRepository):
         new_db_state = RUNNING_STATE_TO_DB[result_state]
         values: dict[str, Any] = {
             "result": new_db_state,
-            # Only update last_result_changed when the result actually transitions
-            # to a different state. This prevents the timestamp from being reset
-            # when the same state is written repeatedly (e.g. WAITING_FOR_CLUSTER
-            # on every scheduler iteration).
+            # Update last_result_changed when the result transitions to a different
+            # state OR when it was previously NULL (e.g. pre-migration rows). This
+            # ensures legacy in-flight runs still get a timeout reference while
+            # avoiding unnecessary timestamp resets when repeatedly writing the
+            # same state.
             "last_result_changed": sa.case(
-                (comp_runs.c.result != new_db_state, sa.func.now()),
+                (
+                    or_(
+                        comp_runs.c.last_result_changed.is_(None),
+                        comp_runs.c.result != new_db_state,
+                    ),
+                    sa.func.now(),
+                ),
                 else_=comp_runs.c.last_result_changed,
             ),
         }
