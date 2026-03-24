@@ -286,10 +286,11 @@ qx.Class.define("osparc.po.UsersPending", {
       this.getChildControl("loading-spinner").show();
       this.getChildControl("filter-users").exclude();
 
-      const params = {};
+      const paramsPending = {};
+      const paramsReviewed = {};
       Promise.all([
-        osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getPendingUsers"),
-        osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getReviewedUsers"),
+        osparc.data.Resources.getInstance().getAllPages("poUsers", paramsPending, "getPendingUsers"),
+        osparc.data.Resources.getInstance().getAllPages("poUsers", paramsReviewed, "getReviewedUsers"),
       ])
         .then(resps => {
           this.getChildControl("filter-users").show();
