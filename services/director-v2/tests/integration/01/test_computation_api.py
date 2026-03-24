@@ -186,7 +186,7 @@ def test_invalid_computation(
     assert response.status_code == exp_response, f"response code is {response.status_code}, error: {response.text}"
 
 
-async def test_start_empty_computation_is_refused(
+async def test_start_empty_computation_returns_200(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
@@ -197,15 +197,16 @@ async def test_start_empty_computation_is_refused(
 ):
     user = create_registered_user()
     empty_project = await create_project(user)
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=empty_project,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # empty project has nothing to run, returns 200 (not 201)
+    computation = await create_pipeline(
+        async_client,
+        project=empty_project,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert computation is not None
 
 
 @dataclass
@@ -478,24 +479,23 @@ async def test_run_partial_computation(
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
-    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=sleepers_project,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-            expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            subgraph=[
-                str(node_id)
-                for index, node_id in enumerate(sleepers_project.workbench)
-                if index in params.subgraph_elements
-            ],
-        )
+    # pipeline is up-to-date, returns 200 (nothing started)
+    await create_pipeline(
+        async_client,
+        project=sleepers_project,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+        subgraph=[
+            str(node_id)
+            for index, node_id in enumerate(sleepers_project.workbench)
+            if index in params.subgraph_elements
+        ],
+    )
 
     # force run it this time.
     # the task are up-to-date but we force run them
@@ -591,16 +591,15 @@ async def test_run_computation(
 
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
-    # run again should return a 422 cause everything is uptodate
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=sleepers_project,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # run again should return a 200 cause everything is up-to-date (nothing started)
+    await create_pipeline(
+        async_client,
+        project=sleepers_project,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
 
     # now force run again
     # the task are up-to-date but we force run them
@@ -712,7 +711,7 @@ async def test_abort_computation(
         wait_for_states=[RunningState.ABORTED],
     )
     assert task_out.state == RunningState.ABORTED
-    # FIXME: Here ideally we should connect to the dask scheduler and check
+    # NOTE: Here ideally we should connect to the dask scheduler and check
     # that the task is really aborted
 
 
@@ -864,16 +863,16 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         },
     )
 
-    # this pipeline is not runnable as there are no computational services
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=project_with_dynamic_node,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # this pipeline has no computational services, returns 200 (nothing to start)
+    computation = await create_pipeline(
+        async_client,
+        project=project_with_dynamic_node,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert computation is not None
 
     # still this pipeline shall be creatable if we do not want to start it
     await create_pipeline(
@@ -927,7 +926,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
         },
     )
 
-    # this pipeline is not runnable as there are no computational services
+    # this pipeline has no computational services, returns 200 (nothing to start)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -939,7 +938,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "collection_run_id": str(uuid.uuid4()),
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, (
+    assert response.status_code == status.HTTP_200_OK, (
         f"response code is {response.status_code}, error: {response.text}"
     )
 

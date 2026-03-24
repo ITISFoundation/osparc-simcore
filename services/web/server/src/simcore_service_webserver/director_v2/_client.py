@@ -19,7 +19,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, TypeAdapter
 
-from ._client_base import request_director_v2
+from ._client_base import _make_request, request_director_v2
 from .settings import DirectorV2Settings, get_client_session, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -66,23 +66,26 @@ class DirectorV2RestClient:
         product_name: str,
         product_api_base_url: str,
         **options,
-    ) -> str:
-        computation_task_out = await request_director_v2(
-            self._app,
+    ) -> tuple[str, int]:
+        session = get_client_session(self._app)
+        computation_task_out, response_status = await _make_request(
+            session,
             "POST",
-            self._settings.base_url / "computations",
-            expected_status=web.HTTPCreated,
-            data=DirectorV2ComputationCreate(
+            None,
+            DirectorV2ComputationCreate(
                 user_id=user_id,
                 project_id=project_id,
                 product_name=product_name,
                 product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(product_api_base_url),
                 **options,
             ).model_dump(mode="json", exclude_unset=True),
+            {web.HTTPOk, web.HTTPCreated},
+            None,
+            self._settings.base_url / "computations",
         )
         assert isinstance(computation_task_out, dict)  # nosec
         computation_task_out_id: str = computation_task_out["id"]
-        return computation_task_out_id
+        return computation_task_out_id, response_status
 
     async def stop_computation(self, project_id: ProjectID, user_id: UserID):
         await request_director_v2(

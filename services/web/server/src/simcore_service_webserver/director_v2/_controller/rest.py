@@ -147,7 +147,7 @@ async def start_computation(request: web.Request) -> web.Response:
     )
 
     computations = DirectorV2RestClient(request.app)
-    _started_pipelines_ids = await asyncio.gather(
+    _started_results: list[tuple[str, int]] = await asyncio.gather(
         *[
             computations.start_computation(
                 pid,
@@ -160,6 +160,9 @@ async def start_computation(request: web.Request) -> web.Response:
         ]
     )
 
+    _started_pipelines_ids = [r[0] for r in _started_results]
+    _response_statuses = [r[1] for r in _started_results]
+
     assert set(_started_pipelines_ids) == set(map(str, running_project_ids))  # nosec
 
     data: dict[str, Any] = {
@@ -168,7 +171,9 @@ async def start_computation(request: web.Request) -> web.Response:
     if project_vc_commits:
         data["ref_ids"] = project_vc_commits
 
-    return envelope_json_response(ComputationStarted.model_validate(data), status_cls=web.HTTPCreated)
+    # If any pipeline returned 200 (nothing to run), propagate 200 to the client
+    response_cls = web.HTTPOk if status.HTTP_200_OK in _response_statuses else web.HTTPCreated
+    return envelope_json_response(ComputationStarted.model_validate(data), status_cls=response_cls)
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")

@@ -21,7 +21,7 @@ from datetime import timedelta
 from typing import Annotated, Any, Final
 
 import networkx as nx
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
     ComputationDelete,
@@ -53,6 +53,7 @@ from ...core.errors import (
     ComputationalRunNotFoundError,
     ComputationalSchedulerError,
     ConfigurationError,
+    EC2InstanceTypeNotFoundError,
     PipelineTaskMissingError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
@@ -119,7 +120,7 @@ async def _check_pipeline_startable(
         catalog_client,
     ):
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            status_code=status.HTTP_409_CONFLICT,
             detail=f"Project {computation.project_id} cannot run since "
             f"it contains deprecated tasks {jsonable_encoder(deprecated_tasks)}",
         )
@@ -192,7 +193,7 @@ async def _try_start_pipeline(
     project: ProjectAtDB,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
-) -> None:
+) -> bool:
     if not minimal_dag.nodes():
         # 2 options here: either we have cycles in the graph or it's really done
         if find_computational_node_cycles(complete_dag):
@@ -201,11 +202,8 @@ async def _try_start_pipeline(
                 detail=f"Project {computation.project_id} contains cycles with "
                 "computational services which are currently not supported! Please remove them.",
             )
-        # there is nothing else to be run here, so we are done
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Project {computation.project_id} has no computational services",
-        )
+        # there is nothing else to be run here (up-to-date or no computational services)
+        return False
 
     # Billing info
     wallet_id = None
@@ -239,6 +237,7 @@ async def _try_start_pipeline(
         use_on_demand_clusters=computation.use_on_demand_clusters,
         collection_run_id=computation.collection_run_id,
     )
+    return True
 
 
 @router.post(
@@ -247,28 +246,26 @@ async def _try_start_pipeline(
     response_model=ComputationGet,
     status_code=status.HTTP_201_CREATED,
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Project or pricing details not found",
+        status.HTTP_200_OK: {
+            "description": "Pipeline is up-to-date, nothing was started",
         },
-        status.HTTP_406_NOT_ACCEPTABLE: {
-            "description": "Cluster not found",
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Project/cluster/pricing details not found",
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": "Service not available",
-        },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Configuration error",
+            "description": "Service not available or configuration error",
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
-        status.HTTP_409_CONFLICT: {"description": "Project already started"},
+        status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
     },
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
 # NOTE: This endpoint is historically used for CREATE, UPDATE or START a computation!
-async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
+async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint: disable=too-many-positional-arguments
     computation: ComputationCreate,
     request: Request,
+    response: Response,
     project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
@@ -323,7 +320,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         )
 
         if computation.start_pipeline:
-            await _try_start_pipeline(
+            pipeline_started = await _try_start_pipeline(
                 request.app,
                 project_repo=project_repo,
                 computation=computation,
@@ -333,6 +330,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
             )
+            if not pipeline_started:
+                response.status_code = status.HTTP_200_OK
 
         # get run details if any
         last_run: CompRunsAtDB | None = None
@@ -365,13 +364,15 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
     except ClusterNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"{e}") from e
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
     except PricingPlanUnitNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except EC2InstanceTypeNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
     except ClustersKeeperNotAvailableError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}") from e
     except ConfigurationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}") from e
     except WalletNotEnoughCreditsError as e:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=f"{e}") from e
 

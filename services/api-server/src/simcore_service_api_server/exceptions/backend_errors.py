@@ -90,12 +90,12 @@ class SolverOutputNotFoundError(BaseBackEndError):
 
 class ClusterNotFoundError(BaseBackEndError):
     msg_template = user_message("The requested cluster could not be found.", _version=1)
-    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    status_code = status.HTTP_404_NOT_FOUND
 
 
 class ConfigurationError(BaseBackEndError):
     msg_template = user_message("A configuration error occurred.", _version=1)
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 class ProductPriceNotFoundError(BaseBackEndError):
@@ -145,7 +145,8 @@ class InsufficientNumberOfSeatsError(BaseBackEndError):
 
 class CanNotCheckoutServiceIsNotRunningError(BaseBackEndError):
     msg_template = user_message(
-        "Unable to check out license item {licensed_item_id} because the dynamic service is not running. Current service ID: {service_run_id}.",
+        "Unable to check out license item {licensed_item_id} because the dynamic service is not running. "
+        "Current service ID: {service_run_id}.",
         _version=1,
     )
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -171,7 +172,8 @@ class CeleryTaskNotFoundError(BaseBackEndError):
 
 class SolverJobOutputRequestButNotSucceededError(BaseBackEndError):
     msg_template = user_message(
-        "Cannot retrieve output for solver job '{job_id}' because it has not completed successfully. Current state: {state}.",
+        "Cannot retrieve output for solver job '{job_id}' because it has not completed successfully. "
+        "Current state: {state}.",
         _version=1,
     )
     status_code = status.HTTP_409_CONFLICT
@@ -187,7 +189,8 @@ class SolverJobNotStoppedYetError(BaseBackEndError):
 
 class StudyJobOutputRequestButNotSucceededError(BaseBackEndError):
     msg_template = user_message(
-        "Cannot retrieve output for project job '{job_id}' because it has not completed successfully. Current state: {state}.",
+        "Cannot retrieve output for project job '{job_id}' because it has not completed successfully. "
+        "Current state: {state}.",
         _version=1,
     )
     status_code = status.HTTP_409_CONFLICT

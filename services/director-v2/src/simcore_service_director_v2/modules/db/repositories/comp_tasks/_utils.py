@@ -52,7 +52,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
-    ConfigurationError,
+    EC2InstanceTypeNotFoundError,
     WalletNotEnoughCreditsError,
 )
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
@@ -289,7 +289,7 @@ async def _update_project_node_resources_from_hardware_info(
         msg = (
             f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}. TIP: adjust product configuration"
         )
-        raise ConfigurationError(msg=msg) from exc
+        raise EC2InstanceTypeNotFoundError(msg=msg) from exc
     except (
         RemoteMethodNotRegisteredError,
         RPCServerError,
