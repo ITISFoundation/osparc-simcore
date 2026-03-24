@@ -229,7 +229,10 @@ async def register(request: web.Request):
                 context={
                     "host": request.host,
                     "link": email_confirmation_url,
-                    "name": user.get("first_name") or user["name"],
+                    "user": {
+                        "first_name": user.get("first_name"),
+                        "user_name": user.get("name"),
+                    },
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
