@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 import typer
 from asgi_lifespan import LifespanManager
@@ -43,6 +44,7 @@ def openapi():
 @asynccontextmanager
 async def _initialized_app(
     *,
+    with_rabbitmq: bool = False,
     with_mounted_fs: bool = False,
     with_outputs: bool = False,
     with_r_clone_mount_manager: bool = False,
@@ -50,8 +52,8 @@ async def _initialized_app(
     app = create_base_app()
 
     # setup required components
-    setup_rabbitmq(app)
-
+    if with_rabbitmq:
+        setup_rabbitmq(app)
     if with_mounted_fs:
         setup_mounted_fs(app)
     if with_outputs:
@@ -82,11 +84,16 @@ def state_list_dirs():
 
 
 @main.command()
-def state_save():
-    """Saves the state, usually workspace directory"""
+def state_save(*, enable_rabbitmq: Annotated[bool, typer.Option(help="allows to disable rabbitmq setup")] = True):
+    """Saves the state, usually workspace directory
+
+    NOTE: if rabbimq is causing issues it's possible to disable the setup (not necessary for this command)
+    """
 
     async def _async_save_state() -> None:
-        async with _initialized_app(with_mounted_fs=True, with_r_clone_mount_manager=True) as app:
+        async with _initialized_app(
+            with_rabbitmq=enable_rabbitmq, with_mounted_fs=True, with_r_clone_mount_manager=True
+        ) as app:
             settings: ApplicationSettings = app.state.settings
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
@@ -102,11 +109,14 @@ def state_save():
 
 
 @main.command()
-def outputs_push():
-    """Pushes the output ports"""
+def outputs_push(*, enable_rabbitmq: Annotated[bool, typer.Option(help="allows to disable rabbitmq setup")] = True):
+    """Pushes the output ports
+
+    NOTE: if rabbimq is causing issues it's possible to disable the setup (not necessary for this command)
+    """
 
     async def _async_outputs_push() -> None:
-        async with _initialized_app(with_mounted_fs=True, with_outputs=True) as app:
+        async with _initialized_app(with_rabbitmq=enable_rabbitmq, with_mounted_fs=True, with_outputs=True) as app:
             outputs_manager: OutputsManager = app.state.outputs_manager
             await push_user_services_output_ports(TaskProgress.create(), app=app, outputs_manager=outputs_manager)
 

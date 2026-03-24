@@ -57,15 +57,23 @@ def test_list_state_dirs(cli_runner: CliRunner):
     assert result.stdout.strip() == "\n".join([f"Entries in /data/state_dir{i}: []" for i in range(4)])
 
 
-def test_state_save_interface(cli_runner: CliRunner, mock_data_manager: None):
-    result = cli_runner.invoke(main, ["state-save"])
+@pytest.mark.parametrize("enable_rabbitmq", [True, False])
+def test_state_save_interface(cli_runner: CliRunner, mock_data_manager: None, enable_rabbitmq: bool):
+    cmd_args = ["state-save"]
+    if not enable_rabbitmq:
+        cmd_args.append("--no-enable-rabbitmq")
+    result = cli_runner.invoke(main, cmd_args)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert "state save finished successfully\n" in result.stdout
     print(result)
 
 
-def test_outputs_pushing_interface(cli_runner: CliRunner):
-    result = cli_runner.invoke(main, ["outputs-push"])
+@pytest.mark.parametrize("enable_rabbitmq", [True, False])
+def test_outputs_pushing_interface(cli_runner: CliRunner, enable_rabbitmq: bool):
+    cmd_args = ["outputs-push"]
+    if not enable_rabbitmq:
+        cmd_args.append("--no-enable-rabbitmq")
+    result = cli_runner.invoke(main, cmd_args)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert "output ports push finished successfully\n" in result.stdout
     print(result)
