@@ -923,11 +923,11 @@ class BaseCompScheduler(ABC):
         if not tasks_waiting_for_cluster:
             return comp_tasks
 
-        # get latest modified task
-        latest_modified_of_all_tasks = max(tasks_waiting_for_cluster, key=lambda task: task.modified).modified
+        if comp_run.last_result_changed is None:
+            return comp_tasks
 
         if (
-            arrow.utcnow().datetime - latest_modified_of_all_tasks
+            arrow.utcnow().datetime - comp_run.last_result_changed
         ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
             await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
                 project_id,
