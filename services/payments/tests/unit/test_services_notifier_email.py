@@ -248,6 +248,14 @@ async def test_create_user_email_logs_timeout_and_url_on_read_timeout(
     assert msg is not None
     assert msg["Subject"]
 
+    # No attachment is added when fetching invoice PDF times out
+    attachments = (
+        list(msg.iter_attachments())
+        if hasattr(msg, "iter_attachments")
+        else [part for part in msg.walk() if part.get_content_disposition() == "attachment" or part.get_filename()]
+    )
+    assert attachments == []
+
     # Log includes ReadTimeout-specific info
     assert "ReadTimeout fetching invoice PDF" in caplog.text
     assert str(invoice_pdf_url) in caplog.text
