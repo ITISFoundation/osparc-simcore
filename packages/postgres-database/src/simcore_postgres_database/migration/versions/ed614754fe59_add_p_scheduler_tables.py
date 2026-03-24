@@ -1,8 +1,8 @@
-"""added p_scheduler
+"""add p_scheduler tables
 
-Revision ID: 3dc2387fd92e
-Revises: 4c8dcaac4285
-Create Date: 2026-03-18 12:50:30.482436+00:00
+Revision ID: ed614754fe59
+Revises: 7f8d9b1c2e4f
+Create Date: 2026-03-24 13:13:01.494115+00:00
 
 """
 
@@ -11,8 +11,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "3dc2387fd92e"
-down_revision = "4c8dcaac4285"
+revision = "ed614754fe59"
+down_revision = "7f8d9b1c2e4f"
 branch_labels = None
 depends_on = None
 
