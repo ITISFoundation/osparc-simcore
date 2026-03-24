@@ -78,7 +78,7 @@ from simcore_service_webserver.constants import (
     INDEX_RESOURCE_NAME,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.notifications import notifications_service
+from simcore_service_webserver.notifications import _service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
@@ -878,7 +878,7 @@ def mocked_send_message_from_template_rpc(
         task_name="send_message_from_template",
     )
     mocker.patch(
-        f"{notifications_service.__name__}.remote_send_message_from_template",
+        f"{_service.__name__}.remote_send_message_from_template",
         autospec=True,
         return_value=fake_response,
     )
