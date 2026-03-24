@@ -97,6 +97,9 @@ qx.Class.define("osparc.po.UsersPending", {
   },
 
   members: {
+    __textFilter: null,
+    __currentFilterText: "",
+    __pendingUsers: null,
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -149,6 +152,20 @@ qx.Class.define("osparc.po.UsersPending", {
       this.getChildControl("intro-text");
       this.getChildControl("loading-spinner");
       this.__populatePendingUsersLayout();
+    },
+
+    __addFilter: function() {
+      if (this.__textFilter) {
+        return;
+      }
+
+      const filterGroupId = "pendingUsersLayout";
+      const filter = this.__textFilter = new osparc.filter.TextFilter("text", filterGroupId);
+      filter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name, email or status"));
+      this.getChildControl("header-layout").add(filter);
+
+      const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
+      qx.event.message.Bus.getInstance().subscribe(msgName, this.__onFilterChange, this);
     },
 
     __addHeader: function() {
@@ -277,7 +294,7 @@ qx.Class.define("osparc.po.UsersPending", {
       ])
         .then(resps => {
           this.getChildControl("loading-spinner").exclude();
-          this.__addHeader();
+          this.__addFilter();
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
           const sortByDate = (a, b) => {
@@ -289,7 +306,8 @@ qx.Class.define("osparc.po.UsersPending", {
           };
           pendingUsers.sort(sortByDate);
           reviewedUsers.sort(sortByDate);
-          this.__addRows(pendingUsers.concat(reviewedUsers));
+          this.__pendingUsers = pendingUsers.concat(reviewedUsers);
+          this.__renderPendingUsers();
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);
@@ -300,6 +318,38 @@ qx.Class.define("osparc.po.UsersPending", {
     __reload: function() {
       this.getChildControl("pending-users-layout").removeAll();
       this.__populatePendingUsersLayout();
+    },
+
+    __onFilterChange: function(msg) {
+      const data = msg ? msg.getData() : null;
+      this.__currentFilterText = data && data.text ? data.text : "";
+      this.__renderPendingUsers();
+    },
+
+    __filterPendingUsers: function() {
+      if (!this.__pendingUsers) {
+        return [];
+      }
+
+      const text = this.__currentFilterText.trim();
+      if (!text || text.length < 2) {
+        return this.__pendingUsers;
+      }
+
+      const query = text.toLowerCase();
+      return this.__pendingUsers.filter(pendingUser => {
+        const fullName = `${pendingUser.firstName || ""} ${pendingUser.lastName || ""}`.trim().toLowerCase();
+        const email = (pendingUser.email || "").toLowerCase();
+        const status = (pendingUser.accountRequestStatus || "").toLowerCase();
+        return [fullName, email, status].some(value => value.includes(query));
+      });
+    },
+
+    __renderPendingUsers: function() {
+      const pendingUsersLayout = this.getChildControl("pending-users-layout");
+      pendingUsersLayout.removeAll();
+      this.__addHeader();
+      this.__addRows(this.__filterPendingUsers());
     },
 
     __createApproveButton: function(email) {
