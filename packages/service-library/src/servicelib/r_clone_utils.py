@@ -1,7 +1,7 @@
 import asyncio
 from typing import Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import PositiveInt
 
