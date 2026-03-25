@@ -47,4 +47,6 @@ async def get_r_clone_version() -> str:
     if len(parts) < _MINIMUM_R_CLONE_VERSION_PARTS:
         raise RCloneVersionParseError(first_line=first_line)
 
-    return parts[1].lstrip("v")
+    version_part = parts[1]
+    assert version_part.startswith("v")  # nosec
+    return version_part.lstrip("v")
