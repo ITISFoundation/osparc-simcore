@@ -147,9 +147,6 @@ class RCloneMountManager:
         self.r_clone_settings = r_clone_settings
         self.requires_data_mounting = requires_data_mounting
         self.delegate = delegate
-        if r_clone_settings.R_CLONE_VERSION is None:
-            msg = "R_CLONE_VERSION setting is not set"
-            raise RuntimeError(msg)
 
         self._tracked_mounts: dict[MountId, _TrackedMount] = {}
         self._task_ensure_mounts_working: asyncio.Task[None] | None = None
