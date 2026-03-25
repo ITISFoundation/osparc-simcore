@@ -45,7 +45,6 @@ def mock_environment(
     bucket: str,
     swarm_stack_name: str,
     docker_node_id: DockerNodeID,
-    r_clone_version: str,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
