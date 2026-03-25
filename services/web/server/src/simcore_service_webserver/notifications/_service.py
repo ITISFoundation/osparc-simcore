@@ -2,7 +2,6 @@ from dataclasses import asdict
 from typing import Any, Final
 
 from aiohttp import web
-from common_library.network import NO_REPLY_LOCAL, replace_email_parts
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
@@ -94,10 +93,7 @@ async def _create_email_message(
 
     from_contact = EmailContact(
         name=f"{product.display_name} Support",
-        email=replace_email_parts(
-            product.support_email,
-            new_local=NO_REPLY_LOCAL,
-        ),
+        email=product.support_email,
     )
 
     to_contacts: list[EmailContact] = []
