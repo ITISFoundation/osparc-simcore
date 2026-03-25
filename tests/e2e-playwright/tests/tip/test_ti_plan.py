@@ -5,8 +5,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import contextlib
-import json
 import logging
 import re
 from collections.abc import Callable
@@ -29,7 +27,6 @@ from pytest_simcore.helpers.playwright import (
 )
 from tenacity import RetryError, retry, stop_after_delay, wait_fixed
 
-_GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/storage/locations/[^/]+/files")
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
 
@@ -65,23 +62,6 @@ class _JLabWaitForWebSocket:
             return bool(re.search("/api/kernels/[^/]+/channels", new_websocket.url))
 
 
-@dataclass
-class _JLabWebSocketWaiter:
-    expected_header_msg_type: str
-    expected_message_contents: str
-
-    def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
-            with contextlib.suppress(json.JSONDecodeError, UnicodeDecodeError):
-                decoded_message = json.loads(message)
-                msg_type: str = decoded_message.get("header", {}).get("msg_type", "")
-                msg_contents: str = decoded_message.get("content", {}).get("text", "")
-                if (msg_type == self.expected_header_msg_type) and (self.expected_message_contents in msg_contents):
-                    return True
-
-            return False
-
-
 @retry(
     stop=stop_after_delay(_JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(2),
@@ -90,7 +70,8 @@ class _JLabWebSocketWaiter:
 def _wait_for_optimization_complete(run_button):
     bg_color = run_button.evaluate("el => getComputedStyle(el).backgroundColor")
     if bg_color != "rgb(0, 128, 0)":
-        raise ValueError("Optimization not finished yet: {bg_color=}, {run_button=}")
+        msg = "Optimization not finished yet: {bg_color=}, {run_button=}"
+        raise ValueError(msg)
 
 
 def test_classic_ti_plan(  # noqa: PLR0915

@@ -54,13 +54,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     ] = DEFAULT_FACTORY
 
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str
-    AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION: Annotated[
-        str,
-        Field(
-            pattern=r"^\d+\.\d+\.\d+$",
-            description="version of rclone for the container image",
-        ),
-    ]
     AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl
     AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: str

@@ -13,21 +13,20 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
+    HttpUrl,
     ValidationInfo,
     field_validator,
     model_validator,
 )
 from pydantic.config import JsonDict
 
-from models_library.groups import AccessRightsDict
-from models_library.rest_filters import Filters
-from models_library.rest_pagination import PageQueryParameters
-
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..rest_filters import Filters
+from ..rest_pagination import PageQueryParameters
 from ..string_types import (
     GlobPatternSafeStr,
     SearchPatternSafeStr,
@@ -50,6 +49,7 @@ from ._base import (
     OutputSchemaWithoutCamelCase,
 )
 from .groups import MyGroupsGet
+from .notifications import MessageContent, MessageContentGet
 from .products import TrialAccountAnnotated, WelcomeCreditsAnnotated
 from .users_preferences import AggregatedPreferences
 
@@ -240,7 +240,10 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     def _validate_user_name(cls, value: str):
         # Ensure valid characters (alphanumeric + . _ -)
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9._-]*$", value):
-            msg = f"Username '{value}' must start with a letter and can only contain letters, numbers and '_', '.' or '-'."
+            msg = (
+                f"Username '{value}' must start with a letter and can only "
+                "contain letters, numbers and '_', '.' or '-'."
+            )
             raise ValueError(msg)
 
         # Ensure no consecutive special characters
@@ -324,13 +327,43 @@ class _InvitationDetails(InputSchema):
     extra_credits_in_usd: WelcomeCreditsAnnotated = None
 
 
+#
+# Account approval
+#
+
+
 class UserAccountApprove(InputSchema):
     email: EmailStr
-    invitation: _InvitationDetails | None = None
+    invitation_url: HttpUrl
+    message_content: MessageContent | None = None
+
+
+class UserAccountPreviewApproval(InputSchema):
+    email: EmailStr
+    invitation: _InvitationDetails
+
+
+class UserAccountPreviewApprovalGet(OutputSchema):
+    invitation_url: HttpUrl
+    message_content: MessageContentGet | None = None
+
+
+#
+# Account rejection
+#
 
 
 class UserAccountReject(InputSchema):
     email: EmailStr
+    message_content: MessageContent | None = None
+
+
+class UserAccountPreviewRejection(InputSchema):
+    email: EmailStr
+
+
+class UserAccountPreviewRejectionGet(OutputSchema):
+    message_content: MessageContentGet | None = None
 
 
 class UserAccountSearchQueryParams(RequestParameters):

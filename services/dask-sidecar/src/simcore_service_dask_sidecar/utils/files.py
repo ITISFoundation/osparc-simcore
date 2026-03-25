@@ -37,11 +37,11 @@ def _file_progress_cb(
     main_loop: asyncio.AbstractEventLoop,
     **kwargs,  # noqa: ARG001
 ):
+    value_readable = ByteSize(value).human_readable() if value else 0
+    size_readable = ByteSize(size).human_readable() if size else "NaN"
     asyncio.run_coroutine_threadsafe(
         log_publishing_cb(
-            f"{text_prefix}"
-            f" {100.0 * float(value or 0) / float(size or 1):.1f}%"
-            f" ({ByteSize(value).human_readable() if value else 0} / {ByteSize(size).human_readable() if size else 'NaN'})",
+            f"{text_prefix} {100.0 * float(value or 0) / float(size or 1):.1f}% ({value_readable} / {size_readable})",
             logging.DEBUG,
         ),
         main_loop,
@@ -68,8 +68,8 @@ _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 
 def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict:
     s3fs_settings: S3FsSettingsDict = {
-        "key": s3_settings.S3_ACCESS_KEY,
-        "secret": s3_settings.S3_SECRET_KEY,
+        "key": s3_settings.S3_ACCESS_KEY.get_secret_value(),
+        "secret": s3_settings.S3_SECRET_KEY.get_secret_value(),
         "client_kwargs": {},
         "config_kwargs": {
             # This setting tells the S3 client to only calculate checksums when explicitly required
@@ -126,7 +126,8 @@ async def _copy_file(
             await log_publishing_cb(
                 f"{text_prefix}"
                 f" {100.0 * float(total_data_written or 0) / float(file_size or 1):.1f}%"
-                f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+                f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / "
+                f"{ByteSize(file_size).human_readable() if file_size else 'NaN'})"
                 f" [{ByteSize(total_data_written).to('MB') / elapsed_time:.2f} MBytes/s (avg)]",
                 logging.DEBUG,
             )

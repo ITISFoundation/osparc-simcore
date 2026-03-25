@@ -13,6 +13,7 @@ from models_library.api_schemas_directorv2.services import (
 )
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.r_clone_utils import get_r_clone_version
 from starlette import status
 
 from ..core.settings import ApplicationSettings
@@ -141,7 +142,7 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
                     f"lazy unmount of stale mountpoint '{mountpoint}' for volume '{volume_name}'",
                     log_duration=True,
                 ):
-                    await _try_lazy_unmount(docker, mountpoint, settings.AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION)
+                    await _try_lazy_unmount(docker, mountpoint)
 
             await volume.delete(force=True)
 
@@ -155,8 +156,10 @@ def _find_volumes_root(path: Path) -> Path:
     return Path(*parts[: first_occurrence + 1])
 
 
-async def _try_lazy_unmount(docker: Docker, mountpoint: Path, r_clone_version: str) -> None:
+async def _try_lazy_unmount(docker: Docker, mountpoint: Path) -> None:
     volumes_root = _find_volumes_root(mountpoint)
+
+    r_clone_version = await get_r_clone_version()
 
     container = await docker.containers.run(
         config={

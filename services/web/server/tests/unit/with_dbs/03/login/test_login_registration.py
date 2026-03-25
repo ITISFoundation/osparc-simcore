@@ -5,6 +5,7 @@
 
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
+from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -14,7 +15,7 @@ from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_error, assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser, parse_link
+from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
@@ -24,6 +25,7 @@ from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,
 )
 from simcore_service_webserver.login._confirmation_web import _url_for_confirmation
+from simcore_service_webserver.login._controller.rest import registration
 from simcore_service_webserver.login.constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
     MSG_LOGGED_IN,
@@ -35,6 +37,7 @@ from simcore_service_webserver.login.settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
+from yarl import URL
 
 
 @pytest.fixture
@@ -53,6 +56,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 
 async def test_register_entrypoint(
     client: TestClient,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
     user_email: str,
     user_password: str,
     cleanup_db_tables: None,
@@ -150,7 +154,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
+        f"{registration.__name__}.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
@@ -297,11 +301,10 @@ async def test_registration_without_confirmation(
 
 async def test_registration_with_confirmation(
     client: TestClient,
-    capsys: pytest.CaptureFixture,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
     mocker: MockerFixture,
     user_email: str,
     user_password: str,
-    mocked_email_core_remove_comments: None,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -337,10 +340,12 @@ async def test_registration_with_confirmation(
 
     assert "verification link" in data["message"]
 
-    # retrieves sent link by email (see monkeypatch of email in conftest.py)
-    out, _ = capsys.readouterr()
-    confirmation_url = parse_link(out)
-    assert "/auth/confirmation/" in str(confirmation_url)
+    # retrieves sent link from notification service mock
+    mocked_notifications_service_send_message_from_template.assert_called_once()
+    notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
+    assert notification_context["link"] is not None
+    confirmation_url = URL(notification_context["link"]).path
+    assert "/auth/confirmation/" in f"{confirmation_url}"
     response = await client.get(confirmation_url)
     text = await response.text()
 

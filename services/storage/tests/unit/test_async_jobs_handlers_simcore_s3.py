@@ -20,8 +20,8 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from celery.worker.worker import WorkController
+from celery_library import CeleryTaskManager
 from celery_library.async_jobs import submit_job, wait_and_get_job_result
-from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -36,6 +36,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
@@ -54,7 +55,6 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -93,7 +93,7 @@ async def _request_copy_folders(
 
         async_job = await submit_job(
             task_manager,
-            execution_metadata=ExecutionMetadata(name="deep_copy_files_from_project"),
+            execution_metadata=TaskExecutionMetadata(name="deep_copy_files_from_project"),
             owner_metadata=owner_metadata,
             user_id=user_id,
             body=FoldersBody(source=source_project, destination=dst_project, nodes_map=nodes_map),
@@ -517,7 +517,7 @@ async def _request_start_export_data(
 
         async_job = await submit_job(
             task_manager,
-            execution_metadata=ExecutionMetadata(name=task_name),
+            execution_metadata=TaskExecutionMetadata(name=task_name),
             owner_metadata=owner_metadata,
             user_id=user_id,
             product_name=product_name,

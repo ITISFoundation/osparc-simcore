@@ -246,9 +246,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.initStudy();
 
-      if (osparc.product.Utils.hasIdlingTrackerEnabled()) {
-        this.__startIdlingTracker();
-      }
+      this.__startIdlingTracker();
 
       // Count dynamic services.
       // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
@@ -349,7 +347,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (data["projectId"] === this.getStudy().getUuid()) {
             if (data["clientSessionId"] && data["clientSessionId"] === osparc.utils.Utils.getClientSessionID()) {
               // ignore my own updates
-              console.debug("ProjectDocument Discarded: My own", data);
               return;
             }
             this.__projectDocumentReceived(data);
@@ -364,7 +361,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       // Ignore outdated updates
       if (this.__lastSyncedProjectVersion && documentVersion <= this.__lastSyncedProjectVersion) {
         // ignore old updates
-        console.debug("ProjectDocument Discarded: Ignoring old", data);
         return;
       }
 
@@ -375,7 +371,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // Reset the timer if it's already running
       if (this.__applyProjectDocumentTimer) {
-        console.debug("ProjectDocument Discarded: Resetting applyProjectDocument timer");
         clearTimeout(this.__applyProjectDocumentTimer);
       }
 
@@ -400,7 +395,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __applyProjectDocument: function(data) {
-      console.debug("ProjectDocument applying:", data);
       this.__lastSyncedProjectVersion = data["version"];
       const updatedProjectDocument = data["document"];
 
@@ -412,7 +406,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.self().curateFrontendProjectDocument(myStudy);
 
       this.__blockUpdates = true;
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedProjectDocument);
+      const delta = this.__calculateDelta(myStudy, updatedProjectDocument);
       const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
       const uiPatches = [];
       const workbenchPatches = [];
@@ -661,7 +655,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const nodesSlidesTree = this.__nodesSlidesTree = new osparc.widget.NodesSlidesTree(study);
       const title = this.tr("Edit App Mode");
       const nNodes = Object.keys(study.getWorkbench().getNodes()).length;
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 370, Math.min(350, 200+(30*nNodes))).set({
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 380, Math.min(350, 200+(30*nNodes))).set({
         modal: false,
         clickAwayClose: false
       });
@@ -670,9 +664,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__workbenchView.getNodesTree().nodeSelected(nodeId);
         this.__workbenchView.getWorkbenchUI().nodeSelected(nodeId);
       });
-      nodesSlidesTree.addListener("finished", () => {
-        const slideshow = study.getUi().getSlideshow();
-        slideshow.fireEvent("changeSlideshow");
+      nodesSlidesTree.addListener("close", () => {
         this.__nodesSlidesTree = null;
         win.close();
       });
@@ -942,14 +934,34 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         sourceStudy,
         delta: {},
       }
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__lastSyncedProjectDocument, sourceStudy);
+      const delta = this.__calculateDelta(this.__lastSyncedProjectDocument, sourceStudy);
       if (delta) {
-        // lastChangeDate and creationDate should not be taken into account as data change
-        delete delta["creationDate"];
-        delete delta["lastChangeDate"];
         studyDiffs.delta = delta;
       }
       return studyDiffs;
+    },
+
+    __calculateDelta: function(studyA, studyB) {
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(studyA, studyB);
+      // curate delta
+      if (delta) {
+        delete delta["prjOwner"];
+        // lastChangeDate and creationDate should not be taken into account as data change
+        delete delta["creationDate"];
+        delete delta["lastChangeDate"];
+        // Handle edge case: empty string vs null is not a real change
+        ["thumbnail", "description"].forEach(prop => {
+          if (
+            prop in delta &&
+            Object.keys(delta[prop]).length === 2 &&
+            (delta[prop][0] === "" || delta[prop][0] === null) &&
+            (delta[prop][1] === "" || delta[prop][1] === null)
+          ) {
+            delete delta[prop];
+          }
+        });
+      }
+      return delta;
     },
 
     // didStudyChange takes around 0.5ms

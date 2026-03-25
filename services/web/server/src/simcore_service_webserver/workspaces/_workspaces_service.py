@@ -121,7 +121,7 @@ async def delete_workspace_with_all_content(
 
         # Delete projects properly
         for project_uuid in workspace_root_projects:
-            await delete_project_by_user(app, project_uuid=project_uuid, user_id=user_id)
+            await delete_project_by_user(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name)
 
     # Get all root folders
     for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):

@@ -30,13 +30,6 @@ except ImportError:
     HAS_ASYNCPG = False
 
 try:
-    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-
-    HAS_AIOPG = True
-except ImportError:
-    HAS_AIOPG = False
-
-try:
     from opentelemetry.instrumentation.redis import RedisInstrumentor
 
     HAS_REDIS = True
@@ -67,6 +60,13 @@ try:
     HAS_AIOPIKA_INSTRUMENTOR = True
 except ImportError:
     HAS_AIOPIKA_INSTRUMENTOR = False
+
+try:
+    from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
+
+    HAS_AIOHTTP_CLIENT = True
+except ImportError:
+    HAS_AIOHTTP_CLIENT = False
 
 
 def _create_span_processor(tracing_destination: str) -> SpanProcessor:
@@ -102,13 +102,6 @@ def _startup(
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
 
-    if HAS_AIOPG:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
-        ):
-            AiopgInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_context(
             _logger,
@@ -145,14 +138,19 @@ def _startup(
         ):
             RequestsInstrumentor().instrument(tracer_provider=tracer_provider)
 
+    if HAS_AIOHTTP_CLIENT:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add aiohttp client opentelemetry autoinstrumentation...",
+        ):
+            AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
+
 
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         FastAPIInstrumentor().uninstrument()
-    if HAS_AIOPG:
-        with log_catch(_logger, reraise=False):
-            AiopgInstrumentor().uninstrument()
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_catch(_logger, reraise=False):
             AioPikaInstrumentor().uninstrument()
@@ -168,6 +166,9 @@ def _shutdown() -> None:
     if HAS_REQUESTS:
         with log_catch(_logger, reraise=False):
             RequestsInstrumentor().uninstrument()
+    if HAS_AIOHTTP_CLIENT:
+        with log_catch(_logger, reraise=False):
+            AioHttpClientInstrumentor().uninstrument()
 
 
 def initialize_fastapi_app_tracing(

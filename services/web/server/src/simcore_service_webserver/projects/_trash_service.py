@@ -16,8 +16,7 @@ from servicelib.utils import fire_and_forget_task
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from . import _crud_api_read, _projects_service, _projects_service_delete
-from . import _projects_repository as _projects_repository
+from . import _crud_api_read, _projects_repository, _projects_service, _projects_service_delete
 from ._access_rights_service import check_user_project_permission
 from .exceptions import (
     ProjectNotFoundError,
@@ -66,7 +65,9 @@ async def trash_project(
 
     if force_stop_first:
         fire_and_forget_task(
-            _projects_service_delete.batch_stop_services_in_project(app, user_id=user_id, project_uuid=project_id),
+            _projects_service_delete.batch_stop_services_in_project(
+                app, user_id=user_id, project_uuid=project_id, product_name=product_name
+            ),
             task_suffix_name=f"trash_project_force_stop_first_{user_id=}_{project_id=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
@@ -185,6 +186,7 @@ async def delete_explicitly_trashed_project(
     *,
     user_id: UserID,
     project_id: ProjectID,
+    product_name: ProductName,
     until_equal_datetime: datetime | None = None,
 ) -> None:
     """
@@ -211,6 +213,7 @@ async def delete_explicitly_trashed_project(
         app,
         user_id=user_id,
         project_uuid=project_id,
+        product_name=product_name,
     )
 
 
@@ -243,6 +246,7 @@ async def batch_delete_trashed_projects_as_admin(
                 await _projects_service_delete.delete_project_as_admin(
                     app,
                     project_uuid=project.uuid,
+                    product_name=project.product_name,
                 )
                 deleted_project_ids.append(project.uuid)
             except Exception as err:  # pylint: disable=broad-exception-caught
@@ -292,6 +296,7 @@ async def batch_delete_projects_in_root_workspace_as_admin(
                 await _projects_service_delete.delete_project_as_admin(
                     app,
                     project_uuid=project.uuid,
+                    product_name=project.product_name,
                 )
                 deleted_project_ids.append(project.uuid)
             except Exception as err:  # pylint: disable=broad-exception-caught

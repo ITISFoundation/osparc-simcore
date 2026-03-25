@@ -62,9 +62,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -115,9 +114,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -187,9 +185,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -260,9 +257,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -378,9 +374,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -476,9 +471,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -555,9 +549,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -689,9 +682,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -753,9 +745,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -817,9 +808,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -907,9 +897,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -969,9 +958,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -1033,9 +1021,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1150,9 +1137,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1203,9 +1189,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -1215,7 +1200,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_S3Settings_"
+                  "$ref": "#/components/schemas/Envelope_S3SettingsGet_"
                 }
               }
             }
@@ -1256,9 +1241,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1310,9 +1294,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1832,12 +1815,12 @@
         "type": "object",
         "title": "Envelope[PathTotalSizeCreate]"
       },
-      "Envelope_S3Settings_": {
+      "Envelope_S3SettingsGet_": {
         "properties": {
           "data": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/S3Settings"
+                "$ref": "#/components/schemas/S3SettingsGet"
               },
               {
                 "type": "null"
@@ -1855,7 +1838,7 @@
           }
         },
         "type": "object",
-        "title": "Envelope[S3Settings]"
+        "title": "Envelope[S3SettingsGet]"
       },
       "Envelope_dict_": {
         "properties": {
@@ -2210,8 +2193,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": true,
-                "minimum": 0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -2521,17 +2503,15 @@
         ],
         "title": "PathTotalSizeCreate"
       },
-      "S3Settings": {
+      "S3SettingsGet": {
         "properties": {
           "S3_ACCESS_KEY": {
             "type": "string",
-            "maxLength": 50,
-            "minLength": 1,
             "title": "S3 Access Key"
           },
           "S3_BUCKET_NAME": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "S3 Bucket Name"
           },
@@ -2551,14 +2531,12 @@
           },
           "S3_REGION": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "S3 Region"
           },
           "S3_SECRET_KEY": {
             "type": "string",
-            "maxLength": 50,
-            "minLength": 1,
             "title": "S3 Secret Key"
           }
         },
@@ -2569,7 +2547,7 @@
           "S3_REGION",
           "S3_SECRET_KEY"
         ],
-        "title": "S3Settings"
+        "title": "S3SettingsGet"
       },
       "SoftCopyBody": {
         "properties": {
@@ -2589,9 +2567,8 @@
         "properties": {
           "number": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Number",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Number"
           },
           "e_tag": {
             "type": "string",

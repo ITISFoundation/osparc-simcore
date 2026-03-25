@@ -56,11 +56,24 @@ async def create_user_pre_registration(
     async with transaction_context(engine, connection) as conn:
         # If link_to_existing_user is True, try to find a matching user
         user_id = None
+        user_has_product_access = False
         if link_to_existing_user:
             result = await conn.execute(sa.select(users.c.id).where(users.c.email == email))
             user = result.one_or_none()
             if user:
                 user_id = user.id
+                user_has_product_access = bool(
+                    await conn.scalar(
+                        sa.select(users.c.id)
+                        .select_from(
+                            users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
+                                products,
+                                products.c.group_id == user_to_groups.c.gid,
+                            )
+                        )
+                        .where((users.c.id == user_id) & (products.c.name == product_name))
+                    )
+                )
 
         # Insert the pre-registration record
         values = {
@@ -76,6 +89,11 @@ async def create_user_pre_registration(
         # Add user_id if found
         if user_id is not None:
             values["user_id"] = user_id
+            if user_has_product_access:
+                values["account_request_status"] = AccountRequestStatus.APPROVED
+                values["account_request_reviewed_at"] = sa.func.now()
+                if created_by is not None:
+                    values["account_request_reviewed_by"] = created_by
 
         result = await conn.execute(
             sa.insert(users_pre_registration_details).values(**values).returning(users_pre_registration_details.c.id)
@@ -512,10 +530,7 @@ async def list_merged_pre_and_registered_users(
     # If filtering by account request status, we only want pre-registered users with any of those statuses
     # No need to union with regular users as they don't have account_request_status
     merged_query: sa.sql.Select | sa.sql.CompoundSelect
-    if filter_any_account_request_status:
-        merged_query = pre_reg_query
-    else:
-        merged_query = pre_reg_query.union_all(users_query)
+    merged_query = pre_reg_query if filter_any_account_request_status else pre_reg_query.union_all(users_query)
 
     # Add distinct on email to eliminate duplicates
     merged_query_subq = merged_query.subquery()

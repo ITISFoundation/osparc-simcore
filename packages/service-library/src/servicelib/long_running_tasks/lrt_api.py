@@ -9,6 +9,7 @@ from .models import (
     TaskContext,
     TaskId,
     TaskStatus,
+    TaskUniqueness,
 )
 
 
@@ -17,7 +18,7 @@ async def start_task(
     lrt_namespace: LRTNamespace,
     registered_task_name: RegisteredTaskName,
     *,
-    unique: bool = False,
+    uniqueness: TaskUniqueness = TaskUniqueness.NONE,
     task_context: TaskContext | None = None,
     task_name: str | None = None,
     fire_and_forget: bool = False,
@@ -37,8 +38,9 @@ async def start_task(
     Args:
         tasks_manager (TasksManager): the tasks manager
         task (TaskProtocol): the tasks to be run in the background
-        unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
-        task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
+        uniqueness (TaskUniqueness, optional): enforces task uniqueness
+        task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task
+            lifetime. Defaults to None.
         task_name (Optional[str], optional): optional task name. Defaults to None.
         fire_and_forget: if True, then the task will not be cancelled if the status is never called
 
@@ -53,7 +55,7 @@ async def start_task(
         rabbitmq_rpc_client,
         lrt_namespace,
         registered_task_name=registered_task_name,
-        unique=unique,
+        uniqueness=uniqueness,
         task_context=task_context,
         task_name=task_name,
         fire_and_forget=fire_and_forget,

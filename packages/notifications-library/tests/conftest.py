@@ -12,9 +12,13 @@ import pytest
 from faker import Faker
 from models_library.products import ProductName
 from notifications_library._models import (
+    CompanyLink,
     ProductData,
+    ProductFooterData,
     ProductUIData,
+    ShareLink,
     SharerData,
+    SocialLink,
     UserData,
 )
 from notifications_library.payments import PaymentData
@@ -68,6 +72,21 @@ def product_data(
         strong_color=vendor_ui.get("strong_color"),
     )
 
+    footer_data = ProductFooterData(
+        social_links=[
+            SocialLink(name=link_name, url=link_url) for link_name, link_url in vendor.get("footer_social_links", [])
+        ],
+        share_links=[
+            ShareLink(name=share_name, label=share_label, url=share_url)
+            for share_name, share_label, share_url in vendor.get("footer_share_links", [])
+        ],
+        company_name=vendor.get("company_name", ""),
+        company_address=vendor.get("company_address", ""),
+        company_links=[
+            CompanyLink(name=link_name, url=link_url) for link_name, link_url in vendor.get("company_links", [])
+        ],
+    )
+
     return ProductData(  # type: ignore
         product_name=product_name,
         display_name=product["display_name"],
@@ -75,6 +94,7 @@ def product_data(
         support_email=product["support_email"],
         homepage_url=vendor.get("url"),
         ui=product_ui,
+        footer=footer_data,
     )
 
 

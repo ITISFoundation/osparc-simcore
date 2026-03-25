@@ -173,6 +173,10 @@ class ServicesInstrumentation(BaseModel):
         None,
         description="moment in which the process of stopping the service was requested",
     )
+    request_trace_carrier: dict[str, str] | None = Field(
+        None,
+        description="W3C traceparent and tracestate headers from the originating request for span linking",
+    )
 
     def elapsed_since_start_request(self) -> float | None:
         if self.start_requested_at is None:

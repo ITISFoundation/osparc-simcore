@@ -1,7 +1,7 @@
 import logging
 from contextlib import suppress
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import Final
 from uuid import uuid4
 
 from aws_library.s3 import S3MetaData, SimcoreS3API
@@ -22,10 +22,10 @@ from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.bytes_iters import ArchiveEntries, get_zip_bytes_iter
 from servicelib.progress_bar import ProgressBarData
 from servicelib.s3_utils import FileLikeBytesIterReader
-from servicelib.utils import ensure_ends_with
+from servicelib.utils import ensure_ends_with, limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..constants import EXPORTS_S3_PREFIX
+from ..constants import EXPORTS_S3_PREFIX, MAX_CONCURRENT_S3_TASKS
 from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db.access_layer import AccessLayerRepository
@@ -159,7 +159,7 @@ def ensure_user_selection_from_same_base_directory(
     return len(set(parents)) <= 1
 
 
-UserSelectionStr: TypeAlias = str
+type UserSelectionStr = str
 
 
 def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> str:
@@ -215,15 +215,25 @@ async def create_and_upload_export(
         project_uuids=_get_project_ids(user_selection={x[0] for x in source_object_keys})
     )
 
+    # Build list of (selection, s3_object) pairs to maintain order
+    source_keys_list = list(source_object_keys)
+
+    # Parallelize HEAD requests for all files (required to get file sizes)
+    byte_streamers = await limited_gather(
+        *[s3_client.get_bytes_streamer_from_object(bucket, s3_object) for (_, s3_object) in source_keys_list],
+        limit=MAX_CONCURRENT_S3_TASKS,
+    )
+
+    # Build archive entries with the parallelized results
     archive_entries: ArchiveEntries = [
         (
             _base_path_parent(
                 _replace_node_id_project_id_in_path(ids_names_map, selection),
                 _replace_node_id_project_id_in_path(ids_names_map, s3_object),
             ),
-            await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
+            streamer,
         )
-        for (selection, s3_object) in source_object_keys
+        for (selection, s3_object), streamer in zip(source_keys_list, byte_streamers, strict=True)
     ]
 
     async with progress_bar:

@@ -2,6 +2,7 @@
 from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import auto
 from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
@@ -17,6 +18,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, model_validator
 
 type TaskType = Callable[..., Coroutine[Any, Any, Any]]
@@ -29,6 +31,12 @@ type TaskContext = dict[str, Any]
 type LRTNamespace = str
 
 type RegisteredTaskName = str
+
+
+class TaskUniqueness(StrAutoEnum):
+    NONE = auto()  # No uniqueness enforced
+    BY_NAME = auto()  # Only one task with this name
+    BY_NAME_AND_ARGS = auto()  # Only one task with this name and these args
 
 
 class ResultField(BaseModel):
@@ -137,6 +145,5 @@ __all__: tuple[str, ...] = (
     "TaskProgress",
     "TaskResult",
     "TaskStatus",
+    "TaskUniqueness",
 )
-
-# nopycln: file

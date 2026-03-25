@@ -491,7 +491,10 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                         attempt.retry_state.attempt_number,
                     )
                     resp = await client.get(url.path)
-                    if resp.status == status.HTTP_200_OK:
+                    if resp.status in {
+                        status.HTTP_200_OK,
+                        status.HTTP_403_FORBIDDEN,
+                    }:
                         raise tenacity.TryAgain
 
                     await assert_status(resp, status.HTTP_404_NOT_FOUND)

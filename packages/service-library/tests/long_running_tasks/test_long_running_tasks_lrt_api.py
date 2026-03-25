@@ -13,7 +13,7 @@ from pydantic import NonNegativeInt
 from pytest_simcore.helpers.long_running_tasks import assert_task_is_no_longer_present
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.manager import LongRunningManager
-from servicelib.long_running_tasks.models import LRTNamespace, TaskContext
+from servicelib.long_running_tasks.models import LRTNamespace, TaskContext, TaskUniqueness
 from servicelib.long_running_tasks.task import TaskId, TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
@@ -148,13 +148,17 @@ async def _assert_list_tasks_from_all_managers(
 
 
 _TASK_CONTEXT: Final[list[TaskContext | None]] = [{"a": "context"}, None]
-_IS_UNIQUE: Final[list[bool]] = [False, True]
+_UNIQUENESS: Final[list[TaskUniqueness]] = [
+    TaskUniqueness.NONE,
+    TaskUniqueness.BY_NAME,
+    TaskUniqueness.BY_NAME_AND_ARGS,
+]
 _TASK_COUNT: Final[list[int]] = [5]
 
 
 @pytest.mark.parametrize("task_count", _TASK_COUNT)
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
-@pytest.mark.parametrize("is_unique", _IS_UNIQUE)
+@pytest.mark.parametrize("uniqueness", _UNIQUENESS)
 @pytest.mark.parametrize("to_return", [{"key": "value"}])
 async def test_workflow_with_result(
     disable_stale_tasks_monitor: None,
@@ -162,12 +166,12 @@ async def test_workflow_with_result(
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
-    is_unique: bool,
+    uniqueness: TaskUniqueness,
     task_context: TaskContext | None,
     to_return: Any,
 ):
     saved_context = task_context or {}
-    task_count = 1 if is_unique else task_count
+    task_count = 1 if uniqueness != TaskUniqueness.NONE else task_count
 
     task_ids: list[TaskId] = []
     for _ in range(task_count):
@@ -175,7 +179,7 @@ async def test_workflow_with_result(
             _get_long_running_manager(long_running_managers).rpc_client,
             _get_long_running_manager(long_running_managers).lrt_namespace,
             _task_echo_input.__name__,
-            unique=is_unique,
+            uniqueness=uniqueness,
             task_name=None,
             task_context=task_context,
             fire_and_forget=False,
@@ -207,18 +211,18 @@ async def test_workflow_with_result(
 
 @pytest.mark.parametrize("task_count", _TASK_COUNT)
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
-@pytest.mark.parametrize("is_unique", _IS_UNIQUE)
+@pytest.mark.parametrize("uniqueness", _UNIQUENESS)
 async def test_workflow_raises_error(
     disable_stale_tasks_monitor: None,
     fast_long_running_tasks_cancellation: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
-    is_unique: bool,
+    uniqueness: TaskUniqueness,
     task_context: TaskContext | None,
 ):
     saved_context = task_context or {}
-    task_count = 1 if is_unique else task_count
+    task_count = 1 if uniqueness != TaskUniqueness.NONE else task_count
 
     task_ids: list[TaskId] = []
     for _ in range(task_count):
@@ -226,7 +230,7 @@ async def test_workflow_raises_error(
             _get_long_running_manager(long_running_managers).rpc_client,
             _get_long_running_manager(long_running_managers).lrt_namespace,
             _task_always_raise.__name__,
-            unique=is_unique,
+            uniqueness=uniqueness,
             task_name=None,
             task_context=task_context,
             fire_and_forget=False,
@@ -256,20 +260,20 @@ async def test_workflow_raises_error(
 
 
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
-@pytest.mark.parametrize("is_unique", _IS_UNIQUE)
+@pytest.mark.parametrize("uniqueness", _UNIQUENESS)
 async def test_remove_task(
     disable_stale_tasks_monitor: None,
     fast_long_running_tasks_cancellation: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    is_unique: bool,
+    uniqueness: TaskUniqueness,
     task_context: TaskContext | None,
 ):
     task_id = await lrt_api.start_task(
         _get_long_running_manager(long_running_managers).rpc_client,
         _get_long_running_manager(long_running_managers).lrt_namespace,
         _task_takes_too_long.__name__,
-        unique=is_unique,
+        uniqueness=uniqueness,
         task_name=None,
         task_context=task_context,
         fire_and_forget=False,

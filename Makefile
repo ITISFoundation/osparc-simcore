@@ -364,9 +364,11 @@ printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc
 printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Dy-scheduler Dashboard" "http://$(get_my_ip).nip.io:8012";\
+printf "$$rows" "Flower" "http://$(get_my_ip).nip.io:5555";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
+printf "$$rows" "Mailpit" "http://$(get_my_ip).nip.io:8025";\
 printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
 printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
@@ -426,18 +428,18 @@ else
 endif
 	@$(_show_endpoints)
 
-# Infrastructure services for phased deployment
-INFRA_SERVICES := postgres redis rabbit migration
+# Batched stack deployment
+PHASED_DEPLOY_BATCH_SIZE ?= 5
 MAX_WAIT_ITERATIONS := 150
 WAIT_INTERVAL_SECS := 2
 YQ_IMAGE := mikefarah/yq:4
 
-# Generate yq filter for keeping only infra services
-# e.g., ".key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration""
-_YQ_INFRA_FILTER := $(shell echo $(INFRA_SERVICES) | awk '{for(i=1;i<=NF;i++) printf "%s.key == \"%s\"%s", (i>1?" or ":""), $$i, (i<NF?"":" ")}')
+# Extract services in docker-compose.yml order (authoritative desired order)
+# Outputs one service name per line.
+_YQ_STACK_SERVICES_ORDERED := '.services | keys | .[]'
 
 define _wait_for_running
-	@count=0; \
+	count=0; \
 	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
 		running=$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
 		[ "$$running" -gt 0 ] && break; \
@@ -449,23 +451,43 @@ define _wait_for_running
 		echo " OK"
 endef
 
-up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in two phases: infrastructure first, then application services
+up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in batches of $(PHASED_DEPLOY_BATCH_SIZE) services (in YAML order)
 	# Deploy ops and vendors stacks
+	# Ensure external networks (referenced by ops/vendor stacks) exist before deploy
+	@docker network inspect pytest-simcore_default >/dev/null 2>&1 || \
+		docker network create --driver overlay --attachable pytest-simcore_default
+	@docker network inspect pytest-simcore_interactive_services_subnet >/dev/null 2>&1 || \
+		docker network create --driver overlay --attachable pytest-simcore_interactive_services_subnet
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
-	# Phase 1: Deploy infrastructure services only
-	@echo "Phase 1: Deploying infrastructure services ($(INFRA_SERVICES))..."
+	@echo "Deploying stack $(SWARM_STACK_NAME) in batches of $(PHASED_DEPLOY_BATCH_SIZE)..."
 	@docker run --rm -i $(YQ_IMAGE) \
-		'.services |= with_entries(select($(_YQ_INFRA_FILTER)))' \
-		< $< > .stack-infra-tmp.yml
-	@docker stack deploy --detach=true --with-registry-auth -c .stack-infra-tmp.yml $(SWARM_STACK_NAME)
-	@echo "Waiting for infrastructure services to be ready..."
-	@$(foreach service,$(INFRA_SERVICES),$(call _wait_for_running,$(service)))
-	# Phase 2: Deploy all services
-	@echo "Phase 2: Deploying all application services..."
-	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@rm -f .stack-infra-tmp.yml
+		$(_YQ_STACK_SERVICES_ORDERED) \
+		< services/docker-compose.yml > .stack-services-all.ignore.txt
+	@total=$$(wc -l < .stack-services-all.ignore.txt | tr -d ' '); \
+		if [ "$$total" -eq 0 ]; then \
+			echo "ERROR: No services found in $<"; exit 1; \
+		fi; \
+		offset=0; \
+		while [ $$offset -lt $$total ]; do \
+			batch_services=$$(sed -n "$$(($$offset + 1)),$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE)))p" .stack-services-all.ignore.txt | tr '\n' ' '); \
+			echo "Deploying services: $$batch_services"; \
+			yq_expr=""; \
+			for s in $$batch_services; do \
+				[ -z "$$yq_expr" ] && yq_expr=".key == \"$$s\"" || yq_expr="$$yq_expr or .key == \"$$s\""; \
+			done; \
+			docker run --rm -i $(YQ_IMAGE) \
+				".services |= with_entries(select($$yq_expr))" \
+				< $< > .stack-batch-tmp.yml; \
+			docker stack deploy --detach=true --with-registry-auth -c .stack-batch-tmp.yml $(SWARM_STACK_NAME); \
+			echo "Waiting for batch services to be ready..."; \
+			for s in $$batch_services; do \
+				$(call _wait_for_running,$$s); \
+			done; \
+			offset=$$(($$offset + $(PHASED_DEPLOY_BATCH_SIZE))); \
+		done
+	@rm -f .stack-services-all.ignore.txt .stack-batch-tmp.yml
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
@@ -536,10 +558,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 ## DOCKER PULL/PUSH  -------------------------------
-#
-# TODO: cannot push modified/untracked
-# TODO: cannot push disceted
-#
+
 .PHONY: pull-version
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
@@ -677,9 +696,11 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 openapi-specs: .env _check_venv_active ## generates and validates openapi specifications and schemas of ALL service's API
 	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
 		echo "Generating openapi-specs using $${makefile}"; \
-		$(MAKE_C) $$(dirname $${makefile}) install-dev; \
-		$(MAKE_C) $$(dirname $${makefile}) $@; \
-		printf "%0.s=" {1..100} && printf "\n"; \
+		( \
+			$(MAKE_C) $$(dirname $${makefile}) install-dev; \
+			$(MAKE_C) $$(dirname $${makefile}) $@; \
+			printf "%0.s=" {1..100} && printf "\n"; \
+		); \
 	done
 
 

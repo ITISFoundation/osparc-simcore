@@ -10,6 +10,7 @@ from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from servicelib.tracing import TracingConfig
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
@@ -92,6 +93,7 @@ def mocked_app(mock_env: None) -> FastAPI:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
     app.state.rabbitmq_client = AsyncMock()
+    app.state.tracing_config = TracingConfig.create(None, service_name="test_service")
     return app
 
 

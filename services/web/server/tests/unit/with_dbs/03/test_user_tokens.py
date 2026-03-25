@@ -25,7 +25,7 @@ from pytest_simcore.helpers.webserver_tokens import (
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.db.plugin import get_database_engine_legacy
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ async def tokens_db_cleanup(
     client: TestClient,
 ) -> AsyncIterator[None]:
     assert client.app
-    engine = get_database_engine_legacy(client.app)
+    engine = get_asyncpg_engine(client.app)
 
     yield None
 
@@ -63,17 +63,17 @@ async def fake_tokens(
     all_tokens = []
     assert client.app
 
-    # TODO: automatically create data from oas!
+    # TODO: automatically create data from oas!  # noqa: FIX002
     # See api/specs/webserver/v0/components/schemas/me.yaml
     for _ in repeat(None, 5):
-        # TODO: add tokens from other users
+        # TODO: add tokens from other users # noqa: FIX002
         data = {
             "service": faker.word(ext_word_list=None),
             "token_key": faker.md5(raw_output=False),
             "token_secret": faker.md5(raw_output=False),
         }
         await create_token_in_db(
-            get_database_engine_legacy(client.app),
+            get_asyncpg_engine(client.app),
             user_id=logged_user["id"],
             token_service=data["service"],
             token_data=data,
@@ -110,9 +110,9 @@ async def test_create_token(
     }
 
     resp = await client.post(url.path, json=token)
-    data, error = await assert_status(resp, expected)
+    _data, error = await assert_status(resp, expected)
     if not error:
-        db_token = await get_token_from_db(get_database_engine_legacy(client.app), token_data=token)
+        db_token = await get_token_from_db(get_asyncpg_engine(client.app), token_data=token)
         assert db_token
         assert db_token["token_data"] == token
         assert db_token["user_id"] == logged_user["id"]
@@ -133,6 +133,7 @@ async def test_read_token(
     tokens_db_cleanup: None,
     fake_tokens: list[dict[str, Any]],
     expected: HTTPStatus,
+    faker: Faker,
 ):
     assert client.app
     # list all
@@ -143,7 +144,7 @@ async def test_read_token(
     data, error = await assert_status(resp, expected)
 
     if not error:
-        expected_token = deepcopy(random.choice(fake_tokens))
+        expected_token = deepcopy(random.choice(fake_tokens))  # noqa: S311
         sid = expected_token["service"]
 
         # get one
@@ -186,4 +187,4 @@ async def test_delete_token(
     _, error = await assert_status(resp, expected)
 
     if not error:
-        assert not (await get_token_from_db(get_database_engine_legacy(client.app), token_service=sid))
+        assert not (await get_token_from_db(get_asyncpg_engine(client.app), token_service=sid))

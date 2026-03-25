@@ -10,7 +10,6 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     ProgressRabbitMessageNode,
@@ -48,8 +47,8 @@ from ...docker_service_specs import (
     extract_service_port_service_settings,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
-    merge_settings_before_use,
 )
+from ...docker_service_specs.settings import merge_settings_before_use
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import get_allow_metrics_collection
 
@@ -164,7 +163,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         project: ProjectAtDB = await projects_repository.get_project(project_id=scheduler_data.project_id)
 
-        node_uuid_str = NodeIDStr(scheduler_data.node_uuid)
+        node_uuid_str = f"{scheduler_data.node_uuid}"
         node: Node | None = project.workbench.get(node_uuid_str)
         boot_options = node.boot_options if node is not None and node.boot_options is not None else {}
         _logger.info("%s", f"{boot_options=}")

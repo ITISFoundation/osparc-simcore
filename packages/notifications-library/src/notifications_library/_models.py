@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import NamedTuple
 
 from models_library.products import ProductName
 
@@ -31,9 +32,40 @@ class SharerData:
 @dataclass(frozen=True)
 class ProductUIData:
     logo_url: str | None = (
-        None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html
+        None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html  # noqa: E501
     )
     strong_color: str | None = None  # default_strong_color = "rgb(131, 0, 191)" in base.html
+
+
+class SocialLink(NamedTuple):
+    name: str  # e.g. "youtube", "linkedin", "github"
+    url: str  # e.g. "https://youtube.com/@company", "https://www.linkedin.com/@company", "https://github.com/ITISFoundation/osparc-simcore"
+
+
+class ShareLink(NamedTuple):
+    name: str  # e.g. "twitter", "linkedin"
+    label: str  # e.g. "Tweet", "Share"
+    url: str  # e.g. "https://twitter.com/tweet", "https://www.linkedin.com/share"
+
+
+class CompanyLink(NamedTuple):
+    name: str  # e.g. "osparc.io", "sim4life"
+    url: str  # e.g. "https://osparc.io/about/", "https://sim4life.swiss/"
+
+
+# --- type aliases (PEP 695) ---
+type FooterSocialLinks = list[SocialLink]
+type FooterShareLinks = list[ShareLink]
+type CompanyLinks = list[CompanyLink]
+
+
+@dataclass(frozen=True)
+class ProductFooterData:
+    social_links: FooterSocialLinks
+    share_links: FooterShareLinks
+    company_name: str
+    company_address: str
+    company_links: CompanyLinks
 
 
 @dataclass(frozen=True)
@@ -44,3 +76,24 @@ class ProductData:
     support_email: str
     homepage_url: str | None  # default_homepage = "https://osparc.io/" in base.html
     ui: ProductUIData
+    footer: ProductFooterData
+
+    @property
+    def footer_social_links(self) -> FooterSocialLinks:
+        return self.footer.social_links
+
+    @property
+    def footer_share_links(self) -> FooterShareLinks:
+        return self.footer.share_links
+
+    @property
+    def company_name(self) -> str:
+        return self.footer.company_name
+
+    @property
+    def company_address(self) -> str:
+        return self.footer.company_address
+
+    @property
+    def company_links(self) -> CompanyLinks:
+        return self.footer.company_links

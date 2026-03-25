@@ -22,7 +22,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobError,
     JobMissingError,
 )
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskKey
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskKey
 from servicelib.celery.task_manager import TaskManager
 from tenacity import (
     AsyncRetrying,
@@ -123,8 +123,8 @@ async def _wait_for_job(
 @pytest.mark.parametrize(
     "execution_metadata",
     [
-        ExecutionMetadata(name=sync_job.__name__),
-        ExecutionMetadata(name=async_job.__name__),
+        TaskExecutionMetadata(name=sync_job.__name__),
+        TaskExecutionMetadata(name=async_job.__name__),
     ],
 )
 @pytest.mark.parametrize(
@@ -141,7 +141,7 @@ async def _wait_for_job(
 async def test_async_jobs_workflow(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
-    execution_metadata: ExecutionMetadata,
+    execution_metadata: TaskExecutionMetadata,
     owner_metadata: OwnerMetadata,
     payload: Any,
 ):
@@ -176,13 +176,13 @@ async def test_async_jobs_workflow(
 @pytest.mark.parametrize(
     "execution_metadata",
     [
-        ExecutionMetadata(name=async_job.__name__),
+        TaskExecutionMetadata(name=async_job.__name__),
     ],
 )
 async def test_async_jobs_cancel(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
-    execution_metadata: ExecutionMetadata,
+    execution_metadata: TaskExecutionMetadata,
     owner_metadata: OwnerMetadata,
 ):
     async_job = await submit_job(
@@ -223,8 +223,8 @@ async def test_async_jobs_cancel(
 @pytest.mark.parametrize(
     "execution_metadata",
     [
-        ExecutionMetadata(name=sync_job.__name__),
-        ExecutionMetadata(name=async_job.__name__),
+        TaskExecutionMetadata(name=sync_job.__name__),
+        TaskExecutionMetadata(name=async_job.__name__),
     ],
 )
 @pytest.mark.parametrize(
@@ -240,7 +240,7 @@ async def test_async_jobs_cancel(
 async def test_async_jobs_raises(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
-    execution_metadata: ExecutionMetadata,
+    execution_metadata: TaskExecutionMetadata,
     owner_metadata: OwnerMetadata,
     error: Exception,
 ):

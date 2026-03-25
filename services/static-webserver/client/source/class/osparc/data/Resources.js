@@ -1141,15 +1141,23 @@ qx.Class.define("osparc.data.Resources", {
           },
           getPendingUsers: {
             method: "GET",
-            url: statics.API + "/admin/user-accounts?review_status=PENDING"
+            url: statics.API + "/admin/user-accounts?review_status=PENDING&offset={offset}&limit={limit}"
           },
           getReviewedUsers: {
             method: "GET",
-            url: statics.API + "/admin/user-accounts?review_status=REVIEWED"
+            url: statics.API + "/admin/user-accounts?review_status=REVIEWED&offset={offset}&limit={limit}"
+          },
+          previewApproval: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:preview-approval"
           },
           approveUser: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:approve"
+          },
+          previewRejection: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:preview-rejection"
           },
           rejectUser: {
             method: "POST",

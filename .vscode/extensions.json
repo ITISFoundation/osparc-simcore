@@ -1,10 +1,10 @@
 {
   "recommendations": [
-    "42Crunch.vscode-openapi",
     "charliermarsh.ruff",
     "DevSoft.svg-viewer-vscode",
     "eamodio.gitlens",
     "exiasr.hadolint",
+    "Gruntfuggly.todo-tree",
     "ms-azuretools.vscode-containers",
     "ms-python.pylint",
     "ms-python.python",

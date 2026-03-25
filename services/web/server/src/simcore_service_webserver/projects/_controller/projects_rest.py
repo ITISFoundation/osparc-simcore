@@ -370,6 +370,7 @@ async def delete_project(request: web.Request):
         project_uuid=path_params.project_id,
         user_id=req_ctx.user_id,
         simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
+        product_name=req_ctx.product_name,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

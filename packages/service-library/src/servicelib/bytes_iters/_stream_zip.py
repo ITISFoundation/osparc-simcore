@@ -2,7 +2,6 @@ import logging
 from collections.abc import AsyncIterable
 from datetime import UTC, datetime
 from stat import S_IFREG
-from typing import TypeAlias
 
 from models_library.bytes_iters import BytesIter, DataSize
 from stream_zip import ZIP_64, AsyncMemberFile, async_stream_zip
@@ -12,9 +11,9 @@ from ._models import BytesStreamer
 
 _logger = logging.getLogger(__name__)
 
-FileNameInArchive: TypeAlias = str
-ArchiveFileEntry: TypeAlias = tuple[FileNameInArchive, BytesStreamer]
-ArchiveEntries: TypeAlias = list[ArchiveFileEntry]
+type FileNameInArchive = str
+type ArchiveFileEntry = tuple[FileNameInArchive, BytesStreamer]
+type ArchiveEntries = list[ArchiveFileEntry]
 
 
 async def _member_files_iter(

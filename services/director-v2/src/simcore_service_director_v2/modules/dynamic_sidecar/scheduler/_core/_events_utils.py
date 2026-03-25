@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast
 
 from common_library.json_serialization import json_loads
@@ -19,6 +20,8 @@ from models_library.shared_user_preferences import (
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
+from opentelemetry import trace
+from opentelemetry.trace import Link
 from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.logging_utils import log_context
 from servicelib.long_running_tasks.errors import TaskExceptionError
@@ -32,6 +35,12 @@ from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
 )
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
+)
+from servicelib.tracing import (
+    TracingConfig,
+    create_standard_attributes,
+    extract_span_link_from_trace_carrier,
+    traced_operation,
 )
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -87,6 +96,105 @@ if TYPE_CHECKING:
     from .._task import DynamicSidecarsScheduler
 
 _logger = logging.getLogger(__name__)
+
+
+def _get_common_span_attributes(scheduler_data: SchedulerData) -> dict[str, str]:
+    return create_standard_attributes(
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_id=scheduler_data.node_uuid,
+        product_name=scheduler_data.product_name,
+        wallet_id=scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else None,
+    ) | {
+        "service_key": scheduler_data.key,
+        "service_version": scheduler_data.version,
+        "service_name": scheduler_data.service_name,
+    }
+
+
+def _extract_span_link_from_scheduler_data(scheduler_data: SchedulerData) -> Link | None:
+    """Extract span link from stored trace context in scheduler_data.
+
+    Returns None if tracing is disabled or no trace context is stored.
+    Wraps the generic extract_span_link_from_trace_headers with scheduler-specific attributes.
+    """
+    instrumentation = scheduler_data.dynamic_sidecar.instrumentation
+
+    # Return early if no trace context stored
+    if not instrumentation.request_trace_carrier:
+        _logger.debug(
+            "No traceparent stored for service %s, skipping link creation",
+            scheduler_data.service_name,
+        )
+        return None
+
+    # Prepare scheduler-specific link attributes
+    link_attributes = _get_common_span_attributes(scheduler_data) | {
+        "link.type": "dynamic_sidecar_request",
+    }
+
+    # Use generic function to extract link from trace headers
+    link = extract_span_link_from_trace_carrier(
+        carrier=instrumentation.request_trace_carrier,
+        link_attributes=link_attributes,
+    )
+
+    if link:
+        _logger.debug(
+            "Created span link for service %s",
+            scheduler_data.service_name,
+        )
+
+    return link
+
+
+@contextmanager
+def traced_scheduler_operation(
+    operation_name: str,
+    *,
+    tracing_config: TracingConfig,
+    scheduler_data: SchedulerData,
+    **extra_attributes: str,
+):
+    """Context manager for creating traced spans with scheduler-specific attributes.
+
+    Specialized version of traced_operation that adds common scheduler_data attributes
+    and extracts span links from the stored request context.
+
+    When tracing is disabled, this becomes a no-op context manager.
+
+    Args:
+        operation_name: Name of the span/operation
+        scheduler_data: Scheduler data containing service context and trace information
+        **extra_attributes: Additional span attributes as kwargs
+    """
+    # Prepare attributes from scheduler_data
+    attributes = _get_common_span_attributes(scheduler_data)
+    attributes.update(extra_attributes)
+
+    # Only extract link if this is a root span (no active span context)
+    # Child spans automatically inherit the parent context and don't need links
+    current_span = trace.get_current_span()
+    is_root_span = not current_span.is_recording()
+
+    link = _extract_span_link_from_scheduler_data(scheduler_data) if is_root_span else None
+
+    _logger.debug(
+        "Creating traced span '%s' for service %s (root=%s) with link=%s",
+        operation_name,
+        scheduler_data.service_name,
+        is_root_span,
+        link is not None,
+    )
+
+    # Use the generic traced_operation with scheduler-specific attributes and link
+    with traced_operation(
+        operation_name,
+        tracing_config=tracing_config,
+        attributes=attributes,
+        links=[link] if link else None,
+    ):
+        yield
 
 
 def get_director_v0_client(app: FastAPI) -> DirectorV0Client:

@@ -34,6 +34,9 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     MountRemoteType,
     RCloneMountManager,
 )
+from simcore_sdk.node_ports_common.r_clone_mount._manager import (
+    _TrackedMount,
+)
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
     AsyncRetrying,
@@ -52,7 +55,7 @@ def bucket_name() -> S3BucketName:
 
 
 @pytest.fixture
-def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName, r_clone_version: str) -> EnvVarsDict:
+def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -62,7 +65,6 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName,
             "S3_BUCKET_NAME": bucket_name,
             "S3_SECRET_KEY": "test",
             "S3_REGION": "us-east-1",
-            "R_CLONE_VERSION": r_clone_version,
             "R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_SHOW_DEBUG_LOGS": "1",
         },
     )
@@ -80,8 +82,8 @@ async def s3_client(r_clone_settings: RCloneSettings, bucket_name: S3BucketName)
     session_client = session.client(
         "s3",
         endpoint_url=f"{s3_settings.S3_ENDPOINT}".replace("moto", "localhost"),
-        aws_access_key_id=s3_settings.S3_ACCESS_KEY,
-        aws_secret_access_key=s3_settings.S3_SECRET_KEY,
+        aws_access_key_id=s3_settings.S3_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=s3_settings.S3_SECRET_KEY.get_secret_value(),
         region_name=s3_settings.S3_REGION,
         config=Config(signature_version="s3v4"),
     )
@@ -366,3 +368,86 @@ async def test_container_recovers_and_shutdown_is_emitted(
         with attempt:
             await asyncio.sleep(0)
             mocked_shutdown.assert_called()
+
+
+@pytest.fixture
+def tracked_mount_with_mocked_client(
+    local_mount_path: Path,
+) -> tuple[_TrackedMount, AsyncMock]:
+    """Creates a _TrackedMount with a mocked RemoteControlHttpClient."""
+    mount = object.__new__(_TrackedMount)
+    mount.local_mount_path = local_mount_path
+    mount._consecutive_unresponsive_count = 0  # noqa: SLF001
+
+    mock_is_responsive = AsyncMock()
+    mount._rc_http_client = AsyncMock()  # noqa: SLF001
+    mount._rc_http_client.is_responsive = mock_is_responsive  # noqa: SLF001
+
+    return mount, mock_is_responsive
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [
+        pytest.param(
+            [
+                (True, True),
+            ],
+            id="single_responsive_returns_true",
+        ),
+        pytest.param(
+            [
+                (False, True),
+            ],
+            id="single_unresponsive_returns_true_below_threshold",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+            ],
+            id="two_consecutive_unresponsive_still_true",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
+            id="three_consecutive_unresponsive_third_returns_false",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+                (True, True),
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
+            id="responsive_in_middle_resets_counter",
+        ),
+        pytest.param(
+            [
+                (False, True),
+                (False, True),
+                (False, False),
+                (True, True),
+                (False, True),
+                (False, True),
+                (False, False),
+            ],
+            id="responsive_in_middle_resets_failing_counter",
+        ),
+    ],
+)
+async def test_is_healthy(
+    tracked_mount_with_mocked_client: tuple[_TrackedMount, AsyncMock],
+    steps: list[tuple[bool, bool]],
+):
+    mount, mock_is_responsive = tracked_mount_with_mocked_client
+
+    for i, (is_resp, expected) in enumerate(steps):
+        mock_is_responsive.return_value = is_resp
+        result = await mount.is_healthy()
+        assert result is expected, f"Step {i}: is_responsive={is_resp}, expected is_healthy={expected}, got {result}"

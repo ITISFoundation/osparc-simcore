@@ -75,3 +75,8 @@ class UserCredentialsTuple(NamedTuple):
     email: LowerCaseEmailStr
     password_hash: str
     display_name: str
+
+
+class PreviewApproval(BaseModel):
+    invitation_url: str
+    message_content: dict[str, Any]

@@ -360,10 +360,11 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize());
-      const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
+      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize()).set({
+        liveUpdate: true,
+      });
+      osparc.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
-        win.close();
         const updatedData = e.getData();
         this.getStudy().setTags(updatedData["tags"]);
         this.fireDataEvent("updateStudy", updatedData);

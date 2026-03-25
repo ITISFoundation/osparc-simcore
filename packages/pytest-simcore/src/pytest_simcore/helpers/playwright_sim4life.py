@@ -63,7 +63,8 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                         self._initial_bit_rate_time = arrow.utcnow().datetime
                         ctx.logger.info(
                             "%s",
-                            f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
+                            f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s "
+                            f"at {self._initial_bit_rate_time.isoformat()}",
                         )
                         return False
 
@@ -83,7 +84,12 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                         bitrate_test = bool(self._initial_bit_rate != current_bit_rate)
                         ctx.logger.info(
                             "%s",
-                            f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                            f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s "
+                            f"after {elapsed_time=}: {
+                                'good!'
+                                if bitrate_test
+                                else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'
+                            }",
                         )
                         return bitrate_test
 
@@ -113,7 +119,7 @@ def wait_for_launched_s4l(
         with page.expect_websocket(
             predicate,
             timeout=_S4L_STARTUP_SCREEN_MAX_TIME
-            + (_S4L_AUTOSCALED_MAX_STARTUP_TIME if autoscaled else _S4L_MAX_STARTUP_TIME)
+            + (_S4L_AUTOSCALED_MAX_STARTUP_TIME if autoscaled else _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME)
             + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0)
             + 10 * SECOND,
         ) as ws_info:
@@ -121,7 +127,11 @@ def wait_for_launched_s4l(
                 page=page,
                 node_id=node_id,
                 websocket=log_in_and_out,
-                timeout=(_S4L_AUTOSCALED_MAX_STARTUP_TIME if autoscaled else _S4L_MAX_STARTUP_TIME)
+                timeout=(
+                    _S4L_AUTOSCALED_MAX_STARTUP_TIME
+                    if autoscaled
+                    else _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME
+                )
                 + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0),
                 press_start_button=False,
                 product_url=product_url,

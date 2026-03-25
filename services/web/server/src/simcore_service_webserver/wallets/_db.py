@@ -8,11 +8,15 @@ from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatu
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.wallet_to_groups import wallet_to_groups
 from simcore_postgres_database.models.wallets import wallets
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from .errors import WalletAccessForbiddenError, WalletNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -26,7 +30,7 @@ async def create_wallet(
     description: str | None,
     thumbnail: str | None,
 ) -> WalletDB:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(
             wallets.insert()
             .values(
@@ -41,7 +45,7 @@ async def create_wallet(
             )
             .returning(literal_column("*"))
         )
-        row = await result.first()
+        row = result.mappings().one()
         return WalletDB.model_validate(row)
 
 
@@ -90,11 +94,10 @@ async def list_wallets_for_user(
         )
     )
 
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        rows = await result.fetchall() or []
-        output: list[UserWalletDB] = [UserWalletDB.model_validate(row) for row in rows]
-        return output
+        rows = result.mappings().fetchall()
+        return [UserWalletDB.model_validate(row) for row in rows]
 
 
 async def list_wallets_owned_by_user(
@@ -112,9 +115,9 @@ async def list_wallets_owned_by_user(
             & (wallets.c.product_name == product_name)
         )
     )
-    async with get_database_engine_legacy(app).acquire() as conn:
-        results = await conn.execute(stmt)
-        rows = await results.fetchall() or []
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
+        result = await conn.execute(stmt)
+        rows = result.fetchall()
         return [row.wallet_id for row in rows]
 
 
@@ -145,9 +148,9 @@ async def get_wallet_for_user(
         )
     )
 
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletAccessForbiddenError(
                 details=f"User does not have access to the wallet {wallet_id}. Or wallet does not exist.",
@@ -173,9 +176,9 @@ async def get_wallet(app: web.Application, wallet_id: WalletID, product_name: Pr
         .select_from(wallets)
         .where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
     )
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletNotFoundError(details=f"Wallet {wallet_id} not found.")
         return WalletDB.model_validate(row)
@@ -190,7 +193,7 @@ async def update_wallet(
     status: WalletStatus,
     product_name: ProductName,
 ) -> WalletDB:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
         result = await conn.execute(
             wallets.update()
             .values(
@@ -203,7 +206,7 @@ async def update_wallet(
             .where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
             .returning(literal_column("*"))
         )
-        row = await result.first()
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletNotFoundError(details=f"Wallet {wallet_id} not found.")
         return WalletDB.model_validate(row)
@@ -214,7 +217,7 @@ async def delete_wallet(
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> None:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
         await conn.execute(
             wallets.delete().where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
         )

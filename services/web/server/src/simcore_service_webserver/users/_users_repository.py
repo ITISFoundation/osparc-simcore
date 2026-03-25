@@ -171,6 +171,31 @@ async def get_users_ids_in_group(
         return {row.uid async for row in result}
 
 
+async def get_active_users_email_data_by_ids(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_ids: list[UserID],
+) -> list[Row]:
+    if not user_ids:
+        return []
+
+    query = (
+        sa.select(
+            users.c.id,
+            users.c.first_name,
+            users.c.last_name,
+            users.c.email,
+        )
+        .where(users.c.id.in_(user_ids))
+        .where(users.c.status == UserStatus.ACTIVE)
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.stream(query)
+        return [row async for row in result]
+
+
 async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> UserID:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_id: UserID = await conn.scalar(

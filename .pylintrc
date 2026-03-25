@@ -48,7 +48,8 @@ fail-under=10
 ignore=CVS,
        migration,
        sandbox,
-       generated_code
+       generated_code,
+       pytest_simcore
 
 
 # Add files or directories matching the regex patterns to the ignore-list. The

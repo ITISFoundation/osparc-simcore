@@ -356,7 +356,8 @@ def mock_director_v2_service_stop(
             request_not_found.respond(
                 status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={
-                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}"
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-not-found"
+                    f"/{node_id_not_found}?can_save={can_save_str}"
                 },
             )
         else:
@@ -369,7 +370,8 @@ def mock_director_v2_service_stop(
             request_manual_intervention.respond(
                 status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={
-                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}"
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-manual"
+                    f"/{node_id_manual_intervention}?can_save={can_save_str}"
                 },
             )
         else:
@@ -399,6 +401,7 @@ async def test_stop_dynamic_service(
             node_id=with_node_id,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            product_name="osparc",
         )
 
     # service was stopped
@@ -454,6 +457,7 @@ async def test_stop_dynamic_service_serializes_generic_errors(
                 node_id=node_id,
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
+                product_name="osparc",
             ),
         )
 

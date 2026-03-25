@@ -4,15 +4,18 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Final
 
 from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
+from models_library.api_schemas_dynamic_sidecar.state_paths import MountActivityStatus
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
@@ -24,20 +27,29 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     MountActivity,
     RCloneMountManager,
 )
+from tenacity import AsyncRetrying
+from tenacity.before import before_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from ..core.rabbitmq import get_rabbitmq_rpc_client, post_sidecar_log_message
 from ..core.settings import ApplicationSettings
 from ..modules.mounted_fs import MountedVolumes
+from .notifications import StatePathsNotifier
 
 _logger = logging.getLogger(__name__)
 
 
 _EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
+_CONTAINER_REMOVAL_WAIT_S: Final[timedelta] = timedelta(seconds=20)
+
+
+class ContainerStillPresentError(OsparcErrorMixin, RuntimeError):
+    msg_template: str = "Container {container_name} is still present after deletion attempt"
 
 
 @dataclass
 class _MountActivitySummary:
-    path: Path
     files_queued: int
     files_in_transfer: FilesInTransfer
 
@@ -53,6 +65,12 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         self.app = app
         self.settings = settings
         self.mounted_volumes = mounted_volumes
+        self.state_paths_notifier = StatePathsNotifier(
+            app=app,
+            user_id=settings.DY_SIDECAR_USER_ID,
+            project_id=settings.DY_SIDECAR_PROJECT_ID,
+            node_id=settings.DY_SIDECAR_NODE_ID,
+        )
 
     async def _get_vfs_paths(self) -> tuple[Path, Path]:
         vfs_cache_path = await self.mounted_volumes.get_vfs_cache_docker_volume(self.settings.DY_SIDECAR_RUN_ID)
@@ -105,15 +123,19 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
     async def mount_activity(self, state_path: Path, activity: MountActivity) -> None:
         # Frontend should receive and use this message to provide feedback to the user
         # regarding the mount activity
-        summary = _MountActivitySummary(
-            path=state_path, files_queued=len(activity.queued), files_in_transfer=activity.in_transfer
-        )
-        _logger.info("Mount activity %s", summary)
+        summary = _MountActivitySummary(files_queued=len(activity.queued), files_in_transfer=activity.in_transfer)
+        _logger.info("%s mount activity for  %s", state_path, summary)
+
+        if summary.files_queued == 0 and len(summary.files_in_transfer) == 0:
+            await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_ENDED)
+            return
+        await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_ONGOING)
 
     async def request_shutdown(self) -> None:
         client = get_rabbitmq_rpc_client(self.app)
 
         with log_context(_logger, logging.INFO, "requesting service shutdown via dynamic-scheduler"):
+            assert self.settings.DY_SIDECAR_PRODUCT_NAME  # nosec
             await stop_dynamic_service(
                 client,
                 dynamic_service_stop=DynamicServiceStop(
@@ -122,6 +144,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
                     node_id=self.settings.DY_SIDECAR_NODE_ID,
                     simcore_user_agent="",
                     save_state=True,
+                    product_name=self.settings.DY_SIDECAR_PRODUCT_NAME,
                 ),
             )
             await post_sidecar_log_message(
@@ -144,9 +167,6 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
 
     async def remove_container(self, container_name: str) -> None:
         async with _get_docker_client() as client:
-            existing_container = await client.containers.get(container_name)
-            await existing_container.delete(force=True)
-
             try:
                 container = await client.containers.get(container_name)
             except DockerError as e:
@@ -158,9 +178,40 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             # if SIGKILL is sent directly FUSE mount will not unmount cleanly
 
             # sends SIGTERM
-            await container.stop()
+            try:
+                await container.stop()
+            except DockerError as e:
+                # container may have already stopped (304) or been removed (404)
+                if e.status not in (
+                    status.HTTP_304_NOT_MODIFIED,
+                    status.HTTP_404_NOT_FOUND,
+                ):
+                    raise
+
             # sends SIGKILL and removes
-            await container.delete(force=True)
+            try:
+                await container.delete(force=True)
+            except DockerError as e:
+                # container may have been auto-removed after stop
+                if e.status != status.HTTP_404_NOT_FOUND:
+                    raise
+
+            # verify the container is fully removed before returning;
+            # Docker can return from delete before the name is freed
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.5),
+                stop=stop_after_delay(_CONTAINER_REMOVAL_WAIT_S.total_seconds()),
+                before=before_log(_logger, logging.WARNING),
+                reraise=True,
+            ):
+                with attempt:
+                    try:
+                        await client.containers.get(container_name)
+                    except DockerError as e:
+                        if e.status == status.HTTP_404_NOT_FOUND:
+                            return
+                        raise
+                    raise ContainerStillPresentError(container_name=container_name)
 
     async def get_node_address(self) -> str:
         async with _get_docker_client() as client:

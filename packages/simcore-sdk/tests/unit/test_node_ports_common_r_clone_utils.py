@@ -128,6 +128,32 @@ _SOURCE_COMMAND: Final[list[str]] = [
             ],
             id="edit-existing-edit-adding-remove",
         ),
+        pytest.param(
+            TypeAdapter(EditArguments).validate_python({}),
+            TypeAdapter(RemoveArguments).validate_python([("--config", 4)]),
+            [
+                "rclone",
+                "--buffer-size",
+                "0M",
+                "sync",
+                "source:path",
+                "destination:path",
+            ],
+            id="remove-a-lot-in-a-row",
+        ),
+        pytest.param(
+            TypeAdapter(EditArguments).validate_python({}),
+            TypeAdapter(RemoveArguments).validate_python([["--config", 2], ["--transfers", 2]]),
+            [
+                "rclone",
+                "--buffer-size",
+                "0M",
+                "sync",
+                "source:path",
+                "destination:path",
+            ],
+            id="regression-remove-consecutive-arguments",
+        ),
     ],
 )
 def test_overwrite_command(edit: EditArguments, remove: RemoveArguments, expected_command: list[str]) -> None:

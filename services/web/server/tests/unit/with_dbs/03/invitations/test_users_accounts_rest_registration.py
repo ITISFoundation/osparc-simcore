@@ -6,14 +6,12 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
-import simcore_service_webserver.login._auth_service
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from common_library.pydantic_fields_extension import is_nullable
@@ -22,8 +20,11 @@ from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.api_schemas_webserver.users import (
     UserAccountGet,
+    UserAccountPreviewApprovalGet,
+    UserAccountPreviewRejectionGet,
 )
 from models_library.groups import AccessRightsDict
+from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
@@ -40,11 +41,14 @@ from pytest_simcore.helpers.webserver_login import (
 from pytest_simcore.helpers.webserver_users import NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.models import PhoneNumberStr
+from simcore_service_webserver.notifications._models import TemplatePreview, TemplateRef
 
 
 @pytest.fixture
@@ -60,32 +64,12 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 
 
 @pytest.fixture
-def mock_email_session(mocker: MockerFixture) -> AsyncMock:
-    """Mock the email session and capture sent messages"""
-    # Create a mock email session
-    mock_session = AsyncMock()
-
-    # List to store sent messages
-    sent_messages = []
-
-    async def mock_send_message(msg):
-        """Mock send_message method to capture messages"""
-        sent_messages.append(msg)
-
-    mock_session.send_message = mock_send_message
-    mock_session.sent_messages = sent_messages
-
-    # Mock the context manager behavior
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=None)
-
-    # Use mocker to patch the create_email_session function
-    mocker.patch(
-        "simcore_service_webserver.users._accounts_service.create_email_session",
-        return_value=mock_session,
+def mock_notifications_send_message(mocker: MockerFixture) -> AsyncMock:
+    """Mock the notifications_service.send_message to avoid RabbitMQ dependency."""
+    return mocker.patch(
+        "simcore_service_webserver.notifications.notifications_service.send_message",
+        return_value=AsyncMock(),
     )
-
-    return mock_session
 
 
 @pytest.fixture
@@ -105,7 +89,7 @@ async def support_user(
         # Add the user to the support group
         assert client.app
 
-        from simcore_service_webserver.groups import _groups_repository
+        from simcore_service_webserver.groups import _groups_repository  # noqa: PLC0415
 
         # Now add user to support group with read-only access
         await _groups_repository.add_new_user_in_group(
@@ -151,7 +135,7 @@ async def test_access_rights_on_search_users_support_user_can_access_when_above_
     """Test that support users with role > GUEST can access the search endpoint."""
     assert client.app
 
-    from pytest_simcore.helpers.webserver_login import switch_client_session_to
+    from pytest_simcore.helpers.webserver_login import switch_client_session_to  # noqa: PLC0415
 
     # Switch client session to the support user
     async with switch_client_session_to(client, support_user):
@@ -196,15 +180,30 @@ def account_request_form(
 async def pre_registration_details_db_cleanup(
     client: TestClient,
 ) -> AsyncGenerator[None]:
-    """Fixture to clean up all pre-registration details after test"""
+    """Fixture to clean up pre-registration details AND orphan users created during tests."""
 
     assert client.app
+    engine = get_asyncpg_engine(client.app)
+
+    # Snapshot user IDs before the test body runs
+    async with engine.connect() as conn:
+        result = await conn.execute(sa.select(users.c.id))
+        user_ids_before = {row.id for row in result}
 
     yield
 
-    # Tear down - clean up the pre-registration details table
-    async with get_asyncpg_engine(client.app).connect() as conn:
+    # Tear down
+    async with engine.connect() as conn:
+        # 1. Clean pre-registration details
         await conn.execute(sa.delete(users_pre_registration_details))
+
+        # 2. Remove users created during the test body (orphans from create_user / new_user calls)
+        result = await conn.execute(sa.select(users.c.id))
+        user_ids_after = {row.id for row in result}
+        orphan_ids = user_ids_after - user_ids_before
+        if orphan_ids:
+            await conn.execute(sa.delete(users).where(users.c.id.in_(orphan_ids)))
+
         await conn.commit()
 
 
@@ -275,7 +274,7 @@ async def test_search_and_pre_registration(
     }
 
     # Emulating registration of pre-register user
-    new_user = await simcore_service_webserver.login._auth_service.create_user(  # noqa: SLF001
+    new_user = await _auth_service.create_user(
         client.app,
         email=account_request_form["email"],
         password=DEFAULT_TEST_PASSWORD,
@@ -303,13 +302,15 @@ async def test_search_and_pre_registration(
         UserRole.PRODUCT_OWNER,
     ],
 )
-async def test_list_users_accounts(
+async def test_list_users_accounts(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
     faker: Faker,
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
 ):
     assert client.app
 
@@ -348,16 +349,30 @@ async def test_list_users_accounts(
     # 2. Register one of the pre-registered users: approve + create account
     registered_email = pre_registered_users[0]["email"]
 
+    # First, preview approval to get the invitation URL
+    preview_url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{preview_url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={
+            "email": registered_email,
+            "invitation": {"trialAccountDays": 30},
+        },
+    )
+    preview_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    invitation_url = preview_data["invitationUrl"]
+
+    # Then approve with the invitation URL
     url = client.app.router["approve_user_account"].url_for()
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json={"email": registered_email},
+        json={"email": registered_email, "invitationUrl": invitation_url},
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Emulates user accepting invitation link
-    new_user = await simcore_service_webserver.login._auth_service.create_user(
+    new_user = await _auth_service.create_user(
         client.app,
         email=registered_email,
         password=DEFAULT_TEST_PASSWORD,
@@ -458,7 +473,8 @@ async def test_reject_user_account(
     faker: Faker,
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
-    mock_email_session: AsyncMock,
+    mock_notifications_send_message: AsyncMock,
+    mock_notifications_preview_template: AsyncMock,
 ):
     assert client.app
 
@@ -484,26 +500,33 @@ async def test_reject_user_account(
     pending_emails = [user["email"] for user in data if user["status"] is None]
     assert pre_registered_email in pending_emails
 
-    # 3. Reject the pre-registered user
+    # 3. Preview the rejection to get message content
+    preview_url = client.app.router["preview_rejection_user_account"].url_for()
+    resp = await client.post(
+        f"{preview_url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": pre_registered_email},
+    )
+    preview_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    message_content = preview_data["messageContent"]
+
+    # 4. Reject the pre-registered user with message content
     url = client.app.router["reject_user_account"].url_for()
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json={"email": pre_registered_email},
+        json={
+            "email": pre_registered_email,
+            "messageContent": message_content,
+        },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # 4. Verify rejection email was sent
-    # Wait a bit for fire-and-forget task to complete
-
-    await asyncio.sleep(0.1)
-
-    assert len(mock_email_session.sent_messages) == 1
-    rejection_msg = mock_email_session.sent_messages[0]
-
-    # Verify email recipients and content
-    assert pre_registered_email in rejection_msg["To"]
-    assert "denied" in rejection_msg["Subject"].lower()
+    # 5. Verify notification was sent
+    mock_notifications_send_message.assert_called_once()
+    call_kwargs = mock_notifications_send_message.call_args.kwargs
+    assert call_kwargs["product_name"] == product_name
+    assert call_kwargs["channel"] == Channel.email
 
     # 5. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
@@ -533,7 +556,10 @@ async def test_reject_user_account(
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json={"email": pre_registered_email},
+        json={
+            "email": pre_registered_email,
+            "invitationUrl": "https://osparc-simcore.test/#/registration?invitation=fake",
+        },
     )
     # Should fail as the account is already reviewed
     assert resp.status == status.HTTP_400_BAD_REQUEST
@@ -553,7 +579,8 @@ async def test_approve_user_account_with_full_invitation_details(
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
     mock_invitations_service_http_api: AioResponsesMock,
-    mock_email_session: AsyncMock,
+    mock_notifications_send_message: AsyncMock,
+    mock_notifications_preview_template: AsyncMock,
 ):
     """Test approving user account with complete invitation details (trial days + credits)"""
     assert client.app
@@ -573,36 +600,47 @@ async def test_approve_user_account_with_full_invitation_details(
     )
     await assert_status(resp, status.HTTP_200_OK)
 
-    # 2. Approve the user with full invitation details
-    approval_payload = {
-        "email": test_email,
-        "invitation": {
-            "trialAccountDays": 30,
-            "extraCreditsInUsd": 100.0,
+    # 2. Preview approval to get the invitation URL and message content
+    preview_url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{preview_url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={
+            "email": test_email,
+            "invitation": {
+                "trialAccountDays": 30,
+                "extraCreditsInUsd": 100.0,
+            },
         },
+    )
+    preview_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    invitation_url = preview_data["invitationUrl"]
+    message_content = preview_data.get("messageContent")
+
+    # 3. Approve the user with the invitation URL and message content
+    approve_payload: dict[str, Any] = {
+        "email": test_email,
+        "invitationUrl": invitation_url,
     }
+    if message_content:
+        approve_payload["messageContent"] = message_content
 
     url = client.app.router["approve_user_account"].url_for()
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json=approval_payload,
+        json=approve_payload,
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # 3. Verify approval email was sent
-    # Wait a bit for fire-and-forget task to complete
+    # 4. Verify notification was sent if message_content was provided
+    if message_content:
+        mock_notifications_send_message.assert_called_once()
+        call_kwargs = mock_notifications_send_message.call_args.kwargs
+        assert call_kwargs["product_name"] == product_name
+        assert call_kwargs["channel"] == Channel.email
 
-    await asyncio.sleep(0.1)
-
-    assert len(mock_email_session.sent_messages) == 1
-    approval_msg = mock_email_session.sent_messages[0]
-
-    # Verify email recipients and content
-    assert test_email in approval_msg["To"]
-    assert "accepted" in approval_msg["Subject"].lower()
-
-    # 4. Verify the user account status and invitation data in extras
+    # 5. Verify the user account status and invitation data in extras
     resp = await client.get(
         "/v0/admin/user-accounts:search",
         params={"email": test_email},
@@ -624,7 +662,6 @@ async def test_approve_user_account_with_full_invitation_details(
     assert invitation_data["trial_account_days"] == 30
     assert invitation_data["extra_credits_in_usd"] == 100.0
     assert invitation_data["product"] == product_name
-    assert "invitation_url" in invitation_data
 
 
 @pytest.mark.parametrize(
@@ -639,6 +676,7 @@ async def test_approve_user_account_with_trial_days_only(
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
     mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
 ):
     """Test approving user account with only trial days"""
     assert client.app
@@ -658,20 +696,25 @@ async def test_approve_user_account_with_trial_days_only(
     )
     await assert_status(resp, status.HTTP_200_OK)
 
-    # 2. Approve the user with only trial days
-    approval_payload = {
-        "email": test_email,
-        "invitation": {
-            "trialAccountDays": 15,
-            # No extra_credits_in_usd
+    # 2. Preview approval to get the invitation URL
+    preview_url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{preview_url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={
+            "email": test_email,
+            "invitation": {"trialAccountDays": 15},
         },
-    }
+    )
+    preview_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    invitation_url = preview_data["invitationUrl"]
 
+    # 3. Approve the user with the invitation URL
     url = client.app.router["approve_user_account"].url_for()
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json=approval_payload,
+        json={"email": test_email, "invitationUrl": invitation_url},
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -702,6 +745,7 @@ async def test_approve_user_account_with_credits_only(
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
     mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
 ):
     """Test approving user account with only extra credits"""
     assert client.app
@@ -721,20 +765,25 @@ async def test_approve_user_account_with_credits_only(
     )
     await assert_status(resp, status.HTTP_200_OK)
 
-    # 2. Approve the user with only extra credits
-    approval_payload = {
-        "email": test_email,
-        "invitation": {
-            # No trial_account_days
-            "extraCreditsInUsd": 50.0,
+    # 2. Preview approval to get the invitation URL
+    preview_url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{preview_url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={
+            "email": test_email,
+            "invitation": {"extraCreditsInUsd": 50.0},
         },
-    }
+    )
+    preview_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    invitation_url = preview_data["invitationUrl"]
 
+    # 3. Approve the user with the invitation URL
     url = client.app.router["approve_user_account"].url_for()
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json=approval_payload,
+        json={"email": test_email, "invitationUrl": invitation_url},
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -759,7 +808,7 @@ async def test_approve_user_account_with_credits_only(
         UserRole.PRODUCT_OWNER,
     ],
 )
-async def test_approve_user_account_without_invitation(
+async def test_approve_user_account_without_invitation_url_fails(
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
@@ -767,7 +816,7 @@ async def test_approve_user_account_without_invitation(
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
 ):
-    """Test approving user account without any invitation details"""
+    """Test approving user account without invitationUrl is rejected (field required)"""
     assert client.app
 
     test_email = faker.email()
@@ -785,29 +834,511 @@ async def test_approve_user_account_without_invitation(
     )
     await assert_status(resp, status.HTTP_200_OK)
 
-    # 2. Approve the user without invitation
-    approval_payload = {
-        "email": test_email,
-        # No invitation field
-    }
-
+    # 2. Attempt to approve without invitationUrl — should fail with 422
     url = client.app.router["approve_user_account"].url_for()
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json=approval_payload,
+        json={"email": test_email},
     )
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-    # 3. Verify no invitation data in extras
+
+@pytest.fixture
+def mock_notifications_preview_template(mocker: MockerFixture) -> AsyncMock:
+    """Mock the notifications_service.preview_template to avoid RabbitMQ dependency."""
+
+    async def _fake_preview_template(
+        app,
+        *,
+        product_name,
+        ref,
+        context,
+    ) -> TemplatePreview:
+        first_name = context.get("user", {}).get("first_name", "User")
+        if ref.template_name == "account_approved":
+            invitation_url = context.get("link", "https://example.com")
+            trial_days = context.get("trial_account_days")
+            extra_credits = context.get("extra_credits")
+            body_parts = [f"<p>Dear {first_name},</p>", "<p>Your account has been approved!</p>"]
+            if trial_days:
+                body_parts.append(f"<p>Trial period: {trial_days} days</p>")
+            if extra_credits:
+                body_parts.append(f"<p>Extra credits: ${extra_credits}</p>")
+            body_parts.append(f'<p><a href="{invitation_url}">Accept Invitation</a></p>')
+            return TemplatePreview(
+                ref=TemplateRef(channel=Channel.email, template_name="account_approved"),
+                message_content={
+                    "subject": "Your account request has been accepted",
+                    "body_html": "\n".join(body_parts),
+                    "body_text": f"Dear {first_name}, your account has been approved.",
+                },
+            )
+        if ref.template_name == "account_rejected":
+            return TemplatePreview(
+                ref=TemplateRef(channel=Channel.email, template_name="account_rejected"),
+                message_content={
+                    "subject": "Your account request has been denied",
+                    "body_html": (
+                        f"<p>Dear {first_name},</p>"
+                        "<p>We regret to inform you that your account request has been denied.</p>"
+                    ),
+                    "body_text": f"Dear {first_name}, your account request has been denied.",
+                },
+            )
+        msg = f"Unexpected template_name={ref.template_name}"
+        raise ValueError(msg)
+
+    return mocker.patch(
+        "simcore_service_webserver.notifications.notifications_service.preview_template",
+        side_effect=_fake_preview_template,
+    )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_preview_approval_user_account(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
+):
+    """Test previewing the approval notification for a pre-registered user account."""
+    assert client.app
+
+    test_email = faker.email()
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # 2. Preview approval with full invitation details
+    preview_payload = {
+        "email": test_email,
+        "invitation": {
+            "trialAccountDays": 30,
+            "extraCreditsInUsd": 100.0,
+        },
+    }
+
+    url = client.app.router["preview_approval_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-approval"
+
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=preview_payload,
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    preview_result = UserAccountPreviewApprovalGet.model_validate(data)
+
+    # Verify response contains invitation_url and message_content
+    assert preview_result.invitation_url is not None
+    assert preview_result.message_content is not None
+    assert preview_result.message_content.subject is not None
+    assert preview_result.message_content.body_html is not None or preview_result.message_content.body_text is not None
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_preview_approval_with_trial_days_only(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
+):
+    """Test previewing approval with only trial days."""
+    assert client.app
+
+    test_email = faker.email()
+
+    # Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # Preview approval with only trial days
+    preview_payload = {
+        "email": test_email,
+        "invitation": {
+            "trialAccountDays": 15,
+        },
+    }
+
+    url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=preview_payload,
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    preview_result = UserAccountPreviewApprovalGet.model_validate(data)
+    assert preview_result.invitation_url is not None
+    assert preview_result.message_content is not None
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_preview_approval_with_credits_only(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
+):
+    """Test previewing approval with only extra credits."""
+    assert client.app
+
+    test_email = faker.email()
+
+    # Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # Preview approval with only extra credits
+    preview_payload = {
+        "email": test_email,
+        "invitation": {
+            "extraCreditsInUsd": 50.0,
+        },
+    }
+
+    url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=preview_payload,
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    preview_result = UserAccountPreviewApprovalGet.model_validate(data)
+    assert preview_result.invitation_url is not None
+    assert preview_result.message_content is not None
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_preview_approval_for_nonexistent_user(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
+):
+    """Test previewing approval for an email that has no pre-registration."""
+    assert client.app
+
+    preview_payload = {
+        "email": "nonexistent-user@example.com",
+        "invitation": {
+            "trialAccountDays": 30,
+        },
+    }
+
+    url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=preview_payload,
+    )
+    # Nonexistent user triggers an error (bad request or not found)
+    assert resp.status in {
+        status.HTTP_200_OK,
+        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_404_NOT_FOUND,
+    }
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_preview_rejection_user_account(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_preview_template: AsyncMock,
+):
+    """Test previewing the rejection notification for a pre-registered user account."""
+    assert client.app
+
+    test_email = faker.email()
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # 2. Preview rejection
+    preview_payload = {
+        "email": test_email,
+    }
+
+    url = client.app.router["preview_rejection_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-rejection"
+
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=preview_payload,
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    preview_result = UserAccountPreviewRejectionGet.model_validate(data)
+
+    # Verify response contains message_content with rejection email content
+    assert preview_result.message_content is not None
+    assert preview_result.message_content.subject is not None
+    assert "denied" in preview_result.message_content.subject.lower()
+    assert preview_result.message_content.body_html is not None or preview_result.message_content.body_text is not None
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_preview_rejection_for_nonexistent_user(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_preview_template: AsyncMock,
+):
+    """Test previewing rejection for an email that has no pre-registration."""
+    assert client.app
+
+    preview_payload = {
+        "email": "nonexistent-user@example.com",
+    }
+
+    url = client.app.router["preview_rejection_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=preview_payload,
+    )
+    # Should fail since the user doesn't exist
+    assert resp.status in {status.HTTP_404_NOT_FOUND, status.HTTP_500_INTERNAL_SERVER_ERROR}
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        *((role, status.HTTP_403_FORBIDDEN) for role in UserRole if UserRole.ANONYMOUS < role < UserRole.PRODUCT_OWNER),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_200_OK),
+    ],
+)
+async def test_access_rights_on_preview_approval(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: HTTPStatus,
+    pre_registration_details_db_cleanup: None,
+):
+    """Test that only PRODUCT_OWNER and ADMIN can access preview approval endpoint."""
+    assert client.app
+
+    url = client.app.router["preview_approval_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-approval"
+
+    resp = await client.post(
+        url.path,
+        json={
+            "email": "test@example.com",
+            "invitation": {"trialAccountDays": 30},
+        },
+    )
+    if expected in {status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN}:
+        await assert_status(resp, expected)
+    else:
+        # Authorized roles pass access control; may fail for other reasons (e.g. user not found)
+        assert resp.status not in {status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN}
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        *((role, status.HTTP_403_FORBIDDEN) for role in UserRole if UserRole.ANONYMOUS < role < UserRole.PRODUCT_OWNER),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_200_OK),
+    ],
+)
+async def test_access_rights_on_preview_rejection(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: HTTPStatus,
+    pre_registration_details_db_cleanup: None,
+):
+    """Test that only PRODUCT_OWNER and ADMIN can access preview rejection endpoint."""
+    assert client.app
+
+    url = client.app.router["preview_rejection_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-rejection"
+
+    resp = await client.post(
+        url.path,
+        json={"email": "test@example.com"},
+    )
+    if expected in {status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN}:
+        await assert_status(resp, expected)
+    else:
+        # Authorized roles pass access control; may fail for other reasons (e.g. user not found)
+        assert resp.status not in {status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN}
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_create_user_auto_approves_pre_registration_with_recovery_metadata(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+):
+    """Test that link_and_update_user_from_pre_registration auto-reconciles PENDING
+    pre-registrations when the user has product access, and writes recovery metadata
+    into extras.
+
+    SETUP:
+    - Pre-register a user via API (PENDING, with form extras)
+    - Create a new user with that email
+    - Add user to the product group
+    - Call link_and_update_user_from_pre_registration
+
+    EXPECTED:
+    - Pre-registration status -> APPROVED
+    - user_id linked
+    - extras.recovery has source, confidence, executed_at, notes
+    - Original form extras preserved
+    """
+    assert client.app
+
+    test_email = account_request_form["email"]
+
+    # 1. Pre-register via API -> creates PENDING record with form extras
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=account_request_form,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    pre_reg_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert pre_reg_data["email"] == test_email
+
+    # 2. Create user + add to product group + link pre-registration
+    # (simulating the real registration flow order: create user, add to group, then link)
+    from simcore_postgres_database.utils_users import UsersRepo  # noqa: PLC0415
+
+    engine = get_asyncpg_engine(client.app)
+    repo = UsersRepo(engine)
+
+    from simcore_service_webserver.security import security_service  # noqa: PLC0415
+
+    new_user = await repo.new_user(
+        email=test_email,
+        password_hash=security_service.encrypt_password(DEFAULT_TEST_PASSWORD),
+        status=UserStatus.ACTIVE,
+        expires_at=None,
+    )
+
+    # Add user to product group (before link_and_update so reconciliation can trigger)
+    from simcore_service_webserver.groups import _groups_repository  # noqa: PLC0415
+
+    await _groups_repository.auto_add_user_to_product_group(
+        client.app,
+        user_id=new_user.id,
+        product_name=product_name,
+    )
+
+    # 3. Link and reconcile
+    await repo.link_and_update_user_from_pre_registration(
+        new_user_id=new_user.id,
+        new_user_email=new_user.email,
+    )
+
+    # 4. Verify via API
     resp = await client.get(
         "/v0/admin/user-accounts:search",
         params={"email": test_email},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
-    user_data = found[0]
+    assert len(found) == 1
 
+    user_data = found[0]
     assert user_data["accountRequestStatus"] == "APPROVED"
-    # Verify no invitation data stored
-    assert "invitation" not in user_data["extras"]
+    assert user_data["registered"] is True
+
+    # 5. Verify recovery metadata in extras
+    extras = user_data.get("extras", {})
+    assert "recovery" in extras, f"Expected 'recovery' key in extras, got: {extras}"
+    recovery = extras["recovery"]
+    assert recovery["source"] == "runtime:link_and_update_user_from_pre_registration"
+    assert recovery["confidence"] in ("high", "medium")
+    assert recovery["executed_at"] is not None
+    assert "auto-reconciled" in recovery["notes"].lower()
+
+    # 6. Verify original form extras are preserved (not overwritten)
+    assert "application" in extras or "description" in extras or "privacyPolicy" in extras

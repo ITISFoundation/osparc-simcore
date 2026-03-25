@@ -157,8 +157,11 @@ async def _delete_legacy_archive(project_id: ProjectID, node_id: NodeID, path: P
     await filemanager.delete_file(user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object)
 
 
-async def _stop_mount(mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt) -> None:
-    await mount_manager.ensure_unmounted(destination_path, index)
+async def _stop_mount(
+    mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt, progress_bar: ProgressBarData
+) -> None:
+    async with progress_bar.sub_progress(steps=1, description=f"stopping mount of {destination_path.name}"):
+        await mount_manager.ensure_unmounted(destination_path, index)
 
 
 async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -176,10 +179,10 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     application_name: str,
     mount_manager: RCloneMountManager,
 ) -> None:
-    """pushes and removes the legacy archive if present"""
+    """saves the state folder, if present, removes any legacy archive"""
 
     if mount_manager.is_mount_tracked(source_path, index):
-        await _stop_mount(mount_manager, source_path, index)
+        await _stop_mount(mount_manager, source_path, index, progress_bar)
     else:
         await _push_directory(
             user_id=user_id,
@@ -235,23 +238,26 @@ async def _start_mount_if_required(
     index: NonNegativeInt,
     *,
     requires_data_mounting: bool,
+    progress_bar: ProgressBarData,
 ) -> None:
     if not requires_data_mounting:
         return
 
-    s3_object = __create_s3_object_key(project_id, node_id, destination_path)
+    async with progress_bar.sub_progress(steps=2, description=f"starting mount of {destination_path.name}") as sub_prog:
+        s3_object = __create_s3_object_key(project_id, node_id, destination_path)
 
-    await filemanager.create_r_clone_mounted_directory_entry(
-        user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
-    )
+        await filemanager.create_r_clone_mounted_directory_entry(
+            user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
+        )
+        await sub_prog.update(1)
 
-    await mount_manager.ensure_mounted(
-        destination_path,
-        index,
-        node_id=node_id,
-        remote_type=MountRemoteType.S3,
-        remote_path=s3_object,
-    )
+        await mount_manager.ensure_mounted(
+            destination_path,
+            index,
+            node_id=node_id,
+            remote_type=MountRemoteType.S3,
+            remote_path=s3_object,
+        )
 
 
 async def pull(  # pylint: disable=too-many-arguments
@@ -267,7 +273,7 @@ async def pull(  # pylint: disable=too-many-arguments
     legacy_state: LegacyState | None,
     mount_manager: RCloneMountManager,
 ) -> None:
-    """restores the state folder"""
+    """restores the state folder, if present, restores the legacy archive"""
 
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
@@ -306,6 +312,7 @@ async def pull(  # pylint: disable=too-many-arguments
                     destination_path,
                     index,
                     requires_data_mounting=mount_manager.requires_data_mounting,
+                    progress_bar=progress_bar,
                 )
             return
 
@@ -334,6 +341,7 @@ async def pull(  # pylint: disable=too-many-arguments
                 destination_path,
                 index,
                 requires_data_mounting=mount_manager.requires_data_mounting,
+                progress_bar=progress_bar,
             )
         return
 
@@ -354,6 +362,7 @@ async def pull(  # pylint: disable=too-many-arguments
                 destination_path,
                 index,
                 requires_data_mounting=mount_manager.requires_data_mounting,
+                progress_bar=progress_bar,
             )
         else:
             await _pull_directory(
@@ -376,5 +385,6 @@ async def pull(  # pylint: disable=too-many-arguments
         destination_path,
         index,
         requires_data_mounting=mount_manager.requires_data_mounting,
+        progress_bar=progress_bar,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)

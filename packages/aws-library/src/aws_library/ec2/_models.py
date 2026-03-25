@@ -288,8 +288,26 @@ class EC2InstanceBootSpecific(BaseModel):
     ] = DEFAULT_FACTORY
     buffer_count: Annotated[
         NonNegativeInt,
-        Field(description="number of buffer EC2s to keep (defaults to 0)"),
+        Field(description="number of warm buffer EC2s to keep (defaults to 0)"),
     ] = 0
+    hot_buffer_count: Annotated[
+        NonNegativeInt,
+        Field(
+            description=(
+                "number of hot buffer EC2s to keep drained and ready (defaults to 0); evaluated per instance type"
+            ),
+        ),
+    ] = 0
+    hot_buffer_max_inactivity_time: Annotated[
+        datetime.timedelta | None,
+        Field(
+            description=(
+                "optional maximum inactivity duration for hot buffer nodes before they are terminated; "
+                "if null the node stays in the buffer indefinitely (24/7 mode)"
+            ),
+            default=None,
+        ),
+    ] = None
     custom_node_labels: Annotated[
         dict[DockerLabelKey, str],
         Field(default_factory=dict, description="type specific docker node labels"),
@@ -380,10 +398,17 @@ class EC2InstanceBootSpecific(BaseModel):
                             "asd",
                         ],
                         "buffer_count": 10,
+                        "hot_buffer_count": 3,
                         "custom_node_labels": {
                             "io.simcore.project-id": "value1",
                             "io.simcore.user-id": "value2",
                         },
+                    },
+                    {
+                        # Hot buffer with inactivity timeout
+                        "ami_id": "ami-123456789abcdef",
+                        "hot_buffer_count": 2,
+                        "hot_buffer_max_inactivity_time": "00:30:00",
                     },
                 ]
             }

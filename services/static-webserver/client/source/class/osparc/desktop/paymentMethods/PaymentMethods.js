@@ -23,12 +23,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    const groupsStore = osparc.store.Groups.getInstance();
-    const myGid = groupsStore.getMyGroupId();
-    const store = osparc.store.Store.getInstance();
-    const personalWallet = store.getWallets().find(wallet => wallet.getOwner() === myGid)
-    this.__personalWalletId = personalWallet.getWalletId()
-    this.__buildLayout()
+    this.__buildLayout();
   },
 
   properties: {
@@ -84,31 +79,43 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __addNewPaymentMethod: function() {
-      const walletId = this.__personalWalletId;
-      if (walletId) {
-        const params = {
-          url: {
-            walletId
-          }
-        };
-        osparc.data.Resources.fetch("paymentMethods", "init", params)
-          .then(data => {
-            const gatewayWindow = this.__popUpPaymentGateway(data.paymentMethodId, data.paymentMethodFormUrl);
-            osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentMethodAcknowledged", ({ paymentMethodId }) => {
-              if (paymentMethodId === data.paymentMethodId) {
-                gatewayWindow.close();
-                this.__fetchPaymentMethods();
-              }
-            });
-          });
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return;
       }
+
+      const params = {
+        url: {
+          walletId: wallet.getWalletId(),
+        }
+      };
+      osparc.data.Resources.fetch("paymentMethods", "init", params)
+        .then(data => {
+          const gatewayWindow = this.__popUpPaymentGateway(data.paymentMethodId, data.paymentMethodFormUrl);
+          osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentMethodAcknowledged", ({ paymentMethodId }) => {
+            if (paymentMethodId === data.paymentMethodId) {
+              gatewayWindow.close();
+              this.__fetchPaymentMethods();
+            }
+          });
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __cancelPaymentMethod: function(paymentMethodId) {
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return;
+      }
+
       // inform backend
       const params = {
         url: {
-          walletId: this.__personalWalletId,
+          walletId: wallet.getWalletId(),
           paymentMethodId
         }
       };
@@ -140,11 +147,17 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __fetchPaymentMethods: function() {
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return;
+      }
+
       this.__fetchingMsg.setVisibility("visible");
-      const walletId = this.__personalWalletId;
       const params = {
         url: {
-          walletId
+          walletId: wallet.getWalletId(),
         }
       };
       osparc.data.Resources.fetch("paymentMethods", "get", params)

@@ -14,6 +14,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed, limited_gather
 
 from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects._projects_service import (
     is_node_id_present_in_any_project_workbench,
     list_node_ids_in_project,
@@ -55,6 +56,8 @@ async def _remove_service(app: web.Application, node_id: NodeID, service: Dynami
             f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
         ),
     ):
+        service_repo = ProjectDBAPI.get_from_app_context(app)
+        project_at_db = await service_repo.get_project_db(service.project_id)
         await dynamic_scheduler_service.stop_dynamic_service(
             app,
             dynamic_service_stop=DynamicServiceStop(
@@ -62,6 +65,7 @@ async def _remove_service(app: web.Application, node_id: NodeID, service: Dynami
                 project_id=service.project_id,
                 node_id=service.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                product_name=project_at_db.product_name,
                 save_state=save_service_state,
             ),
         )
@@ -131,7 +135,14 @@ async def remove_orphaned_services(registry: RedisResourceRegistry, app: web.App
     # NOTE: no need to not reraise here, since we catch everything above
     # and logged_gather first runs everything
     await limited_gather(
-        *(_remove_service(app, node_id, running_services_by_id[node_id]) for node_id in orphaned_running_service_ids),
+        *(
+            _remove_service(
+                app,
+                node_id,
+                running_services_by_id[node_id],
+            )
+            for node_id in orphaned_running_service_ids
+        ),
         log=_logger,
         limit=_MAX_CONCURRENT_CALLS,
     )

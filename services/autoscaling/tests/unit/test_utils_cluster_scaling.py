@@ -4,8 +4,10 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import datetime
 import json
 import re
+import secrets
 from collections.abc import Callable
 from random import choice, shuffle
 
@@ -23,12 +25,13 @@ from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceDa
 from simcore_service_autoscaling.utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
-    get_hot_buffer_type,
     sort_drained_nodes,
 )
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 @pytest.fixture
@@ -215,7 +218,8 @@ async def test_ec2_startup_script_with_pre_pulling(
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 6
     assert re.fullmatch(
-        r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh)$",
+        r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && "
+        r"(echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh)$",
         startup_script,
     ), f"{startup_script=}"
 
@@ -251,18 +255,11 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     assert re.fullmatch(r"^docker swarm join --availability=drain --token .*$", startup_script)
 
 
-def test_get_machine_buffer_type(
-    random_fake_available_instances: list[EC2InstanceType],
-):
-    assert get_hot_buffer_type(random_fake_available_instances) == random_fake_available_instances[0]
-
-
 def test_sort_empty_drained_nodes(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
-    random_fake_available_instances: list[EC2InstanceType],
 ):
-    assert sort_drained_nodes(app_settings, [], random_fake_available_instances) == (
+    assert sort_drained_nodes(app_settings, []) == (
         [],
         [],
         [],
@@ -270,17 +267,20 @@ def test_sort_empty_drained_nodes(
 
 
 def test_sort_drained_nodes(
-    with_instances_machines_hot_buffer: EnvVarsDict,
     minimal_configuration: None,
+    with_multiple_hot_buffer_instance_types: EnvVarsDict,
     app_settings: ApplicationSettings,
     random_fake_available_instances: list[EC2InstanceType],
     create_fake_node: Callable[..., DockerNode],
     create_associated_instance: Callable[..., AssociatedInstance],
+    hot_buffer_instance_types: set[InstanceTypeType],
+    hot_buffer_total_count: int,
 ):
+    assert len(hot_buffer_instance_types) > 0, "this test needs at least 2 hot buffer instance types configured"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    machine_buffer_type = get_hot_buffer_type(random_fake_available_instances)
+
     _NUM_DRAINED_NODES = 20
-    _NUM_NODE_WITH_TYPE_BUFFER = 3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    _RATIO_HOT_BUFFER_TYPES = 3
     _NUM_NODES_TERMINATING = 13
     fake_drained_nodes = []
     for _ in range(_NUM_DRAINED_NODES):
@@ -290,20 +290,24 @@ def test_sort_drained_nodes(
             terminateable_time=False,
             fake_ec2_instance_data_override={
                 "type": choice(  # noqa: S311
-                    [i for i in random_fake_available_instances if i != machine_buffer_type]
+                    [i for i in random_fake_available_instances if i not in hot_buffer_instance_types]
                 ).name
             },
         )
         fake_drained_nodes.append(fake_associated_instance)
 
-    for _ in range(_NUM_NODE_WITH_TYPE_BUFFER):
-        fake_node = create_fake_node()
-        fake_associated_instance = create_associated_instance(
-            fake_node,
-            terminateable_time=False,
-            fake_ec2_instance_data_override={"type": machine_buffer_type.name},
-        )
-        fake_drained_nodes.append(fake_associated_instance)
+    for hot_buffer_type in hot_buffer_instance_types:
+        for _ in range(
+            _RATIO_HOT_BUFFER_TYPES
+            * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_type].hot_buffer_count
+        ):
+            fake_node = create_fake_node()
+            fake_associated_instance = create_associated_instance(
+                fake_node,
+                terminateable_time=False,
+                fake_ec2_instance_data_override={"type": hot_buffer_type},
+            )
+            fake_drained_nodes.append(fake_associated_instance)
 
     for _ in range(_NUM_NODES_TERMINATING):
         fake_node = create_fake_node()
@@ -313,26 +317,81 @@ def test_sort_drained_nodes(
         fake_associated_instance = create_associated_instance(
             fake_node,
             terminateable_time=False,
-            fake_ec2_instance_data_override={"type": machine_buffer_type.name},
+            fake_ec2_instance_data_override={"type": secrets.choice(tuple(hot_buffer_instance_types))},
         )
         fake_drained_nodes.append(fake_associated_instance)
     shuffle(fake_drained_nodes)
 
-    assert len(fake_drained_nodes) == _NUM_DRAINED_NODES + _NUM_NODE_WITH_TYPE_BUFFER + _NUM_NODES_TERMINATING
+    assert (
+        len(fake_drained_nodes)
+        == _NUM_DRAINED_NODES + _RATIO_HOT_BUFFER_TYPES * hot_buffer_total_count + _NUM_NODES_TERMINATING
+    )
     (
         sorted_drained_nodes,
         sorted_buffer_drained_nodes,
         terminating_nodes,
-    ) = sort_drained_nodes(app_settings, fake_drained_nodes, random_fake_available_instances)
+    ) = sort_drained_nodes(app_settings, fake_drained_nodes)
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert len(sorted_drained_nodes) == (
-        _NUM_DRAINED_NODES
-        + _NUM_NODE_WITH_TYPE_BUFFER
-        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+        _NUM_DRAINED_NODES + _RATIO_HOT_BUFFER_TYPES * hot_buffer_total_count - hot_buffer_total_count
     )
-    assert len(sorted_buffer_drained_nodes) == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    assert len(sorted_buffer_drained_nodes) == hot_buffer_total_count
     assert len(terminating_nodes) == _NUM_NODES_TERMINATING
     for n in terminating_nodes:
         assert n.node.spec
         assert n.node.spec.labels
         assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in n.node.spec.labels
+
+
+def test_sort_drained_nodes_inactivity_timeout(
+    minimal_configuration: None,
+    with_multiple_hot_buffer_instance_types: EnvVarsDict,
+    app_settings: ApplicationSettings,
+    random_fake_available_instances: list[EC2InstanceType],
+    create_fake_node: Callable[..., DockerNode],
+    create_associated_instance: Callable[..., AssociatedInstance],
+    hot_buffer_instance_types: set[InstanceTypeType],
+    hot_buffer_total_count: int,
+):
+    assert len(hot_buffer_instance_types) > 1, "this test needs at least 2 hot buffer instance types configured"
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+
+    selected_ec2_instance_type_with_inactivity_timeout = secrets.choice(tuple(hot_buffer_instance_types))
+
+    ec2_config = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+        selected_ec2_instance_type_with_inactivity_timeout
+    ]
+    ec2_config.hot_buffer_count = 2
+    ec2_config.hot_buffer_max_inactivity_time = datetime.timedelta(seconds=5)
+
+    old_node = create_fake_node()
+    assert old_node.spec
+    assert old_node.spec.labels is not None
+    old_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        datetime.datetime.now(datetime.UTC) - datetime.timedelta(seconds=10)
+    ).isoformat()
+
+    fresh_node = create_fake_node()
+    assert fresh_node.spec
+    assert fresh_node.spec.labels is not None
+    fresh_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = datetime.datetime.now(datetime.UTC).isoformat()
+
+    drained_nodes = [
+        create_associated_instance(
+            old_node,
+            terminateable_time=False,
+            fake_ec2_instance_data_override={"type": selected_ec2_instance_type_with_inactivity_timeout},
+        ),
+        create_associated_instance(
+            fresh_node,
+            terminateable_time=False,
+            fake_ec2_instance_data_override={"type": selected_ec2_instance_type_with_inactivity_timeout},
+        ),
+    ]
+
+    other_drained_nodes, hot_buffer_drained_nodes, terminating_nodes = sort_drained_nodes(app_settings, drained_nodes)
+
+    assert not terminating_nodes
+    assert len(hot_buffer_drained_nodes) == 1
+    assert len(other_drained_nodes) == 1
+    assert hot_buffer_drained_nodes[0].node.description == fresh_node.description

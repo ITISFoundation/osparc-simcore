@@ -1,30 +1,50 @@
 from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 
-from models_library.progress_bar import ProgressReport
-
-from .models import (
-    ExecutionMetadata,
+from models_library.celery import (
+    GroupExecutionMetadata,
+    GroupKey,
+    GroupStatus,
+    GroupUUID,
     OwnerMetadata,
     Task,
+    TaskExecutionMetadata,
     TaskKey,
     TaskStatus,
     TaskStreamItem,
     TaskUUID,
 )
+from models_library.progress_bar import ProgressReport
 
 
 @runtime_checkable
 class TaskManager(Protocol):
+    async def submit_group(
+        self,
+        execution_metadata: GroupExecutionMetadata,
+        *,
+        owner_metadata: OwnerMetadata,
+    ) -> tuple[GroupUUID, list[TaskUUID]]: ...
+
     async def submit_task(
-        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_param
+        self, execution_metadata: TaskExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params
     ) -> TaskUUID: ...
 
     async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None: ...
 
+    async def cancel_group(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> None: ...
+
+    async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None: ...
+
     async def get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any: ...
 
     async def get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus: ...
+
+    async def get_group_status(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> GroupStatus: ...
+
+    async def get_status(
+        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
+    ) -> TaskStatus | GroupStatus: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
@@ -44,4 +64,4 @@ class TaskManager(Protocol):
 
     async def set_task_stream_last_update(self, task_key: TaskKey) -> None: ...
 
-    async def task_exists(self, task_key: TaskKey) -> bool: ...
+    async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...

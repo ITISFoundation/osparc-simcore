@@ -554,7 +554,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
                   toolTipText = this.tr("Waiting for upstream port to finish uploading...");
                   break;
                 case "DOWNLOAD_FINISHED_EMPTY":
-                  toolTipText = this.tr("No data downloaded");
+                  toolTipText = this.tr("Download completed: port has no data");
                   break;
                 case "DOWNLOAD_FINISHED_SUCCESSFULLY":
                   toolTipText = this.tr("Download finished successfully");

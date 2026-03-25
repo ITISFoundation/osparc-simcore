@@ -1,11 +1,11 @@
 from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Final, Literal
+from typing import Annotated, Final
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from pydantic import ByteSize, Field, NonNegativeFloat, NonNegativeInt, TypeAdapter
+from pydantic import ByteSize, Field, NonNegativeFloat, NonNegativeInt, PositiveInt, TypeAdapter
 
 from .base import BaseCustomSettings
 from .s3 import S3Settings
@@ -27,7 +27,7 @@ type SearchArgument = str
 type EditArgument = str
 type ArgumentValue = str
 type ReplaceArgument = EditArgument | tuple[EditArgument, ArgumentValue]
-type ElementsToRemove = Annotated[Literal[1, 2], int]
+type ElementsToRemove = Annotated[PositiveInt, int]
 type EditArguments = dict[SearchArgument, ReplaceArgument]
 type RemoveArguments = list[tuple[SearchArgument, ElementsToRemove]]
 
@@ -75,7 +75,7 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
 
     R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT: Annotated[
         ByteSize, Field(description="memory limit for the rclone mount container")
-    ] = TypeAdapter(ByteSize).validate_python("2GiB")
+    ] = TypeAdapter(ByteSize).validate_python("3GiB")
 
     R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS: Annotated[
         NonNegativeInt, Field(description="CPU limit for the rclone mount container")
@@ -107,14 +107,6 @@ class SimcoreSDKSyncSettings(BaseCustomSettings):
 class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: Annotated[S3Settings, Field(json_schema_extra={"auto_default_from_env": True})]
     R_CLONE_PROVIDER: S3Provider
-
-    R_CLONE_VERSION: Annotated[
-        str | None,
-        Field(
-            pattern=r"^\d+\.\d+\.\d+$",
-            description="version of rclone for the container image",
-        ),
-    ] = None
 
     R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: SimcoreSDKMountSettings = Field(
         json_schema_extra={"auto_default_from_env": True}

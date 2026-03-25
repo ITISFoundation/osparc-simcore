@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
 )
+from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -144,6 +145,7 @@ async def stop_dynamic_services_in_project(
     project_id: ProjectID,
     simcore_user_agent: str,
     save_state: bool,
+    product_name: ProductName,
 ) -> None:
     """Stops all dynamic services in the project"""
     running_dynamic_services = await list_dynamic_services(app, user_id=user_id, project_id=project_id)
@@ -171,6 +173,7 @@ async def stop_dynamic_services_in_project(
                     node_id=service.node_uuid,
                     simcore_user_agent=simcore_user_agent,
                     save_state=save_state,
+                    product_name=product_name,
                 ),
                 progress=progress_bar.sub_progress(1, description=f"{service.node_uuid}"),
             )

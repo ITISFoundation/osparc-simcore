@@ -2,8 +2,10 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 import typer
+from asgi_lifespan import LifespanManager
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.long_running_tasks.models import TaskProgress
@@ -19,6 +21,7 @@ from .modules.long_running_tasks import (
 )
 from .modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from .modules.outputs import OutputsManager, setup_outputs
+from .modules.r_clone_mount_manager import setup_r_clone_mount_manager
 
 log = logging.getLogger(__name__)
 main = typer.Typer(
@@ -39,17 +42,27 @@ def openapi():
 
 
 @asynccontextmanager
-async def _initialized_app() -> AsyncIterator[FastAPI]:
+async def _initialized_app(
+    *,
+    with_rabbitmq: bool = False,
+    with_mounted_fs: bool = False,
+    with_outputs: bool = False,
+    with_r_clone_mount_manager: bool = False,
+) -> AsyncIterator[FastAPI]:
     app = create_base_app()
 
-    # setup MountedVolumes
-    setup_rabbitmq(app)
-    setup_mounted_fs(app)
-    setup_outputs(app)
+    # setup required components
+    if with_rabbitmq:
+        setup_rabbitmq(app)
+    if with_mounted_fs:
+        setup_mounted_fs(app)
+    if with_outputs:
+        setup_outputs(app)
+    if with_r_clone_mount_manager:
+        setup_r_clone_mount_manager(app)
 
-    await app.router.startup()
-    yield app
-    await app.router.shutdown()
+    async with LifespanManager(app):
+        yield app
 
 
 def _print_highlight(message: str) -> None:
@@ -61,7 +74,7 @@ def state_list_dirs():
     """Lists files inside state directories"""
 
     async def _async_state_list_dirs() -> None:
-        async with _initialized_app() as app:
+        async with _initialized_app(with_mounted_fs=True) as app:
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
             for state_path in mounted_volumes.state_paths:
                 state_path_content = list(state_path.glob("*"))
@@ -71,11 +84,16 @@ def state_list_dirs():
 
 
 @main.command()
-def state_save():
-    """Saves the state, usually workspace directory"""
+def state_save(*, enable_rabbitmq: Annotated[bool, typer.Option(help="allows to disable rabbitmq setup")] = True):
+    """Saves the state, usually workspace directory
+
+    NOTE: if rabbitmq is causing issues it's possible to disable the setup (not necessary for this command)
+    """
 
     async def _async_save_state() -> None:
-        async with _initialized_app() as app:
+        async with _initialized_app(
+            with_rabbitmq=enable_rabbitmq, with_mounted_fs=True, with_r_clone_mount_manager=True
+        ) as app:
             settings: ApplicationSettings = app.state.settings
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
@@ -91,11 +109,14 @@ def state_save():
 
 
 @main.command()
-def outputs_push():
-    """Pushes the output ports"""
+def outputs_push(*, enable_rabbitmq: Annotated[bool, typer.Option(help="allows to disable rabbitmq setup")] = True):
+    """Pushes the output ports
+
+    NOTE: if rabbitmq is causing issues it's possible to disable the setup (not necessary for this command)
+    """
 
     async def _async_outputs_push() -> None:
-        async with _initialized_app() as app:
+        async with _initialized_app(with_rabbitmq=enable_rabbitmq, with_mounted_fs=True, with_outputs=True) as app:
             outputs_manager: OutputsManager = app.state.outputs_manager
             await push_user_services_output_ports(TaskProgress.create(), app=app, outputs_manager=outputs_manager)
 

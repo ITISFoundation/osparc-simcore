@@ -297,6 +297,11 @@ def test_resources_create_as_empty():
             Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
             Resources.model_construct(cpus=-0.9, ram=ByteSize(-33)),
         ),  # string resources are ignored in summation
+        (
+            Resources(cpus=14.6, ram=ByteSize(29850022707), generic_resources={}),
+            Resources(cpus=14.6, ram=ByteSize(29850022707), generic_resources={}),
+            Resources(cpus=0, ram=ByteSize(0), generic_resources={}),
+        ),
     ],
 )
 def test_resources_sub(a: Resources, b: Resources, result: Resources):

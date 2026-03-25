@@ -55,6 +55,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.storage._rest import submit_export_data
 from simcore_service_webserver.tasks._tasks_service import (
     cancel_task,
     get_task_result,
@@ -443,7 +444,7 @@ async def test_export_data(
     expected_status: int,
 ):
     mock_handler_in_storage_rest(
-        submit_job.__name__,
+        submit_export_data.__name__,
         side_effect=backend_result_or_exception,
     )
 

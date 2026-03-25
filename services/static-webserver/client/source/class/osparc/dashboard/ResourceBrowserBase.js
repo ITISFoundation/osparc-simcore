@@ -86,6 +86,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       event: "changeMultiSelection",
       apply: "_applyMultiSelection"
     },
+
+    activeFilters: {
+      check: "Object",
+      init: {},
+      nullable: false,
+      event: "changeActiveFilters",
+      apply: "__applyActiveFilters",
+    },
   },
 
   events: {
@@ -294,6 +302,57 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
 
+      this._searchBarFilter.addListener("changeSelectedTags", e => {
+        const selectedTagIds = e.getData();
+        if (selectedTagIds.length > 0) {
+          this.__addFilter("tags", selectedTagIds, null);
+        } else {
+          this.__removeFilter("tags");
+        }
+      }, this);
+
+      this._searchBarFilter.addListener("changeSharedWith", e => {
+        const sharedWithData = e.getData();
+        if (sharedWithData) {
+          this.__addFilter("sharedWith", sharedWithData.id, sharedWithData.label);
+        } else {
+          this.__removeFilter("sharedWith");
+        }
+      }, this);
+
+      this._searchBarFilter.addListener("changeAppType", e => {
+        const appTypeData = e.getData();
+        if (appTypeData) {
+          this.__addFilter("appType", appTypeData.id, appTypeData.label);
+        } else {
+          this.__removeFilter("appType");
+        }
+      }, this);
+
+      this._searchBarFilter.addListener("changeText", e => {
+        const textFilterValue = e.getData();
+        if (textFilterValue) {
+          this.__addFilter("text", textFilterValue, null);
+        } else {
+          this.__removeFilter("text");
+        }
+      }, this);
+
+      this._searchBarFilter.addListener("searchContextChanged", e => {
+        const searchContext = e.getData();
+        this._changeContext(searchContext);
+      }, this);
+
+      this._searchBarFilter.addListener("resetButtonPressed", () => {
+        this._resetFilters();
+        // and bring back to the default context
+        if (this._resourceType === "study") {
+          this._backToContext();
+        }
+      }, this);
+
+      this.bind("activeFilters", searchBarFilter, "activeFilters");
+
       this._addToLayout(searchBarFilter);
     },
 
@@ -328,7 +387,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourcesContainer.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
-      resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyProjectIconClicked", e => this._emptyProjectIconClicked(e.getData()));
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
       resourcesContainer.addListener("moveFolderToRequested", e => this._moveFolderToRequested(e.getData()));
@@ -358,6 +416,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("untrashWorkspaceRequested", e => this._untrashWorkspaceRequested(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
       resourcesContainer.addListener("openLocation", e => this._openLocation(e.getData()));
+      resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
 
       this._addToLayout(resourcesContainer);
     },
@@ -468,27 +527,74 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       resourceFilter.addListener("changeSharedWith", e => {
         const sharedWith = e.getData();
-        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
+        if (sharedWith) {
+          this.__addFilter("sharedWith", sharedWith.id, sharedWith.label);
+        } else {
+          this.__removeFilter("sharedWith");
+        }
       }, this);
 
       resourceFilter.addListener("changeSelectedTags", e => {
         const selectedTagIds = e.getData();
-        this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
+        if (selectedTagIds.length > 0) {
+          this.__addFilter("tags", selectedTagIds, null);
+        } else {
+          this.__removeFilter("tags");
+        }
       }, this);
 
       resourceFilter.addListener("changeAppType", e => {
-        const appType = e.getData();
-        this._searchBarFilter.setAppTypeActiveFilter(appType.appType, appType.label);
+        const appData = e.getData();
+        if (appData) {
+          this.__addFilter("appType", appData.appType, appData.label);
+        } else {
+          this.__removeFilter("appType");
+        }
       }, this);
 
-      this._searchBarFilter.addListener("filterChanged", e => {
-        const filterData = e.getData();
-        resourceFilter.filterChanged(filterData);
-      });
+      this.bind("activeFilters", resourceFilter, "activeFilters");
 
       this._leftFilters.add(resourceFilter, {
         flex: 1
       });
+    },
+
+    __addFilter: function(filterName, filterId, filterLabel) {
+      // clone the active filters to trigger the change event
+      const activeFilters = osparc.utils.Utils.deepCloneObject(this.getActiveFilters() || {});
+      if (filterName && filterId) {
+        activeFilters[filterName] = {
+          id: filterId,
+          label: filterLabel
+        };
+      }
+      this.setActiveFilters(activeFilters);
+    },
+
+    __removeFilter: function(filterName) {
+      // clone the active filters to trigger the change event
+      const activeFilters = osparc.utils.Utils.deepCloneObject(this.getActiveFilters() || {});
+      if (filterName in activeFilters) {
+        delete activeFilters[filterName];
+      }
+      this.setActiveFilters(activeFilters);
+    },
+
+    _resetFilters: function() {
+      const activeFilters = {};
+      this.setActiveFilters(activeFilters);
+    },
+
+    __applyActiveFilters: function(value, old) {
+      if (JSON.stringify(value) !== JSON.stringify(old)) {
+        const curatedFilters = {};
+        curatedFilters.tags = value.tags ? value["tags"]["id"] : [];
+        curatedFilters.sharedWith = value.sharedWith ? value["sharedWith"]["id"] : null;
+        curatedFilters.appType = value.appType ? value["appType"]["id"] : null;
+        curatedFilters.text = value.text ? value["text"]["id"] : "";
+        // this will trigger the UIFilter's mechanism to filter the shown cards
+        this._searchBarFilter._filterChange(curatedFilters);
+      }
     },
 
     /**
@@ -784,6 +890,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         studyOptions.addListener("cancel", () => cancelStudyOptions());
         studyOptions.addListener("startStudy", () => {
           const newName = studyOptions.getChildControl("title-field").getValue();
+          const selectedTagIds = studyOptions.getSelectedTags();
           const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
           const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
           win.close();
@@ -805,6 +912,22 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               if (newStudyData["name"] !== newName) {
                 promises.push(osparc.study.StudyOptions.updateName(newStudyData, newName));
               }
+              // add the tags if they changed
+              selectedTagIds.forEach(tagId => {
+                const found = newStudyData["tags"].includes(tagId);
+                if (!found) {
+                  // add the missing tag
+                  promises.push(osparc.store.Study.getInstance().addTag(newStudyData["uuid"], tagId));
+                }
+              });
+              // remove the tags that are not selected anymore
+              newStudyData["tags"].forEach(tagId => {
+                const found = selectedTagIds.includes(tagId);
+                if (!found) {
+                  // remove the tag
+                  promises.push(osparc.store.Study.getInstance().removeTag(newStudyData["uuid"], tagId));
+                }
+              });
               // patch the wallet
               if (walletSelection.length && walletSelection[0]["walletId"]) {
                 const walletId = walletSelection[0]["walletId"];
@@ -835,6 +958,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   win.close();
                   const showStudyOptions = false;
                   this._startStudyById(studyId, openCB, cancelCB, showStudyOptions);
+                })
+                .catch(err => {
+                  this._hideLoadingPage();
+                  osparc.FlashMessenger.logError(err);
                 });
             })
             .catch(err => {

@@ -218,7 +218,8 @@ async def _assert_project_state_updated(
         )
         async def _received_project_update_event() -> None:
             assert handler.call_count == len(expected_project_state_updates), (
-                f"received {handler.call_count}:{handler.call_args_list} of {len(expected_project_state_updates)} expected calls"
+                f"received {handler.call_count}:{handler.call_args_list} of "
+                f"{len(expected_project_state_updates)} expected calls"
             )
             if expected_project_state_updates:
                 calls = [
@@ -1029,6 +1030,7 @@ async def test_close_project(
                     node_id=service.node_uuid,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state=True,
+                    product_name="osparc",
                 ),
                 progress=mock.ANY,
             )
@@ -1161,7 +1163,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         "service_id": None,
     }
     resp = await client.post(url.path, json=body)
-    data, errors = await assert_status(resp, expected_response_on_create)
+    data, _errors = await assert_status(resp, expected_response_on_create)
     dynamic_node_id = None
     if resp.status == status.HTTP_201_CREATED:
         mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
@@ -1179,7 +1181,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         "service_id": None,
     }
     resp = await client.post(f"{url}", json=body)
-    data, errors = await assert_status(resp, expected_response_on_create)
+    data, _errors = await assert_status(resp, expected_response_on_create)
     computational_node_id = None
     if resp.status == status.HTTP_201_CREATED:
         mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
@@ -1210,7 +1212,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         }
     )
     resp = await client.get(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_get)
+    data, _errors = await assert_status(resp, expected_response_on_get)
     if resp.status == status.HTTP_200_OK:
         assert "service_state" in data
         assert data["service_state"] == "running"
@@ -1227,7 +1229,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         }
     )
     resp = await client.get(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_get)
+    data, _errors = await assert_status(resp, expected_response_on_get)
     if resp.status == status.HTTP_200_OK:
         assert "service_state" in data
         assert data["service_state"] == "idle"
@@ -1235,7 +1237,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     # delete the node
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=dynamic_node_id)
     resp = await client.delete(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_delete)
+    data, _errors = await assert_status(resp, expected_response_on_delete)
     await asyncio.sleep(5)
     if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_called_once()
@@ -1249,7 +1251,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=computational_node_id)
     resp = await client.delete(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_delete)
+    data, _errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
@@ -1283,7 +1285,7 @@ async def test_open_shared_project_multiple_users(
 ):
     base_client = client
     (
-        sio_base,
+        _sio_base,
         base_client_tab_id,
         sio_base_handlers,
     ) = await create_socketio_connection_with_handlers(None, base_client)
@@ -1469,7 +1471,8 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
     )
     await _state_project(client, shared_project, expected.ok, opened_project_state)
 
-    # now we simulate refreshing the tab of the base user (the client session id remains the same), by disconnecting and reconnecting the socket.io
+    # now we simulate refreshing the tab of the base user (the client session id remains the same),
+    # by disconnecting and reconnecting the socket.io
     await original_socketio.disconnect()
     await _assert_project_state_updated(
         original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
@@ -1554,7 +1557,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     await original_socketio.disconnect()
     await asyncio.sleep(5)  # wait for the disconnect to be processed
     (
-        new_socketio,
+        _new_socketio,
         new_client_session_id,
         new_socketio_handlers,
     ) = await create_socketio_connection_with_handlers(None, client)
@@ -1607,7 +1610,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     client_2 = client_on_running_server_factory()
 
     # 1. user 1 opens project
-    sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
+    _sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
     # expected is that the project is closed and unlocked
     expected_project_state_client_1 = ProjectStateOutputSchema(
         share_state=ProjectShareStateOutputSchema(locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]),
@@ -1657,7 +1660,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         enable_check=user_role != UserRole.ANONYMOUS,
         exit_stack=exit_stack,
     )
-    sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(None, client_2)
+    _sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(None, client_2)
     await _open_project(
         client_2,
         client_id2,
@@ -1694,7 +1697,8 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
 
     # we should receive an event that the project lock state changed
     # NOTE: user 1 is part of the primary group owning the project, and the all group
-    # there will be an event when the project is CLOSING, then another once the services are removed and the project is CLOSED
+    # there will be an event when the project is CLOSING, then another once the services are removed and the
+    # project is CLOSED
     # user 2 is only part of the all group, therefore only receives 1 event
 
     await _assert_project_state_updated(

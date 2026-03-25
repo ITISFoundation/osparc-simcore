@@ -46,7 +46,7 @@ from ..core.settings import ApplicationSettings
 from ..models import AssociatedInstance
 from ..modules.docker import AutoscalingDocker
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 _NANO_CPU: Final[float] = 10**9
 
 _TASK_STATUS_WITH_ASSIGNED_RESOURCES: Final[tuple[TaskState, ...]] = (
@@ -126,7 +126,7 @@ async def remove_nodes(docker_client: AutoscalingDocker, *, nodes: list[Node], f
                 NodeState.disconnected,
                 NodeState.unknown,
             ]
-        logger.warning(
+        _logger.warning(
             "%s has no Status/State! This is unexpected and shall be checked",
             f"{node=}",
         )
@@ -136,14 +136,14 @@ async def remove_nodes(docker_client: AutoscalingDocker, *, nodes: list[Node], f
     nodes_that_need_removal = [n for n in nodes if (force is True) or _check_if_node_is_removable(n)]
     for node in nodes_that_need_removal:
         assert node.id  # nosec
-        with log_context(logger, logging.INFO, msg=f"remove {node.id=}"):
+        with log_context(_logger, logging.INFO, msg=f"remove {node.id=}"):
             await docker_client.nodes.remove(node_id=node.id, force=force)
     return nodes_that_need_removal
 
 
 def _is_task_waiting_for_resources(task: Task) -> bool:
     # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-    with log_context(logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.id}"):
+    with log_context(_logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.id}"):
         if not task.status or not task.status.state or not task.status.message or not task.status.err:
             return False
         return (
@@ -206,7 +206,7 @@ async def pending_service_tasks_with_insufficient_resources(
     )
 
     sorted_tasks = sorted(tasks, key=_by_created_dt)
-    logger.debug(
+    _logger.debug(
         "found following tasks that might trigger autoscaling: %s",
         [task.id for task in tasks],
     )
@@ -361,6 +361,12 @@ async def compute_node_used_resources(
     if service_labels is not None:
         task_filters |= {"label": service_labels}
     all_tasks_on_node = TypeAdapter(list[Task]).validate_python(await docker_client.tasks.list(filters=task_filters))
+    _logger.debug(
+        "found following tasks on node %s: %s, using filters %s",
+        node.id,
+        [task.id for task in all_tasks_on_node],
+        task_filters,
+    )
     for task in all_tasks_on_node:
         assert task.status  # nosec
         if (
@@ -375,6 +381,12 @@ async def compute_node_used_resources(
                     "cpus": (task.spec.resources.reservations.nano_cp_us or 0) / _NANO_CPU,
                 }
             )
+    _logger.debug(
+        "node %s has used resources: %s, based on tasks: %s",
+        node.id,
+        dict(cluster_resources_counter),
+        [task.id for task in all_tasks_on_node],
+    )
     return Resources.model_validate(dict(cluster_resources_counter))
 
 
@@ -514,7 +526,7 @@ async def tag_node(
     if (node.spec.labels == tags) and ((node.spec.availability is Availability.active) == available):
         # nothing to do
         return node
-    with log_context(logger, logging.INFO, msg=f"tag {node.id=} with {tags=} and {available=}"):
+    with log_context(_logger, logging.INFO, msg=f"tag {node.id=} with {tags=} and {available=}"):
         assert node.id  # nosec
 
         latest_version_node = TypeAdapter(Node).validate_python(await docker_client.nodes.inspect(node_id=node.id))
@@ -601,6 +613,11 @@ async def set_node_osparc_ready(
 
     if additional_labels:
         new_tags.update(additional_labels)
+
+    if ready:
+        # NOTE: clean empty tag in case we activate a node that was previously found empty,
+        # we do not want to keep the old timestamp in this case
+        new_tags.pop(_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY, None)
 
     # Remove custom placement labels when draining (not ready)
     if not ready:

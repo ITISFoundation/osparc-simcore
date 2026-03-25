@@ -13,6 +13,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import NonNegativeInt
 from servicelib.file_utils import disk_usage
+from servicelib.r_clone_utils import get_r_clone_version
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
 from tenacity import (
     before_sleep_log,
@@ -124,9 +125,8 @@ async def _get_rclone_mount_command(
         "5G",
         "--vfs-cache-poll-interval",
         "1m",
-        "--write-back-cache",
         "--vfs-write-back",
-        "10s",
+        "5s",
         "--cache-dir",
         f"{target_cache_path}",
         "--dir-cache-time",
@@ -218,7 +218,6 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         # ensure nothing was left from previous runs
         await self.delegate.remove_container(self._r_clone_container_name)
 
-        assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
         await _docker_utils.create_r_clone_container(
             self.delegate,
@@ -233,7 +232,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                 rc_user=self.rc_user,
                 rc_password=self.rc_password,
             ),
-            r_clone_version=self.r_clone_settings.R_CLONE_VERSION,
+            r_clone_version=await get_r_clone_version(),
             rc_port=self.rc_port,
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
@@ -253,12 +252,10 @@ class RemoteControlHttpClient:
         rc_password: str,
         *,
         transfers_completed_timeout: timedelta,
-        update_interval: timedelta = _DEFAULT_UPDATE_INTERVAL,
         r_clone_client_timeout: timedelta = _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT,
     ) -> None:
         self.transfers_completed_timeout = transfers_completed_timeout
-        self._update_interval_seconds = update_interval.total_seconds()
-        self._r_clone_client_timeout = r_clone_client_timeout
+        self._r_clone_client_timeout_seconds = r_clone_client_timeout.total_seconds()
         self.rc_host = rc_host
         self.rc_port = rc_port
         self._auth = (rc_user, rc_password)
@@ -271,20 +268,23 @@ class RemoteControlHttpClient:
         request_url = f"{self._base_url}/{path}"
         _logger.debug("Sending '%s %s' request", method, request_url)
 
-        async with AsyncClient(timeout=self._r_clone_client_timeout.total_seconds()) as client:
+        async with AsyncClient(timeout=self._r_clone_client_timeout_seconds) as client:
             response = await client.request(method, request_url, auth=self._auth)
             response.raise_for_status()
             dict_response: dict = response.json()
             return dict_response
 
     async def _post_core_stats(self) -> dict:
+        """for details refer to https://rclone.org/rc/#core-stats"""
         return await self._request("POST", "core/stats")
 
     async def _post_vfs_queue(self) -> dict:
+        """for details refer to https://rclone.org/rc/#vfs-queue"""
         return await self._request("POST", "vfs/queue")
 
     async def _rc_noop(self) -> dict:
-        return await self._request("POST", "rc/noop")
+        """for details refer to https://rclone.org/rc/#rc-noopauth"""
+        return await self._request("POST", "rc/noopauth")
 
     async def get_mount_activity(self) -> MountActivity:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())

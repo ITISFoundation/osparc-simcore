@@ -97,6 +97,9 @@ qx.Class.define("osparc.po.UsersPending", {
   },
 
   members: {
+    __currentFilterText: "",
+    __pendingUsers: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -121,6 +124,24 @@ qx.Class.define("osparc.po.UsersPending", {
           });
           this.getChildControl("header-layout").add(control);
           break;
+        case "loading-spinner":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26").set({
+            padding: 6
+          });
+          control.getContentElement().addClass("rotate");
+          this._add(control);
+          break;
+        case "filter-users": {
+          const filterGroupId = "pendingUsersLayout";
+          control = new osparc.filter.TextFilter("text", filterGroupId).set({
+            minWidth: 300,
+          });
+          control.getChildControl("textfield").setPlaceholder(this.tr("Filter by Name, Email or Status"));
+          const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
+          qx.event.message.Bus.getInstance().subscribe(msgName, this.__onFilterChange, this);
+          this._add(control);
+          break;
+        }
         case "pending-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control, {
@@ -140,8 +161,7 @@ qx.Class.define("osparc.po.UsersPending", {
     _buildLayout: function() {
       this.getChildControl("reload-button");
       this.getChildControl("intro-text");
-      this.getChildControl("pending-users-container");
-      this.__addHeader();
+      this.getChildControl("loading-spinner");
       this.__populatePendingUsersLayout();
     },
 
@@ -262,11 +282,17 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __populatePendingUsersLayout: function() {
+      this.getChildControl("loading-spinner").show();
+      this.getChildControl("filter-users").exclude();
+
+      const paramsPending = {};
+      const paramsReviewed = {};
       Promise.all([
-        osparc.data.Resources.fetch("poUsers", "getPendingUsers"),
-        osparc.data.Resources.fetch("poUsers", "getReviewedUsers")
+        osparc.data.Resources.getInstance().getAllPages("poUsers", paramsPending, "getPendingUsers"),
+        osparc.data.Resources.getInstance().getAllPages("poUsers", paramsReviewed, "getReviewedUsers"),
       ])
         .then(resps => {
+          this.getChildControl("filter-users").show();
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
           const sortByDate = (a, b) => {
@@ -278,132 +304,156 @@ qx.Class.define("osparc.po.UsersPending", {
           };
           pendingUsers.sort(sortByDate);
           reviewedUsers.sort(sortByDate);
-          this.__addRows(pendingUsers.concat(reviewedUsers));
+          this.__pendingUsers = pendingUsers.concat(reviewedUsers);
+          this.__renderPendingUsers();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => osparc.FlashMessenger.logError(err))
+        .finally(() => this.getChildControl("loading-spinner").exclude());
     },
 
     __reload: function() {
       this.getChildControl("pending-users-layout").removeAll();
-      this.__addHeader();
       this.__populatePendingUsersLayout();
+    },
+
+    __onFilterChange: function(msg) {
+      const data = msg ? msg.getData() : null;
+      this.__currentFilterText = data && data.text ? data.text : "";
+      this.__renderPendingUsers();
+    },
+
+    __filterPendingUsers: function() {
+      if (!this.__pendingUsers) {
+        return [];
+      }
+
+      const text = this.__currentFilterText.trim();
+      if (!text || text.length < 2) {
+        return this.__pendingUsers;
+      }
+
+      const query = text.toLowerCase();
+      return this.__pendingUsers.filter(pendingUser => {
+        const fullName = `${pendingUser.firstName || ""} ${pendingUser.lastName || ""}`.trim().toLowerCase();
+        const email = (pendingUser.email || "").toLowerCase();
+        const status = (pendingUser.accountRequestStatus || "").toLowerCase();
+        return [fullName, email, status].some(value => value.includes(query));
+      });
+    },
+
+    __renderPendingUsers: function() {
+      const pendingUsersLayout = this.getChildControl("pending-users-layout");
+      pendingUsersLayout.removeAll();
+      this.__addHeader();
+      this.__addRows(this.__filterPendingUsers());
     },
 
     __createApproveButton: function(email) {
       const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
-      button.addListener("execute", () => {
-        const form = this.self().createInvitationForm(false);
-        const approveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Approve"));
-        approveBtn.set({
-          appearance: "form-button"
-        });
-        form.addButton(approveBtn);
-        const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-        const invitationForm = new qx.ui.form.renderer.Single(form);
-        layout.add(invitationForm);
-        const win = osparc.ui.window.Window.popUpInWindow(layout, email, 350, 150).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: true
-        });
-        win.open();
-        approveBtn.addListener("execute", () => {
-          if (osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
-            if (form.validate()) {
-              const extraCreditsInUsd = form.getItems()["credits"].getValue();
-              let trialAccountDays = 0;
-              if (form.getItems()["withExpiration"].getValue()) {
-                trialAccountDays = form.getItems()["trialDays"].getValue();
-              }
-
-              let msg = `Are you sure you want to approve ${email}`;
-              if (extraCreditsInUsd) {
-                msg += ` with ${extraCreditsInUsd}$ worth credits`;
-              }
-              if (trialAccountDays > 0) {
-                msg += ` and ${trialAccountDays} days of trial`;
-              }
-              msg += "?";
-              const confWin = new osparc.ui.window.Confirmation(msg).set({
-                caption: "Approve User",
-                confirmText: "Approve",
-                confirmAction: "create"
-              });
-              confWin.center();
-              confWin.open();
-              confWin.addListener("close", () => {
-                if (confWin.getConfirmed()) {
-                  approveBtn.setFetching(true);
-                  this.__approveUser(email, form)
-                    .then(() => {
-                      osparc.FlashMessenger.logAs("User approved", "INFO");
-                      this.__reload();
-                    })
-                    .catch(err => osparc.FlashMessenger.logError(err))
-                    .finally(() => {
-                      approveBtn.setFetching(false);
-                      win.close();
-                    });
-                }
-              });
-            }
-          }
-        });
-      });
+      button.addListener("execute", () => this.__openApproveDialog(email));
       return button;
     },
 
     __createRejectButton: function(email) {
-      const button = new osparc.ui.form.FetchButton("Reject");
-      button.addListener("execute", () => {
-        const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted`;
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          caption: "Reject User",
-          confirmText: "Reject",
-          confirmAction: "delete",
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            button.setFetching(true);
-            this.__rejectUser(email)
-              .then(() => {
-                osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User denied"), "INFO");
-                this.__reload();
-              })
-              .catch(err => osparc.FlashMessenger.logError(err))
-              .finally(() => button.setFetching(false));
-          }
-        });
-      });
+      const button = new qx.ui.form.Button(qx.locale.Manager.tr("Reject"));
+      button.addListener("execute", () => this.__previewRejection(email));
       return button;
     },
 
-    __approveUser: function(email, form) {
-      const params = {
-        data: {
-          email,
-        },
-      };
-      params.data["invitation"] = {};
-      const extraCreditsInUsd = form.getItems()["credits"].getValue();
-      if (extraCreditsInUsd > 0) {
-        params.data["invitation"]["extraCreditsInUsd"] = extraCreditsInUsd;
-      }
-      if (form.getItems()["withExpiration"].getValue()) {
-        params.data["invitation"]["trialAccountDays"] = form.getItems()["trialDays"].getValue();
-      }
-      return osparc.data.Resources.fetch("poUsers", "approveUser", params);
+    __openApproveDialog: function(email) {
+      const form = this.self().createInvitationForm(false);
+      const approveBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Preview Approve")).set({
+        appearance: "form-button"
+      });
+      form.addButton(approveBtn);
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const invitationForm = new qx.ui.form.renderer.Single(form);
+      layout.add(invitationForm);
+      const win = osparc.ui.window.Window.popUpInWindow(layout, email, 350, 150).set({
+        clickAwayClose: false,
+        resizable: false,
+        showClose: true
+      });
+      win.open();
+      approveBtn.addListener("execute", () => {
+        if (osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
+          if (form.validate()) {
+            const invitationData = {};
+            const extraCreditsInUsd = form.getItems()["credits"].getValue();
+            if (extraCreditsInUsd > 0) {
+              invitationData["extraCreditsInUsd"] = extraCreditsInUsd;
+            }
+            if (form.getItems()["withExpiration"].getValue()) {
+              invitationData["trialAccountDays"] = form.getItems()["trialDays"].getValue();
+            }
+            win.close();
+            this.__previewApproval(email, invitationData);
+          }
+        }
+      });
     },
 
-    __rejectUser: function(email) {
+    __previewApproval: function(email, invitationData) {
       const params = {
         data: {
           email,
-        },
+          invitation: invitationData
+        }
       };
-      return osparc.data.Resources.fetch("poUsers", "rejectUser", params);
+      osparc.data.Resources.fetch("poUsers", "previewApproval", params)
+        .then(data => {
+          const invitationUrl = data["invitationUrl"];
+          const messageContent = data["messageContent"];
+          this.__openApprovalPreview(email, invitationUrl, messageContent);
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __openApprovalPreview: function(email, invitationUrl, messageContent) {
+      const previewApproval = new osparc.po.PreviewApprovalRejection();
+      previewApproval.set({
+        invitationUrl,
+        email,
+        subject: messageContent["subject"],
+        bodyHtml: messageContent["bodyHtml"],
+      });
+      const win = osparc.ui.window.Window.popUpInWindow(previewApproval, qx.locale.Manager.tr("Preview email"), 700, 670);
+      previewApproval.addListener("userApproved", () => {
+        win.close();
+        this.__reload();
+      });
+    },
+
+    __previewRejection: function(email) {
+      const params = {
+        data: {
+          email,
+        }
+      };
+      osparc.data.Resources.fetch("poUsers", "previewRejection", params)
+        .then(data => {
+          const messageContent = data["messageContent"];
+          this.__openRejectionPreview(email, messageContent);
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __openRejectionPreview: function(email, messageContent) {
+      const previewRejection = new osparc.po.PreviewApprovalRejection().set({
+        actionMode: "reject",
+      });
+      previewRejection.getChildControl("invitation-url-container").exclude();
+      previewRejection.set({
+        email,
+        subject: messageContent["subject"],
+        bodyHtml: messageContent["bodyHtml"],
+      });
+
+      const win = osparc.ui.window.Window.popUpInWindow(previewRejection, qx.locale.Manager.tr("Preview email"), 700, 670);
+      previewRejection.addListener("userRejected", () => {
+        win.close();
+        this.__reload();
+      });
     },
   }
 });

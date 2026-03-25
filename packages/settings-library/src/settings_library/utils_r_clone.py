@@ -53,8 +53,8 @@ def get_s3_r_clone_config(r_clone_settings: RCloneSettings, *, s3_config_key: st
     # replace entries in template
     return r_clone_config_template.format(
         endpoint=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
-        access_key=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-        secret_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        access_key=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY.get_secret_value(),
+        secret_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY.get_secret_value(),
         aws_region=r_clone_settings.R_CLONE_S3.S3_REGION,
     )
 

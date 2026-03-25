@@ -2,14 +2,15 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
-from models_library.rpc.notifications import NOTIFICATIONS_RPC_NAMESPACE
+from models_library.notifications.rpc import NOTIFICATIONS_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
 
 from ...clients.rabbitmq import get_rabbitmq_rpc_client
-from . import _notifications
+from . import _message, _template
 
 ROUTERS: list[RPCRouter] = [
-    _notifications.router,
+    _message.router,
+    _template.router,
 ]
 
 

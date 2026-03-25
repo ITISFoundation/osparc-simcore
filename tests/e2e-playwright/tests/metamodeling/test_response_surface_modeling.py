@@ -31,6 +31,7 @@ _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_func
 
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
+EXPECTED_MOGA_KEY: Final[str] = "moga"
 
 
 @pytest.fixture
@@ -83,7 +84,7 @@ def create_function_from_project(
             assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 
 
-def test_response_surface_modeling(
+def test_response_surface_modeling(  # noqa: PLR0915
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
@@ -182,44 +183,157 @@ def test_response_surface_modeling(
     create_function_from_project(page, our_project["uuid"])
 
     # 3. start a RSM with that function
+    service_keys = [
+        "mmux-vite-app-moga-write",
+        "mmux-vite-app-sumo-write",
+        "mmux-vite-app-uq-write",
+    ]
 
-    with log_context(
-        logging.INFO,
-        f"Waiting for {service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
-    ):
-        project_data = create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key, None, service_version)
-        assert "workbench" in project_data, "Expected workbench to be in project data!"
-        assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
-        node_ids: list[str] = list(project_data["workbench"])
-        assert len(node_ids) == 1, "Expected 1 node in the workbench!"
+    for local_service_key in service_keys:
+        with log_context(
+            logging.INFO,
+            f"Waiting for {local_service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
+        ):
+            project_data = create_project_from_service_dashboard(
+                ServiceType.DYNAMIC, local_service_key, None, service_version
+            )
+            assert "workbench" in project_data, "Expected workbench to be in project data!"
+            assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
+            node_ids: list[str] = list(project_data["workbench"])
+            assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-        wait_for_service_running(
-            page=page,
-            node_id=node_ids[0],
-            websocket=log_in_and_out,
-            timeout=_WAITING_FOR_SERVICE_TO_START,
-            press_start_button=False,
-            product_url=product_url,
-            is_service_legacy=is_service_legacy,
-        )
+            wait_for_service_running(
+                page=page,
+                node_id=node_ids[0],
+                websocket=log_in_and_out,
+                timeout=_WAITING_FOR_SERVICE_TO_START,
+                press_start_button=False,
+                product_url=product_url,
+                is_service_legacy=is_service_legacy,
+            )
 
-    service_iframe = page.frame_locator("iframe")
-    with log_context(logging.INFO, "Waiting for the RSM to be ready..."):
-        service_iframe.get_by_role("grid").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
+        service_iframe = page.frame_locator("iframe")
+        with log_context(logging.INFO, "Waiting for the RSM to be ready..."):
+            service_iframe.get_by_role("grid").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
 
-    page.wait_for_timeout(10000)
+        # select the function
+        with log_context(logging.INFO, "Selected test function..."):
+            service_iframe.get_by_role("button", name="SELECT").nth(0).click()
 
-    # # select the function
-    # service_iframe.get_by_role("gridcell", name=_FUNCTION_NAME).click()
+        with log_context(logging.INFO, "Filling the input parameters..."):
+            min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
+            min_inputs = service_iframe.locator(f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]')
+            count_min = min_inputs.count()
 
-    # # Find the first input field (textbox) in the iframe
-    # min_input_field = service_iframe.get_by_role("textbox").nth(0)
-    # min_input_field.fill("1")
-    # max_input_field = service_iframe.get_by_role("textbox").nth(1)
-    # max_input_field.fill("10")
+            for i in range(count_min):
+                input_field = min_inputs.nth(i)
+                input_field.fill(str(i + 1))
+                logging.info("Filled %s input %d with value %d", min_test_id, i, i + 1)
+                assert input_field.input_value() == str(i + 1)
 
-    # # click on next
-    # service_iframe.get_by_role("button", name="Next").click()
+            max_test_id = "Standard Deviation" if "uq" in local_service_key.lower() else "Max"
+            max_inputs = service_iframe.locator(f'[mmux-testid="input-block-{max_test_id}"] input[type="number"]')
+            count_max = max_inputs.count()
 
-    # # then we wait a long time
-    # page.wait_for_timeout(1 * MINUTE)
+            for i in range(count_max):
+                input_field = max_inputs.nth(i)
+                input_field.fill(str((i + 1) * 10))
+                logging.info("Filled %s input %d with value %d", max_test_id, i, (i + 1) * 10)
+                assert input_field.input_value() == str((i + 1) * 10)
+
+            page.wait_for_timeout(1000)
+            page.keyboard.press("Tab")
+            page.wait_for_timeout(1000)
+
+        if EXPECTED_MOGA_KEY in local_service_key.lower():
+            with log_context(logging.INFO, "Filling the output parameters..."):
+                output_plus_button = service_iframe.locator('[mmux-testid="add-output-var-btn"]')
+                output_plus_button.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
+                output_plus_button.scroll_into_view_if_needed()
+                output_plus_button.click(timeout=30 * SECOND)
+
+                output_confirm_button = service_iframe.locator('[mmux-testid="confirm-add-output-btn"]')
+                output_confirm_button.wait_for(state="visible")
+                output_confirm_button.click(timeout=30 * SECOND)
+
+        # Click the next button
+        with log_context(logging.INFO, "Clicking Next to go to the next step..."):
+            next_button = service_iframe.locator('[mmux-testid="next-button"]')
+            next_button.scroll_into_view_if_needed()
+            next_button.click(timeout=30 * SECOND)
+
+        page.wait_for_timeout(1 * SECOND)
+
+        with log_context(logging.INFO, "Waiting for the AI model to be created..."):
+            creating_ai_model_text = service_iframe.get_by_text("Creating AI model...")
+            # wait for it to disappear, which means the model is created and we can proceed
+            creating_ai_model_text.wait_for(state="hidden", timeout=2 * MINUTE)
+
+        with log_context(logging.INFO, "Starting the sampling..."):
+            extend_sampling_btn = service_iframe.locator('[mmux-testid="extend-sampling-btn"]')
+            extend_sampling_btn.wait_for(state="visible")
+            extend_sampling_btn.scroll_into_view_if_needed()
+            extend_sampling_btn.click(timeout=30 * SECOND)
+
+            new_sampling_btn = service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]')
+            new_sampling_btn.wait_for(state="visible")
+            new_sampling_btn.scroll_into_view_if_needed()
+            new_sampling_btn.click(timeout=30 * SECOND)
+
+            samplingInput = service_iframe.locator(
+                '[mmux-testid="lhs-number-of-sampling-points-input"] input[type="number"]'
+            )
+            samplingInput.wait_for(state="visible")
+            samplingInput.scroll_into_view_if_needed()
+            samplingInput.fill("40")
+            samplingInput.press("Enter")
+
+            run_sampling_btn = service_iframe.locator('[mmux-testid="run-sampling-btn"]')
+            run_sampling_btn.wait_for(state="visible")
+            run_sampling_btn.scroll_into_view_if_needed()
+            run_sampling_btn.click(timeout=30 * SECOND)
+
+        with log_context(logging.INFO, "Waiting for the sampling to launch..."):
+            toast = service_iframe.locator("div.Toastify__toast").filter(
+                has_text="Sampling started running successfully, please wait for completion."
+            )
+            # waits up to 120 seconds
+            toast.wait_for(state="visible", timeout=120000)
+
+        with log_context(logging.INFO, "Waiting for the sampling to complete..."):
+
+            def all_completed(service_iframe):
+                status_cells = service_iframe.locator('div[role="gridcell"][data-field="status"]')
+                total = status_cells.count()
+                if total == 0:
+                    return False
+                for i in range(total):
+                    text = (status_cells.nth(i).text_content() or "").lower().strip()
+                    logging.info("STATUS CELL TEXT %d: %s", i, text)
+                    if text != "complete":
+                        return False
+                return True
+
+            while not all_completed(service_iframe):
+                logging.info("⏳ Waiting for all status cells to be completed...")
+                page.wait_for_timeout(3000)
+                refresh_btn = service_iframe.locator('[mmux-testid="refresh-job-collections-btn"]')
+                refresh_btn.wait_for(state="visible", timeout=30 * SECOND)
+                refresh_btn.click()
+
+            select_all_btn = service_iframe.locator('[mmux-testid="select-all-successful-jobs-btn"]')
+            select_all_btn.wait_for(state="visible", timeout=30 * SECOND)
+            select_all_btn.click()
+
+            plotly_graph = service_iframe.locator(".js-plotly-plot")
+            plotly_graph.wait_for(state="visible", timeout=300000)
+            page.wait_for_timeout(2000)
+
+        with (
+            log_context(logging.INFO, "Go back to dashboard"),
+            page.expect_response(re.compile(r"/projects\?.+")) as list_projects_response,
+        ):
+            page.get_by_test_id("dashboardBtn").click()
+            page.get_by_test_id("confirmDashboardBtn").click()
+            assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
+            page.wait_for_timeout(2000)

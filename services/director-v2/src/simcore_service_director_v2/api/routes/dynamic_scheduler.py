@@ -13,6 +13,7 @@ from servicelib.long_running_tasks.models import (
     ProgressPercent,
     TaskId,
     TaskProgress,
+    TaskUniqueness,
 )
 from servicelib.long_running_tasks.task import TaskRegistry
 from tenacity import retry
@@ -105,7 +106,7 @@ async def delete_service_containers(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             _task_remove_service_containers.__name__,
-            unique=True,
+            uniqueness=TaskUniqueness.BY_NAME,
             node_uuid=node_uuid,
         )
     except TaskAlreadyRunningError as e:
@@ -155,7 +156,7 @@ async def save_service_state(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             _task_save_service_state.__name__,
-            unique=True,
+            uniqueness=TaskUniqueness.BY_NAME,
             node_uuid=node_uuid,
         )
     except TaskAlreadyRunningError as e:
@@ -189,7 +190,7 @@ async def push_service_outputs(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             _task_push_service_outputs.__name__,
-            unique=True,
+            uniqueness=TaskUniqueness.BY_NAME,
             node_uuid=node_uuid,
         )
     except TaskAlreadyRunningError as e:
@@ -222,7 +223,7 @@ async def delete_service_docker_resources(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             _task_cleanup_service_docker_resources.__name__,
-            unique=True,
+            uniqueness=TaskUniqueness.BY_NAME,
             node_uuid=node_uuid,
         )
     except TaskAlreadyRunningError as e:

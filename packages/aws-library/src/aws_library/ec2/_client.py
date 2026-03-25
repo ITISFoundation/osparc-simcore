@@ -1,3 +1,4 @@
+import base64
 import contextlib
 import logging
 from collections.abc import Iterable, Sequence
@@ -338,7 +339,8 @@ class SimcoreEC2API:
             instance_datas -- the instances to start
             change_startup_script -- optional user data script to set on instances before starting
                         Note: this will overwrite any existing user data on the instance
-                        Note2: By default, EC2 instances execute user data only on first launch; per-boot execution is enabled via MIME multi-part format (run_on_every_boot=True).
+                        Note2: By default, EC2 instances execute user data only on first launch;
+                        per-boot execution is enabled via MIME multi-part format (run_on_every_boot=True).
 
         Raises:
             EC2InstanceNotFoundError: if some of the instance_datas are not found
@@ -355,10 +357,15 @@ class SimcoreEC2API:
             if change_startup_script is not None:
                 # modify user data on stopped instances before starting
                 # use run_on_every_boot=True so the script executes on every restart (e.g., warm buffer activation)
+                # NOTE: modify_instance_attribute requires base64-encoded user data
+                # (unlike run_instances which handles encoding automatically)
+                encoded_user_data = base64.b64encode(
+                    compose_user_data(change_startup_script, run_on_every_boot=True).encode()
+                ).decode()
                 for instance_id in instance_ids:
                     await self.client.modify_instance_attribute(
                         InstanceId=instance_id,
-                        UserData={"Value": compose_user_data(change_startup_script, run_on_every_boot=True)},
+                        UserData={"Value": encoded_user_data},
                     )
             await self.client.start_instances(InstanceIds=instance_ids)
             # wait for the instance to be in a pending state
@@ -368,11 +375,13 @@ class SimcoreEC2API:
             _logger.info("instances %s exists now.", instance_ids)
             # NOTE: waiting for pending ensure we get all the IPs back
             aws_instances = await self.client.describe_instances(InstanceIds=instance_ids)
-            assert len(aws_instances["Reservations"]) == 1  # nosec
-            assert "Instances" in aws_instances["Reservations"][0]  # nosec
+
+            # Important: when starting instances they might be part of different reservations
+            # so we have to collect all instances from all reservations returned!
             return [
                 await ec2_instance_data_from_aws_instance(self, i)
-                for i in aws_instances["Reservations"][0]["Instances"]
+                for r in aws_instances["Reservations"]
+                for i in r["Instances"]
             ]
 
     @ec2_exception_handler(_logger)

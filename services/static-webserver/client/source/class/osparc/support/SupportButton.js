@@ -23,11 +23,11 @@ qx.Class.define("osparc.support.SupportButton", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
+    osparc.utils.Utils.setIdToWidget(this, "supportButton");
+
     this.set({
       toolTipText: this.tr("Help & Support"),
     });
-
-    osparc.utils.Utils.setIdToWidget(this, "helpNavigationBtn");
 
     this.getChildControl("icon");
 

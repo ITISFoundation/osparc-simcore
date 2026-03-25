@@ -48,10 +48,6 @@ SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 echo "$INFO" "Starting service..."
 
-AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=$(rclone version | head -n1 | awk '{print $2}' | sed 's/^v//') && \
-  echo "$INFO" "AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=${AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION}" && \
-  export AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION
-
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} ' | tr '\n' ' ')
   exec sh -c "

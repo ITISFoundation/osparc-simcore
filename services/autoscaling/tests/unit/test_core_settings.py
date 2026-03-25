@@ -355,3 +355,46 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_custom_node_labels(  # noqa: N802
             ).split("pytest")[0]
             in caplog.text
         )
+
+
+def test_start_with_too_many_hot_buffers(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    caplog: pytest.LogCaptureFixture,
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+
+    # setting too many hot buffers
+    assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES < 1000
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {"t3.micro": {"ami_id": faker.pystr(), "pre_pull_images": [], "hot_buffer_count": 1000}}
+            )
+        },
+    )
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
+            in caplog.text
+        )
+
+        assert "Sum of hot_buffer_count" in caplog.text
+
+
+def test_settings_log_level(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("AUTOSCALING_LOG_LEVEL", "DEBUG")
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.log_level == settings.AUTOSCALING_LOGLEVEL

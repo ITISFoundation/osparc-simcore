@@ -1,0 +1,38 @@
+[project]
+dependencies = [
+  "arrow",
+  "aiocache",
+  "asyncssh",
+  "asyncpg",
+  "black",
+  "boto3",
+  # NOTE: these must be in sync with osparc
+  "cloudpickle",
+  "dask[distributed]",
+  "mypy_boto3_ec2",
+  "types-boto3",
+  "parse",
+  "pydantic[email]",
+  "python-dotenv",
+  "typer",
+  "rich",
+  "sqlalchemy[asyncio]",
+  "ansible>=10.7.0",
+  "lz4",
+  "orjson>=3.11.7",
+]
+name = "autoscaled-monitor"
+version = "1.0.0"
+authors = [
+  { name = "Sylvain Anderegg", email = "35365065+sanderegg@users.noreply.github.com" },
+]
+description = "Helper script for monitoring clusters"
+readme = "README.md"
+requires-python = ">=3.13"
+
+[project.scripts]
+autoscaled-monitor = "autoscaled_monitor.main:app"
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"

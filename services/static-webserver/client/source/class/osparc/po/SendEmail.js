@@ -18,15 +18,7 @@
 qx.Class.define("osparc.po.SendEmail", {
   extend: osparc.po.BaseView,
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__selectedRecipients = [];
-  },
-
   members: {
-    __selectedRecipients: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -57,74 +49,9 @@ qx.Class.define("osparc.po.SendEmail", {
           this.getChildControl("email-template-container").add(control);
           break;
         }
-        case "form-container": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Grid(10, 5));
-          control.getLayout().setColumnFlex(1, 1);
-          this._add(control);
-          break;
-        }
-        case "recipients-container": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
-            alignY: "middle",
-          })).set({
-            backgroundColor: "input-background",
-            height: 26,
-            marginBottom: 5,
-          });
-          const formContainer = this.getChildControl("form-container");
-          formContainer.add(new qx.ui.basic.Label(this.tr("To")).set({
-            paddingTop: 5,
-          }), {
-            row: 0,
-            column: 0
-          });
-          formContainer.add(control, {
-            row: 0,
-            column: 1
-          });
-          break;
-        }
-        case "add-recipient-button": {
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus/12").set({
-            allowGrowX: false,
-            allowGrowY: true,
-            toolTipText: this.tr("Add Recipient"),
-          });
-          control.addListener("execute", () => this.__openCollaboratorsManager(), this);
-          this.getChildControl("recipients-container").add(control);
-          break;
-        }
-        case "recipients-chips": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4).set({
-            alignY: "middle",
-          }));
-          this.getChildControl("recipients-container").add(control, {
-            flex: 1
-          });
-          break;
-        }
-        case "subject-field": {
-          control = new qx.ui.form.TextField().set({
-            marginBottom: 10
-          });
-          const formContainer = this.getChildControl("form-container");
-          formContainer.add(new qx.ui.basic.Label(this.tr("Subject")).set({
-            paddingTop: 5,
-          }), {
-            row: 1,
-            column: 0
-          });
-          formContainer.add(control, {
-            row: 1,
-            column: 1
-          });
-          break;
-        }
         case "email-editor": {
-          control = new osparc.editor.EmailEditor();
-          const container = new qx.ui.container.Scroll();
-          container.add(control);
-          this._add(container, {
+          control = new osparc.po.EmailEditor();
+          this._add(control, {
             flex: 1
           });
           break;
@@ -139,7 +66,7 @@ qx.Class.define("osparc.po.SendEmail", {
           break;
         }
         case "send-email-button":
-          control = new qx.ui.form.Button(this.tr("Send")).set({
+          control = new osparc.ui.form.FetchButton(this.tr("Send")).set({
             appearance: "strong-button",
             allowGrowX: false
           });
@@ -153,9 +80,6 @@ qx.Class.define("osparc.po.SendEmail", {
     _buildLayout: function() {
       this.getChildControl("email-template-helper");
       const selectBox = this.getChildControl("email-template-selector");
-      this.getChildControl("add-recipient-button");
-      this.getChildControl("recipients-chips");
-      this.getChildControl("subject-field");
       this.getChildControl("email-editor");
       this.getChildControl("send-email-button");
 
@@ -182,75 +106,86 @@ qx.Class.define("osparc.po.SendEmail", {
       if (!templateId) return;
       osparc.message.Messages.fetchEmailPreview(templateId)
         .then(template => {
-          const subjectField = this.getChildControl("subject-field");
-          subjectField.setValue(template["content"]["subject"]);
           const emailEditor = this.getChildControl("email-editor");
-          emailEditor.setTemplateEmail(template["content"]["bodyHtml"]);
+          const subjectField = emailEditor.getChildControl("subject-field");
+          subjectField.setValue(template["messageContent"]["subject"]);
+          const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+          emailContentEditor.setTemplateEmail(template["messageContent"]["bodyHtml"]);
         });
-    },
-
-    __openCollaboratorsManager: function() {
-      const data = {
-        resourceType: "emailRecipients",
-      };
-      const collaboratorsManager = new osparc.share.NewCollaboratorsManager(data, true, false);
-      collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
-      collaboratorsManager.addListener("addCollaborators", e => {
-        const data = e.getData();
-        const selectedGids = data.selectedGids;
-        selectedGids.forEach(gid => {
-          if (!this.__selectedRecipients.includes(gid)) {
-            this.__selectedRecipients.push(gid);
-          }
-        });
-        this.__updateRecipientsChips();
-        collaboratorsManager.close();
-      }, this);
-    },
-
-    __updateRecipientsChips: function() {
-      const chipsContainer = this.getChildControl("recipients-chips");
-      chipsContainer.removeAll();
-      const groupsStore = osparc.store.Groups.getInstance();
-      this.__selectedRecipients.forEach((gid, index) => {
-        const group = groupsStore.getGroup(gid);
-        const chip = new qx.ui.basic.Atom(group.getLabel(), "@FontAwesome5Solid/times/10").set({
-          toolTipText: group.getDescription(),
-          padding: [2, 8],
-          decorator: "chip",
-          cursor: "pointer",
-          iconPosition: "right",
-          gap: 8,
-          allowGrowY: true,
-          backgroundColor: "background-main-3",
-        });
-        chip.addListener("tap", () => {
-          this.__selectedRecipients.splice(index, 1);
-          this.__updateRecipientsChips();
-        }, this);
-        chipsContainer.add(chip);
-      });
     },
 
     __sendEmailClicked: function() {
-      if (!this.__selectedRecipients.length) {
+      const emailEditor = this.getChildControl("email-editor");
+      const selectedGroupIds = emailEditor.getSelectedGroupIds();
+      // make sure at least one recipient is selected
+      if (!selectedGroupIds.length) {
         osparc.FlashMessenger.logAs(this.tr("Please select at least one recipient"), "WARNING");
         return;
       }
 
-      const subjectField = this.getChildControl("subject-field");
-      const subject = subjectField.getValue();
+      // make sure subject is not empty
+      const subjectField = emailEditor.getChildControl("subject-field");
+      if (!subjectField.getValue()) {
+        osparc.FlashMessenger.logAs(this.tr("Please enter a subject"), "WARNING");
+        return;
+      }
+
+      // if the user is not in the preview page, force them there so they can see the final email before sending
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      if (!emailContentEditor.isPreviewActive()) {
+        osparc.FlashMessenger.logAs(this.tr("Please preview the email before sending"), "WARNING");
+        emailContentEditor.makePreviewActive();
+        return;
+      }
+
+      this.__sendEmail();
+    },
+
+    __sendEmail: function() {
+      const sending = () => {
+        this.setEnabled(false);
+        this.getChildControl("send-email-button").setFetching(true);
+      }
+
+      const notSending = () => {
+        this.setEnabled(true);
+        this.getChildControl("send-email-button").setFetching(false);
+      }
+
+      sending();
+
       const emailEditor = this.getChildControl("email-editor");
-      const bodyHtml = emailEditor.composeWholeHtml();
-      const bodyText = emailEditor.getBodyText();
-      osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText)
-        .then(() => {
-          osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
+      const selectedGroupIds = emailEditor.getSelectedGroupIds();
+      const subjectField = emailEditor.getChildControl("subject-field");
+      const subject = subjectField.getValue();
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      const bodyHtml = emailContentEditor.composeWholeHtml();
+      const bodyText = emailContentEditor.getBodyText();
+      const sendMessagePromise = osparc.message.Messages.sendMessage(selectedGroupIds, subject, bodyHtml, bodyText);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(sendMessagePromise)
+        .then(task => {
+          osparc.task.SendEmail.sendEmailTaskReceived(task, subject);
+          const text = this.tr("Sending email(s) process started and added to the background tasks");
+          osparc.FlashMessenger.logAs(text, "INFO");
+          notSending();
+          this.__emailSent();
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
           osparc.FlashMessenger.logError(errorMsg);
+          notSending();
         });
+    },
+
+    __emailSent: function() {
+      // cleared "To" field
+      const emailEditor = this.getChildControl("email-editor");
+      emailEditor.clearRecipients();
+
+      // switch to Editor tab
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      emailContentEditor.setSelection([emailContentEditor.getChildControl("editor-page")]);
     },
   }
 });

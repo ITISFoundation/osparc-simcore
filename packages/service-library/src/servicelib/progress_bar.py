@@ -2,7 +2,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from inspect import isawaitable
-from typing import Final, Optional, Protocol, runtime_checkable
+from typing import Final, Optional, Protocol, Self, runtime_checkable
 
 from models_library.progress_bar import (
     ProgressReport,
@@ -100,7 +100,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             self.step_weights = _normalize_weights(self.num_steps, self.step_weights)
             self.step_weights.append(0)  # NOTE: needed to compute reports
 
-    async def __aenter__(self) -> "ProgressBarData":
+    async def __aenter__(self) -> Self:
         await self.start()
         return self
 
@@ -169,7 +169,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                     "%s",
                     f"{_PROGRESS_ALREADY_REACGED_MAXIMUM} {self.num_steps=}, "
                     f"cause: {self._current_steps=} is updated by {steps=}"
-                    "TIP: sub progresses are not created correctly please check the stack trace",
+                    " TIP: sub progresses are not created correctly please check the stack trace",
                     stack_info=True,
                 )
 

@@ -89,10 +89,19 @@ class DockerImageMultiArchManifestsV2(BaseModel):
     )
 
 
+class _DockerPullImageProgressDetail(ProgressDetail):
+    units: str | None = (
+        None  # if empty or None, the units are in bytes https://pkg.go.dev/github.com/moby/moby/pkg/jsonmessage#JSONProgress
+    )
+
+    def are_units_bytes(self) -> bool:
+        return self.units is None or self.units in ["", "B", "bytes"]
+
+
 class _DockerPullImage(BaseModel):
     status: str
     id: str | None = None
-    progress_detail: ProgressDetail | None = None
+    progress_detail: _DockerPullImageProgressDetail | None = None
     progress: str | None = None
     model_config = ConfigDict(
         frozen=True,
@@ -145,7 +154,12 @@ class _PulledStatus:
     extracted: int = 0
 
 
-async def _parse_pull_information(parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]):
+async def _parse_pull_information(  # noqa: C901
+    parsed_progress: _DockerPullImage,
+    *,
+    layer_id_to_size: dict[str, _PulledStatus],
+    image_information: DockerImageManifestsV2 | None,
+) -> None:
     match parsed_progress.status.lower():
         case progress_status if any(
             msg in progress_status
@@ -161,12 +175,20 @@ async def _parse_pull_information(parsed_progress: _DockerPullImage, *, layer_id
         case "downloading":
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
-            assert parsed_progress.progress_detail.current  # nosec
-
-            layer_id_to_size.setdefault(
-                parsed_progress.id,
-                _PulledStatus(parsed_progress.progress_detail.total or 0),
-            ).downloaded = parsed_progress.progress_detail.current
+            assert parsed_progress.progress_detail.current is not None  # nosec
+            if (image_information is not None) and (parsed_progress.id not in layer_id_to_size):
+                _logger.warning(
+                    "Unexpected layer during download: %s (size: %s bytes). This layer "
+                    "is not in the image manifest and will be ignored in the progress.",
+                    f"{parsed_progress.id=}",
+                    f"{parsed_progress.progress_detail.total=}",
+                )
+                return
+            if parsed_progress.progress_detail.are_units_bytes():
+                layer_id_to_size.setdefault(
+                    parsed_progress.id,
+                    _PulledStatus(parsed_progress.progress_detail.total or 0),
+                ).downloaded = parsed_progress.progress_detail.current
         case "verifying checksum" | "download complete":
             assert parsed_progress.id  # nosec
             layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size.setdefault(
@@ -175,11 +197,12 @@ async def _parse_pull_information(parsed_progress: _DockerPullImage, *, layer_id
         case "extracting":
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
-            assert parsed_progress.progress_detail.current  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id,
-                _PulledStatus(parsed_progress.progress_detail.total or 0),
-            ).extracted = parsed_progress.progress_detail.current
+            assert parsed_progress.progress_detail.current is not None  # nosec
+            if parsed_progress.progress_detail.are_units_bytes():
+                layer_id_to_size.setdefault(
+                    parsed_progress.id,
+                    _PulledStatus(parsed_progress.progress_detail.total or 0),
+                ).extracted = parsed_progress.progress_detail.current
         case "pull complete":
             assert parsed_progress.id  # nosec
             layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
@@ -248,9 +271,15 @@ async def pull_image(
                 layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
                 for layer in image_information.layers
             }
+            _logger.info(
+                "pulling image with layer information for %s. Progress will be accurate and uses %s",
+                f"{image=}",
+                f"{layer_id_to_size=}",
+            )
         else:
             _logger.warning(
-                "pulling image without layer information for %s. Progress will be approximative. TIP: check why this happens",
+                "pulling image without layer information for %s. Progress will be approximative. "
+                "TIP: check why this happens",
                 f"{image=}",
             )
 
@@ -278,8 +307,6 @@ async def pull_image(
                 _reset_progress_from_previous_attempt()
             attempt += 1
 
-            _logger.info("attempt '%s' trying to pull image='%s'", attempt, image)
-
             reported_progress = 0.0
             async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
                 try:
@@ -292,13 +319,16 @@ async def pull_image(
                         f"{pull_progress=}",
                     )
                 else:
-                    await _parse_pull_information(parsed_progress, layer_id_to_size=layer_id_to_size)
+                    await _parse_pull_information(
+                        parsed_progress, layer_id_to_size=layer_id_to_size, image_information=image_information
+                    )
 
                 # compute total progress
                 total_downloaded_size = sum(layer.downloaded for layer in layer_id_to_size.values())
                 total_extracted_size = sum(layer.extracted for layer in layer_id_to_size.values())
                 total_progress = (total_downloaded_size + total_extracted_size) / 2.0
                 progress_to_report = total_progress - reported_progress
+
                 await progress_bar.update(progress_to_report)
                 reported_progress = total_progress
 

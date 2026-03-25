@@ -1,7 +1,7 @@
+import datetime
 import functools
 import logging
 import typing
-from typing import TypeAlias
 
 from aws_library.ec2 import (
     EC2InstanceBootSpecific,
@@ -109,35 +109,52 @@ def find_selected_instance_type_for_task(
     return selected_instance
 
 
-def get_hot_buffer_type(
-    available_ec2_types: list[EC2InstanceType],
-) -> EC2InstanceType:
-    assert len(available_ec2_types) > 0  # nosec
-    return available_ec2_types[0]
-
-
-DrainedNodes: TypeAlias = list[AssociatedInstance]
-HotBufferDrainedNodes: TypeAlias = list[AssociatedInstance]
-TerminatingNodes: TypeAlias = list[AssociatedInstance]
+type DrainedNodes = list[AssociatedInstance]
+type HotBufferDrainedNodes = list[AssociatedInstance]
+type TerminatingNodes = list[AssociatedInstance]
 
 
 def sort_drained_nodes(
     app_settings: ApplicationSettings,
     all_drained_nodes: list[AssociatedInstance],
-    available_ec2_types: list[EC2InstanceType],
 ) -> tuple[DrainedNodes, HotBufferDrainedNodes, TerminatingNodes]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    hot_buffer_requirements: dict[InstanceTypeType, tuple[int, datetime.timedelta | None]] = {
+        typing.cast(InstanceTypeType, type_name): (config.hot_buffer_count, config.hot_buffer_max_inactivity_time)
+        for type_name, config in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
+        if config.hot_buffer_count > 0
+    }
     # first sort out the drained nodes that started termination
     terminating_nodes = [
         n for n in all_drained_nodes if utils_docker.get_node_termination_started_since(n.node) is not None
     ]
+
     remaining_drained_nodes = [n for n in all_drained_nodes if n not in terminating_nodes]
-    # we need to keep in reserve only the drained nodes of the right type
-    hot_buffer_type = get_hot_buffer_type(available_ec2_types)
-    # NOTE: we keep only in buffer the drained nodes with the right EC2 type, AND the right amount
-    hot_buffer_drained_nodes = [
-        node for node in remaining_drained_nodes if node.ec2_instance.type == hot_buffer_type.name
-    ][: app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER]
-    # all the others are "normal" drained nodes and may be terminated at some point
-    other_drained_nodes = [node for node in remaining_drained_nodes if node not in hot_buffer_drained_nodes]
+    candidates_by_type: dict[InstanceTypeType, list[AssociatedInstance]] = {}
+    now = datetime.datetime.now(datetime.UTC)
+    for node in remaining_drained_nodes:
+        requirement = hot_buffer_requirements.get(node.ec2_instance.type)
+        if not requirement:
+            continue
+        _, inactivity_limit = requirement
+        last_ready_update = utils_docker.get_node_last_readiness_update(node.node)
+        if inactivity_limit is not None and (now - last_ready_update) >= inactivity_limit:
+            # Too old to keep in buffer, let normal termination flow handle it
+            continue
+        candidates_by_type.setdefault(node.ec2_instance.type, []).append(node)
+
+    hot_buffer_drained_nodes: list[AssociatedInstance] = []
+    for ec2_type in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES:
+        requirement = hot_buffer_requirements.get(typing.cast(InstanceTypeType, ec2_type))
+        if not requirement:
+            continue
+        desired_count, _ = requirement
+        if desired_count <= 0:
+            continue
+        hot_buffer_drained_nodes.extend(
+            candidates_by_type.get(typing.cast(InstanceTypeType, ec2_type), [])[:desired_count]
+        )
+
+    hot_buffer_ids = {node.ec2_instance.id for node in hot_buffer_drained_nodes}
+    other_drained_nodes = [node for node in remaining_drained_nodes if node.ec2_instance.id not in hot_buffer_ids]
     return (other_drained_nodes, hot_buffer_drained_nodes, terminating_nodes)

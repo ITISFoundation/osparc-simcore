@@ -2,12 +2,12 @@
 from pathlib import Path
 from typing import Final
 
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskName, TaskUUID
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 
-from ....celery.models import ExecutionMetadata, OwnerMetadata, TaskName, TaskUUID
-from ....celery.task_manager import TaskManager
+from ...task_manager import TaskManager
 
 COMPUTE_PATH_SIZE_TASK_NAME: Final[str] = "compute_path_size"
 DELETE_PATHS_TASK_NAME: Final[str] = "delete_paths"
@@ -22,7 +22,7 @@ async def submit_compute_path_size_task(
     path: Path,
 ) -> tuple[TaskUUID, TaskName]:
     return await task_manager.submit_task(
-        ExecutionMetadata(
+        TaskExecutionMetadata(
             name=COMPUTE_PATH_SIZE_TASK_NAME,
         ),
         owner_metadata=owner_metadata,
@@ -41,7 +41,7 @@ async def submit_delete_paths_task(
     paths: set[Path],
 ) -> tuple[TaskUUID, TaskName]:
     return await task_manager.submit_task(
-        ExecutionMetadata(
+        TaskExecutionMetadata(
             name=DELETE_PATHS_TASK_NAME,
         ),
         owner_metadata=owner_metadata,

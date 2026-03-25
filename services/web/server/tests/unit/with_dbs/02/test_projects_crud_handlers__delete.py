@@ -90,6 +90,7 @@ async def test_delete_project(
                     node_id=service.node_uuid,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state=True,
+                    product_name="osparc",
                 ),
                 progress=mock.ANY,
             )

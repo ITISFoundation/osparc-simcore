@@ -46,8 +46,8 @@ qx.Class.define("osparc.study.CreateFunction", {
       // const probes = osparc.study.Utils.extractProbes(workbench);
       // return (filePickers.length + parameters.length) && probes.length;
 
-      const parameters = osparc.study.Utils.extractFunctionableParameters(workbench);
-      const probes = osparc.study.Utils.extractFunctionableProbes(workbench);
+      const parameters = osparc.study.Utils.extractParametersForFunction(workbench);
+      const probes = osparc.study.Utils.extractProbesForFunction(workbench);
       const computationals = osparc.study.Utils.extractComputationalServices(workbench);
       const dynamics = osparc.study.Utils.extractDynamicServices(workbench);
 
@@ -131,7 +131,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       column = 0;
       row++;
 
-      const parameters = osparc.study.Utils.extractFunctionableParameters(this.__studyData["workbench"]);
+      const parameters = osparc.study.Utils.extractParametersForFunction(this.__studyData["workbench"]);
       parameters.forEach(parameter => {
         const parameterKey = parameter["label"];
         const parameterLabel = new qx.ui.basic.Label(parameterKey);
@@ -222,7 +222,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       column = 0;
       row++;
 
-      const probes = osparc.study.Utils.extractFunctionableProbes(this.__studyData["workbench"]);
+      const probes = osparc.study.Utils.extractProbesForFunction(this.__studyData["workbench"]);
       probes.forEach(probe => {
         const parameterLabel = new qx.ui.basic.Label(probe["label"]);
         outputsLayout.add(parameterLabel, {

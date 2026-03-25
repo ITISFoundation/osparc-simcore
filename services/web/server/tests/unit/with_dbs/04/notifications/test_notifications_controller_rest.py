@@ -5,22 +5,26 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from http import HTTPStatus
 from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
+from common_library.users_enums import UserStatus
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
-    NotificationsTemplateGet,
-    NotificationsTemplatePreviewGet,
+    TemplateGet,
+    TemplatePreviewGet,
 )
-from models_library.notifications import ChannelType
-from models_library.rpc.notifications.template import (
-    NotificationsTemplatePreviewRpcResponse,
-    NotificationsTemplateRefRpc,
-    NotificationsTemplateRpcResponse,
+from models_library.notifications import Channel
+from models_library.notifications.errors import NotificationsTooManyRecipientsError
+from models_library.notifications.rpc import (
+    PreviewTemplateResponse,
+    SearchTemplatesResponse,
+    TemplateRef,
 )
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -28,20 +32,20 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.notifications._controller import _rest
+from simcore_service_webserver.notifications import _service
 
 pytest_simcore_core_services_selection = []
 
 
 @pytest.fixture
-def fake_template_preview_response(faker: Faker) -> NotificationsTemplatePreviewRpcResponse:
+def fake_template_preview_response(faker: Faker) -> PreviewTemplateResponse:
     """Create a fake template preview response"""
-    return NotificationsTemplatePreviewRpcResponse(
-        ref=NotificationsTemplateRefRpc(
-            channel=ChannelType.email,
+    return PreviewTemplateResponse(
+        ref=TemplateRef(
+            channel=Channel.email,
             template_name="test_template",
         ),
-        content={
+        message_content={
             "subject": faker.sentence(),
             "bodyHtml": faker.text(),
             "bodyText": faker.text(),
@@ -50,11 +54,11 @@ def fake_template_preview_response(faker: Faker) -> NotificationsTemplatePreview
 
 
 @pytest.fixture
-def fake_template_response(faker: Faker) -> NotificationsTemplateRpcResponse:
+def fake_template_response(faker: Faker) -> SearchTemplatesResponse:
     """Create a fake template response"""
-    return NotificationsTemplateRpcResponse(
-        ref=NotificationsTemplateRefRpc(
-            channel=ChannelType.email,
+    return SearchTemplatesResponse(
+        ref=TemplateRef(
+            channel=Channel.email,
             template_name="test_template",
         ),
         context_schema={
@@ -96,20 +100,54 @@ async def test_send_message_access_control(
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test access control for send_message endpoint"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    # Prepare request body
-    body = {
-        "channel": "email",
-        "recipients": [42],
-        "content": fake_email_content,
-    }
+    async with create_test_users(1, None) as users:
+        # Prepare request body
+        body = {
+            "channel": "email",
+            "groupIds": [users[0]["primary_gid"]],
+            "content": fake_email_content,
+        }
 
-    response = await client.post(url.path, json=body)
-    await assert_status(response, expected_status)
+        response = await client.post(url.path, json=body)
+        await assert_status(response, expected_status)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_status",
+    [
+        (UserRole.PRODUCT_OWNER, status.HTTP_400_BAD_REQUEST),
+        (UserRole.ADMIN, status.HTTP_400_BAD_REQUEST),
+    ],
+)
+async def test_send_message_no_active_recipients(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected_status: HTTPStatus,
+    mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
+):
+    """Test that send_message returns 400 when no active recipients are provided"""
+    assert client.app
+    url = client.app.router["send_message"].url_for()
+
+    async with create_test_users(3, [UserStatus.ACTIVE, UserStatus.BANNED, UserStatus.EXPIRED]) as (_, user2, user3):
+        # Prepare request body
+        body = {
+            "channel": "email",
+            "groupIds": [user2["primary_gid"], user3["primary_gid"]],
+            "content": fake_email_content,
+        }
+
+        response = await client.post(url.path, json=body)
+        await assert_status(response, expected_status)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
@@ -118,77 +156,105 @@ async def test_send_message_returns_task(
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test that send_message returns a task resource"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    # Prepare request body
-    body = {
-        "channel": "email",
-        "recipients": [42],
-        "content": fake_email_content,
-    }
+    async with create_test_users(1, None) as users:
+        # Prepare request body
+        body = {
+            "channel": "email",
+            "groupIds": [users[0]["primary_gid"]],
+            "content": fake_email_content,
+        }
 
-    response = await client.post(url.path, json=body)
-    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
-    assert not error
+        response = await client.post(url.path, json=body)
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert not error
 
-    # Validate response structure
-    task = TaskGet.model_validate(data)
+        # Validate response structure
+        task = TaskGet.model_validate(data)
 
-    # Validate that hrefs are properly formed
-    assert f"{task.task_id}" in task.status_href
-    assert f"{task.task_id}" in task.abort_href
+        # Validate that hrefs are properly formed
+        assert f"{task.task_id}" in task.status_href
+        assert f"{task.task_id}" in task.abort_href
 
-    assert task.result_href is not None
-    assert f"{task.task_id}" in task.result_href
+        assert task.result_href is not None
+        assert f"{task.task_id}" in task.result_href
 
 
 @pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 @pytest.mark.parametrize(
-    "channel,recipients,expected_status",
+    "recipients_count,expected_status",
     [
-        # Valid email notification
-        (
-            "email",
-            [42],
-            status.HTTP_202_ACCEPTED,
-        ),
+        # Single recipient
+        (1, status.HTTP_202_ACCEPTED),
         # Multiple recipients
-        (
-            "email",
-            [42, 314],
-            status.HTTP_202_ACCEPTED,
-        ),
+        (2, status.HTTP_202_ACCEPTED),
     ],
 )
 async def test_send_message_with_different_inputs(
     client: TestClient,
     logged_user: UserInfoDict,
-    channel: str,
-    recipients: list[int],
+    recipients_count: int,
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test send_message with various valid inputs"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    body = {
-        "channel": channel,
-        "recipients": recipients,
-        "content": fake_email_content,
-    }
+    async with create_test_users(recipients_count, None) as users:
+        groupIds = [user["primary_gid"] for user in users]
 
-    response = await client.post(url.path, json=body)
-    data, error = await assert_status(response, expected_status)
+        body = {
+            "channel": "email",
+            "groupIds": groupIds,
+            "content": fake_email_content,
+        }
 
-    if expected_status == status.HTTP_202_ACCEPTED:
-        assert not error
-        task = TaskGet.model_validate(data)
-        assert task.task_id
+        response = await client.post(url.path, json=body)
+        data, error = await assert_status(response, expected_status)
+
+        if expected_status == status.HTTP_202_ACCEPTED:
+            assert not error
+            task = TaskGet.model_validate(data)
+            assert task.task_id
+
+
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
+async def test_send_message_too_many_recipients(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
+    mocker: MockerFixture,
+):
+    """Test that send_message returns 400 when too many recipients are provided"""
+    assert client.app
+    url = client.app.router["send_message"].url_for()
+
+    mocked_notifications_rpc_client.patch(
+        f"{_service.__name__}.remote_send_message",
+        side_effect=NotificationsTooManyRecipientsError(num_recipients=100, max_recipients=50),
+    )
+
+    async with create_test_users(1, None) as users:
+        body = {
+            "channel": "email",
+            "groupIds": [users[0]["primary_gid"]],
+            "content": fake_email_content,
+        }
+
+        response = await client.post(url.path, json=body)
+        _, error = await assert_status(response, status.HTTP_400_BAD_REQUEST)
+        assert error
+        assert "The number of recipients" in error["message"]
 
 
 @pytest.mark.parametrize(
@@ -208,14 +274,14 @@ async def test_preview_template_access_control(
     user_role: UserRole,
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_preview_response: NotificationsTemplatePreviewRpcResponse,
+    fake_template_preview_response: PreviewTemplateResponse,
 ):
     """Test access control for preview_template endpoint"""
     assert client.app
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=fake_template_preview_response,
     )
 
@@ -224,7 +290,7 @@ async def test_preview_template_access_control(
     body = {
         "ref": {
             "channel": "email",
-            "template_name": "empty",
+            "templateName": "empty",
         },
         "context": {
             "subject": "Test",
@@ -241,7 +307,7 @@ async def test_preview_template_success(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_preview_response: NotificationsTemplatePreviewRpcResponse,
+    fake_template_preview_response: PreviewTemplateResponse,
     fake_email_content: dict[str, Any],
 ):
     """Test successful template preview"""
@@ -249,7 +315,7 @@ async def test_preview_template_success(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=fake_template_preview_response,
     )
 
@@ -258,7 +324,7 @@ async def test_preview_template_success(
     body = {
         "ref": {
             "channel": "email",
-            "template_name": "test_template",
+            "templateName": "test_template",
         },
         "context": fake_email_content,
     }
@@ -268,10 +334,10 @@ async def test_preview_template_success(
     assert not error
 
     # Validate response structure
-    preview = NotificationsTemplatePreviewGet.model_validate(data)
-    assert preview.ref.channel == ChannelType.email
+    preview = TemplatePreviewGet.model_validate(data)
+    assert preview.ref.channel == Channel.email
     assert preview.ref.template_name == "test_template"
-    assert preview.content
+    assert preview.message_content
 
 
 @pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
@@ -287,13 +353,13 @@ async def test_preview_template_enriches_context_with_product_data(
 
     # Spy on the RPC call to verify the enriched context
     mock_rpc_call = mocker.patch(
-        f"{_rest.__name__}.remote_preview_template",
-        return_value=NotificationsTemplatePreviewRpcResponse(
-            ref=NotificationsTemplateRefRpc(
-                channel=ChannelType.email,
+        f"{_service.__name__}.remote_preview_template",
+        return_value=PreviewTemplateResponse(
+            ref=TemplateRef(
+                channel=Channel.email,
                 template_name="test",
             ),
-            content={"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
+            message_content={"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
         ),
     )
 
@@ -302,7 +368,7 @@ async def test_preview_template_enriches_context_with_product_data(
     body = {
         "ref": {
             "channel": "email",
-            "template_name": "test_template",
+            "templateName": "test_template",
         },
         "context": fake_email_content,
     }
@@ -313,9 +379,9 @@ async def test_preview_template_enriches_context_with_product_data(
     # Verify RPC was called with enriched context including product data
     assert mock_rpc_call.called
     call_args = mock_rpc_call.call_args
-    assert "request" in call_args.kwargs
-    request = call_args.kwargs["request"]
-    assert "product" in request.context
+    assert "context" in call_args.kwargs
+    context = call_args.kwargs["context"]
+    assert "product" in context
 
 
 @pytest.mark.parametrize(
@@ -335,14 +401,14 @@ async def test_search_templates_access_control(
     user_role: UserRole,
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_response: NotificationsTemplateRpcResponse,
+    fake_template_response: SearchTemplatesResponse,
 ):
     """Test access control for search_templates endpoint"""
     assert client.app
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -357,14 +423,14 @@ async def test_search_templates_no_filters(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_response: NotificationsTemplateRpcResponse,
+    fake_template_response: SearchTemplatesResponse,
 ):
     """Test searching templates without filters"""
     assert client.app
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -375,9 +441,9 @@ async def test_search_templates_no_filters(
     assert not error
 
     # Validate response structure
-    templates = TypeAdapter(list[NotificationsTemplateGet]).validate_python(data)
+    templates = TypeAdapter(list[TemplateGet]).validate_python(data)
     assert len(templates) == 1
-    assert templates[0].ref.channel == ChannelType.email
+    assert templates[0].ref.channel == Channel.email
     assert templates[0].ref.template_name == "test_template"
     assert templates[0].context_schema
 
@@ -402,7 +468,7 @@ async def test_search_templates_with_filters(
     query_params: dict[str, str],
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_response: NotificationsTemplateRpcResponse,
+    fake_template_response: SearchTemplatesResponse,
     mocker: MockerFixture,
 ):
     """Test searching templates with different filter combinations"""
@@ -410,7 +476,7 @@ async def test_search_templates_with_filters(
 
     # Mock the RPC call and spy on it
     mock_rpc = mocker.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -440,7 +506,7 @@ async def test_search_templates_empty_result(
     assert client.app
 
     mocker.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[],
     )
 
@@ -451,5 +517,5 @@ async def test_search_templates_empty_result(
     assert not error
 
     # Validate response is empty list
-    templates = TypeAdapter(list[NotificationsTemplateGet]).validate_python(data)
+    templates = TypeAdapter(list[TemplateGet]).validate_python(data)
     assert len(templates) == 0

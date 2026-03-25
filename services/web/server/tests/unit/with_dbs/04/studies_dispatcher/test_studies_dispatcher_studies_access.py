@@ -22,8 +22,6 @@ from aiohttp.test_utils import TestClient, TestServer
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
 )
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
@@ -36,15 +34,12 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rest_responses import unwrap_envelope
-from settings_library.rabbit import RabbitSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
@@ -99,18 +94,6 @@ def _assert_same_projects(got: dict[str, Any], expected: dict[str, Any]):
 
 def _is_user_authenticated(session: ClientSession) -> bool:
     return DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    rabbit_service: RabbitSettings,
-) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
-    )
 
 
 @pytest.fixture
@@ -295,7 +278,11 @@ async def _assert_redirected_to_study(response: ClientResponse, session: ClientS
 # -----------------------------------------------------------
 
 
-async def test_access_to_invalid_study(client: TestClient, faker: Faker):
+async def test_access_to_invalid_study(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    faker: Faker,
+):
     invalid_project_id = faker.uuid4()
     response = await client.get(f"/study/{invalid_project_id}")
 
@@ -306,7 +293,11 @@ async def test_access_to_invalid_study(client: TestClient, faker: Faker):
     )
 
 
-async def test_access_to_forbidden_study(client: TestClient, unpublished_project: ProjectDict):
+async def test_access_to_forbidden_study(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    unpublished_project: ProjectDict,
+):
     response = await client.get(f"/study/{unpublished_project['uuid']}")
 
     _assert_redirected_to_error_page(
@@ -317,6 +308,7 @@ async def test_access_to_forbidden_study(client: TestClient, unpublished_project
 
 
 async def test_access_study_anonymously(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
@@ -363,6 +355,7 @@ async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 async def test_access_study_by_logged_user(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
@@ -395,6 +388,7 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
@@ -433,7 +427,9 @@ async def test_access_cookie_of_expired_user(
 
         prj_id = projects[0]["uuid"]
 
-        delete_task = await submit_delete_project_task(app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE)
+        delete_task = await submit_delete_project_task(
+            app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE, "osparc"
+        )
         await delete_task
 
         await delete_user_without_projects(app, user_id=uid)
@@ -473,6 +469,7 @@ async def test_access_cookie_of_expired_user(
     ],
 )
 async def test_guest_user_is_not_garbage_collected(
+    studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     number_of_simultaneous_requests: int,
     web_server: TestServer,
@@ -523,3 +520,63 @@ async def test_guest_user_is_not_garbage_collected(
 
     await asyncio.gather(*request_tasks)
     # and now the garbage collector shall delete our users since we are done...
+
+
+@pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
+async def test_access_study_with_dispatcher_disabled(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+):
+    """
+    Test that accessing /study returns 404 when studies_dispatcher_enabled is False.
+
+    When the product has studies_dispatcher_enabled=False, the dispatcher feature
+    should be completely disabled, and accessing the /study endpoint should result
+    in a direct 404 response (not a redirect).
+    """
+    assert not _is_user_authenticated(client.session), "Is anonymous"
+    assert client.app
+
+    # Accessing the study should return 404 directly
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    resp = await client.get(f"{study_url}")
+
+    assert resp.status == status.HTTP_404_NOT_FOUND, (
+        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    )
+
+    # User should NOT be auto-logged in as guest when dispatcher is disabled
+    me_url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{me_url}")
+    assert resp.status == status.HTTP_401_UNAUTHORIZED, "Dispatcher disabled, so guest login should not have occurred"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
+@pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)
+async def test_access_study_by_logged_user_with_dispatcher_disabled(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+    user_role: UserRole,
+):
+    """
+    Test that accessing /study returns 404 for logged-in users when
+    studies_dispatcher_enabled is False.
+
+    Even logged-in users should not be able to access the dispatcher
+    when the feature is disabled at the product level.
+    """
+    assert _is_user_authenticated(client.session), "Is already logged-in"
+    assert client.app
+
+    # Accessing the study should return 404 directly, even for authenticated users
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    resp = await client.get(f"{study_url}")
+
+    assert resp.status == status.HTTP_404_NOT_FOUND, (
+        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    )

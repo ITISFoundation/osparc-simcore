@@ -1,0 +1,105 @@
+/* ==========================================================
+ * release-notes.css
+ * Styles for the "New Version Released" dialog markdown.
+ * Scoped under .osparc-release-notes so they don't leak.
+ *
+ * Colors are injected as CSS custom properties from JS
+ * (see NewRelease.__applyThemeCssVars) so both dark and
+ * light themes are supported.
+ * ========================================================== */
+
+.osparc-release-notes {
+  font-family: "Manrope", sans-serif;
+  font-size: 14px !important;
+  line-height: 1.55;
+  word-break: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── headings ─────────────────────────────────────────── */
+
+.osparc-release-notes h1 {
+  font-size: 1.45em;
+  font-weight: normal;
+  margin: 1em 0 0.75em;
+  line-height: 1.3;
+}
+
+.osparc-release-notes h2 {
+  font-size: 1.25em;
+  font-weight: normal;
+  margin: 1em 0 0.75em;
+  line-height: 1.4;
+}
+
+.osparc-release-notes h3 {
+  font-size: 1.1em;
+  font-weight: normal;
+  margin: 0.8em 0 0.6em;
+  line-height: 1.5;
+}
+
+.osparc-release-notes h4,
+.osparc-release-notes h5,
+.osparc-release-notes h6 {
+  font-size: 1em;
+  font-weight: normal;
+  margin: 0.6em 0 0.4em;
+  line-height: 1.3;
+}
+
+/* ── paragraphs ───────────────────────────────────────── */
+
+.osparc-release-notes p {
+  margin: 0 0 0.5em;
+}
+
+/* ── lists ─────────────────────────────────────────────── */
+
+.osparc-release-notes ul,
+.osparc-release-notes ol {
+  margin: 0.3em 0 0.6em;
+  padding-left: 1.6em;
+}
+
+.osparc-release-notes li {
+  margin: 0.15em 0;
+  padding: 0;
+}
+
+.osparc-release-notes li::marker {
+  color: var(--rn-text-muted);
+}
+
+/* ── emphasis & strong ────────────────────────────────── */
+
+.osparc-release-notes strong {
+  font-weight: normal;
+}
+
+.osparc-release-notes em {
+  font-style: italic;
+}
+
+/* ── blockquotes ──────────────────────────────────────── */
+
+.osparc-release-notes blockquote {
+  color: var(--rn-text-muted);
+}
+
+/* ── images ────────────────────────────────────────────── */
+
+.osparc-release-notes img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.5em 0;
+  border-radius: 6px;
+}
+
+/* ── horizontal rules ─────────────────────────────────── */
+
+.osparc-release-notes hr {
+  margin: 1.4em 0;
+}

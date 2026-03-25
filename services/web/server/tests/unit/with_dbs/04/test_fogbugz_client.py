@@ -36,6 +36,7 @@ def app_environment(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "WEBSERVER_FOGBUGZ": "{}",
             "FOGBUGZ_URL": fake_api_base_url,
             "FOGBUGZ_API_TOKEN": "asdf",
         },

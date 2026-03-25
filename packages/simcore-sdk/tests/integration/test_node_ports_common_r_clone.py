@@ -46,8 +46,8 @@ async def cleanup_bucket_after_test(
     r_clone_settings: RCloneSettings,
 ) -> AsyncIterator[None]:
     session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY.get_secret_value(),
     )
 
     yield
