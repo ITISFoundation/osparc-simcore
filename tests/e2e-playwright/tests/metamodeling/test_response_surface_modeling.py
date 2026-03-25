@@ -262,6 +262,13 @@ def test_response_surface_modeling(  # noqa: PLR0915
             next_button.scroll_into_view_if_needed()
             next_button.click(timeout=30 * SECOND)
 
+        page.wait_for_timeout(1 * SECOND)
+
+        with log_context(logging.INFO, "Waiting for the AI model to be created..."):
+            creating_ai_model_text = service_iframe.get_by_text("Creating AI model...")
+            # wait for it to disappear, which means the model is created and we can proceed
+            creating_ai_model_text.wait_for(state="hidden", timeout=2 * MINUTE)
+
         with log_context(logging.INFO, "Starting the sampling..."):
             extend_sampling_btn = service_iframe.locator('[mmux-testid="extend-sampling-btn"]')
             extend_sampling_btn.wait_for(state="visible")
