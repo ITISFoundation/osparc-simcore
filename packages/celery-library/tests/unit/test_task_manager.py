@@ -890,3 +890,154 @@ async def test_get_group_status_with_empty_group(
     assert group_status.completed_count == 0
     assert group_status.is_done
     assert group_status.is_successful
+
+
+async def test_get_result_dispatches_to_task_result(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    task_uuid = await task_manager.submit_task(
+        TaskExecutionMetadata(name=fake_file_processor.__name__),
+        owner_metadata=fake_owner_metadata,
+        files=["file1"],
+    )
+    await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
+
+    result = await task_manager.get_result(fake_owner_metadata, task_uuid)
+    assert result == "archive.zip"
+
+
+async def test_get_result_dispatches_to_group_result(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    group_tasks = [
+        (
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": [f"file{i}"]},
+        )
+        for i in range(2)
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        GroupExecutionMetadata(name="result_dispatch_group", tasks=group_tasks),
+        owner_metadata=fake_owner_metadata,
+    )
+
+    for task_uuid in task_uuids:
+        await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
+
+    result = await task_manager.get_result(fake_owner_metadata, group_id)
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert all(r == "archive.zip" for r in result)
+
+
+async def test_get_result_with_nonexistent_uuid_raises_error(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    fake_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.get_result(fake_owner_metadata, fake_uuid)
+
+
+async def test_get_group_result_returns_all_results(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    num_tasks = 3
+    group_tasks = [
+        (
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": [f"file{i}"]},
+        )
+        for i in range(num_tasks)
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        GroupExecutionMetadata(name="all_results_group", tasks=group_tasks),
+        owner_metadata=fake_owner_metadata,
+    )
+
+    for task_uuid in task_uuids:
+        await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
+
+    results = await task_manager.get_group_result(fake_owner_metadata, group_id)
+    assert results == ["archive.zip"] * num_tasks
+
+
+async def test_get_group_result_with_failures(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    group_tasks = [
+        (
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": ["file1"]},
+        ),
+        (
+            GroupTaskExecutionMetadata(name=failure_task.__name__),
+            {},
+        ),
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        GroupExecutionMetadata(name="failures_result_group", tasks=group_tasks),
+        owner_metadata=fake_owner_metadata,
+    )
+
+    for task_uuid in task_uuids:
+        await _wait_for_task_done(task_manager, fake_owner_metadata, task_uuid)
+
+    results = await task_manager.get_group_result(fake_owner_metadata, group_id)
+    assert len(results) == 2
+    assert results[0] == "archive.zip"
+    assert isinstance(results[1], TransferableCeleryError)
+    assert "Something strange happened: BOOM!" in f"{results[1]}"
+
+
+async def test_get_group_result_with_ephemeral_cleans_up(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    num_tasks = 2
+    group_tasks = [
+        (
+            GroupTaskExecutionMetadata(name=fake_file_processor.__name__, ephemeral=True),
+            {"files": [f"file{i}"]},
+        )
+        for i in range(num_tasks)
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        GroupExecutionMetadata(name="ephemeral_result_group", tasks=group_tasks, ephemeral=True),
+        owner_metadata=fake_owner_metadata,
+    )
+
+    for task_uuid in task_uuids:
+        await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
+
+    # First call returns results and triggers cleanup
+    results = await task_manager.get_group_result(fake_owner_metadata, group_id)
+    assert results == ["archive.zip"] * num_tasks
+
+    # Second call should fail because the group was cleaned up
+    with pytest.raises(GroupNotFoundError):
+        await task_manager.get_group_result(fake_owner_metadata, group_id)
+
+
+async def test_get_group_result_with_nonexistent_group_raises_error(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
+    with pytest.raises(GroupNotFoundError):
+        await task_manager.get_group_result(fake_owner_metadata, fake_group_uuid)
