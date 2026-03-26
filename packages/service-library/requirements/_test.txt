@@ -68,9 +68,7 @@ frozenlist==1.8.0
     #   aiohttp
     #   aiosignal
 greenlet==3.3.2
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   sqlalchemy
+    # via sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
