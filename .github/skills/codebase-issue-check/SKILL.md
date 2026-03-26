@@ -1,7 +1,7 @@
 ---
 name: codebase-issue-check
 description: 'Investigate whether the issue described by the user is present in any other place in the repository. Use when a bug, regression or repeated implementation pattern may be shared. Checks implementations, tests, and behavior differences, then reports affected and unaffected areas.'
-argument-hint: 'Describe the issue or code pattern that might exist in elsewhere'
+argument-hint: '(use Claude Opus 4.6 for better results) describe the issue or code pattern that might exist elsewhere'
 ---
 
 # Codebase Issue Check
