@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import warnings
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -90,7 +91,10 @@ def dask_client_security(
 def dask_client(dask_scheduler_service: str, dask_client_security: distributed.Security) -> Iterator[Client]:
     client = Client(dask_scheduler_service, security=dask_client_security)
     yield client
-    client.close()
+    # SEE https://github.com/dask/distributed/issues/2507
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        client.close()
 
 
 @pytest.fixture
