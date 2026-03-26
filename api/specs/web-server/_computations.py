@@ -45,6 +45,7 @@ async def get_computation(_path: Annotated[ComputationPathParams, Depends()]): .
 @router.post(
     "/computations/{project_id}:start",
     response_model=Envelope[ComputationStarted],
+    status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_200_OK: {"description": "Pipeline is up-to-date, nothing was started"},
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Insufficient credits to run computation"},
