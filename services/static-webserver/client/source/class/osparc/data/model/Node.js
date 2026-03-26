@@ -1571,8 +1571,8 @@ qx.Class.define("osparc.data.model.Node", {
         label: this.getLabel(),
         inputs: this.__getInputData(),
         inputsUnits: this.__getInputUnits(), // this is not working
-        inputNodes: this.getInputNodes(),
-        inputsRequired: this.getInputsRequired(),
+        inputNodes: [...this.getInputNodes()],
+        inputsRequired: [...this.getInputsRequired()],
         bootOptions: this.getBootOptions()
       };
 
