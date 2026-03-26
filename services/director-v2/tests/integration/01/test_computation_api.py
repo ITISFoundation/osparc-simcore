@@ -151,7 +151,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "product_name": "not a product",
                 "product_api_base_url": "http://invalid",
             },
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             {
@@ -160,7 +160,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "product_name": "not a product",
                 "product_api_base_url": "http://invalid",
             },
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             {
@@ -1038,7 +1038,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
         },
     )
 
-    # this pipeline is not runnable as there are no computational services and it contains a cycle
+    # this pipeline is not runnable as it contains a cycle
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -1063,6 +1063,159 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
             "start_pipeline": False,
             "product_name": osparc_product_name,
             "product_api_base_url": osparc_product_api_base_url,
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
+
+
+async def test_pipeline_with_dynamic_cycle_and_disconnected_comp_nodes_is_allowed(
+    client: TestClient,
+    create_registered_user: Callable,
+    with_product: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    sleeper_service: dict[str, Any],
+    jupyter_service: dict[str, Any],
+    osparc_product_name: str,
+    osparc_product_api_base_url: str,
+):
+    """Dynamic-only cycle + 2 disconnected computational nodes.
+
+    Topology:
+        jupyter_a <--> jupyter_b  (cycle, dynamic only)
+        sleeper_1                  (disconnected, computational)
+        sleeper_2                  (disconnected, computational)
+
+    Expected: 201 — the computational nodes should run (the dynamic cycle is irrelevant).
+    """
+    user = create_registered_user()
+    project = await create_project(
+        user,
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_a",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_b",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee01": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "sleeper_1",
+            },
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee02": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "sleeper_2",
+            },
+        },
+    )
+
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user["id"],
+            "project_id": str(project.uuid),
+            "start_pipeline": True,
+            "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
+            "collection_run_id": str(uuid.uuid4()),
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
+
+
+async def test_pipeline_with_dynamic_cycle_feeding_comp_node_is_allowed(
+    client: TestClient,
+    create_registered_user: Callable,
+    with_product: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    sleeper_service: dict[str, Any],
+    jupyter_service: dict[str, Any],
+    osparc_product_name: str,
+    osparc_product_api_base_url: str,
+):
+    """Dynamic cycle with a computational node taking input from the cycle (but not part of it).
+
+    Topology:
+        jupyter_a <--> jupyter_b  (cycle, dynamic only)
+        jupyter_a --> sleeper_1    (comp node, NOT in the cycle)
+
+    Expected: 201 — the computational node is not in the cycle, it just reads from a dynamic node.
+    """
+    user = create_registered_user()
+    project = await create_project(
+        user,
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_a",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_b",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee01": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "sleeper fed by dynamic cycle",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+        },
+    )
+
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user["id"],
+            "project_id": str(project.uuid),
+            "start_pipeline": True,
+            "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
+            "collection_run_id": str(uuid.uuid4()),
         },
     )
     assert response.status_code == status.HTTP_201_CREATED, (

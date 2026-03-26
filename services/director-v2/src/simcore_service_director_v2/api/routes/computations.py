@@ -188,20 +188,12 @@ async def _try_start_pipeline(
     *,
     project_repo: ProjectsRepository,
     computation: ComputationCreate,
-    complete_dag: nx.DiGraph,
     minimal_dag: nx.DiGraph,
     project: ProjectAtDB,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> bool:
     if not minimal_dag.nodes():
-        # 2 options here: either we have cycles in the graph or it's really done
-        if find_computational_node_cycles(complete_dag):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Project {computation.project_id} contains cycles with "
-                "computational services which are currently not supported! Please remove them.",
-            )
         # there is nothing else to be run here (up-to-date or no computational services)
         return False
 
@@ -214,7 +206,7 @@ async def _try_start_pipeline(
 
     if computation.collection_run_id is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Project {computation.project_id} has no collection run ID",
         )
     await run_new_pipeline(
@@ -257,7 +249,7 @@ async def _try_start_pipeline(
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
         status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Invalid computation request (e.g. missing collection_run_id)",
         },
     },
@@ -293,6 +285,15 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
+
+        # reject cycles involving computational nodes early (before catalog checks)
+        if computation.start_pipeline and find_computational_node_cycles(complete_dag):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Project {computation.project_id} contains cycles with "
+                "computational services which are currently not supported! Please remove them.",
+            )
+
         # find the minimal viable graph to be run
         minimal_computational_dag: nx.DiGraph = await create_minimal_computational_graph_based_on_selection(
             complete_dag=complete_dag,
@@ -328,7 +329,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint
                 request.app,
                 project_repo=project_repo,
                 computation=computation,
-                complete_dag=complete_dag,
                 minimal_dag=minimal_computational_dag,
                 project=project,
                 users_repo=users_repo,
