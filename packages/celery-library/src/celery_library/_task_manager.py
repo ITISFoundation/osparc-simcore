@@ -372,13 +372,7 @@ class CeleryTaskManager:
             if group_result.ready():
                 task_metadata = await self._task_store.get_task_metadata(group_key)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    _logger.debug("Removing ephemeral group result: group_key=%s", group_key)
-                    for async_result in group_result.results or []:
-                        task_key: TaskKey = async_result.id
-                        await self._task_store.remove_task(task_key)
-                        await self._forget_task(task_key)
-                    group_result.forget()
-                    await self._task_store.remove_task(group_key)
+                    await self.cancel_group(owner_metadata, group_uuid)
 
             return results
 
