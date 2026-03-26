@@ -52,6 +52,10 @@ def get_rabbitmq_client_from_request(request: Request):
     return get_rabbitmq_client(request.app)
 
 
+def get_rabbitmq_rpc_client_from_request(request: Request) -> RabbitMQRPCClient:
+    return get_rabbitmq_rpc_client(request.app)
+
+
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     if not app.state.rabbitmq_client:
         raise ConfigurationError(msg="RabbitMQ client is not available. Please check the configuration.")
