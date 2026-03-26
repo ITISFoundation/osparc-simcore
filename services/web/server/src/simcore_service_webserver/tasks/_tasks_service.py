@@ -66,9 +66,9 @@ async def get_task_result(
         )
         if not status.is_done:
             raise JobNotDoneError(job_id=task_uuid)
-        result = await task_manager.get_task_result(
+        result = await task_manager.get_result(
             owner_metadata=owner_metadata,
-            task_uuid=task_uuid,
+            task_or_group_uuid=task_uuid,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
