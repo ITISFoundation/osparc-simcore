@@ -500,7 +500,15 @@ async def test_run_partial_computation(
         ],
     )
     assert new_task_out is not None
-    assert new_task_out == task_out
+    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
+    # empty adjacency list, and state reflects the last completed run
+    assert new_task_out.stop_url is None
+    assert new_task_out.state is RunningState.SUCCESS
+    assert new_task_out.id == task_out.id
+    assert new_task_out.iteration == task_out.iteration
+    assert new_task_out.pipeline_details.adjacency_list == {}
+    assert new_task_out.started is None
+    assert new_task_out.stopped is None
 
     # force run it this time.
     # the task are up-to-date but we force run them
@@ -606,7 +614,15 @@ async def test_run_computation(
         product_api_base_url=osparc_product_api_base_url,
     )
     assert new_task_out is not None
-    assert new_task_out == task_out
+    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
+    # empty adjacency list, and state reflects the last completed run
+    assert new_task_out.stop_url is None
+    assert new_task_out.state is RunningState.SUCCESS
+    assert new_task_out.id == task_out.id
+    assert new_task_out.iteration == task_out.iteration
+    assert new_task_out.pipeline_details.adjacency_list == {}
+    assert new_task_out.started is None
+    assert new_task_out.stopped is None
 
     # now force run again
     # the task are up-to-date but we force run them
