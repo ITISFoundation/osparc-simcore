@@ -84,7 +84,7 @@ idna==3.10
     #   requests
 iniconfig==2.3.0
     # via pytest
-kombu==5.6.1
+kombu==5.6.2
     # via
     #   -c requirements/_base.txt
     #   celery
