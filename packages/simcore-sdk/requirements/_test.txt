@@ -325,9 +325,9 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
     # via pytest-sugar
-types-aiobotocore==3.2.1
+types-aiobotocore==3.3.0
     # via -r requirements/_test.in
-types-aiobotocore-s3==3.2.1
+types-aiobotocore-s3==3.3.0
     # via types-aiobotocore
 types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
