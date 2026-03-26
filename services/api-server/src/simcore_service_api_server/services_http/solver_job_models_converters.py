@@ -237,6 +237,12 @@ def create_job_from_project(
 
 
 def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
+    # Collect errors from all failed nodes
+    all_errors = []
+    for node_state in task.pipeline_details.node_states.values():
+        if node_state.errors:
+            all_errors.extend(node_state.errors)
+
     return JobStatus(
         job_id=task.id,
         state=task.state,
@@ -244,4 +250,5 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
         submitted_at=task.submitted or arrow.utcnow().datetime,
         started_at=task.started,
         stopped_at=task.stopped,
+        errors=all_errors or None,
     )
