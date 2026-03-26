@@ -52,7 +52,7 @@ class PricingPlanUnitNotFoundError(DirectorError):
 
 
 class EC2InstanceTypeNotFoundError(DirectorError):
-    msg_template: str = "invalid EC2 type name selected {msg}"
+    msg_template: str = "invalid EC2 instance type selected {ec2_instance_types}. TIP: adjust product configuration"
 
 
 class PipelineNotFoundError(DirectorError):

@@ -286,10 +286,7 @@ async def _update_project_node_resources_from_hardware_info(
         else:
             _logger.warning("Services resource override not implemented yet for multi-container services!!!")
     except StopIteration as exc:
-        msg = (
-            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}. TIP: adjust product configuration"
-        )
-        raise EC2InstanceTypeNotFoundError(msg=msg) from exc
+        raise EC2InstanceTypeNotFoundError(ec2_instance_types=f"{set(hardware_info.aws_ec2_instances)}") from exc
     except (
         RemoteMethodNotRegisteredError,
         RPCServerError,

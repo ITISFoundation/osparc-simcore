@@ -171,8 +171,9 @@ async def start_computation(request: web.Request) -> web.Response:
     if project_vc_commits:
         data["ref_ids"] = project_vc_commits
 
-    # If any pipeline returned 200 (nothing to run), propagate 200 to the client
-    response_cls = web.HTTPOk if status.HTTP_200_OK in _response_statuses else web.HTTPCreated
+    # Return 200 only when ALL pipelines are up-to-date (nothing to run)
+    all_ok = bool(_response_statuses) and all(s == status.HTTP_200_OK for s in _response_statuses)
+    response_cls = web.HTTPOk if all_ok else web.HTTPCreated
     return envelope_json_response(ComputationStarted.model_validate(data), status_cls=response_cls)
 
 

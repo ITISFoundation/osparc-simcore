@@ -257,6 +257,9 @@ async def _try_start_pipeline(
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
         status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Invalid computation request (e.g. missing collection_run_id)",
+        },
     },
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
