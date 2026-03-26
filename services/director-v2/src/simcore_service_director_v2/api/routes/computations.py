@@ -322,6 +322,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint
             rabbitmq_rpc_client=rpc_client,
         )
 
+        pipeline_started = False
         if computation.start_pipeline:
             pipeline_started = await _try_start_pipeline(
                 request.app,
@@ -354,7 +355,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint
                 TypeAdapter(AnyHttpUrl).validate_python(
                     f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
                 )
-                if computation.start_pipeline
+                if computation.start_pipeline and pipeline_started
                 else None
             ),
             iteration=last_run.iteration if last_run else None,
