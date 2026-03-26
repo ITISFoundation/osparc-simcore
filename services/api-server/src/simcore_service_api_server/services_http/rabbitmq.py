@@ -28,6 +28,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
         app.state.health_checker = ApiServerHealthChecker(
             log_distributor=app.state.log_distributor,
             rabbit_client=app.state.rabbitmq_client,
+            rabbit_rpc_client=app.state.rabbitmq_rpc_client,
             timeout_seconds=app.state.settings.API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS,
             allowed_health_check_failures=app.state.settings.API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES,
         )
