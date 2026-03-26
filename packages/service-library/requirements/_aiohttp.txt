@@ -6,8 +6,6 @@ aiohttp==3.13.3
     #   -r requirements/_aiohttp.in
 aiosignal==1.4.0
     # via aiohttp
-async-timeout==4.0.3
-    # via aiopg
 attrs==25.4.0
     # via
     #   -r requirements/_aiohttp.in
@@ -18,8 +16,6 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-greenlet==3.3.2
-    # via sqlalchemy
 idna==3.11
     # via yarl
 importlib-metadata==8.7.1
@@ -85,7 +81,6 @@ wrapt==1.17.3
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-    #   opentelemetry-instrumentation-dbapi
 yarl==1.23.0
     # via aiohttp
 zipp==3.23.0
