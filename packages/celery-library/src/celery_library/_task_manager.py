@@ -1,8 +1,7 @@
 import logging
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from uuid import uuid4
 
 from celery import Celery, group, signature  # type: ignore[import-untyped]
@@ -47,6 +46,15 @@ _logger = logging.getLogger(__name__)
 
 _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 1.0
+
+
+@runtime_checkable
+class _ExecutorStrategy(Protocol):
+    async def cancel(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> None: ...
+    async def get_result(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> Any: ...
+    async def get_status(
+        self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID
+    ) -> TaskStatus | GroupStatus: ...
 
 
 @dataclass(frozen=True)
@@ -312,51 +320,36 @@ class CeleryTaskManager:
                 progress_report=await self._get_task_progress_report(task_key, task_state),
             )
 
-    async def _dispatch(
+    async def _resolve_strategy(
         self,
         owner_metadata: OwnerMetadata,
         task_or_group_uuid: TaskUUID | GroupUUID,
-        *,
-        task_fn: Callable[[OwnerMetadata, TaskUUID | GroupUUID], Awaitable[Any]],
-        group_fn: Callable[[OwnerMetadata, TaskUUID | GroupUUID], Awaitable[Any]],
-    ) -> Any:
+    ) -> _ExecutorStrategy:
         task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
         if not await self.task_or_group_exists(task_or_group_key):
             raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
 
         task_metadata = await self._task_store.get_task_metadata(task_or_group_key)
         if task_metadata and task_metadata.type == ExecutorType.GROUP:
-            return await group_fn(owner_metadata, task_or_group_uuid)
-        return await task_fn(owner_metadata, task_or_group_uuid)
+            return _GroupStrategy(self)
+        return _TaskStrategy(self)
 
     @handle_celery_errors
     async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None:
-        await self._dispatch(
-            owner_metadata,
-            task_or_group_uuid,
-            task_fn=self.cancel_task,
-            group_fn=self.cancel_group,
-        )
+        strategy = await self._resolve_strategy(owner_metadata, task_or_group_uuid)
+        await strategy.cancel(owner_metadata, task_or_group_uuid)
 
     @handle_celery_errors
     async def get_result(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> Any:
-        return await self._dispatch(
-            owner_metadata,
-            task_or_group_uuid,
-            task_fn=self.get_task_result,
-            group_fn=self.get_group_result,
-        )
+        strategy = await self._resolve_strategy(owner_metadata, task_or_group_uuid)
+        return await strategy.get_result(owner_metadata, task_or_group_uuid)
 
     @handle_celery_errors
     async def get_status(
         self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
     ) -> TaskStatus | GroupStatus:
-        return await self._dispatch(
-            owner_metadata,
-            task_or_group_uuid,
-            task_fn=self.get_task_status,
-            group_fn=self.get_group_status,
-        )
+        strategy = await self._resolve_strategy(owner_metadata, task_or_group_uuid)
+        return await strategy.get_status(owner_metadata, task_or_group_uuid)
 
     @make_async()
     def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
@@ -502,6 +495,34 @@ class CeleryTaskManager:
                 raise TaskNotFoundError(task_key=task_key)
 
             return await self._task_store.pull_task_stream_items(task_key, limit)
+
+
+@dataclass(frozen=True)
+class _TaskStrategy:
+    _mgr: CeleryTaskManager
+
+    async def cancel(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> None:
+        await self._mgr.cancel_task(owner_metadata, uuid)
+
+    async def get_result(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> Any:
+        return await self._mgr.get_task_result(owner_metadata, uuid)
+
+    async def get_status(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> TaskStatus | GroupStatus:
+        return await self._mgr.get_task_status(owner_metadata, uuid)
+
+
+@dataclass(frozen=True)
+class _GroupStrategy:
+    _mgr: CeleryTaskManager
+
+    async def cancel(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> None:
+        await self._mgr.cancel_group(owner_metadata, uuid)
+
+    async def get_result(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> Any:
+        return await self._mgr.get_group_result(owner_metadata, uuid)
+
+    async def get_status(self, owner_metadata: OwnerMetadata, uuid: TaskUUID | GroupUUID) -> TaskStatus | GroupStatus:
+        return await self._mgr.get_group_status(owner_metadata, uuid)
 
 
 if TYPE_CHECKING:
