@@ -288,11 +288,14 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint
 
         # reject cycles involving computational nodes early (before catalog checks)
         if computation.start_pipeline and (computational_cycles := find_computational_node_cycles(complete_dag)):
+            cycle_descriptions = [
+                [complete_dag.nodes[n].get("name", n) for n in cycle] for cycle in computational_cycles
+            ]
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Project {computation.project_id} contains cycles with "
-                f"computational services which are currently not supported: {computational_cycles}. "
-                "Please remove them.",
+                "computational services which are currently not supported: "
+                f"{cycle_descriptions}. Please remove them.",
             )
 
         # find the minimal viable graph to be run
