@@ -206,7 +206,7 @@ async def _try_start_pipeline(
 
     if computation.collection_run_id is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Project {computation.project_id} has no collection run ID",
         )
     await run_new_pipeline(
@@ -249,7 +249,7 @@ async def _try_start_pipeline(
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
         status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
-        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "description": "Invalid computation request (e.g. missing collection_run_id)",
         },
     },
