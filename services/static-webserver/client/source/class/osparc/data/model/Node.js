@@ -1571,8 +1571,8 @@ qx.Class.define("osparc.data.model.Node", {
         label: this.getLabel(),
         inputs: this.__getInputData(),
         inputsUnits: this.__getInputUnits(), // this is not working
-        inputNodes: [...this.getInputNodes()],
-        inputsRequired: [...this.getInputsRequired()],
+        inputNodes: this.getInputNodes(),
+        inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()
       };
 
@@ -1591,7 +1591,8 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
 
-      return filteredNodeEntry;
+      // return a deep clone of the object to avoid modifications to the original object
+      return osparc.utils.Utils.deepCloneObject(filteredNodeEntry);
     },
 
     serializeUI: function() {
