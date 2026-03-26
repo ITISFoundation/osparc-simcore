@@ -10,12 +10,16 @@ from datetime import datetime
 from typing import Any, Final
 
 import sqlalchemy as sa
+from common_library.users_enums import AccountRequestStatus
 from sqlalchemy import Column
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine.result import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Select
 
+from .models.groups import user_to_groups
+from .models.products import products
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 from .models.users_secrets import users_secrets
@@ -40,7 +44,7 @@ def _generate_random_chars(length: int = MIN_USERNAME_LEN) -> str:
 
 
 def _generate_username_from_email(email: str) -> str:
-    username = email.split("@")[0]
+    username = email.split("@", maxsplit=1)[0]
 
     # Remove any non-alphanumeric characters and convert to lowercase
     username = re.sub(r"[^a-zA-Z0-9]", "", username).lower()
@@ -157,11 +161,77 @@ class UsersRepo:
         assert new_user_id > 0  # nosec
 
         async with transaction_context(self._engine, connection) as conn:
-            # Link ALL pre-registrations for this email to the user
-            result = await conn.execute(
+            user_has_access_to_pre_reg_product = sa.exists(
+                sa.select(sa.literal(1))
+                .select_from(user_to_groups.join(products, products.c.group_id == user_to_groups.c.gid))
+                .where(
+                    (user_to_groups.c.uid == new_user_id)
+                    & (products.c.name == users_pre_registration_details.c.product_name)
+                )
+            )
+
+            # Link ALL pre-registrations for this email to the user and reconcile rows that are still pending review
+            # SEE https://github.com/ITISFoundation/private-issues/issues/492
+            _is_pending = users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING
+            _reconciles = _is_pending & user_has_access_to_pre_reg_product
+
+            await conn.execute(
                 users_pre_registration_details.update()
                 .where(users_pre_registration_details.c.pre_email == new_user_email)
-                .values(user_id=new_user_id)
+                .values(
+                    user_id=new_user_id,
+                    account_request_status=sa.case(
+                        (_reconciles, AccountRequestStatus.APPROVED),
+                        else_=users_pre_registration_details.c.account_request_status,
+                    ),
+                    account_request_reviewed_by=sa.case(
+                        (
+                            _reconciles & users_pre_registration_details.c.account_request_reviewed_by.is_(None),
+                            users_pre_registration_details.c.created_by,
+                        ),
+                        else_=users_pre_registration_details.c.account_request_reviewed_by,
+                    ),
+                    account_request_reviewed_at=sa.case(
+                        (
+                            _reconciles & users_pre_registration_details.c.account_request_reviewed_at.is_(None),
+                            sa.func.now(),
+                        ),
+                        else_=users_pre_registration_details.c.account_request_reviewed_at,
+                    ),
+                    extras=sa.case(
+                        (
+                            _reconciles,
+                            sa.func.coalesce(
+                                users_pre_registration_details.c.extras,
+                                sa.cast(sa.text("'{}'"), postgresql.JSONB),
+                            ).concat(
+                                sa.func.jsonb_build_object(
+                                    "recovery",
+                                    sa.func.jsonb_build_object(
+                                        "source",
+                                        "runtime:link_and_update_user_from_pre_registration",
+                                        "confidence",
+                                        sa.case(
+                                            (
+                                                users_pre_registration_details.c.created_by.is_not(None),
+                                                "high",
+                                            ),
+                                            else_="medium",
+                                        ),
+                                        "executed_at",
+                                        sa.func.to_char(
+                                            sa.func.timezone("UTC", sa.func.now()),
+                                            'YYYY-MM-DD"T"HH24:MI:SS"Z"',
+                                        ),
+                                        "notes",
+                                        "Auto-reconciled on user registration: user has product access",
+                                    ),
+                                )
+                            ),
+                        ),
+                        else_=users_pre_registration_details.c.extras,
+                    ),
+                )
             )
 
             # COPIES some pre-registration details to the users table

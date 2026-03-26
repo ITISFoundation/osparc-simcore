@@ -55,7 +55,7 @@ def bucket_name() -> S3BucketName:
 
 
 @pytest.fixture
-def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName, r_clone_version: str) -> EnvVarsDict:
+def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -65,7 +65,6 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName,
             "S3_BUCKET_NAME": bucket_name,
             "S3_SECRET_KEY": "test",
             "S3_REGION": "us-east-1",
-            "R_CLONE_VERSION": r_clone_version,
             "R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_SHOW_DEBUG_LOGS": "1",
         },
     )

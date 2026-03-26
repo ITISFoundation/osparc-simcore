@@ -111,7 +111,7 @@ async def _legacy_convert_db_projects_to_api_projects(
     api_projects: list[dict] = []
     for db_prj in db_projects:
         db_prj_dict = db_prj
-        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj['id']}")
+        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=db_prj["id"])
         user_email = await users_service.get_user_email_legacy(app, db_prj["prj_owner"])
         api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
     return api_projects

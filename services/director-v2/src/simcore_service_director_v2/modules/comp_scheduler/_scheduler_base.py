@@ -64,6 +64,7 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ..osparc_variables._errors import OsparcVariableResolveTimeoutError
 from ._models import TaskStateTracker
 from ._publisher import request_pipeline_scheduling
 from ._utils import (
@@ -855,6 +856,36 @@ class BaseCompScheduler(ABC):
             for task in tasks_ready_to_start:
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
 
+        except OsparcVariableResolveTimeoutError as exc:
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "Variable resolution timed out during task scheduling. "
+                    "Tasks are set back to WAITING_FOR_CLUSTER state and will be retried!",
+                    error=exc,
+                    error_context=log_error_context,
+                    tip="This is likely a transient issue. The variable resolution will be retried "
+                    "on the next scheduling cycle.",
+                )
+            )
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log=user_message(
+                    "Variable resolution timed out during task scheduling, will retry.",
+                    _version=1,
+                ),
+                log_level=logging.WARNING,
+            )
+            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+                project_id,
+                comp_run.run_id,
+                list(tasks_ready_to_start.keys()),
+                RunningState.WAITING_FOR_CLUSTER,
+            )
+            for task in tasks_ready_to_start:
+                comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
+
         except Exception as exc:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
@@ -892,11 +923,11 @@ class BaseCompScheduler(ABC):
         if not tasks_waiting_for_cluster:
             return comp_tasks
 
-        # get latest modified task
-        latest_modified_of_all_tasks = max(tasks_waiting_for_cluster, key=lambda task: task.modified).modified
+        if comp_run.last_result_changed is None:
+            return comp_tasks
 
         if (
-            arrow.utcnow().datetime - latest_modified_of_all_tasks
+            arrow.utcnow().datetime - comp_run.last_result_changed
         ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
             await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
                 project_id,

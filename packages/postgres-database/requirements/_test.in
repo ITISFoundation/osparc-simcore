@@ -9,7 +9,6 @@
 --constraint _base.txt
 --constraint _migration.txt
 
-aiopg[sa]
 arrow
 coverage
 faker
@@ -19,6 +18,7 @@ pytest-cov
 pytest-docker
 pytest-instafail
 pytest-runner
+pytest-timeout
 pyyaml
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types-docker

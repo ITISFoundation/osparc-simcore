@@ -6,11 +6,9 @@
 --constraint ./constraints.txt
 
 aiohttp
-aiopg[sa]
 attrs
 jsonschema
 opentelemetry-instrumentation-aiohttp-client
 opentelemetry-instrumentation-aiohttp-server
-opentelemetry-instrumentation-aiopg
 prometheus_client
 werkzeug

@@ -3,18 +3,19 @@ from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
-from ...celery import GroupUUID, TaskUUID
+from ...celery import GroupUUID, OwnerMetadata, TaskUUID
+from ._email import Addressing, Message
 from ._template import TemplateRef
 
 
 class SendMessageRequest(BaseModel):
     message: Annotated[
-        dict[str, Any],
+        Message,
         Field(
-            description="Channel-specific message payload. "
-            "Structure depends on the channel type (e.g. EmailMessage for email).",
+            description="Channel-specific message payload (e.g. EmailMessage for email).",
         ),
     ]
+    owner_metadata: OwnerMetadata | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -24,21 +25,28 @@ class SendMessageRequest(BaseModel):
                     {
                         "message": {
                             "channel": "email",
-                            "from": {
-                                "name": "osparc support",
-                                "email": "support@osparc.io",
+                            "addressing": {
+                                "from": {
+                                    "name": "osparc support",
+                                    "email": "support@osparc.io",
+                                },
+                                "to": [
+                                    {
+                                        "name": "John Doe",
+                                        "email": "john@example.com",
+                                    }
+                                ],
                             },
-                            "to": [
-                                {
-                                    "name": "John Doe",
-                                    "email": "john@example.com",
-                                }
-                            ],
                             "content": {
                                 "subject": "Welcome!",
                                 "body_html": "<p>Welcome to osparc!</p>",
                                 "body_text": "Welcome to osparc!",
                             },
+                        },
+                        "owner_metadata": {
+                            "user_id": 123,
+                            "product_name": "osparc",
+                            "owner": "notification-service",
                         },
                     },
                 ]
@@ -49,11 +57,10 @@ class SendMessageRequest(BaseModel):
 
 
 class SendMessageFromTemplateRequest(BaseModel):
-    envelope: Annotated[
-        dict[str, Any],
+    addressing: Annotated[
+        Addressing,
         Field(
-            description="Channel-specific envelope (addressing info). "
-            "Structure depends on the channel type (e.g. from/to for email). "
+            description="Channel-specific addressing info. "
             "Does NOT include message content, which is generated from the template.",
         ),
     ]
@@ -66,6 +73,7 @@ class SendMessageFromTemplateRequest(BaseModel):
             description="Template context variables. Must conform to the context_schema of the referenced template.",
         ),
     ]
+    owner_metadata: OwnerMetadata | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -73,7 +81,7 @@ class SendMessageFromTemplateRequest(BaseModel):
             {
                 "examples": [
                     {
-                        "envelope": {
+                        "addressing": {
                             "channel": "email",
                             "from": {
                                 "name": "osparc support",
@@ -93,6 +101,11 @@ class SendMessageFromTemplateRequest(BaseModel):
                         "context": {
                             "user": {"first_name": "John"},
                             "link": "https://osparc.io",
+                        },
+                        "owner_metadata": {
+                            "user_id": 123,
+                            "product_name": "osparc",
+                            "owner": "notification-service",
                         },
                     },
                 ]

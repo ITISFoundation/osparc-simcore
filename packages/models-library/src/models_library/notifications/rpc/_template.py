@@ -2,14 +2,16 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from .. import ChannelType, TemplateName
+from .. import Channel, TemplateName
 
 
 class TemplateRef(BaseModel):
-    channel: ChannelType
+    channel: Channel
     template_name: TemplateName
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
 
 class SearchTemplatesResponse(BaseModel):

@@ -7,6 +7,7 @@ import asyncio
 import logging
 import re
 from contextlib import AsyncExitStack
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
@@ -16,7 +17,7 @@ from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
+from pytest_simcore.helpers.webserver_login import NewUser, parse_test_marks
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
@@ -44,6 +45,7 @@ from simcore_service_webserver.products.errors import UnknownProductError
 from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.user_preferences import user_preferences_service
 from twilio.base.exceptions import TwilioRestException
+from yarl import URL
 
 
 @pytest.fixture
@@ -120,8 +122,9 @@ async def test_2fa_code_operations(client: TestClient):
 
 
 @pytest.mark.acceptance_test
-async def test_workflow_register_and_login_with_2fa(
+async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     client: TestClient,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
     confirmation_repository: ConfirmationRepository,
     capsys: pytest.CaptureFixture,
     user_email: str,
@@ -147,14 +150,14 @@ async def test_workflow_register_and_login_with_2fa(
     )
     await assert_status(response, status.HTTP_200_OK)
 
-    # check email was sent
-    def _get_confirmation_link_from_email():
-        out, _ = capsys.readouterr()
-        link = parse_link(out)
-        assert "/auth/confirmation/" in str(link)
-        return link
+    # retrieves sent link from notification service mock
+    mocked_notifications_service_send_message_from_template.assert_called_once()
+    notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
+    assert notification_context["link"] is not None
+    confirmation_url = URL(notification_context["link"]).path
+    assert "/auth/confirmation/" in f"{confirmation_url}"
 
-    url = _get_confirmation_link_from_email()
+    url = confirmation_url
 
     # 2. confirmation
     response = await client.get(f"{url}")

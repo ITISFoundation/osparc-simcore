@@ -1,13 +1,14 @@
 # pylint: disable=unused-argument
 
 import pytest
-from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
 from models_library.notifications.rpc import (
     PreviewTemplateResponse,
+    TemplateRef,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
@@ -27,7 +28,7 @@ async def test_search_templates_by_channel(
 ):
     all_templates = await search_templates(rpc_client, channel=None, template_name=None)
     if all_templates:
-        channel = ChannelType.email
+        channel = Channel.email
         filtered = await search_templates(rpc_client, channel=channel, template_name=None)
         # Check that all returned templates match the filter
         assert all(t.ref.channel == channel for t in filtered)
@@ -40,7 +41,7 @@ async def test_search_templates_by_ref(
 ):
     all_templates = await search_templates(rpc_client, channel=None, template_name=None)
     if all_templates:
-        channel = ChannelType.email
+        channel = Channel.email
         template_name = "empty"
         filtered = await search_templates(rpc_client, channel=channel, template_name=template_name)
         assert len(filtered) == 1
@@ -61,7 +62,7 @@ async def test_preview_template_success(
     fake_product_data: dict[str, str],
     rpc_client: RabbitMQRPCClient,
 ):
-    templates = await search_templates(rpc_client, channel=ChannelType.email, template_name="empty")
+    templates = await search_templates(rpc_client, channel=Channel.email, template_name="empty")
     assert len(templates) == 1
     template = templates[0]
     ref = TemplateRef(**template.ref.model_dump())
@@ -80,7 +81,7 @@ async def test_preview_template_not_found(
     rpc_client: RabbitMQRPCClient,
 ):
     ref = TemplateRef(
-        channel=ChannelType.email,
+        channel=Channel.email,
         template_name="non_existent_template",
     )
     context = {}

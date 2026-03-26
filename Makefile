@@ -558,10 +558,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 ## DOCKER PULL/PUSH  -------------------------------
-#
-# TODO: cannot push modified/untracked
-# TODO: cannot push disceted
-#
+
 .PHONY: pull-version
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
@@ -699,9 +696,11 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 openapi-specs: .env _check_venv_active ## generates and validates openapi specifications and schemas of ALL service's API
 	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
 		echo "Generating openapi-specs using $${makefile}"; \
-		$(MAKE_C) $$(dirname $${makefile}) install-dev; \
-		$(MAKE_C) $$(dirname $${makefile}) $@; \
-		printf "%0.s=" {1..100} && printf "\n"; \
+		( \
+			$(MAKE_C) $$(dirname $${makefile}) install-dev; \
+			$(MAKE_C) $$(dirname $${makefile}) $@; \
+			printf "%0.s=" {1..100} && printf "\n"; \
+		); \
 	done
 
 

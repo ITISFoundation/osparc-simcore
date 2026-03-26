@@ -4,7 +4,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from simcore_postgres_database.models.users import UserRole
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..users import users_service
 from ..users.exceptions import UserNotFoundError
@@ -21,7 +21,7 @@ async def validate_project_ownership(app: web.Application, user_id: UserID, proj
     Raises:
         ProjectInvalidRightsError: if 'user_id' does not own 'project_uuid'
     """
-    if await get_project_owner(get_database_engine_legacy(app), project_uuid=project_uuid) != user_id:
+    if await get_project_owner(get_asyncpg_engine(app), project_uuid=project_uuid) != user_id:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
 
