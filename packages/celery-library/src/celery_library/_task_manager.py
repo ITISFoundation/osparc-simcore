@@ -272,7 +272,6 @@ class CeleryTaskManager:
             if async_result.ready():
                 task_metadata = await self._task_store.get_task_metadata(task_key)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    _logger.debug("Removing ephemeral task result: task_key=%s", task_key)
                     await self._task_store.remove_task(task_key)
                     await self._forget_task(task_key)
             return result
