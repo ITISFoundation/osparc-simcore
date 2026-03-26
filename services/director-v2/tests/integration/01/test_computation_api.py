@@ -151,7 +151,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "product_name": "not a product",
                 "product_api_base_url": "http://invalid",
             },
-            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
         (
             {
@@ -160,7 +160,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "product_name": "not a product",
                 "product_api_base_url": "http://invalid",
             },
-            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
         (
             {
