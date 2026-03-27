@@ -296,7 +296,7 @@ async def test_filtering_listing_tasks(
     finally:
         # clean up all tasks. this should ideally be done in the fixture
         for task_uuid, owner_metadata in all_tasks:
-            await task_manager.cancel_task(owner_metadata, task_uuid)
+            await task_manager.cancel(owner_metadata, task_uuid)
 
 
 async def test_push_task_result_streams_data_during_execution(
