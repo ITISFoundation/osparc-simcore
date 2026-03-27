@@ -377,10 +377,12 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     ) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
-    except ClustersKeeperNotAvailableError as e:
+    except (
+        ClustersKeeperNotAvailableError,
+        ConfigurationError,
+    ) as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}") from e
-    except ConfigurationError as e:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}") from e
+
     except WalletNotEnoughCreditsError as e:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=f"{e}") from e
 
