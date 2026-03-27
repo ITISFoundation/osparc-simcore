@@ -125,6 +125,12 @@ def create_prometheus_instrumentationmain_input_state(*, enabled: bool) -> State
     return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
 
 
+def get_prometheus_instrumentation(app: FastAPI) -> CollectorRegistry:
+    prometheus_metrics = app.state.prometheus_metrics
+    assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
+    return prometheus_metrics.registry
+
+
 async def prometheus_instrumentation_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the
     # lifespan of the application runs, usually right after the ``FastAPI`` instance is created

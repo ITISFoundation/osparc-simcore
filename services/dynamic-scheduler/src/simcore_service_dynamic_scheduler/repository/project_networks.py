@@ -8,7 +8,9 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection
+
+from ..services.base_repository import BaseRepository
 
 
 class BaseProjectNetworksError(OsparcErrorMixin, RuntimeError):
@@ -19,10 +21,7 @@ class ProjectNetworkNotFoundError(BaseProjectNetworksError):
     msg_template: str = "no networks found for project {project_id}"
 
 
-class ProjectNetworksRepo:
-    def __init__(self, engine: AsyncEngine):
-        self.engine = engine
-
+class ProjectNetworksRepo(BaseRepository):
     async def get_projects_networks(
         self, connection: AsyncConnection | None = None, *, project_id: ProjectID
     ) -> ProjectsNetworks:

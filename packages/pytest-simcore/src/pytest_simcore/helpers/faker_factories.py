@@ -52,6 +52,23 @@ def random_phone_number(fake: Faker = DEFAULT_FAKER) -> str:
     return phone[: -len(tail)] + tail  # ensure phone keeps its length
 
 
+def _compute_hash(password: str) -> str:
+    try:
+        # 'passlib' will be used only if already installed.
+        # This way we do not force all modules to install
+        # it only for testing.
+        import passlib.hash  # noqa: PLC0415
+
+        return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
+    except ImportError:
+        # if 'passlib' is not installed, we will use a library
+        # from the python distribution for convenience
+        import hashlib  # noqa: PLC0415
+
+        return hashlib.sha224(password.encode("ascii")).hexdigest()
+
+
 DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
 
 
@@ -699,4 +716,55 @@ def random_group_classifier(
     assert set(data.keys()).issubset({c.name for c in group_classifiers.columns})
 
     data.update(overrides)
+    return data
+
+
+def random_ps_run(
+    *,
+    is_reverting: bool = False,
+    waiting_manual_intervention: bool = False,
+    fake: Faker = DEFAULT_FAKER,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.p_scheduler import ps_runs  # noqa: PLC0415
+
+    data = {
+        "run_id": fake.random_int(min=1),
+        "node_id": fake.uuid4(),
+        "workflow_name": fake.word(),
+        "is_reverting": is_reverting,
+        "waiting_manual_intervention": waiting_manual_intervention,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in ps_runs.columns})
+
+    return data
+
+
+def random_ps_step(
+    run_id: int,
+    *,
+    is_reverting: bool = False,
+    step_state: str = "CREATED",
+    finished_at: datetime | None = None,
+    message: str | None = None,
+    fake: Faker = DEFAULT_FAKER,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.p_scheduler import ps_steps  # noqa: PLC0415
+
+    data = {
+        "step_id": fake.random_int(min=1),
+        "created_at": fake.date_time(),
+        "run_id": run_id,
+        "step_type": fake.word(),
+        "is_reverting": is_reverting,
+        "timeout": timedelta(minutes=fake.random_int(min=1, max=5)),
+        "available_attempts": fake.random_int(min=1, max=5),
+        "attempt_number": 1,
+        "state": step_state,
+        "finished_at": finished_at,
+        "message": message,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in ps_steps.columns})
+
     return data
