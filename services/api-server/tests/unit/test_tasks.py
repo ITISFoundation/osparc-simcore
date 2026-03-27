@@ -86,7 +86,7 @@ async def test_get_task_result(
     response = await client.get(f"/v0/tasks/{task_id}/result", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     assert mock_task_manager.get_result.called
-    assert f"{mock_task_manager.get_result.call_args[1]['task_uuid']}" == task_id
+    assert f"{mock_task_manager.get_result.call_args[1]['task_or_group_uuid']}" == task_id
 
 
 @pytest.mark.parametrize(
