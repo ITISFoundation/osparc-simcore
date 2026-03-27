@@ -32,7 +32,7 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     manager: RedisClientsManager = app[APP_REDIS_CLIENT_KEY]
-    if not manager.are_healethy():
+    if not manager.healthy():
         raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
 
 

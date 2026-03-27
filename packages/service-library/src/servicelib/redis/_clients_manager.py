@@ -39,7 +39,7 @@ class RedisClientsManager:
     def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]
 
-    def are_healethy(self) -> bool:
+    def healthy(self) -> bool:
         return all(client.is_healthy for client in self._client_sdks.values())
 
     async def __aenter__(self) -> Self:
