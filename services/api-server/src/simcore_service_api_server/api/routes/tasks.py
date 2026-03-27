@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from typing import Annotated, Any
 
-from celery_library.errors import TaskNotFoundError
+from celery_library.errors import TaskOrGroupNotFoundError
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
@@ -51,7 +51,7 @@ _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 def _exception_mapper(task_uuid: TaskUUID):
     try:
         yield
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise CeleryTaskNotFoundError(task_uuid=task_uuid) from exc
 
 

@@ -36,7 +36,7 @@ from settings_library.celery import CelerySettings
 from .errors import (
     GroupNotFoundError,
     GroupSubmissionError,
-    TaskNotFoundError,
+    TaskOrGroupNotFoundError,
     TaskSubmissionError,
     handle_celery_errors,
 )
@@ -251,7 +251,7 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
             if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
 
             await self._task_store.remove_task(task_key)
             await self._forget_task(task_key)
@@ -272,7 +272,7 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
             if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
 
             async_result = self._app.AsyncResult(task_key)
             result = async_result.result
@@ -370,7 +370,7 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
             if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
 
             task_state = await self._get_task_celery_state(task_key)
             return TaskStatus(
@@ -386,7 +386,7 @@ class CeleryTaskManager:
     ) -> bool:
         task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
         if not await self.task_or_group_exists(task_or_group_key):
-            raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
+            raise TaskOrGroupNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
 
         task_metadata = await self._task_store.get_task_metadata(task_or_group_key)
         return task_metadata is not None and task_metadata.type == ExecutorType.GROUP
@@ -430,7 +430,7 @@ class CeleryTaskManager:
     async def set_task_stream_done(self, task_key: TaskKey) -> None:
         with log_context(_logger, logging.DEBUG, "Set task stream done: task_key= %s", task_key):
             if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_key=task_key)
+                raise TaskOrGroupNotFoundError(task_key=task_key)
 
             await self._task_store.set_task_stream_done(task_key)
 
@@ -438,7 +438,7 @@ class CeleryTaskManager:
     async def set_task_stream_last_update(self, task_key: TaskKey) -> None:
         with log_context(_logger, logging.DEBUG, "Set task stream last update: task_key=%s", task_key):
             if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_key=task_key)
+                raise TaskOrGroupNotFoundError(task_key=task_key)
 
             await self._task_store.set_task_stream_last_update(task_key)
 
@@ -452,7 +452,7 @@ class CeleryTaskManager:
             items,
         ):
             if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_key=task_key)
+                raise TaskOrGroupNotFoundError(task_key=task_key)
 
             await self._task_store.push_task_stream_items(task_key, *items)
 
@@ -475,7 +475,7 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
             if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_key=task_key)
+                raise TaskOrGroupNotFoundError(task_key=task_key)
 
             return await self._task_store.pull_task_stream_items(task_key, limit)
 

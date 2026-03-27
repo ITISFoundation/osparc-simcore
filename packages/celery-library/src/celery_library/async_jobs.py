@@ -33,7 +33,7 @@ from tenacity import (
 
 from .errors import (
     TaskManagerError,
-    TaskNotFoundError,
+    TaskOrGroupNotFoundError,
     TransferableCeleryError,
     decode_celery_transferable_error,
 )
@@ -54,7 +54,7 @@ async def cancel_job(
             owner_metadata=owner_metadata,
             task_or_group_uuid=job_id,
         )
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -81,7 +81,7 @@ async def get_job_result(
             owner_metadata=owner_metadata,
             task_or_group_uuid=job_id,
         )
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -120,7 +120,7 @@ async def get_job_status(
             owner_metadata=owner_metadata,
             task_or_group_uuid=job_id,
         )
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

@@ -15,7 +15,7 @@ import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library._task_manager import CeleryTaskManager
-from celery_library.errors import GroupNotFoundError, TaskNotFoundError, TransferableCeleryError
+from celery_library.errors import TaskOrGroupNotFoundError, TransferableCeleryError
 from celery_library.task import register_task
 from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
@@ -224,7 +224,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
     await task_manager.cancel(fake_owner_metadata, task_uuid)
 
-    with pytest.raises(TaskNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.get_status(fake_owner_metadata, task_uuid)
 
     assert task_uuid not in await task_manager.list_tasks(fake_owner_metadata)
@@ -385,7 +385,7 @@ async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
 ):
     fake_task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
 
-    with pytest.raises(TaskNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.pull_task_stream_items(fake_owner_metadata, fake_task_uuid)
 
 
@@ -395,7 +395,7 @@ async def test_push_task_stream_items_to_nonexistent_task_raises_error(
 ):
     not_existing_task_id = "not_existing"
 
-    with pytest.raises(TaskNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.push_task_stream_items(not_existing_task_id, TaskStreamItem(data="some-result"))
 
 
@@ -470,7 +470,7 @@ async def test_submit_group_tasks_appear_in_listing(
     finally:
         # Clean up
         for task_uuid in task_uuids:
-            with contextlib.suppress(TaskNotFoundError):
+            with contextlib.suppress(TaskOrGroupNotFoundError):
                 await task_manager.cancel(fake_owner_metadata, task_uuid)
 
 
@@ -548,7 +548,7 @@ async def test_submit_group_can_cancel_individual_tasks(
     await task_manager.cancel(fake_owner_metadata, task_uuids[0])
 
     # Verify first task is gone
-    with pytest.raises(TaskNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.get_status(fake_owner_metadata, task_uuids[0])
 
     # Cancel remaining tasks
@@ -584,12 +584,12 @@ async def test_cancelling_a_group_cancels_all_tasks(
     await task_manager.cancel(fake_owner_metadata, group_uuid)
 
     # Group itself should no longer exist
-    with pytest.raises(GroupNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.get_status(fake_owner_metadata, group_uuid)
 
     # All individual tasks should also be gone
     for task_uuid in task_uuids:
-        with pytest.raises(TaskNotFoundError):
+        with pytest.raises(TaskOrGroupNotFoundError):
             await task_manager.get_status(fake_owner_metadata, task_uuid)
 
 
@@ -673,7 +673,7 @@ async def test_submit_group_with_ephemeral_tasks(
 
     for task_uuid in task_uuids:
         # Second attempt to get result should fail as ephemeral tasks are cleaned up
-        with pytest.raises(TaskNotFoundError):
+        with pytest.raises(TaskOrGroupNotFoundError):
             await task_manager.get_status(fake_owner_metadata, task_uuid)
 
 
@@ -732,7 +732,7 @@ async def test_get_group_status_returns_status_for_running_group(
     finally:
         # Clean up
         for task_uuid in task_uuids:
-            with contextlib.suppress(TaskNotFoundError):
+            with contextlib.suppress(TaskOrGroupNotFoundError):
                 await task_manager.cancel(fake_owner_metadata, task_uuid)
 
 
@@ -824,7 +824,7 @@ async def test_get_group_status_with_nonexistent_group_raises_error(
 ):
     fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
 
-    with pytest.raises(GroupNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.get_status(fake_owner_metadata, fake_group_uuid)
 
 
@@ -872,7 +872,7 @@ async def test_get_group_status_tracks_progress(
     finally:
         # Clean up
         for task_uuid in task_uuids:
-            with contextlib.suppress(TaskNotFoundError):
+            with contextlib.suppress(TaskOrGroupNotFoundError):
                 await task_manager.cancel(fake_owner_metadata, task_uuid)
 
 
@@ -951,7 +951,7 @@ async def test_get_result_with_nonexistent_uuid_raises_error(
     fake_owner_metadata: OwnerMetadata,
 ):
     fake_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
-    with pytest.raises(TaskNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.get_result(fake_owner_metadata, fake_uuid)
 
 
@@ -1039,7 +1039,7 @@ async def test_get_group_result_with_ephemeral_cleans_up(
     assert results == ["archive.zip"] * num_tasks
 
     # Second call should fail because the group was cleaned up
-    with pytest.raises(GroupNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.get_result(fake_owner_metadata, group_id)
 
 
@@ -1049,5 +1049,5 @@ async def test_get_group_result_with_nonexistent_group_raises_error(
     fake_owner_metadata: OwnerMetadata,
 ):
     fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
-    with pytest.raises(GroupNotFoundError):
+    with pytest.raises(TaskOrGroupNotFoundError):
         await task_manager.get_result(fake_owner_metadata, fake_group_uuid)
