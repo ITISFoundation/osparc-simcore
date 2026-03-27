@@ -4580,7 +4580,14 @@
             }
           },
           "200": {
-            "description": "Pipeline is up-to-date, nothing was started"
+            "description": "Pipeline is up-to-date, nothing was started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ComputationGet_"
+                }
+              }
+            }
           },
           "402": {
             "description": "Insufficient credits to run computation"
