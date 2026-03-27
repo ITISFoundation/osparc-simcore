@@ -1,7 +1,8 @@
 import base64
 import pickle
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable
 from functools import wraps
+from types import CoroutineType
 from typing import Any
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
@@ -51,8 +52,8 @@ class TaskManagerError(OsparcErrorMixin, Exception):
 
 
 def handle_celery_errors[**P, R](
-    func: Callable[P, Coroutine[Any, Any, R]],
-) -> Callable[P, Coroutine[Any, Any, R]]:
+    func: Callable[P, CoroutineType[Any, Any, R]],
+) -> Callable[P, CoroutineType[Any, Any, R]]:
     @wraps(func)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
