@@ -223,7 +223,7 @@ pyyaml==6.0.3
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   jsonschema-path
-redis==7.3.0
+redis==7.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

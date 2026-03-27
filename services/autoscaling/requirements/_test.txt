@@ -242,7 +242,7 @@ pyyaml==6.0.3
     #   jsonschema-path
     #   moto
     #   responses
-redis==7.0.1
+redis==7.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -298,21 +298,21 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
     # via pytest-sugar
-types-aiobotocore==2.25.2
+types-aiobotocore==3.3.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-types-aiobotocore-ec2==2.25.2
+types-aiobotocore-ec2==3.3.0
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore
-types-aiobotocore-iam==2.25.2
+types-aiobotocore-iam==3.3.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.25.2
+types-aiobotocore-s3==3.3.0
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore
-types-aiobotocore-ssm==2.25.2
+types-aiobotocore-ssm==3.3.0
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore

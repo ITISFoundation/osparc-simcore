@@ -509,7 +509,7 @@ pyyaml==6.0.3
     #   bokeh
     #   dask
     #   distributed
-redis==7.0.1
+redis==7.4.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
