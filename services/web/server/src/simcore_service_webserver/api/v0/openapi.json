@@ -10741,31 +10741,6 @@
         }
       }
     },
-    "/v0/publications/service-submission": {
-      "post": {
-        "tags": [
-          "publication"
-        ],
-        "summary": "Service Submission",
-        "description": "Submits files with new service candidate",
-        "operationId": "service_submission",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_service_submission"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
-    },
     "/v0/services/-/resource-usages": {
       "get": {
         "tags": [
@@ -14441,21 +14416,6 @@
           "email"
         ],
         "title": "Author"
-      },
-      "Body_service_submission": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "format": "binary",
-            "title": "File",
-            "description": "metadata.json submission file"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_service_submission"
       },
       "BootChoice": {
         "properties": {
@@ -28494,8 +28454,7 @@
               "change_email_email.jinja2",
               "new_2fa_code.jinja2",
               "registration_email.jinja2",
-              "reset_password_email.jinja2",
-              "service_submission.jinja2"
+              "reset_password_email.jinja2"
             ],
             "title": "Template Name",
             "default": "registration_email.jinja2"
