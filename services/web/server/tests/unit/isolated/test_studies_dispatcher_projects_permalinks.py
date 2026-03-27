@@ -48,7 +48,6 @@ def app_environment(env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PAYMENTS": "null",
             "WEBSERVER_PRODUCTS": "1",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_RABBITMQ": "null",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_RPC_NAMESPACE": "null",
