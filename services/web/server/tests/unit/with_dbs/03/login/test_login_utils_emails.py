@@ -2,8 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -18,12 +16,10 @@ from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email.plugin import setup_email
 from simcore_service_webserver.login._emails_service import (
-    AttachmentTuple,
     get_template_path,
     send_email_from_template,
 )
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.publications._utils import json2html
 from simcore_service_webserver.statics._constants import FRONTEND_APPS_AVAILABLE
 
 
@@ -145,34 +141,4 @@ async def test_render_and_send_mail_to_change_email(
             "link": link,
             "product": SimpleNamespace(display_name=product_name.capitalize(), name=product_name),
         },
-    )
-
-
-@pytest.mark.parametrize("product_name", FRONTEND_APPS_AVAILABLE)
-async def test_render_and_send_mail_for_submission(
-    faker: Faker,
-    mocked_core_do_send_email: MagicMock,
-    product_name: str,
-    destination_email: str,
-    http_request: web.Request,
-):
-    data = {"name": faker.first_name(), "surname": faker.last_name()}  # some form
-
-    await send_email_from_template(
-        http_request,
-        from_=f"no-reply@{product_name}.test",
-        to=destination_email,
-        template=await get_template_path(http_request, "service_submission.jinja2"),
-        context={
-            "user": destination_email,
-            "data": json2html.convert(json=json.dumps(data), table_attributes='class="pure-table"'),
-            "subject": "TEST",
-            "product": SimpleNamespace(display_name=product_name.capitalize(), name=product_name),
-        },
-        attachments=[
-            AttachmentTuple(
-                filename="test_login_utils.py",
-                payload=bytearray(Path(__file__).read_bytes()),
-            )
-        ],
     )

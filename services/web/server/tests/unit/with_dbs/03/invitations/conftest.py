@@ -190,7 +190,6 @@ def app_environment(
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_NOTIFICATIONS": "0",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "0",
             "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",

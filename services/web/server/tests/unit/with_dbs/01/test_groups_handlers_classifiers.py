@@ -34,7 +34,6 @@ def app_environment(
             "WEBSERVER_LOGIN": "null",
             "WEBSERVER_PRODUCTS": "0",
             "WEBSERVER_PROJECTS": "null",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_SOCKETIO": "0",
             "WEBSERVER_STORAGE": "null",
             "WEBSERVER_RESOURCE_MANAGER": "null",
