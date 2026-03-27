@@ -419,7 +419,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_NOTIFICATIONS: bool = True
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PROFILING: bool = False
-    WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True

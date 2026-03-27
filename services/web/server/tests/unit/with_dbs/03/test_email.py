@@ -50,7 +50,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",
             "WEBSERVER_PRODUCTS": "1",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "1",  # for login notifications
             "WEBSERVER_STUDIES_DISPATCHER": "null",
@@ -145,13 +144,13 @@ class IndexParser(HTMLParser):
         self.has_comments = False
         super().__init__()
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag, _):
         self.tags.append(tag)
 
     def handle_endtag(self, tag):
         self.tags.append(tag)
 
-    def handle_comment(self, data):
+    def handle_comment(self, _):
         self.has_comments = True
 
     def error(self, message):

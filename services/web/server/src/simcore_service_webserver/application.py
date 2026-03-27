@@ -49,7 +49,6 @@ from .notifications.plugin import setup_notifications
 from .payments.plugin import setup_payments
 from .products.plugin import setup_products
 from .projects.plugin import setup_projects
-from .publications.plugin import setup_publications
 from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .resource_manager.plugin import setup_resource_manager
@@ -101,7 +100,7 @@ def _create_finished_banner() -> Callable:
     return _finished_banner
 
 
-def create_application(tracing_config: TracingConfig) -> web.Application:
+def create_application(tracing_config: TracingConfig) -> web.Application:  # noqa: PLR0915
     """
     Initializes service
     """
@@ -187,7 +186,6 @@ def create_application(tracing_config: TracingConfig) -> web.Application:
     setup_tags(app)
 
     setup_announcements(app)
-    setup_publications(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_realtime_collaboration(app)

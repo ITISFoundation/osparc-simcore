@@ -29,7 +29,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_GROUPS": "0",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PROJECTS": "null",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "1",  # <--- activate only sockets
             "WEBSERVER_STORAGE": "null",
