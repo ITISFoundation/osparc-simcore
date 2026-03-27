@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass, field
+from typing import Self
 
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -38,7 +39,10 @@ class RedisClientsManager:
     def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]
 
-    async def __aenter__(self) -> "RedisClientsManager":
+    def are_healethy(self) -> bool:
+        return all(client.is_healthy for client in self._client_sdks.values())
+
+    async def __aenter__(self) -> Self:
         await self.setup()
         return self
 

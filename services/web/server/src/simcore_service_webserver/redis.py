@@ -43,7 +43,7 @@ _DATABASES: Final[tuple[RedisDatabase, ...]] = (
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     manager: RedisClientsManager = app[APP_REDIS_CLIENT_KEY]
-    if any(not manager.client(db).is_healthy for db in _DATABASES):
+    if not manager.are_healethy():
         raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
 
 
