@@ -30,7 +30,7 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
         "worker_detect_quorum_queues": True,
     }
     if celery_settings.CELERY_REDIS_RESULT_BACKEND.REDIS_SECURE:
-        base_config["redis_backend_use_ssl"] = {"ssl_cert_reqs": ssl.CERT_NONE}
+        base_config["redis_backend_use_ssl"] = {"ssl_cert_reqs": f"{ssl.CERT_NONE}"}
     return base_config
 
 
