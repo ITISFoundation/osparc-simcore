@@ -71,6 +71,7 @@ class RedisClientSDK:
             encoding="utf-8",
             decode_responses=self.decode_responses,
             client_name=self.client_name,
+            health_check_interval=self.health_check_interval.total_seconds(),
         )
         self._is_healthy = False
         self._started_event_task_health_check = asyncio.Event()
