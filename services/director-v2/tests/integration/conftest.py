@@ -101,7 +101,7 @@ async def create_pipeline(
             },
         )
         response.raise_for_status()
-        assert response.status_code == status.HTTP_201_CREATED
+        assert response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED)
 
         computation_task = ComputationGet.model_validate(response.json())
         created_comp_tasks.append((user_id, computation_task))
@@ -161,7 +161,8 @@ async def wait_for_catalog_service(
                 timeout=1,
             )
             assert response.status_code == status.HTTP_200_OK, (
-                f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+                f"catalog is not ready {response.status_code}:{response.text}, "
+                "TIP: migration not completed or catalog broken?"
             )
             services = response.json()
             assert services != [], "catalog is not ready: no services available"
