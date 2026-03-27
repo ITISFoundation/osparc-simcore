@@ -34,9 +34,9 @@ async def create_mock_task_manager(
             async def _raise(*args, **kwargs):
                 raise status_or_exception
 
-            mock_task_manager.get_task_status.side_effect = _raise
+            mock_task_manager.get_status.side_effect = _raise
         else:
-            mock_task_manager.get_task_status.return_value = status_or_exception
+            mock_task_manager.get_status.return_value = status_or_exception
         return mock_task_manager
 
     return _
