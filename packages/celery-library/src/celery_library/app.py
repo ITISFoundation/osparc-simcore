@@ -3,6 +3,7 @@ from typing import Any
 
 from celery import Celery  # type: ignore[import-untyped]
 from models_library.celery import DEFAULT_QUEUE
+from pydantic import TypeAdapter
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
@@ -30,7 +31,7 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
         "worker_detect_quorum_queues": True,
     }
     if celery_settings.CELERY_REDIS_RESULT_BACKEND.REDIS_SECURE:
-        base_config["redis_backend_use_ssl"] = {"ssl_cert_reqs": f"{ssl.CERT_NONE}"}
+        base_config["redis_backend_use_ssl"] = {"ssl_cert_reqs": TypeAdapter(bool).validate_python(ssl.CERT_NONE)}
     return base_config
 
 
