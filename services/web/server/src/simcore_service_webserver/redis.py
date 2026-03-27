@@ -3,12 +3,14 @@ from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from models_library.errors import REDIS_CLIENT_UNHEALTHY_MSG
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._meta import APP_NAME
 from .application_keys import APP_SETTINGS_APPKEY
 from .application_setup import ModuleCategory, app_setup_func
+from .rest.healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -26,6 +28,25 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
 
 
 # EVENTS --------------------------------------------------------------------------
+
+_DATABASES: Final[tuple[RedisDatabase, ...]] = (
+    RedisDatabase.RESOURCES,
+    RedisDatabase.LOCKS,
+    RedisDatabase.VALIDATION_CODES,
+    RedisDatabase.SCHEDULED_MAINTENANCE,
+    RedisDatabase.USER_NOTIFICATIONS,
+    RedisDatabase.ANNOUNCEMENTS,
+    RedisDatabase.DOCUMENTS,
+    RedisDatabase.CELERY_TASKS,
+)
+
+
+async def _on_healthcheck_async_adapter(app: web.Application) -> None:
+    manager: RedisClientsManager = app[APP_REDIS_CLIENT_KEY]
+    if any(not manager.client(db).is_healthy for db in _DATABASES):
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
+
+
 async def setup_redis_client(app: web.Application):
     """
 
@@ -33,22 +54,13 @@ async def setup_redis_client(app: web.Application):
     """
     redis_settings: RedisSettings = get_plugin_settings(app)
     app[APP_REDIS_CLIENT_KEY] = manager = RedisClientsManager(
-        databases_configs={
-            RedisManagerDBConfig(database=db)
-            for db in (
-                RedisDatabase.RESOURCES,
-                RedisDatabase.LOCKS,
-                RedisDatabase.VALIDATION_CODES,
-                RedisDatabase.SCHEDULED_MAINTENANCE,
-                RedisDatabase.USER_NOTIFICATIONS,
-                RedisDatabase.ANNOUNCEMENTS,
-                RedisDatabase.DOCUMENTS,
-                RedisDatabase.CELERY_TASKS,
-            )
-        },
+        databases_configs={RedisManagerDBConfig(database=db) for db in _DATABASES},
         settings=redis_settings,
         client_name=APP_NAME,
     )
+
+    healthcheck = app[HEALTHCHECK_APPKEY]
+    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     await manager.setup()
 
