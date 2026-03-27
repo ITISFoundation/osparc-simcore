@@ -57,7 +57,6 @@ from tenacity.stop import stop_after_delay
 
 from ..core.settings import WebServerSettings
 from ..exceptions.backend_errors import (
-    ClusterNotFoundError,
     ConfigurationError,
     ForbiddenWalletError,
     JobNotFoundError,
@@ -265,7 +264,10 @@ class AuthSession:
                 task_status = Envelope[TaskStatus].model_validate_json(get_response.text).data
                 assert task_status is not None  # nosec
                 if not task_status.done:
-                    msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
+                    msg = (
+                        "Timed out creating project. "
+                        "TIP: Try again, or contact oSparc support if this is happening repeatedly"
+                    )
                     raise TryAgain(msg)
 
         result_response = await self.long_running_task_client.get(
@@ -492,8 +494,7 @@ class AuthSession:
         http_status_map=_JOB_STATUS_MAP
         | {
             status.HTTP_409_CONFLICT: ProjectAlreadyStartedError,
-            status.HTTP_406_NOT_ACCEPTABLE: ClusterNotFoundError,
-            status.HTTP_422_UNPROCESSABLE_ENTITY: ConfigurationError,
+            status.HTTP_503_SERVICE_UNAVAILABLE: ConfigurationError,
         }
     )
     async def start_project(
