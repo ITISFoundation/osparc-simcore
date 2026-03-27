@@ -2,7 +2,6 @@ import base64
 import pickle
 from collections.abc import Callable
 from functools import wraps
-from types import CoroutineType
 from typing import Any
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
@@ -51,14 +50,12 @@ class TaskManagerError(OsparcErrorMixin, Exception):
     msg_template = "An internal error occurred"
 
 
-def handle_celery_errors[**P, R](
-    func: Callable[P, CoroutineType[Any, Any, R]],
-) -> Callable[P, CoroutineType[Any, Any, R]]:
+def handle_celery_errors[F: Callable[..., Any]](func: F) -> F:
     @wraps(func)
-    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return await func(*args, **kwargs)
         except CeleryError as exc:
             raise TaskManagerError from exc
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]

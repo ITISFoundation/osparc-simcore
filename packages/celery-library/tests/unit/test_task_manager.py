@@ -252,7 +252,7 @@ async def test_listing_task_uuids_contains_submitted_task(
 
 
 async def test_filtering_listing_tasks(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
     class MyOwnerMetadata(OwnerMetadata):
@@ -903,7 +903,7 @@ async def test_get_group_status_with_empty_group(
 
 
 async def test_get_result_dispatches_to_task_result(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
     fake_owner_metadata: OwnerMetadata,
 ):
@@ -919,7 +919,7 @@ async def test_get_result_dispatches_to_task_result(
 
 
 async def test_get_result_dispatches_to_group_result(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
     fake_owner_metadata: OwnerMetadata,
 ):
@@ -946,7 +946,7 @@ async def test_get_result_dispatches_to_group_result(
 
 
 async def test_get_result_with_nonexistent_uuid_raises_error(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
     fake_owner_metadata: OwnerMetadata,
 ):
@@ -956,7 +956,7 @@ async def test_get_result_with_nonexistent_uuid_raises_error(
 
 
 async def test_get_group_result_returns_all_results(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
     fake_owner_metadata: OwnerMetadata,
 ):
@@ -982,7 +982,7 @@ async def test_get_group_result_returns_all_results(
 
 
 async def test_get_group_result_with_failures(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
     fake_owner_metadata: OwnerMetadata,
 ):
@@ -1013,7 +1013,7 @@ async def test_get_group_result_with_failures(
 
 
 async def test_get_group_result_with_ephemeral_cleans_up(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
     fake_owner_metadata: OwnerMetadata,
 ):
@@ -1044,7 +1044,7 @@ async def test_get_group_result_with_ephemeral_cleans_up(
 
 
 async def test_get_group_result_with_nonexistent_group_raises_error(
-    task_manager: TaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
     fake_owner_metadata: OwnerMetadata,
 ):
