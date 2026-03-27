@@ -88,9 +88,6 @@ class SolverOutputNotFoundError(BaseBackEndError):
     status_code = status.HTTP_404_NOT_FOUND
 
 
-class ClusterNotFoundError(BaseBackEndError):
-    msg_template = user_message("The requested cluster could not be found.", _version=1)
-    status_code = status.HTTP_404_NOT_FOUND
 
 
 class ConfigurationError(BaseBackEndError):
