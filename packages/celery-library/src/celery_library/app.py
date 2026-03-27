@@ -9,7 +9,10 @@ from settings_library.redis import RedisDatabase
 
 def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
     base_config = {
+        "broker_connection_max_retries": None,
         "broker_connection_retry_on_startup": True,
+        "broker_connection_retry": True,
+        "broker_heartbeat": 30,
         "result_expires": celery_settings.CELERY_RESULT_EXPIRES,
         "result_extended": True,
         "result_serializer": "json",
