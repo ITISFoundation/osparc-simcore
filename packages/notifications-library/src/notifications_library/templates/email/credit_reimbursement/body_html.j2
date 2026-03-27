@@ -1,0 +1,25 @@
+{% extends 'email/_base/body_html.j2' %}
+
+{% block title %} {% include 'email/credit_reimbursement/subject.j2' %} {% endblock %}
+
+{% block content %}
+
+<p>Dear User,</p>
+
+<p>
+  We want to inform you that your service run (<strong>{{ service_run_id }}</strong>) on {{ product.display_name }}
+  was affected by a platform issue and was not billed.
+</p>
+
+<p>
+  <strong>{{ reimbursed_credits }}</strong> <strong><em>credits</em></strong> have been reimbursed to your wallet.
+</p>
+
+<p>No action is needed on your part.</p>
+
+<p>Please don't hesitate to contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a> if you need further help.</p>
+
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
+
+{% endblock %}

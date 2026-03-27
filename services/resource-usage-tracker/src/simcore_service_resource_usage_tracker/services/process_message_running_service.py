@@ -21,6 +21,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceType
 from pydantic import TypeAdapter
+from servicelib.rabbitmq import RabbitMQRPCClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..models.credit_transactions import (
@@ -39,7 +40,8 @@ from .modules.db import (
     pricing_plans_db,
     service_runs_db,
 )
-from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
+from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client, get_rabbitmq_rpc_client
+from .notifications import notify_user_of_credit_reimbursement
 from .utils import (
     compute_service_run_credit_costs,
     make_negative,
@@ -59,8 +61,11 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     )
     _db_engine = app.state.engine
     rabbitmq_client = get_rabbitmq_client(app)
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
-    await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](_db_engine, rabbit_message, rabbitmq_client)
+    await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](
+        _db_engine, rabbit_message, rabbitmq_client, rabbitmq_rpc_client
+    )
     return True
 
 
@@ -68,6 +73,7 @@ async def _process_start_event(
     db_engine: AsyncEngine,
     msg: RabbitResourceTrackingStartedMessage,
     rabbitmq_client: RabbitMQClient,
+    _rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if service_run_db:
@@ -160,6 +166,7 @@ async def _process_heartbeat_event(
     db_engine: AsyncEngine,
     msg: RabbitResourceTrackingHeartbeatMessage,
     rabbitmq_client: RabbitMQClient,
+    _rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if not service_run_db:
@@ -226,6 +233,7 @@ async def _process_stop_event(
     db_engine: AsyncEngine,
     msg: RabbitResourceTrackingStoppedMessage,
     rabbitmq_client: RabbitMQClient,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if not service_run_db:
@@ -302,8 +310,6 @@ async def _process_stop_event(
             _transaction_status = CreditTransactionStatus.NOT_BILLED
             _send_email = True
 
-            # NOTE: Here we can send the email
-
         # Update credits in the transaction table and close the transaction
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=msg.service_run_id,
@@ -315,8 +321,13 @@ async def _process_stop_event(
         )
 
         if _send_email:
-            # NOTE: Here we can send the email - here we are sure that the state in DB is already NOT_BILLED
-            ...
+            await notify_user_of_credit_reimbursement(
+                rabbitmq_rpc_client,
+                product_name=running_service.product_name,
+                user_email=running_service.user_email,
+                service_run_id=msg.service_run_id,
+                reimbursed_credits=computed_credits,
+            )
         # Publish wallet total credits to RabbitMQ
         await sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,

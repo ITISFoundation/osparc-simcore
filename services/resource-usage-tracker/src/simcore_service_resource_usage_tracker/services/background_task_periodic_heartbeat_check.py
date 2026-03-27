@@ -10,6 +10,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services_types import ServiceRunID
 from pydantic import NonNegativeInt, PositiveInt
+from servicelib.rabbitmq import RabbitMQRPCClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..core.settings import ApplicationSettings
@@ -20,6 +21,8 @@ from .modules.db import (
     licensed_items_checkouts_db,
     service_runs_db,
 )
+from .modules.rabbitmq import get_rabbitmq_rpc_client
+from .notifications import notify_user_of_credit_reimbursement
 from .utils import compute_service_run_credit_costs, make_negative
 
 _logger = logging.getLogger(__name__)
@@ -29,6 +32,7 @@ _BATCH_SIZE = 20
 
 async def _check_service_heartbeat(
     db_engine: AsyncEngine,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
     base_start_timestamp: datetime,
     resource_usage_tracker_missed_heartbeat_interval: timedelta,
     resource_usage_tracker_missed_heartbeat_counter_fail: NonNegativeInt,
@@ -55,7 +59,7 @@ async def _check_service_heartbeat(
                 service_run_id,
                 missed_heartbeat_counter,
             )
-            await _close_unhealthy_service(db_engine, service_run_id, base_start_timestamp)
+            await _close_unhealthy_service(db_engine, rabbitmq_rpc_client, service_run_id, base_start_timestamp)
         else:
             _logger.warning(
                 "Service run id: %s missed heartbeat. Counter %s",
@@ -72,6 +76,7 @@ async def _check_service_heartbeat(
 
 async def _close_unhealthy_service(
     db_engine: AsyncEngine,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
     service_run_id: ServiceRunID,
     base_start_timestamp: datetime,
 ):
@@ -122,7 +127,13 @@ async def _close_unhealthy_service(
         )
 
         if _transaction_status == CreditTransactionStatus.NOT_BILLED:
-            ...  # NOTE: send email
+            await notify_user_of_credit_reimbursement(
+                rabbitmq_rpc_client,
+                product_name=running_service.product_name,
+                user_email=running_service.user_email,
+                service_run_id=service_run_id,
+                reimbursed_credits=computed_credits,
+            )
 
         # 3. If the credit transaction status is considered "NOT_BILLED", this might return
         # the wallet to positive numbers. If, in the meantime, some transactions were marked as DEBT,
@@ -151,6 +162,7 @@ async def check_running_services(app: FastAPI) -> None:
     # This check runs across all products
     app_settings: ApplicationSettings = app.state.settings
     _db_engine = app.state.engine
+    _rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
     base_start_timestamp = datetime.now(tz=UTC)
 
@@ -170,6 +182,7 @@ async def check_running_services(app: FastAPI) -> None:
             *(
                 _check_service_heartbeat(
                     db_engine=_db_engine,
+                    rabbitmq_rpc_client=_rabbitmq_rpc_client,
                     base_start_timestamp=base_start_timestamp,
                     resource_usage_tracker_missed_heartbeat_interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
                     resource_usage_tracker_missed_heartbeat_counter_fail=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL,
