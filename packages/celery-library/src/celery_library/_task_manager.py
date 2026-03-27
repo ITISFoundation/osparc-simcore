@@ -34,7 +34,6 @@ from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
 from .errors import (
-    GroupNotFoundError,
     GroupSubmissionError,
     TaskOrGroupNotFoundError,
     TaskSubmissionError,
@@ -230,7 +229,7 @@ class CeleryTaskManager:
         ):
             group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_uuid)
             if not await self.task_or_group_exists(group_key):
-                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_or_group_uuid=group_uuid, owner_metadata=owner_metadata)
 
             group_result = await self._restore_group_result(group_uuid)
             if group_result is not None:
@@ -307,11 +306,11 @@ class CeleryTaskManager:
         ):
             group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_uuid)
             if not await self.task_or_group_exists(group_key):
-                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_or_group_uuid=group_uuid, owner_metadata=owner_metadata)
 
             group_result = await self._restore_group_result(group_uuid)
             if group_result is None:
-                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_or_group_uuid=group_uuid, owner_metadata=owner_metadata)
 
             results: list[Any] = [async_result.result for async_result in (group_result.results or [])]
 
@@ -330,12 +329,12 @@ class CeleryTaskManager:
         ):
             group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_uuid)
             if not await self.task_or_group_exists(group_key):
-                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_or_group_uuid=group_uuid, owner_metadata=owner_metadata)
 
             group_result = await self._restore_group_result(group_uuid)
 
             if group_result is None:
-                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
+                raise TaskOrGroupNotFoundError(task_or_group_uuid=group_uuid, owner_metadata=owner_metadata)
 
             # Get task UUIDs from the group result
             # AsyncResult objects have .id attribute containing the task key
