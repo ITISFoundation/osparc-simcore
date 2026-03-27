@@ -257,7 +257,7 @@ async def _try_start_pipeline(
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
 # NOTE: This endpoint is historically used for CREATE, UPDATE or START a computation!
-async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint: disable=too-many-positional-arguments
+async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
     computation: ComputationCreate,
     request: Request,
     response: Response,
@@ -369,14 +369,14 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913, C901 # pylint
             submitted=last_run.created if last_run else None,
         )
 
-    except ProjectNotFoundError as e:
+    except (
+        ProjectNotFoundError,
+        ClusterNotFoundError,
+        PricingPlanUnitNotFoundError,
+        EC2InstanceTypeNotFoundError,
+    ) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ClusterNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except PricingPlanUnitNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except EC2InstanceTypeNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+
     except ClustersKeeperNotAvailableError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}") from e
     except ConfigurationError as e:
