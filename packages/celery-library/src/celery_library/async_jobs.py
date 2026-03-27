@@ -19,7 +19,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState, TaskStatus
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 from tenacity import (
@@ -50,9 +50,9 @@ async def cancel_job(
     job_id: AsyncJobId,
 ) -> None:
     try:
-        await task_manager.cancel_task(
+        await task_manager.cancel(
             owner_metadata=owner_metadata,
-            task_uuid=job_id,
+            task_or_group_uuid=job_id,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
@@ -71,22 +71,22 @@ async def get_job_result(
     assert owner_metadata  # nosec
 
     try:
-        task_status = await task_manager.get_task_status(
+        task_status = await task_manager.get_status(
             owner_metadata=owner_metadata,
-            task_uuid=job_id,
+            task_or_group_uuid=job_id,
         )
         if not task_status.is_done:
             raise JobNotDoneError(job_id=job_id)
-        task_result = await task_manager.get_task_result(
+        task_result = await task_manager.get_result(
             owner_metadata=owner_metadata,
-            task_uuid=job_id,
+            task_or_group_uuid=job_id,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    if task_status.task_state == TaskState.FAILURE:
+    if isinstance(task_status, TaskStatus) and task_status.task_state == TaskState.FAILURE:
         # fallback exception to report
         exc_type = type(task_result).__name__
         exc_msg = f"{task_result}"

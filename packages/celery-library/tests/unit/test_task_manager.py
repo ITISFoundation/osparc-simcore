@@ -23,6 +23,7 @@ from faker import Faker
 from models_library.celery import (
     TASK_DONE_STATES,
     GroupExecutionMetadata,
+    GroupStatus,
     GroupTaskExecutionMetadata,
     GroupUUID,
     OwnerMetadata,
@@ -329,7 +330,7 @@ async def test_push_task_result_streams_data_during_execution(
     await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Final task result should be available
-    final_result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
+    final_result = await task_manager.get_result(fake_owner_metadata, task_uuid)
     assert final_result == f"completed-{num_results}-results"
 
     # After task completion, try to pull any remaining results
@@ -426,7 +427,7 @@ async def test_submit_group_all_tasks_complete_successfully(
 
     # Verify all results
     for task_uuid in task_uuids:
-        result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
+        result = await task_manager.get_result(fake_owner_metadata, task_uuid)
         assert result == "archive.zip"
 
 
@@ -466,7 +467,7 @@ async def test_submit_group_tasks_appear_in_listing(
         # Clean up
         for task_uuid in task_uuids:
             with contextlib.suppress(TaskNotFoundError):
-                await task_manager.cancel_task(fake_owner_metadata, task_uuid)
+                await task_manager.cancel(fake_owner_metadata, task_uuid)
 
 
 async def test_submit_group_with_mixed_task_types(
@@ -505,11 +506,11 @@ async def test_submit_group_with_mixed_task_types(
         await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Verify first two tasks return "archive.zip"
-    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
-    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[1]) == "archive.zip"
+    assert await task_manager.get_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
+    assert await task_manager.get_result(fake_owner_metadata, task_uuids[1]) == "archive.zip"
 
     # Verify streaming task result
-    result = await task_manager.get_task_result(fake_owner_metadata, task_uuids[2])
+    result = await task_manager.get_result(fake_owner_metadata, task_uuids[2])
     assert result == "completed-2-results"
 
 
@@ -540,15 +541,15 @@ async def test_submit_group_can_cancel_individual_tasks(
     await asyncio.sleep(2.0)
 
     # Cancel the first task
-    await task_manager.cancel_task(fake_owner_metadata, task_uuids[0])
+    await task_manager.cancel(fake_owner_metadata, task_uuids[0])
 
     # Verify first task is gone
     with pytest.raises(TaskNotFoundError):
-        await task_manager.get_task_status(fake_owner_metadata, task_uuids[0])
+        await task_manager.get_status(fake_owner_metadata, task_uuids[0])
 
     # Cancel remaining tasks
     for task_uuid in task_uuids[1:]:
-        await task_manager.cancel_task(fake_owner_metadata, task_uuid)
+        await task_manager.cancel(fake_owner_metadata, task_uuid)
 
 
 async def test_cancelling_a_group_cancels_all_tasks(
@@ -576,16 +577,16 @@ async def test_cancelling_a_group_cancels_all_tasks(
     # Wait a bit to ensure tasks are running
     await asyncio.sleep(2.0)
 
-    await task_manager.cancel_group(fake_owner_metadata, group_uuid)
+    await task_manager.cancel(fake_owner_metadata, group_uuid)
 
     # Group itself should no longer exist
     with pytest.raises(GroupNotFoundError):
-        await task_manager.get_group_status(fake_owner_metadata, group_uuid)
+        await task_manager.get_status(fake_owner_metadata, group_uuid)
 
     # All individual tasks should also be gone
     for task_uuid in task_uuids:
         with pytest.raises(TaskNotFoundError):
-            await task_manager.get_task_status(fake_owner_metadata, task_uuid)
+            await task_manager.get_status(fake_owner_metadata, task_uuid)
 
 
 async def test_submit_group_with_failures(
@@ -624,11 +625,11 @@ async def test_submit_group_with_failures(
         await _wait_for_task_done(task_manager, fake_owner_metadata, task_uuid)
 
     # Verify successful tasks
-    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
-    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[2]) == "archive.zip"
+    assert await task_manager.get_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
+    assert await task_manager.get_result(fake_owner_metadata, task_uuids[2]) == "archive.zip"
 
     # Verify failed task
-    result = await task_manager.get_task_result(fake_owner_metadata, task_uuids[1])
+    result = await task_manager.get_result(fake_owner_metadata, task_uuids[1])
     assert isinstance(result, TransferableCeleryError)
     assert "Something strange happened: BOOM!" in f"{result}"
 
@@ -663,13 +664,13 @@ async def test_submit_group_with_ephemeral_tasks(
         await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
         # Getting the result should trigger cleanup for ephemeral tasks
-        result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
+        result = await task_manager.get_result(fake_owner_metadata, task_uuid)
         assert result == "archive.zip"
 
     for task_uuid in task_uuids:
         # Second attempt to get result should fail as ephemeral tasks are cleaned up
         with pytest.raises(TaskNotFoundError):
-            await task_manager.get_task_status(fake_owner_metadata, task_uuid)
+            await task_manager.get_status(fake_owner_metadata, task_uuid)
 
 
 async def test_submit_empty_group(
@@ -716,7 +717,7 @@ async def test_get_group_status_returns_status_for_running_group(
         await asyncio.sleep(1.0)
 
         # Get group status while tasks are running
-        group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
+        group_status = await task_manager.get_status(fake_owner_metadata, group_id)
 
         assert group_status.group_uuid == group_id
         assert group_status.task_uuids == task_uuids
@@ -727,7 +728,7 @@ async def test_get_group_status_returns_status_for_running_group(
         # Clean up
         for task_uuid in task_uuids:
             with contextlib.suppress(TaskNotFoundError):
-                await task_manager.cancel_task(fake_owner_metadata, task_uuid)
+                await task_manager.cancel(fake_owner_metadata, task_uuid)
 
 
 async def test_get_group_status_returns_done_when_all_tasks_complete(
@@ -758,8 +759,9 @@ async def test_get_group_status_returns_done_when_all_tasks_complete(
         await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Get group status
-    group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
+    group_status = await task_manager.get_status(fake_owner_metadata, group_id)
 
+    assert isinstance(group_status, GroupStatus)
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == task_uuids
     assert group_status.total_count == num_tasks
@@ -798,8 +800,9 @@ async def test_get_group_status_successful_false_when_task_fails(
         await _wait_for_task_done(task_manager, fake_owner_metadata, task_uuid)
 
     # Get group status
-    group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
+    group_status = await task_manager.get_status(fake_owner_metadata, group_id)
 
+    assert isinstance(group_status, GroupStatus)
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == task_uuids
     assert group_status.total_count == 2
@@ -817,7 +820,7 @@ async def test_get_group_status_with_nonexistent_group_raises_error(
     fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
 
     with pytest.raises(GroupNotFoundError):
-        await task_manager.get_group_status(fake_owner_metadata, fake_group_uuid)
+        await task_manager.get_status(fake_owner_metadata, fake_group_uuid)
 
 
 async def test_get_group_status_tracks_progress(
@@ -848,8 +851,9 @@ async def test_get_group_status_tracks_progress(
         previous_completed = 0
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
+                group_status = await task_manager.get_status(fake_owner_metadata, group_id)
 
+                assert isinstance(group_status, GroupStatus)
                 # Progress should never go backwards
                 assert group_status.completed_count >= previous_completed
                 previous_completed = group_status.completed_count
@@ -864,7 +868,7 @@ async def test_get_group_status_tracks_progress(
         # Clean up
         for task_uuid in task_uuids:
             with contextlib.suppress(TaskNotFoundError):
-                await task_manager.cancel_task(fake_owner_metadata, task_uuid)
+                await task_manager.cancel(fake_owner_metadata, task_uuid)
 
 
 async def test_get_group_status_with_empty_group(
@@ -882,8 +886,9 @@ async def test_get_group_status_with_empty_group(
     )
 
     # Get group status
-    group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
+    group_status = await task_manager.get_status(fake_owner_metadata, group_id)
 
+    assert isinstance(group_status, GroupStatus)
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == []
     assert group_status.total_count == 0

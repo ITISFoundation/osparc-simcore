@@ -215,21 +215,14 @@ class CeleryTaskManager:
             return task_uuid
 
     @handle_celery_errors
-    async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"task cancellation: {owner_metadata=} {task_uuid=}",
-        ):
-            task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
-            if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
-
-            await self._task_store.remove_task(task_key)
-            await self._forget_task(task_key)
+    async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None:
+        if await self._is_group(owner_metadata, task_or_group_uuid):
+            await self._cancel_group(owner_metadata, task_or_group_uuid)
+        else:
+            await self._cancel_task(owner_metadata, task_or_group_uuid)
 
     @handle_celery_errors
-    async def cancel_group(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> None:
+    async def _cancel_group(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -249,6 +242,20 @@ class CeleryTaskManager:
 
             await self._task_store.remove_task(group_key)
 
+    @handle_celery_errors
+    async def _cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"task cancellation: {owner_metadata=} {task_uuid=}",
+        ):
+            task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
+            if not await self.task_or_group_exists(task_key):
+                raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
+
+            await self._task_store.remove_task(task_key)
+            await self._forget_task(task_key)
+
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool:
         return await self._task_store.task_or_group_exists(task_or_group_key)
 
@@ -257,7 +264,7 @@ class CeleryTaskManager:
         self._app.AsyncResult(task_key).forget()
 
     @handle_celery_errors
-    async def get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any:
+    async def _get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -292,68 +299,7 @@ class CeleryTaskManager:
     def _get_task_celery_state(self, task_key: TaskKey) -> TaskState:
         return TaskState(self._app.AsyncResult(task_key).state)
 
-    @handle_celery_errors
-    async def get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"Getting task status: {owner_metadata=} {task_uuid=}",
-        ):
-            task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
-            if not await self.task_or_group_exists(task_key):
-                raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
-
-            task_state = await self._get_task_celery_state(task_key)
-            return TaskStatus(
-                task_uuid=task_uuid,
-                task_state=task_state,
-                progress_report=await self._get_task_progress_report(task_key, task_state),
-            )
-
-    async def _is_group(
-        self,
-        owner_metadata: OwnerMetadata,
-        task_or_group_uuid: TaskUUID | GroupUUID,
-    ) -> bool:
-        task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
-        if not await self.task_or_group_exists(task_or_group_key):
-            raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
-
-        task_metadata = await self._task_store.get_task_metadata(task_or_group_key)
-        return task_metadata is not None and task_metadata.type == ExecutorType.GROUP
-
-    @handle_celery_errors
-    async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None:
-        if await self._is_group(owner_metadata, task_or_group_uuid):
-            await self.cancel_group(owner_metadata, task_or_group_uuid)
-        else:
-            await self.cancel_task(owner_metadata, task_or_group_uuid)
-
-    @handle_celery_errors
-    async def get_result(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> Any:
-        if await self._is_group(owner_metadata, task_or_group_uuid):
-            return await self.get_group_result(owner_metadata, task_or_group_uuid)
-        return await self.get_task_result(owner_metadata, task_or_group_uuid)
-
-    @handle_celery_errors
-    async def get_status(
-        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
-    ) -> TaskStatus | GroupStatus:
-        if await self._is_group(owner_metadata, task_or_group_uuid):
-            return await self.get_group_status(owner_metadata, task_or_group_uuid)
-        return await self.get_task_status(owner_metadata, task_or_group_uuid)
-
-    @make_async()
-    def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
-        """Restore a GroupResult from its ID."""
-        try:
-            return GroupResult.restore(f"{group_uuid}", app=self._app)
-        except (KeyError, AttributeError):
-            # Group not found or invalid
-            return None
-
-    @handle_celery_errors
-    async def get_group_result(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> list[Any]:
+    async def _get_group_result(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> list[Any]:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -372,12 +318,11 @@ class CeleryTaskManager:
             if group_result.ready():
                 task_metadata = await self._task_store.get_task_metadata(group_key)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self.cancel_group(owner_metadata, group_uuid)
+                    await self._cancel_group(owner_metadata, group_uuid)
 
             return results
 
-    @handle_celery_errors
-    async def get_group_status(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> GroupStatus:
+    async def _get_group_status(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> GroupStatus:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -416,6 +361,58 @@ class CeleryTaskManager:
                     total=float(total_count),
                 ),
             )
+
+    async def _get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Getting task status: {owner_metadata=} {task_uuid=}",
+        ):
+            task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
+            if not await self.task_or_group_exists(task_key):
+                raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
+
+            task_state = await self._get_task_celery_state(task_key)
+            return TaskStatus(
+                task_uuid=task_uuid,
+                task_state=task_state,
+                progress_report=await self._get_task_progress_report(task_key, task_state),
+            )
+
+    async def _is_group(
+        self,
+        owner_metadata: OwnerMetadata,
+        task_or_group_uuid: TaskUUID | GroupUUID,
+    ) -> bool:
+        task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
+        if not await self.task_or_group_exists(task_or_group_key):
+            raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
+
+        task_metadata = await self._task_store.get_task_metadata(task_or_group_key)
+        return task_metadata is not None and task_metadata.type == ExecutorType.GROUP
+
+    @handle_celery_errors
+    async def get_result(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> Any:
+        if await self._is_group(owner_metadata, task_or_group_uuid):
+            return await self._get_group_result(owner_metadata, task_or_group_uuid)
+        return await self._get_task_result(owner_metadata, task_or_group_uuid)
+
+    @handle_celery_errors
+    async def get_status(
+        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
+    ) -> TaskStatus | GroupStatus:
+        if await self._is_group(owner_metadata, task_or_group_uuid):
+            return await self._get_group_status(owner_metadata, task_or_group_uuid)
+        return await self._get_task_status(owner_metadata, task_or_group_uuid)
+
+    @make_async()
+    def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
+        """Restore a GroupResult from its ID."""
+        try:
+            return GroupResult.restore(f"{group_uuid}", app=self._app)
+        except (KeyError, AttributeError):
+            # Group not found or invalid
+            return None
 
     @handle_celery_errors
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
