@@ -27,10 +27,11 @@ from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
+from settings_library.redis import RedisDatabase
 
 from .core.settings import get_application_settings
 from .dsm import get_dsm_provider
-from .modules.redis import get_redis_client
+from .modules.redis import get_redis_client_manager
 from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ def setup_dsm_cleaner(app: FastAPI) -> None:
         assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
         @exclusive_periodic(
-            get_redis_client(app),
+            get_redis_client_manager(app).client(RedisDatabase.LOCKS),
             task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
             retry_after=timedelta(minutes=5),
         )
