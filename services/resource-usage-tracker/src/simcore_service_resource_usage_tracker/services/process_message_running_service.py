@@ -21,6 +21,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceType
 from pydantic import TypeAdapter
+from servicelib.rabbitmq import RabbitMQRPCClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..models.credit_transactions import (
@@ -39,7 +40,8 @@ from .modules.db import (
     pricing_plans_db,
     service_runs_db,
 )
-from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
+from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client, get_rabbitmq_rpc_client
+from .notifications import notify_user_of_credit_reimbursement
 from .utils import (
     compute_service_run_credit_costs,
     make_negative,
@@ -59,8 +61,11 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     )
     _db_engine = app.state.engine
     rabbitmq_client = get_rabbitmq_client(app)
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
-    await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](_db_engine, rabbit_message, rabbitmq_client)
+    await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](
+        _db_engine, rabbit_message, rabbitmq_client, rabbitmq_rpc_client
+    )
     return True
 
 
@@ -68,12 +73,14 @@ async def _process_start_event(
     db_engine: AsyncEngine,
     msg: RabbitResourceTrackingStartedMessage,
     rabbitmq_client: RabbitMQClient,
+    _rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if service_run_db:
         # NOTE: After we find out why sometimes RUT receives multiple start events and fix it, we can change it to log level `error`
         _logger.warning(
-            "On process start event the service run id %s already exists in DB, INVESTIGATE! Current msg created_at: %s, already stored msg created_at: %s",
+            "On process start event the service run id %s already exists in DB, INVESTIGATE! "
+            "Current msg created_at: %s, already stored msg created_at: %s",
             msg.service_run_id,
             msg.created_at,
             service_run_db.started_at,
@@ -135,7 +142,7 @@ async def _process_start_event(
             pricing_unit_cost_id=msg.pricing_unit_cost_id,
             user_id=msg.user_id,
             user_email=msg.user_email,
-            osparc_credits=Decimal(0.0),
+            osparc_credits=Decimal(0),
             transaction_status=CreditTransactionStatus.PENDING,
             transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
             service_run_id=service_run_id,
@@ -159,11 +166,13 @@ async def _process_heartbeat_event(
     db_engine: AsyncEngine,
     msg: RabbitResourceTrackingHeartbeatMessage,
     rabbitmq_client: RabbitMQClient,
+    _rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if not service_run_db:
         _logger.error(
-            "Received process heartbeat event for service_run_id: %s, but we do not have the started record in the DB, INVESTIGATE!",
+            "Received process heartbeat event for service_run_id: %s, but we do not have the "
+            "started record in the DB, INVESTIGATE!",
             msg.service_run_id,
         )
         return
@@ -224,13 +233,15 @@ async def _process_stop_event(
     db_engine: AsyncEngine,
     msg: RabbitResourceTrackingStoppedMessage,
     rabbitmq_client: RabbitMQClient,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if not service_run_db:
         # NOTE: ANE/MD discussed. When the RUT receives a stop event and has not received before any start or heartbeat event, it probably means that
         # we failed to start container. https://github.com/ITISFoundation/osparc-simcore/issues/5169
         _logger.warning(
-            "Received stop event for service_run_id: %s, but we do not have any record in the DB, therefore the service probably didn't start correctly.",
+            "Received stop event for service_run_id: %s, but we do not have any record in the DB, "
+            "therefore the service probably didn't start correctly.",
             msg.service_run_id,
         )
         return
@@ -294,8 +305,10 @@ async def _process_stop_event(
         )
 
         # Adjust the status if the platform status is not OK
+        _send_email = False
         if msg.simcore_platform_status != SimcorePlatformStatus.OK:
             _transaction_status = CreditTransactionStatus.NOT_BILLED
+            _send_email = True
 
         # Update credits in the transaction table and close the transaction
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
@@ -306,6 +319,15 @@ async def _process_stop_event(
         await credit_transactions_db.update_credit_transaction_credits_and_status(
             db_engine, data=update_credit_transaction
         )
+
+        if _send_email:
+            await notify_user_of_credit_reimbursement(
+                rabbitmq_rpc_client,
+                product_name=running_service.product_name,
+                user_email=running_service.user_email,
+                service_run_id=msg.service_run_id,
+                reimbursed_credits=computed_credits,
+            )
         # Publish wallet total credits to RabbitMQ
         await sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,
