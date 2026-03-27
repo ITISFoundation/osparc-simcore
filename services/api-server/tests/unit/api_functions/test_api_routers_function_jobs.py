@@ -281,7 +281,7 @@ async def test_get_function_job_status(
             ),
         )
 
-    mock_dependency_get_celery_task_manager.get_task_status = _get_task_status
+    mock_dependency_get_celery_task_manager.get_status = _get_task_status
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
