@@ -29,17 +29,6 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
 
 # EVENTS --------------------------------------------------------------------------
 
-_DATABASES: Final[tuple[RedisDatabase, ...]] = (
-    RedisDatabase.RESOURCES,
-    RedisDatabase.LOCKS,
-    RedisDatabase.VALIDATION_CODES,
-    RedisDatabase.SCHEDULED_MAINTENANCE,
-    RedisDatabase.USER_NOTIFICATIONS,
-    RedisDatabase.ANNOUNCEMENTS,
-    RedisDatabase.DOCUMENTS,
-    RedisDatabase.CELERY_TASKS,
-)
-
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     manager: RedisClientsManager = app[APP_REDIS_CLIENT_KEY]
@@ -54,7 +43,19 @@ async def setup_redis_client(app: web.Application):
     """
     redis_settings: RedisSettings = get_plugin_settings(app)
     app[APP_REDIS_CLIENT_KEY] = manager = RedisClientsManager(
-        databases_configs={RedisManagerDBConfig(database=db) for db in _DATABASES},
+        databases_configs={
+            RedisManagerDBConfig(database=db)
+            for db in (
+                RedisDatabase.RESOURCES,
+                RedisDatabase.LOCKS,
+                RedisDatabase.VALIDATION_CODES,
+                RedisDatabase.SCHEDULED_MAINTENANCE,
+                RedisDatabase.USER_NOTIFICATIONS,
+                RedisDatabase.ANNOUNCEMENTS,
+                RedisDatabase.DOCUMENTS,
+                RedisDatabase.CELERY_TASKS,
+            )
+        },
         settings=redis_settings,
         client_name=APP_NAME,
     )
