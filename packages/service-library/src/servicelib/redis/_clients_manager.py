@@ -39,6 +39,7 @@ class RedisClientsManager:
     def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]
 
+    @property
     def healthy(self) -> bool:
         return all(client.is_healthy for client in self._client_sdks.values())
 
