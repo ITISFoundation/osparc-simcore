@@ -9,9 +9,10 @@ from models_library.errors import (
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.redis import RedisClientSDK
 
 from ...clients.postgres import PostgresLiveness
-from .dependencies import RedisClientSDK, get_postgres_liveness, get_rabbitmq_rpc_client, get_redis_client_from_request
+from .dependencies import get_postgres_liveness, get_rabbitmq_rpc_client, get_redis_client_from_request
 
 router = APIRouter()
 
