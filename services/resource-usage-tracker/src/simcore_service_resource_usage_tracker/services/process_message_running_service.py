@@ -73,7 +73,8 @@ async def _process_start_event(
     if service_run_db:
         # NOTE: After we find out why sometimes RUT receives multiple start events and fix it, we can change it to log level `error`
         _logger.warning(
-            "On process start event the service run id %s already exists in DB, INVESTIGATE! Current msg created_at: %s, already stored msg created_at: %s",
+            "On process start event the service run id %s already exists in DB, INVESTIGATE! "
+            "Current msg created_at: %s, already stored msg created_at: %s",
             msg.service_run_id,
             msg.created_at,
             service_run_db.started_at,
@@ -135,7 +136,7 @@ async def _process_start_event(
             pricing_unit_cost_id=msg.pricing_unit_cost_id,
             user_id=msg.user_id,
             user_email=msg.user_email,
-            osparc_credits=Decimal(0.0),
+            osparc_credits=Decimal(0),
             transaction_status=CreditTransactionStatus.PENDING,
             transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
             service_run_id=service_run_id,
@@ -163,7 +164,8 @@ async def _process_heartbeat_event(
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if not service_run_db:
         _logger.error(
-            "Received process heartbeat event for service_run_id: %s, but we do not have the started record in the DB, INVESTIGATE!",
+            "Received process heartbeat event for service_run_id: %s, but we do not have the "
+            "started record in the DB, INVESTIGATE!",
             msg.service_run_id,
         )
         return
@@ -230,7 +232,8 @@ async def _process_stop_event(
         # NOTE: ANE/MD discussed. When the RUT receives a stop event and has not received before any start or heartbeat event, it probably means that
         # we failed to start container. https://github.com/ITISFoundation/osparc-simcore/issues/5169
         _logger.warning(
-            "Received stop event for service_run_id: %s, but we do not have any record in the DB, therefore the service probably didn't start correctly.",
+            "Received stop event for service_run_id: %s, but we do not have any record in the DB, "
+            "therefore the service probably didn't start correctly.",
             msg.service_run_id,
         )
         return
@@ -294,8 +297,12 @@ async def _process_stop_event(
         )
 
         # Adjust the status if the platform status is not OK
+        _send_email = False
         if msg.simcore_platform_status != SimcorePlatformStatus.OK:
             _transaction_status = CreditTransactionStatus.NOT_BILLED
+            _send_email = True
+
+            # NOTE: Here we can send the email
 
         # Update credits in the transaction table and close the transaction
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
@@ -306,6 +313,10 @@ async def _process_stop_event(
         await credit_transactions_db.update_credit_transaction_credits_and_status(
             db_engine, data=update_credit_transaction
         )
+
+        if _send_email:
+            # NOTE: Here we can send the email - here we are sure that the state in DB is already NOT_BILLED
+            ...
         # Publish wallet total credits to RabbitMQ
         await sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,

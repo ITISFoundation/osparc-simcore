@@ -39,15 +39,13 @@ async def _check_service_heartbeat(
 ):
     # Check for missed heartbeats
     if (
-        (
-            # Checks that in last 5 minutes we didn't get any heartbeat (ex. last heartbeat < current time - 5 minutes).
-            last_heartbeat_at < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
-        )
-        and (  # Checks that last modified timestamp is older than some reasonable small threshold (this is here to prevent situation
-            # when RUT is restarting and in the beginning starts the `check_of_running_services_task`. If the task was already running in
-            # last 2 minutes it will not allow it to compute. )
-            modified_at < base_start_timestamp - timedelta(minutes=2)
-        )
+        # Checks that in last 5 minutes we didn't get any heartbeat (ex. last heartbeat < current time - 5 minutes).
+        last_heartbeat_at < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
+    ) and (  # Checks that last modified timestamp is older than some reasonable small threshold
+        # (this is here to prevent situation when RUT is restarting and in the beginning
+        # starts the `check_of_running_services_task`. If the task was already running in
+        # last 2 minutes it will not allow it to compute.)
+        modified_at < base_start_timestamp - timedelta(minutes=2)
     ):
         missed_heartbeat_counter += 1
         if missed_heartbeat_counter > resource_usage_tracker_missed_heartbeat_counter_fail:
@@ -122,6 +120,9 @@ async def _close_unhealthy_service(
         await credit_transactions_db.update_credit_transaction_credits_and_status(
             db_engine, data=update_credit_transaction
         )
+
+        if _transaction_status == CreditTransactionStatus.NOT_BILLED:
+            ...  # NOTE: send email
 
         # 3. If the credit transaction status is considered "NOT_BILLED", this might return
         # the wallet to positive numbers. If, in the meantime, some transactions were marked as DEBT,
