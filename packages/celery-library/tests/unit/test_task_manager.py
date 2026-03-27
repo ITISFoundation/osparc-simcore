@@ -30,6 +30,7 @@ from models_library.celery import (
     TaskExecutionMetadata,
     TaskKey,
     TaskState,
+    TaskStatus,
     TaskStreamItem,
     TaskUUID,
     Wildcard,
@@ -148,7 +149,8 @@ async def _wait_for_task_success(
     """Wait for a task to reach SUCCESS state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            status = await task_manager.get_status(owner_metadata, task_uuid)
+            assert isinstance(status, TaskStatus)
             assert status.task_state == TaskState.SUCCESS
 
 
@@ -160,7 +162,8 @@ async def _wait_for_task_done(
     """Wait for a task to reach any DONE state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            status = await task_manager.get_status(owner_metadata, task_uuid)
+            assert isinstance(status, TaskStatus)
             assert status.task_state in TASK_DONE_STATES
 
 
@@ -178,9 +181,10 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     )
 
     await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
-
-    assert (await task_manager.get_task_status(fake_owner_metadata, task_uuid)).task_state == TaskState.SUCCESS
-    assert (await task_manager.get_task_result(fake_owner_metadata, task_uuid)) == "archive.zip"
+    task_status = await task_manager.get_status(fake_owner_metadata, task_uuid)
+    assert isinstance(task_status, TaskStatus)
+    assert task_status.task_state == TaskState.SUCCESS
+    assert (await task_manager.get_result(fake_owner_metadata, task_uuid)) == "archive.zip"
 
 
 async def test_submitting_task_with_failure_results_with_error(
@@ -197,10 +201,10 @@ async def test_submitting_task_with_failure_results_with_error(
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            raw_result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
+            raw_result = await task_manager.get_result(fake_owner_metadata, task_uuid)
             assert isinstance(raw_result, TransferableCeleryError)
 
-    raw_result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
+    raw_result = await task_manager.get_result(fake_owner_metadata, task_uuid)
     assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
@@ -218,10 +222,10 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
     await asyncio.sleep(3.0)
 
-    await task_manager.cancel_task(fake_owner_metadata, task_uuid)
+    await task_manager.cancel(fake_owner_metadata, task_uuid)
 
     with pytest.raises(TaskNotFoundError):
-        await task_manager.get_task_status(fake_owner_metadata, task_uuid)
+        await task_manager.get_status(fake_owner_metadata, task_uuid)
 
     assert task_uuid not in await task_manager.list_tasks(fake_owner_metadata)
 
@@ -719,6 +723,7 @@ async def test_get_group_status_returns_status_for_running_group(
         # Get group status while tasks are running
         group_status = await task_manager.get_status(fake_owner_metadata, group_id)
 
+        assert isinstance(group_status, GroupStatus)
         assert group_status.group_uuid == group_id
         assert group_status.task_uuids == task_uuids
         assert group_status.total_count == num_tasks
@@ -972,7 +977,7 @@ async def test_get_group_result_returns_all_results(
     for task_uuid in task_uuids:
         await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
-    results = await task_manager.get_group_result(fake_owner_metadata, group_id)
+    results = await task_manager.get_result(fake_owner_metadata, group_id)
     assert results == ["archive.zip"] * num_tasks
 
 
@@ -1000,7 +1005,7 @@ async def test_get_group_result_with_failures(
     for task_uuid in task_uuids:
         await _wait_for_task_done(task_manager, fake_owner_metadata, task_uuid)
 
-    results = await task_manager.get_group_result(fake_owner_metadata, group_id)
+    results = await task_manager.get_result(fake_owner_metadata, group_id)
     assert len(results) == 2
     assert results[0] == "archive.zip"
     assert isinstance(results[1], TransferableCeleryError)
@@ -1030,12 +1035,12 @@ async def test_get_group_result_with_ephemeral_cleans_up(
         await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # First call returns results and triggers cleanup
-    results = await task_manager.get_group_result(fake_owner_metadata, group_id)
+    results = await task_manager.get_result(fake_owner_metadata, group_id)
     assert results == ["archive.zip"] * num_tasks
 
     # Second call should fail because the group was cleaned up
     with pytest.raises(GroupNotFoundError):
-        await task_manager.get_group_result(fake_owner_metadata, group_id)
+        await task_manager.get_result(fake_owner_metadata, group_id)
 
 
 async def test_get_group_result_with_nonexistent_group_raises_error(
@@ -1045,4 +1050,4 @@ async def test_get_group_result_with_nonexistent_group_raises_error(
 ):
     fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
     with pytest.raises(GroupNotFoundError):
-        await task_manager.get_group_result(fake_owner_metadata, fake_group_uuid)
+        await task_manager.get_result(fake_owner_metadata, fake_group_uuid)
