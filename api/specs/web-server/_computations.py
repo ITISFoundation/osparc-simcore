@@ -47,7 +47,10 @@ async def get_computation(_path: Annotated[ComputationPathParams, Depends()]): .
     response_model=Envelope[ComputationStarted],
     status_code=status.HTTP_201_CREATED,
     responses={
-        status.HTTP_200_OK: {"description": "Pipeline is up-to-date, nothing was started"},
+        status.HTTP_200_OK: {
+            "description": "Pipeline is up-to-date, nothing was started",
+            "model": Envelope[ComputationGet],
+        },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Insufficient credits to run computation"},
         status.HTTP_404_NOT_FOUND: {"description": "Project/wallet/pricing/cluster details were not found"},
         status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
