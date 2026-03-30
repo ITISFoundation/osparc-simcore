@@ -20,7 +20,6 @@ esac
 SEVEN_ZIP_VERSION="2409"
 SEVEN_ZIP_VERSION_DOT="${SEVEN_ZIP_VERSION:0:2}.${SEVEN_ZIP_VERSION:2}"
 
-
 echo "create install dir"
 rm -rf /tmp/7zip
 mkdir -p /tmp/7zip
