@@ -18,18 +18,23 @@ case "${TARGETARCH}" in \
 esac
 
 SEVEN_ZIP_VERSION="2409"
+SEVEN_ZIP_VERSION_DOT="${SEVEN_ZIP_VERSION:0:2}.${SEVEN_ZIP_VERSION:2}"
+
 
 echo "create install dir"
 rm -rf /tmp/7zip
 mkdir -p /tmp/7zip
 cd /tmp/7zip
 
+URL="https://github.com/ip7z/7zip/releases/download/${SEVEN_ZIP_VERSION_DOT}/7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz"
+
+echo "Downloading from: ${URL}"
 curl -LO \
   --retry 5 \
   --retry-delay 2 \
   --retry-max-time 60 \
   --retry-all-errors \
-  https://www.7-zip.org/a/7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz
+  "${URL}"
 tar -xvf 7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz
 cp 7zz /usr/bin/7z
 
