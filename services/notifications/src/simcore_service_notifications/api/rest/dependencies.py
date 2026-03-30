@@ -6,9 +6,8 @@ from fastapi import Depends, FastAPI, Request
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 
-from ...clients import postgres
+from ...clients import postgres, redis
 from ...clients.postgres import PostgresLiveness
-from ...clients.redis import get_redis_client
 
 
 def get_application(request: Request) -> FastAPI:
@@ -28,5 +27,5 @@ def get_postgres_liveness(
     return postgres.get_postgres_liveness(app)
 
 
-def get_redis_client_from_request(app: Annotated[FastAPI, Depends(get_application)]) -> RedisClientSDK:
-    return get_redis_client(app)
+def get_redis_client(app: Annotated[FastAPI, Depends(get_application)]) -> RedisClientSDK:
+    return redis.get_redis_client(app)
