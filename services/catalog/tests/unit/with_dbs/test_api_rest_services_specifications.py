@@ -82,7 +82,7 @@ async def services_specifications_injector(
 def create_service_specifications(
     faker: Faker,
 ) -> Callable[..., ServiceSpecificationsAtDB]:
-    def _creator(service_key, service_version, gid) -> ServiceSpecificationsAtDB:
+    def _creator(service_key, service_version, gid, comments=None) -> ServiceSpecificationsAtDB:
         return ServiceSpecificationsAtDB(
             service_key=service_key,
             service_version=service_version,
@@ -113,6 +113,7 @@ def create_service_specifications(
                     )
                 )
             ),
+            comments=comments,
         )
 
     return _creator
@@ -201,7 +202,8 @@ async def test_get_service_specifications(
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(everyone_service_specs.model_dump())
 
-    # let's inject some rights in a standard group, user is not part of that group yet, so it should still return only everyone
+    # let's inject some rights in a standard group, user is not part of that group yet,
+    # so it should still return only everyone
     standard_group_service_specs = create_service_specifications(SERVICE_KEY, SERVICE_VERSION, team_gid)
     await services_specifications_injector(standard_group_service_specs)
     response = client.get(f"{url}")
@@ -275,7 +277,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         ]
     )
 
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, _user_gid, _team_gid = user_groups_ids
     # let's inject some rights for everyone group ONLY for some versions
     INDEX_FIRST_SERVICE_VERSION_WITH_SPEC = 2
     INDEX_SECOND_SERVICE_VERSION_WITH_SPEC = 6
@@ -309,7 +311,8 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(version_speced[0].model_dump()), (
-            f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
+            f"specifications for {version=} are not passed "
+            f"down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
         )
 
     # check version from second to last use the second version
@@ -320,10 +323,12 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(version_speced[1].model_dump()), (
-            f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
+            f"specifications for {version=} are not passed "
+            f"down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
         )
 
-    # if we call with the strict parameter set to true, then we should only get the specs for the one that were specified
+    # if we call with the strict parameter set to true,
+    # then we should only get the specs for the one that were specified
     for version in sorted_versions:
         url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(user_id=user_id, strict=1)
         response = client.get(f"{url}")
