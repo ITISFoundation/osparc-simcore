@@ -89,14 +89,14 @@ def test_health_ok(mock_services_health: None, test_client: TestClient):
 
 
 @pytest.mark.parametrize(
-    "rabbit_healthy, postgres_healthy, redis_healthy, expecteded_msg",
+    "rabbit_healthy, postgres_healthy, redis_healthy, expected_msg",
     [
         (True, True, False, REDIS_CLIENT_UNHEALTHY_MSG),
         (True, False, True, POSRGRES_DATABASE_UNHEALTHY_MSG),
         (False, True, True, RABBITMQ_CLIENT_UNHEALTHY_MSG),
     ],
 )
-def test_unhealthy_services(mock_services_health: None, test_client: TestClient, expecteded_msg: str):
+def test_unhealthy_services(mock_services_health: None, test_client: TestClient, expected_msg: str):
     with pytest.raises(HealthCheckError) as exc:
         test_client.get("/")
-    assert expecteded_msg in f"{exc.value}"
+    assert expected_msg in f"{exc.value}"
