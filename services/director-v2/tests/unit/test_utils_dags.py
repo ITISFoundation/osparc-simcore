@@ -177,6 +177,125 @@ async def test_create_minimal_graph(fake_workbench: NodesDict, graph: MinimalGra
     assert nx.to_dict_of_lists(reduced_dag_with_auto_detect) == graph.not_forced_exp_dag
 
 
+async def test_create_minimal_graph_with_dynamic_cycle_and_disconnected_comp_nodes():
+    """Regression test: dynamic-only cycles must not prevent disconnected
+    computational nodes from being detected as runnable.
+
+    Scenario: 2 dynamic (interactive) nodes forming a cycle + 2 disconnected
+    computational nodes that have never run (no outputs, no run_hash).
+    """
+    dag = nx.DiGraph()
+    # Dynamic cycle: dyn_a <-> dyn_b
+    dag.add_node(
+        "dyn_a",
+        name="jupyter-a",
+        key="simcore/services/dynamic/jupyter-math",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={},
+        state=RunningState.NOT_STARTED,
+        node_class=NodeClass.INTERACTIVE,
+    )
+    dag.add_node(
+        "dyn_b",
+        name="jupyter-b",
+        key="simcore/services/dynamic/jupyter-math",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={},
+        state=RunningState.NOT_STARTED,
+        node_class=NodeClass.INTERACTIVE,
+    )
+    dag.add_edge("dyn_a", "dyn_b")
+    dag.add_edge("dyn_b", "dyn_a")
+
+    # Two disconnected computational nodes (never ran)
+    dag.add_node(
+        "comp_1",
+        name="sleeper-1",
+        key="simcore/services/comp/sleeper",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={},
+        state=RunningState.NOT_STARTED,
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    dag.add_node(
+        "comp_2",
+        name="sleeper-2",
+        key="simcore/services/comp/sleeper",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={},
+        state=RunningState.NOT_STARTED,
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+
+    # Without fix this would return an empty graph (topological_sort fails on cycle)
+    minimal = await create_minimal_computational_graph_based_on_selection(dag, selected_nodes=[], force_restart=False)
+    assert set(minimal.nodes()) == {"comp_1", "comp_2"}
+
+    # Force restart should also work
+    minimal_forced = await create_minimal_computational_graph_based_on_selection(
+        dag, selected_nodes=[], force_restart=True
+    )
+    assert set(minimal_forced.nodes()) == {"comp_1", "comp_2"}
+
+
+async def test_create_minimal_graph_with_dynamic_cycle_feeding_comp_node():
+    """Dynamic nodes in a cycle that feed into a computational node.
+
+    The computational node should still be detected as runnable even though
+    its upstream dynamic nodes form a cycle.
+    """
+    dag = nx.DiGraph()
+    dag.add_node(
+        "dyn_a",
+        name="jupyter-a",
+        key="simcore/services/dynamic/jupyter-math",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={"out_1": 42},
+        state=RunningState.SUCCESS,
+        node_class=NodeClass.INTERACTIVE,
+    )
+    dag.add_node(
+        "dyn_b",
+        name="jupyter-b",
+        key="simcore/services/dynamic/jupyter-math",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={"out_1": 99},
+        state=RunningState.SUCCESS,
+        node_class=NodeClass.INTERACTIVE,
+    )
+    dag.add_edge("dyn_a", "dyn_b")
+    dag.add_edge("dyn_b", "dyn_a")
+
+    # Computational node that takes input from dyn_a
+    dag.add_node(
+        "comp_1",
+        name="sleeper-1",
+        key="simcore/services/comp/sleeper",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={},
+        state=RunningState.NOT_STARTED,
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    dag.add_edge("dyn_a", "comp_1")
+
+    minimal = await create_minimal_computational_graph_based_on_selection(dag, selected_nodes=[], force_restart=False)
+    assert set(minimal.nodes()) == {"comp_1"}
+
+
 @pytest.mark.parametrize(
     "dag_adjacency, node_keys, exp_cycles",
     [

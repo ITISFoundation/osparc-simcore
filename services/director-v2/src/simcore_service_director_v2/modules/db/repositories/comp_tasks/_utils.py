@@ -52,7 +52,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
-    ConfigurationError,
+    EC2InstanceTypeNotFoundError,
     WalletNotEnoughCreditsError,
 )
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
@@ -286,10 +286,11 @@ async def _update_project_node_resources_from_hardware_info(
         else:
             _logger.warning("Services resource override not implemented yet for multi-container services!!!")
     except StopIteration as exc:
-        msg = (
-            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}. TIP: adjust product configuration"
-        )
-        raise ConfigurationError(msg=msg) from exc
+        raise EC2InstanceTypeNotFoundError(
+            ec2_instance_types=f"{set(hardware_info.aws_ec2_instances)}",
+            node_id=f"{node_id}",
+            project_id=f"{project_id}",
+        ) from exc
     except (
         RemoteMethodNotRegisteredError,
         RPCServerError,

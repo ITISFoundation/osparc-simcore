@@ -7,7 +7,7 @@
 
 import functools
 import logging
-from typing import Any, TypeAlias
+from typing import Any
 
 from aiohttp import web
 from common_library.pydantic_fields_extension import get_type, is_nullable
@@ -19,7 +19,7 @@ from .constants import MSG_UNDER_DEVELOPMENT
 
 _logger = logging.getLogger(__name__)
 
-AppConfigDict: TypeAlias = dict[str, Any]
+type AppConfigDict = dict[str, Any]
 
 
 def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
@@ -31,7 +31,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
             "host": app_settings.WEBSERVER_SERVER_HOST,
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOGLEVEL}",
-            "testing": False,  # TODO: deprecate!
+            "testing": False,  # deprecate!
             "studies_access_enabled": (
                 int(app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED)
                 if app_settings.WEBSERVER_STUDIES_DISPATCHER
@@ -45,7 +45,10 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
         "db": {
             "postgres": {
                 "database": getattr(app_settings.WEBSERVER_DB, "POSTGRES_DB", None),
-                "endpoint": f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_HOST', None)}:{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_PORT', None)}",
+                "endpoint": (
+                    f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_HOST', None)}:"
+                    f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_PORT', None)}"
+                ),
                 "host": getattr(app_settings.WEBSERVER_DB, "POSTGRES_HOST", None),
                 "maxsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAXSIZE", None),
                 "minsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MINSIZE", None),
@@ -144,7 +147,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
         "groups": {"enabled": app_settings.WEBSERVER_GROUPS},
         "products": {"enabled": app_settings.WEBSERVER_PRODUCTS},
-        "publications": {"enabled": app_settings.WEBSERVER_PUBLICATIONS},
         "remote_debug": {"enabled": app_settings.WEBSERVER_REMOTE_DEBUG},
         "security": {"enabled": True},
         "scicrunch": {"enabled": app_settings.WEBSERVER_SCICRUNCH is not None},
@@ -179,7 +181,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         field = dict(ApplicationSettings.model_fields)[field_name]
         if not enabled:
             envs[field_name] = "null" if is_nullable(field) else "0"
-        elif get_type(field) == bool:
+        elif get_type(field) is bool:
             envs[field_name] = "1"
 
     if main := cfg.get("main"):
@@ -281,7 +283,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         "WEBSERVER_GROUPS",
         "WEBSERVER_PRODUCTS",
         "WEBSERVER_PROJECTS",
-        "WEBSERVER_PUBLICATIONS",
         "WEBSERVER_REMOTE_DEBUG",
         "WEBSERVER_REST",
         "WEBSERVER_SOCKETIO",

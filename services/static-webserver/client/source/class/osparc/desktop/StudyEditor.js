@@ -704,15 +704,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           "force_restart": forceRestart,
         }
       };
-      osparc.data.Resources.fetch("runPipeline", "startPipeline", params)
-        .then(resp => this.__onPipelineSubmitted(resp))
-        .catch(err => {
-          const errStatus = err.status;
-          if (errStatus == "409") {
-            osparc.FlashMessenger.logError(err);
-            const msg = osparc.FlashMessenger.extractMessage(err);
-            this.getStudyLogger().error(null, msg);
-          } else if (errStatus == "422") {
+      osparc.data.Resources.fetch("runPipeline", "startPipeline", params, {resolveWResponse: true})
+        .then(resp => {
+          if (resp.status === 200) {
+            // Pipeline is up-to-date, nothing was started
+            this.getStudy().setPipelineRunning(false);
             this.getStudyLogger().info(null, "The pipeline is up-to-date");
             const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
             const win = new osparc.ui.window.Confirmation(msg).set({
@@ -727,6 +723,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 this.__requestStartPipeline(studyId, partialPipeline, true);
               }
             }, this);
+          } else {
+            this.__onPipelineSubmitted(resp.data);
+          }
+        })
+        .catch(err => {
+          const errStatus = err.status;
+          if (errStatus === 409) {
+            osparc.FlashMessenger.logError(err);
+            const msg = osparc.FlashMessenger.extractMessage(err);
+            this.getStudyLogger().error(null, msg);
           } else {
             osparc.FlashMessenger.logError(err);
             this.getStudyLogger().error(null, "Unsuccessful pipeline submission");
