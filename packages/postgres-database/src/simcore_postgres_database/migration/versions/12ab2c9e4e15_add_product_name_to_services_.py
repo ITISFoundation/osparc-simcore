@@ -24,25 +24,23 @@ def upgrade():
     )
 
     # Step 2: Backfill existing rows.
-    # For each existing row, duplicate it for every product where the service has
-    # access rights. Then remove the original rows (with NULL product_name).
+    # For each existing row, duplicate it for every product defined in the products table.
+    # Then remove the original rows (with NULL product_name).
     conn = op.get_bind()
 
-    # Duplicate existing specs for each product they have access rights in
+    # Duplicate existing specs for each product in the products table
     conn.execute(
         sa.text("""
         INSERT INTO services_specifications (service_key, service_version, gid, product_name, sidecar, service, comments)
-        SELECT DISTINCT ss.service_key, ss.service_version, ss.gid, sar.product_name, ss.sidecar, ss.service, ss.comments
+        SELECT ss.service_key, ss.service_version, ss.gid, p.name, ss.sidecar, ss.service, ss.comments
         FROM services_specifications ss
-        JOIN services_access_rights sar
-            ON ss.service_key = sar.key AND ss.service_version = sar.version
+        CROSS JOIN products p
         WHERE ss.product_name IS NULL
-          AND sar.product_name IS NOT NULL
         ON CONFLICT DO NOTHING
     """)
     )
 
-    # Delete rows that still have NULL product_name (they've been duplicated above, or have no access rights)
+    # Delete rows that still have NULL product_name (they've been duplicated above)
     conn.execute(sa.text("DELETE FROM services_specifications WHERE product_name IS NULL"))
 
     # Step 3: Make column non-nullable
