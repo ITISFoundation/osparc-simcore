@@ -19,7 +19,7 @@ from simcore_service_notifications.api.rest._health import HealthCheckError
 from simcore_service_notifications.api.rest.dependencies import (
     get_postgres_liveness,
     get_rabbitmq_rpc_client,
-    get_redis_client_from_request,
+    get_redis_client,
 )
 
 
@@ -70,13 +70,13 @@ def mock_services_health(
 ) -> Iterator[None]:
     mock_fastapi_app.dependency_overrides[get_rabbitmq_rpc_client] = lambda: _get_mock(rabbit_healthy)
     mock_fastapi_app.dependency_overrides[get_postgres_liveness] = lambda: _get_mock(postgres_healthy)
-    mock_fastapi_app.dependency_overrides[get_redis_client_from_request] = lambda: _get_mock(redis_healthy)
+    mock_fastapi_app.dependency_overrides[get_redis_client] = lambda: _get_mock(redis_healthy)
 
     yield
 
     mock_fastapi_app.dependency_overrides.pop(get_rabbitmq_rpc_client, None)
     mock_fastapi_app.dependency_overrides.pop(get_postgres_liveness, None)
-    mock_fastapi_app.dependency_overrides.pop(get_redis_client_from_request, None)
+    mock_fastapi_app.dependency_overrides.pop(get_redis_client, None)
 
 
 @pytest.mark.parametrize("rabbit_healthy", [True])
