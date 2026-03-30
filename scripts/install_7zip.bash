@@ -24,7 +24,12 @@ rm -rf /tmp/7zip
 mkdir -p /tmp/7zip
 cd /tmp/7zip
 
-curl -LO https://www.7-zip.org/a/7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz
+curl -LO \
+  --retry 5 \
+  --retry-delay 2 \
+  --retry-max-time 60 \
+  --retry-all-errors \
+  https://www.7-zip.org/a/7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz
 tar -xvf 7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz
 cp 7zz /usr/bin/7z
 
