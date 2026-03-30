@@ -68,7 +68,7 @@ def _merge_specs(
     merged_spec = {}
     for spec in itertools.chain([everyone_spec], team_specs.values(), [user_spec]):
         if spec is not None:
-            merged_spec.update(spec.model_dump(include={"sidecar", "service"}))
+            merged_spec.update(spec.model_dump(include={"sidecar", "service", "comments"}))
     return merged_spec
 
 
