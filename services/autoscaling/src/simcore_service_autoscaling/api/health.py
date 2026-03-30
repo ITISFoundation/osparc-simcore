@@ -30,7 +30,7 @@ class HealthCheckError(RuntimeError):
 
 
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
-async def health_check(app: Annotated[FastAPI, Depends(get_app)]):
+async def health_check(app: Annotated[FastAPI, Depends(get_app)]) -> str:
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
 
     if not get_rabbitmq_client(app).healthy:

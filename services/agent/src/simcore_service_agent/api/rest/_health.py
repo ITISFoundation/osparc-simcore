@@ -4,7 +4,7 @@ import arrow
 from fastapi import APIRouter, Depends
 from models_library.api_schemas__common.health import HealthCheckGet
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ._dependencies import get_rabbitmq_rpc_client
 
@@ -17,7 +17,7 @@ class HealthCheckError(RuntimeError):
 
 @router.get("/health", response_model=HealthCheckGet)
 async def check_service_health(
-    rabbitmq_rpc_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client)],
+    rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
 ):
     if not rabbitmq_rpc_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
