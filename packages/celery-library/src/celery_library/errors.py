@@ -1,6 +1,8 @@
 import base64
 import pickle
+from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.errors_classes import OsparcErrorMixin
@@ -36,24 +38,20 @@ class TaskSubmissionError(OsparcErrorMixin, Exception):
     msg_template = "Unable to submit task {task_name} with key '{task_key}' and params {task_params}"
 
 
-class TaskNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Task with uuid '{task_uuid}' and owner_metadata '{owner_metadata}' was not found"
-
-
-class GroupNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Group with uuid '{group_uuid}' and owner_metadata '{owner_metadata}' was not found"
+class TaskOrGroupNotFoundError(OsparcErrorMixin, Exception):
+    msg_template = "Task or group with uuid '{task_uuid}' and owner_metadata '{owner_metadata}' was not found"
 
 
 class TaskManagerError(OsparcErrorMixin, Exception):
     msg_template = "An internal error occurred"
 
 
-def handle_celery_errors(func):
+def handle_celery_errors[F: Callable[..., Any]](func: F) -> F:
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return await func(*args, **kwargs)
         except CeleryError as exc:
             raise TaskManagerError from exc
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
