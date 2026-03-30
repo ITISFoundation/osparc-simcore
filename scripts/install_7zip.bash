@@ -24,11 +24,7 @@ rm -rf /tmp/7zip
 mkdir -p /tmp/7zip
 cd /tmp/7zip
 
-curl -LO \
-  --connect-timeout 10 \
-  --retry 5 \
-  --retry-all-errors \
-  https://github.com/ip7z/7zip/releases/download/${SEVEN_ZIP_VERSION}/7z${SEVEN_ZIP_VERSION_NODOT}-linux-${ARCH}.tar.xz
+curl -LO https://www.7-zip.org/a/7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz
 tar -xvf 7z${SEVEN_ZIP_VERSION}-linux-${ARCH}.tar.xz
 cp 7zz /usr/bin/7z
 
