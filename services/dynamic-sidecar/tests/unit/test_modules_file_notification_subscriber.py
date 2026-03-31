@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 
 import uuid
+from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
@@ -63,7 +64,7 @@ async def test_handle_file_notification_calls_notify_path_change(
     result = await _handle_file_notification(None, data)
 
     assert result is True
-    mock_notify_path_change.assert_awaited_once_with(app=None, path=file_id, recursive=False)
+    mock_notify_path_change.assert_awaited_once_with(app=None, path=f"{Path(file_id).parent}", recursive=False)
 
 
 async def test_handle_file_notification_with_optional_ids(
@@ -80,4 +81,4 @@ async def test_handle_file_notification_with_optional_ids(
     result = await _handle_file_notification(None, data)
 
     assert result is True
-    mock_notify_path_change.assert_awaited_once_with(app=None, path=file_id, recursive=False)
+    mock_notify_path_change.assert_awaited_once_with(app=None, path=f"{Path(file_id).parent}", recursive=False)
