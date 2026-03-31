@@ -1,4 +1,4 @@
-aio-pika==9.4.1
+aio-pika==9.6.2
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
