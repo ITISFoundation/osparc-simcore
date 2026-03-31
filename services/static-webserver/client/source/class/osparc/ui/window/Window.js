@@ -34,8 +34,8 @@ qx.Class.define("osparc.ui.window.Window", {
     this.__boundKeepWithinScreen = this.__keepWithinScreen.bind(this);
     window.addEventListener("resize", this.__boundKeepWithinScreen);
 
-    const commandEsc = new qx.ui.command.Command("Esc");
-    commandEsc.addListener("execute", () => {
+    this.__commandEsc = new qx.ui.command.Command("Esc");
+    this.__commandEsc.addListener("execute", () => {
       if (this.isEscapeClose()) {
         this.fireEvent("cancel");
         this.close();
@@ -94,6 +94,7 @@ qx.Class.define("osparc.ui.window.Window", {
   },
 
   members: {
+    __commandEsc: null,
     __recenter: null,
 
     // overridden
@@ -268,5 +269,9 @@ qx.Class.define("osparc.ui.window.Window", {
 
   destruct: function() {
     window.removeEventListener("resize", this.__boundKeepWithinScreen);
+    if (this.__commandEsc) {
+      this.__commandEsc.dispose();
+      this.__commandEsc = null;
+    }
   },
 });
