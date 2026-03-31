@@ -155,6 +155,14 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
             color: ${color} !important;
             opacity: 0.6;
           }
+          /* Fix Quill v2 bug: bullet lists rendered inside <ol> instead of <ul> (slab/quill#4124) */
+          .ql-editor ol li[data-list="bullet"]::before {
+            content: none;
+          }
+          .ql-editor li[data-list="bullet"] > .ql-ui::before {
+            content: "\\2022";
+            text-align: center;
+          }
         `;
         document.head.appendChild(style);
       }
@@ -210,7 +218,8 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     },
 
     getHTML: function(quill) {
-      return quill.root.innerHTML;
+      // Use getSemanticHTML() to get proper <ul>/<ol> output (Quill v2 uses <ol> for both internally)
+      return quill.getSemanticHTML();
     },
 
     setHTML: function(quill, html) {
