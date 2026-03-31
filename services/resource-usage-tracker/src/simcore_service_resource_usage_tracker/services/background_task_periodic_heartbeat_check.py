@@ -126,15 +126,6 @@ async def _close_unhealthy_service(
             db_engine, data=update_credit_transaction
         )
 
-        if _transaction_status == CreditTransactionStatus.NOT_BILLED:
-            await notify_user_of_credit_reimbursement(
-                rabbitmq_rpc_client,
-                product_name=running_service.product_name,
-                user_email=running_service.user_email,
-                service_run_id=service_run_id,
-                reimbursed_credits=computed_credits,
-            )
-
         # 3. If the credit transaction status is considered "NOT_BILLED", this might return
         # the wallet to positive numbers. If, in the meantime, some transactions were marked as DEBT,
         # we need to update them back to the BILLED state.
@@ -154,6 +145,20 @@ async def _close_unhealthy_service(
 
     # 4. Release license seats in case some were checked out but not properly released.
     await licensed_items_checkouts_db.force_release_license_seats_by_run_id(db_engine, service_run_id=service_run_id)
+
+    # 5. Best-effort notification (after all critical DB/billing operations)
+    if (
+        running_service.wallet_id
+        and running_service.pricing_unit_cost is not None
+        and _transaction_status == CreditTransactionStatus.NOT_BILLED
+    ):
+        await notify_user_of_credit_reimbursement(
+            rabbitmq_rpc_client,
+            product_name=running_service.product_name,
+            user_email=running_service.user_email,
+            service_run_id=service_run_id,
+            reimbursed_credits=computed_credits,
+        )
 
 
 async def check_running_services(app: FastAPI) -> None:

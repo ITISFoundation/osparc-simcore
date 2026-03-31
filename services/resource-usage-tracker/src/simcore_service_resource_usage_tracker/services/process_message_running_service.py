@@ -320,6 +320,15 @@ async def _process_stop_event(
             db_engine, data=update_credit_transaction
         )
 
+        # Publish wallet total credits to RabbitMQ
+        await sum_credit_transactions_and_publish_to_rabbitmq(
+            db_engine,
+            rabbitmq_client=rabbitmq_client,
+            product_name=running_service.product_name,
+            wallet_id=running_service.wallet_id,
+        )
+
+        # Best-effort notification (after all critical DB/billing operations)
         if _send_email:
             await notify_user_of_credit_reimbursement(
                 rabbitmq_rpc_client,
@@ -328,13 +337,6 @@ async def _process_stop_event(
                 service_run_id=msg.service_run_id,
                 reimbursed_credits=computed_credits,
             )
-        # Publish wallet total credits to RabbitMQ
-        await sum_credit_transactions_and_publish_to_rabbitmq(
-            db_engine,
-            rabbitmq_client=rabbitmq_client,
-            product_name=running_service.product_name,
-            wallet_id=running_service.wallet_id,
-        )
 
 
 RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]]] = {
