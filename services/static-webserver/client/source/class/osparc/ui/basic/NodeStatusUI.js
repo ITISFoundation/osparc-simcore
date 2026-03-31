@@ -53,7 +53,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           const parts = [];
           if (errors) {
             errors.forEach(error => {
-              let entry = error["msg"];
+              let entry = qx.log.appender.Formatter.escapeHTML(error["msg"]);
               if (error["type"] === "runtime.oom") {
                 if (osparc.store.StaticInfo.isBillableProduct()) {
                   entry += "<br>💡 Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
