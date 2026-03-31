@@ -328,10 +328,9 @@ async def test_stop_event_with_platform_ok_does_not_send_reimbursement_notificat
 
     await _process_start_event(engine, msg, publisher, rpc_client)
 
-    await asyncio.sleep(1)
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=UTC),
+        created_at=msg.created_at + timedelta(seconds=1),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
     await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
