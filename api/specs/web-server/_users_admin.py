@@ -12,10 +12,12 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     UserAccountApprove,
     UserAccountGet,
+    UserAccountMoveProduct,
     UserAccountPreviewApproval,
     UserAccountPreviewApprovalGet,
     UserAccountPreviewRejection,
     UserAccountPreviewRejectionGet,
+    UserAccountProductOptionGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
@@ -82,6 +84,22 @@ async def search_user_accounts(
 ):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
+
+
+@router.post(
+    "/admin/user-accounts:move",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=_extra_tags,
+)
+async def move_user_account(_body: UserAccountMoveProduct): ...
+
+
+@router.get(
+    "/admin/products",
+    response_model=Envelope[list[UserAccountProductOptionGet]],
+    tags=_extra_tags,
+)
+async def list_products_for_user_accounts(): ...
 
 
 @router.post(

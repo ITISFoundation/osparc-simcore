@@ -269,19 +269,33 @@ async def test_move_user_account_request_to_product_fails_if_linked(
     product_owner_user: dict[str, Any],
 ):
     asyncpg_engine = get_asyncpg_engine(app)
+    target_product = await _get_other_existing_product_name(app, current_product_name=product_name)
+
+    # Create pre-reg WITHOUT auto-linking so status stays PENDING
     pre_registration_id = await create_user_pre_registration(
         asyncpg_engine,
-        email=product_owner_user["email"],
+        email="linked-pending@example.com",
         created_by=product_owner_user["id"],
         product_name=product_name,
         institution="Linked University",
+        link_to_existing_user=False,
     )
+
+    # Manually set user_id while keeping status=PENDING to simulate
+    # a pre-registration linked to an account but not yet reviewed
+    async with asyncpg_engine.connect() as conn:
+        await conn.execute(
+            users_pre_registration_details.update()
+            .values(user_id=product_owner_user["id"])
+            .where(users_pre_registration_details.c.id == pre_registration_id)
+        )
+        await conn.commit()
 
     with pytest.raises(PreRegistrationAlreadyLinkedToAccountError):
         await _accounts_service.move_user_account_request_to_product(
             app,
             pre_registration_id=pre_registration_id,
-            new_product_name=product_name,
+            new_product_name=target_product,
             moved_by=product_owner_user["id"],
         )
 

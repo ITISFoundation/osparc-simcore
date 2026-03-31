@@ -36,6 +36,7 @@ from ....login.decorators import login_required
 from ....notifications import notifications_service
 from ....notifications._models import TemplateRef
 from ....products import products_service
+from ....products.errors import ProductNotFoundError
 from ....security.decorators import (
     group_or_role_permission_required,
     permission_required,
@@ -64,6 +65,12 @@ async def list_users_accounts(request: web.Request) -> web.Response:
 
     query_params = parse_request_query_parameters_as(UsersAccountListQueryParams, request)
     target_product_name = query_params.product_name or req_ctx.product_name
+
+    if query_params.product_name and query_params.product_name != req_ctx.product_name:
+        # Validate the overridden product exists
+        product_names = await products_service.list_products_names(request.app)
+        if target_product_name not in product_names:
+            raise ProductNotFoundError(product_name=target_product_name)
 
     if query_params.review_status == "PENDING":
         filter_any_account_request_status = [AccountRequestStatus.PENDING]

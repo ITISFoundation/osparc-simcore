@@ -1,3 +1,13 @@
+"""Typed helpers for the ``extras`` JSONB column on ``users_pre_registration_details``.
+
+Known top-level keys
+--------------------
+- **invitation**: stored when an approval generates an invitation link.
+- **recovery**: written by data-reconciliation / migration scripts.
+- **product_move**: audit trail when a PO moves the request to another product.
+- *form fields*: arbitrary key/value pairs from the original request form.
+"""
+
 from datetime import UTC, datetime
 from typing import Any, Literal
 
