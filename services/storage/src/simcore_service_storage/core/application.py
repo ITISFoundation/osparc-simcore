@@ -74,14 +74,14 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         tracing_config=get_tracing_config(app),
     )
 
+    setup_redis(app)
+    setup_rabbitmq(app)
+
     if settings.STORAGE_CELERY:
         setup_task_manager(app, settings=settings.STORAGE_CELERY)
 
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
-
-    setup_redis(app)
-    setup_rabbitmq(app)
 
     setup_dsm(app)
     if settings.STORAGE_CLEANER_INTERVAL_S and not settings.STORAGE_WORKER_MODE:

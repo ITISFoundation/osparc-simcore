@@ -7,7 +7,6 @@ from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
-from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
@@ -17,7 +16,7 @@ from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSet
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
-    STORAGE_HOST: str = "0.0.0.0"  # nosec
+    STORAGE_HOST: str = "0.0.0.0"  # nosec  # noqa: S104
     STORAGE_PORT: PortInt = 8080
 
     LOG_LEVEL: Annotated[
@@ -58,11 +57,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         int | None,
         Field(
             30,
-            description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
+            description=(
+                "Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner."
+            ),
         ),
     ]
-
-    STORAGE_RABBITMQ: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
         int,
@@ -80,7 +79,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development _logger format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development _logger format. WARNING: make sure it is disabled "
+                "if you want to have structured logs!"
+            ),
         ),
     ]
 
@@ -89,7 +91,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of _logger message patterns that should be filtered out.",
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of _logger message patterns that should be filtered out."
+            ),
         ),
     ]
 
