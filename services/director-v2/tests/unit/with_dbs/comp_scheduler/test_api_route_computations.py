@@ -562,7 +562,7 @@ async def test_create_computation_with_wallet(
     "default_pricing_plan",
     [RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0])],
 )
-async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
+async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_404(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
@@ -595,7 +595,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
             )
         ),
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+    assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name.assert_called_once()
 
 
@@ -767,7 +767,7 @@ async def test_start_computation_with_project_node_resources_defined(
     assert mocked_get_service_resources.call_count == 0
 
 
-async def test_start_computation_with_deprecated_services_raises_406(
+async def test_start_computation_with_deprecated_services_raises_409(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts_deprecated: respx.MockRouter,
@@ -796,7 +796,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
             )
         ),
     )
-    assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
+    assert response.status_code == status.HTTP_409_CONFLICT, response.text
 
 
 async def test_get_computation_from_empty_project(

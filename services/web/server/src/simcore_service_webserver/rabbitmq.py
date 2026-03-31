@@ -23,7 +23,8 @@ RABBITMQ_RPC_CLIENT_APPKEY: Final = web.AppKey("RABBITMQ_RPC_CLIENT", RabbitMQRP
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-    if not rabbit_client.healthy:
+    rpc_client: RabbitMQRPCClient = get_rabbitmq_rpc_client(app)
+    if not rabbit_client.healthy or not rpc_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
 
