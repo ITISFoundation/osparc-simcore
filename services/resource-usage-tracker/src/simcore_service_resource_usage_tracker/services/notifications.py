@@ -46,15 +46,26 @@ async def notify_user_of_credit_reimbursement(
         },
     }
 
-    await send_message_from_template(
-        rabbitmq_rpc_client,
-        addressing=addressing,
-        template_ref=TemplateRef(
-            channel=Channel.email,
-            template_name=_CREDIT_REIMBURSEMENT_TEMPLATE,
-        ),
-        context=context,
-    )
+    try:
+        await send_message_from_template(
+            rabbitmq_rpc_client,
+            addressing=addressing,
+            template_ref=TemplateRef(
+                channel=Channel.email,
+                template_name=_CREDIT_REIMBURSEMENT_TEMPLATE,
+            ),
+            context=context,
+        )
+    except Exception:  # noqa: BLE001
+        _logger.exception(
+            "Failed to send credit reimbursement notification to %s for service_run_id %s "
+            "using template '%s' and product '%s'",
+            user_email,
+            service_run_id,
+            _CREDIT_REIMBURSEMENT_TEMPLATE,
+            product_name,
+        )
+        return
 
     _logger.info(
         "Sent credit reimbursement notification to %s for service_run_id %s",
