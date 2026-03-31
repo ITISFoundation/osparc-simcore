@@ -210,7 +210,8 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     },
 
     getHTML: function(quill) {
-      return quill.root.innerHTML;
+      // Use getSemanticHTML() to get proper <ul>/<ol> output (Quill v2 uses <ol> for both internally)
+      return quill.getSemanticHTML();
     },
 
     setHTML: function(quill, html) {
