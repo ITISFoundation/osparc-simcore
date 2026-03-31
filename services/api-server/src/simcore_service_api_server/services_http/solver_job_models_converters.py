@@ -246,7 +246,7 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
     return JobStatus(
         job_id=task.id,
         state=task.state,
-        progress=PercentageInt((task.pipeline_details.progress or 0) * 100.0),
+        progress=TypeAdapter(PercentageInt).validate_python((task.pipeline_details.progress or 0) * 100.0),
         submitted_at=task.submitted or arrow.utcnow().datetime,
         started_at=task.started,
         stopped_at=task.stopped,
