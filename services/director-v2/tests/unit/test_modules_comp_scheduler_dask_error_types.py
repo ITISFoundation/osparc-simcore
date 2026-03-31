@@ -75,6 +75,7 @@ async def test_handle_task_error_sets_correct_error_type(
     expected_error_type: str | None,
     expected_state: RunningState,
 ):
+    # pylint:disable=protected-access
     state, platform_status, errors, completed = await DaskScheduler._handle_task_error(  # noqa: SLF001
         task=fake_task,
         result=exception,
