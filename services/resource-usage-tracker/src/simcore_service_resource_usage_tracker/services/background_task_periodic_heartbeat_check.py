@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.resource_tracker import (
     CreditTransactionStatus,
@@ -164,11 +165,18 @@ async def _close_unhealthy_service(
                 service_run_id=service_run_id,
                 reimbursed_credits=computed_credits,
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception as exc:  # pylint: disable=broad-except
             _logger.exception(
-                "Best-effort notification of credit reimbursement failed for service_run_id=%s, user_email=%s",
-                service_run_id,
-                running_service.user_email,
+                **create_troubleshooting_log_kwargs(
+                    "Notification of credit reimbursement failed",
+                    error=exc,
+                    error_context={
+                        "service_run_id": service_run_id,
+                        "user_email": running_service.user_email,
+                        "product_name": running_service.product_name,
+                    },
+                    tip="Check that the notifications service is running and the email template exists.",
+                )
             )
 
 
