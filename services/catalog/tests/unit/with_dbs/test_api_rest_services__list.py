@@ -230,7 +230,9 @@ async def test_list_services_that_are_deprecated(
     client: TestClient,
 ):
     # injects fake data in db
-    deprecation_date = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(  # NOTE: old offset-naive column
+    deprecation_date = datetime.datetime.now(tz=datetime.UTC).replace(
+        tzinfo=None
+    ) + datetime.timedelta(  # NOTE: old offset-naive column
         days=1
     )
     deprecated_service = create_fake_service_data(
