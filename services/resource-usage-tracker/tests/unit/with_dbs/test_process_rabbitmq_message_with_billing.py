@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Callable, Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
 from unittest.mock import AsyncMock
@@ -279,10 +279,9 @@ async def test_stop_event_with_platform_bad_sends_reimbursement_notification(
 
     await _process_start_event(engine, msg, publisher, rpc_client)
 
-    await asyncio.sleep(1)
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=UTC),
+        created_at=msg.created_at + timedelta(seconds=1),
         simcore_platform_status=SimcorePlatformStatus.BAD,
     )
     await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
