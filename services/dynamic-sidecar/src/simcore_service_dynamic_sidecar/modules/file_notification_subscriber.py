@@ -1,5 +1,6 @@
 import functools
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import FileNotificationMessage
@@ -16,7 +17,7 @@ _logger = logging.getLogger(__name__)
 async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
     message = FileNotificationMessage.model_validate_json(data)
     _logger.debug("Received file notification: %s for file_id=%s", message.event_type, message.file_id)
-    await container_extensions.notify_path_change(app=app, path=message.file_id, recursive=False)
+    await container_extensions.notify_path_change(app=app, path=f"{Path(message.file_id).parent}", recursive=False)
     return True
 
 
