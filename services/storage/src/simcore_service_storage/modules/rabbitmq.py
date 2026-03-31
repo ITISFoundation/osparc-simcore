@@ -56,9 +56,7 @@ async def post_file_notification(
 ) -> None:
     with (
         log_catch(_logger, reraise=False),
-        log_context(
-            _logger, logging.DEBUG, msg=f"Posting file notification for file_id={file_id} with event_type={event_type}"
-        ),
+        log_context(_logger, logging.DEBUG, msg=f"Posting file notification for {file_id=} with {event_type=}"),
     ):
         parts = f"{file_id}".split("/")
         project_id = _try_parse_uuid(parts[0]) if len(parts) > 0 else None
