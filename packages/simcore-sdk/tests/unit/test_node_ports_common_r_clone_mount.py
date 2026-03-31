@@ -207,7 +207,7 @@ def index() -> int:
 
 
 @pytest.fixture
-def ensure_remote_path(faker: Faker) -> Callable[[], StorageFileID]:
+def fake_remote_path(faker: Faker) -> Callable[[], StorageFileID]:
     def _() -> StorageFileID:
         remote = f"{faker.uuid4()}/{faker.uuid4()}/mounted-path"
         return TypeAdapter(StorageFileID).validate_python(remote)
@@ -216,8 +216,8 @@ def ensure_remote_path(faker: Faker) -> Callable[[], StorageFileID]:
 
 
 @pytest.fixture
-def remote_path(ensure_remote_path: Callable[[], StorageFileID]) -> StorageFileID:
-    return ensure_remote_path()
+def remote_path(fake_remote_path: Callable[[], StorageFileID]) -> StorageFileID:
+    return fake_remote_path()
 
 
 @pytest.fixture
@@ -430,7 +430,7 @@ async def test_refresh_path(
     local_mount_path: Path,
     remote_path: StorageFileID,
     ensure_tmp_dir: Callable[[Path], Path],
-    ensure_remote_path: Callable[[], StorageFileID],
+    fake_remote_path: Callable[[], StorageFileID],
     index: int,
     s3_client: S3Client,
     file_count: NonNegativeInt,
@@ -445,9 +445,9 @@ async def test_refresh_path(
     assert len(local_checksums) == 0, "Local mount should be empty at the start of the test"
 
     for remote, local in [
-        (ensure_remote_path(), ensure_tmp_dir(Path("other1"))),
+        (fake_remote_path(), ensure_tmp_dir(Path("other1"))),
         (remote_path, local_mount_path),
-        (ensure_remote_path(), ensure_tmp_dir(Path("other2") / "else")),
+        (fake_remote_path(), ensure_tmp_dir(Path("other2") / "else")),
     ]:
         await r_clone_mount_manager.ensure_mounted(
             local_mount_path=local,
