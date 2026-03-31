@@ -156,6 +156,7 @@ async def _generate_task_image(
     catalog_client: CatalogClient,
     connection: AsyncConnection,
     user_id: UserID,
+    product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
     node: Node,
@@ -171,7 +172,7 @@ async def _generate_task_image(
     project_node = await project_nodes_repo.get(connection, node_id=node_id)
     node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
     if not node_resources:
-        node_resources = await catalog_client.get_service_resources(user_id, node.key, node.version)
+        node_resources = await catalog_client.get_service_resources(user_id, node.key, node.version, product_name)
 
     if node_resources:
         data.update(node_requirements=_compute_node_requirements(node_resources))
@@ -386,6 +387,7 @@ async def generate_tasks_list_from_project(
             catalog_client=catalog_client,
             connection=connection,
             user_id=user_id,
+            product_name=product_name,
             project_id=project.uuid,
             node_id=NodeID(node_id),
             node=node,

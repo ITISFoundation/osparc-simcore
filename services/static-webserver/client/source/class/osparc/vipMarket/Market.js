@@ -18,7 +18,7 @@
 qx.Class.define("osparc.vipMarket.Market", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function(openCategory) {
+  construct: function(openCategory = null) {
     this.base(arguments);
 
     const miniWallet = osparc.desktop.credits.BillingCenter.createMiniWalletView().set({
@@ -43,7 +43,7 @@ qx.Class.define("osparc.vipMarket.Market", {
       return;
     }
 
-    this.__reqOpenCategory = openCategory;
+    this.setReqOpenCategory(openCategory);
     this.__populateCategories();
   },
 
@@ -58,11 +58,16 @@ qx.Class.define("osparc.vipMarket.Market", {
       nullable: true,
       event: "changeOpenBy",
     },
+
+    reqOpenCategory: {
+      check: ["HumanWholeBody", "HumanBodyRegion", "AnimalWholeBody", "ComputationalPhantom", "availableModels"],
+      init: null,
+      nullable: true,
+    },
   },
 
   members: {
     __fetchingIcon: null,
-    __reqOpenCategory: null,
     __myModelsCategoryMarket: null,
     __myModelsCategoryButton: null,
 
@@ -88,11 +93,11 @@ qx.Class.define("osparc.vipMarket.Market", {
             items: [],
           };
           categories.push(availableCategory);
-          let openCategory = null;
+          let openCategory = this.getReqOpenCategory();
           Object.values(licensedItems).forEach(licensedItem => {
             if (licensedItem.getSeats().length) {
               availableCategory["items"].push(licensedItem);
-              if (!this.__reqOpenCategory) {
+              if (!this.getReqOpenCategory()) {
                 openCategory = availableCategory["categoryId"];
               }
             }
@@ -141,7 +146,7 @@ qx.Class.define("osparc.vipMarket.Market", {
               this.__freeItems.push(licensedItem);
             }
           }
-          if (!this.__reqOpenCategory && this.__freeItems.length) {
+          if (!this.getReqOpenCategory() && this.__freeItems.length) {
             this.__openCategory("availableModels");
           }
           this.__repopulateMyModelsCategory();

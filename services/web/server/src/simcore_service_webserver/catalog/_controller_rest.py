@@ -300,6 +300,7 @@ async def get_service_resources(request: Request):
         user_id=ctx.user_id,
         service_key=path_params.service_key,
         service_version=path_params.service_version,
+        product_name=ctx.product_name,
     )
 
     data = ServiceResourcesDictHelpers.create_jsonable(service_resources)

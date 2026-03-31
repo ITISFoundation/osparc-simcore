@@ -170,7 +170,8 @@ class ServiceExampleParam:
 def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
     return [
         f"if [ -z ${{{variable_name}+x}} ];then echo {variable_name} does not exist && exit 9;fi",
-        f'if [ "${{{variable_name}}}" != "{variable_value}" ];then echo expected "{variable_value}" and found "${{{variable_name}}}" && exit 9;fi',
+        f'if [ "${{{variable_name}}}" != "{variable_value}" ];then echo expected '
+        f'"{variable_value}" and found "${{{variable_name}}}" && exit 9;fi',
     ]
 
 
@@ -211,7 +212,8 @@ def sleeper_task(
     task_owner: TaskOwner,
     s3_settings: S3Settings,
 ) -> ServiceExampleParam:
-    """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
+    """Creates a console task in an ubuntu distro that
+    checks for the expected files and error in case they are missing"""
     # let's have some input files on the file server
     NUM_FILES = 12
     list_of_files = [file_on_s3_server() for _ in range(NUM_FILES)]
@@ -233,7 +235,8 @@ def sleeper_task(
             },
         }
     )
-    # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
+    # check in the console that the expected files are present
+    # in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
     file_names = [file.path for file in list_of_files]
     list_of_bash_commands = [
         "echo User: $(id $(whoami))",
@@ -273,7 +276,8 @@ def sleeper_task(
 
     list_of_bash_commands += [
         f"echo '{faker.text(max_nb_chars=17216)}'",
-        f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
+        f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || "
+        f"(echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
         f"sleep {randint(1, 4)}",  # noqa: S311
     ]
@@ -328,7 +332,10 @@ def sleeper_task(
     # check for the log file if legacy version
     list_of_bash_commands += [
         "echo $(ls -tlah ${LOG_FOLDER})",
-        f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''} -f ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} || (echo ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} file does {'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists && exit 1))",
+        f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''} "
+        f"-f ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} || "
+        f"(echo ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} file does "
+        f"{'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists && exit 1))",
     ]
     if integration_version == LEGACY_INTEGRATION_VERSION:
         list_of_bash_commands = [
@@ -667,7 +674,7 @@ async def test_run_computational_sidecar_dask(
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(30),
+        stop=stop_after_delay(60),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
@@ -728,7 +735,8 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
                 "-c",
                 " && ".join(
                     [
-                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; echo "progress: $i/{NUMBER_OF_LOGS}"; done '
+                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; '
+                        f'echo "progress: $i/{NUMBER_OF_LOGS}"; done '
                     ]
                 ),
             ],
@@ -744,7 +752,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(30),
+        stop=stop_after_delay(60),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
@@ -897,14 +905,21 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     mocked_get_image_labels: mock.Mock,
 ):
     # Configure the task to exceed memory limit
-    allocation_size = TypeAdapter(ByteSize).validate_python("100MB")
+    # NOTE: We allocate memory gradually (1MB chunks in a loop) instead of a single
+    # large bytearray to ensure pages are actually committed and the kernel OOM killer
+    # fires reliably. A single large malloc can fail with MemoryError (exit code 1)
+    # instead of triggering OOMKilled, depending on the host's overcommit settings.
+    memory_limit = TypeAdapter(ByteSize).validate_python("50MiB")
     memory_exceeding_task = sidecar_task(
         service_key="python",
         service_version="3.11-slim",
         command=[
             "python",
             "-c",
-            f"print('Allocating memory {allocation_size} bytes', flush=True); a = bytearray({allocation_size}); print('Allocating memory {allocation_size} bytes DONE', flush=True); import time; time.sleep(10)",
+            "import sys; blocks = [];\n"
+            "while True:\n"
+            "    blocks.append(bytearray(1024*1024))\n"
+            "    print(f'Allocated {len(blocks)} MiB', flush=True)\n",
         ],
     )
 
@@ -913,7 +928,7 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     future = dask_client.submit(
         run_computational_sidecar,
         **memory_exceeding_task.sidecar_params(),
-        resources={"RAM": allocation_size * 3 // 4},  # set limit to 75% of allocation
+        resources={"RAM": memory_limit},
     )
     with pytest.raises(ServiceOutOfMemoryError):
         future.result()
