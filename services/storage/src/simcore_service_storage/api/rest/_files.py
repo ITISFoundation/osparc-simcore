@@ -386,12 +386,13 @@ async def delete_file(
 ):
     dsm = get_dsm_provider(request.app).get(location_id)
     await dsm.delete_file(query_params.user_id, file_id)
-    await post_file_notification(
-        request.app,
-        event_type=FileNotificationEventType.FILE_DELETED,
-        user_id=query_params.user_id,
-        file_id=file_id,
-    )
+    if location_id == SimcoreS3DataManager.get_location_id():
+        await post_file_notification(
+            request.app,
+            event_type=FileNotificationEventType.FILE_DELETED,
+            user_id=query_params.user_id,
+            file_id=file_id,
+        )
 
 
 @router.post("/files/{file_id:path}:soft-copy", response_model=Envelope[FileMetaDataGet])
@@ -410,6 +411,6 @@ async def copy_as_soft_link(
         request.app,
         event_type=FileNotificationEventType.FILE_UPLOADED,
         user_id=query_params.user_id,
-        file_id=file_id,
+        file_id=file_link.file_id,
     )
     return Envelope[FileMetaDataGet](data=FileMetaDataGet(**file_link.model_dump()))
