@@ -2,6 +2,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from decimal import Decimal
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.rabbitmq_messages import (
@@ -342,13 +343,18 @@ async def _process_stop_event(
                     service_run_id=msg.service_run_id,
                     reimbursed_credits=computed_credits,
                 )
-            except Exception:  # pylint: disable=broad-except
+            except Exception as exc:  # pylint: disable=broad-except
                 _logger.exception(
-                    "Failed to send credit reimbursement notification for "
-                    "service_run_id=%s, user_email=%s, product_name=%s",
-                    msg.service_run_id,
-                    running_service.user_email,
-                    running_service.product_name,
+                    **create_troubleshooting_log_kwargs(
+                        "Failed to send credit reimbursement notification",
+                        error=exc,
+                        error_context={
+                            "service_run_id": msg.service_run_id,
+                            "user_email": running_service.user_email,
+                            "product_name": running_service.product_name,
+                        },
+                        tip="Check that the notifications service is running and the email template exists.",
+                    )
                 )
 
 
