@@ -23,7 +23,12 @@ def upgrade():
         sa.Column("product_name", sa.String(), nullable=True),
     )
 
-    # Step 2: Backfill existing rows.
+    # Step 2: Drop old primary key BEFORE backfill to avoid conflicts.
+    # The old PK (service_key, service_version, gid) would cause INSERT conflicts
+    # since the new rows share the same values but differ only in product_name.
+    op.drop_constraint("services_specifications_pk", "services_specifications", type_="primary")
+
+    # Step 3: Backfill existing rows.
     # For each existing row, duplicate it for every product defined in the products table.
     # Then remove the original rows (with NULL product_name).
     conn = op.get_bind()
@@ -36,18 +41,16 @@ def upgrade():
         FROM services_specifications ss
         CROSS JOIN products p
         WHERE ss.product_name IS NULL
-        ON CONFLICT DO NOTHING
-    """)
+    """)  # noqa: E501
     )
 
     # Delete rows that still have NULL product_name (they've been duplicated above)
     conn.execute(sa.text("DELETE FROM services_specifications WHERE product_name IS NULL"))
 
-    # Step 3: Make column non-nullable
+    # Step 4: Make column non-nullable
     op.alter_column("services_specifications", "product_name", nullable=False)
 
-    # Step 4: Drop old primary key and create new one including product_name
-    op.drop_constraint("services_specifications_pk", "services_specifications", type_="primary")
+    # Step 5: Create new primary key including product_name
     op.create_primary_key(
         "services_specifications_pk",
         "services_specifications",

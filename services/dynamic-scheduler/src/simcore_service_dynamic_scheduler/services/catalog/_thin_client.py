@@ -2,6 +2,7 @@ import urllib.parse
 
 from fastapi import FastAPI, status
 from httpx import Response
+from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -44,9 +45,12 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_services_specifications(
-        self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
+        self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion, product_name: ProductName
     ) -> Response:
         request_url = URL(
             f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/specifications",
         ).with_query(user_id=user_id)
-        return await self.client.get(f"{request_url}")
+        return await self.client.get(
+            f"{request_url}",
+            headers={"X-Simcore-Products-Name": product_name},
+        )
