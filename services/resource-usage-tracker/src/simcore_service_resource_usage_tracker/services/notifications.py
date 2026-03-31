@@ -67,7 +67,7 @@ async def notify_user_of_credit_reimbursement(
                 error_context={
                     "user_email": user_email,
                     "service_run_id": service_run_id,
-                    "template": _CREDIT_REIMBURSEMENT_TEMPLATE,
+                    "template_name": _CREDIT_REIMBURSEMENT_TEMPLATE,
                     "product_name": product_name,
                 },
                 tip="Check that the notifications service is running and the email template exists.",
