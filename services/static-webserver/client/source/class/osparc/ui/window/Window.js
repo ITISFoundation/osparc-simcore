@@ -36,8 +36,10 @@ qx.Class.define("osparc.ui.window.Window", {
 
     const commandEsc = new qx.ui.command.Command("Esc");
     commandEsc.addListener("execute", () => {
-      this.fireEvent("cancel");
-      this.close();
+      if (this.isEscapeClose()) {
+        this.fireEvent("cancel");
+        this.close();
+      }
     });
   },
 
@@ -45,6 +47,11 @@ qx.Class.define("osparc.ui.window.Window", {
     clickAwayClose: {
       check: "Boolean",
       init: false
+    },
+
+    escapeClose: {
+      check: "Boolean",
+      init: true
     },
 
     // it will be used to center the window within that element
