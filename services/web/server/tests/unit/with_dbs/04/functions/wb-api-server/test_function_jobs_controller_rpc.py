@@ -147,26 +147,6 @@ async def test_register_get_delete_function_job(
     "user_role",
     [UserRole.USER],
 )
-async def test_batch_register_function_jobs_empty_list(
-    client: TestClient,
-    add_user_function_api_access_rights: None,
-    webserver_rpc_client: WebServerRpcClient,
-    logged_user: UserInfoDict,
-    osparc_product_name: ProductName,
-    clean_functions: None,
-):
-    registered_jobs_batch_create = await webserver_rpc_client.functions.batch_register_function_jobs(
-        function_jobs=[],
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-    )
-    assert registered_jobs_batch_create.created_items == []
-
-
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
 async def test_get_function_job_not_found(
     client: TestClient,
     add_user_function_api_access_rights: None,

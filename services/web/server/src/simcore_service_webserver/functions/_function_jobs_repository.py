@@ -62,8 +62,7 @@ async def create_function_jobs(
     product_name: ProductName,
     function_jobs: list[FunctionJobDB],
 ) -> BatchCreateRegisteredFunctionJobsDB:
-    if not function_jobs:
-        return BatchCreateRegisteredFunctionJobsDB(created_items=[])
+    assert function_jobs, "function_jobs must not be empty"  # nosec
 
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
