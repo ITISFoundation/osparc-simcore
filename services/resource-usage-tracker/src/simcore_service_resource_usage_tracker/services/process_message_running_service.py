@@ -330,13 +330,21 @@ async def _process_stop_event(
 
         # Best-effort notification (after all critical DB/billing operations)
         if _send_email:
-            await notify_user_of_credit_reimbursement(
-                rabbitmq_rpc_client,
-                product_name=running_service.product_name,
-                user_email=running_service.user_email,
-                service_run_id=msg.service_run_id,
-                reimbursed_credits=computed_credits,
-            )
+            try:
+                await notify_user_of_credit_reimbursement(
+                    rabbitmq_rpc_client,
+                    product_name=running_service.product_name,
+                    user_email=running_service.user_email,
+                    service_run_id=msg.service_run_id,
+                    reimbursed_credits=computed_credits,
+                )
+            except Exception:  # noqa: BLE001
+                _logger.exception(
+                    "Failed to send credit reimbursement notification for service_run_id=%s, user_email=%s, product_name=%s",
+                    msg.service_run_id,
+                    running_service.user_email,
+                    running_service.product_name,
+                )
 
 
 RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]]] = {
