@@ -39,7 +39,7 @@ async def notify_user_of_credit_reimbursement(
 
     context: dict = {
         "service_run_id": service_run_id,
-        "reimbursed_credits": str(reimbursed_credits),
+        "reimbursed_credits": f"{reimbursed_credits}",
         "product": {
             "display_name": product_name,
             "support_email": f"support@{product_name}.io",
