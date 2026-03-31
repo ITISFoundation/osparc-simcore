@@ -271,7 +271,7 @@ class RemoteControlHttpClient:
         _logger.debug("Sending '%s %s' request with payload '%s'", method, request_url, params)
 
         async with AsyncClient(timeout=self._r_clone_client_timeout_seconds) as client:
-            response = await client.request(method, request_url, auth=self._auth)
+            response = await client.request(method, request_url, auth=self._auth, params=params)
             response.raise_for_status()
             dict_response: dict = response.json()
             return dict_response
