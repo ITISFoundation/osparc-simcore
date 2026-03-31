@@ -11,7 +11,7 @@ class ContainerTaskError(OsparcErrorMixin, RuntimeError):
 
 
 class ServiceRuntimeError(ContainerTaskError):
-    code = "runtime"
+    code = "runtime"  # type: ignore[assignment]
     msg_template = (
         "The service {service_key}:{service_version} running in container {container_id} failed with code {exit_code}."
     )
