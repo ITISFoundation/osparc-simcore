@@ -39,6 +39,7 @@ from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
 from ..modules.celery import setup_task_manager
 from ..modules.db import setup_db
+from ..modules.rabbitmq import setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from .settings import ApplicationSettings
@@ -80,6 +81,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     set_exception_handlers(app)
 
     setup_redis(app)
+    setup_rabbitmq(app)
 
     setup_dsm(app)
     if settings.STORAGE_CLEANER_INTERVAL_S and not settings.STORAGE_WORKER_MODE:

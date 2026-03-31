@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 
 import json
-import logging
 from collections.abc import Awaitable, Callable, Iterator
 
 import pytest
@@ -21,7 +20,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, StorageFileID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -557,47 +556,3 @@ async def test_update_projects_networks(
     project_id: ProjectID,
 ):
     await services.update_projects_networks(rpc_client, project_id=project_id)
-
-
-@pytest.fixture
-def s3_path(faker: Faker) -> StorageFileID:
-    remote = f"{faker.uuid4()}/{faker.uuid4()}/remote-dir"
-    return TypeAdapter(StorageFileID).validate_python(remote)
-
-
-async def test_notify_path_change_missing(
-    rpc_client: RabbitMQRPCClient, node_id: NodeID, s3_path: StorageFileID, caplog: pytest.LogCaptureFixture
-):
-    caplog.set_level(logging.DEBUG)
-    caplog.clear()
-
-    await services.notify_path_change(rpc_client, node_id=node_id, path=s3_path, recursive=False)
-
-    assert "Did not find a remote method" in caplog.text
-
-
-@pytest.fixture
-def mock_container_extensions(
-    mocker: MockerFixture,
-) -> None:
-    module_base = "simcore_service_dynamic_scheduler.services.common_interface"
-    mocker.patch(
-        f"{module_base}.container_extensions.notify_path_change",
-        autospec=True,
-        return_value=None,
-    )
-
-
-async def test_notify_path_change(
-    mock_container_extensions: None,
-    rpc_client: RabbitMQRPCClient,
-    node_id: NodeID,
-    s3_path: StorageFileID,
-    caplog: pytest.LogCaptureFixture,
-):
-    caplog.set_level(logging.DEBUG)
-    caplog.clear()
-
-    await services.notify_path_change(rpc_client, node_id=node_id, path=s3_path, recursive=False)
-
-    assert "Did not find a remote method" not in caplog.text

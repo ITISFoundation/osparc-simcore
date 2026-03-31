@@ -12,11 +12,11 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, StorageFileID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCRouter
+from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
@@ -82,14 +82,3 @@ async def retrieve_inputs(
 @router.expose()
 async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> None:
     await common_interface.update_projects_networks(app, project_id=project_id)
-
-
-@router.expose()
-async def notify_path_change(app: FastAPI, *, node_id: NodeID, path: StorageFileID, recursive: bool) -> None:
-    try:
-        await common_interface.notify_path_change(app, node_id=node_id, path=path, recursive=recursive)
-    except RemoteMethodNotRegisteredError as e:
-        _logger.debug(
-            "Did not find a remote method '%s'. Service is not running.",
-            e.method_name,  # type: ignore[attr-defined]    #pylint: disable=no-member
-        )

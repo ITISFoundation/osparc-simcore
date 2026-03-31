@@ -21,7 +21,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, StorageFileID
+from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.services import ServicePortKey
 from models_library.users import UserID
@@ -225,8 +225,3 @@ async def retrieve_inputs(
 
 async def update_projects_networks(app: web.Application, *, project_id: ProjectID) -> None:
     await services.update_projects_networks(get_rabbitmq_rpc_client(app), project_id=project_id)
-
-
-async def notify_path_change(app: web.Application, *, path: StorageFileID) -> None:
-    node_id = NodeID(path.split("/")[1])
-    await services.notify_path_change(get_rabbitmq_rpc_client(app), node_id=node_id, path=path)

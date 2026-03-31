@@ -2847,7 +2847,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {

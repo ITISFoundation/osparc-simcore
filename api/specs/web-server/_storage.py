@@ -26,7 +26,6 @@ from models_library.api_schemas_webserver.storage import (
     SearchBodyParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
-    StoragePathNotifyChangeParams,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
@@ -70,14 +69,6 @@ async def list_storage_paths(
     _query: Annotated[ListPathsQueryParams, Depends()],
 ):
     """Lists the files/directories in WorkingDirectory"""
-
-
-@router.post(
-    "/storage/locations/{location_id}/paths/{path}:notifyChange",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def notify_path_change(_path: Annotated[StoragePathNotifyChangeParams, Depends()]):
-    """triggers a reload of the files from S3 for a given directory"""
 
 
 @router.post(

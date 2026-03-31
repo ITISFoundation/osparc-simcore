@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Final, cast
+from typing import Annotated, cast
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, Request
@@ -18,6 +18,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskUUID
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
+from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
@@ -38,6 +39,7 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
+from ...modules.rabbitmq import post_file_notification
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_task_manager
@@ -271,11 +273,6 @@ async def abort_upload_file(
     await dsm.abort_file_upload(query_params.user_id, file_id)
 
 
-_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = (
-    "undefinedproduct"  # NOTE: this is used to keep backwards compatibility with user of these APIs
-)
-
-
 @router.post(
     "/locations/{location_id}/files/{file_id:path}:complete",
     response_model=Envelope[FileUploadCompleteResponse],
@@ -339,6 +336,7 @@ async def is_completed_upload_file(
     location_id: LocationID,
     file_id: StorageFileID,
     future_id: str,
+    request: Request,
 ):
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # therefore we wait a bit to see if it completes fast and return a 204
@@ -360,6 +358,12 @@ async def is_completed_upload_file(
         new_fmd = task_result
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
+        await post_file_notification(
+            request.app,
+            event_type=FileNotificationEventType.FILE_UPLOADED,
+            user_id=query_params.user_id,
+            file_id=file_id,
+        )
         response = FileUploadCompleteFutureResponse(
             state=FileUploadCompleteState.OK,
             e_tag=new_fmd.entity_tag,
@@ -382,6 +386,12 @@ async def delete_file(
 ):
     dsm = get_dsm_provider(request.app).get(location_id)
     await dsm.delete_file(query_params.user_id, file_id)
+    await post_file_notification(
+        request.app,
+        event_type=FileNotificationEventType.FILE_DELETED,
+        user_id=query_params.user_id,
+        file_id=file_id,
+    )
 
 
 @router.post("/files/{file_id:path}:soft-copy", response_model=Envelope[FileMetaDataGet])
@@ -396,5 +406,10 @@ async def copy_as_soft_link(
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
     file_link = await dsm.create_soft_link(query_params.user_id, file_id, body.link_id)
-
+    await post_file_notification(
+        request.app,
+        event_type=FileNotificationEventType.FILE_UPLOADED,
+        user_id=query_params.user_id,
+        file_id=file_id,
+    )
     return Envelope[FileMetaDataGet](data=FileMetaDataGet(**file_link.model_dump()))

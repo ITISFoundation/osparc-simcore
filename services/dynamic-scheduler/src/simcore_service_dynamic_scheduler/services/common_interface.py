@@ -13,18 +13,16 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, StorageFileID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import container_extensions
 from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import ApplicationSettings
 from .catalog._public_client import CatalogPublicClient
 from .director_v2 import DirectorV2Client
 from .fire_and_forget import FireAndForgetCollection
-from .rabbitmq import get_rabbitmq_rpc_client
 from .service_tracker import (
     get_tracked_service,
     set_request_as_running,
@@ -153,9 +151,3 @@ async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> No
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     await director_v2_client.update_projects_networks(project_id=project_id)
-
-
-async def notify_path_change(app: FastAPI, *, node_id: NodeID, path: StorageFileID, recursive: bool) -> None:
-    await container_extensions.notify_path_change(
-        get_rabbitmq_rpc_client(app), node_id=node_id, path=path, recursive=recursive
-    )

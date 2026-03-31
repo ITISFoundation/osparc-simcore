@@ -11856,8 +11856,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -11906,8 +11905,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -11955,8 +11953,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -12043,8 +12040,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12078,8 +12074,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12113,8 +12108,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12165,8 +12159,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -26540,6 +26533,12 @@
             "description": "Describes how the dynamic services was started (legacy=V0, modern=V2).Since legacy services do not have this label it defaults to V0.",
             "default": "V0"
           },
+          "data_mounting_enabled": {
+            "type": "boolean",
+            "title": "Data Mounting Enabled",
+            "description": "True if data mounting is enabled",
+            "default": false
+          },
           "service_host": {
             "type": "string",
             "title": "Service Host",
@@ -26577,7 +26576,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {
@@ -27731,6 +27730,9 @@
           "top_tracemalloc"
         ],
         "title": "StatusDiagnosticsGet"
+      },
+      "StorageFileIDStr": {
+        "type": "string"
       },
       "Structure": {
         "properties": {
