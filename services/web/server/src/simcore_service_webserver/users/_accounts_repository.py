@@ -21,7 +21,7 @@ from simcore_postgres_database.utils_repos import (
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ._pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
+from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
 from .exceptions import (
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
