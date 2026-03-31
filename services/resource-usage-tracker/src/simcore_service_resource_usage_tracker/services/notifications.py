@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.notifications import Channel
 from models_library.notifications.rpc import (
     EmailAddressing,
@@ -58,14 +59,19 @@ async def notify_user_of_credit_reimbursement(
             ),
             context=context,
         )
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-except
         _logger.exception(
-            "Failed to send credit reimbursement notification to %s for service_run_id %s "
-            "using template '%s' and product '%s'",
-            user_email,
-            service_run_id,
-            _CREDIT_REIMBURSEMENT_TEMPLATE,
-            product_name,
+            **create_troubleshooting_log_kwargs(
+                "Failed to send credit reimbursement notification",
+                error=exc,
+                error_context={
+                    "user_email": user_email,
+                    "service_run_id": service_run_id,
+                    "template": _CREDIT_REIMBURSEMENT_TEMPLATE,
+                    "product_name": product_name,
+                },
+                tip="Check that the notifications service is running and the email template exists.",
+            )
         )
         return
 
