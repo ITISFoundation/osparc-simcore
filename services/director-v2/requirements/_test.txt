@@ -1,4 +1,4 @@
-aio-pika==9.5.8
+aio-pika==9.6.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
