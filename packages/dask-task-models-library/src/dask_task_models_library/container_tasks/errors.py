@@ -11,12 +11,14 @@ class ContainerTaskError(OsparcErrorMixin, RuntimeError):
 
 
 class ServiceRuntimeError(ContainerTaskError):
+    code = "runtime"
     msg_template = (
         "The service {service_key}:{service_version} running in container {container_id} failed with code {exit_code}."
     )
 
 
 class ServiceOutOfMemoryError(ServiceRuntimeError):
+    code = "runtime.oom"
     msg_template = (
         "The service {service_key}:{service_version}"
         " running in container {container_id} ran out of memory and was terminated."
@@ -25,6 +27,7 @@ class ServiceOutOfMemoryError(ServiceRuntimeError):
 
 
 class ServiceTimeoutLoggingError(ServiceRuntimeError):
+    code = "runtime.timeout"
     msg_template = (
         "The service {service_key}:{service_version}"
         " running in container {container_id} was silent/hanging for longer than {timeout_timedelta} "
