@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -216,9 +215,8 @@ async def test_process_event_functions(
     first_occurrence_of_last_heartbeat_at = output.last_heartbeat_at
     modified_at = output.modified
 
-    await asyncio.sleep(1)  # NOTE: Computation of credits depends on time ((heartbeat-start)*cost_per_unit)
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=msg.service_run_id, created_at=datetime.now(tz=UTC)
+        service_run_id=msg.service_run_id, created_at=msg.created_at + timedelta(seconds=1)
     )
     await _process_heartbeat_event(engine, heartbeat_msg, publisher, rpc_client)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id, modified_at)
@@ -228,10 +226,9 @@ async def test_process_event_functions(
     assert first_occurrence_of_last_heartbeat_at < output.last_heartbeat_at
     modified_at = output.modified
 
-    await asyncio.sleep(2)  # NOTE: Computation of credits depends on time ((stop-start)*cost_per_unit)
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=UTC),
+        created_at=msg.created_at + timedelta(seconds=2),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
     await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
