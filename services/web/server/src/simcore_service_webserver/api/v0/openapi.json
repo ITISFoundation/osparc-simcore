@@ -4569,7 +4569,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -4579,23 +4579,27 @@
               }
             }
           },
+          "200": {
+            "description": "Pipeline is up-to-date, nothing was started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ComputationGet_"
+                }
+              }
+            }
+          },
           "402": {
             "description": "Insufficient credits to run computation"
           },
           "404": {
-            "description": "Project/wallet/pricing details were not found"
-          },
-          "406": {
-            "description": "Cluster not found"
+            "description": "Project/wallet/pricing/cluster details were not found"
           },
           "409": {
-            "description": "Project already started"
-          },
-          "422": {
-            "description": "Configuration error"
+            "description": "Project already started or contains deprecated services"
           },
           "503": {
-            "description": "Service not available"
+            "description": "Service not available or configuration error"
           }
         }
       }

@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState, TaskStatus
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api.celery.tasks import (
@@ -60,7 +60,8 @@ async def test_send_mail(
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            status = await task_manager.get_status(owner_metadata, task_uuid)
+            assert isinstance(status, TaskStatus)  # nosec
             assert status.task_state == TaskState.SUCCESS
 
     # if mocked, check email was sent
