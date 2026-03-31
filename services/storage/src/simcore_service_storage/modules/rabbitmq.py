@@ -57,7 +57,7 @@ async def post_file_notification(
     with (
         log_catch(_logger, reraise=False),
         log_context(
-            _logger, logging.INFO, msg=f"Posting file notification for file_id={file_id} with event_type={event_type}"
+            _logger, logging.DEBUG, msg=f"Posting file notification for file_id={file_id} with event_type={event_type}"
         ),
     ):
         parts = f"{file_id}".split("/")
