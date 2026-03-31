@@ -31,12 +31,10 @@ async def notify_user_of_credit_reimbursement(
     reimbursed_credits: Decimal,
 ) -> None:
     addressing = EmailAddressing(
-        **{
-            "from": EmailContact(
-                name=f"{product_display_name} support",
-                email=support_email,
-            ),
-        },
+        from_=EmailContact(
+            name=f"{product_display_name} support",
+            email=support_email,
+        ),
         to=[EmailContact(name=user_email, email=user_email)],
     )
 
