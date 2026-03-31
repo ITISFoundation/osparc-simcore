@@ -9,7 +9,7 @@ from models_library.rabbitmq_messages import (
     FileNotificationMessage,
 )
 from models_library.users import UserID
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 
 from .._meta import APP_NAME
@@ -54,7 +54,12 @@ async def post_file_notification(
     user_id: UserID,
     file_id: StorageFileID,
 ) -> None:
-    with log_catch(_logger, reraise=False):
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(
+            _logger, logging.INFO, msg=f"Posting file notification for file_id={file_id} with event_type={event_type}"
+        ),
+    ):
         parts = f"{file_id}".split("/")
         project_id = _try_parse_uuid(parts[0]) if len(parts) > 0 else None
         node_id = _try_parse_uuid(parts[1]) if len(parts) > 1 else None
