@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -23,8 +21,6 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 )
 
 from ...services import common_interface
-
-_logger = logging.getLogger(__name__)
 
 router = RPCRouter()
 
