@@ -9,16 +9,36 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
+from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.products import ProductName
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.products import products_service
 from simcore_service_webserver.users import _accounts_service
 from simcore_service_webserver.users._accounts_repository import (
     create_user_pre_registration,
 )
+from simcore_service_webserver.users.exceptions import (
+    PreRegistrationAlreadyLinkedToAccountError,
+    PreRegistrationAlreadyReviewedError,
+    PreRegistrationDuplicateInProductError,
+)
+
+
+async def _get_other_existing_product_name(
+    app: web.Application,
+    *,
+    current_product_name: ProductName,
+) -> ProductName:
+    product_names = await products_service.list_products_names(app)
+    for name in product_names:
+        if name != current_product_name:
+            return name
+
+    pytest.skip("At least two products are required for move-product tests")
 
 
 @pytest.fixture
@@ -34,7 +54,7 @@ async def pre_registered_user_created(
     pre_registered_email = "pre-registered@example.com"
     created_by_user_id = product_owner_user["id"]
 
-    pre_registration_details = {
+    pre_registration_details: dict[str, Any] = {
         "pre_first_name": "Pre-Registered",
         "pre_last_name": "User",
         "institution": "Test University",
@@ -164,3 +184,136 @@ async def test_search_users_as_admin_wildcard(
     assert f"user1{email_domain}" in emails_found
     assert f"user2{email_domain}" in emails_found
     assert "different@other.com" not in emails_found
+
+
+async def test_move_user_account_request_to_product_happy_path(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+):
+    asyncpg_engine = get_asyncpg_engine(app)
+    email = "move-happy@example.com"
+    source_product = product_name
+    target_product = await _get_other_existing_product_name(app, current_product_name=source_product)
+
+    pre_registration_id = await create_user_pre_registration(
+        asyncpg_engine,
+        email=email,
+        created_by=product_owner_user["id"],
+        product_name=source_product,
+        institution="Move University",
+    )
+
+    await _accounts_service.move_user_account_request_to_product(
+        app,
+        pre_registration_id=pre_registration_id,
+        new_product_name=target_product,
+        moved_by=product_owner_user["id"],
+    )
+
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(
+                users_pre_registration_details.c.product_name,
+                users_pre_registration_details.c.extras,
+            ).where(users_pre_registration_details.c.id == pre_registration_id)
+        )
+        row = result.one()
+
+    assert row.product_name == target_product
+    assert row.extras
+    assert "product_move" in row.extras
+    move_audit = row.extras["product_move"]
+    if isinstance(move_audit, list):
+        move_audit = move_audit[-1]
+    assert move_audit["source"] == "po_center:move_product"
+    assert move_audit["confidence"] == "high"
+    assert "Moved from" in move_audit["notes"]
+    assert "executed_at" in move_audit
+
+
+async def test_move_user_account_request_to_product_fails_if_reviewed(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+):
+    asyncpg_engine = get_asyncpg_engine(app)
+    pre_registration_id = await create_user_pre_registration(
+        asyncpg_engine,
+        email="move-reviewed@example.com",
+        created_by=product_owner_user["id"],
+        product_name=product_name,
+        institution="Reviewed University",
+    )
+
+    async with asyncpg_engine.connect() as conn:
+        await conn.execute(
+            users_pre_registration_details.update()
+            .values(account_request_status=AccountRequestStatus.APPROVED)
+            .where(users_pre_registration_details.c.id == pre_registration_id)
+        )
+        await conn.commit()
+
+    with pytest.raises(PreRegistrationAlreadyReviewedError):
+        await _accounts_service.move_user_account_request_to_product(
+            app,
+            pre_registration_id=pre_registration_id,
+            new_product_name=product_name,
+            moved_by=product_owner_user["id"],
+        )
+
+
+async def test_move_user_account_request_to_product_fails_if_linked(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+):
+    asyncpg_engine = get_asyncpg_engine(app)
+    pre_registration_id = await create_user_pre_registration(
+        asyncpg_engine,
+        email=product_owner_user["email"],
+        created_by=product_owner_user["id"],
+        product_name=product_name,
+        institution="Linked University",
+    )
+
+    with pytest.raises(PreRegistrationAlreadyLinkedToAccountError):
+        await _accounts_service.move_user_account_request_to_product(
+            app,
+            pre_registration_id=pre_registration_id,
+            new_product_name=product_name,
+            moved_by=product_owner_user["id"],
+        )
+
+
+async def test_move_user_account_request_to_product_fails_on_duplicate_target(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+):
+    asyncpg_engine = get_asyncpg_engine(app)
+    email = "duplicate-move@example.com"
+    target_product = await _get_other_existing_product_name(app, current_product_name=product_name)
+
+    source_pre_registration_id = await create_user_pre_registration(
+        asyncpg_engine,
+        email=email,
+        created_by=product_owner_user["id"],
+        product_name=product_name,
+        institution="Source University",
+    )
+    await create_user_pre_registration(
+        asyncpg_engine,
+        email=email,
+        created_by=product_owner_user["id"],
+        product_name=target_product,
+        institution="Target University",
+    )
+
+    with pytest.raises(PreRegistrationDuplicateInProductError):
+        await _accounts_service.move_user_account_request_to_product(
+            app,
+            pre_registration_id=source_pre_registration_id,
+            new_product_name=target_product,
+            moved_by=product_owner_user["id"],
+        )

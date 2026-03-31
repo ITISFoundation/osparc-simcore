@@ -21,6 +21,14 @@ from simcore_postgres_database.utils_repos import (
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from ._pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
+from .exceptions import (
+    PreRegistrationAlreadyLinkedToAccountError,
+    PreRegistrationAlreadyReviewedError,
+    PreRegistrationDuplicateInProductError,
+    PreRegistrationNotFoundError,
+)
+
 _logger = logging.getLogger(__name__)
 
 
@@ -264,6 +272,123 @@ async def review_user_pre_registration(
         )
 
 
+async def get_pre_registration_by_id(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    pre_registration_id: int,
+    with_for_update: bool = False,
+) -> dict[str, Any] | None:
+    query = sa.select(
+        users_pre_registration_details.c.id,
+        users_pre_registration_details.c.pre_email,
+        users_pre_registration_details.c.product_name,
+        users_pre_registration_details.c.user_id,
+        users_pre_registration_details.c.account_request_status,
+        users_pre_registration_details.c.extras,
+    ).where(users_pre_registration_details.c.id == pre_registration_id)
+
+    if with_for_update:
+        query = query.with_for_update()
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        row = result.mappings().one_or_none()
+        return dict(row) if row else None
+
+
+async def check_pre_registration_email_exists_in_product(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    email: str,
+    product_name: ProductName,
+    exclude_pre_registration_id: int | None = None,
+) -> bool:
+    conditions = [
+        users_pre_registration_details.c.pre_email == email,
+        users_pre_registration_details.c.product_name == product_name,
+    ]
+    if exclude_pre_registration_id is not None:
+        conditions.append(users_pre_registration_details.c.id != exclude_pre_registration_id)
+
+    query = sa.select(sa.exists().where(sa.and_(*conditions)))
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        return bool(result.scalar_one())
+
+
+async def update_pre_registration_product(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    pre_registration_id: int,
+    new_product_name: ProductName,
+    moved_by: UserID,
+) -> None:
+    async with transaction_context(engine, connection) as conn:
+        pre_registration = await get_pre_registration_by_id(
+            engine,
+            conn,
+            pre_registration_id=pre_registration_id,
+            with_for_update=True,
+        )
+        if pre_registration is None:
+            raise PreRegistrationNotFoundError(pre_registration_id=pre_registration_id)
+
+        current_status = pre_registration["account_request_status"]
+        if current_status != AccountRequestStatus.PENDING:
+            raise PreRegistrationAlreadyReviewedError(
+                pre_registration_id=pre_registration_id,
+                status=f"{current_status}",
+            )
+
+        existing_user_id = pre_registration["user_id"]
+        if existing_user_id is not None:
+            raise PreRegistrationAlreadyLinkedToAccountError(
+                pre_registration_id=pre_registration_id,
+                user_id=existing_user_id,
+            )
+
+        current_product_name = pre_registration["product_name"]
+        if current_product_name == new_product_name:
+            return
+
+        pre_email = pre_registration["pre_email"]
+        assert pre_email is not None  # nosec
+        has_duplicate = await check_pre_registration_email_exists_in_product(
+            engine,
+            conn,
+            email=pre_email,
+            product_name=new_product_name,
+            exclude_pre_registration_id=pre_registration_id,
+        )
+        if has_duplicate:
+            raise PreRegistrationDuplicateInProductError(email=pre_email, product_name=new_product_name)
+
+        current_extras = pre_registration["extras"]
+        audit_entry = ExtrasAuditEntry.create_now(
+            source="po_center:move_product",
+            confidence="high",
+            notes=f"Moved from '{current_product_name}' to '{new_product_name}' by user {moved_by}",
+        )
+        merged_extras = merge_audit_entry_into_extras(
+            current_extras=current_extras,
+            key="product_move",
+            entry=audit_entry,
+        )
+
+        await conn.execute(
+            users_pre_registration_details.update()
+            .values(
+                product_name=new_product_name,
+                extras=merged_extras,
+            )
+            .where(users_pre_registration_details.c.id == pre_registration_id)
+        )
+
+
 #
 # PRE AND REGISTERED USERS
 #
@@ -362,6 +487,7 @@ async def search_merged_pre_and_registered_users(
         users_pre_registration_details.c.state,
         users_pre_registration_details.c.postal_code,
         users_pre_registration_details.c.country,
+        users_pre_registration_details.c.product_name,
         users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
         users_pre_registration_details.c.extras,
         users_pre_registration_details.c.account_request_status,
@@ -469,6 +595,7 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.state,
             users_pre_registration_details.c.postal_code,
             users_pre_registration_details.c.country,
+            users_pre_registration_details.c.product_name,
             users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.created,
@@ -504,6 +631,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("state"),
             sa.literal(None).label("postal_code"),
             sa.literal(None).label("country"),
+            sa.literal(None).label("product_name"),
             sa.literal(None).label("pre_reg_user_id"),
             sa.literal(None).label("extras"),
             users.c.created_at.label("created"),
