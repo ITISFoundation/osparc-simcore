@@ -20,10 +20,7 @@ pytest_simcore_ops_services_selection = []
 def mocked_get_rabbitmq_rpc_client(mocker: MockerFixture, is_healthy: bool) -> None:
     mock = Mock()
     mock.healthy = is_healthy
-    for client in [
-        "get_rabbitmq_client",
-        "get_rabbitmq_rpc_client",
-    ]:
+    for client in ("get_rabbitmq_client", "get_rabbitmq_rpc_client", "get_redis_lock_client"):
         mocker.patch(f"simcore_service_efs_guardian.api.rest.health.{client}", return_value=mock)
 
 

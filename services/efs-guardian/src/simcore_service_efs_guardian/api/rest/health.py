@@ -9,10 +9,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
-from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
+from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG, REDIS_CLIENT_UNHEALTHY_MSG
 from servicelib.fastapi.dependencies import get_app
 
 from ...services.modules.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
+from ...services.modules.redis import get_redis_lock_client
 
 router = APIRouter()
 
@@ -25,8 +26,11 @@ class HealthCheckError(RuntimeError):
 async def health_check(
     app: Annotated[FastAPI, Depends(get_app)],
 ):
-    if any(not client.healthy for client in (get_rabbitmq_client(app), get_rabbitmq_rpc_client(app))):
+    if not get_rabbitmq_client(app).healthy or not get_rabbitmq_rpc_client(app).healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
+
+    if not get_redis_lock_client(app).is_healthy:
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
 
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
     return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"

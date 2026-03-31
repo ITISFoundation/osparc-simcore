@@ -4,10 +4,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
-from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
+from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG, REDIS_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.redis import RedisClientSDK
 
 from ...services.modules.rabbitmq import get_rabbitmq_client_from_request, get_rabbitmq_rpc_client_from_request
+from ...services.modules.redis import get_redis_lock_client_from_request
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +28,12 @@ class HealthCheckError(RuntimeError):
 async def healthcheck(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
     rabbitmq_rpc_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client_from_request)],
+    redis_lock_client: Annotated[RedisClientSDK, Depends(get_redis_lock_client_from_request)],
 ) -> str:
     if not rabbitmq_client.healthy or not rabbitmq_rpc_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
-    # NOTE: check also redis?/postgres connections
+    if not redis_lock_client.is_healthy:
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
 
     return f"{__name__}@{datetime.datetime.now(datetime.UTC).isoformat()}"

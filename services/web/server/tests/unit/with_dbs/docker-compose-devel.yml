@@ -90,6 +90,12 @@ services:
     ports:
       - "18081:8081"
     user: redis
+    healthcheck:
+      test: ["CMD", "/redis-commander/bin/healthcheck.js"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 1m
 
   rabbit:
     image: itisfoundation/rabbitmq:4.1.6-management
