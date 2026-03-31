@@ -23,6 +23,8 @@ async def notify_user_of_credit_reimbursement(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
+    product_display_name: str,
+    support_email: str,
     user_email: str,
     service_run_id: ServiceRunID,
     reimbursed_credits: Decimal,
@@ -30,8 +32,8 @@ async def notify_user_of_credit_reimbursement(
     addressing = EmailAddressing(
         **{
             "from": EmailContact(
-                name=f"{product_name} support",
-                email=f"support@{product_name}.io",
+                name=f"{product_display_name} support",
+                email=support_email,
             ),
         },
         to=[EmailContact(name=user_email, email=user_email)],
@@ -41,8 +43,8 @@ async def notify_user_of_credit_reimbursement(
         "service_run_id": service_run_id,
         "reimbursed_credits": f"{reimbursed_credits}",
         "product": {
-            "display_name": product_name,
-            "support_email": f"support@{product_name}.io",
+            "display_name": product_display_name,
+            "support_email": support_email,
         },
     }
 
@@ -56,7 +58,7 @@ async def notify_user_of_credit_reimbursement(
             ),
             context=context,
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         _logger.exception(
             "Failed to send credit reimbursement notification to %s for service_run_id %s "
             "using template '%s' and product '%s'",
