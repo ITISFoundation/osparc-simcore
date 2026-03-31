@@ -15,6 +15,7 @@ from models_library.projects import ProjectAtDB
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from starlette import status
@@ -157,7 +158,7 @@ async def wait_for_catalog_service(
             response = await client.get(
                 f"{catalog_endpoint}/v0/services",
                 params={"details": False, "user_id": user_id},
-                headers={"x-simcore-products-name": product_name},
+                headers={X_PRODUCT_NAME_HEADER: product_name},
                 timeout=1,
             )
             assert response.status_code == status.HTTP_200_OK, (

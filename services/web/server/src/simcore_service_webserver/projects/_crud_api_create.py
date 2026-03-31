@@ -208,6 +208,7 @@ async def _compose_project_data(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: str,
     new_project: ProjectDict,
     predefined_project: ProjectDict,
 ) -> tuple[ProjectDict, dict[NodeID, ProjectNodeCreate] | None]:
@@ -223,7 +224,9 @@ async def _compose_project_data(
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
                 required_resources=jsonable_encoder(
-                    await catalog_service.get_service_resources(app, user_id, node_data["key"], node_data["version"])
+                    await catalog_service.get_service_resources(
+                        app, user_id, node_data["key"], node_data["version"], product_name
+                    )
                 ),
                 key=node_data.get("key"),
                 version=node_data.get("version"),
@@ -353,6 +356,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             new_project, project_nodes = await _compose_project_data(
                 app,
                 user_id=user_id,
+                product_name=product_name,
                 new_project=new_project,
                 predefined_project=predefined_project,
             )

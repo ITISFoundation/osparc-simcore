@@ -165,6 +165,7 @@ async def get_service_resources(
     user_id: UserID,
     service_key: str,
     service_version: str,
+    product_name: str,
 ) -> ServiceResourcesDict:
     settings: CatalogSettings = get_plugin_settings(app)
     url = (
@@ -175,7 +176,7 @@ async def get_service_resources(
     ).with_query({"user_id": user_id})
 
     with _handle_client_exceptions(app) as session:
-        async with session.get(url) as resp:
+        async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
             resp.raise_for_status()
             dict_response = await resp.json()
             return TypeAdapter(ServiceResourcesDict).validate_python(dict_response)

@@ -439,6 +439,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
         node_id=path_params.node_id,
         service_key=project["workbench"][f"{path_params.node_id}"]["key"],
         service_version=project["workbench"][f"{path_params.node_id}"]["version"],
+        product_name=req_ctx.product_name,
     )
     return envelope_json_response(resources)
 
