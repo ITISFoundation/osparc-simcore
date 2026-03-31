@@ -330,7 +330,6 @@ async def _process_stop_event(
             wallet_id=running_service.wallet_id,
         )
 
-        # Best-effort notification (after all critical DB/billing operations)
         if _send_email:
             try:
                 product_email_info = await get_product_email_info(db_engine, product_name=running_service.product_name)
