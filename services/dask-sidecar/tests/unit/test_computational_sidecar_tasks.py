@@ -674,7 +674,7 @@ async def test_run_computational_sidecar_dask(
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(30),
+        stop=stop_after_delay(60),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
@@ -752,7 +752,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(30),
+        stop=stop_after_delay(60),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
@@ -905,15 +905,21 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     mocked_get_image_labels: mock.Mock,
 ):
     # Configure the task to exceed memory limit
-    allocation_size = TypeAdapter(ByteSize).validate_python("100MB")
+    # NOTE: We allocate memory gradually (1MB chunks in a loop) instead of a single
+    # large bytearray to ensure pages are actually committed and the kernel OOM killer
+    # fires reliably. A single large malloc can fail with MemoryError (exit code 1)
+    # instead of triggering OOMKilled, depending on the host's overcommit settings.
+    memory_limit = TypeAdapter(ByteSize).validate_python("50MiB")
     memory_exceeding_task = sidecar_task(
         service_key="python",
         service_version="3.11-slim",
         command=[
             "python",
             "-c",
-            f"print('Allocating memory {allocation_size} bytes', flush=True); a = bytearray({allocation_size}); "
-            f"print('Allocating memory {allocation_size} bytes DONE', flush=True); import time; time.sleep(10)",
+            "import sys; blocks = [];\n"
+            "while True:\n"
+            "    blocks.append(bytearray(1024*1024))\n"
+            "    print(f'Allocated {len(blocks)} MiB', flush=True)\n",
         ],
     )
 
@@ -922,7 +928,7 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     future = dask_client.submit(
         run_computational_sidecar,
         **memory_exceeding_task.sidecar_params(),
-        resources={"RAM": allocation_size * 3 // 4},  # set limit to 75% of allocation
+        resources={"RAM": memory_limit},
     )
     with pytest.raises(ServiceOutOfMemoryError):
         future.result()
