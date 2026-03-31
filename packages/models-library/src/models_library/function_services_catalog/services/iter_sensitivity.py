@@ -98,14 +98,14 @@ def eval_sensitivity(
         yield (i, paramtestplus, paramtestminus)
 
 
-def _sensitivity_generator(paramrefs: list[float], paramdiff: list[float], diff_or_fact: bool) -> Iterator[OutputsDict]:
+def _sensitivity_generator(paramrefs: list[float], paramdiff: list[float], diff_or_fact: bool) -> Iterator[OutputsDict]:  # noqa: FBT001
     for i, paramtestplus, paramtestminus in eval_sensitivity(
         paramrefs=paramrefs, paramdiff=paramdiff, diff_or_fact=diff_or_fact
     ):
         yield {
-            OutputID("out_1"): i,
-            OutputID("out_2"): paramtestplus,
-            OutputID("out_3"): paramtestminus,
+            TypeAdapter(OutputID).validate_python("out_1"): i,
+            TypeAdapter(OutputID).validate_python("out_2"): paramtestplus,
+            TypeAdapter(OutputID).validate_python("out_3"): paramtestminus,
         }
 
 

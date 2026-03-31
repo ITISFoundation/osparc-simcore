@@ -208,7 +208,7 @@ class NodeState(BaseModel):
                     "currentStatus": "FAILED",
                     "errors": [
                         {
-                            "loc": ("service_1",),
+                            "loc": ("service_1",),  # type: ignore[dict-item]
                             "msg": "service ran out of memory",
                             "type": "runtime.oom",
                         }
