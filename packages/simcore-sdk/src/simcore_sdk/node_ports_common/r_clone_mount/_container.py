@@ -296,9 +296,8 @@ class RemoteControlHttpClient:
             params["dir"] = dir_to_refresh
         refresh_result = await self._request("POST", "vfs/refresh", params=params)
 
-        result = refresh_result.get("result", {})
-        if not all(v == "OK" for v in result.values()):
-            raise RefreshMountError(result=result)
+        if refresh_result.get("result") != {dir_to_refresh: "OK"}:
+            raise RefreshMountError(refresh_result=refresh_result)
 
     async def get_mount_activity(self) -> MountActivity:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
