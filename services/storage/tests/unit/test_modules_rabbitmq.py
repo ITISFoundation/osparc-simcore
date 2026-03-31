@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
 import uuid
 from unittest.mock import AsyncMock
 
