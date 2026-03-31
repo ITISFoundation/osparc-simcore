@@ -10,6 +10,7 @@
 import json
 import logging
 import re
+import time
 from collections.abc import Callable, Iterator
 from typing import Any, Final
 
@@ -17,13 +18,7 @@ import pytest
 from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-    RobustWebSocket,
-    ServiceType,
-    wait_for_service_running,
-)
+from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, ServiceType, wait_for_service_running
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
@@ -32,6 +27,8 @@ _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_func
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
+_SAMPLING_TIMEOUT: Final[int] = 10 * MINUTE
+_FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 
 
 @pytest.fixture
@@ -57,8 +54,9 @@ def create_function_from_project(
             page.wait_for_timeout(2000)
 
             with page.expect_response(
-                lambda response: re.compile(r"/functions").search(response.url) is not None
-                and response.request.method == "POST"
+                lambda response: (
+                    re.compile(r"/functions").search(response.url) is not None and response.request.method == "POST"
+                )
             ) as create_function_response:
                 page.get_by_test_id("create_function_page_btn").click()
             assert create_function_response.value.ok, (
@@ -84,7 +82,7 @@ def create_function_from_project(
             assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 
 
-def test_response_surface_modeling(  # noqa: PLR0915
+def test_response_surface_modeling(  # noqa: PLR0915, C901
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
@@ -97,7 +95,7 @@ def test_response_surface_modeling(  # noqa: PLR0915
     # 1. create the initial study with jsonifier
     with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
-            ServiceType.COMPUTATIONAL, "jsonifier", None, service_version
+            ServiceType.COMPUTATIONAL, "jsonifier", None, "1.2.1"
         )
         assert "workbench" in jsonifier_project_data, "Expected workbench to be in project data!"
         assert isinstance(jsonifier_project_data["workbench"], dict), "Expected workbench to be a dict!"
@@ -115,8 +113,9 @@ def test_response_surface_modeling(  # noqa: PLR0915
                     lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}") and resp.request.method == "PATCH"
                 ) as patch_prj_probe_ctx,
                 page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes")
-                    and resp.request.method == "POST"
+                    lambda resp: (
+                        resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes") and resp.request.method == "POST"
+                    )
                 ) as create_probe_ctx,
             ):
                 page.get_by_test_id("connect_probe_btn_number_3").click()
@@ -134,8 +133,9 @@ def test_response_surface_modeling(  # noqa: PLR0915
                     lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}") and resp.request.method == "PATCH"
                 ) as patch_prj_param_ctx,
                 page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes")
-                    and resp.request.method == "POST"
+                    lambda resp: (
+                        resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes") and resp.request.method == "POST"
+                    )
                 ) as create_param_ctx,
             ):
                 page.get_by_text("new parameter").click()
@@ -302,19 +302,32 @@ def test_response_surface_modeling(  # noqa: PLR0915
 
         with log_context(logging.INFO, "Waiting for the sampling to complete..."):
 
-            def all_completed(service_iframe):
+            def check_sampling_status(service_iframe) -> str:
+                """Returns 'complete', 'running', or 'failed'."""
                 status_cells = service_iframe.locator('div[role="gridcell"][data-field="status"]')
                 total = status_cells.count()
                 if total == 0:
-                    return False
+                    return "running"
+                all_complete = True
                 for i in range(total):
                     text = (status_cells.nth(i).text_content() or "").lower().strip()
                     logging.info("STATUS CELL TEXT %d: %s", i, text)
+                    if text in _FAILED_STATES:
+                        return "failed"
                     if text != "complete":
-                        return False
-                return True
+                        all_complete = False
+                return "complete" if all_complete else "running"
 
-            while not all_completed(service_iframe):
+            start_time = time.monotonic()
+            while True:
+                status = check_sampling_status(service_iframe)
+                if status == "complete":
+                    break
+                assert status != "failed", "Sampling job failed! Check the deployment logs."
+                elapsed = time.monotonic() - start_time
+                assert elapsed < _SAMPLING_TIMEOUT / 1000, (
+                    f"Sampling did not complete within {_SAMPLING_TIMEOUT / 1000}s"
+                )
                 logging.info("⏳ Waiting for all status cells to be completed...")
                 page.wait_for_timeout(3000)
                 refresh_btn = service_iframe.locator('[mmux-testid="refresh-job-collections-btn"]')

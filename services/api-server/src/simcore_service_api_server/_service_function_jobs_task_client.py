@@ -315,55 +315,58 @@ class FunctionJobTaskClientService:
 
         uncached_inputs = [input_ for input_, job in zip(inputs, cached_jobs, strict=False) if job is None]
 
-        pre_registered_function_job_data_list = await self._function_job_service.batch_pre_register_function_jobs(
-            function=function,
-            job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
-        )
-
-        # run function in celery task
-        owner_metadata = ApiServerOwnerMetadata(
-            user_id=user_identity.user_id,
-            product_name=user_identity.product_name,
-            owner=APP_NAME,
-        )
-        task_uuids = [
-            await self._celery_task_manager.submit_task(
-                TaskExecutionMetadata(
-                    name="run_function",
-                    ephemeral=False,
-                    queue=API_SERVER_CELERY_QUEUE_DEFAULT,
-                ),
-                owner_metadata=owner_metadata,
-                user_identity=user_identity,
+        if uncached_inputs:
+            pre_registered_function_job_data_list = await self._function_job_service.batch_pre_register_function_jobs(
                 function=function,
-                pre_registered_function_job_data=pre_registered_function_job_data,
-                pricing_spec=pricing_spec,
-                job_links=job_links,
-                x_simcore_parent_project_uuid=parent_project_uuid,
-                x_simcore_parent_node_id=parent_node_id,
+                job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
             )
-            for pre_registered_function_job_data in pre_registered_function_job_data_list
-        ]
 
-        patched_jobs = await self._function_job_service.batch_patch_registered_function_job(
-            user_id=user_identity.user_id,
-            product_name=user_identity.product_name,
-            function_job_patches=[
-                FunctionJobPatch(
-                    function_class=function.function_class,
-                    function_job_id=pre_registered_function_job_data.function_job_id,
-                    job_creation_task_id=TaskID(task_uuid),
-                    project_job_id=None,
-                    solver_job_id=None,
+            # run function in celery task
+            owner_metadata = ApiServerOwnerMetadata(
+                user_id=user_identity.user_id,
+                product_name=user_identity.product_name,
+                owner=APP_NAME,
+            )
+            task_uuids = [
+                await self._celery_task_manager.submit_task(
+                    TaskExecutionMetadata(
+                        name="run_function",
+                        ephemeral=False,
+                        queue=API_SERVER_CELERY_QUEUE_DEFAULT,
+                    ),
+                    owner_metadata=owner_metadata,
+                    user_identity=user_identity,
+                    function=function,
+                    pre_registered_function_job_data=pre_registered_function_job_data,
+                    pricing_spec=pricing_spec,
+                    job_links=job_links,
+                    x_simcore_parent_project_uuid=parent_project_uuid,
+                    x_simcore_parent_node_id=parent_node_id,
                 )
-                for task_uuid, pre_registered_function_job_data in zip(
-                    task_uuids, pre_registered_function_job_data_list, strict=False
-                )
-            ],
-        )
-        patched_jobs_iter = iter(patched_jobs.updated_items)
+                for pre_registered_function_job_data in pre_registered_function_job_data_list
+            ]
 
-        def resolve_cached_jobs(job):
+            patched_jobs = await self._function_job_service.batch_patch_registered_function_job(
+                user_id=user_identity.user_id,
+                product_name=user_identity.product_name,
+                function_job_patches=[
+                    FunctionJobPatch(
+                        function_class=function.function_class,
+                        function_job_id=pre_registered_function_job_data.function_job_id,
+                        job_creation_task_id=TaskID(task_uuid),
+                        project_job_id=None,
+                        solver_job_id=None,
+                    )
+                    for task_uuid, pre_registered_function_job_data in zip(
+                        task_uuids, pre_registered_function_job_data_list, strict=False
+                    )
+                ],
+            )
+            patched_jobs_iter = iter(patched_jobs.updated_items)
+        else:
+            patched_jobs_iter = iter([])
+
+        def resolve_cached_jobs(job: RegisteredFunctionJob | None) -> RegisteredFunctionJob:
             return job if job is not None else next(patched_jobs_iter)
 
         return [resolve_cached_jobs(job) for job in cached_jobs]

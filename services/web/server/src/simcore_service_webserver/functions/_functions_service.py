@@ -43,10 +43,7 @@ from models_library.functions import (
     RegisteredSolverFunctionJob,
     RegisteredSolverFunctionJobWithStatus,
 )
-from models_library.functions_errors import (
-    UnsupportedFunctionClassError,
-    UnsupportedFunctionJobClassError,
-)
+from models_library.functions_errors import UnsupportedFunctionClassError, UnsupportedFunctionJobClassError
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
@@ -115,7 +112,7 @@ async def batch_register_function_jobs(
     product_name: ProductName,
     function_jobs: FunctionJobList,
 ) -> BatchCreateRegisteredFunctionJobs:
-    TypeAdapter(FunctionJobList).validate_python(function_jobs)
+    function_jobs = TypeAdapter(FunctionJobList).validate_python(function_jobs)
     encoded_function_jobs = [_encode_functionjob(job) for job in function_jobs]
     created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
         app=app,
