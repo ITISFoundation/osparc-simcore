@@ -10,7 +10,7 @@ class WaitingForTransfersToCompleteError(_BaseRcloneMountError):
 
 
 class RefreshMountError(_BaseRcloneMountError):
-    msg_template: str = "Failed to refresh the mount, rclone response: refresh_result={refresh_result}"
+    msg_template: str = "Failed to refresh the mount, rclone response: result={result}"
 
 
 class WaitingForQueueToBeEmptyError(_BaseRcloneMountError):

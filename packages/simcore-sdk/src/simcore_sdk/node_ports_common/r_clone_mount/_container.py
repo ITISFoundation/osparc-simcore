@@ -271,7 +271,7 @@ class RemoteControlHttpClient:
         _logger.debug("Sending '%s %s' request with payload '%s'", method, request_url, params)
 
         async with AsyncClient(timeout=self._r_clone_client_timeout_seconds) as client:
-            response = await client.request(method, request_url, auth=self._auth, params=params)
+            response = await client.request(method, request_url, auth=self._auth)
             response.raise_for_status()
             dict_response: dict = response.json()
             return dict_response
@@ -296,8 +296,9 @@ class RemoteControlHttpClient:
             params["dir"] = dir_to_refresh
         refresh_result = await self._request("POST", "vfs/refresh", params=params)
 
-        if refresh_result.get("result") != {dir_to_refresh: "OK"}:
-            raise RefreshMountError(refresh_result=refresh_result)
+        result = refresh_result.get("result", {})
+        if not all(v == "OK" for v in result.values()):
+            raise RefreshMountError(result=result)
 
     async def get_mount_activity(self) -> MountActivity:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
