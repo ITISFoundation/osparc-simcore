@@ -44,7 +44,7 @@ qx.Class.define("osparc.store.Functions", {
         "defaultInputs": {},
       };
 
-      const parameters = osparc.study.Utils.extractFunctionableParameters(templateData["workbench"]);
+      const parameters = osparc.study.Utils.extractParametersForFunction(templateData["workbench"]);
       parameters.forEach(parameter => {
         const parameterKey = parameter["label"];
         if (exposedInputs[parameterKey]) {
@@ -62,7 +62,7 @@ qx.Class.define("osparc.store.Functions", {
         }
       });
 
-      const probes = osparc.study.Utils.extractFunctionableProbes(templateData["workbench"]);
+      const probes = osparc.study.Utils.extractProbesForFunction(templateData["workbench"]);
       probes.forEach(probe => {
         const probeLabel = probe["label"];
         if (exposedOutputs[probeLabel]) {

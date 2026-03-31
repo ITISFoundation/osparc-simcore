@@ -133,9 +133,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -178,21 +177,17 @@
           },
           "service_port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Service Port",
-            "description": "the service swarm internal port",
-            "maximum": 65535,
-            "minimum": 0
+            "description": "the service swarm internal port"
           },
           "published_port": {
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"

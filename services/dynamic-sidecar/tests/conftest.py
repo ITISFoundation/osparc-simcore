@@ -47,7 +47,6 @@ pytest_plugins = [
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.r_clone",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -190,7 +189,6 @@ def base_mock_envs(
     node_id: NodeID,
     service_run_id: ServiceRunID,
     ensure_shared_store_dir: None,
-    r_clone_version: str,
     product_name: ProductName,
 ) -> EnvVarsDict:
     return {
@@ -218,7 +216,6 @@ def base_mock_envs(
             }
         ),
         "DYNAMIC_SIDECAR_TRACING": "null",
-        "R_CLONE_VERSION": r_clone_version,
         "DY_SIDECAR_PRODUCT_NAME": product_name,
     }
 
@@ -244,7 +241,6 @@ def mock_environment(
     dy_volumes: Path,
     shared_store_dir: Path,
     faker: Faker,
-    r_clone_version: str,
     product_name: ProductName,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
@@ -294,7 +290,6 @@ def mock_environment(
                     "REGISTRY_URL": "registry.pytest.com",
                 }
             ),
-            "R_CLONE_VERSION": r_clone_version,
             "DY_SIDECAR_PRODUCT_NAME": product_name,
         },
     )

@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
 )
+from models_library.celery import OwnerMetadata, TaskState, TaskStatus, TaskUUID
 from models_library.functions import (
     FunctionJob,
     FunctionJobStatus,
@@ -33,7 +34,6 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import OwnerMetadata, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_function_jobs_task_client import (
     FunctionJobTaskClientService,
@@ -263,10 +263,10 @@ async def test_get_function_job_status(
 ) -> None:
     _expected_return_status = status.HTTP_200_OK
 
-    async def _get_task_status(task_uuid: TaskUUID, owner_metadata: OwnerMetadata) -> TaskStatus:
-        assert f"{task_uuid}" == job_creation_task_id
+    async def _get_task_status(task_or_group_uuid: TaskUUID, owner_metadata: OwnerMetadata) -> TaskStatus:
+        assert f"{task_or_group_uuid}" == job_creation_task_id
         return TaskStatus(
-            task_uuid=task_uuid,
+            task_uuid=task_or_group_uuid,
             task_state=celery_task_state,
             progress_report=ProgressReport(
                 actual_value=0.5,
@@ -281,7 +281,7 @@ async def test_get_function_job_status(
             ),
         )
 
-    mock_dependency_get_celery_task_manager.get_task_status = _get_task_status
+    mock_dependency_get_celery_task_manager.get_status = _get_task_status
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",

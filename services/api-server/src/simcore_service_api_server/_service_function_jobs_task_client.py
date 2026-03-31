@@ -2,10 +2,11 @@
 import logging
 from dataclasses import dataclass
 
-from celery_library.errors import TaskNotFoundError
+from celery_library.errors import TaskOrGroupNotFoundError
 from common_library.exclude import as_dict_exclude_none
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
+from models_library.celery import TaskExecutionMetadata, TaskStatus, TaskUUID
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -32,7 +33,6 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetIn
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskExecutionMetadata, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -85,9 +85,10 @@ async def _celery_task_status(
     )
     task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(f"{job_creation_task_id}")
     try:
-        task_status = await task_manager.get_task_status(owner_metadata=owner_metadata, task_uuid=task_uuid)
+        task_status = await task_manager.get_status(owner_metadata=owner_metadata, task_or_group_uuid=task_uuid)
+        assert isinstance(task_status, TaskStatus)  # nosec
         return FunctionJobCreationTaskStatus[task_status.task_state]
-    except TaskNotFoundError as err:
+    except TaskOrGroupNotFoundError as err:
         user_msg = f"Job creation task not found for task_uuid={task_uuid!r}."
         _logger.exception(
             **create_troubleshooting_log_kwargs(

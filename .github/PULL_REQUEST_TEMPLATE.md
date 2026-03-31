@@ -17,6 +17,7 @@
   🗃️    Database table changed (relevant for devops).
   👽️    Public API changes (meaning: dev features are moved to being exposed in production)
   🚨    Do manual testing when deployed
+  🤖    (partially-)AI generated PR
 
 or from https://gitmoji.dev/
 -->

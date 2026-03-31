@@ -165,8 +165,10 @@ class CompRunsRepository(BaseRepository):
         Keyword Arguments:
             filter_by_state -- will return only the runs with result in filter_by_state (default: {None})
             never_scheduled -- will return the runs which were never scheduled (default: {False})
-            processed_since -- will return the runs which were processed since X, which are not re-scheduled since then (default: {None})
-            scheduled_since -- will return the runs which were scheduled since X, which are not processed since then (default: {None})
+            processed_since -- will return the runs which were processed since X,
+                                which are not re-scheduled since then (default: {None})
+            scheduled_since -- will return the runs which were scheduled since X,
+                                which are not processed since then (default: {None})
         """
 
         conditions = []
@@ -508,7 +510,25 @@ class CompRunsRepository(BaseRepository):
         result_state: RunningState,
         final_state: bool | None = False,
     ) -> CompRunsAtDB | None:
-        values: dict[str, Any] = {"result": RUNNING_STATE_TO_DB[result_state]}
+        new_db_state = RUNNING_STATE_TO_DB[result_state]
+        values: dict[str, Any] = {
+            "result": new_db_state,
+            # Update last_result_changed when the result transitions to a different
+            # state OR when it was previously NULL (e.g. pre-migration rows). This
+            # ensures legacy in-flight runs still get a timeout reference while
+            # avoiding unnecessary timestamp resets when repeatedly writing the
+            # same state.
+            "last_result_changed": sa.case(
+                (
+                    or_(
+                        comp_runs.c.last_result_changed.is_(None),
+                        comp_runs.c.result != new_db_state,
+                    ),
+                    sa.func.now(),
+                ),
+                else_=comp_runs.c.last_result_changed,
+            ),
+        }
         if final_state:
             values.update({"ended": arrow.utcnow().datetime})
         return await self.update(

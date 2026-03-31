@@ -1,0 +1,80 @@
+from dataclasses import asdict
+
+from fastapi import FastAPI
+from models_library.notifications import Channel
+from models_library.notifications.errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
+from models_library.notifications.rpc import (
+    PreviewTemplateRequest,
+    PreviewTemplateResponse,
+    SearchTemplatesResponse,
+)
+from models_library.notifications.rpc import (
+    TemplateRef as TemplateRefRpc,
+)
+from servicelib.rabbitmq import RPCRouter
+
+from ...models.template import TemplateRef
+from .dependencies import get_template_service
+
+router = RPCRouter()
+
+
+@router.expose(
+    reraise_if_error_type=(
+        NotificationsTemplateContextValidationError,
+        NotificationsTemplateNotFoundError,
+    )
+)
+async def preview_template(
+    app: FastAPI,
+    *,
+    request: PreviewTemplateRequest,
+) -> PreviewTemplateResponse:
+    assert app  # nosec
+    service = get_template_service()
+
+    preview = service.preview_template(
+        ref=TemplateRef(**request.ref.model_dump()),
+        context=request.context,
+    )
+
+    return PreviewTemplateResponse(
+        ref=request.ref,
+        message_content=preview.message_content.model_dump(),
+    )
+
+
+@router.expose()
+async def search_templates(
+    app: FastAPI,
+    *,
+    channel: Channel | None,
+    template_name: str | None,
+) -> list[SearchTemplatesResponse]:
+    """
+    Searches for notification templates based on the specified channel and template name.
+
+    Args:
+        _app: The FastAPI application instance.
+        channel: The channel type to filter templates. Use `None` to search across all channels.
+        template_name: The name of the template to search for.
+            Use wildcards (e.g., `*`, `?`) for partial matches. `None` searches for all templates.
+
+    Returns:
+        A list of notification template responses matching the search criteria.
+    """
+    assert app  # nosec
+
+    service = get_template_service()
+    templates = service.search_templates(channel=channel, template_name=template_name)
+
+    return [
+        SearchTemplatesResponse(
+            ref=TemplateRefRpc(**asdict(template.ref)),
+            context_schema=template.context_model.model_json_schema(),
+        )
+        for template in templates
+    ]

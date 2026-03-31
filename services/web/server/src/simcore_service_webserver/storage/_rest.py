@@ -31,6 +31,7 @@ from models_library.api_schemas_webserver.storage import (
     StoragePathComputeSizeParams,
     StoragePathNotifyChangeParams,
 )
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.utils.change_case import camel_to_snake
@@ -53,7 +54,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME, DELETE_PATHS_TASK_NAME
 from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL

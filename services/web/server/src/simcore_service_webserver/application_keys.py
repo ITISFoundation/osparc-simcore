@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Final
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import (
-    APP_AIOPG_ENGINE_KEY,
     APP_CLIENT_SESSION_KEY,
     APP_CONFIG_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,
@@ -20,11 +19,10 @@ else:
 
 
 __all__: tuple[str, ...] = (
-    "APP_AIOPG_ENGINE_KEY",
     "APP_CLIENT_SESSION_KEY",
     "APP_CONFIG_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
     "APP_SETTINGS_APPKEY",
 )
 
-# nopycln: file
+# nopycln: file  # noqa: ERA001

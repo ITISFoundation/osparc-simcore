@@ -4,14 +4,14 @@ import json
 from collections.abc import Callable
 
 import pytest
-from celery_library.errors import TaskNotFoundError
+from celery_library.errors import TaskOrGroupNotFoundError
 from faker import Faker
+from models_library.celery import TaskState, TaskStatus, TaskUUID
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import TaskState, TaskStatus, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._service_function_jobs_task_client import (
     _celery_task_status,
@@ -34,9 +34,9 @@ async def create_mock_task_manager(
             async def _raise(*args, **kwargs):
                 raise status_or_exception
 
-            mock_task_manager.get_task_status.side_effect = _raise
+            mock_task_manager.get_status.side_effect = _raise
         else:
-            mock_task_manager.get_task_status.return_value = status_or_exception
+            mock_task_manager.get_status.return_value = status_or_exception
         return mock_task_manager
 
     return _
@@ -52,7 +52,7 @@ async def create_mock_task_manager(
         )
         for state in list(TaskState)
     ]
-    + [TaskNotFoundError(task_uuid=_faker.uuid4(), owner_metadata=json.dumps({"owner": "test-owner"}))],
+    + [TaskOrGroupNotFoundError(task_uuid=_faker.uuid4(), owner_metadata=json.dumps({"owner": "test-owner"}))],
 )
 @pytest.mark.parametrize("job_creation_task_id", [_faker.uuid4(), None])
 async def test_celery_status_conversion(
@@ -73,7 +73,7 @@ async def test_celery_status_conversion(
 
     if job_creation_task_id is None:
         assert status == FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    elif isinstance(status_or_exception, TaskNotFoundError):
+    elif isinstance(status_or_exception, TaskOrGroupNotFoundError):
         assert status == FunctionJobCreationTaskStatus.ERROR
     elif isinstance(status_or_exception, TaskStatus):
         assert status == FunctionJobCreationTaskStatus[status_or_exception.task_state.name]

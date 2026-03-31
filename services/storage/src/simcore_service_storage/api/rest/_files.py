@@ -15,12 +15,12 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     SoftCopyBody,
 )
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskUUID
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.celery.models import OwnerMetadata, TaskExecutionMetadata, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from yarl import URL
@@ -345,15 +345,16 @@ async def is_completed_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
-    task_status = await task_manager.get_task_status(
-        owner_metadata=owner_metadata, task_uuid=TypeAdapter(TaskUUID).validate_python(future_id)
+    task_status = await task_manager.get_status(
+        owner_metadata=owner_metadata,
+        task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
-            await task_manager.get_task_result(
+            await task_manager.get_result(
                 owner_metadata=owner_metadata,
-                task_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
+                task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
             )
         )
         new_fmd = task_result

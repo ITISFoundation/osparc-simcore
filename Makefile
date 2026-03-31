@@ -368,6 +368,7 @@ printf "$$rows" "Flower" "http://$(get_my_ip).nip.io:5555";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
+printf "$$rows" "Mailpit" "http://$(get_my_ip).nip.io:8025";\
 printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
 printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
@@ -557,10 +558,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 ## DOCKER PULL/PUSH  -------------------------------
-#
-# TODO: cannot push modified/untracked
-# TODO: cannot push disceted
-#
+
 .PHONY: pull-version
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
@@ -698,9 +696,11 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 openapi-specs: .env _check_venv_active ## generates and validates openapi specifications and schemas of ALL service's API
 	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
 		echo "Generating openapi-specs using $${makefile}"; \
-		$(MAKE_C) $$(dirname $${makefile}) install-dev; \
-		$(MAKE_C) $$(dirname $${makefile}) $@; \
-		printf "%0.s=" {1..100} && printf "\n"; \
+		( \
+			$(MAKE_C) $$(dirname $${makefile}) install-dev; \
+			$(MAKE_C) $$(dirname $${makefile}) $@; \
+			printf "%0.s=" {1..100} && printf "\n"; \
+		); \
 	done
 
 

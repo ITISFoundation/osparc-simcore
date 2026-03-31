@@ -45,13 +45,16 @@ async def get_computation(_path: Annotated[ComputationPathParams, Depends()]): .
 @router.post(
     "/computations/{project_id}:start",
     response_model=Envelope[ComputationStarted],
+    status_code=status.HTTP_201_CREATED,
     responses={
+        status.HTTP_200_OK: {
+            "description": "Pipeline is up-to-date, nothing was started",
+            "model": Envelope[ComputationGet],
+        },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Insufficient credits to run computation"},
-        status.HTTP_404_NOT_FOUND: {"description": "Project/wallet/pricing details were not found"},
-        status.HTTP_406_NOT_ACCEPTABLE: {"description": "Cluster not found"},
-        status.HTTP_409_CONFLICT: {"description": "Project already started"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Configuration error"},
-        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service not available"},
+        status.HTTP_404_NOT_FOUND: {"description": "Project/wallet/pricing/cluster details were not found"},
+        status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service not available or configuration error"},
     },
 )
 async def start_computation(

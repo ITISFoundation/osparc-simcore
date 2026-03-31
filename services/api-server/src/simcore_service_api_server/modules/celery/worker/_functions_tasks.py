@@ -3,10 +3,10 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 )
 from celery_library.worker.app_server import get_app_server
 from fastapi import FastAPI
+from models_library.celery import TaskKey
 from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from servicelib.celery.models import TaskKey
 
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 

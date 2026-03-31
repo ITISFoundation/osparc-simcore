@@ -24,7 +24,9 @@ DAY: int = 24 * HOUR  # sec
 
 
 def now() -> datetime:
-    return datetime.utcnow()
+    utc_now = datetime.utcnow()
+    # Truncate to millisecond precision to match format_datetime's timespec="milliseconds"
+    return utc_now.replace(microsecond=utc_now.microsecond // 1000 * 1000)
 
 
 def format_datetime(snapshot: datetime) -> str:
@@ -107,8 +109,12 @@ def get_tracemalloc_info(top=10) -> list[str]:
     return top_trace
 
 
-def compose_support_error_msg(msg: str, error_code: ErrorCodeStr, support_email: str = "support") -> str:
+def compose_support_error_msg(msg: str, error_code: ErrorCodeStr, support_email: str | None = None) -> str:
     sentences = [sentence[0].upper() + sentence[1:] for line in msg.split("\n") if (sentence := line.strip(" ."))]
-    sentences.append(f"For more information please forward this message to {support_email} (supportID={error_code})")
+
+    if support_email:
+        sentences.append(f"Forward to {support_email} with [{error_code}]")
+    else:
+        sentences.append(f"[{error_code}]")
 
     return ". ".join(sentences)

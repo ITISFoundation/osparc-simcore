@@ -277,10 +277,11 @@ async def _assert_and_wait_for_pipeline_state(
     ):
         with attempt:
             print(
-                f"--> waiting for pipeline to complete with {expected_state=} attempt {attempt.retry_state.attempt_number}..."
+                f"--> waiting for pipeline to complete with {expected_state=} "
+                f"attempt {attempt.retry_state.attempt_number}..."
             )
             resp = await client.get(f"{url_project_state}")
-            data, error = await assert_status(resp, expected_api_response.ok)
+            data, _ = await assert_status(resp, expected_api_response.ok)
             assert "state" in data
             assert "value" in data["state"]
             received_study_state = RunningState(data["state"]["value"])
@@ -304,7 +305,8 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
     ):
         with attempt:
             print(
-                f"--> waiting for pipeline results to move to projects table, attempt {attempt.retry_state.attempt_number}..."
+                f"--> waiting for pipeline results to move to projects table, "
+                f"attempt {attempt.retry_state.attempt_number}..."
             )
             comp_tasks_in_db: dict[NodeIdStr, Any] = await _get_computational_tasks_from_db(
                 project_id, sqlalchemy_async_engine
@@ -376,9 +378,9 @@ async def test_start_stop_computation(
         await _assert_and_wait_for_pipeline_state(client, project_id, RunningState.SUCCESS, expected)
         # we need to wait until the webserver has updated the projects DB before starting another round
         await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(project_id, sqlalchemy_async_engine)
-        # restart the computation, this should produce a 422 since the computation was complete
+        # restart the computation, this should produce a 200 since the computation was complete (nothing to start)
         resp = await client.post(f"{url_start}")
-        assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert resp.status == status.HTTP_200_OK
         # force restart the computation
         resp = await client.post(f"{url_start}", json={"force_restart": True})
         data, error = await assert_status(resp, expected.created)
@@ -484,7 +486,8 @@ async def test_run_pipeline_and_check_state(
             if received_study_state != RunningState.SUCCESS:
                 raise ValueError
             print(
-                f"--> pipeline completed with state {received_study_state=}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
+                f"--> pipeline completed with state {received_study_state=}! "
+                f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
     assert pipeline_state == RunningState.SUCCESS
     comp_tasks_in_db: dict[NodeIdStr, Any] = await _get_computational_tasks_from_db(project_id, sqlalchemy_async_engine)

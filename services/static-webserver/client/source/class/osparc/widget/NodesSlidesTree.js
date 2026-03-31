@@ -75,7 +75,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
             openMode: "none",
             contentPadding: 0,
             padding: 0,
-            backgroundColor: "background-main-2"
+            backgroundColor: "transparent",
           });
           this._add(control, {
             flex: 1

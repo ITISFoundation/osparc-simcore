@@ -98,8 +98,7 @@
               "anyOf": [
                 {
                   "type": "integer",
-                  "exclusiveMinimum": true,
-                  "minimum": 0
+                  "exclusiveMinimum": 0
                 },
                 {
                   "type": "null"
@@ -278,9 +277,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -484,9 +482,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1349,6 +1346,10 @@
         "title": "GenericResources",
         "description": "User-defined resources can be either Integer resources (e.g, `SSD=3`) or\nString resources (e.g, `GPU=UUID1`)."
       },
+      "GroupID": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
       "HTTPValidationError": {
         "properties": {
           "errors": {
@@ -1869,10 +1870,9 @@
         "properties": {
           "CPU": {
             "type": "number",
-            "exclusiveMinimum": true,
+            "exclusiveMinimum": 0.0,
             "title": "Cpu",
-            "description": "defines the required (maximum) CPU shares for running the services",
-            "minimum": 0.0
+            "description": "defines the required (maximum) CPU shares for running the services"
           },
           "GPU": {
             "anyOf": [
@@ -2691,6 +2691,9 @@
               },
               "type": "object"
             },
+            "propertyNames": {
+              "$ref": "#/components/schemas/GroupID"
+            },
             "type": "object",
             "title": "Gids With Access Rights"
           }
@@ -2853,6 +2856,9 @@
               {
                 "additionalProperties": {
                   "$ref": "#/components/schemas/ServiceGroupAccessRights"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/GroupID"
                 },
                 "type": "object"
               },
@@ -3626,10 +3632,9 @@
         "properties": {
           "minHeight": {
             "type": "integer",
-            "exclusiveMinimum": true,
+            "exclusiveMinimum": 0,
             "title": "Minheight",
-            "description": "minimum Height of the textarea",
-            "minimum": 0
+            "description": "minimum Height of the textarea"
           }
         },
         "additionalProperties": false,

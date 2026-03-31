@@ -97,6 +97,9 @@ qx.Class.define("osparc.po.UsersPending", {
   },
 
   members: {
+    __currentFilterText: "",
+    __pendingUsers: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -121,6 +124,24 @@ qx.Class.define("osparc.po.UsersPending", {
           });
           this.getChildControl("header-layout").add(control);
           break;
+        case "loading-spinner":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26").set({
+            padding: 6
+          });
+          control.getContentElement().addClass("rotate");
+          this._add(control);
+          break;
+        case "filter-users": {
+          const filterGroupId = "pendingUsersLayout";
+          control = new osparc.filter.TextFilter("text", filterGroupId).set({
+            minWidth: 300,
+          });
+          control.getChildControl("textfield").setPlaceholder(this.tr("Filter by Name, Email or Status"));
+          const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
+          qx.event.message.Bus.getInstance().subscribe(msgName, this.__onFilterChange, this);
+          this._add(control);
+          break;
+        }
         case "pending-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control, {
@@ -140,8 +161,7 @@ qx.Class.define("osparc.po.UsersPending", {
     _buildLayout: function() {
       this.getChildControl("reload-button");
       this.getChildControl("intro-text");
-      this.getChildControl("pending-users-container");
-      this.__addHeader();
+      this.getChildControl("loading-spinner");
       this.__populatePendingUsersLayout();
     },
 
@@ -262,11 +282,17 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __populatePendingUsersLayout: function() {
+      this.getChildControl("loading-spinner").show();
+      this.getChildControl("filter-users").exclude();
+
+      const paramsPending = {};
+      const paramsReviewed = {};
       Promise.all([
-        osparc.data.Resources.fetch("poUsers", "getPendingUsers"),
-        osparc.data.Resources.fetch("poUsers", "getReviewedUsers")
+        osparc.data.Resources.getInstance().getAllPages("poUsers", paramsPending, "getPendingUsers"),
+        osparc.data.Resources.getInstance().getAllPages("poUsers", paramsReviewed, "getReviewedUsers"),
       ])
         .then(resps => {
+          this.getChildControl("filter-users").show();
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
           const sortByDate = (a, b) => {
@@ -278,15 +304,48 @@ qx.Class.define("osparc.po.UsersPending", {
           };
           pendingUsers.sort(sortByDate);
           reviewedUsers.sort(sortByDate);
-          this.__addRows(pendingUsers.concat(reviewedUsers));
+          this.__pendingUsers = pendingUsers.concat(reviewedUsers);
+          this.__renderPendingUsers();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => osparc.FlashMessenger.logError(err))
+        .finally(() => this.getChildControl("loading-spinner").exclude());
     },
 
     __reload: function() {
       this.getChildControl("pending-users-layout").removeAll();
-      this.__addHeader();
       this.__populatePendingUsersLayout();
+    },
+
+    __onFilterChange: function(msg) {
+      const data = msg ? msg.getData() : null;
+      this.__currentFilterText = data && data.text ? data.text : "";
+      this.__renderPendingUsers();
+    },
+
+    __filterPendingUsers: function() {
+      if (!this.__pendingUsers) {
+        return [];
+      }
+
+      const text = this.__currentFilterText.trim();
+      if (!text || text.length < 2) {
+        return this.__pendingUsers;
+      }
+
+      const query = text.toLowerCase();
+      return this.__pendingUsers.filter(pendingUser => {
+        const fullName = `${pendingUser.firstName || ""} ${pendingUser.lastName || ""}`.trim().toLowerCase();
+        const email = (pendingUser.email || "").toLowerCase();
+        const status = (pendingUser.accountRequestStatus || "").toLowerCase();
+        return [fullName, email, status].some(value => value.includes(query));
+      });
+    },
+
+    __renderPendingUsers: function() {
+      const pendingUsersLayout = this.getChildControl("pending-users-layout");
+      pendingUsersLayout.removeAll();
+      this.__addHeader();
+      this.__addRows(this.__filterPendingUsers());
     },
 
     __createApproveButton: function(email) {

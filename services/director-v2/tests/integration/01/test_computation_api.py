@@ -186,7 +186,7 @@ def test_invalid_computation(
     assert response.status_code == exp_response, f"response code is {response.status_code}, error: {response.text}"
 
 
-async def test_start_empty_computation_is_refused(
+async def test_start_empty_computation_returns_200(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
@@ -197,15 +197,19 @@ async def test_start_empty_computation_is_refused(
 ):
     user = create_registered_user()
     empty_project = await create_project(user)
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=empty_project,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # empty project has nothing to run, returns 200 (not 201)
+    computation = await create_pipeline(
+        async_client,
+        project=empty_project,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert computation is not None
+    assert computation.started is None
+    assert computation.state is RunningState.NOT_STARTED
+    assert computation.stopped is None
 
 
 @dataclass
@@ -478,24 +482,33 @@ async def test_run_partial_computation(
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
-    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=sleepers_project,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-            expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            subgraph=[
-                str(node_id)
-                for index, node_id in enumerate(sleepers_project.workbench)
-                if index in params.subgraph_elements
-            ],
-        )
+    # pipeline is up-to-date, returns 200 (nothing started)
+    new_task_out = await create_pipeline(
+        async_client,
+        project=sleepers_project,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+        subgraph=[
+            str(node_id)
+            for index, node_id in enumerate(sleepers_project.workbench)
+            if index in params.subgraph_elements
+        ],
+    )
+    assert new_task_out is not None
+    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
+    # empty adjacency list, and state reflects the last completed run
+    assert new_task_out.stop_url is None
+    assert new_task_out.state is RunningState.SUCCESS
+    assert new_task_out.id == task_out.id
+    assert new_task_out.iteration == task_out.iteration
+    assert new_task_out.pipeline_details.adjacency_list == {}
+    assert new_task_out.started is None
+    assert new_task_out.stopped is None
 
     # force run it this time.
     # the task are up-to-date but we force run them
@@ -591,16 +604,25 @@ async def test_run_computation(
 
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
-    # run again should return a 422 cause everything is uptodate
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=sleepers_project,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # run again should return a 200 cause everything is up-to-date (nothing started)
+    new_task_out = await create_pipeline(
+        async_client,
+        project=sleepers_project,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert new_task_out is not None
+    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
+    # empty adjacency list, and state reflects the last completed run
+    assert new_task_out.stop_url is None
+    assert new_task_out.state is RunningState.SUCCESS
+    assert new_task_out.id == task_out.id
+    assert new_task_out.iteration == task_out.iteration
+    assert new_task_out.pipeline_details.adjacency_list == {}
+    assert new_task_out.started is None
+    assert new_task_out.stopped is None
 
     # now force run again
     # the task are up-to-date but we force run them
@@ -712,7 +734,7 @@ async def test_abort_computation(
         wait_for_states=[RunningState.ABORTED],
     )
     assert task_out.state == RunningState.ABORTED
-    # FIXME: Here ideally we should connect to the dask scheduler and check
+    # NOTE: Here ideally we should connect to the dask scheduler and check
     # that the task is really aborted
 
 
@@ -864,16 +886,19 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         },
     )
 
-    # this pipeline is not runnable as there are no computational services
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project=project_with_dynamic_node,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # this pipeline has no computational services, returns 200 (nothing to start)
+    computation = await create_pipeline(
+        async_client,
+        project=project_with_dynamic_node,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert computation is not None
+    assert computation.started is None
+    assert computation.state is RunningState.NOT_STARTED
+    assert computation.stopped is None
 
     # still this pipeline shall be creatable if we do not want to start it
     await create_pipeline(
@@ -927,7 +952,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
         },
     )
 
-    # this pipeline is not runnable as there are no computational services
+    # this pipeline has no computational services, returns 200 (nothing to start)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -939,7 +964,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "collection_run_id": str(uuid.uuid4()),
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, (
+    assert response.status_code == status.HTTP_200_OK, (
         f"response code is {response.status_code}, error: {response.text}"
     )
 
@@ -1013,7 +1038,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
         },
     )
 
-    # this pipeline is not runnable as there are no computational services and it contains a cycle
+    # this pipeline is not runnable as it contains a cycle
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -1038,6 +1063,159 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
             "start_pipeline": False,
             "product_name": osparc_product_name,
             "product_api_base_url": osparc_product_api_base_url,
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
+
+
+async def test_pipeline_with_dynamic_cycle_and_disconnected_comp_nodes_is_allowed(
+    client: TestClient,
+    create_registered_user: Callable,
+    with_product: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    sleeper_service: dict[str, Any],
+    jupyter_service: dict[str, Any],
+    osparc_product_name: str,
+    osparc_product_api_base_url: str,
+):
+    """Dynamic-only cycle + 2 disconnected computational nodes.
+
+    Topology:
+        jupyter_a <--> jupyter_b  (cycle, dynamic only)
+        sleeper_1                  (disconnected, computational)
+        sleeper_2                  (disconnected, computational)
+
+    Expected: 201 — the computational nodes should run (the dynamic cycle is irrelevant).
+    """
+    user = create_registered_user()
+    project = await create_project(
+        user,
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_a",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_b",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee01": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "sleeper_1",
+            },
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee02": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "sleeper_2",
+            },
+        },
+    )
+
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user["id"],
+            "project_id": str(project.uuid),
+            "start_pipeline": True,
+            "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
+            "collection_run_id": str(uuid.uuid4()),
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
+
+
+async def test_pipeline_with_dynamic_cycle_feeding_comp_node_is_allowed(
+    client: TestClient,
+    create_registered_user: Callable,
+    with_product: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    sleeper_service: dict[str, Any],
+    jupyter_service: dict[str, Any],
+    osparc_product_name: str,
+    osparc_product_api_base_url: str,
+):
+    """Dynamic cycle with a computational node taking input from the cycle (but not part of it).
+
+    Topology:
+        jupyter_a <--> jupyter_b  (cycle, dynamic only)
+        jupyter_a --> sleeper_1    (comp node, NOT in the cycle)
+
+    Expected: 201 — the computational node is not in the cycle, it just reads from a dynamic node.
+    """
+    user = create_registered_user()
+    project = await create_project(
+        user,
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_a",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "jupyter_b",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee01": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "sleeper fed by dynamic cycle",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+        },
+    )
+
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user["id"],
+            "project_id": str(project.uuid),
+            "start_pipeline": True,
+            "product_name": osparc_product_name,
+            "product_api_base_url": osparc_product_api_base_url,
+            "collection_run_id": str(uuid.uuid4()),
         },
     )
     assert response.status_code == status.HTTP_201_CREATED, (

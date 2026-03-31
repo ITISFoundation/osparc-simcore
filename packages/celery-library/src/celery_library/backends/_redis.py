@@ -4,9 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
-from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter, ValidationError
-from servicelib.celery.models import (
+from models_library.celery import (
     WILDCARD,
     ExecutionMetadata,
     ExecutorType,
@@ -19,6 +17,8 @@ from servicelib.celery.models import (
     TaskStore,
     TaskStreamItem,
 )
+from models_library.progress_bar import ProgressReport
+from pydantic import TypeAdapter, ValidationError
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
 _CELERY_TASK_DELIMTATOR: Final[str] = ":"
@@ -77,7 +77,7 @@ class RedisTaskStore:
                 key=_CELERY_TASK_EXEC_METADATA_KEY,
                 value=task_execution_metadata.model_dump_json(),
             )
-        await handle_redis_returns_union_types(pipe.execute())
+        await pipe.execute()
         await self._redis_client_sdk.redis.expire(
             group_key,
             expiry,

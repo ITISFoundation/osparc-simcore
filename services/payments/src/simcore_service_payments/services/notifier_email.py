@@ -11,6 +11,7 @@ import httpx
 from aiosmtplib import SMTP
 from attr import dataclass
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from fastapi import status
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.products import ProductName
@@ -19,8 +20,7 @@ from pydantic import EmailStr
 from settings_library.email import EmailProtocol, SMTPSettings
 from tenacity import (
     retry,
-    retry_if_exception_type,
-    retry_if_result,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential,
 )
@@ -73,8 +73,13 @@ _NOTIFY_PAYMENTS_HTML = """
 
 {% block content %}
 <p>Dear {{ user.first_name }},</p>
-<p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
-The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
+<p>
+    We are delighted to confirm the successful processing of your payment of
+    <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of
+    <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
+    The credits have been added to your {{ product.display_name }} account, and you are all set to
+    utilize them.
+</p>
 <p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a>.</p>
 <p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
 <p>Best Regards,</p>
@@ -85,7 +90,9 @@ The credits have been added to your {{ product.display_name }} account, and you 
 _NOTIFY_PAYMENTS_TXT = """
 Dear {{ user.first_name }},
 
-We are delighted to confirm the successful processing of your payment of {{ payment.price_dollars }} USD for the purchase of {{ payment.osparc_credits }} credits. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.
+We are delighted to confirm the successful processing of your payment of {{ payment.price_dollars }} USD
+for the purchase of {{ payment.osparc_credits }} credits. The credits have been added to your
+{{ product.display_name }} account, and you are all set to utilize them.
 
 For more details you can view or download your receipt: {{ payment.invoice_url }}.
 
@@ -133,28 +140,42 @@ class _PaymentData:
     invoice_pdf_url: str
 
 
-def retry_if_status_code(response):
-    return response.status_code in (
-        429,
-        500,
-        502,
-        503,
-        504,
-    )  # Retry for these common transient errors
+def _retry_if_invoice_pdf_error(exception: BaseException) -> bool:
+    if isinstance(exception, (httpx.ConnectError, httpx.ReadTimeout)):
+        return True
+    if isinstance(exception, httpx.HTTPStatusError):
+        return exception.response.status_code in (
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status.HTTP_502_BAD_GATEWAY,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            status.HTTP_504_GATEWAY_TIMEOUT,
+        )
+    return False
 
 
-exception_retry_condition = retry_if_exception_type((httpx.ConnectError, httpx.ReadTimeout))
-result_retry_condition = retry_if_result(retry_if_status_code)
+_INVOICE_PDF_TIMEOUT_SECONDS: Final[float] = 10.0
+_INVOICE_PDF_RETRY_ATTEMPTS: Final[int] = 5
+_INVOICE_PDF_RETRY_WAIT_MIN_SECONDS: Final[int] = 4
+_INVOICE_PDF_RETRY_WAIT_MAX_SECONDS: Final[int] = 10
+
+# Worst case for repeated read timeouts is about 70 seconds total:
+# 5 attempts * 10 seconds timeout + waits of 4 + 4 + 4 + 8 seconds.
+_INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
 
 
 @retry(
-    retry=exception_retry_condition | result_retry_condition,
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-    stop=stop_after_attempt(5),
+    retry=retry_if_exception(_retry_if_invoice_pdf_error),
+    wait=wait_exponential(
+        multiplier=1,
+        min=_INVOICE_PDF_RETRY_WAIT_MIN_SECONDS,
+        max=_INVOICE_PDF_RETRY_WAIT_MAX_SECONDS,
+    ),
+    stop=stop_after_attempt(_INVOICE_PDF_RETRY_ATTEMPTS),
     reraise=True,
 )
 async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
-    async with httpx.AsyncClient(follow_redirects=True) as client:
+    async with httpx.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
         _response = await client.get(invoice_pdf)
         _response.raise_for_status()
     return _response
@@ -233,6 +254,23 @@ async def _create_user_email(
                 filename=file_name,
                 maintype=main_type,
                 subtype=sub_type,
+            )
+
+        except httpx.ReadTimeout as exc:
+            timeout_info = exc.request.extensions.get("timeout", "unknown")
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "ReadTimeout fetching invoice PDF. Email sent w/o attached pdf invoice",
+                    error=exc,
+                    error_context={
+                        "url": str(exc.request.url),
+                        "timeout": timeout_info,
+                        "user": user,
+                        "payment": payment,
+                        "product": product,
+                    },
+                    tip="Consider increasing _INVOICE_PDF_TIMEOUT if this happens frequently",
+                )
             )
 
         except Exception as exc:  # pylint: disable=broad-exception-caught

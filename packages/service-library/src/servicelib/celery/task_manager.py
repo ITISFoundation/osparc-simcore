@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 
-from models_library.progress_bar import ProgressReport
-
-from .models import (
+from models_library.celery import (
     GroupExecutionMetadata,
     GroupKey,
     GroupStatus,
@@ -16,6 +14,7 @@ from .models import (
     TaskStreamItem,
     TaskUUID,
 )
+from models_library.progress_bar import ProgressReport
 
 
 @runtime_checkable
@@ -31,17 +30,9 @@ class TaskManager(Protocol):
         self, execution_metadata: TaskExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params
     ) -> TaskUUID: ...
 
-    async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None: ...
-
-    async def cancel_group(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> None: ...
-
     async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None: ...
 
-    async def get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any: ...
-
-    async def get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus: ...
-
-    async def get_group_status(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> GroupStatus: ...
+    async def get_result(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> Any: ...
 
     async def get_status(
         self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID

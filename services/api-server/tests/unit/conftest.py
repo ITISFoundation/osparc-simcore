@@ -18,7 +18,6 @@ import aiohttp.test_utils
 import httpx
 import pytest
 import respx
-import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -340,8 +339,8 @@ def directorv2_service_openapi_specs(
 def webserver_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
-    openapi_path = osparc_simcore_services_dir / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
-    return yaml.safe_load(openapi_path.read_text())
+    openapi_path = osparc_simcore_services_dir / "web/server/src/simcore_service_webserver/api/v0/openapi.json"
+    return json.loads(openapi_path.read_text())
 
 
 @pytest.fixture

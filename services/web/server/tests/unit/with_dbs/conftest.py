@@ -7,7 +7,7 @@
 import random
 import sys
 import textwrap
-import warnings
+import uuid
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -23,7 +23,6 @@ from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
-import aiopg.sa
 import pytest
 import pytest_asyncio
 import redis
@@ -31,17 +30,16 @@ import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.email
 import simcore_service_webserver.email._core
-import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
-from aiopg.sa import create_engine
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
 )
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.notifications.rpc._message import SendMessageResponse
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
@@ -58,7 +56,6 @@ from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
 from servicelib import tracing
-from servicelib.common_aiopg_utils import DSN
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.email import SMTPSettings
@@ -78,10 +75,10 @@ from simcore_service_webserver.application_settings import (
 )
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import (
-    APP_AIOPG_ENGINE_KEY,
     INDEX_RESOURCE_NAME,
 )
-from simcore_service_webserver.db.plugin import get_database_engine_legacy
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.notifications import _service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
@@ -179,6 +176,9 @@ def app_environment(
                 # affects PostgresSettings.POSTGRES_CLIENT_NAME
                 "HOSTNAME": "wb-test_host.0",
                 "WEBSERVER_RPC_NAMESPACE": service_name,
+                # Explicitly disabled for tests (reenable specifically in tests that need it)
+                "WEBSERVER_CHATBOT": "null",
+                "WEBSERVER_FOGBUGZ": "null",
             },
         )
     )
@@ -244,10 +244,11 @@ async def web_server(
 
     assert isinstance(postgres_db, sa.engine.Engine)
 
-    pg_settings = dict(e.split("=") for e in app[APP_AIOPG_ENGINE_KEY].dsn.split())
-    assert pg_settings["host"] == postgres_db.url.host
-    assert int(pg_settings["port"]) == postgres_db.url.port
-    assert pg_settings["user"] == postgres_db.url.username
+    asyncpg_engine = get_asyncpg_engine(app)
+    assert asyncpg_engine is not None
+    assert str(asyncpg_engine.url.host) == str(postgres_db.url.host)
+    assert asyncpg_engine.url.port == postgres_db.url.port
+    assert asyncpg_engine.url.username == postgres_db.url.username
 
     return server
 
@@ -315,7 +316,7 @@ def osparc_product_api_base_url() -> str:
 @pytest.fixture
 async def default_product_name(client: TestClient) -> ProductName:
     assert client.app
-    async with get_database_engine_legacy(client.app).acquire() as conn:
+    async with get_asyncpg_engine(client.app).connect() as conn:
         return await get_default_product_name(conn)
 
 
@@ -550,6 +551,7 @@ def postgres_dsn(docker_services: Services, docker_ip: str | Any, default_app_cf
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
+    DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
     url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
@@ -588,28 +590,7 @@ def postgres_db(postgres_dsn: dict, postgres_service: str) -> Iterator[sa.engine
 
 
 @pytest.fixture
-async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.Engine]:
-    engine = await create_engine(f"{postgres_db.url}")
-    assert engine
-
-    warnings.warn(
-        "The 'aiopg_engine' fixture is deprecated and will be removed in a future release. "
-        "Please use 'asyncpg_engine' fixture instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    yield engine
-
-    if engine:
-        engine.close()
-        await engine.wait_closed()
-
-
-@pytest.fixture
-async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE instead of aiopg_engine
-    postgres_db: sa.engine.Engine, is_pdb_enabled: bool
-) -> AsyncIterable[AsyncEngine]:
+async def asyncpg_engine(postgres_db: sa.engine.Engine, is_pdb_enabled: bool) -> AsyncIterable[AsyncEngine]:
     # NOTE: call to postgres BEFORE app starts
     dsn = f"{postgres_db.url}".replace("postgresql://", "postgresql+asyncpg://")
     minsize = 1
@@ -746,18 +727,21 @@ async def user_project(
 
 @pytest.fixture
 async def with_permitted_override_services_specifications(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
 ) -> AsyncIterator[None]:
     old_value = False
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.connect() as conn:
         old_value = bool(
-            await conn.scalar(
-                sa.select(groups_extra_properties.c.override_services_specifications).where(
-                    groups_extra_properties.c.group_id == 1
+            (
+                await conn.execute(
+                    sa.select(groups_extra_properties.c.override_services_specifications).where(
+                        groups_extra_properties.c.group_id == 1
+                    )
                 )
-            )
+            ).scalar_one_or_none()
         )
 
+    async with asyncpg_engine.begin() as conn:
         await conn.execute(
             groups_extra_properties.update()
             .where(groups_extra_properties.c.group_id == 1)
@@ -766,7 +750,7 @@ async def with_permitted_override_services_specifications(
 
     yield
 
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.begin() as conn:
         await conn.execute(
             groups_extra_properties.update()
             .where(groups_extra_properties.c.group_id == 1)
@@ -883,3 +867,19 @@ async def latest_osparc_price(
     assert usd is not None
     assert usd != all_product_prices["osparc"]
     return Decimal(usd)
+
+
+@pytest.fixture
+def mocked_send_message_from_template_rpc(
+    mocker: MockerFixture,
+) -> SendMessageResponse:
+    fake_response = SendMessageResponse(
+        task_or_group_uuid=uuid.uuid4(),
+        task_name="send_message_from_template",
+    )
+    mocker.patch(
+        f"{_service.__name__}.remote_send_message_from_template",
+        autospec=True,
+        return_value=fake_response,
+    )
+    return fake_response

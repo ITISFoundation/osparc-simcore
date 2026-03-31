@@ -110,6 +110,14 @@ comp_runs = sa.Table(
         sa.String,
         nullable=False,
     ),
+    sa.Column(
+        "last_result_changed",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        server_default=sa.func.now(),
+        doc="Timestamp of when the result column last changed to a different value. "
+        "Nullable so that adding this column does not modify existing rows in production.",
+    ),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
     sa.Index("ix_comp_runs_user_id", "user_id"),
     sa.Index("ix_comp_runs_collection_run_id", "collection_run_id"),

@@ -4,9 +4,9 @@ from collections.abc import Callable
 
 import pytest
 from faker import Faker
+from models_library.celery import TaskStatus, TaskUUID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import TaskStatus, TaskUUID
 from servicelib.celery.task_manager import Task, TaskManager
 
 _faker = Faker()
@@ -68,9 +68,9 @@ def mock_task_manager_object(
             method.return_value = value
 
     _set_return_or_raise(mock.submit_task, submit_task_return_value)
-    _set_return_or_raise(mock.cancel_task, cancel_task_return_value)
-    _set_return_or_raise(mock.get_task_result, get_task_result_return_value)
-    _set_return_or_raise(mock.get_task_status, get_task_status_return_value)
+    _set_return_or_raise(mock.cancel, cancel_task_return_value)
+    _set_return_or_raise(mock.get_result, get_task_result_return_value)
+    _set_return_or_raise(mock.get_status, get_task_status_return_value)
     _set_return_or_raise(mock.list_tasks, list_tasks_return_value)
     _set_return_or_raise(mock.set_task_progress, set_task_progress_return_value)
     return mock
@@ -87,9 +87,9 @@ def mock_task_manager_object_raising_factory(
             raise task_manager_exception
 
         mock.submit_task.side_effect = _raise_exc
-        mock.cancel_task.side_effect = _raise_exc
-        mock.get_task_result.side_effect = _raise_exc
-        mock.get_task_status.side_effect = _raise_exc
+        mock.cancel.side_effect = _raise_exc
+        mock.get_result.side_effect = _raise_exc
+        mock.get_status.side_effect = _raise_exc
         mock.list_tasks.side_effect = _raise_exc
         mock.set_task_progress.side_effect = _raise_exc
         return mock

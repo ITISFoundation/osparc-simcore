@@ -8,7 +8,9 @@ from typing import Any, Final
 
 import arrow
 from faststream.exceptions import NackMessage, RejectMessage
+from faststream.middlewares import AckPolicy
 from faststream.rabbit import (
+    Channel,
     ExchangeType,
     QueueType,
     RabbitBroker,
@@ -137,6 +139,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     ) -> None:
         self._task_tracker: BaseTaskTracker = RedisTaskTracker(scheduler_redis_sdk)
 
+        self._max_workers = max_workers
         self._worker_tracker = WorkerTracker(max_workers)
         self.delay_when_requeuing_message = delay_when_requeuing_message
 
@@ -570,43 +573,48 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self._fs_handle_scheduled = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.SCHEDULED),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.NACK_ON_ERROR,
         )(self._fs_handle_scheduled)
 
         self._fs_handle_submit_task = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.SUBMIT_TASK),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.NACK_ON_ERROR,
         )(self._fs_handle_submit_task)
 
         self._fs_handle_worker = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.WORKER),
             exchange=self.common_exchange,
-            retry=True,
+            # NOTE: prefetch_count limits the number of unacknowledged messages
+            # delivered to this consumer. Set to max_workers so that only as many
+            # messages as there are free worker slots are in-flight, avoiding the
+            # costly sleep+nack requeue cycle when all slots are busy.
+            channel=Channel(prefetch_count=self._max_workers),
+            ack_policy=AckPolicy.NACK_ON_ERROR,
         )(self._fs_handle_worker)
 
         self._fs_handle_error_result = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.ERROR_RESULT),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.NACK_ON_ERROR,
         )(self._fs_handle_error_result)
 
         self._fs_handle_finished_with_error = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.FINISHED_WITH_ERROR),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.NACK_ON_ERROR,
         )(self._fs_handle_finished_with_error)
 
         self._fs_handle_deferred_result = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.DEFERRED_RESULT),
             exchange=self.common_exchange,
-            retry=True,
+            ack_policy=AckPolicy.NACK_ON_ERROR,
         )(self._fs_handle_deferred_result)
 
         self._fs_handle_manually_cancelled = self.router.subscriber(
             queue=self._get_global_queue(_FastStreamRabbitQueue.MANUALLY_CANCELLED),
             exchange=self.cancellation_exchange,
-            retry=True,
+            ack_policy=AckPolicy.NACK_ON_ERROR,
         )(self._fs_handle_manually_cancelled)
 
     async def setup(self) -> None:

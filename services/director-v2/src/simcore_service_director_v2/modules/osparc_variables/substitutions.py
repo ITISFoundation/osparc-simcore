@@ -3,7 +3,7 @@
 import functools
 import logging
 from copy import deepcopy
-from typing import Any, Final, TypeVar
+from typing import Any, Final
 
 from fastapi import FastAPI
 from models_library.osparc_variable_identifier import (
@@ -26,7 +26,6 @@ from servicelib.logging_utils import log_context
 
 from ...utils.db import get_repository
 from ...utils.osparc_variables import (
-    ContextDict,
     OsparcVariablesTable,
     resolve_variables_from_context,
 )
@@ -36,10 +35,8 @@ from ._user import request_user_email, request_user_role
 
 _logger = logging.getLogger(__name__)
 
-TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
-
-async def substitute_vendor_secrets_in_model(
+async def substitute_vendor_secrets_in_model[TBaseModel: BaseModel](
     app: FastAPI,
     model: TBaseModel,
     *,
@@ -168,7 +165,7 @@ def auto_inject_environments(
     return compose_spec
 
 
-async def resolve_and_substitute_session_variables_in_model(
+async def resolve_and_substitute_session_variables_in_model[TBaseModel: BaseModel](
     app: FastAPI,
     model: TBaseModel,
     *,
@@ -191,16 +188,16 @@ async def resolve_and_substitute_session_variables_in_model(
         table = OsparcSessionVariablesTable.get_from_app_state(app)
         identifiers = await resolve_variables_from_context(
             table.copy(),
-            context=ContextDict(
-                app=app,
-                user_id=user_id,
-                product_name=product_name,
-                project_id=project_id,
-                node_id=node_id,
-                run_id=service_run_id,
-                wallet_id=wallet_id,
-                api_server_base_url=product_api_base_url,
-            ),
+            context={
+                "app": app,
+                "user_id": user_id,
+                "product_name": product_name,
+                "project_id": project_id,
+                "node_id": node_id,
+                "run_id": service_run_id,
+                "wallet_id": wallet_id,
+                "api_server_base_url": product_api_base_url,
+            },
         )
         _logger.debug("replacing with the identifiers=%s", identifiers)
         result = replace_osparc_variable_identifier(model, identifiers)
@@ -237,16 +234,16 @@ async def resolve_and_substitute_session_variables_in_specs(
         if identifiers_to_replace:
             environs = await resolve_variables_from_context(
                 table.copy(include=identifiers_to_replace),
-                context=ContextDict(
-                    app=app,
-                    user_id=user_id,
-                    product_name=product_name,
-                    project_id=project_id,
-                    node_id=node_id,
-                    run_id=service_run_id,
-                    wallet_id=wallet_id,
-                    api_server_base_url=product_api_base_url,
-                ),
+                context={
+                    "app": app,
+                    "user_id": user_id,
+                    "product_name": product_name,
+                    "project_id": project_id,
+                    "node_id": node_id,
+                    "run_id": service_run_id,
+                    "wallet_id": wallet_id,
+                    "api_server_base_url": product_api_base_url,
+                },
             )
 
             resolver.set_substitutions(mappings=environs)
@@ -258,10 +255,12 @@ async def resolve_and_substitute_session_variables_in_specs(
 
 def setup(app: FastAPI):
     """
-    **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
+    **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs
+      (e.g. docker-compose).
         - **vendor secrets**: information set by a vendor on the platform. e.g. a vendor service license
         - **session variables**: some session information as "current user email" or the "current product name"
-        - **lifespan variables**: produced before a service is started and cleaned up after it finishes (e.g. API tokens )
+        - **lifespan variables**: produced before a service is started and cleaned up after it finishes
+        (e.g. API tokens)
     """
     app.add_event_handler("startup", functools.partial(OsparcSessionVariablesTable.create, app))
 

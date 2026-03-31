@@ -30,13 +30,6 @@ except ImportError:
     HAS_ASYNCPG = False
 
 try:
-    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-
-    HAS_AIOPG = True
-except ImportError:
-    HAS_AIOPG = False
-
-try:
     from opentelemetry.instrumentation.redis import RedisInstrumentor
 
     HAS_REDIS = True
@@ -109,13 +102,6 @@ def _startup(
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
 
-    if HAS_AIOPG:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
-        ):
-            AiopgInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_context(
             _logger,
@@ -165,9 +151,6 @@ def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         FastAPIInstrumentor().uninstrument()
-    if HAS_AIOPG:
-        with log_catch(_logger, reraise=False):
-            AiopgInstrumentor().uninstrument()
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_catch(_logger, reraise=False):
             AioPikaInstrumentor().uninstrument()

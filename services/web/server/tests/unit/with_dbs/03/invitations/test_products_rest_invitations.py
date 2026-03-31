@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.products import (
     InvitationGenerated,
 )
 from models_library.invitations import _MAX_LEN
+from models_library.notifications.rpc import SendMessageResponse
 from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -123,6 +124,7 @@ MANY_TIMES: Final = 2
 async def test_pre_registration_and_invitation_workflow(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
+    mocked_send_message_from_template_rpc: SendMessageResponse,
     logged_user: UserInfoDict,
     expected_status: HTTPStatus,
     guest_email: str,
