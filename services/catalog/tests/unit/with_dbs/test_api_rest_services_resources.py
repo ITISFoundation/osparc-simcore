@@ -24,6 +24,7 @@ from models_library.services_resources import (
 )
 from pydantic import ByteSize, TypeAdapter
 from respx.models import Route
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_catalog.core.settings import _DEFAULT_RESOURCES
 from starlette.testclient import TestClient
 from yarl import URL
@@ -34,8 +35,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-_PRODUCT_HEADER = "x-simcore-products-name"
 
 
 @pytest.fixture
@@ -210,7 +209,7 @@ async def test_get_service_resources(
 ) -> None:
     mocked_director_service_labels.respond(json={"data": params.simcore_service_label})
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
-    response = client.get(f"{url}", headers={_PRODUCT_HEADER: target_product})
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
     received_resources: ServiceResourcesDict = ServiceResourcesDict(**data)
@@ -334,7 +333,7 @@ async def test_get_service_resources_sim4life_case(
     create_mock_director_service_labels(mapped_services_labels)
 
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
-    response = client.get(f"{url}", headers={_PRODUCT_HEADER: target_product})
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
     received_service_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
@@ -354,11 +353,11 @@ async def test_get_service_resources_raises_errors(
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     # simulate a communication error
     mocked_director_service_labels.side_effect = httpx.HTTPError
-    response = client.get(f"{url}", headers={_PRODUCT_HEADER: target_product})
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == httpx.codes.SERVICE_UNAVAILABLE, f"{response.text}"
     # simulate a missing service
     mocked_director_service_labels.respond(httpx.codes.NOT_FOUND, json={"error": "service not found"})
-    response = client.get(f"{url}", headers={_PRODUCT_HEADER: target_product})
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == httpx.codes.NOT_FOUND, f"{response.text}"
 
     response = client.get(f"{url}")

@@ -13,6 +13,7 @@ from servicelib.fastapi.http_client_thin import (
     retry_on_errors,
 )
 from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from yarl import URL
 
 from ...core.settings import ApplicationSettings
@@ -52,5 +53,5 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
         ).with_query(user_id=user_id)
         return await self.client.get(
             f"{request_url}",
-            headers={"X-Simcore-Products-Name": product_name},
+            headers={X_PRODUCT_NAME_HEADER: product_name},
         )

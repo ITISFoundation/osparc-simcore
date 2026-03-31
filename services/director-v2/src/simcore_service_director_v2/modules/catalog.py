@@ -12,6 +12,7 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.tracing import setup_httpx_client_tracing
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
@@ -88,7 +89,7 @@ class CatalogClient:
             "GET",
             f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}",
             params={"user_id": user_id},
-            headers={"X-Simcore-Products-Name": product_name},
+            headers={X_PRODUCT_NAME_HEADER: product_name},
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
@@ -107,7 +108,7 @@ class CatalogClient:
             "GET",
             f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/resources",
             params={"user_id": user_id},
-            headers={"X-Simcore-Products-Name": product_name},
+            headers={X_PRODUCT_NAME_HEADER: product_name},
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
@@ -147,7 +148,7 @@ class CatalogClient:
             "GET",
             f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/specifications",
             params={"user_id": user_id},
-            headers={"X-Simcore-Products-Name": product_name},
+            headers={X_PRODUCT_NAME_HEADER: product_name},
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:

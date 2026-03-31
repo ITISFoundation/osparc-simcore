@@ -16,6 +16,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
@@ -73,7 +74,7 @@ async def test_list_services_with_details(
         },
     )
 
-    response = benchmark(client.get, f"{url}", headers={"x-simcore-products-name": target_product})
+    response = benchmark(client.get, f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
 
     assert response.status_code == 200
     data = response.json()
@@ -108,7 +109,7 @@ async def test_list_services_without_details(
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = benchmark(client.get, f"{url}", headers={"x-simcore-products-name": target_product})
+    response = benchmark(client.get, f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == NUM_SERVICES
@@ -147,7 +148,7 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id + 1, "details": "false"})
-    response = client.get(f"{url}", headers={"x-simcore-products-name": target_product})
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == 403
 
 
@@ -178,7 +179,7 @@ async def test_list_services_without_details_with_another_product_returns_other_
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = client.get(f"{url}", headers={"x-simcore-products-name": other_product})
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: other_product})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 0
@@ -211,7 +212,7 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = client.get(f"{url}", headers={"x-simcore-products-name": "no valid product"})
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: "no valid product"})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 0
@@ -229,7 +230,7 @@ async def test_list_services_that_are_deprecated(
     client: TestClient,
 ):
     # injects fake data in db
-    deprecation_date = datetime.utcnow() + timedelta(  # NOTE: old offset-naive column
+    deprecation_date = datetime.now(tz=datetime.time.UTC) + timedelta(  # NOTE: old offset-naive column
         days=1
     )
     deprecated_service = create_fake_service_data(
@@ -244,7 +245,7 @@ async def test_list_services_that_are_deprecated(
 
     # check without details
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    resp = client.get(f"{url}", headers={"x-simcore-products-name": target_product})
+    resp = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert resp.status_code == status.HTTP_200_OK
     list_of_services = TypeAdapter(list[ServiceGet]).validate_python(resp.json())
     assert list_of_services
@@ -268,7 +269,7 @@ async def test_list_services_that_are_deprecated(
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "true"})
-    resp = client.get(f"{url}", headers={"x-simcore-products-name": target_product})
+    resp = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert resp.status_code == status.HTTP_200_OK
     list_of_services = TypeAdapter(list[ServiceGet]).validate_python(resp.json())
     assert list_of_services
