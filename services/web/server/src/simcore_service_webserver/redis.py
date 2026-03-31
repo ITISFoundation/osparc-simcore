@@ -3,12 +3,14 @@ from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from models_library.errors import REDIS_CLIENT_UNHEALTHY_MSG
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._meta import APP_NAME
 from .application_keys import APP_SETTINGS_APPKEY
 from .application_setup import ModuleCategory, app_setup_func
+from .rest.healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -26,6 +28,14 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
 
 
 # EVENTS --------------------------------------------------------------------------
+
+
+async def _on_healthcheck_async_adapter(app: web.Application) -> None:
+    manager: RedisClientsManager = app[APP_REDIS_CLIENT_KEY]
+    if not manager.healthy:
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
+
+
 async def setup_redis_client(app: web.Application):
     """
 
@@ -49,6 +59,9 @@ async def setup_redis_client(app: web.Application):
         settings=redis_settings,
         client_name=APP_NAME,
     )
+
+    healthcheck = app[HEALTHCHECK_APPKEY]
+    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     await manager.setup()
 

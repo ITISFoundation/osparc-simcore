@@ -1,7 +1,7 @@
 import logging
 from typing import cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from servicelib.logging_utils import log_context
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -40,3 +40,7 @@ def setup(app: FastAPI) -> None:
 
 def get_redis_lock_client(app: FastAPI) -> RedisClientSDK:
     return cast(RedisClientSDK, app.state.redis_client_sdk)
+
+
+def get_redis_lock_client_from_request(request: Request) -> RedisClientSDK:
+    return get_redis_lock_client(request.app)

@@ -5,20 +5,24 @@
 """
 
 import logging
+from typing import Annotated
 
 from aws_library.s3 import S3AccessError
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from models_library.api_schemas_storage.storage_schemas import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
+from models_library.errors import REDIS_CLIENT_UNHEALTHY_MSG
 from models_library.generics import Envelope
 from pydantic import TypeAdapter
 from servicelib.db_asyncpg_utils import check_postgres_liveness
 from servicelib.fastapi.db_asyncpg_engine import get_engine
+from servicelib.redis import RedisClientsManager
 from simcore_postgres_database.utils_aiosqlalchemy import get_pg_engine_stateinfo
 
 from ..._meta import API_VERSION, PROJECT_NAME, VERSION
 from ...core.settings import get_application_settings
 from ...modules.s3 import get_s3_client
+from .dependencies.redis import get_redis_client_manager_from_request
 
 _logger = logging.getLogger(__name__)
 
@@ -29,10 +33,19 @@ router = APIRouter(
 )
 
 
+class HealthCheckError(RuntimeError):
+    """Failed a health check"""
+
+
 @router.get("/", include_in_schema=True, response_model=Envelope[HealthCheck])
 async def get_health(
     request: Request,
+    redis_client_manager: Annotated[RedisClientsManager, Depends(get_redis_client_manager_from_request)],
 ) -> Envelope[HealthCheck]:
+    # NOTE: celery uses rabbitmq internally and retry options have already been setup
+    if not redis_client_manager.healthy:
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
+
     assert request  # nosec
     return Envelope[HealthCheck](
         data=HealthCheck(
