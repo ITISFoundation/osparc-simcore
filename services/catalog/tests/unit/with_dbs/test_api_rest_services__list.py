@@ -5,9 +5,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import datetime
 import re
 from collections.abc import Callable
-from datetime import datetime, timedelta
 
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.products import ProductName
@@ -230,7 +230,7 @@ async def test_list_services_that_are_deprecated(
     client: TestClient,
 ):
     # injects fake data in db
-    deprecation_date = datetime.now(tz=datetime.time.UTC) + timedelta(  # NOTE: old offset-naive column
+    deprecation_date = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(  # NOTE: old offset-naive column
         days=1
     )
     deprecated_service = create_fake_service_data(
