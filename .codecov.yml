@@ -11,9 +11,11 @@ flag_management:
     - type: project
       target: auto
       threshold: 5%
+      informational: true
     - type: patch
       target: auto
       threshold: 5%
+      informational: true
 
 
 component_management:
