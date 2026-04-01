@@ -628,7 +628,7 @@ async def update_project_node_resources_from_hardware_info(
         # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
         # less memory than the machine theoretical amount
         node_resources = await get_project_node_resources(
-            app, user_id, project_id, node_id, service_key, service_version
+            app, user_id, project_id, node_id, service_key, service_version, product_name
         )
         scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
         new_cpus_value, new_ram_value = estimate_dynamic_sidecar_resources_from_ec2_instance(
@@ -904,6 +904,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
             node_id=node_uuid,
             service_key=service_key,
             service_version=service_version,
+            product_name=product_name,
         )
         await dynamic_scheduler_service.run_dynamic_service(
             app=request.app,
@@ -964,7 +965,9 @@ async def add_project_node(
     )
 
     node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
-    default_resources = await catalog_service.get_service_resources(request.app, user_id, service_key, service_version)
+    default_resources = await catalog_service.get_service_resources(
+        request.app, user_id, service_key, service_version, product_name
+    )
     db_legacy: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     assert db_legacy  # nosec
     await db_legacy.add_project_node(
@@ -1902,6 +1905,7 @@ async def get_project_node_resources(
     node_id: NodeID,
     service_key: str,
     service_version: str,
+    product_name: str,
 ) -> ServiceResourcesDict:
     db = ProjectDBAPI.get_from_app_context(app)
     try:
@@ -1909,7 +1913,9 @@ async def get_project_node_resources(
         node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
         if not node_resources:
             # get default resources
-            node_resources = await catalog_service.get_service_resources(app, user_id, service_key, service_version)
+            node_resources = await catalog_service.get_service_resources(
+                app, user_id, service_key, service_version, product_name
+            )
         return node_resources
 
     except ProjectNodesNodeNotFoundError as exc:
@@ -1934,7 +1940,9 @@ async def update_project_node_resources(
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
-            current_resources = await catalog_service.get_service_resources(app, user_id, service_key, service_version)
+            current_resources = await catalog_service.get_service_resources(
+                app, user_id, service_key, service_version, product_name
+            )
 
         validate_new_service_resources(current_resources, new_resources=resources)
         set_reservation_same_as_limit(resources)

@@ -1533,9 +1533,15 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           case "outputs": {
             const updatedPortKey = path.split("/")[4];
-            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
-            currentOutputs[updatedPortKey] = value;
-            this.setOutputData(currentOutputs);
+            // "remove" ops have no value field, so value is undefined.
+            if (op === "remove" && this.isFilePicker()) {
+              // Reset File Picker
+              osparc.file.FilePicker.resetOutputValue(this);
+            } else {
+              const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
+              currentOutputs[updatedPortKey] = value;
+              this.setOutputData(currentOutputs);
+            }
             break;
           }
           case "progress":
