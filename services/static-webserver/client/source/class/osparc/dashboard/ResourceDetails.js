@@ -138,6 +138,24 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         layout: new qx.ui.layout.Grow(),
         ...osparc.ui.window.TabbedWindow.DEFAULT_PROPS,
       });
+      switch (resourceData["resourceType"]) {
+        case "study":
+          osparc.utils.Utils.setIdToWidget(window, "projectDetailsWindow");
+          break;
+        case "template":
+        case "tutorial":
+          osparc.utils.Utils.setIdToWidget(window, "templateDetailsWindow");
+          break;
+        case "function":
+          osparc.utils.Utils.setIdToWidget(window, "functionDetailsWindow");
+          break;
+        case "hypertool":
+          osparc.utils.Utils.setIdToWidget(window, "hypertoolDetailsWindow");
+          break;
+        case "service":
+          osparc.utils.Utils.setIdToWidget(window, "serviceDetailsWindow");
+          break;
+      }
       resourceDetails.addListener("closeWindow", () => window.close());
       window.addListener("close", () => {
         // trigger children's destroy functions
