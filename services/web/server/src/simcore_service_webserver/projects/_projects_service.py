@@ -2148,14 +2148,17 @@ async def notify_project_node_update(
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
 
+    data: dict = {
+        "project_id": project["uuid"],
+        "node_id": f"{node_id}",
+        "data": project["workbench"][f"{node_id}"],
+    }
+    if errors is not None:
+        data["errors"] = errors
+
     message = SocketMessageDict(
         event_type=SOCKET_IO_NODE_UPDATED_EVENT,
-        data={
-            "project_id": project["uuid"],
-            "node_id": f"{node_id}",
-            "data": project["workbench"][f"{node_id}"],
-            "errors": errors,
-        },
+        data=data,
     )
 
     await _send_message_to_project_groups(app, project["uuid"], message)
