@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
+from models_library.products import ProductName
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -26,9 +27,9 @@ class CatalogPublicClient(SingletonInAppStateMixin):
         return TypeAdapter(SimcoreServiceLabels).validate_python(response.json())
 
     async def get_services_specifications(
-        self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
+        self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion, product_name: ProductName
     ) -> ServiceSpecifications:
         response = await CatalogThinClient.get_from_app_state(self.app).get_services_specifications(
-            user_id, service_key, service_version
+            user_id, service_key, service_version, product_name
         )
         return TypeAdapter(ServiceSpecifications).validate_python(response.json())

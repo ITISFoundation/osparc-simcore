@@ -13,6 +13,7 @@ import pytest
 import simcore_service_catalog.api._dependencies.services
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
@@ -52,7 +53,7 @@ async def mocked_check_service_read_access(mocker: MockerFixture, user_groups_id
     assert user_groups_ids
 
     mocker.patch.object(
-        simcore_service_catalog.api._dependencies.services.ServicesRepository,
+        simcore_service_catalog.api._dependencies.services.ServicesRepository,  # noqa: SLF001
         "get_service",
         autospec=True,
         return_value=True,
@@ -95,7 +96,7 @@ async def test_list_service_ports(
     benchmark,
 ):
     url = URL(f"/v0/services/{service_key}/{service_version}/ports").with_query({"user_id": user_id})
-    response = benchmark(client.get, f"{url}", headers={"x-simcore-products-name": product_name})
+    response = benchmark(client.get, f"{url}", headers={X_PRODUCT_NAME_HEADER: product_name})
     assert response.status_code == 200
     ports = response.json()
 

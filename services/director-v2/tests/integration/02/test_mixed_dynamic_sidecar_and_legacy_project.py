@@ -193,7 +193,7 @@ async def ensure_services_stopped(
                         delete_result = await docker_client.services.delete(service_name)
                         assert delete_result is True
                     except aiodocker.exceptions.DockerError as e:
-                        assert e.status == 404, f"Unexpected error when deleting service: {e}"
+                        assert e.status == 404, f"Unexpected error when deleting service: {e}"  # noqa: PT017
 
         project_id = f"{dy_static_file_server_project.uuid}"
 
@@ -217,8 +217,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
-            # pylint: disable=cell-var-from-loop
-            side_effect=lambda *args, **kwargs: return_value,
+            side_effect=lambda *args, rv=return_value, **kwargs: rv,  # noqa: ARG005
         )
 
     # also patch the long_running_tasks client context mangers handling the above

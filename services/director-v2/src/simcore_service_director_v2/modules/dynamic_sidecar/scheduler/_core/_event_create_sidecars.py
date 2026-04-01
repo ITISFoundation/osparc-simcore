@@ -241,7 +241,10 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         user_specific_service_spec = (
             await catalog_client.get_service_specifications(
-                scheduler_data.user_id, scheduler_data.key, scheduler_data.version
+                scheduler_data.user_id,
+                scheduler_data.key,
+                scheduler_data.version,
+                scheduler_data.product_name,
             )
         ).get("sidecar", {}) or {}
         user_specific_service_spec = AioDockerServiceSpec.model_validate(user_specific_service_spec)
