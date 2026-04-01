@@ -172,7 +172,7 @@ async def _process_heartbeat_event(
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if not service_run_db:
-        _logger.exception(
+        _logger.error(
             **create_troubleshooting_log_kwargs(
                 "Received process heartbeat event but we do not have the started record in the DB",
                 error=RuntimeError("No service run record found in DB for the received heartbeat event"),
@@ -184,7 +184,7 @@ async def _process_heartbeat_event(
         ServiceRunStatus.SUCCESS,
         ServiceRunStatus.ERROR,
     }:
-        _logger.exception(
+        _logger.error(
             **create_troubleshooting_log_kwargs(
                 "Received process heartbeat event but the service run was already closed",
                 error=RuntimeError("Service run already closed"),
