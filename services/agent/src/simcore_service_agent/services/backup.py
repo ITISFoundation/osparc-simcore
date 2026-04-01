@@ -144,10 +144,6 @@ async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
 
 
 async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails) -> None:
-    exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
-
-    config_file_path = _get_config_file_path(settings)
-
     source_dir = volume_details.mountpoint
     try:
         source_exists = Path(source_dir).exists()
@@ -169,6 +165,8 @@ async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_d
         )
         return
 
+    exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
+    config_file_path = _get_config_file_path(settings)
     s3_path = _get_s3_path(settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels)
 
     # listing files rclone will sync
