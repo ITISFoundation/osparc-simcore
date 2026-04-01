@@ -4,6 +4,7 @@ from typing import Final
 
 from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER, FAIL_MARKER
 from playwright.sync_api import FrameLocator, expect
+from pydantic import ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import SECOND
 
@@ -27,7 +28,17 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
         output_locator.scroll_into_view_if_needed()
 
 
-def create_files_in_jupyter(iframe: FrameLocator) -> None:
+def _replace_line_starting_with(source: str, starts_with: str, new_line: str) -> str:
+    """Replace the line in *source* that starts with *starts_with* with *new_line*."""
+    lines = source.splitlines()
+    for i, line in enumerate(lines):
+        if line.startswith(starts_with):
+            lines[i] = new_line
+            break
+    return "\n".join(lines)
+
+
+def create_files_in_jupyter(iframe: FrameLocator, large_file_block_size: ByteSize) -> None:
     with log_context(logging.INFO, "running rclone stress test"):
         iframe.get_by_role("button", name="New Launcher").nth(0).click()
         iframe.locator(".jp-LauncherCard-icon").first.click()
@@ -39,6 +50,11 @@ def create_files_in_jupyter(iframe: FrameLocator) -> None:
 
         # first cell: load all definitions (imports, config, helpers, phase functions)
         preamble_code = _JUPYTER_CELL_CODE_PATH.read_text()
+        preamble_code = _replace_line_starting_with(
+            preamble_code,
+            "LARGE_FILE_MAX_BYTES: Final[int] =",
+            f"LARGE_FILE_MAX_BYTES: Final[int] = {large_file_block_size}",
+        )
         with log_context(logging.INFO, "loading preamble (definitions)"):
             cell = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox").last
             cell.fill(preamble_code)
