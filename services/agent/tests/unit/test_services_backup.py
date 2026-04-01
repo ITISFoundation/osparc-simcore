@@ -2,9 +2,11 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import errno
 from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
 from typing import Final
+from unittest.mock import patch
 from uuid import uuid4
 
 import aioboto3
@@ -18,7 +20,7 @@ from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib.container_utils import run_command_in_container
 from simcore_service_agent.core.settings import ApplicationSettings
-from simcore_service_agent.services.backup import backup_volume
+from simcore_service_agent.services.backup import _store_in_s3, backup_volume
 from simcore_service_agent.services.docker_utils import get_volume_details
 from simcore_service_agent.services.volumes_manager import VolumesManager
 from utils import VOLUMES_TO_CREATE
@@ -138,3 +140,32 @@ async def test_backup_volume(
         await asyncio.gather(*[_download_file(key) for key in synced_keys])
 
         assert len([x for x in downloaded_from_s3.rglob("*") if x.is_file()]) == expected_files
+
+
+async def test_store_in_s3_skips_backup_on_stale_fuse_mount(
+    initialized_app: FastAPI,
+    create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
+    caplog: pytest.LogCaptureFixture,
+):
+    caplog.clear()
+    caplog.set_level("WARNING")
+
+    node_id = uuid4()
+    volumes = await create_dynamic_sidecar_volumes(node_id, False)  # noqa: FBT003
+
+    settings: ApplicationSettings = initialized_app.state.settings
+
+    assert len(volumes) > 0
+    volume = next(iter(volumes))
+
+    volume_details = await get_volume_details(
+        VolumesManager.get_from_app_state(initialized_app).docker, volume_name=volume
+    )
+
+    with patch.object(Path, "exists", side_effect=OSError(errno.ENOTCONN, "Transport endpoint is not connected")):
+        await _store_in_s3(
+            settings=settings,
+            volume_name=volume,
+            volume_details=volume_details,
+        )
+        assert "has a stale FUSE mount" in caplog.text

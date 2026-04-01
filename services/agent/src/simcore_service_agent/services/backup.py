@@ -1,4 +1,5 @@
 import asyncio
+import errno
 import json
 import logging
 import socket
@@ -148,7 +149,19 @@ async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_d
     config_file_path = _get_config_file_path(settings)
 
     source_dir = volume_details.mountpoint
-    if not Path(source_dir).exists():
+    try:
+        source_exists = Path(source_dir).exists()
+    except OSError as e:
+        if e.errno == errno.ENOTCONN:
+            _logger.warning(
+                "Volume mountpoint %s has a stale FUSE mount (transport endpoint not connected). "
+                "Skipping backup, volume %s will be removed.",
+                source_dir,
+                volume_name,
+            )
+            return
+        raise
+    if not source_exists:
         _logger.info(
             "Volume mountpoint %s does not exist. Skipping backup, volume %s will be removed.",
             source_dir,
