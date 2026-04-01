@@ -42,7 +42,6 @@ from models_library.api_schemas_webserver.projects_nodes import (
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.basic_types import KeyIDStr
-from models_library.errors import ErrorDict
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID
@@ -931,7 +930,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
 
         project = await get_project_for_user(request.app, f"{project_uuid}", user_id, include_state=True)
 
-        await notify_project_node_update(request.app, project, node_uuid, errors=None)
+        await notify_project_node_update(request.app, project, node_uuid)
 
     await _safe_service_start()
 
@@ -1243,10 +1242,10 @@ async def patch_project_node(
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
         for node_uuid in updated_project["workbench"]:
-            await notify_project_node_update(app, updated_project, node_uuid, errors=None)
+            await notify_project_node_update(app, updated_project, node_uuid)
         return
 
-    await notify_project_node_update(app, updated_project, node_id, errors=None)
+    await notify_project_node_update(app, updated_project, node_id)
 
 
 async def update_project_node_outputs(
@@ -2143,7 +2142,6 @@ async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
-    errors: list[ErrorDict] | None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2153,8 +2151,6 @@ async def notify_project_node_update(
         "node_id": f"{node_id}",
         "data": project["workbench"][f"{node_id}"],
     }
-    if errors is not None:
-        data["errors"] = errors
 
     message = SocketMessageDict(
         event_type=SOCKET_IO_NODE_UPDATED_EVENT,
