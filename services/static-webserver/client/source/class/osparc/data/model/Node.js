@@ -851,6 +851,31 @@ qx.Class.define("osparc.data.model.Node", {
 
             // errors to logger
             this.fireDataEvent("showInLogger", errorMsgData);
+
+            // show troubleshooting tips for specific error types
+            if (error["type"] === "runtime.oom") {
+              let tipMsg = error["msg"];
+              if (osparc.store.StaticInfo.isBillableProduct()) {
+                tipMsg += "\nTip: Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
+              } else {
+                tipMsg += "\nTip: Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
+              }
+              osparc.FlashMessenger.logAs(tipMsg, "WARNING");
+              this.fireDataEvent("showInLogger", {
+                nodeId: this.getNodeId(),
+                msg: tipMsg,
+                level: "WARNING"
+              });
+            } else if (error["type"] === "runtime.timeout") {
+              let tipMsg = error["msg"];
+              tipMsg += "\nTip: The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
+              osparc.FlashMessenger.logAs(tipMsg, "WARNING");
+              this.fireDataEvent("showInLogger", {
+                nodeId: this.getNodeId(),
+                msg: tipMsg,
+                level: "WARNING"
+              });
+            }
           }
         });
       } else if (this.hasInputs()) {
