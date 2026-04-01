@@ -599,8 +599,12 @@ qx.Class.define("osparc.data.model.Node", {
     populateState: function(nodeData) {
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
-        if ("errors" in nodeData.state && nodeData.state.errors) {
+        const hasState = nodeData.state && typeof nodeData.state === "object";
+        const hasErrors = hasState && "errors" in nodeData.state && nodeData.state.errors;
+        if (hasErrors) {
           this.setErrors(nodeData.state.errors, true);
+        } else if (hasState) {
+          this.setErrors(null, true);
         }
       }
     },
@@ -831,7 +835,7 @@ qx.Class.define("osparc.data.model.Node", {
      * @param silent {Boolean?false} if true, only update the property (tooltip) without popups or logger
      */
     setErrors: function(errors, silent) {
-      this.base(arguments, errors);
+      this.set("errors", errors);
       if (!silent) {
         this.__notifyErrors(errors);
       }

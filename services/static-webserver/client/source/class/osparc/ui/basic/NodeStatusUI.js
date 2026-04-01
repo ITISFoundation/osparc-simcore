@@ -32,7 +32,14 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
   },
 
   members: {
-    __applyNode: function(node) {
+    __errorToolTip: null,
+    __errorBindingId: null,
+
+    __applyNode: function(node, oldNode) {
+      if (oldNode && this.__errorBindingId !== null) {
+        oldNode.removeBinding(this.__errorBindingId);
+        this.__errorBindingId = null;
+      }
       this.show();
       if (node.isFilePicker()) {
         this.__setupFilePicker();
@@ -43,12 +50,14 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       } else {
         this.exclude();
       }
-      const errorToolTip = new qx.ui.tooltip.ToolTip().set({
-        rich: true,
-        maxWidth: 300
-      });
-      this.setToolTip(errorToolTip);
-      node.bind("errors", errorToolTip, "label", {
+      if (!this.__errorToolTip) {
+        this.__errorToolTip = new qx.ui.tooltip.ToolTip().set({
+          rich: true,
+          maxWidth: 300
+        });
+        this.setToolTip(this.__errorToolTip);
+      }
+      this.__errorBindingId = node.bind("errors", this.__errorToolTip, "label", {
         converter: errors => {
           const parts = [];
           if (errors) {
