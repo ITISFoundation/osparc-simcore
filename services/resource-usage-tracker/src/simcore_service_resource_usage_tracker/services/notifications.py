@@ -30,24 +30,24 @@ async def notify_user_of_credit_reimbursement(
     service_run_id: ServiceRunID,
     reimbursed_credits: Decimal,
 ) -> None:
-    addressing = EmailAddressing(
-        from_=EmailContact(
-            name=f"{product_display_name} support",
-            email=support_email,
-        ),
-        to=[EmailContact(name=user_email, email=user_email)],
-    )
-
-    context: dict = {
-        "service_run_id": service_run_id,
-        "reimbursed_credits": f"{reimbursed_credits}",
-        "product": {
-            "display_name": product_display_name,
-            "support_email": support_email,
-        },
-    }
-
     try:
+        addressing = EmailAddressing(
+            from_=EmailContact(
+                name=f"{product_display_name} support",
+                email=support_email,
+            ),
+            to=[EmailContact(name=user_email, email=user_email)],
+        )
+
+        context: dict = {
+            "service_run_id": service_run_id,
+            "reimbursed_credits": f"{reimbursed_credits}",
+            "product": {
+                "display_name": product_display_name,
+                "support_email": support_email,
+            },
+        }
+
         await send_message_from_template(
             rabbitmq_rpc_client,
             addressing=addressing,
