@@ -223,7 +223,15 @@ async def _run_checks_until_service_deemed_unhealthy(
         await asyncio.sleep(_PROD_RUN_INTERVAL_SEC)
         with postgres_db.connect() as con:
             fake_old_modified_at = datetime.now(tz=UTC) - timedelta(minutes=5)
-            update_stmt = resource_tracker_service_runs.update().values(modified=fake_old_modified_at)
+            update_stmt = (
+                resource_tracker_service_runs.update()
+                .where(
+                    resource_tracker_service_runs.c.service_run_id.in_(
+                        [_SERVICE_RUN_ID_STALE_COMPUTATIONAL, _SERVICE_RUN_ID_STALE_DYNAMIC]
+                    )
+                )
+                .values(modified=fake_old_modified_at)
+            )
             con.execute(update_stmt)
     # This final call closes the unhealthy services
     await check_running_services(initialized_app)
