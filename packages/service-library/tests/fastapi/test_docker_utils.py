@@ -15,7 +15,14 @@ from models_library.progress_bar import ProgressReport
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
-from servicelib.docker_utils import pull_image
+from servicelib.docker_utils import (
+    _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC,
+    _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO,
+    _DockerPullImage,
+    _parse_pull_information,
+    _PulledStatus,
+    pull_image,
+)
 from servicelib.fastapi.docker_utils import (
     pull_images,
     retrieve_image_layer_information,
@@ -276,3 +283,74 @@ async def test_pull_images_set(
         for r in caplog.records
         if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
     ]
+
+
+async def test_parse_pull_information_with_non_byte_extraction_units(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Docker v29+ reports extraction progress as elapsed seconds instead of bytes.
+    Verify that estimated extraction progress increases and caps at 99%."""
+    layer_id = "abc123def456"
+    layer_size = 500_000_000  # 500 MB
+
+    layer_id_to_size: dict[str, _PulledStatus] = {
+        layer_id: _PulledStatus(size=layer_size, downloaded=layer_size),
+    }
+    logged_non_byte_extraction_layers: set[str] = set()
+
+    # simulate 1 second of extraction with non-byte units
+    progress_1s = _DockerPullImage(
+        status="extracting",
+        id=layer_id,
+        progress_detail={"current": 1, "total": 0, "units": "seconds"},
+    )
+    await _parse_pull_information(
+        progress_1s,
+        layer_id_to_size=layer_id_to_size,
+        image_information=None,
+        logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+    )
+    expected_1s = int(1 * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
+    assert layer_id_to_size[layer_id].extracted == expected_1s
+    assert expected_1s < layer_size
+
+    # simulate 2 seconds of extraction
+    progress_2s = _DockerPullImage(
+        status="extracting",
+        id=layer_id,
+        progress_detail={"current": 2, "total": 0, "units": "seconds"},
+    )
+    await _parse_pull_information(
+        progress_2s,
+        layer_id_to_size=layer_id_to_size,
+        image_information=None,
+        logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+    )
+    expected_2s = int(2 * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
+    assert layer_id_to_size[layer_id].extracted == expected_2s
+    assert expected_2s > expected_1s
+
+    # verify non-byte units warning was logged only once for this layer
+    non_byte_warnings = [r.message for r in caplog.records if "non-byte units" in r.message]
+    assert len(non_byte_warnings) == 1
+
+    # simulate enough elapsed time to exceed cap
+    caplog.clear()
+    max_estimated = int(layer_size * _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO)
+    progress_large = _DockerPullImage(
+        status="extracting",
+        id=layer_id,
+        progress_detail={"current": 9999, "total": 0, "units": "seconds"},
+    )
+    await _parse_pull_information(
+        progress_large,
+        layer_id_to_size=layer_id_to_size,
+        image_information=None,
+        logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+    )
+    assert layer_id_to_size[layer_id].extracted == max_estimated
+    assert layer_id_to_size[layer_id].extracted < layer_size
+
+    # verify warning about cap being hit
+    cap_warnings = [r.message for r in caplog.records if "reached cap" in r.message]
+    assert cap_warnings
