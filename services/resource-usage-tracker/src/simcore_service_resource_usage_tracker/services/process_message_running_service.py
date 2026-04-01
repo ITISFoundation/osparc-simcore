@@ -172,19 +172,24 @@ async def _process_heartbeat_event(
 ):
     service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
     if not service_run_db:
-        _logger.error(
-            "Received process heartbeat event for service_run_id: %s, but we do not have the "
-            "started record in the DB, INVESTIGATE!",
-            msg.service_run_id,
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Received process heartbeat event but we do not have the started record in the DB",
+                error=RuntimeError("No service run record found in DB for the received heartbeat event"),
+                error_context={"service_run_id": msg.service_run_id},
+            )
         )
         return
     if service_run_db.service_run_status in {
         ServiceRunStatus.SUCCESS,
         ServiceRunStatus.ERROR,
     }:
-        _logger.error(
-            "Received process heartbeat event for service_run_id: %s, but it was already closed, INVESTIGATE!",
-            msg.service_run_id,
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Received process heartbeat event but the service run was already closed",
+                error=RuntimeError("Service run already closed"),
+                error_context={"service_run_id": msg.service_run_id},
+            )
         )
         return
 
@@ -242,9 +247,11 @@ async def _process_stop_event(
         # NOTE: ANE/MD discussed. When the RUT receives a stop event and has not received before any start or heartbeat event, it probably means that
         # we failed to start container. https://github.com/ITISFoundation/osparc-simcore/issues/5169
         _logger.warning(
-            "Received stop event for service_run_id: %s, but we do not have any record in the DB, "
-            "therefore the service probably didn't start correctly.",
-            msg.service_run_id,
+            **create_troubleshooting_log_kwargs(
+                "Received stop event but we do not have any record in the DB",
+                error=RuntimeError("No service run record found in DB for the received stop event"),
+                error_context={"service_run_id": msg.service_run_id},
+            )
         )
         return
     if service_run_db.service_run_status in {
@@ -252,8 +259,11 @@ async def _process_stop_event(
         ServiceRunStatus.ERROR,
     }:
         _logger.error(
-            "Received stop event for service_run_id: %s, but it was already closed, INVESTIGATE!",
-            msg.service_run_id,
+            **create_troubleshooting_log_kwargs(
+                "Received stop event but the service run was already closed",
+                error=RuntimeError("Service run already closed"),
+                error_context={"service_run_id": msg.service_run_id},
+            )
         )
         return
 
@@ -278,8 +288,11 @@ async def _process_stop_event(
 
     if running_service is None:
         _logger.error(
-            "Nothing to update. This should not happen investigate. service_run_id: %s",
-            msg.service_run_id,
+            **create_troubleshooting_log_kwargs(
+                "Nothing to update. This should not happen investigate.",
+                error=RuntimeError("No running service found for the update"),
+                error_context={"service_run_id": msg.service_run_id},
+            )
         )
         return
 
