@@ -27,7 +27,7 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
         output_locator.scroll_into_view_if_needed()
 
 
-def execute_rclone_stress(iframe: FrameLocator) -> None:
+def create_files_in_jupyter(iframe: FrameLocator) -> None:
     with log_context(logging.INFO, "running rclone stress test"):
         iframe.get_by_role("button", name="New Launcher").nth(0).click()
         iframe.locator(".jp-LauncherCard-icon").first.click()

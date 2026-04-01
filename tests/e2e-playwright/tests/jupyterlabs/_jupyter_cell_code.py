@@ -36,6 +36,8 @@ PARALLEL_WORKERS: Final[int] = 8
 
 FILES_TO_MOVE: Final[int] = int(0.1 * (NUM_SMALL_FILES + NUM_LARGE_FILES))
 
+_CHECKSUM_CHUNK_SIZE: Final[int] = 8 * _KB
+
 errors: List[str] = []  # noqa: UP006
 
 
@@ -46,7 +48,7 @@ def _random_bytes(size: int) -> bytes:
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
+        for chunk in iter(lambda: f.read(_CHECKSUM_CHUNK_SIZE), b""):
             h.update(chunk)
     return h.hexdigest()
 

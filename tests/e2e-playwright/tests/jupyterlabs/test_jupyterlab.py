@@ -13,20 +13,18 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Final, Literal
 
-from helpers_rclone_stress import execute_rclone_stress
+from helpers_jupyter_code import create_files_in_jupyter
 from playwright.sync_api import Page, WebSocket
 from pydantic import AnyUrl, ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
-    SECOND,
     RobustWebSocket,
     ServiceType,
     wait_for_service_running,
 )
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 10 * MINUTE  # NOTE: smash is 13Gib, math 2Gib
-_WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL: Final[int] = 10 * SECOND
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/api/contents/workspace")
 _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
     "jupyter-octave-python-math": re.compile(r"/api/contents"),  # old way
@@ -67,7 +65,6 @@ def test_jupyterlab(
     large_file_block_size: ByteSize,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    rclone_stress_test: bool,
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
     with (
@@ -115,44 +112,10 @@ def test_jupyterlab(
             name=_SERVICE_NAME_TAB_TO_WAIT_FOR.get(service_key, _DEFAULT_TAB_TO_WAIT_FOR),
         ).wait_for(state="visible")
     if large_file_size:
-        with log_context(
-            logging.INFO,
-            f"Creating multiple files and 1 file of about {large_file_size.human_readable()}",
-        ):
-            iframe.get_by_role("button", name="New Launcher").nth(0).click()
-            with page.expect_websocket(_JLabWaitForTerminalWebSocket()) as ws_info:
-                iframe.get_by_label("Launcher").get_by_text("Terminal").click()
-
-            assert not ws_info.value.is_closed()
-            restartable_terminal_web_socket = RobustWebSocket(page, ws_info.value)
-
-            terminal = iframe.locator("#jp-Terminal-0 > div > div.xterm-screen").get_by_role("textbox")
-            terminal.fill("pip install uv")
-            terminal.press("Enter")
-            terminal.fill("uv pip install numpy pandas dask[distributed] fastapi")
-            terminal.press("Enter")
-            # NOTE: this call creates a large file with random blocks inside
-            blocks_count = int(large_file_size / large_file_block_size)
-            with restartable_terminal_web_socket.expect_event(
-                "framereceived",
-                _JLabTerminalWebSocketWaiter(expected_message_type="stdout", expected_message_contents="copied"),
-                timeout=_WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL
-                * max(int(large_file_size.to("GiB")), 1)
-                * 3,  # avoids flakiness since timeout is deterimned based on size
-            ):
-                terminal.fill(
-                    f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
-                )
-                terminal.press("Enter")
-
-            restartable_terminal_web_socket.auto_reconnect = False
+        create_files_in_jupyter(iframe)
 
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)
-
-    if rclone_stress_test:
-        execute_rclone_stress(iframe)
-        return
 
     if service_key == "jupyter-ml-pytorch":
         print(f"skipping any more complicated stuff since this is {service_key=} which is different from the others")
