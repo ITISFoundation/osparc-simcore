@@ -255,8 +255,7 @@ define run_test
 	pytest -s $2 \
 		--color=yes \
 		--browser chromium \
-		--tracing=on \
-		--output=$(PWD)/result.ignore \
+		--headed \
 		$$TEST_ARGS
 endef
 
@@ -266,8 +265,7 @@ define run_test_on_chrome
 	pytest -s $2 \
 		--color=yes \
 		--browser-channel chrome \
-		--tracing=on \
-		--output=$(PWD)/result.ignore \
+		--headed \
 		$$TEST_ARGS
 endef
 
