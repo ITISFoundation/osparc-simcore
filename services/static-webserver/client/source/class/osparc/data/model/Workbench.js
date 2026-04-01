@@ -816,8 +816,13 @@ qx.Class.define("osparc.data.model.Workbench", {
             if (nodeData[changedFieldKey] === undefined) {
               return;
             }
-            // if the progress is not 100% somebody else is uploading data don't patch it, the backend already knows
-            if (node.isFilePicker() && nodeData["progress"] !== osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+            // if someone else is actively uploading (progress between NOT_STARTED and COMPLETED), don't patch it, the backend already knows
+            if (
+              node.isFilePicker() &&
+              nodeData["progress"] > osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED &&
+              nodeData["progress"] < osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED &&
+              !osparc.file.FilePicker.isRTCTokenMine(node)
+            ) {
               console.warn("File picker progress changed by another user, skipping patch");
               return;
             }
