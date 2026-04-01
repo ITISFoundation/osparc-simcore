@@ -13,12 +13,14 @@ from typing import Any
 
 import pytest
 from models_library.basic_regex import (
+    ALLOWED_PREFIXES,
     DATE_RE,
     DOCKER_GENERIC_TAG_KEY_RE,
     DOCKER_LABEL_KEY_REGEX,
     PUBLIC_VARIABLE_NAME_RE,
     SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     SEMANTIC_VERSION_RE_W_NAMED_GROUPS,
+    SIMCORE_S3_FILE_ID_RE,
     SIMPLE_VERSION_RE,
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
     UUID_RE,
@@ -429,3 +431,8 @@ def test_DOCKER_LABEL_KEY_REGEX(sample, expected):
 )
 def test_DOCKER_GENERIC_TAG_KEY_RE(sample, expected):
     assert_match_and_get_capture(DOCKER_GENERIC_TAG_KEY_RE, sample, expected)
+
+
+@pytest.mark.parametrize("prefix", ALLOWED_PREFIXES)
+def test_simcore_s3_file_id_re(prefix: str):
+    assert prefix in SIMCORE_S3_FILE_ID_RE

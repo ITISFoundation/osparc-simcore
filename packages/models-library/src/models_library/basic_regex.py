@@ -42,7 +42,13 @@ PUBLIC_VARIABLE_NAME_RE = r"^[^_\W0-9]\w*$"
 MIME_TYPE_RE = r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
 
 # Storage basic file ID
-SIMCORE_S3_FILE_ID_RE = rf"^(exports\/\d+\/{UUID_RE_BASE}\.zip)|((api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$)"
+_ALLOWED_PREFIX_EXPORTS: Final[str] = "exports"
+_ALLOWED_PREFIX_API: Final[str] = "api"
+ALLOWED_PREFIXES: Final[set[str]] = {_ALLOWED_PREFIX_API, _ALLOWED_PREFIX_EXPORTS}
+SIMCORE_S3_FILE_ID_RE = (
+    rf"^({_ALLOWED_PREFIX_EXPORTS}\/\d+\/{UUID_RE_BASE}\.zip)|"
+    rf"(({_ALLOWED_PREFIX_API}|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$)"
+)
 
 
 SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
