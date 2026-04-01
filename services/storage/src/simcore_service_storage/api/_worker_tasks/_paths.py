@@ -12,7 +12,7 @@ from pydantic import ByteSize, TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
-from ...constants import MAX_CONCURRENT_S3_TASKS
+from ...constants import MAX_CONCURRENT_FILE_DELETE_NOTIFICATIONS, MAX_CONCURRENT_S3_TASKS
 from ...dsm import get_dsm_provider
 from ...modules.rabbitmq import post_file_notification
 
@@ -67,5 +67,5 @@ async def delete_paths(
                 )
                 for file_id in files_ids
             ],
-            limit=MAX_CONCURRENT_S3_TASKS,
+            limit=MAX_CONCURRENT_FILE_DELETE_NOTIFICATIONS,
         )
