@@ -339,8 +339,8 @@ class FileNotificationMessage(RabbitMessageBase):
 
     event_type: FileNotificationEventType
     user_id: UserID
-    project_id: ProjectID | None = None
-    node_id: NodeID | None = None
+    project_id: ProjectID
+    node_id: NodeID
     file_id: SimcoreS3FileID
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,

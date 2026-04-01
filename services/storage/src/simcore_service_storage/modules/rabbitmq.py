@@ -1,9 +1,10 @@
 import logging
 from typing import cast
-from uuid import UUID
 
 from fastapi import FastAPI
-from models_library.projects_nodes_io import StorageFileID
+from models_library.basic_regex import SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.rabbitmq_messages import (
     FileNotificationEventType,
     FileNotificationMessage,
@@ -40,13 +41,6 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
-def _try_parse_uuid(value: str) -> UUID | None:
-    try:
-        return UUID(value)
-    except ValueError:
-        return None
-
-
 async def post_file_notification(
     app: FastAPI,
     *,
@@ -59,8 +53,22 @@ async def post_file_notification(
         log_context(_logger, logging.DEBUG, msg=f"Posting file notification for {file_id=} with {event_type=}"),
     ):
         parts = f"{file_id}".split("/")
-        project_id = _try_parse_uuid(parts[0]) if len(parts) > 0 else None
-        node_id = _try_parse_uuid(parts[1]) if len(parts) > 1 else None
+        if parts is None:
+            _logger.warning("Skip notification for file_id=%s because it cannot be parsed", file_id)
+            return
+
+        if parts[0] in SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES:
+            _logger.debug("Skip notification for file_id=%s starting with prefix %s", file_id, parts[0])
+            return
+
+        project_id = ProjectID(parts[0]) if len(parts) > 0 else None
+        node_id = NodeID(parts[1]) if len(parts) > 1 else None
+
+        if project_id is None or node_id is None:
+            _logger.warning(
+                "Skip notification for file_id=%s because project and node ids could not be extracted", file_id
+            )
+            return
 
         message = FileNotificationMessage(
             event_type=event_type,
