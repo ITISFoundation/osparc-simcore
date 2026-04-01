@@ -143,7 +143,8 @@ qx.Class.define("osparc.data.model.Node", {
       check: "Array",
       init: [],
       nullable: true,
-      event: "changeErrors"
+      event: "changeErrors",
+      apply: "__applyErrors"
     },
 
     bootOptions: {
@@ -599,13 +600,6 @@ qx.Class.define("osparc.data.model.Node", {
     populateState: function(nodeData) {
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
-        const hasState = nodeData.state && typeof nodeData.state === "object";
-        const hasErrors = hasState && "errors" in nodeData.state && nodeData.state.errors;
-        if (hasErrors) {
-          this.setErrors(nodeData.state.errors, true);
-        } else if (hasState) {
-          this.setErrors(null, true);
-        }
       }
     },
 
@@ -830,18 +824,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    /**
-     * @param errors {Array} error list
-     * @param silent {Boolean?false} if true, only update the property (tooltip) without popups or logger
-     */
-    setErrors: function(errors, silent) {
-      this.set("errors", errors);
-      if (!silent) {
-        this.__notifyErrors(errors);
-      }
-    },
-
-    __notifyErrors: function(errors) {
+    __applyErrors: function(errors) {
       if (errors && errors.length) {
         errors.forEach(error => {
           const loc = error["loc"];
@@ -868,30 +851,6 @@ qx.Class.define("osparc.data.model.Node", {
 
             // errors to logger
             this.fireDataEvent("showInLogger", errorMsgData);
-
-            // show troubleshooting tips for specific error types
-            if (error["type"] === "runtime.oom") {
-              let tipMsg;
-              if (osparc.store.StaticInfo.isBillableProduct()) {
-                tipMsg = error["msg"] + "\n💡 Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
-              } else {
-                tipMsg = error["msg"] + "\n💡 Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
-              }
-              osparc.FlashMessenger.logAs(tipMsg, "WARNING");
-              this.fireDataEvent("showInLogger", {
-                nodeId: this.getNodeId(),
-                msg: tipMsg,
-                level: "WARNING"
-              });
-            } else if (error["type"] === "runtime.timeout") {
-              const tipMsg = error["msg"] + "\n💡 The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
-              osparc.FlashMessenger.logAs(tipMsg, "WARNING");
-              this.fireDataEvent("showInLogger", {
-                nodeId: this.getNodeId(),
-                msg: tipMsg,
-                level: "WARNING"
-              });
-            }
           }
         });
       } else if (this.hasInputs()) {

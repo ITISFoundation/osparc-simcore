@@ -32,14 +32,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
   },
 
   members: {
-    __errorToolTip: null,
-    __errorBindingId: null,
-
-    __applyNode: function(node, oldNode) {
-      if (oldNode && this.__errorBindingId !== null) {
-        oldNode.removeBinding(this.__errorBindingId);
-        this.__errorBindingId = null;
-      }
+    __applyNode: function(node) {
       this.show();
       if (node.isFilePicker()) {
         this.__setupFilePicker();
@@ -50,32 +43,13 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       } else {
         this.exclude();
       }
-      if (!this.__errorToolTip) {
-        this.__errorToolTip = new qx.ui.tooltip.ToolTip().set({
-          rich: true,
-          maxWidth: 300
-        });
-        this.setToolTip(this.__errorToolTip);
-      }
-      this.__errorBindingId = node.bind("errors", this.__errorToolTip, "label", {
+      node.bind("errors", this, "toolTipText", {
         converter: errors => {
-          const parts = [];
+          let errorsText = "";
           if (errors) {
-            errors.forEach(error => {
-              let entry = qx.log.appender.Formatter.escapeHTML(error["msg"]);
-              if (error["type"] === "runtime.oom") {
-                if (osparc.store.StaticInfo.isBillableProduct()) {
-                  entry += "<br>💡 Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
-                } else {
-                  entry += "<br>💡 Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
-                }
-              } else if (error["type"] === "runtime.timeout") {
-                entry += "<br>💡 The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
-              }
-              parts.push(entry);
-            });
+            errors.forEach(error => errorsText += error["msg"] + "<br>");
           }
-          return parts.length ? parts.join("<hr>") : null;
+          return errorsText;
         }
       });
     },
