@@ -29,8 +29,8 @@ SMALL_FILE_MIN_BYTES: Final[int] = 1 * _KB
 SMALL_FILE_MAX_BYTES: Final[int] = 8 * _KB
 
 NUM_LARGE_FILES: Final[int] = 2
-LARGE_FILE_MIN_BYTES: Final[int] = 5 * _MB
 LARGE_FILE_MAX_BYTES: Final[int] = 20 * _MB
+LARGE_FILE_MIN_BYTES: Final[int] = int(LARGE_FILE_MAX_BYTES * 0.9)
 LARGE_FILE_WRITE_CHUNK: Final[int] = 1 * _MB
 PARALLEL_WORKERS: Final[int] = 8
 
