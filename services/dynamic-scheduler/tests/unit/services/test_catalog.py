@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
+from models_library.products import ProductName
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -52,6 +53,11 @@ def service_version() -> ServiceVersion:
 @pytest.fixture
 def service_key() -> ServiceKey:
     return "simcore/services/dynamic/test"
+
+
+@pytest.fixture
+def product_name() -> ProductName:
+    return ProductName("thetestproduct")
 
 
 @pytest.fixture
@@ -106,7 +112,8 @@ async def test_get_services_specifications(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     service_specifications: ServiceSpecifications,
+    product_name: ProductName,
 ):
     client = CatalogPublicClient.get_from_app_state(app)
-    result = await client.get_services_specifications(user_id, service_key, service_version)
+    result = await client.get_services_specifications(user_id, service_key, service_version, product_name)
     assert result.model_dump(mode="json") == service_specifications.model_dump(mode="json")

@@ -21,6 +21,7 @@ from ..api.rpc.routes import rpc_api_routes_lifespan
 from ..clients.celery import task_manager_lifespan
 from ..clients.postgres import postgres_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
+from ..clients.redis import redis_lifespan
 from .settings import ApplicationSettings
 
 
@@ -64,6 +65,9 @@ def create_app_lifespan(
 
         # - rpc api routes
         app_lifespan.add(rpc_api_routes_lifespan)
+
+    # - redis
+    app_lifespan.add(redis_lifespan)
 
     # - celery task manager
     app_lifespan.add(task_manager_lifespan)

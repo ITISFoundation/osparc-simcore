@@ -108,6 +108,15 @@
               "title": "User Id"
             },
             "description": "if passed, and that user has custom resources, they will be merged with default resources and returned."
+          },
+          {
+            "name": "x-simcore-products-name",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Simcore-Products-Name"
+            }
           }
         ],
         "responses": {
@@ -292,6 +301,15 @@
               "title": "Strict"
             },
             "description": "if True only the version specs will be retrieved, if False the latest version will be used instead"
+          },
+          {
+            "name": "x-simcore-products-name",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Simcore-Products-Name"
+            }
           }
         ],
         "responses": {
