@@ -52,8 +52,8 @@ _dampen_noisy_loggers(("botocore", "aiobotocore", "aioboto3", "moto.server"))
 
 
 @pytest.fixture
-def bucket_name() -> S3BucketName:
-    return TypeAdapter(S3BucketName).validate_python("osparc-data")
+def bucket_name(faker: Faker) -> S3BucketName:
+    return TypeAdapter(S3BucketName).validate_python(f"osparc-data-{faker.uuid4()}")
 
 
 @pytest.fixture
@@ -183,8 +183,8 @@ async def r_clone_mount_manager(
 
 @pytest.fixture
 def ensure_tmp_dir(tmpdir: LocalPath) -> Callable[[Path], Path]:
-    def _(path: Path) -> Path:
-        tmp_path = Path(tmpdir) / path
+    def _(sub_path: Path) -> Path:
+        tmp_path = Path(tmpdir) / sub_path
         tmp_path.mkdir(parents=True, exist_ok=True)
         return tmp_path
 
@@ -299,7 +299,7 @@ async def _get_file_checksums_from_s3(
     return checksums
 
 
-async def _create_file_in_s3_path(
+async def _upload_random_binary_file(
     s3_client: S3Client, bucket_name: S3BucketName, remote_path: StorageFileID, *, file_name: Path, file_size: ByteSize
 ) -> tuple[Path, str]:
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
@@ -461,7 +461,7 @@ async def test_refresh_path(
     s3_create_files_checums: dict[Path, str] = dict(
         await asyncio.gather(
             *[
-                _create_file_in_s3_path(
+                _upload_random_binary_file(
                     s3_client,
                     bucket_name,
                     remote_path,
