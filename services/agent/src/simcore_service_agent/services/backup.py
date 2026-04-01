@@ -227,9 +227,10 @@ async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_d
             stderr=asyncio.subprocess.STDOUT,
         )
 
-    assert process.stdout  # nosec
-    r_clone_sync_output = await _read_stream(process.stdout)
-    await process.wait()
+        assert process.stdout  # nosec
+        r_clone_sync_output = await _read_stream(process.stdout)
+        await process.wait()
+
     _logger.info("Sync result:\n%s", r_clone_sync_output)
 
     if process.returncode != 0:
