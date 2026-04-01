@@ -5,6 +5,8 @@ import logging
 import socket
 import tempfile
 from asyncio.streams import StreamReader
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from textwrap import dedent
@@ -36,7 +38,8 @@ acl = private
 """
 
 
-def _get_config_file_path(settings: ApplicationSettings) -> Path:
+@contextmanager
+def _get_config_file_path(settings: ApplicationSettings) -> Iterator[Path]:
     config_content = _R_CLONE_CONFIG.format(
         destination_provider=resolve_provider(settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER),
         destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
@@ -46,7 +49,10 @@ def _get_config_file_path(settings: ApplicationSettings) -> Path:
     )
     conf_path = Path(tempfile.gettempdir()) / f"rclone_config_{uuid4()}.ini"
     conf_path.write_text(config_content)
-    return conf_path
+    try:
+        yield conf_path
+    finally:
+        conf_path.unlink(missing_ok=True)
 
 
 def _get_s3_path(s3_bucket: str, labels: DynamicServiceVolumeLabels) -> Path:
@@ -166,60 +172,60 @@ async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_d
         return
 
     exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
-    config_file_path = _get_config_file_path(settings)
     s3_path = _get_s3_path(settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels)
 
-    # listing files rclone will sync
-    r_clone_ls = [
-        "rclone",
-        "--config",
-        f"{config_file_path}",
-        "ls",
-        f"{source_dir}",
-    ]
-    process = await asyncio.create_subprocess_shell(
-        _get_r_clone_str_command(r_clone_ls, exclude_files),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
+    with _get_config_file_path(settings) as config_file_path:
+        # listing files rclone will sync
+        r_clone_ls = [
+            "rclone",
+            "--config",
+            f"{config_file_path}",
+            "ls",
+            f"{source_dir}",
+        ]
+        process = await asyncio.create_subprocess_shell(
+            _get_r_clone_str_command(r_clone_ls, exclude_files),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
 
-    assert process.stdout  # nosec
-    r_clone_ls_output = await _read_stream(process.stdout)
-    await process.wait()
-    _log_expected_operation(volume_details.labels, s3_path, r_clone_ls_output, volume_name)
+        assert process.stdout  # nosec
+        r_clone_ls_output = await _read_stream(process.stdout)
+        await process.wait()
+        _log_expected_operation(volume_details.labels, s3_path, r_clone_ls_output, volume_name)
 
-    await _ensure_permissions_on_source_dir(source_dir)
+        await _ensure_permissions_on_source_dir(source_dir)
 
-    # sync files via rclone
-    r_clone_sync = [
-        "rclone",
-        "--config",
-        f"{config_file_path}",
-        "--low-level-retries",
-        "3",
-        "--retries",
-        f"{settings.AGENT_VOLUMES_CLEANUP_RETRIES}",
-        "--transfers",
-        f"{settings.AGENT_VOLUMES_CLEANUP_PARALLELISM}",
-        # below two options reduce to a minimum the memory footprint
-        # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
-        "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
-        "16M",
-        "--stats",
-        "5s",
-        "--stats-one-line",
-        "sync",
-        f"{source_dir}",
-        f"dst:{s3_path}",
-        "--verbose",
-    ]
+        # sync files via rclone
+        r_clone_sync = [
+            "rclone",
+            "--config",
+            f"{config_file_path}",
+            "--low-level-retries",
+            "3",
+            "--retries",
+            f"{settings.AGENT_VOLUMES_CLEANUP_RETRIES}",
+            "--transfers",
+            f"{settings.AGENT_VOLUMES_CLEANUP_PARALLELISM}",
+            # below two options reduce to a minimum the memory footprint
+            # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
+            "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
+            "16M",
+            "--stats",
+            "5s",
+            "--stats-one-line",
+            "sync",
+            f"{source_dir}",
+            f"dst:{s3_path}",
+            "--verbose",
+        ]
 
-    str_r_clone_sync = _get_r_clone_str_command(r_clone_sync, exclude_files)
-    process = await asyncio.create_subprocess_shell(
-        str_r_clone_sync,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
+        str_r_clone_sync = _get_r_clone_str_command(r_clone_sync, exclude_files)
+        process = await asyncio.create_subprocess_shell(
+            str_r_clone_sync,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
 
     assert process.stdout  # nosec
     r_clone_sync_output = await _read_stream(process.stdout)
