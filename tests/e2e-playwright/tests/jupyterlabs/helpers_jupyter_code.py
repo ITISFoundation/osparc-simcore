@@ -22,11 +22,14 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
         f"▶️ executing '{phase_label}' expected max duration "
         f"'{timedelta_as_minute_second_ms(timedelta(milliseconds=timeout))}'",
     ):
+        # count existing outputs so we can target the new cell's output by index
+        output_count_before = iframe.locator(".jp-OutputArea-output").count()
+
         cell = iframe.get_by_label("files_creation.ipynb").get_by_role("textbox").last
         cell.fill(code)
         cell.press("Shift+Enter")
 
-        output_locator = iframe.locator(".jp-OutputArea-output").last
+        output_locator = iframe.locator(".jp-OutputArea-output").nth(output_count_before)
         expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=timeout)
         expect(output_locator).not_to_contain_text(FAIL_MARKER)
 
@@ -34,9 +37,9 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
         output_locator.scroll_into_view_if_needed()
 
 
-def _replace_line_with_prefix(s: str, prefix: str, replacement: str) -> str:
-    pattern = r"^" + re.escape(prefix) + r".*$"
-    return re.sub(pattern, replacement, s, flags=re.MULTILINE)
+def _replace_line(s: str, line_start_with: str, replace_with: str) -> str:
+    pattern = r"^" + re.escape(line_start_with) + r".*$"
+    return re.sub(pattern, replace_with, s, flags=re.MULTILINE)
 
 
 def create_files_in_jupyter(iframe: FrameLocator, large_file_size: ByteSize, large_file_block_size: ByteSize) -> None:
@@ -59,16 +62,18 @@ def create_files_in_jupyter(iframe: FrameLocator, large_file_size: ByteSize, lar
 
         # first cell: load all definitions (imports, config, helpers, phase functions)
         preamble_code = _JUPYTER_CELL_CODE_PATH.read_text()
-        preamble_code = _replace_line_with_prefix(
-            preamble_code,
-            "LARGE_FILE_MAX_BYTES: Final[int] =",
-            f"LARGE_FILE_MAX_BYTES: Final[int] = {large_file_size}",
-        )
-        preamble_code = _replace_line_with_prefix(
-            preamble_code,
-            "LARGE_FILE_WRITE_CHUNK: Final[int] =",
-            f"LARGE_FILE_WRITE_CHUNK: Final[int] = {large_file_block_size}",
-        )
+        for line_start_with, replace_with in (
+            (
+                "LARGE_FILE_MAX_BYTES: Final[int] =",
+                f"LARGE_FILE_MAX_BYTES: Final[int] = {large_file_size}",
+            ),
+            (
+                "LARGE_FILE_WRITE_CHUNK: Final[int] =",
+                f"LARGE_FILE_WRITE_CHUNK: Final[int] = {large_file_block_size}",
+            ),
+        ):
+            preamble_code = _replace_line(preamble_code, line_start_with, replace_with)
+
         with log_context(logging.INFO, "loading preamble (definitions)"):
             cell = iframe.get_by_label("files_creation.ipynb").get_by_role("textbox").last
             cell.fill(preamble_code)
