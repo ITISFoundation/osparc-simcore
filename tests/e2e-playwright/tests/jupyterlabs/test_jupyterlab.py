@@ -112,10 +112,10 @@ def test_jupyterlab(
             name=_SERVICE_NAME_TAB_TO_WAIT_FOR.get(service_key, _DEFAULT_TAB_TO_WAIT_FOR),
         ).wait_for(state="visible")
     if large_file_size:
-        create_files_in_jupyter(iframe, large_file_block_size)
-
+        create_files_in_jupyter(iframe, large_file_size, large_file_block_size)
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)
+        return
 
     if service_key == "jupyter-ml-pytorch":
         print(f"skipping any more complicated stuff since this is {service_key=} which is different from the others")
