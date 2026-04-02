@@ -5,6 +5,7 @@ from typing import Any
 
 from aiohttp import web
 from captcha.image import ImageCaptcha
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.emails import LowerCaseEmailStr
 from models_library.notifications import Channel
 from models_library.products import ProductName
@@ -102,10 +103,16 @@ async def send_account_request_email_to_support(
                 "ipinfo": ipinfo,
             },
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         _logger.exception(
-            "Failed while sending 'account_requested' email to %s",
-            f"{destination_email=}",
+            **create_troubleshooting_log_kwargs(
+                "Failed to send 'account_requested' email",
+                error=exc,
+                error_context={
+                    "product_name": product_name,
+                    "destination_email": destination_email,
+                },
+            ),
         )
 
 
