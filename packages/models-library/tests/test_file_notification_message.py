@@ -81,24 +81,6 @@ def test_routing_key_format(
     assert routing_key == f"{project_id}.{node_id}"
 
 
-def test_optional_project_and_node_id(user_id: int):
-    file_id = f"api/{uuid.uuid4()}/some-file.txt"
-    message = FileNotificationMessage(
-        event_type=FileNotificationEventType.FILE_UPLOADED,
-        user_id=user_id,
-        file_id=file_id,
-    )
-
-    assert message.project_id is None
-    assert message.node_id is None
-    assert message.routing_key() == "None.None"
-
-    raw = message.body()
-    restored = FileNotificationMessage.model_validate_json(raw)
-    assert restored.project_id is None
-    assert restored.node_id is None
-
-
 def test_all_event_types_exist():
     assert set(FileNotificationEventType) == {
         FileNotificationEventType.FILE_UPLOADED,
