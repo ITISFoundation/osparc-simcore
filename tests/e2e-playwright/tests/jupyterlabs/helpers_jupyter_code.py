@@ -7,7 +7,7 @@ from typing import Final
 from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER, FAIL_MARKER
 from playwright.sync_api import FrameLocator, expect
 from pydantic import ByteSize
-from pytest_simcore.helpers.logging_tools import log_context
+from pytest_simcore.helpers.logging_tools import log_context, timedelta_as_minute_second_ms
 from pytest_simcore.helpers.playwright import SECOND
 
 _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
@@ -18,7 +18,9 @@ _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_co
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
     """Fill a new cell with *code*, execute it and wait for COMPLETE_MARKER."""
     with log_context(
-        logging.INFO, f"▶️ executing '{phase_label}' expected max duration '{timedelta(milliseconds=timeout)}'"
+        logging.INFO,
+        f"▶️ executing '{phase_label}' expected max duration "
+        f"'{timedelta_as_minute_second_ms(timedelta(milliseconds=timeout))}'",
     ):
         cell = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox").last
         cell.fill(code)

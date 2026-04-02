@@ -5,10 +5,10 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from types import SimpleNamespace
-from typing import Final, TypeAlias
+from typing import Final
 
 
-def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
+def timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
     total_seconds = delta.total_seconds()
     minutes, rem_seconds = divmod(abs(total_seconds), 60)
     seconds, milliseconds = divmod(rem_seconds, 1)
@@ -56,7 +56,10 @@ class DynamicIndentFormatter(logging.Formatter):
 
     def format(self, record) -> str:
         original_message = record.msg
-        record.msg = f"{self.indent_char * self._cls_indent_level}{self.indent_char * self._instance_indent_level}{original_message}"
+        record.msg = (
+            f"{self.indent_char * self._cls_indent_level}{self.indent_char * self._instance_indent_level}"
+            f"{original_message}"
+        )
         result = super().format(record)
         record.msg = original_message
         return result
@@ -108,8 +111,8 @@ class ContextMessages:
             self.raised = lambda: f"{self.done if isinstance(self.done, str) else self.done()} [with raised error]"
 
 
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
+type LogLevelInt = int
+type LogMessageStr = str
 
 
 @contextmanager
@@ -165,7 +168,10 @@ def log_context(
         with _increased_logger_indent(logger):
             yield SimpleNamespace(logger=logger, messages=ctx_msg)
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        done_message = f"{_resolve(ctx_msg.done, _DONE_PREFIX, _DONE_SUFFIX)} (total time spent: {_timedelta_as_minute_second_ms(elapsed_time)})"
+        done_message = (
+            f"{_resolve(ctx_msg.done, _DONE_PREFIX, _DONE_SUFFIX)} "
+            f"(total time spent: {timedelta_as_minute_second_ms(elapsed_time)})"
+        )
         logger.log(
             level,
             done_message,
@@ -176,7 +182,10 @@ def log_context(
 
     except:
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        error_message = f"{_resolve(ctx_msg.raised, _RAISED_PREFIX, _RAISED_SUFFIX)} (total time spent: {_timedelta_as_minute_second_ms(elapsed_time)})"
+        error_message = (
+            f"{_resolve(ctx_msg.raised, _RAISED_PREFIX, _RAISED_SUFFIX)} "
+            f"(total time spent: {timedelta_as_minute_second_ms(elapsed_time)})"
+        )
         logger.exception(
             error_message,
             *args,
