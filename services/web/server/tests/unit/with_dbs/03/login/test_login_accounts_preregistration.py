@@ -21,6 +21,7 @@ from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.constants import MSG_USER_DELETED
+from simcore_service_webserver.login_accounts import _controller_rest, _service
 
 
 @pytest.mark.parametrize("user_role", [role for role in UserRole if role < UserRole.USER])
@@ -44,18 +45,9 @@ async def test_unregister_account_access_rights(client: TestClient, logged_user:
 
 
 @pytest.fixture
-def mocked_send_email(mocker: MockerFixture) -> MagicMock:
-    # OVERRIDES services/web/server/tests/unit/with_dbs/conftest.py:mocked_send_email fixture
-    return mocker.patch(
-        "simcore_service_webserver.email._core._do_send_mail",
-        spec=True,
-    )
-
-
-@pytest.fixture
 def mocked_send_notification(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.login_accounts._service.send_message_from_template",
+        f"{_service.__name__}.send_message_from_template",
         spec=True,
     )
 
@@ -63,7 +55,7 @@ def mocked_send_notification(mocker: MockerFixture) -> MagicMock:
 @pytest.fixture
 def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.login_accounts._controller_rest.session_service.get_session",
+        f"{_controller_rest.__name__}.session_service.get_session",
         spec=True,
         return_value={"captcha": "123456"},
     )
