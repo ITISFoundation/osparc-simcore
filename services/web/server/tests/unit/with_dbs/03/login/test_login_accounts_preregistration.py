@@ -37,10 +37,10 @@ async def test_unregister_account_access_rights(client: TestClient, logged_user:
         response.raise_for_status()
 
     error = err_info.value
-    assert error.status in (
+    assert error.status in {
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
-    ), f"{error}"
+    }, f"{error}"
 
 
 @pytest.fixture
