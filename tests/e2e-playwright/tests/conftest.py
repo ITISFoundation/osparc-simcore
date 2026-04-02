@@ -618,12 +618,12 @@ def create_new_project_and_delete(
             f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
             # Retry deletion in case the project is still closing (409 locked)
-            for attempt in range(5):
+            for attempt in range(10):
                 response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
                 if response.status == 204:
                     break
-                if response.status == 409 and attempt < 4:
-                    time.sleep(2)
+                if response.status == 409 and attempt < 9:
+                    time.sleep(3)
                     continue
                 assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 
