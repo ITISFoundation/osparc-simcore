@@ -70,7 +70,7 @@ def create_files_in_jupyter(iframe: FrameLocator, large_file_size: ByteSize, lar
             f"LARGE_FILE_WRITE_CHUNK: Final[int] = {large_file_block_size}",
         )
         with log_context(logging.INFO, "loading preamble (definitions)"):
-            cell = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox").last
+            cell = iframe.get_by_label("files_creation.ipynb").get_by_role("textbox").last
             cell.fill(preamble_code)
             cell.press("Shift+Enter")
 
