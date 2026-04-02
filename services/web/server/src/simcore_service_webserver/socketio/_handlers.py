@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 _ANONYMOUS_USER_ID = -1
 
 # Messages reaching users
-_MSG_UNAUTHORIZED_MISSING_SESSION_INFO = "Sorry, we cannot identify you. Please reaload the page and login again."
+_MSG_UNAUTHORIZED_MISSING_SESSION_INFO = "Sorry, we cannot identify you. Please reload the page and login again."
 
 
 # Send service_deletion_timeout to client
