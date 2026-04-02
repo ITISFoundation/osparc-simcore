@@ -61,6 +61,10 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 @group_or_role_permission_required("admin.users.read")
 @handle_rest_requests_exceptions
 async def list_users_accounts(request: web.Request) -> web.Response:
+    """
+    NOTE: Now supports listing users across products (defaults to current),
+    that means that the PO or support groups can list all users of the system.
+    """
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 

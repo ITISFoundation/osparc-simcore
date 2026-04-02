@@ -17,6 +17,7 @@ from simcore_postgres_database.models.users_details import (
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.products import products_service
+from simcore_service_webserver.products.errors import ProductNotFoundError
 from simcore_service_webserver.users import _accounts_service
 from simcore_service_webserver.users._accounts_repository import (
     create_user_pre_registration,
@@ -25,6 +26,7 @@ from simcore_service_webserver.users.exceptions import (
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,
+    PreRegistrationNotFoundError,
 )
 
 
@@ -230,6 +232,51 @@ async def test_move_user_account_request_to_product_happy_path(
     assert move_audit["confidence"] == "high"
     assert "Moved from" in move_audit["notes"]
     assert "executed_at" in move_audit
+
+
+async def test_move_user_account_request_to_product_fails_if_pre_registration_not_found(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+):
+    """Test moving a non-existent pre-registration raises PreRegistrationNotFoundError."""
+    target_product = await _get_other_existing_product_name(app, current_product_name=product_name)
+    non_existent_id = 99999
+
+    with pytest.raises(PreRegistrationNotFoundError):
+        await _accounts_service.move_user_account_request_to_product(
+            app,
+            pre_registration_id=non_existent_id,
+            new_product_name=target_product,
+            moved_by=product_owner_user["id"],
+        )
+
+
+async def test_move_user_account_request_to_product_fails_if_target_product_not_found(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+):
+    """Test moving pre-registration to non-existent product raises ProductNotFoundError."""
+    asyncpg_engine = get_asyncpg_engine(app)
+    email = "move-invalid-product@example.com"
+    invalid_product_name = "non-existent-product-xyz"
+
+    pre_registration_id = await create_user_pre_registration(
+        asyncpg_engine,
+        email=email,
+        created_by=product_owner_user["id"],
+        product_name=product_name,
+        institution="Test University",
+    )
+
+    with pytest.raises(ProductNotFoundError):
+        await _accounts_service.move_user_account_request_to_product(
+            app,
+            pre_registration_id=pre_registration_id,
+            new_product_name=invalid_product_name,
+            moved_by=product_owner_user["id"],
+        )
 
 
 async def test_move_user_account_request_to_product_fails_if_reviewed(
