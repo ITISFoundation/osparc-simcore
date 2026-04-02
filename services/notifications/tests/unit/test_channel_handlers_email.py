@@ -2,9 +2,7 @@ import itertools
 from collections import Counter
 
 import pytest
-from models_library.notifications.rpc import (
-    EmailContact,
-)
+from models_library.notifications.rpc import EmailContact
 from simcore_service_notifications.services.channel_handlers._email import (
     _interleave_recipients_by_domain,
 )
