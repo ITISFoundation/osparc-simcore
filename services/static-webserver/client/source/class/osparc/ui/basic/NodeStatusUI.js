@@ -45,11 +45,26 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       }
       node.bind("errors", this, "toolTipText", {
         converter: errors => {
-          let errorsText = "";
+          const parts = [];
           if (errors) {
-            errors.forEach(error => errorsText += error["msg"] + "<br>");
+            errors.forEach(error => {
+              parts.push(qx.log.appender.Formatter.escapeHTML(error["msg"]));
+              let hint = null;
+              if (error["type"] === "runtime.oom") {
+                if (osparc.store.StaticInfo.isBillableProduct()) {
+                  hint = "Tip: Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
+                } else {
+                  hint = "Tip: Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
+                }
+              } else if (error["type"] === "runtime.timeout") {
+                hint = "Tip: The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
+              }
+              if (hint) {
+                parts.push(hint);
+              }
+            });
           }
-          return errorsText;
+          return parts.length ? parts.join("<br>") : null;
         }
       });
     },
