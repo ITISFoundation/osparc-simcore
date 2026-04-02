@@ -244,12 +244,13 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     serializeOutput: function(outputs) {
-      let output = {};
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       if (outFileValue) {
-        output[osparc.data.model.NodePort.FP_PORT_KEY] = outFileValue;
+        return {
+          [osparc.data.model.NodePort.FP_PORT_KEY]: outFileValue,
+        };
       }
-      return output;
+      return {};
     },
 
     /** RTC Token management

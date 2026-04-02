@@ -5,7 +5,7 @@
 #
 # Python version can be upgraded if:
 #   - Has been patched several times (avoid using the very first release for production)
-#   - Can be installed with pyenv (SEE pyenv install --list )
+#   - Can be installed with UV
 #
 #
 ARG PYTHON_VERSION="3.13.9"

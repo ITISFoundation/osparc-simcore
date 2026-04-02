@@ -267,6 +267,11 @@ async def compute_pipeline_details(
                     if node_id in node_id_to_comp_task and node_id_to_comp_task[node_id].progress is not None
                     else None
                 ),
+                errors=(
+                    node_id_to_comp_task[node_id].errors
+                    if node_id in node_id_to_comp_task and node_id_to_comp_task[node_id].errors
+                    else None
+                ),
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL
