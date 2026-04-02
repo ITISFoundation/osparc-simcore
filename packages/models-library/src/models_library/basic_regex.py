@@ -45,10 +45,13 @@ MIME_TYPE_RE = r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+
 _ALLOWED_PREFIX_EXPORTS: Final[str] = "exports"
 _ALLOWED_PREFIX_API: Final[str] = "api"
 SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES: Final[set[str]] = {_ALLOWED_PREFIX_API, _ALLOWED_PREFIX_EXPORTS}
-SIMCORE_S3_FILE_ID_RE = (
-    rf"^({_ALLOWED_PREFIX_EXPORTS}\/\d+\/{UUID_RE_BASE}\.zip)|"
-    rf"(({_ALLOWED_PREFIX_API}|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$)"
-)
+
+# e.g. exports/123/<uuid>.zip
+_EXPORT_S3_FILE_RE = rf"{_ALLOWED_PREFIX_EXPORTS}\/\d+\/{UUID_RE_BASE}\.zip"
+# e.g. api/<uuid>/some/path  or  <uuid>/<uuid>/some/path
+_API_S3_FILE_RE = rf"({_ALLOWED_PREFIX_API}|{UUID_RE_BASE})\/{UUID_RE_BASE}\/.+"
+
+SIMCORE_S3_FILE_ID_RE = rf"^({_EXPORT_S3_FILE_RE})|({_API_S3_FILE_RE})$"
 
 
 SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
