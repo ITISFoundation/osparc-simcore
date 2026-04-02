@@ -168,7 +168,8 @@ async def upload_file(
     file_id: StorageFileIDStr,
     file_size: ByteSize | None,
     link_type: LinkType = LinkType.PRESIGNED,
-    is_directory: bool = False,  # noqa: FBT001, FBT002
+    *,
+    is_directory: bool = False,
 ):
     """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
 
