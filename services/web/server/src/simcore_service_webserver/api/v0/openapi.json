@@ -19581,6 +19581,45 @@
         ],
         "title": "EnvelopedError"
       },
+      "ErrorDict": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Loc"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "ctx": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ctx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ErrorDict",
+        "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
+      },
       "ErrorGet": {
         "properties": {
           "message": {
@@ -20912,6 +20951,100 @@
             }
           }
         }
+      },
+      "InputID": {
+        "type": "string",
+        "pattern": "^[-_a-zA-Z0-9]+$"
+      },
+      "InputsDict-Input": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "contentMediaType": "application/json",
+              "contentSchema": {}
+            },
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/PortLink"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/InputID"
+        },
+        "type": "object"
+      },
+      "InputsDict-Output": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {},
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/PortLink"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/InputID"
+        },
+        "type": "object"
       },
       "InvitationCheck": {
         "properties": {
@@ -22247,21 +22380,19 @@
           "inputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/InputsDict-Input"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Inputs",
             "description": "values of input properties"
           },
           "inputsRequired": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "pattern": "^[-_a-zA-Z0-9]+$"
+                  "$ref": "#/components/schemas/InputID"
                 },
                 "type": "array"
               },
@@ -22275,6 +22406,12 @@
           "inputsUnits": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22287,6 +22424,12 @@
           "inputAccess": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AccessEnum"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22315,13 +22458,12 @@
           "outputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/OutputsDict-Input"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Outputs",
             "description": "values of output properties"
           },
           "outputNode": {
@@ -22480,21 +22622,19 @@
           "inputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/InputsDict-Output"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Inputs",
             "description": "values of input properties"
           },
           "inputsRequired": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "pattern": "^[-_a-zA-Z0-9]+$"
+                  "$ref": "#/components/schemas/InputID"
                 },
                 "type": "array"
               },
@@ -22508,6 +22648,12 @@
           "inputsUnits": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22520,6 +22666,12 @@
           "inputAccess": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AccessEnum"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22548,13 +22700,12 @@
           "outputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/OutputsDict-Output"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Outputs",
             "description": "values of output properties"
           },
           "outputNode": {
@@ -22891,16 +23042,14 @@
             "title": "Label"
           },
           "inputs": {
-            "type": "object",
-            "title": "Inputs",
+            "$ref": "#/components/schemas/InputsDict-Input",
             "default": {}
           },
           "inputsRequired": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "pattern": "^[-_a-zA-Z0-9]+$"
+                  "$ref": "#/components/schemas/InputID"
                 },
                 "type": "array"
               },
@@ -23164,6 +23313,21 @@
               }
             ],
             "description": "the node's lock state"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "error details when the node is in a FAILED state"
           }
         },
         "additionalProperties": false,
@@ -23218,6 +23382,21 @@
               }
             ],
             "description": "the node's lock state"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "error details when the node is in a FAILED state"
           }
         },
         "additionalProperties": false,
@@ -23259,6 +23438,94 @@
           "running_time_in_hours"
         ],
         "title": "OsparcCreditsAggregatedByServiceGet"
+      },
+      "OutputID": {
+        "type": "string",
+        "pattern": "^[-_a-zA-Z0-9]+$"
+      },
+      "OutputsDict-Input": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "contentMediaType": "application/json",
+              "contentSchema": {}
+            },
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/OutputID"
+        },
+        "type": "object"
+      },
+      "OutputsDict-Output": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {},
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/OutputID"
+        },
+        "type": "object"
       },
       "PageLinks": {
         "properties": {
@@ -28619,6 +28886,9 @@
         ],
         "title": "UnitExtraInfoTier",
         "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
+      },
+      "UnitStr": {
+        "type": "string"
       },
       "UnregisterCheck": {
         "properties": {

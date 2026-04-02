@@ -2088,6 +2088,45 @@
         ],
         "title": "DynamicSidecarStatus"
       },
+      "ErrorDict": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Loc"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "ctx": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ctx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ErrorDict",
+        "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
+      },
       "GetProjectInactivityResponse": {
         "properties": {
           "is_inactive": {
@@ -2494,6 +2533,21 @@
               }
             ],
             "description": "the node's lock state"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "error details when the node is in a FAILED state"
           }
         },
         "additionalProperties": false,

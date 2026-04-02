@@ -55,7 +55,7 @@ async def _notify_comp_node_progress(app: web.Application, message: ProgressRabb
     project = await _projects_service.get_project_for_user(
         app, f"{message.project_id}", message.user_id, include_state=True
     )
-    await _projects_service.notify_project_node_update(app, project, message.node_id, None)
+    await _projects_service.notify_project_node_update(app, project, message.node_id)
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
@@ -108,10 +108,7 @@ async def _computational_pipeline_status_message_parser(app: web.Application, da
             if _is_computational_node(n.key)
         )
         await limited_gather(
-            *[
-                _projects_service.notify_project_node_update(app, project, n_id, errors=None)
-                for n_id in computational_node_ids
-            ],
+            *[_projects_service.notify_project_node_update(app, project, n_id) for n_id in computational_node_ids],
             limit=10,  # notify 10 nodes at a time
         )
     await _projects_service.notify_project_state_update(app, project)
@@ -170,7 +167,8 @@ async def _webserver_internal_events_message_parser(app: web.Application, data: 
             await project_logs.unsubscribe(app, ProjectID(_project_id))
         else:
             _logger.error(
-                "Missing project_id in UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE event, this should never happen, investigate!"
+                "Missing project_id in UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE event, "
+                "this should never happen, investigate!"
             )
 
     else:

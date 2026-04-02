@@ -11,7 +11,6 @@ from typing import Final, NoReturn
 
 import asyncpg
 from aiohttp import web
-from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -49,7 +48,6 @@ async def _update_project_state(
     project_uuid: ProjectID,
     node_uuid: NodeID,
     new_state: RunningState,
-    node_errors: list[ErrorDict] | None,
 ) -> None:
     project = await _projects_service.update_project_node_state(
         app,
@@ -60,7 +58,7 @@ async def _update_project_state(
         client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
     )
 
-    await _projects_service.notify_project_node_update(app, project, node_uuid, node_errors)
+    await _projects_service.notify_project_node_update(app, project, node_uuid)
 
     await _projects_service.notify_project_state_update(app, project)
 
@@ -94,7 +92,6 @@ async def _handle_db_notification(
                 payload.node_id,
                 changed_row.outputs,
                 changed_row.run_hash,
-                node_errors=changed_row.errors,
                 ui_changed_keys=None,
                 client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
             )
@@ -106,7 +103,6 @@ async def _handle_db_notification(
                 payload.project_id,
                 payload.node_id,
                 convert_state_from_db(changed_row.state),
-                node_errors=changed_row.errors,
             )
 
     except exceptions.ProjectNotFoundError as exc:
