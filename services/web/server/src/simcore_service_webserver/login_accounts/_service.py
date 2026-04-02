@@ -79,6 +79,7 @@ async def send_account_request_email_to_support(
     try:
         await send_message_from_template(
             app,
+            user_id=None,
             product_name=product_name,
             channel=Channel.email,
             group_ids=None,
