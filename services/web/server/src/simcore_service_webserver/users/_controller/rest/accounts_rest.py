@@ -125,10 +125,13 @@ async def list_users_accounts(request: web.Request) -> web.Response:
 @group_or_role_permission_required("admin.users.read")
 @handle_rest_requests_exceptions
 async def list_products_for_user_accounts(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
     product_options = [
-        UserAccountProductOptionGet(name=product.name, display_name=product.display_name).model_dump(
-            **_RESPONSE_MODEL_MINIMAL_POLICY
-        )
+        UserAccountProductOptionGet(
+            name=product.name,
+            display_name=product.display_name,
+            is_current=product.name == req_ctx.product_name,
+        ).model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
         for product in products_service.list_products(request.app)
     ]
     return envelope_json_response(product_options)

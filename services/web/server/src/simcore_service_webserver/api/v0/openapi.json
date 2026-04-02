@@ -29860,6 +29860,11 @@
           "displayName": {
             "type": "string",
             "title": "Displayname"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "title": "Iscurrent",
+            "default": false
           }
         },
         "type": "object",

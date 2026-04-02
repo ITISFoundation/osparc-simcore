@@ -22,12 +22,14 @@ from models_library.api_schemas_webserver.users import (
     UserAccountGet,
     UserAccountPreviewApprovalGet,
     UserAccountPreviewRejectionGet,
+    UserAccountProductOptionGet,
 )
 from models_library.groups import AccessRightsDict
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.rest_error import ErrorGet
 from models_library.rest_pagination import Page
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -1408,3 +1410,28 @@ async def test_move_user_account_unknown_product_returns_409(
     error_model = ErrorGet.model_validate(error)
     assert error_model.status == status.HTTP_409_CONFLICT
     assert error_model.message == f"Invalid product '{invalid_product_name}'. The specified product does not exist."
+
+
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
+async def test_list_products_for_user_accounts_marks_current_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+):
+    assert client.app
+
+    url = client.app.router["list_products_for_user_accounts"].url_for()
+    assert url.path == "/v0/admin/products"
+
+    resp = await client.get(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    options = TypeAdapter(list[UserAccountProductOptionGet]).validate_python(data)
+    current_options = [option for option in options if option.is_current]
+
+    assert current_options
+    assert any(option.name == product_name for option in current_options)

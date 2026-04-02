@@ -404,6 +404,7 @@ class UserAccountSearchQueryParams(RequestParameters):
 class UserAccountProductOptionGet(OutputSchema):
     name: ProductName
     display_name: str
+    is_current: bool = False
 
 
 class UserAccountGet(OutputSchema):
