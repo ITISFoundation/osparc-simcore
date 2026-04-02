@@ -52,10 +52,15 @@ async def send_close_account_email(
                 "retention_days": retention_days,
             },
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         _logger.exception(
-            "Failed while sending 'unregister' email to %s",
-            f"{user_email=}",
+            **create_troubleshooting_log_kwargs(
+                f"Failed while sending 'unregister' email to {user_email}",
+                error=exc,
+                error_context={
+                    "user_email": user_email,
+                },
+            ),
         )
 
 
@@ -106,7 +111,7 @@ async def send_account_request_email_to_support(
     except Exception as exc:  # pylint: disable=broad-except
         _logger.exception(
             **create_troubleshooting_log_kwargs(
-                "Failed to send 'account_requested' email",
+                f"Failed to send 'account_requested' email to {destination_email}",
                 error=exc,
                 error_context={
                     "product_name": product_name,
