@@ -595,14 +595,10 @@ def wait_for_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    skip_endpoint_check: bool = False,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of
     the required websocket events will not be emitted again.
     In which case this will need further adjutment
-
-    skip_endpoint_check: If True, skip checking if the service HTTP endpoint is responding.
-    This is useful for local deployments where services are not exposed externally.
     """
 
     started = arrow.utcnow()
@@ -632,17 +628,16 @@ def wait_for_service_running(
     if waiter and not waiter.success:
         pytest.fail("❌ Service failed starting!  ❌")
 
-    if not skip_endpoint_check:
-        wait_for_service_endpoint_responding(
-            node_id,
-            api_request_context=page.request,
-            product_url=product_url,
-            is_legacy_service=is_service_legacy,
-            timeout=max(
-                timeout - int(elapsed_time.total_seconds() * SECOND),
-                _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
-            ),
-        )
+    wait_for_service_endpoint_responding(
+        node_id,
+        api_request_context=page.request,
+        product_url=product_url,
+        is_legacy_service=is_service_legacy,
+        timeout=max(
+            timeout - int(elapsed_time.total_seconds() * SECOND),
+            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+        ),
+    )
 
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
