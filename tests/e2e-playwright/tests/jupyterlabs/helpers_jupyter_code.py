@@ -40,10 +40,18 @@ def _replace_line_with_prefix(s: str, prefix: str, replacement: str) -> str:
 
 
 def create_files_in_jupyter(iframe: FrameLocator, large_file_size: ByteSize, large_file_block_size: ByteSize) -> None:
-    with log_context(logging.INFO, "running rclone stress test"):
+    with log_context(logging.INFO, "running files test"):
         iframe.get_by_role("button", name="New Launcher").nth(0).click()
         iframe.locator(".jp-LauncherCard-icon").first.click()
         iframe.get_by_role("tab", name="Untitled.ipynb").click()
+
+        # rename the notebook so "Untitled.ipynb" is free for subsequent notebooks
+        with log_context(logging.INFO, "renaming notebook"):
+            iframe.get_by_role("tab", name="Untitled.ipynb").click(button="right")
+            iframe.get_by_text("Rename Notebook").click()
+            name_input = iframe.locator(".jp-Dialog input")
+            name_input.fill("files_creation.ipynb")
+            iframe.get_by_role("button", name="Rename").click()
 
         # wait for the kernel to be fully initialized before interacting
         with log_context(logging.INFO, "waiting for kernel to be fully initialized"):
@@ -74,11 +82,3 @@ def create_files_in_jupyter(iframe: FrameLocator, large_file_size: ByteSize, lar
                 phase_label=phase_func_name,
                 timeout=timeout,
             )
-
-        # rename the notebook so "Untitled.ipynb" is free for subsequent notebooks
-        with log_context(logging.INFO, "renaming notebook"):
-            iframe.get_by_role("tab", name="Untitled.ipynb").click(button="right")
-            iframe.get_by_text("Rename Notebook").click()
-            name_input = iframe.locator(".jp-Dialog input")
-            name_input.fill("files_creation.ipynb")
-            iframe.get_by_role("button", name="Rename").click()

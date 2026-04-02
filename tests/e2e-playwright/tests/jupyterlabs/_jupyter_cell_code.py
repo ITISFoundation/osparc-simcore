@@ -71,7 +71,7 @@ def _finalise_phase(func: Callable[[], None]) -> Callable[[], None]:
             print(f"\n{FAIL_MARKER} count={len(errors)}:")
             for e in errors:
                 print(f"  • {e}")
-            msg = f"Stress test failed with {len(errors)} error(s)"
+            msg = f"Test failed with {len(errors)} error(s)"
             raise RuntimeError(msg)
 
     return wrapper
