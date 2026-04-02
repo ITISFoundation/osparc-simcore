@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
@@ -16,7 +17,7 @@ _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_co
 
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
     """Fill a new cell with *code*, execute it and wait for COMPLETE_MARKER."""
-    with log_context(logging.INFO, f"▶️ executing '{phase_label}' with timeout {ByteSize(timeout).human_readable()}⌛️"):
+    with log_context(logging.INFO, f"▶️ executing '{phase_label}' expected max duration '{timedelta(seconds=timeout)}'"):
         cell = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox").last
         cell.fill(code)
         cell.press("Shift+Enter")
