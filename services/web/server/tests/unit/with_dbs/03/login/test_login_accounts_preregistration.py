@@ -175,10 +175,13 @@ async def test_request_an_account(
 
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
-    # check notification service was called with correct template
+    # check notification service was called with correct template and addressing
     mocked_send_notification.assert_called_once()
     call_kwargs = mocked_send_notification.call_args[1]
     assert call_kwargs["template_name"] == "account_requested"
+    assert any(c.email for c in call_kwargs["external_contacts"]), "recipient (support/PO email) must be set"
+    assert call_kwargs["reply_to"] is not None
+    assert call_kwargs["reply_to"].email == user_data["email"]
 
     # check it appears in PO center
     async with (
