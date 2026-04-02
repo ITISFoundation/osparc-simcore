@@ -115,7 +115,6 @@ def test_jupyterlab(
         create_files_in_jupyter(iframe, large_file_size, large_file_block_size)
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)
-        return
 
     if service_key == "jupyter-ml-pytorch":
         print(f"skipping any more complicated stuff since this is {service_key=} which is different from the others")
