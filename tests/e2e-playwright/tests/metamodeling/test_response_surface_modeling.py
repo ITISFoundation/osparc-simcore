@@ -371,13 +371,7 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
             select_all_btn.click()
 
             plotly_graph = service_iframe.locator(".js-plotly-plot")
-            try:
-                plotly_graph.wait_for(state="visible", timeout=60 * SECOND)
-            except Exception:
-                logging.warning(
-                    "Plotly graph not visible for %s after 60s (backend visualization may have failed)",
-                    local_service_key,
-                )
+            plotly_graph.wait_for(state="visible", timeout=60 * SECOND)
             page.wait_for_timeout(2000)
 
         with (
