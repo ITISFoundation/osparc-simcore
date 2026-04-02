@@ -2,6 +2,7 @@ import logging
 from typing import Any, cast
 
 import sqlalchemy as sa
+import sqlalchemy.exc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
@@ -357,15 +358,6 @@ async def update_pre_registration_product(
 
         pre_email = pre_registration["pre_email"]
         assert pre_email is not None  # nosec
-        has_duplicate = await check_pre_registration_email_exists_in_product(
-            engine,
-            conn,
-            email=pre_email,
-            product_name=new_product_name,
-            exclude_pre_registration_id=pre_registration_id,
-        )
-        if has_duplicate:
-            raise PreRegistrationDuplicateInProductError(email=pre_email, product_name=new_product_name)
 
         current_extras = pre_registration["extras"]
         audit_entry = ExtrasAuditEntry.create_now(
@@ -379,14 +371,29 @@ async def update_pre_registration_product(
             entry=audit_entry,
         )
 
-        await conn.execute(
-            users_pre_registration_details.update()
-            .values(
-                product_name=new_product_name,
-                extras=merged_extras,
+        # Duplicate detection is enforced at DB level on update. We intentionally
+        # rely on the constraint + IntegrityError mapping here to avoid TOCTOU races
+        # that can happen with a separate pre-check query under concurrency.
+        try:
+            await conn.execute(
+                users_pre_registration_details.update()
+                .values(
+                    product_name=new_product_name,
+                    extras=merged_extras,
+                )
+                .where(users_pre_registration_details.c.id == pre_registration_id)
             )
-            .where(users_pre_registration_details.c.id == pre_registration_id)
-        )
+        except sqlalchemy.exc.IntegrityError as exc:
+            _logger.debug(
+                "IntegrityError while moving pre-registration %s to product %s: %s",
+                pre_registration_id,
+                new_product_name,
+                exc,
+            )
+            raise PreRegistrationDuplicateInProductError(
+                email=pre_email,
+                product_name=new_product_name,
+            ) from exc
 
 
 #

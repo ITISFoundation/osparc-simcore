@@ -185,6 +185,12 @@ async def pre_register_user_account(request: web.Request) -> web.Response:
 @group_or_role_permission_required("admin.users.write")
 @handle_rest_requests_exceptions
 async def move_user_account(request: web.Request) -> web.Response:
+    """
+    Allows a pre-registration to be moved to a different product
+    (from ANY src to ANY dst regardless of the current product ) IF it is not
+    reviewed. This is useful in case the user made a mistake in the product selection
+    during account requests.
+    """
     req_ctx = UsersRequestContext.model_validate(request)
     move_data = await parse_request_body_as(UserAccountMoveProduct, request)
 
