@@ -23,11 +23,19 @@ from models_library.api_schemas_webserver.users import (
     UsersAccountListQueryParams,
 )
 from models_library.generics import Envelope
+from models_library.rest_error import EnvelopedError
 from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.users._controller.rest._rest_exceptions import (
+    _TO_HTTP_ERROR_MAP,
+)
 from simcore_service_webserver.users.schemas import UserAccountRestPreRegister
 
-router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
+router = APIRouter(
+    prefix=f"/{API_VTAG}",
+    tags=["users"],
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
+)
 
 _extra_tags: list[str | Enum] = ["admin"]
 
@@ -36,6 +44,12 @@ _extra_tags: list[str | Enum] = ["admin"]
     "/admin/user-accounts",
     response_model=Page[UserAccountGet],
     tags=_extra_tags,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "The specified product_name override does not exist",
+            "model": EnvelopedError,
+        },
+    },
 )
 async def list_users_accounts(
     _query: Annotated[as_query(UsersAccountListQueryParams), Depends()],
@@ -90,6 +104,12 @@ async def search_user_accounts(
     "/admin/user-accounts:move",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "The specified new_product_name does not exist",
+            "model": EnvelopedError,
+        },
+    },
 )
 async def move_user_account(_body: UserAccountMoveProduct): ...
 

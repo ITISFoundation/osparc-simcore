@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.notifications import MessageContentGet
@@ -67,10 +68,15 @@ async def list_users_accounts(request: web.Request) -> web.Response:
     target_product_name = query_params.product_name or req_ctx.product_name
 
     if query_params.product_name and query_params.product_name != req_ctx.product_name:
-        # Validate the overridden product exists
+        # Unknown override is a caller conflict (409), not a global not-found case.
         product_names = await products_service.list_products_names(request.app)
         if target_product_name not in product_names:
-            raise ProductNotFoundError(product_name=target_product_name)
+            raise web.HTTPConflict(
+                text=user_message(
+                    "Invalid product '{product_name}'. The specified product does not exist.",
+                    _version=1,
+                ).format(product_name=target_product_name)
+            )
 
     if query_params.review_status == "PENDING":
         filter_any_account_request_status = [AccountRequestStatus.PENDING]
@@ -179,12 +185,20 @@ async def move_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     move_data = await parse_request_body_as(UserAccountMoveProduct, request)
 
-    await _accounts_service.move_user_account_request_to_product(
-        request.app,
-        pre_registration_id=move_data.pre_registration_id,
-        new_product_name=move_data.new_product_name,
-        moved_by=req_ctx.user_id,
-    )
+    try:
+        await _accounts_service.move_user_account_request_to_product(
+            request.app,
+            pre_registration_id=move_data.pre_registration_id,
+            new_product_name=move_data.new_product_name,
+            moved_by=req_ctx.user_id,
+        )
+    except ProductNotFoundError as exc:
+        raise web.HTTPConflict(
+            text=user_message(
+                "Invalid product '{product_name}'. The specified product does not exist.",
+                _version=1,
+            ).format(product_name=move_data.new_product_name)
+        ) from exc
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
