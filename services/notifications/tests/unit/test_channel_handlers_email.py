@@ -2,7 +2,12 @@ import itertools
 from collections import Counter
 
 import pytest
-from models_library.notifications.rpc import EmailAddressing, EmailContact, EmailMessage
+from models_library.notifications.rpc import (
+    EmailAddressing,
+    EmailContact,
+    EmailContent,
+    EmailMessage,
+)
 from simcore_service_notifications.services.channel_handlers._email import (
     EmailChannelHandler,
     _interleave_recipients_by_domain,
@@ -95,7 +100,7 @@ def test_prepare_messages_propagates_reply_to():
             to=[to_contact],
             reply_to=reply_to_contact,
         ),
-        content={"subject": "Test", "body_text": "Hello"},
+        content=EmailContent(subject="Test", body_text="Hello"),
     )
 
     payloads = EmailChannelHandler.prepare_messages(message)
@@ -112,7 +117,7 @@ def test_prepare_messages_without_reply_to():
             from_=from_contact,
             to=[to_contact],
         ),
-        content={"subject": "Test", "body_text": "Hello"},
+        content=EmailContent(subject="Test", body_text="Hello"),
     )
 
     payloads = EmailChannelHandler.prepare_messages(message)
