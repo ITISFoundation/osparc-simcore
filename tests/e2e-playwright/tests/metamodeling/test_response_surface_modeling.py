@@ -73,13 +73,11 @@ def create_function_from_project(
 
     yield _create_function_from_project
 
-    # cleanup the functions (delete associated jobs first, then the function)
     for function_uuid in created_function_uuids:
         with log_context(
             logging.INFO,
             f"Delete function with {function_uuid=} in {product_url=} as {is_product_billable=}",
         ):
-            # Delete all function jobs first to avoid 409 Conflict
             jobs_response = api_request_context.get(f"{product_url}v0/functions/{function_uuid}/jobs")
             if jobs_response.ok:
                 jobs_data = jobs_response.json()
@@ -226,7 +224,6 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
         with log_context(logging.INFO, "Waiting for the RSM iframe to be ready..."):
             service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
 
-        # select the function (wait for function list to load from backend)
         with log_context(logging.INFO, "Selected test function..."):
             select_btn = service_iframe.locator('[mmux-testid="select-function-btn"]').first
             select_btn.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
@@ -295,7 +292,6 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
             page.wait_for_timeout(2 * SECOND)
 
             samplingInput = service_iframe.locator('input[placeholder="Number of sampling points"]')
-            # First wait for element to exist in DOM, then scroll into view
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
@@ -317,7 +313,6 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
         with log_context(logging.INFO, "Waiting for the sampling to complete..."):
 
             def check_sampling_status(service_iframe) -> str:
-                """Returns 'complete', 'running', or 'failed'."""
                 status_cells = service_iframe.locator('div[role="gridcell"][data-field="status"]')
                 total = status_cells.count()
                 if total == 0:
@@ -332,20 +327,12 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
                         all_complete = False
                 return "complete" if all_complete else "running"
 
-            # After sampling launches, the accordion may collapse (e.g. MOGA sets
-            # calculating=True during Pareto optimization which disables the accordion).
-            # The accordion auto-reopens when done. Wait for the refresh button column header
-            # to become visible, using a longer timeout to accommodate MOGA calculations.
-            # Note: MOGA has a second DataGrid (Pareto table), so we target specifically
-            # the JobSelector's DataGrid by its "subJobs" column field.
             refresh_btn = service_iframe.locator(
                 '.MuiDataGrid-columnHeader[data-field="subJobs"] button:not(.MuiDataGrid-sortButton)'
             )
             try:
                 refresh_btn.wait_for(state="visible", timeout=2 * MINUTE)
             except PlaywrightTimeoutError:
-                # Refresh button not visible - accordion might still be collapsed.
-                # Try clicking extend-sampling-btn to re-open.
                 logging.info("Refresh button not visible after 2min, trying to re-open accordion")
                 extend_btn = service_iframe.locator('[mmux-testid="extend-sampling-btn"]')
                 extend_btn.scroll_into_view_if_needed()
@@ -371,7 +358,6 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
             select_all_btn.wait_for(state="visible", timeout=30 * SECOND)
             select_all_btn.click()
 
-            # UQ service does not produce a Plotly visualization
             if "uq" not in local_service_key.lower():
                 plotly_graph = service_iframe.locator(".js-plotly-plot")
                 plotly_graph.wait_for(state="visible", timeout=60 * SECOND)

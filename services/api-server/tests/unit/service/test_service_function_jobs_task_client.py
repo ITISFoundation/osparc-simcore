@@ -150,7 +150,6 @@ async def test_create_function_job_creation_tasks_all_cached(
     registered_project_function: RegisteredFunction,
     cached_function_job: RegisteredFunctionJob,
 ):
-    """When all jobs are cached, no new tasks should be submitted."""
     mock_web_rpc = mocker.AsyncMock(spec=WbApiRpcClient)
     mock_web_rpc.find_cached_function_jobs.return_value = [
         cached_function_job,
@@ -185,6 +184,5 @@ async def test_create_function_job_creation_tasks_all_cached(
 
     assert len(result) == 1
     assert result[0] == cached_function_job
-    # Verify no task submission happened since all jobs were cached
     mock_function_job_service = service._function_job_service  # noqa: SLF001
     mock_function_job_service.batch_pre_register_function_jobs.assert_not_called()

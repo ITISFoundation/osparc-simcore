@@ -321,7 +321,6 @@ class FunctionJobTaskClientService:
                 job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
             )
 
-            # run function in celery task
             owner_metadata = ApiServerOwnerMetadata(
                 user_id=user_identity.user_id,
                 product_name=user_identity.product_name,
