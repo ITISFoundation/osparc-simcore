@@ -33,7 +33,7 @@ async def send_close_account_email(
     user_first_name: str,
     retention_days: PositiveInt,
     host: str,
-):
+) -> None:
     try:
         await send_message_from_template(
             app,
