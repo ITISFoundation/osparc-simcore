@@ -164,6 +164,7 @@ def _handle_extracting_progress(
     *,
     layer_id_to_size: dict[str, _PulledStatus],
     logged_non_byte_extraction_layers: set[str],
+    logged_cap_reached_layers: set[str],
 ) -> None:
     assert parsed_progress.id  # nosec
     assert parsed_progress.progress_detail  # nosec
@@ -191,7 +192,8 @@ def _handle_extracting_progress(
         )
         max_estimated = int(layer_status.size * _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO)
         estimated_extracted = int(parsed_progress.progress_detail.current * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
-        if estimated_extracted >= max_estimated:
+        if estimated_extracted >= max_estimated and parsed_progress.id not in logged_cap_reached_layers:
+            logged_cap_reached_layers.add(parsed_progress.id)
             _logger.warning(
                 "Estimated extraction for layer %s reached cap of %d%% "
                 "(%s of %s bytes) after %ss. "
@@ -218,6 +220,7 @@ async def _parse_pull_information(  # noqa: C901
     layer_id_to_size: dict[str, _PulledStatus],
     image_information: DockerImageManifestsV2 | None,
     logged_non_byte_extraction_layers: set[str],
+    logged_cap_reached_layers: set[str],
 ) -> None:
     match parsed_progress.status.lower():
         case progress_status if any(
@@ -258,6 +261,7 @@ async def _parse_pull_information(  # noqa: C901
                 parsed_progress,
                 layer_id_to_size=layer_id_to_size,
                 logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+                logged_cap_reached_layers=logged_cap_reached_layers,
             )
         case "pull complete":
             assert parsed_progress.id  # nosec
@@ -287,6 +291,54 @@ async def _parse_pull_information(  # noqa: C901
                 "unknown pull state: %s. Please check",
                 f"{parsed_progress=}",
             )
+
+
+async def _pull_image_with_retry(
+    client: aiodocker.Docker,
+    image: DockerGenericTag,
+    image_short_name: str,
+    registry_auth: dict[str, str] | None,
+    layer_id_to_size: dict[str, _PulledStatus],
+    image_information: DockerImageManifestsV2 | None,
+    progress_bar: ProgressBarData,
+    log_cb: LogCB,
+) -> None:
+    reported_progress = 0.0
+    logged_non_byte_extraction_layers: set[str] = set()
+    logged_cap_reached_layers: set[str] = set()
+    last_log_message = ""
+    async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
+        try:
+            parsed_progress = TypeAdapter(_DockerPullImage).validate_python(pull_progress)
+        except ValidationError:
+            _logger.exception(
+                "Unexpected error while validating '%s'. "
+                "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
+                "The pulling process will still continue.",
+                f"{pull_progress=}",
+            )
+        else:
+            await _parse_pull_information(
+                parsed_progress,
+                layer_id_to_size=layer_id_to_size,
+                image_information=image_information,
+                logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+                logged_cap_reached_layers=logged_cap_reached_layers,
+            )
+
+        # compute total progress
+        total_downloaded_size = sum(layer.downloaded for layer in layer_id_to_size.values())
+        total_extracted_size = sum(layer.extracted for layer in layer_id_to_size.values())
+        total_progress = (total_downloaded_size + total_extracted_size) / 2.0
+        progress_to_report = total_progress - reported_progress
+
+        await progress_bar.update(progress_to_report)
+        reported_progress = total_progress
+
+        log_message = f"pulling {image_short_name}: {pull_progress}..."
+        if log_message != last_log_message:
+            await log_cb(log_message, logging.DEBUG)
+            last_log_message = log_message
 
 
 async def pull_image(
@@ -355,49 +407,25 @@ async def pull_image(
             retry=retry_if_exception_type(asyncio.TimeoutError),
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         )
-        async def _pull_image_with_retry() -> None:
+        async def _do_pull() -> None:
             nonlocal attempt
             if attempt > 1:
-                # for each attempt rest the progress
                 progress_bar.reset()
                 _reset_progress_from_previous_attempt()
             attempt += 1
 
-            reported_progress = 0.0
-            logged_non_byte_extraction_layers: set[str] = set()
-            async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
-                try:
-                    parsed_progress = TypeAdapter(_DockerPullImage).validate_python(pull_progress)
-                except ValidationError:
-                    _logger.exception(
-                        "Unexpected error while validating '%s'. "
-                        "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
-                        "The pulling process will still continue.",
-                        f"{pull_progress=}",
-                    )
-                else:
-                    await _parse_pull_information(
-                        parsed_progress,
-                        layer_id_to_size=layer_id_to_size,
-                        image_information=image_information,
-                        logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
-                    )
+            await _pull_image_with_retry(
+                client,
+                image,
+                image_short_name,
+                registry_auth,
+                layer_id_to_size,
+                image_information,
+                progress_bar,
+                log_cb,
+            )
 
-                # compute total progress
-                total_downloaded_size = sum(layer.downloaded for layer in layer_id_to_size.values())
-                total_extracted_size = sum(layer.extracted for layer in layer_id_to_size.values())
-                total_progress = (total_downloaded_size + total_extracted_size) / 2.0
-                progress_to_report = total_progress - reported_progress
-
-                await progress_bar.update(progress_to_report)
-                reported_progress = total_progress
-
-                await log_cb(
-                    f"pulling {image_short_name}: {pull_progress}...",
-                    logging.DEBUG,
-                )
-
-        await _pull_image_with_retry()
+        await _do_pull()
 
 
 # NOTE: Docker v29+ reports extraction progress as elapsed seconds instead of bytes.

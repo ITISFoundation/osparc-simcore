@@ -79,7 +79,7 @@ To build and run:
 
 To develop, in addition:
 
-- *python 3.10*: we recommend using the python manager [pyenv](https://brain2life.hashnode.dev/how-to-install-pyenv-python-version-manager-on-ubuntu-2004)
+- *python 3.10*: we recommend using [UV](https://docs.astral.sh/uv/)
 - *nodejs* for client part: we recommend using the node manager [nvm](https://github.com/nvm-sh/nvm#install--update-script)
 - [vscode] (highly recommended)
 
