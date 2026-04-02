@@ -17,7 +17,9 @@ _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_co
 
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
     """Fill a new cell with *code*, execute it and wait for COMPLETE_MARKER."""
-    with log_context(logging.INFO, f"▶️ executing '{phase_label}' expected max duration '{timedelta(seconds=timeout)}'"):
+    with log_context(
+        logging.INFO, f"▶️ executing '{phase_label}' expected max duration '{timedelta(milliseconds=timeout)}'"
+    ):
         cell = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox").last
         cell.fill(code)
         cell.press("Shift+Enter")
@@ -70,3 +72,11 @@ def create_files_in_jupyter(iframe: FrameLocator, large_file_size: ByteSize, lar
                 phase_label=phase_func_name,
                 timeout=timeout,
             )
+
+        # rename the notebook so "Untitled.ipynb" is free for subsequent notebooks
+        with log_context(logging.INFO, "renaming notebook"):
+            iframe.get_by_role("tab", name="Untitled.ipynb").click(button="right")
+            iframe.get_by_text("Rename Notebook").click()
+            name_input = iframe.locator(".jp-Dialog input")
+            name_input.fill("files_creation.ipynb")
+            iframe.get_by_role("button", name="Rename").click()
