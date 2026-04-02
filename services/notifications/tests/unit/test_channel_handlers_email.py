@@ -2,8 +2,9 @@ import itertools
 from collections import Counter
 
 import pytest
-from models_library.notifications.rpc import EmailContact
+from models_library.notifications.rpc import EmailAddressing, EmailContact, EmailMessage
 from simcore_service_notifications.services.channel_handlers._email import (
+    EmailChannelHandler,
     _interleave_recipients_by_domain,
 )
 
@@ -81,3 +82,39 @@ def test_interleave_many_domains_one_each():
     domains = [r.email.split("@")[1] for r in result]
     consecutive_same = sum(1 for a, b in itertools.pairwise(domains) if a == b)
     assert consecutive_same == 0
+
+
+def test_prepare_messages_propagates_reply_to():
+    from_contact = _contact("support@example.com")
+    to_contact = _contact("user@example.com")
+    reply_to_contact = _contact("requester@example.com")
+
+    message = EmailMessage(
+        addressing=EmailAddressing(
+            from_=from_contact,
+            to=[to_contact],
+            reply_to=reply_to_contact,
+        ),
+        content={"subject": "Test", "body_text": "Hello"},
+    )
+
+    payloads = EmailChannelHandler.prepare_messages(message)
+    assert len(payloads) == 1
+    assert payloads[0]["reply_to"]["email"] == "requester@example.com"
+
+
+def test_prepare_messages_without_reply_to():
+    from_contact = _contact("support@example.com")
+    to_contact = _contact("user@example.com")
+
+    message = EmailMessage(
+        addressing=EmailAddressing(
+            from_=from_contact,
+            to=[to_contact],
+        ),
+        content={"subject": "Test", "body_text": "Hello"},
+    )
+
+    payloads = EmailChannelHandler.prepare_messages(message)
+    assert len(payloads) == 1
+    assert "reply_to" not in payloads[0] or payloads[0].get("reply_to") is None
