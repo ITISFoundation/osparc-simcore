@@ -164,7 +164,7 @@ PERSONALIZED_TIP_INPUT_FILE := .e2e-playwright-personalizedtip-env.txt
 RSM_INPUT_FILE := .e2e-playwright-rsm-env.txt
 
 # Prompt the user for input and store it into variables
-$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(RSM_INPUT_FILE):
+$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE) $(RSM_INPUT_FILE):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
 	read -p "Is the product lite [y/n]: " IS_LITE; \
@@ -172,7 +172,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(PER
 	read -p "Enter your username: " USER_NAME; \
 	read -s -p "Enter your password: " PASSWORD; echo ""; \
 	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
-	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
+	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.ignore.txt" >> $@; \
 	if [ "$$BILLABLE" = "y" ]; then \
 		echo "--product-billable" >> $@; \
 	fi; \
@@ -270,4 +270,4 @@ define run_test_on_chrome
 endef
 
 clean:
-	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE)
+	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(S4L_TEMPLATE_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE) $(RSM_INPUT_FILE)
