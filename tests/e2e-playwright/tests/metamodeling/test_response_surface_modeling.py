@@ -30,6 +30,50 @@ _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
 _SAMPLING_TIMEOUT: Final[int] = 10 * MINUTE
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
+_LHS_SEED: Final[int] = 42
+_NUM_SAMPLING_POINTS: Final[int] = 40
+_EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
+    1.1852604487,
+    1.4180537145,
+    1.5227525095,
+    1.5854643369,
+    1.8790490261,
+    2.2554447459,
+    2.403950683,
+    2.404167764,
+    2.5347171132,
+    2.6364247049,
+    2.6506405887,
+    2.7970640394,
+    2.9110519961,
+    3.6210622618,
+    3.6293018368,
+    3.7381801866,
+    3.7415239226,
+    4.2972565896,
+    4.3708610696,
+    4.8875051678,
+    4.9613724437,
+    5.104629858,
+    5.6281099457,
+    5.7228078847,
+    6.3317311198,
+    6.3879263578,
+    6.4100351057,
+    6.4679036671,
+    6.5066760525,
+    7.1580972386,
+    7.3726532002,
+    7.5879454763,
+    8.0665836525,
+    8.275576133,
+    8.4919837672,
+    8.795585312,
+    9.5399698353,
+    9.5564287577,
+    9.6906882977,
+    9.7291886695,
+]
 
 
 @pytest.fixture
@@ -100,6 +144,7 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
     product_url: AnyUrl,
     is_service_legacy: bool,
     create_function_from_project: Callable[[Page, str], dict[str, Any]],
+    api_request_context: APIRequestContext,
 ):
     # 1. create the initial study with jsonifier
     with log_context(logging.INFO, "Create new study for function"):
@@ -189,7 +234,8 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
     )
 
     # 3. convert it to a function
-    create_function_from_project(page, our_project["uuid"])
+    function_data = create_function_from_project(page, our_project["uuid"])
+    function_uuid = function_data["uuid"]
 
     # 3. start a RSM with that function
     service_keys = [
@@ -295,8 +341,13 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill("40")
+            samplingInput.fill(str(_NUM_SAMPLING_POINTS))
             samplingInput.press("Enter")
+
+            seed_input = service_iframe.locator('[mmux-testid="lhs-seed-input"] input')
+            seed_input.wait_for(state="visible", timeout=30 * SECOND)
+            seed_input.fill(str(_LHS_SEED))
+            seed_input.press("Tab")
 
             run_sampling_btn = service_iframe.locator('[mmux-testid="run-sampling-btn"]')
             run_sampling_btn.wait_for(state="attached", timeout=30 * SECOND)
@@ -362,6 +413,51 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
                 plotly_graph = service_iframe.locator(".js-plotly-plot")
                 plotly_graph.wait_for(state="visible", timeout=60 * SECOND)
             page.wait_for_timeout(2000)
+
+        with log_context(logging.INFO, f"Verifying sampling results for {local_service_key}..."):
+            jobs_response = api_request_context.get(f"{product_url}v0/functions/{function_uuid}/jobs")
+            assert jobs_response.ok, f"Failed to get function jobs: {jobs_response.status}"
+            jobs_data = jobs_response.json()
+            all_jobs = jobs_data.get("data", [])
+
+            successful_jobs = [j for j in all_jobs if j.get("status") == "SUCCESS" or j.get("outputs") is not None]
+            logging.info("Total jobs: %d, successful: %d", len(all_jobs), len(successful_jobs))
+
+            input_values = sorted(
+                [
+                    j["inputs"]["Number parameter"]
+                    for j in successful_jobs
+                    if j.get("inputs") and "Number parameter" in j["inputs"]
+                ]
+            )
+            output_values = sorted(
+                [j["outputs"]["number_3"] for j in successful_jobs if j.get("outputs") and "number_3" in j["outputs"]]
+            )
+
+            logging.info(
+                "Input values for %s (seed=%d): %s",
+                local_service_key,
+                _LHS_SEED,
+                json.dumps(input_values),
+            )
+            logging.info(
+                "Output values for %s (seed=%d): %s",
+                local_service_key,
+                _LHS_SEED,
+                json.dumps(output_values),
+            )
+
+            if "uq" not in local_service_key.lower():
+                assert len(input_values) == _NUM_SAMPLING_POINTS, (
+                    f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
+                )
+                assert len(output_values) == _NUM_SAMPLING_POINTS, (
+                    f"Expected {_NUM_SAMPLING_POINTS} output values, got {len(output_values)}"
+                )
+                for i, (actual, expected) in enumerate(zip(input_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)):
+                    assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
+                for i, (actual, expected) in enumerate(zip(output_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)):
+                    assert abs(actual - expected) < 1e-4, f"Output value {i} mismatch: {actual} != {expected}"
 
         with (
             log_context(logging.INFO, "Go back to dashboard"),
