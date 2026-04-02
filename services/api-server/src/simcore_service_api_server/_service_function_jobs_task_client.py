@@ -34,6 +34,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.celery.task_manager import TaskManager
+from servicelib.utils import logged_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._meta import APP_NAME
@@ -326,24 +327,27 @@ class FunctionJobTaskClientService:
                 product_name=user_identity.product_name,
                 owner=APP_NAME,
             )
-            task_uuids = [
-                await self._celery_task_manager.submit_task(
-                    TaskExecutionMetadata(
-                        name="run_function",
-                        ephemeral=False,
-                        queue=API_SERVER_CELERY_QUEUE_DEFAULT,
-                    ),
-                    owner_metadata=owner_metadata,
-                    user_identity=user_identity,
-                    function=function,
-                    pre_registered_function_job_data=pre_registered_function_job_data,
-                    pricing_spec=pricing_spec,
-                    job_links=job_links,
-                    x_simcore_parent_project_uuid=parent_project_uuid,
-                    x_simcore_parent_node_id=parent_node_id,
-                )
-                for pre_registered_function_job_data in pre_registered_function_job_data_list
-            ]
+            task_uuids = await logged_gather(
+                *(
+                    self._celery_task_manager.submit_task(
+                        TaskExecutionMetadata(
+                            name="run_function",
+                            ephemeral=False,
+                            queue=API_SERVER_CELERY_QUEUE_DEFAULT,
+                        ),
+                        owner_metadata=owner_metadata,
+                        user_identity=user_identity,
+                        function=function,
+                        pre_registered_function_job_data=pre_registered_function_job_data,
+                        pricing_spec=pricing_spec,
+                        job_links=job_links,
+                        x_simcore_parent_project_uuid=parent_project_uuid,
+                        x_simcore_parent_node_id=parent_node_id,
+                    )
+                    for pre_registered_function_job_data in pre_registered_function_job_data_list
+                ),
+                max_concurrency=5,
+            )
 
             patched_jobs = await self._function_job_service.batch_patch_registered_function_job(
                 user_id=user_identity.user_id,
