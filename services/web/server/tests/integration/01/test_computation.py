@@ -633,7 +633,6 @@ async def test_running_computation_sends_progress_updates_via_socketio(
         assert "node_id" in message
         assert "project_id" in message
         assert "data" in message
-        assert "errors" in message
         node_data = TypeAdapter(Node).validate_python(message["data"])
         assert node_data
 

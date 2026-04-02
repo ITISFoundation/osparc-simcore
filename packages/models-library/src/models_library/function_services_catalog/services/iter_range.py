@@ -1,5 +1,7 @@
 from collections.abc import Iterator
 
+from pydantic import TypeAdapter
+
 from ...projects_nodes import OutputID, OutputsDict
 from ...services import ServiceMetaDataPublished, ServiceType
 from ...services_constants import LATEST_INTEGRATION_VERSION
@@ -9,14 +11,14 @@ from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 def create_metadata(type_name: str, prefix: str | None = None) -> ServiceMetaDataPublished:
     prefix = prefix or type_name
-    LABEL = f"{type_name.capitalize()} iterator"
+    label = f"{type_name.capitalize()} iterator"
     return ServiceMetaDataPublished.model_validate(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/{prefix}-range",
             "version": "1.0.0",
             "type": ServiceType.BACKEND,
-            "name": LABEL,
+            "name": label,
             "description": "Iterates over a sequence of integers from start (inclusive) to stop (exclusive) by step",
             "thumbnail": create_fake_thumbnail_url(f"{type_name}"),
             "authors": [
@@ -62,7 +64,7 @@ def _linspace_generator(**kwargs) -> Iterator[OutputsDict]:
     # Maps generator with iterable outputs.
     # Can have non-iterable outputs as well
     for value in _linspace_func(**kwargs):
-        yield {OutputID("out_1"): value}
+        yield {TypeAdapter(OutputID).validate_python("out_1"): value}
 
 
 services = FunctionServices()

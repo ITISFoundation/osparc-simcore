@@ -94,8 +94,13 @@ class _DockerPullImageProgressDetail(ProgressDetail):
         None  # if empty or None, the units are in bytes https://pkg.go.dev/github.com/moby/moby/pkg/jsonmessage#JSONProgress
     )
 
+    _TIME_UNITS: frozenset[str] = frozenset({"s", "sec", "secs", "second", "seconds"})
+
     def are_units_bytes(self) -> bool:
         return self.units is None or self.units in ["", "B", "bytes"]
+
+    def are_units_time(self) -> bool:
+        return self.units is not None and self.units.lower().strip() in self._TIME_UNITS
 
 
 class _DockerPullImage(BaseModel):
@@ -154,11 +159,65 @@ class _PulledStatus:
     extracted: int = 0
 
 
+def _handle_extracting_progress(
+    parsed_progress: _DockerPullImage,
+    *,
+    layer_id_to_size: dict[str, _PulledStatus],
+    logged_non_byte_extraction_layers: set[str],
+) -> None:
+    assert parsed_progress.id  # nosec
+    assert parsed_progress.progress_detail  # nosec
+    assert parsed_progress.progress_detail.current is not None  # nosec
+    if parsed_progress.progress_detail.are_units_bytes():
+        layer_id_to_size.setdefault(
+            parsed_progress.id,
+            _PulledStatus(parsed_progress.progress_detail.total or 0),
+        ).extracted = parsed_progress.progress_detail.current
+    elif parsed_progress.progress_detail.are_units_time():
+        # Docker v29+: extraction progress reports elapsed seconds instead of bytes.
+        # We estimate extracted bytes using a throughput constant.
+        if parsed_progress.id not in logged_non_byte_extraction_layers:
+            logged_non_byte_extraction_layers.add(parsed_progress.id)
+            _logger.info(
+                "Extraction progress for layer %s uses non-byte units (%s). "
+                "Estimating extraction progress using throughput of %s/s.",
+                parsed_progress.id,
+                parsed_progress.progress_detail.units,
+                _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC.human_readable(),
+            )
+        layer_status = layer_id_to_size.setdefault(
+            parsed_progress.id,
+            _PulledStatus(parsed_progress.progress_detail.total or 0),
+        )
+        max_estimated = int(layer_status.size * _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO)
+        estimated_extracted = int(parsed_progress.progress_detail.current * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
+        if estimated_extracted >= max_estimated:
+            _logger.warning(
+                "Estimated extraction for layer %s reached cap of %d%% "
+                "(%s of %s bytes) after %ss. "
+                "TIP: consider decreasing _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC.",
+                parsed_progress.id,
+                int(_EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO * 100),
+                max_estimated,
+                layer_status.size,
+                parsed_progress.progress_detail.current,
+            )
+        layer_status.extracted = min(estimated_extracted, max_estimated)
+    else:
+        _logger.warning(
+            "Extraction progress for layer %s uses unknown units (%s). "
+            "Cannot estimate extraction progress. Please check.",
+            parsed_progress.id,
+            parsed_progress.progress_detail.units,
+        )
+
+
 async def _parse_pull_information(  # noqa: C901
     parsed_progress: _DockerPullImage,
     *,
     layer_id_to_size: dict[str, _PulledStatus],
     image_information: DockerImageManifestsV2 | None,
+    logged_non_byte_extraction_layers: set[str],
 ) -> None:
     match parsed_progress.status.lower():
         case progress_status if any(
@@ -195,14 +254,11 @@ async def _parse_pull_information(  # noqa: C901
                 parsed_progress.id, _PulledStatus(0)
             ).size
         case "extracting":
-            assert parsed_progress.id  # nosec
-            assert parsed_progress.progress_detail  # nosec
-            assert parsed_progress.progress_detail.current is not None  # nosec
-            if parsed_progress.progress_detail.are_units_bytes():
-                layer_id_to_size.setdefault(
-                    parsed_progress.id,
-                    _PulledStatus(parsed_progress.progress_detail.total or 0),
-                ).extracted = parsed_progress.progress_detail.current
+            _handle_extracting_progress(
+                parsed_progress,
+                layer_id_to_size=layer_id_to_size,
+                logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+            )
         case "pull complete":
             assert parsed_progress.id  # nosec
             layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
@@ -308,6 +364,7 @@ async def pull_image(
             attempt += 1
 
             reported_progress = 0.0
+            logged_non_byte_extraction_layers: set[str] = set()
             async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
                 try:
                     parsed_progress = TypeAdapter(_DockerPullImage).validate_python(pull_progress)
@@ -320,7 +377,10 @@ async def pull_image(
                     )
                 else:
                     await _parse_pull_information(
-                        parsed_progress, layer_id_to_size=layer_id_to_size, image_information=image_information
+                        parsed_progress,
+                        layer_id_to_size=layer_id_to_size,
+                        image_information=image_information,
+                        logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
                     )
 
                 # compute total progress
@@ -339,6 +399,14 @@ async def pull_image(
 
         await _pull_image_with_retry()
 
+
+# NOTE: Docker v29+ reports extraction progress as elapsed seconds instead of bytes.
+# We estimate extraction progress using a throughput constant based on EC2 EBS gp3 baseline
+# (125 MB/s throughput, 3000 IOPS) combined with average CPU decompression overhead.
+_ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("150MiB")
+# NOTE: Cap estimated extraction at 99% of layer size. The final 100% comes from the
+# "pull complete" event. If this cap is hit, the throughput constant may need adjustment.
+_EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO: Final[float] = 0.99
 
 _CPUS_SAFE_MARGIN: Final[float] = 1.4  # accounts for machine overhead (ops + sidecar itself)
 _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
