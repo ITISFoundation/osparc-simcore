@@ -6,6 +6,7 @@ from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.basic_types import SHA256Str
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -167,7 +168,7 @@ class JobOutputs(BaseModel):
 
 
 # Limits metadata values
-MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str
+type MetaValueType = StrictBool | StrictInt | StrictFloat | str
 
 
 class JobMetadataUpdate(BaseModel):
@@ -306,7 +307,7 @@ class Job(BaseModel):
         return self.name
 
 
-PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
+type PercentageInt = Annotated[int, Field(ge=0, le=100)]
 
 
 class JobStatus(BaseModel):
@@ -329,6 +330,11 @@ class JobStatus(BaseModel):
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
 
+    errors: list[ErrorDict] | None = Field(
+        None,
+        description="Error details when the job state is FAILED",
+    )
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -338,6 +344,7 @@ class JobStatus(BaseModel):
                 "submitted_at": "2021-04-01 07:15:54.631007",
                 "started_at": "2021-04-01 07:16:43.670610",
                 "stopped_at": None,
+                "errors": None,
             }
         }
     )
