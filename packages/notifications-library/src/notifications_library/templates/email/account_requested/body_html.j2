@@ -1,37 +1,64 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/account_requested/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear Support team</p>
+{%- set table_style = "width: 100%; border-collapse: collapse; margin-bottom: 10px;" -%}
+{%- set th_style = "text-align: left; padding: 8px 12px; border: 1px solid #dddddd; background-color: #f5f5f5; font-size: 14px; color: #555555; width: 35%;" -%}
+{%- set td_style = "padding: 8px 12px; border: 1px solid #dddddd; font-size: 14px;" -%}
+{%- set section_title_style = "font-size: 16px; font-weight: 600; margin: 24px 0 8px 0; color: #353638;" -%}
+
+<p>Dear Support team,</p>
 
 <p>
-  We have received the following request form for an account in :
-<ol>
-  <li>Product: <b>{{ product.display_name }}</b></li>
-  <li>Host: <b>{{ host }}</b></li>
-  <li>PO center: <b>https://{{ host }}/#/review-users</b></li>
-</ol>
+  We have received the following request form for an account:
 </p>
 
-<pre>
-{{ dumps(request_form) }}
-</pre>
+<table style="{{ table_style }}">
+  <tr>
+    <th style="{{ th_style }}">Product</th>
+    <td style="{{ td_style }}">{{ product.display_name }}</td>
+  </tr>
+  <tr>
+    <th style="{{ th_style }}">Host</th>
+    <td style="{{ td_style }}"><a href="https://{{ host }}">{{ host }}</a></td>
+  </tr>
+  <tr>
+    <th style="{{ th_style }}">PO Center</th>
+    <td style="{{ td_style }}"><a href="https://{{ host }}/#/review-users">https://{{ host }}/#/review-users</a></td>
+  </tr>
+</table>
 
-<p>
-  Some details about the requested product follow:
+<p style="{{ section_title_style }}">Request Form</p>
+<table style="{{ table_style }}">
+  {% for key, value in request_form.items() %}
+  <tr>
+    <th style="{{ th_style }}">{{ key }}</th>
+    <td style="{{ td_style }}">{{ value }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p style="{{ section_title_style }}">Product Info</p>
+<table style="{{ table_style }}">
+  {% for key, value in product_info.items() %}
+  <tr>
+    <th style="{{ th_style }}">{{ key }}</th>
+    <td style="{{ td_style }}">{% if value is mapping %}{{ dumps(value) }}{% else %}{{ value }}{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p style="{{ section_title_style }}">IP Info</p>
+<table style="{{ table_style }}">
+  {% for key, value in ipinfo.items() %}
+  <tr>
+    <th style="{{ th_style }}">{{ key }}</th>
+    <td style="{{ td_style }}">{% if key == 'test_url' %}<a href="{{ value }}">{{ value }}</a>{% else %}{{ value }}{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p style="font-size: 13px; color: #888888; margin-top: 16px;">
+  TIP: Use <a href="https://ipinfo.io/">https://ipinfo.io/</a> to find out more information on the IP.
 </p>
-
-<pre>
-{{ dumps(product_info) }}
-</pre>
-
-<p>
-  To validate the request form, here you can get further info on this request:
-</p>
-
-<pre>
-{{ dumps(ipinfo) }}
-</pre>
-
-<p>TIP: Use https://ipinfo.io/ to find out more information on the ip</p>
 
 {% endblock %}
