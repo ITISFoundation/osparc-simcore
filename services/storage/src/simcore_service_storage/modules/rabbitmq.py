@@ -53,9 +53,6 @@ async def post_file_notification(
         log_context(_logger, logging.DEBUG, msg=f"Posting file notification for {file_id=} with {event_type=}"),
     ):
         parts = f"{file_id}".split("/")
-        if parts is None:
-            _logger.warning("Skip notification for file_id=%s because it cannot be parsed", file_id)
-            return
 
         if parts[0] in SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES:
             _logger.debug("Skip notification for file_id=%s starting with prefix %s", file_id, parts[0])
