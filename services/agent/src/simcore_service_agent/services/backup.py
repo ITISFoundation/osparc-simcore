@@ -39,7 +39,7 @@ acl = private
 
 
 @contextmanager
-def _get_config_file_path(settings: ApplicationSettings) -> Iterator[Path]:
+def _rclone_config_file(settings: ApplicationSettings) -> Iterator[Path]:
     config_content = _R_CLONE_CONFIG.format(
         destination_provider=resolve_provider(settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER),
         destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
@@ -149,8 +149,7 @@ async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
         )
 
 
-async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails) -> None:
-    source_dir = volume_details.mountpoint
+def _source_dir_exists(source_dir: Path, volume_name: str) -> bool:
     try:
         source_exists = Path(source_dir).exists()
     except OSError as e:
@@ -161,7 +160,7 @@ async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_d
                 source_dir,
                 volume_name,
             )
-            return
+            return False
         raise
     if not source_exists:
         _logger.info(
@@ -169,12 +168,20 @@ async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_d
             source_dir,
             volume_name,
         )
+        return False
+    return True
+
+
+async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails) -> None:
+    source_dir = volume_details.mountpoint
+
+    if not _source_dir_exists(source_dir, volume_name):
         return
 
     exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
     s3_path = _get_s3_path(settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels)
 
-    with _get_config_file_path(settings) as config_file_path:
+    with _rclone_config_file(settings) as config_file_path:
         # listing files rclone will sync
         r_clone_ls = [
             "rclone",
