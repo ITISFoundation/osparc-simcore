@@ -72,7 +72,7 @@ async def send_account_request_email_to_support(
     request_form: dict[str, Any],
     ipinfo: dict,
     host: str,
-):
+) -> None:
     destination_email = product.product_owners_email or product.support_email
     reply_to_email: LowerCaseEmailStr | None
     try:
