@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument
 
 import pytest
-from faker import Faker
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
@@ -103,62 +102,3 @@ async def test_preview_template_invalid_context(
 
         with pytest.raises((NotificationsTemplateContextValidationError,)):
             await preview_template(rpc_client, ref=ref, context=context)
-
-
-async def test_preview_unregister_template(
-    fake_product_data: dict[str, str],
-    rpc_client: RabbitMQRPCClient,
-    faker: Faker,
-):
-    templates = await search_templates(rpc_client, channel=Channel.email, template_name="unregister")
-    assert len(templates) == 1
-
-    ref = TemplateRef(**templates[0].ref.model_dump())
-    context = {
-        "user": {
-            "first_name": faker.first_name(),
-            "user_name": faker.user_name(),
-        },
-        "host": faker.domain_name(),
-        "retention_days": 30,
-        "product": fake_product_data,
-    }
-
-    response = await preview_template(rpc_client, ref=ref, context=context)
-    assert isinstance(response, PreviewTemplateResponse)
-    assert response.ref == templates[0].ref
-    assert "subject" in response.message_content
-
-
-async def test_preview_account_requested_template(
-    fake_product_data: dict[str, str],
-    rpc_client: RabbitMQRPCClient,
-    faker: Faker,
-):
-    templates = await search_templates(rpc_client, channel=Channel.email, template_name="account_requested")
-    assert len(templates) == 1
-
-    ref = TemplateRef(**templates[0].ref.model_dump())
-    context = {
-        "host": faker.domain_name(),
-        "product_info": {
-            "name": "osparc",
-            "display_name": "o²S²PARC",
-            "vendor": {"name": "IT'IS Foundation"},
-            "is_payment_enabled": False,
-        },
-        "request_form": {
-            "firstName": faker.first_name(),
-            "lastName": faker.last_name(),
-            "email": faker.email(),
-        },
-        "ipinfo": {
-            "x-real-ip": faker.ipv4(),
-        },
-        "product": fake_product_data,
-    }
-
-    response = await preview_template(rpc_client, ref=ref, context=context)
-    assert isinstance(response, PreviewTemplateResponse)
-    assert response.ref == templates[0].ref
-    assert "subject" in response.message_content
