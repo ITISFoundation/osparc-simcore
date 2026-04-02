@@ -213,7 +213,7 @@ async def send_message(
 async def send_message_from_template(
     app: web.Application,
     *,
-    user_id: UserID | None = None,
+    user_id: UserID,
     product_name: ProductName,
     channel: Channel,
     group_ids: list[GroupID] | None,
