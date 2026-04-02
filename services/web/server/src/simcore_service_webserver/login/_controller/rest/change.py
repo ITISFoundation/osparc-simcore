@@ -20,7 +20,6 @@ from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
 from ... import _auth_service, _confirmation_web
-from ..._emails_service import get_template_path, send_email_from_template
 from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
@@ -245,15 +244,25 @@ async def initiate_change_email(request: web.Request):
     )
     link = _confirmation_web.make_confirmation_link(request, confirmation.code)
     try:
-        await send_email_from_template(
-            request,
-            from_=product.support_email,
-            to=request_body.email,
-            template=await get_template_path(request, "change_email_email.jinja2"),
+        await notifications_service.send_message_from_template(
+            request.app,
+            user_id=user["id"],
+            product_name=product.name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[
+                EmailContact(
+                    name=user.get("first_name") or user["name"],
+                    email=request_body.email,
+                )
+            ],
+            template_name="change_email",
             context={
-                "host": request.host,
+                "user": {
+                    "first_name": user.get("first_name"),
+                    "user_name": user["name"],
+                },
                 "link": link,
-                "product": product,
             },
         )
     except Exception as err:  # pylint: disable=broad-except
