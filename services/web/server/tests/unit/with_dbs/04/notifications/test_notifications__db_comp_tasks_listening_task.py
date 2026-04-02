@@ -25,7 +25,6 @@ from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from common_library.async_tools import delayed_start
 from faker import Faker
 from models_library.projects import ProjectAtDB
-from models_library.projects_nodes import InputsDict
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -277,7 +276,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
             node_id=node_id,
             outputs=node_data.get("outputs", {}),
             node_class=(NodeClass.INTERACTIVE if "dynamic" in node_data["key"] else NodeClass.COMPUTATIONAL),
-            inputs=node_data.get("inputs", InputsDict()),
+            inputs=node_data.get("inputs", {}),
         )
         for node_id, node_data in fake_2connected_jupyterlabs_workbench.items()
     ]

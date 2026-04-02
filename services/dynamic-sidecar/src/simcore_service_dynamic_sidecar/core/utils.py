@@ -32,7 +32,7 @@ def _close_transport(proc: Process):
     #
     # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>
     # Traceback (most recent call last):
-    #   File " ... .pyenv/versions/3.9.12/lib/python3.9/asyncio/base_subprocess.py", line 126, in __del__
+    #   File " ... ./versions/3.9.12/lib/python3.9/asyncio/base_subprocess.py", line 126, in __del__
     #     self.close()
     #
 

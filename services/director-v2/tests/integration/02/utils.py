@@ -13,6 +13,7 @@ import aiodocker
 import httpx
 from fastapi import FastAPI
 from models_library.basic_types import PortInt
+from models_library.products import ProductName
 from models_library.projects import Node, NodesDict
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
@@ -27,6 +28,7 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -124,7 +126,8 @@ async def _wait_for_service(service_name: str) -> None:
                 services = await docker_client.services.list(filters={"name": service_name})
                 assert len(services) == 1, f"Docker service {service_name=} is missing, {services=}"
                 print(
-                    f"<-- {service_name=} was started ({json.dumps(attempt.retry_state.retry_object.statistics, indent=2)})"
+                    f"<-- {service_name=} was started "
+                    f"({json.dumps(attempt.retry_state.retry_object.statistics, indent=2)})"
                 )
 
 
@@ -278,16 +281,19 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     return port
 
 
-async def _get_service_resources(catalog_url: URL, service_key: str, service_version: str) -> ServiceResourcesDict:
+async def _get_service_resources(
+    catalog_url: URL, service_key: str, service_version: str, product_name: ProductName
+) -> ServiceResourcesDict:
     encoded_key = urllib.parse.quote_plus(service_key)
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
     async with httpx.AsyncClient() as client:
-        response = await client.get(f"{url}")
+        response = await client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: product_name})
         return TypeAdapter(ServiceResourcesDict).validate_python(response.json())
 
 
 async def _handle_redirection(redirection_response: httpx.Response, *, method: str, **kwargs) -> httpx.Response:
-    """since we are in a test environment with a test server, a real client must be used in order to get to an external server
+    """since we are in a test environment with a test server,
+    a real client must be used in order to get to an external server
     i.e. the async_client used with the director test server is unable to follow redirects
     """
     assert redirection_response.next_request, f"no redirection set in {redirection_response}"
@@ -313,6 +319,7 @@ async def assert_start_service(
         catalog_url=catalog_url,
         service_key=service_key,
         service_version=service_version,
+        product_name=product_name,
     )
     data = {
         "user_id": user_id,
@@ -461,7 +468,7 @@ async def _inspect_service_and_print_logs(tag: str, service_name: str, is_legacy
             print(f"Container inspect: {container_name}")
             print(f"{formatted_container_inspect}\n{SEPARATOR}")
 
-        logs = await docker_client.services.logs(service_details["ID"], stderr=True, stdout=True, tail=50)
+        logs = await docker_client.services.logs(service_details["ID"], stderr=True, stdout=True, tail=50)  # type: ignore
         formatted_logs = "".join(logs)
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 
@@ -471,7 +478,7 @@ def run_command(command: str) -> str:
     # and sometimes ir randomly hangs forever
 
     print(f"Running: '{command}'")
-    command_result = os.popen(command).read()
+    command_result = os.popen(command).read()  # noqa: S605
     print(command_result)
     return command_result
 

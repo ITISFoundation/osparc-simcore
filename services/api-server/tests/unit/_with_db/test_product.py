@@ -18,6 +18,7 @@ from models_library.generics import Envelope
 from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
 from pytest_mock import MockType
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.model_adapter import (
     WalletGetWithAvailableCreditsLegacy,
@@ -39,9 +40,9 @@ async def test_product_webserver(
         wallet_to_api_keys_map[_wallet_id] = api_key
 
     def _check_key_product_compatibility(request: httpx.Request, **kwargs):
-        assert (received_product_name := request.headers.get("x-simcore-products-name")) is not None
-        assert (wallet_id := kwargs.get("wallet_id")) is not None
-        assert (api_key := wallet_to_api_keys_map[int(wallet_id)]) is not None
+        assert (received_product_name := request.headers.get(X_PRODUCT_NAME_HEADER)) is not None
+        assert (wallet_id := kwargs.get("wallet_id")) is not None  # noqa: RUF018
+        assert (api_key := wallet_to_api_keys_map[int(wallet_id)]) is not None  # noqa: RUF018
         assert api_key.product_name == received_product_name
         return httpx.Response(
             status.HTTP_200_OK,
@@ -54,9 +55,9 @@ async def test_product_webserver(
                         owner=api_key.id_,
                         thumbnail="something",
                         status=WalletStatus.ACTIVE,
-                        created=datetime.datetime.now(),
-                        modified=datetime.datetime.now(),
-                        available_credits=Decimal(20.0),
+                        created=datetime.datetime.now(tz=datetime.UTC),
+                        modified=datetime.datetime.now(tz=datetime.UTC),
+                        available_credits=Decimal("20.0"),
                     )
                 )
             ),

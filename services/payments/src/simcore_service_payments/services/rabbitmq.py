@@ -48,13 +48,17 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
-def get_rabbitmq_client_from_request(request: Request):
+def get_rabbitmq_client_from_request(request: Request) -> RabbitMQClient:
     return get_rabbitmq_client(request.app)
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     assert app.state.rabbitmq_rpc_client  # nosec
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
+
+
+def get_rabbitmq_rpc_client_from_request(request: Request) -> RabbitMQRPCClient:
+    return get_rabbitmq_rpc_client(request.app)
 
 
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:

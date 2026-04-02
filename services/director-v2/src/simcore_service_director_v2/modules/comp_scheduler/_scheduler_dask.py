@@ -7,7 +7,10 @@ from typing import Any, Final
 
 import arrow
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
-from dask_task_models_library.container_tasks.errors import TaskCancelledError
+from dask_task_models_library.container_tasks.errors import (
+    ServiceRuntimeError,
+    TaskCancelledError,
+)
 from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
@@ -503,6 +506,9 @@ class DaskScheduler(BaseCompScheduler):
                 error_context=log_error_context,
             )
         )
+
+        error_type = result.code if isinstance(result, ServiceRuntimeError) else ServiceRuntimeError.code
+
         return (
             RunningState.FAILED,
             SimcorePlatformStatus.OK,
@@ -510,7 +516,7 @@ class DaskScheduler(BaseCompScheduler):
                 ErrorDict(
                     loc=(f"{task.project_id}", f"{task.node_id}"),
                     msg=f"{result}",
-                    type="runtime",
+                    type=error_type,
                 )
             ],
             True,

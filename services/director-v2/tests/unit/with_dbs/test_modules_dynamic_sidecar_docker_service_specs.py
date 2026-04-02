@@ -580,6 +580,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         scheduler_data.user_id,
         mock_service_key_version.key,
         mock_service_key_version.version,
+        scheduler_data.product_name,
     )
     assert user_service_specs
     assert "sidecar" in user_service_specs
