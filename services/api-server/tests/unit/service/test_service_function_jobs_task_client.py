@@ -155,6 +155,8 @@ async def test_create_function_job_creation_tasks_all_cached(
         cached_function_job,
     ]
 
+    mock_function_job_service = mocker.AsyncMock(spec=FunctionJobService)
+
     service = FunctionJobTaskClientService(
         user_id=user_id,
         product_name=product_name,
@@ -162,7 +164,7 @@ async def test_create_function_job_creation_tasks_all_cached(
         _storage_client=mocker.AsyncMock(spec=StorageService),
         _job_service=mocker.AsyncMock(spec=JobService),
         _function_service=mocker.AsyncMock(spec=FunctionService),
-        _function_job_service=mocker.AsyncMock(spec=FunctionJobService),
+        _function_job_service=mock_function_job_service,
         _webserver_api=mocker.AsyncMock(spec=AuthSession),
         _celery_task_manager=mocker.Mock(spec=TaskManager),
         _async_pg_engine=mocker.MagicMock(spec=AsyncEngine),
@@ -184,5 +186,4 @@ async def test_create_function_job_creation_tasks_all_cached(
 
     assert len(result) == 1
     assert result[0] == cached_function_job
-    mock_function_job_service = service._function_job_service  # noqa: SLF001
     mock_function_job_service.batch_pre_register_function_jobs.assert_not_called()
