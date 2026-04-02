@@ -22,7 +22,7 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
         f"▶️ executing '{phase_label}' expected max duration "
         f"'{timedelta_as_minute_second_ms(timedelta(milliseconds=timeout))}'",
     ):
-        cell = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox").last
+        cell = iframe.get_by_label("files_creation.ipynb").get_by_role("textbox").last
         cell.fill(code)
         cell.press("Shift+Enter")
 
