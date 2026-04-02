@@ -298,6 +298,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
         layer_id: _PulledStatus(size=layer_size, downloaded=layer_size),
     }
     logged_non_byte_extraction_layers: set[str] = set()
+    logged_cap_reached_layers: set[str] = set()
 
     with caplog.at_level(logging.INFO, logger="servicelib.docker_utils"):
         # simulate 1 second of extraction with non-byte units
@@ -311,6 +312,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
             layer_id_to_size=layer_id_to_size,
             image_information=None,
             logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+            logged_cap_reached_layers=logged_cap_reached_layers,
         )
         expected_1s = int(1 * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
         assert layer_id_to_size[layer_id].extracted == expected_1s
@@ -327,6 +329,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
             layer_id_to_size=layer_id_to_size,
             image_information=None,
             logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+            logged_cap_reached_layers=logged_cap_reached_layers,
         )
         expected_2s = int(2 * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
         assert layer_id_to_size[layer_id].extracted == expected_2s
@@ -349,6 +352,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
             layer_id_to_size=layer_id_to_size,
             image_information=None,
             logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+            logged_cap_reached_layers=logged_cap_reached_layers,
         )
         assert layer_id_to_size[layer_id].extracted == max_estimated
         assert layer_id_to_size[layer_id].extracted < layer_size
