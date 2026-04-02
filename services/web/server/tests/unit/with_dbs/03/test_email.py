@@ -9,7 +9,6 @@ import json
 from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -200,7 +199,7 @@ def test_render_templates(template_path: Path, faker: Faker):
             "code": "123",
             "reason": "no reason",
             "link": faker.url(),
-            "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
+            "product": {"name": "foobar", "display_name": "Foo Bar"},
             "retention_days": 30,
             "dumps": functools.partial(json_dumps, indent=1),
             "request_form": fake_request_form,
