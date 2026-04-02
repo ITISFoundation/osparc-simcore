@@ -109,7 +109,7 @@ async def test_schedule_all_pipelines_empty_db(
     await schedule_all_pipelines(initialized_app)
 
     # check nothing was distributed
-    _assert_scheduler_client_not_called(scheduler_rabbit_client_parser)
+    await _assert_scheduler_client_not_called(scheduler_rabbit_client_parser)
 
     # check comp_runs is still empty
     await assert_comp_runs_empty(sqlalchemy_async_engine)
