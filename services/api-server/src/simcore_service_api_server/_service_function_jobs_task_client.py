@@ -57,6 +57,8 @@ from .services_rpc.wb_api_server import WbApiRpcClient
 
 _logger = logging.getLogger(__name__)
 
+_MAX_TASK_SUBMISSION_CONCURRENCY = 5
+
 
 def join_inputs(
     default_inputs: FunctionInputs | None,
@@ -346,7 +348,7 @@ class FunctionJobTaskClientService:
                     )
                     for pre_registered_function_job_data in pre_registered_function_job_data_list
                 ),
-                max_concurrency=5,
+                max_concurrency=_MAX_TASK_SUBMISSION_CONCURRENCY,
             )
 
             patched_jobs = await self._function_job_service.batch_patch_registered_function_job(
