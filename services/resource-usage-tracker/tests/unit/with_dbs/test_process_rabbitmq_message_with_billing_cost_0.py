@@ -3,6 +3,7 @@ from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from decimal import Decimal
 from unittest import mock
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
@@ -130,6 +131,7 @@ async def test_process_event_functions(
 ):
     engine = initialized_app.state.engine
     publisher = create_rabbitmq_client("publisher")
+    rpc_client = AsyncMock()
     consumer = create_rabbitmq_client("consumer")
     await consumer.subscribe(
         WalletCreditsLimitReachedMessage.get_channel_name(),
@@ -145,7 +147,7 @@ async def test_process_event_functions(
         pricing_unit_cost_id=1,
     )
 
-    await _process_start_event(engine, msg, publisher)
+    await _process_start_event(engine, msg, publisher, rpc_client)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "PENDING"
@@ -157,7 +159,7 @@ async def test_process_event_functions(
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
         service_run_id=msg.service_run_id, created_at=datetime.now(tz=UTC)
     )
-    await _process_heartbeat_event(engine, heartbeat_msg, publisher)
+    await _process_heartbeat_event(engine, heartbeat_msg, publisher, rpc_client)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id, modified_at)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "PENDING"
@@ -168,7 +170,7 @@ async def test_process_event_functions(
         created_at=datetime.now(tz=UTC),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await _process_stop_event(engine, stopped_msg, publisher)
+    await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id, modified_at)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "BILLED"
