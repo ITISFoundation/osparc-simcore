@@ -237,15 +237,6 @@ async def send_message_from_template(
     product_data = get_product_data(app, product_name=product_name)
     enriched_context = {**context, "product": asdict(product_data)}
 
-    owner_metadata = (
-        WebServerOwnerMetadata(
-            user_id=user_id,
-            product_name=product_name,
-        )
-        if user_id is not None
-        else None
-    )
-
     response = await remote_send_message_from_template(
         get_rabbitmq_rpc_client(app),
         addressing=_RPC_ADDRESSING_ADAPTER.validate_python(addressing.model_dump()),
@@ -253,7 +244,10 @@ async def send_message_from_template(
             TemplateRef(channel=channel, template_name=template_name).model_dump()
         ),
         context=enriched_context,
-        owner_metadata=owner_metadata,
+        owner_metadata=WebServerOwnerMetadata(
+            user_id=user_id,
+            product_name=product_name,
+        ),
     )
 
     return response.task_or_group_uuid, response.task_name
