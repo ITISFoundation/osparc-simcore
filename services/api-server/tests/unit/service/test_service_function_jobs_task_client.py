@@ -1,24 +1,42 @@
 # pylint: disable=redefined-outer-name
 
+import datetime
 import json
 from collections.abc import Callable
+from uuid import uuid4
 
 import pytest
 from celery_library.errors import TaskOrGroupNotFoundError
 from faker import Faker
+from models_library.api_schemas_webserver.functions import (
+    FunctionClass,
+    JSONFunctionInputSchema,
+    JSONFunctionOutputSchema,
+    RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
+)
 from models_library.celery import TaskState, TaskStatus, TaskUUID
+from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.task_manager import TaskManager
+from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server._service_function_jobs_task_client import (
+    FunctionJobTaskClientService,
     _celery_task_status,
 )
-from simcore_service_api_server.models.schemas.functions import (
-    FunctionJobCreationTaskStatus,
-)
+from simcore_service_api_server._service_functions import FunctionService
+from simcore_service_api_server._service_jobs import JobService
+from simcore_service_api_server.api.dependencies.authentication import Identity
+from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.models.schemas.functions import FunctionJobCreationTaskStatus
+from simcore_service_api_server.services_http.webserver import AuthSession
+from simcore_service_api_server.services_rpc.storage import StorageService
+from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 _faker = Faker()
 
@@ -79,3 +97,94 @@ async def test_celery_status_conversion(
         assert status == FunctionJobCreationTaskStatus[status_or_exception.task_state.name]
     else:
         pytest.fail("Unexpected test input")
+
+
+@pytest.fixture
+def registered_project_function() -> RegisteredFunction:
+    return RegisteredProjectFunction(
+        title="test_function",
+        function_class=FunctionClass.PROJECT,
+        description="A test function",
+        input_schema=JSONFunctionInputSchema(
+            schema_content={
+                "type": "object",
+                "properties": {"input1": {"type": "integer"}},
+            }
+        ),
+        output_schema=JSONFunctionOutputSchema(
+            schema_content={
+                "type": "object",
+                "properties": {"output1": {"type": "string"}},
+            }
+        ),
+        default_inputs=None,
+        project_id=uuid4(),
+        uid=uuid4(),
+        created_at=datetime.datetime.now(datetime.UTC),
+        modified_at=datetime.datetime.now(datetime.UTC),
+    )
+
+
+@pytest.fixture
+def cached_function_job(
+    registered_project_function: RegisteredFunction,
+) -> RegisteredFunctionJob:
+    return RegisteredProjectFunctionJob(
+        uid=uuid4(),
+        function_uid=registered_project_function.uid,
+        title="Cached job",
+        description="A cached function job",
+        inputs={"input1": 42},
+        outputs={"output1": "result"},
+        project_job_id=uuid4(),
+        function_class=FunctionClass.PROJECT,
+        job_creation_task_id=None,
+        created_at=datetime.datetime.now(datetime.UTC),
+    )
+
+
+async def test_create_function_job_creation_tasks_all_cached(
+    mocker: MockerFixture,
+    user_id: UserID,
+    product_name: ProductName,
+    registered_project_function: RegisteredFunction,
+    cached_function_job: RegisteredFunctionJob,
+):
+    """When all jobs are cached, no new tasks should be submitted."""
+    mock_web_rpc = mocker.AsyncMock(spec=WbApiRpcClient)
+    mock_web_rpc.find_cached_function_jobs.return_value = [
+        cached_function_job,
+    ]
+
+    service = FunctionJobTaskClientService(
+        user_id=user_id,
+        product_name=product_name,
+        _web_rpc_client=mock_web_rpc,
+        _storage_client=mocker.AsyncMock(spec=StorageService),
+        _job_service=mocker.AsyncMock(spec=JobService),
+        _function_service=mocker.AsyncMock(spec=FunctionService),
+        _function_job_service=mocker.AsyncMock(spec=FunctionJobService),
+        _webserver_api=mocker.AsyncMock(spec=AuthSession),
+        _celery_task_manager=mocker.Mock(spec=TaskManager),
+        _async_pg_engine=mocker.MagicMock(spec=AsyncEngine),
+    )
+
+    identity = Identity(
+        user_id=user_id,
+        product_name=product_name,
+        email="test@example.com",
+    )
+
+    result = await service.create_function_job_creation_tasks(
+        function=registered_project_function,
+        function_inputs=[{"input1": 42}],
+        user_identity=identity,
+        pricing_spec=None,
+        job_links=mocker.MagicMock(spec=JobLinks),
+    )
+
+    assert len(result) == 1
+    assert result[0] == cached_function_job
+    # Verify no task submission happened since all jobs were cached
+    mock_function_job_service = service._function_job_service  # noqa: SLF001
+    mock_function_job_service.batch_pre_register_function_jobs.assert_not_called()
