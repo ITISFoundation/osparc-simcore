@@ -16,6 +16,7 @@ from typing import Any, Final
 
 import pytest
 from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, ServiceType, wait_for_service_running
@@ -342,7 +343,7 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
             )
             try:
                 refresh_btn.wait_for(state="visible", timeout=2 * MINUTE)
-            except Exception:
+            except PlaywrightTimeoutError:
                 # Refresh button not visible - accordion might still be collapsed.
                 # Try clicking extend-sampling-btn to re-open.
                 logging.info("Refresh button not visible after 2min, trying to re-open accordion")
