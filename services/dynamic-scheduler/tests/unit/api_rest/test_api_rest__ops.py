@@ -42,6 +42,7 @@ def mock_director_v2_service(
 async def test_running_services(
     mock_director_v2_service: None,
     disable_generic_scheduler_lifespan: None,
+    disable_p_scheduler_lifespan: None,
     client: AsyncClient,
 ):
     response = await client.get(f"/{API_VTAG}/ops/running-services")
