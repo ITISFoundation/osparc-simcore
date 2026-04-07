@@ -17,6 +17,8 @@ case "${TARGETARCH}" in \
   *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
 esac
 
+# Latest versions available at https://www.7-zip.org/download.html
+# GitHub releases: https://github.com/ip7z/7zip/releases
 SEVEN_ZIP_VERSION="2600"
 SEVEN_ZIP_VERSION_DOT="${SEVEN_ZIP_VERSION:0:2}.${SEVEN_ZIP_VERSION:2}"
 
