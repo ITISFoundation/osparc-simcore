@@ -266,6 +266,8 @@ qx.Class.define("osparc.po.UsersPending", {
             buttonsLayout.add(approveButton);
             const rejectButton = this.__createRejectButton(pendingUser.email);
             buttonsLayout.add(rejectButton);
+            const moveButton = this.__createMoveButton(pendingUser);
+            buttonsLayout.add(moveButton);
             break;
           }
           case "REJECTED": {
@@ -286,6 +288,7 @@ qx.Class.define("osparc.po.UsersPending", {
             break;
           }
         }
+
         row++;
       });
     },
@@ -431,6 +434,88 @@ qx.Class.define("osparc.po.UsersPending", {
         win.close();
         this.__reload();
       });
+    },
+
+    __createMoveButton: function(pendingUser) {
+      const button = new qx.ui.form.Button(null, "@MaterialIcons/swap_horiz/14").set({
+        toolTipText: qx.locale.Manager.tr("Move to another product"),
+      });
+      button.addListener("execute", () => this.__openMoveDialog(pendingUser));
+      return button;
+    },
+
+    __openMoveDialog: function(pendingUser) {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        padding: 10,
+      });
+
+      layout.add(new qx.ui.basic.Label(this.tr("Select the target product:")).set({
+        font: "text-14",
+      }));
+
+      const selectBox = new qx.ui.form.SelectBox().set({
+        minWidth: 200,
+      });
+      layout.add(selectBox);
+
+      const moveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Move")).set({
+        appearance: "form-button",
+        enabled: false,
+      });
+      layout.add(moveBtn);
+
+      const title = this.tr("Move to Product") + " - " + pendingUser.email;
+      const win = osparc.ui.window.Window.popUpInWindow(layout, title, 350, 160).set({
+        clickAwayClose: false,
+        resizable: false,
+        showClose: true,
+      });
+
+      osparc.data.Resources.fetch("poUsers", "getProducts")
+        .then(products => {
+          products.forEach(product => {
+            const item = new qx.ui.form.ListItem(product.displayName);
+            item.productName = product.name;
+            item.isCurrent = product.isCurrent || false;
+            selectBox.add(item);
+            if (product.isCurrent) {
+              selectBox.setSelection([item]);
+            }
+          });
+          this.__updateMoveButtonState(selectBox, moveBtn);
+          selectBox.addListener("changeSelection", () => this.__updateMoveButtonState(selectBox, moveBtn));
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          win.close();
+        });
+
+      moveBtn.addListener("execute", () => {
+        const selected = selectBox.getSelection()[0];
+        if (!selected) {
+          return;
+        }
+        moveBtn.setFetching(true);
+        const params = {
+          data: {
+            preRegistrationId: pendingUser.preRegistrationId,
+            newProductName: selected.productName,
+          },
+        };
+        osparc.data.Resources.fetch("poUsers", "moveUserAccount", params)
+          .then(() => {
+            osparc.FlashMessenger.logAs(this.tr("User moved successfully"), "INFO");
+            win.close();
+            this.__reload();
+          })
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => moveBtn.setFetching(false));
+      });
+    },
+
+    __updateMoveButtonState: function(selectBox, moveBtn) {
+      const selected = selectBox.getSelection()[0];
+      moveBtn.setEnabled(selected ? !selected.isCurrent : false);
     },
 
     __previewRejection: function(email) {
