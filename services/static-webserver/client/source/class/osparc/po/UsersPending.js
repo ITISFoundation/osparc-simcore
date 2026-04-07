@@ -58,7 +58,9 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     createResendEmailButton: function(email) {
-      const button = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Resend Email"));
+      const button = new osparc.ui.form.FetchButton(null, "@MaterialIcons/send/14").set({
+        toolTipText: qx.locale.Manager.tr("Resend Email"),
+      });
       button.addListener("execute", () => {
         button.setFetching(true);
         const params = {
@@ -93,6 +95,15 @@ qx.Class.define("osparc.po.UsersPending", {
         return pendingUser.accountRequestReviewedAt;
       }
       return null;
+    },
+
+    COLUMNS: {
+      NAME: 0,
+      EMAIL: 1,
+      DATE: 2,
+      STATUS: 3,
+      INFO: 4,
+      ACTIONS: 5,
     },
   },
 
@@ -172,28 +183,42 @@ qx.Class.define("osparc.po.UsersPending", {
         font: "text-14"
       }), {
         row: 0,
-        column: 0,
+        column: this.self().COLUMNS.NAME,
       });
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Email")).set({
         font: "text-14"
       }), {
         row: 0,
-        column: 1,
+        column: this.self().COLUMNS.EMAIL,
       });
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Date")).set({
         font: "text-14"
       }), {
         row: 0,
-        column: 2,
+        column: this.self().COLUMNS.DATE,
       });
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
         font: "text-14"
       }), {
         row: 0,
-        column: 3,
+        column: this.self().COLUMNS.STATUS,
+      });
+
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
+        font: "text-14"
+      }), {
+        row: 0,
+        column: this.self().COLUMNS.INFO,
+      });
+
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Actions")).set({
+        font: "text-14"
+      }), {
+        row: 0,
+        column: this.self().COLUMNS.ACTIONS,
       });
     },
 
@@ -210,7 +235,7 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         pendingUsersLayout.add(fullNameLabel, {
           row,
-          column: 0,
+          column: this.self().COLUMNS.NAME,
         });
 
         const emailLabel = new qx.ui.basic.Label(pendingUser.email).set({
@@ -218,14 +243,14 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         pendingUsersLayout.add(emailLabel, {
           row,
-          column: 1,
+          column: this.self().COLUMNS.EMAIL,
         });
 
         const dateData = this.self().extractDate(pendingUser);
         const date = dateData ? osparc.utils.Utils.formatDateAndTime(new Date(dateData)) : "-";
         pendingUsersLayout.add(new qx.ui.basic.Label(date), {
           row,
-          column: 2,
+          column: this.self().COLUMNS.DATE,
         });
 
         const statusChip = new osparc.ui.basic.Chip().set({
@@ -236,19 +261,19 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         pendingUsersLayout.add(statusChip, {
           row,
-          column: 3,
+          column: this.self().COLUMNS.STATUS,
         });
 
         const infoButton = this.self().createInfoButton(pendingUser);
         pendingUsersLayout.add(infoButton, {
           row,
-          column: 4,
+          column: this.self().COLUMNS.INFO,
         });
 
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
         pendingUsersLayout.add(buttonsLayout, {
           row,
-          column: 5,
+          column: this.self().COLUMNS.ACTIONS,
         });
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
@@ -257,6 +282,8 @@ qx.Class.define("osparc.po.UsersPending", {
             buttonsLayout.add(approveButton);
             const rejectButton = this.__createRejectButton(pendingUser.email);
             buttonsLayout.add(rejectButton);
+            const moveButton = this.__createMoveButton(pendingUser);
+            buttonsLayout.add(moveButton);
             break;
           }
           case "REJECTED": {
@@ -277,6 +304,7 @@ qx.Class.define("osparc.po.UsersPending", {
             break;
           }
         }
+
         row++;
       });
     },
@@ -349,13 +377,17 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __createApproveButton: function(email) {
-      const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
+      const button = new qx.ui.form.Button(null, "@MaterialIcons/check/14").set({
+        toolTipText: qx.locale.Manager.tr("Approve"),
+      });
       button.addListener("execute", () => this.__openApproveDialog(email));
       return button;
     },
 
     __createRejectButton: function(email) {
-      const button = new qx.ui.form.Button(qx.locale.Manager.tr("Reject"));
+      const button = new qx.ui.form.Button(null, "@MaterialIcons/close/14").set({
+        toolTipText: qx.locale.Manager.tr("Reject"),
+      });
       button.addListener("execute", () => this.__previewRejection(email));
       return button;
     },
@@ -422,6 +454,91 @@ qx.Class.define("osparc.po.UsersPending", {
         win.close();
         this.__reload();
       });
+    },
+
+    __createMoveButton: function(pendingUser) {
+      const button = new qx.ui.form.Button(null, "@MaterialIcons/swap_horiz/14").set({
+        toolTipText: qx.locale.Manager.tr("Move to another product"),
+      });
+      button.addListener("execute", () => this.__openMoveUserDialog(pendingUser));
+      return button;
+    },
+
+    __openMoveUserDialog: function(pendingUser) {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        padding: 10,
+      });
+
+      layout.add(new qx.ui.basic.Label(this.tr("Select the target product:")).set({
+        font: "text-14",
+      }));
+
+      const selectBox = new qx.ui.form.SelectBox().set({
+        minWidth: 200,
+      });
+      layout.add(selectBox);
+
+      const moveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Move")).set({
+        appearance: "strong-button",
+        allowGrowX: false,
+        allowGrowY: false,
+        alignX: "right",
+        enabled: false,
+      });
+      layout.add(moveBtn);
+
+      const title = this.tr("Move to Product") + " - " + pendingUser.email;
+      const win = osparc.ui.window.Window.popUpInWindow(layout, title, 350, 160).set({
+        clickAwayClose: false,
+        resizable: false,
+        showClose: true,
+      });
+
+      osparc.data.Resources.fetch("poUsers", "getProducts")
+        .then(products => {
+          products.forEach(product => {
+            const item = new qx.ui.form.ListItem(product.displayName);
+            item.setUserData("productName", product.name);
+            item.setUserData("isCurrent", product.isCurrent || false);
+            selectBox.add(item);
+            if (product.isCurrent) {
+              selectBox.setSelection([item]);
+            }
+          });
+          this.__updateMoveButtonState(selectBox, moveBtn);
+          selectBox.addListener("changeSelection", () => this.__updateMoveButtonState(selectBox, moveBtn));
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          win.close();
+        });
+
+      moveBtn.addListener("execute", () => {
+        const selected = selectBox.getSelection()[0];
+        if (!selected) {
+          return;
+        }
+        moveBtn.setFetching(true);
+        const params = {
+          data: {
+            preRegistrationId: pendingUser.preRegistrationId,
+            newProductName: selected.getUserData("productName"),
+          },
+        };
+        osparc.data.Resources.fetch("poUsers", "moveUserAccount", params)
+          .then(() => {
+            osparc.FlashMessenger.logAs(this.tr("User moved successfully"), "INFO");
+            win.close();
+            this.__reload();
+          })
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => moveBtn.setFetching(false));
+      });
+    },
+
+    __updateMoveButtonState: function(selectBox, moveBtn) {
+      const selected = selectBox.getSelection()[0];
+      moveBtn.setEnabled(selected ? !selected.getUserData("isCurrent") : false);
     },
 
     __previewRejection: function(email) {
