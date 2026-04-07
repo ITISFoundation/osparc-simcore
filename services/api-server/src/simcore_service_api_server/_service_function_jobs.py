@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import jsonschema
 from common_library.exclude import as_dict_exclude_none
@@ -20,26 +21,20 @@ from models_library.functions import (
     RegisteredSolverFunctionJobPatch,
     SolverFunctionJob,
 )
-from models_library.functions_errors import (
-    FunctionInputsValidationError,
-    UnsupportedFunctionClassError,
-)
+from models_library.functions_errors import FunctionInputsValidationError, UnsupportedFunctionClassError
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from pydantic import TypeAdapter, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 
 from ._service_jobs import JobService
 from .models.api_resources import JobLinks
-from .models.domain.functions import (
-    FunctionJobPatch,
-    PreRegisteredFunctionJobData,
-)
+from .models.domain.functions import FunctionJobPatch, PreRegisteredFunctionJobData
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
@@ -57,6 +52,19 @@ def join_inputs(
 
     # last dict will override defaults
     return {**default_inputs, **function_inputs}
+
+
+def _sanitize_inputs_for_rpc(inputs: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Convert Pydantic model instances to plain dicts for pickle-safe RPC transport.
+
+    The api-server uses service-specific types (e.g. File) in ArgumentTypes that
+    cannot be deserialized by the webserver. This ensures only JSON-serializable
+    primitives are sent over the wire.
+    """
+    if inputs is None:
+        return None
+
+    return {k: v.model_dump(mode="json") if isinstance(v, BaseModel) else v for k, v in inputs.items()}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -148,7 +156,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=input_.values,
+                    inputs=_sanitize_inputs_for_rpc(input_.values),
                     outputs=None,
                     project_job_id=None,
                     job_creation_task_id=None,
@@ -168,7 +176,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=input_.values,
+                    inputs=_sanitize_inputs_for_rpc(input_.values),
                     outputs=None,
                     solver_job_id=None,
                     job_creation_task_id=None,
@@ -191,7 +199,7 @@ class FunctionJobService:
                 function_job_id=job.uid,
                 job_inputs=input_,
             )
-            for job, input_ in zip(jobs, job_input_list)
+            for job, input_ in zip(jobs, job_input_list, strict=True)
         ]
 
     async def batch_patch_registered_function_job(
@@ -267,7 +275,7 @@ class FunctionJobService:
                 job_id=study_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_job = await self._web_rpc_client.patch_registered_function_job(
+            return await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
                 function_job_patch_request=FunctionJobPatchRequest(
@@ -282,7 +290,6 @@ class FunctionJobService:
                     ),
                 ),
             )
-            return registered_job
 
         if function.function_class == FunctionClass.SOLVER:
             solver_job = await self._job_service.create_solver_job(
@@ -300,7 +307,7 @@ class FunctionJobService:
                 job_id=solver_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_job = await self._web_rpc_client.patch_registered_function_job(
+            return await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
                 function_job_patch_request=FunctionJobPatchRequest(
@@ -315,7 +322,6 @@ class FunctionJobService:
                     ),
                 ),
             )
-            return registered_job
 
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,
