@@ -17,7 +17,7 @@ case "${TARGETARCH}" in \
   *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
 esac
 
-SEVEN_ZIP_VERSION="2409"
+SEVEN_ZIP_VERSION="2600"
 SEVEN_ZIP_VERSION_DOT="${SEVEN_ZIP_VERSION:0:2}.${SEVEN_ZIP_VERSION:2}"
 
 echo "create install dir"
