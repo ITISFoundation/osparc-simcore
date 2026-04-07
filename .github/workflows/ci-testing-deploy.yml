@@ -1791,8 +1791,6 @@ jobs:
         uses: ./.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "*"
-      - name: prepare devenv
-        run: make devenv
       - name: setup
         run: |
           ./ci/github/system-testing/e2e-playwright.bash install

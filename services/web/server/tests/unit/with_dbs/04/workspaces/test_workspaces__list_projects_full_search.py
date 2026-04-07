@@ -132,20 +132,21 @@ async def test_workspaces__list_projects_full_search(  # noqa: PLR0915
     url = base_url.with_query({"text": "solution"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    sorted_data = sorted(data, key=lambda x: x["uuid"])
-    assert len(sorted_data) == 3
+    assert len(data) == 3
 
-    assert sorted_data[0]["uuid"] == project_1["uuid"]
-    assert sorted_data[0]["workspaceId"] == added_workspace["workspaceId"]
-    assert sorted_data[0]["folderId"] is None
+    result_by_uuid = {d["uuid"]: d for d in data}
 
-    assert sorted_data[1]["uuid"] == project_2["uuid"]
-    assert sorted_data[1]["workspaceId"] is None
-    assert sorted_data[1]["folderId"] is None
+    assert project_1["uuid"] in result_by_uuid
+    assert result_by_uuid[project_1["uuid"]]["workspaceId"] == added_workspace["workspaceId"]
+    assert result_by_uuid[project_1["uuid"]]["folderId"] is None
 
-    assert sorted_data[2]["uuid"] == project_3["uuid"]
-    assert sorted_data[2]["workspaceId"] is None
-    assert sorted_data[2]["folderId"] == root_folder["folderId"]
+    assert project_2["uuid"] in result_by_uuid
+    assert result_by_uuid[project_2["uuid"]]["workspaceId"] is None
+    assert result_by_uuid[project_2["uuid"]]["folderId"] is None
+
+    assert project_3["uuid"] in result_by_uuid
+    assert result_by_uuid[project_3["uuid"]]["workspaceId"] is None
+    assert result_by_uuid[project_3["uuid"]]["folderId"] == root_folder["folderId"]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

@@ -8655,6 +8655,45 @@
         ],
         "title": "ClientFileUploadData"
       },
+      "ErrorDict": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Loc"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "ctx": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ctx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ErrorDict",
+        "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
+      },
       "ErrorGet": {
         "properties": {
           "errors": {
@@ -9194,20 +9233,7 @@
           },
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MetaValueType"
             },
             "type": "object",
             "title": "Metadata",
@@ -9251,20 +9277,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MetaValueType"
             },
             "type": "object",
             "title": "Metadata",
@@ -9352,10 +9365,7 @@
             "$ref": "#/components/schemas/RunningState"
           },
           "progress": {
-            "type": "integer",
-            "maximum": 100,
-            "minimum": 0,
-            "title": "Progress",
+            "$ref": "#/components/schemas/PercentageInt",
             "default": 0
           },
           "submitted_at": {
@@ -9389,6 +9399,21 @@
             ],
             "title": "Stopped At",
             "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "Error details when the job state is FAILED"
           }
         },
         "type": "object",
@@ -9889,6 +9914,22 @@
           },
           "version": "2.4.45"
         }
+      },
+      "MetaValueType": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          }
+        ]
       },
       "OnePage_SolverPort_": {
         "properties": {
@@ -10496,6 +10537,11 @@
           "links"
         ],
         "title": "Page[Study]"
+      },
+      "PercentageInt": {
+        "type": "integer",
+        "maximum": 100,
+        "minimum": 0
       },
       "PricingPlanClassification": {
         "type": "string",
