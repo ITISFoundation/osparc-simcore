@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
