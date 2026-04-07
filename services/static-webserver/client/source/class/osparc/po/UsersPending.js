@@ -361,13 +361,17 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __createApproveButton: function(email) {
-      const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
+      const button = new qx.ui.form.Button(null, "@MaterialIcons/check/14").set({
+        toolTipText: qx.locale.Manager.tr("Approve"),
+      });
       button.addListener("execute", () => this.__openApproveDialog(email));
       return button;
     },
 
     __createRejectButton: function(email) {
-      const button = new qx.ui.form.Button(qx.locale.Manager.tr("Reject"));
+      const button = new qx.ui.form.Button(null, "@MaterialIcons/close/14").set({
+        toolTipText: qx.locale.Manager.tr("Reject"),
+      });
       button.addListener("execute", () => this.__previewRejection(email));
       return button;
     },
