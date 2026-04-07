@@ -359,6 +359,20 @@ qx.Class.define("osparc.data.model.Node", {
       }
       return Array.from(linkedNodeIds);
     },
+
+    getRuntimeErrorTip: function(error) {
+      let tip = null;
+      if (error["type"] === "runtime.oom") {
+        if (osparc.store.StaticInfo.isBillableProduct()) {
+          tip = "Tip: Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
+        } else {
+          tip = "Tip: Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
+        }
+      } else if (error["type"] === "runtime.timeout") {
+        tip = "Tip: The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
+      }
+      return tip;
+    },
   },
 
   members: {
