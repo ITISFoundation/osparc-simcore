@@ -54,12 +54,13 @@ def join_inputs(
     return {**default_inputs, **function_inputs}
 
 
-def _sanitize_inputs_for_rpc(inputs: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Convert Pydantic model instances to plain dicts for pickle-safe RPC transport.
+def ensure_rpc_serializable(inputs: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Ensure inputs/outputs dict contains only pickle-safe primitives for RPC transport.
 
-    The api-server uses service-specific types (e.g. File) in ArgumentTypes that
-    cannot be deserialized by the webserver. This ensures only JSON-serializable
-    primitives are sent over the wire.
+    The api-server's ArgumentTypes union includes Pydantic models (e.g. File) that
+    live in the api-server namespace. These cannot be deserialized by the webserver
+    since it lacks that module. This function converts any BaseModel instances to
+    plain JSON-serializable dicts before sending over RabbitMQ RPC.
     """
     if inputs is None:
         return None
@@ -156,7 +157,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=_sanitize_inputs_for_rpc(input_.values),
+                    inputs=ensure_rpc_serializable(input_.values),
                     outputs=None,
                     project_job_id=None,
                     job_creation_task_id=None,
@@ -176,7 +177,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=_sanitize_inputs_for_rpc(input_.values),
+                    inputs=ensure_rpc_serializable(input_.values),
                     outputs=None,
                     solver_job_id=None,
                     job_creation_task_id=None,
