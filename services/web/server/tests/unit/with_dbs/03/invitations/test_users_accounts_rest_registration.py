@@ -22,11 +22,14 @@ from models_library.api_schemas_webserver.users import (
     UserAccountGet,
     UserAccountPreviewApprovalGet,
     UserAccountPreviewRejectionGet,
+    UserAccountProductOptionGet,
 )
 from models_library.groups import AccessRightsDict
 from models_library.notifications import Channel
 from models_library.products import ProductName
+from models_library.rest_error import ErrorGet
 from models_library.rest_pagination import Page
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -1342,3 +1345,93 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
 
     # 6. Verify original form extras are preserved (not overwritten)
     assert "application" in extras or "description" in extras or "privacyPolicy" in extras
+
+
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
+async def test_list_users_accounts_unknown_product_override_returns_409(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+):
+    """Passing an unknown product_name query override must yield 409 Conflict, not 404."""
+    assert client.app
+    invalid_product_name = "nonexistent-product-xyz"
+
+    url = client.app.router["list_users_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts"
+
+    resp = await client.get(
+        f"{url}?product_name={invalid_product_name}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    _, error = await assert_status(resp, status.HTTP_409_CONFLICT)
+
+    error_model = ErrorGet.model_validate(error)
+    assert error_model.status == status.HTTP_409_CONFLICT
+    assert error_model.message == f"Invalid product '{invalid_product_name}'. The specified product does not exist."
+
+
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
+async def test_move_user_account_unknown_product_returns_409(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+):
+    """Passing an unknown new_product_name in the move endpoint must yield 409 Conflict."""
+    assert client.app
+    invalid_product_name = "nonexistent-product-xyz"
+
+    # 1. Create a pending pre-registration so the move operation can be attempted
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=account_request_form,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    pre_reg_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    pre_registration_id: int = pre_reg_data["preRegistrationId"]
+
+    # 2. Move towards a product that does not exist -> should be a conflict (409)
+    url = client.app.router["move_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:move"
+
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={
+            "preRegistrationId": pre_registration_id,
+            "newProductName": invalid_product_name,
+        },
+    )
+    _, error = await assert_status(resp, status.HTTP_409_CONFLICT)
+
+    error_model = ErrorGet.model_validate(error)
+    assert error_model.status == status.HTTP_409_CONFLICT
+    assert error_model.message == f"Invalid product '{invalid_product_name}'. The specified product does not exist."
+
+
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
+async def test_list_products_for_user_accounts_marks_current_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+):
+    assert client.app
+
+    url = client.app.router["list_products_for_user_accounts"].url_for()
+    assert url.path == "/v0/admin/products"
+
+    resp = await client.get(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    options = TypeAdapter(list[UserAccountProductOptionGet]).validate_python(data)
+    current_options = [option for option in options if option.is_current]
+
+    assert current_options
+    assert any(option.name == product_name for option in current_options)

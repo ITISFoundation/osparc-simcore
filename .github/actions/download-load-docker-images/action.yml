@@ -15,16 +15,19 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-    - name: download docker images with retry
-      uses: Wandalen/wretry.action@master
+    - name: download docker images (single artifact)
+      if: inputs.artifact-name-pattern != '*'
+      uses: actions/download-artifact@v8
       with:
-        action: actions/download-artifact@v4
-        with: |
-          ${{ inputs.artifact-name-pattern == '*' && 'pattern' || 'name' }}: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-${{ inputs.artifact-name-pattern }}
-          path: ${{ inputs.download-path }}
-        attempt_limit: 5
-        attempt_delay: 1000
+        name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-${{ inputs.artifact-name-pattern }}
+        path: ${{ inputs.download-path }}
+
+    - name: download docker images (all artifacts)
+      if: inputs.artifact-name-pattern == '*'
+      uses: actions/download-artifact@v8
+      with:
+        pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
+        path: ${{ inputs.download-path }}
 
     - name: load docker images
       shell: bash
