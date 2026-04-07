@@ -498,8 +498,8 @@ qx.Class.define("osparc.po.UsersPending", {
         .then(products => {
           products.forEach(product => {
             const item = new qx.ui.form.ListItem(product.displayName);
-            item.productName = product.name;
-            item.isCurrent = product.isCurrent || false;
+            item.setUserData("productName", product.name);
+            item.setUserData("isCurrent", product.isCurrent || false);
             selectBox.add(item);
             if (product.isCurrent) {
               selectBox.setSelection([item]);
@@ -522,7 +522,7 @@ qx.Class.define("osparc.po.UsersPending", {
         const params = {
           data: {
             preRegistrationId: pendingUser.preRegistrationId,
-            newProductName: selected.productName,
+            newProductName: selected.getUserData("productName"),
           },
         };
         osparc.data.Resources.fetch("poUsers", "moveUserAccount", params)
@@ -538,7 +538,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
     __updateMoveButtonState: function(selectBox, moveBtn) {
       const selected = selectBox.getSelection()[0];
-      moveBtn.setEnabled(selected ? !selected.isCurrent : false);
+      moveBtn.setEnabled(selected ? !selected.getUserData("isCurrent") : false);
     },
 
     __previewRejection: function(email) {
