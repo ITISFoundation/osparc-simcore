@@ -567,24 +567,22 @@ qx.Class.define("osparc.data.model.Study", {
         return;
       }
       const nodeId = nodeUpdatedData["node_id"];
+      const node = this.getWorkbench().getNode(nodeId);
+      if (!node) {
+        return;
+      }
+
       const nodeData = nodeUpdatedData["data"];
-      const workbench = this.getWorkbench();
-      const node = workbench.getNode(nodeId);
-      // Do not listen to output related backend updates if the node is a frontend node.
-      // The frontend controls its output values, progress and states.
-      // If a File Picker is uploading a file, the backend could override the current state with some older state.
-      if (node) {
-        if (nodeData && !osparc.data.model.Node.isFrontend(node.getMetadata())) {
-          node.setOutputData(nodeData.outputs);
-          node.populateProgress(nodeData);
-          node.populateState(nodeData);
-        }
-        if ("errors" in nodeUpdatedData) {
-          const errors = nodeUpdatedData["errors"];
-          node.setErrors(errors);
-        } else {
-          node.setErrors([]);
-        }
+      if (nodeData && !osparc.data.model.Node.isFrontend(node.getMetadata())) {
+        node.setOutputData(nodeData.outputs);
+        node.populateProgress(nodeData);
+        node.populateState(nodeData);
+      }
+      if ("errors" in nodeUpdatedData) {
+        const errors = nodeUpdatedData["errors"];
+        node.setErrors(errors);
+      } else {
+        node.setErrors([]);
       }
     },
 
