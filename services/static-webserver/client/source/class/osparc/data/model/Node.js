@@ -360,18 +360,18 @@ qx.Class.define("osparc.data.model.Node", {
       return Array.from(linkedNodeIds);
     },
 
-    getRuntimeErrorTip: function(error) {
-      let tip = null;
+    getRuntimeErrorHint: function(error) {
+      let hint = null;
       if (error["type"] === "runtime.oom") {
         if (osparc.store.StaticInfo.isBillableProduct()) {
-          tip = "Tip: Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
+          hint = "Tip: Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
         } else {
-          tip = "Tip: Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
+          hint = "Tip: Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
         }
       } else if (error["type"] === "runtime.timeout") {
-        tip = "Tip: The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
+        hint = "Tip: The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
       }
-      return tip;
+      return hint;
     },
   },
 
@@ -888,13 +888,13 @@ qx.Class.define("osparc.data.model.Node", {
             this.fireDataEvent("showInLogger", errorMsgData);
 
             // show troubleshooting tips for specific error types
-            const tipMessage = osparc.data.model.Node.getRuntimeErrorTip(error);
-            if (tipMessage) {
-              const tippedMsg = error["msg"] + "\n" + tipMessage;
-              osparc.FlashMessenger.logAs(tipMessage, "WARNING");
+            const hintMessage = osparc.data.model.Node.getRuntimeErrorHint(error);
+            if (hintMessage) {
+              const hintedMsg = error["msg"] + "\n" + hintMessage;
+              osparc.FlashMessenger.logAs(hintMessage, "WARNING");
               this.fireDataEvent("showInLogger", {
                 nodeId: this.getNodeId(),
-                msg: tippedMsg,
+                msg: hintedMsg,
                 level: "WARNING"
               });
             }
