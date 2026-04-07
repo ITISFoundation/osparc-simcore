@@ -598,7 +598,7 @@ def wait_for_service_running(
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of
     the required websocket events will not be emitted again.
-    In which case this will need further adjutment
+    In which case this will need further adjustment
     """
 
     started = arrow.utcnow()
