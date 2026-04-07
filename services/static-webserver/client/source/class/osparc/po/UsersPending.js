@@ -460,11 +460,11 @@ qx.Class.define("osparc.po.UsersPending", {
       const button = new qx.ui.form.Button(null, "@MaterialIcons/swap_horiz/14").set({
         toolTipText: qx.locale.Manager.tr("Move to another product"),
       });
-      button.addListener("execute", () => this.__openMoveDialog(pendingUser));
+      button.addListener("execute", () => this.__openMoveUserDialog(pendingUser));
       return button;
     },
 
-    __openMoveDialog: function(pendingUser) {
+    __openMoveUserDialog: function(pendingUser) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         padding: 10,
       });
@@ -479,7 +479,10 @@ qx.Class.define("osparc.po.UsersPending", {
       layout.add(selectBox);
 
       const moveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Move")).set({
-        appearance: "form-button",
+        appearance: "strong-button",
+        allowGrowX: false,
+        allowGrowY: false,
+        alignX: "right",
         enabled: false,
       });
       layout.add(moveBtn);
