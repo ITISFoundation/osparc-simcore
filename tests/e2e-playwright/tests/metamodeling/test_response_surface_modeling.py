@@ -104,7 +104,7 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
     # 1. create the initial study with jsonifier
     with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
-            ServiceType.COMPUTATIONAL, "jsonifier", None, "1.2.1"
+            ServiceType.COMPUTATIONAL, "jsonifier", None, service_version
         )
         assert "workbench" in jsonifier_project_data, "Expected workbench to be in project data!"
         assert isinstance(jsonifier_project_data["workbench"], dict), "Expected workbench to be a dict!"
