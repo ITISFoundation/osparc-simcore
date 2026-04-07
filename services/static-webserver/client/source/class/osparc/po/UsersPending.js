@@ -58,7 +58,9 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     createResendEmailButton: function(email) {
-      const button = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Resend Email"));
+      const button = new osparc.ui.form.FetchButton(null, "@MaterialIcons/send/14").set({
+        toolTipText: qx.locale.Manager.tr("Resend Email"),
+      });
       button.addListener("execute", () => {
         button.setFetching(true);
         const params = {
@@ -203,6 +205,20 @@ qx.Class.define("osparc.po.UsersPending", {
       }), {
         row: 0,
         column: this.self().COLUMNS.STATUS,
+      });
+
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
+        font: "text-14"
+      }), {
+        row: 0,
+        column: this.self().COLUMNS.INFO,
+      });
+
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Actions")).set({
+        font: "text-14"
+      }), {
+        row: 0,
+        column: this.self().COLUMNS.ACTIONS,
       });
     },
 
