@@ -572,18 +572,7 @@ qx.Class.define("osparc.data.model.Study", {
         return;
       }
 
-      const nodeData = nodeUpdatedData["data"];
-      if (nodeData && !osparc.data.model.Node.isFrontend(node.getMetadata())) {
-        node.setOutputData(nodeData.outputs);
-        node.populateProgress(nodeData);
-        node.populateState(nodeData);
-      }
-      if ("errors" in nodeUpdatedData) {
-        const errors = nodeUpdatedData["errors"];
-        node.setErrors(errors);
-      } else {
-        node.setErrors([]);
-      }
+      node.nodeUpdated(nodeUpdatedData);
     },
 
     nodeNodeProgressSequence: function(nodeProgressData) {

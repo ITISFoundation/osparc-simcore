@@ -540,8 +540,8 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
         this.__populateInputOutputData(nodeData);
-        this.populateProgress(nodeData);
-        this.populateState(nodeData);
+        this.__populateProgress(nodeData);
+        this.__populateState(nodeData);
         if (nodeData.bootOptions) {
           this.setBootOptions(nodeData.bootOptions);
         }
@@ -553,6 +553,21 @@ qx.Class.define("osparc.data.model.Node", {
         // do not initialize the logger and iframe if the study isn't open
         this.__initLogger();
         this.initIframeHandler();
+      }
+    },
+
+    nodeUpdated: function(nodeUpdatedData) {
+      const nodeData = nodeUpdatedData["data"];
+      if (nodeData && !osparc.data.model.Node.isFrontend(this.getMetadata())) {
+        this.setOutputData(nodeData.outputs);
+        this.__populateProgress(nodeData);
+        this.__populateState(nodeData);
+      }
+      if ("errors" in nodeUpdatedData) {
+        const errors = nodeUpdatedData["errors"];
+        this.setErrors(errors);
+      } else {
+        this.setErrors([]);
       }
     },
 
@@ -583,7 +598,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setInputsRequired(nodeData.inputsRequired || []);
     },
 
-    populateProgress: function(nodeData) {
+    __populateProgress: function(nodeData) {
       if ("progress" in nodeData) {
         const progress = Number.parseInt(nodeData["progress"]);
         const oldProgress = this.getStatus().getProgress();
@@ -597,8 +612,9 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    populateState: function(nodeData) {
+    __populateState: function(nodeData) {
       if ("state" in nodeData) {
+        console.log("Updating node with data from nodeUpdated event", nodeData.state);
         this.getStatus().setState(nodeData.state);
       }
     },
