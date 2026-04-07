@@ -563,6 +563,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.__populateProgress(nodeData);
         this.__populateState(nodeData);
       }
+
       if ("errors" in nodeUpdatedData) {
         const errors = nodeUpdatedData["errors"];
         this.setErrors(errors);
@@ -614,8 +615,12 @@ qx.Class.define("osparc.data.model.Node", {
 
     __populateState: function(nodeData) {
       if ("state" in nodeData) {
-        console.log("Updating node with data from nodeUpdated event", nodeData.state);
         this.getStatus().setState(nodeData.state);
+
+        // errors can also be part of the state, so we need to check them here as well
+        if ("errors" in nodeData.state) {
+          this.setErrors(nodeData.state.errors);
+        }
       }
     },
 
