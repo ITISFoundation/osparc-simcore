@@ -316,7 +316,7 @@ class FunctionJobTaskClientService:
             status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
         )
 
-        uncached_inputs = [input_ for input_, job in zip(inputs, cached_jobs, strict=False) if job is None]
+        uncached_inputs = [input_ for input_, job in zip(inputs, cached_jobs, strict=True) if job is None]
 
         if uncached_inputs:
             pre_registered_function_job_data_list = await self._function_job_service.batch_pre_register_function_jobs(
