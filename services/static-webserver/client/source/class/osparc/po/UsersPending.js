@@ -94,6 +94,15 @@ qx.Class.define("osparc.po.UsersPending", {
       }
       return null;
     },
+
+    COLUMNS: {
+      NAME: 0,
+      EMAIL: 1,
+      DATE: 2,
+      STATUS: 3,
+      INFO: 4,
+      ACTIONS: 5,
+    },
   },
 
   members: {
@@ -172,28 +181,28 @@ qx.Class.define("osparc.po.UsersPending", {
         font: "text-14"
       }), {
         row: 0,
-        column: 0,
+        column: this.self().COLUMNS.NAME,
       });
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Email")).set({
         font: "text-14"
       }), {
         row: 0,
-        column: 1,
+        column: this.self().COLUMNS.EMAIL,
       });
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Date")).set({
         font: "text-14"
       }), {
         row: 0,
-        column: 2,
+        column: this.self().COLUMNS.DATE,
       });
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
         font: "text-14"
       }), {
         row: 0,
-        column: 3,
+        column: this.self().COLUMNS.STATUS,
       });
     },
 
@@ -210,7 +219,7 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         pendingUsersLayout.add(fullNameLabel, {
           row,
-          column: 0,
+          column: this.self().COLUMNS.NAME,
         });
 
         const emailLabel = new qx.ui.basic.Label(pendingUser.email).set({
@@ -218,14 +227,14 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         pendingUsersLayout.add(emailLabel, {
           row,
-          column: 1,
+          column: this.self().COLUMNS.EMAIL,
         });
 
         const dateData = this.self().extractDate(pendingUser);
         const date = dateData ? osparc.utils.Utils.formatDateAndTime(new Date(dateData)) : "-";
         pendingUsersLayout.add(new qx.ui.basic.Label(date), {
           row,
-          column: 2,
+          column: this.self().COLUMNS.DATE,
         });
 
         const statusChip = new osparc.ui.basic.Chip().set({
@@ -236,19 +245,19 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         pendingUsersLayout.add(statusChip, {
           row,
-          column: 3,
+          column: this.self().COLUMNS.STATUS,
         });
 
         const infoButton = this.self().createInfoButton(pendingUser);
         pendingUsersLayout.add(infoButton, {
           row,
-          column: 4,
+          column: this.self().COLUMNS.INFO,
         });
 
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
         pendingUsersLayout.add(buttonsLayout, {
           row,
-          column: 5,
+          column: this.self().COLUMNS.ACTIONS,
         });
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
