@@ -581,8 +581,6 @@ qx.Class.define("osparc.data.model.Node", {
       if ("errors" in nodeUpdatedData) {
         const errors = nodeUpdatedData["errors"];
         this.setErrors(errors);
-      } else {
-        this.setErrors([]);
       }
     },
 
@@ -859,7 +857,12 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __applyErrors: function(errors) {
+    __applyErrors: function(errors, oldErrors) {
+      // check new errors are different from old errors to avoid unnecessary UI updates
+      if (JSON.stringify(errors) === JSON.stringify(oldErrors)) {
+        return;
+      }
+
       if (errors && errors.length) {
         errors.forEach(error => {
           const loc = error["loc"];
