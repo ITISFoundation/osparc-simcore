@@ -16,7 +16,7 @@ from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, parse_test_marks
+from pytest_simcore.helpers.webserver_login import NewUser
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
@@ -122,12 +122,10 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     client: TestClient,
     mocked_notifications_service_send_message_from_template: AsyncMock,
     confirmation_repository: ConfirmationRepository,
-    capsys: pytest.CaptureFixture,
     user_email: str,
     user_password: str,
     user_phone_number: str,
     mocked_twilio_service: dict[str, MockType],
-    mocked_email_core_remove_comments: None,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -286,10 +284,11 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     assert data["parameters"]["message"]
     assert data["parameters"]["expiration_2fa"]
 
-    out, _ = capsys.readouterr()
-    parsed_context = parse_test_marks(out)
-    assert parsed_context["name"] == user["name"]
-    assert "support" in parsed_context["support_email"]
+    # assert email was sent via notifications service
+    email_call = mocked_notifications_service_send_message_from_template.call_args_list[-1]
+    email_context = email_call.kwargs["context"]
+    assert email_context["user"]["first_name"] == (user["first_name"] or user["name"])
+    assert email_context["user"]["user_name"] == user["name"]
 
     # login (2FA Disabled) ---------------------------------------------------------
     await user_preferences_service.set_frontend_user_preference(
