@@ -2,16 +2,19 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.notifications import MessageContentGet
 from models_library.api_schemas_webserver.users import (
     UserAccountApprove,
     UserAccountGet,
+    UserAccountMoveProduct,
     UserAccountPreviewApproval,
     UserAccountPreviewApprovalGet,
     UserAccountPreviewRejection,
     UserAccountPreviewRejectionGet,
+    UserAccountProductOptionGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
@@ -33,6 +36,8 @@ from ....invitations import api as invitations_service
 from ....login.decorators import login_required
 from ....notifications import notifications_service
 from ....notifications._models import TemplateRef
+from ....products import products_service
+from ....products.errors import ProductNotFoundError
 from ....security.decorators import (
     group_or_role_permission_required,
     permission_required,
@@ -56,10 +61,26 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 @group_or_role_permission_required("admin.users.read")
 @handle_rest_requests_exceptions
 async def list_users_accounts(request: web.Request) -> web.Response:
+    """
+    NOTE: Now supports listing users across products (defaults to current),
+    that means that the PO or support groups can list all users of the system.
+    """
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
     query_params = parse_request_query_parameters_as(UsersAccountListQueryParams, request)
+    target_product_name = query_params.product_name or req_ctx.product_name
+
+    if query_params.product_name and query_params.product_name != req_ctx.product_name:
+        # Unknown override is a caller conflict (409), not a global not-found case.
+        product_names = await products_service.list_products_names(request.app)
+        if target_product_name not in product_names:
+            raise web.HTTPConflict(
+                text=user_message(
+                    "Invalid product '{product_name}'. The specified product does not exist.",
+                    _version=1,
+                ).format(product_name=target_product_name)
+            )
 
     if query_params.review_status == "PENDING":
         filter_any_account_request_status = [AccountRequestStatus.PENDING]
@@ -74,7 +95,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
 
     user_accounts, total_count = await _accounts_service.list_user_accounts(
         request.app,
-        product_name=req_ctx.product_name,
+        product_name=target_product_name,
         filter_any_account_request_status=filter_any_account_request_status,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
@@ -101,6 +122,23 @@ async def list_users_accounts(request: web.Request) -> web.Response:
     )
 
     return create_json_response_from_page(page)
+
+
+@routes.get(f"/{API_VTAG}/admin/products", name="list_products_for_user_accounts")
+@login_required
+@group_or_role_permission_required("admin.users.read")
+@handle_rest_requests_exceptions
+async def list_products_for_user_accounts(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    product_options = [
+        UserAccountProductOptionGet(
+            name=product.name,
+            display_name=product.display_name,
+            is_current=product.name == req_ctx.product_name,
+        ).model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
+        for product in products_service.list_products(request.app)
+    ]
+    return envelope_json_response(product_options)
 
 
 @routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_accounts")
@@ -144,6 +182,38 @@ async def pre_register_user_account(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
+
+
+@routes.post(f"/{API_VTAG}/admin/user-accounts:move", name="move_user_account")
+@login_required
+@group_or_role_permission_required("admin.users.write")
+@handle_rest_requests_exceptions
+async def move_user_account(request: web.Request) -> web.Response:
+    """
+    Allows a pre-registration to be moved to a different product
+    (from ANY src to ANY dst regardless of the current product ) IF it is not
+    reviewed. This is useful in case the user made a mistake in the product selection
+    during account requests.
+    """
+    req_ctx = UsersRequestContext.model_validate(request)
+    move_data = await parse_request_body_as(UserAccountMoveProduct, request)
+
+    try:
+        await _accounts_service.move_user_account_request_to_product(
+            request.app,
+            pre_registration_id=move_data.pre_registration_id,
+            new_product_name=move_data.new_product_name,
+            moved_by=req_ctx.user_id,
+        )
+    except ProductNotFoundError as exc:
+        raise web.HTTPConflict(
+            text=user_message(
+                "Invalid product '{product_name}'. The specified product does not exist.",
+                _version=1,
+            ).format(product_name=move_data.new_product_name)
+        ) from exc
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(f"/{API_VTAG}/admin/user-accounts:approve", name="approve_user_account")

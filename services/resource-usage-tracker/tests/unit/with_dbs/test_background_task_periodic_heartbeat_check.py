@@ -11,6 +11,7 @@ from models_library.resource_tracker import (
     ResourceTrackerServiceType,
     ServiceRunStatus,
 )
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
@@ -19,11 +20,13 @@ from simcore_postgres_database.models.resource_tracker_credit_transactions impor
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
+from simcore_postgres_database.utils_products import ProductEmailInfo
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 from simcore_service_resource_usage_tracker.models.credit_transactions import (
     CreditTransactionDB,
 )
 from simcore_service_resource_usage_tracker.models.service_runs import ServiceRunDB
+from simcore_service_resource_usage_tracker.services import background_task_periodic_heartbeat_check
 from simcore_service_resource_usage_tracker.services.background_task_periodic_heartbeat_check import (
     check_running_services,
 )
@@ -141,7 +144,6 @@ async def test_process_event_functions(
     resource_tracker_setup_db,
     initialized_app,
 ):
-    engine = initialized_app.state.engine
     app_settings: ApplicationSettings = initialized_app.state.settings
 
     for _ in range(app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL):
@@ -205,3 +207,161 @@ async def test_process_event_functions(
                 assert transaction.transaction_status == CreditTransactionStatus.BILLED
         else:
             assert transaction.transaction_status == CreditTransactionStatus.PENDING
+
+
+_SERVICE_RUN_ID_STALE_COMPUTATIONAL = "stale_comp_1"
+_SERVICE_RUN_ID_STALE_DYNAMIC = "stale_dyn_1"
+
+
+async def _run_checks_until_service_deemed_unhealthy(
+    initialized_app,
+    postgres_db: sa.engine.Engine,
+):
+    app_settings: ApplicationSettings = initialized_app.state.settings
+    for _ in range(app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL):
+        await check_running_services(initialized_app)
+        await asyncio.sleep(_PROD_RUN_INTERVAL_SEC)
+        with postgres_db.connect() as con:
+            fake_old_modified_at = datetime.now(tz=UTC) - timedelta(minutes=5)
+            update_stmt = (
+                resource_tracker_service_runs.update()
+                .where(
+                    resource_tracker_service_runs.c.service_run_id.in_(
+                        [_SERVICE_RUN_ID_STALE_COMPUTATIONAL, _SERVICE_RUN_ID_STALE_DYNAMIC]
+                    )
+                )
+                .values(modified=fake_old_modified_at)
+            )
+            con.execute(update_stmt)
+    # This final call closes the unhealthy services
+    await check_running_services(initialized_app)
+
+
+@pytest.fixture()
+async def stale_computational_service_db(
+    sqlalchemy_async_engine: AsyncEngine,
+    random_resource_tracker_service_run: Callable[..., dict[str, Any]],
+    random_resource_tracker_credit_transactions: Callable[..., dict[str, Any]],
+) -> AsyncIterator[None]:
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            resource_tracker_service_runs.insert().values(
+                **random_resource_tracker_service_run(
+                    service_run_id=_SERVICE_RUN_ID_STALE_COMPUTATIONAL,
+                    service_type=ResourceTrackerServiceType.COMPUTATIONAL_SERVICE,
+                    product_name="osparc",
+                    wallet_id=1,
+                    last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
+                    started_at=_LAST_HEARTBEAT_10_MIN_OLD - timedelta(minutes=1),
+                )
+            )
+        )
+        await conn.execute(
+            resource_tracker_credit_transactions.insert().values(
+                **random_resource_tracker_credit_transactions(
+                    service_run_id=_SERVICE_RUN_ID_STALE_COMPUTATIONAL,
+                    product_name="osparc",
+                    wallet_id=1,
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
+                    last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
+                    transaction_status="PENDING",
+                )
+            )
+        )
+
+    yield
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(resource_tracker_credit_transactions.delete())
+        await conn.execute(resource_tracker_service_runs.delete())
+
+
+@pytest.fixture()
+async def stale_dynamic_service_db(
+    sqlalchemy_async_engine: AsyncEngine,
+    random_resource_tracker_service_run: Callable[..., dict[str, Any]],
+    random_resource_tracker_credit_transactions: Callable[..., dict[str, Any]],
+) -> AsyncIterator[None]:
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            resource_tracker_service_runs.insert().values(
+                **random_resource_tracker_service_run(
+                    service_run_id=_SERVICE_RUN_ID_STALE_DYNAMIC,
+                    service_type=ResourceTrackerServiceType.DYNAMIC_SERVICE,
+                    product_name="osparc",
+                    wallet_id=1,
+                    last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
+                    started_at=_LAST_HEARTBEAT_10_MIN_OLD - timedelta(minutes=1),
+                )
+            )
+        )
+        await conn.execute(
+            resource_tracker_credit_transactions.insert().values(
+                **random_resource_tracker_credit_transactions(
+                    service_run_id=_SERVICE_RUN_ID_STALE_DYNAMIC,
+                    product_name="osparc",
+                    wallet_id=1,
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
+                    last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
+                    transaction_status="PENDING",
+                )
+            )
+        )
+
+    yield
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(resource_tracker_credit_transactions.delete())
+        await conn.execute(resource_tracker_service_runs.delete())
+
+
+async def test_close_unhealthy_computational_service_sends_reimbursement_notification(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    stale_computational_service_db,
+    initialized_app,
+    mocker: MockerFixture,
+):
+    mock_notify = mocker.patch(
+        f"{background_task_periodic_heartbeat_check.__name__}.notify_user_of_credit_reimbursement",
+        autospec=True,
+    )
+    mocker.patch(
+        f"{background_task_periodic_heartbeat_check.__name__}.get_product_email_info",
+        autospec=True,
+        return_value=ProductEmailInfo(display_name="osparc", support_email="support@osparc.io"),
+    )
+
+    await _run_checks_until_service_deemed_unhealthy(initialized_app, postgres_db)
+
+    # Computational service gets NOT_BILLED status => reimbursement notification should be sent
+    mock_notify.assert_called_once()
+    call_kwargs = mock_notify.call_args.kwargs
+    assert call_kwargs["service_run_id"] == _SERVICE_RUN_ID_STALE_COMPUTATIONAL
+
+
+async def test_close_unhealthy_dynamic_service_does_not_send_reimbursement_notification(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    stale_dynamic_service_db,
+    initialized_app,
+    mocker: MockerFixture,
+):
+    mock_notify = mocker.patch(
+        f"{background_task_periodic_heartbeat_check.__name__}.notify_user_of_credit_reimbursement",
+        autospec=True,
+    )
+    mocker.patch(
+        f"{background_task_periodic_heartbeat_check.__name__}.get_product_email_info",
+        autospec=True,
+        return_value=ProductEmailInfo(display_name="osparc", support_email="support@osparc.io"),
+    )
+
+    await _run_checks_until_service_deemed_unhealthy(initialized_app, postgres_db)
+
+    # Dynamic service gets BILLED status => no reimbursement notification should be sent
+    mock_notify.assert_not_called()

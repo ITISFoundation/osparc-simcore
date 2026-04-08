@@ -355,7 +355,7 @@ def test_fixed_issubclass_type_error_with_pydantic_models():
         # >> issubclass(dict[str, str], BaseSettings)
         # Traceback (most recent call last):
         # File "<string>", line 1, in <module>
-        # File "/home/crespo/.pyenv/versions/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
+        # File "/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
         #     return _abc_subclasscheck(cls, subclass)
         # TypeError: issubclass() arg 1 must be a class
         #
