@@ -11,8 +11,10 @@ from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
     EmptyProductsError,
+    ProductEmailInfo,
     get_default_product_name,
     get_or_create_product_group,
+    get_product_email_info,
     get_product_group_id_or_none,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -74,3 +76,21 @@ async def test_get_or_create_group_product(asyncpg_engine: AsyncEngine, make_pro
             await conn.execute(groups.delete().where(groups.c.gid == product_group_id))
             product_group_id = await get_product_group_id_or_none(conn, product_name=product_row.name)
             assert product_group_id is None
+
+
+async def test_get_product_email_info(asyncpg_engine: AsyncEngine, make_products_table: Callable):
+    async with asyncpg_engine.begin() as conn:
+        await make_products_table(conn)
+
+        result = await get_product_email_info(conn, "s4l")
+        assert isinstance(result, ProductEmailInfo)
+        assert result.display_name == "Product S4l"
+        assert "@" in result.support_email
+
+
+async def test_get_product_email_info_not_found(asyncpg_engine: AsyncEngine, make_products_table: Callable):
+    async with asyncpg_engine.begin() as conn:
+        await make_products_table(conn)
+
+        with pytest.raises(ValueError, match="not found"):
+            await get_product_email_info(conn, "nonexistent")

@@ -20,10 +20,7 @@ from models_library.functions import (
     RegisteredSolverFunctionJobPatch,
     SolverFunctionJob,
 )
-from models_library.functions_errors import (
-    FunctionInputsValidationError,
-    UnsupportedFunctionClassError,
-)
+from models_library.functions_errors import FunctionInputsValidationError, UnsupportedFunctionClassError
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
@@ -36,10 +33,7 @@ from simcore_service_api_server.services_rpc.storage import StorageService
 
 from ._service_jobs import JobService
 from .models.api_resources import JobLinks
-from .models.domain.functions import (
-    FunctionJobPatch,
-    PreRegisteredFunctionJobData,
-)
+from .models.domain.functions import FunctionJobPatch, PreRegisteredFunctionJobData
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
@@ -133,6 +127,9 @@ class FunctionJobService:
         function: RegisteredFunction,
         job_input_list: list[JobInputs],
     ) -> list[PreRegisteredFunctionJobData]:
+        if not job_input_list:
+            return []
+
         if function.input_schema is not None:
             is_valid, validation_str = await self.validate_function_inputs(
                 function=function,
@@ -191,7 +188,7 @@ class FunctionJobService:
                 function_job_id=job.uid,
                 job_inputs=input_,
             )
-            for job, input_ in zip(jobs, job_input_list)
+            for job, input_ in zip(jobs, job_input_list, strict=True)
         ]
 
     async def batch_patch_registered_function_job(
@@ -267,7 +264,7 @@ class FunctionJobService:
                 job_id=study_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_job = await self._web_rpc_client.patch_registered_function_job(
+            return await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
                 function_job_patch_request=FunctionJobPatchRequest(
@@ -282,7 +279,6 @@ class FunctionJobService:
                     ),
                 ),
             )
-            return registered_job
 
         if function.function_class == FunctionClass.SOLVER:
             solver_job = await self._job_service.create_solver_job(
@@ -300,7 +296,7 @@ class FunctionJobService:
                 job_id=solver_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_job = await self._web_rpc_client.patch_registered_function_job(
+            return await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
                 function_job_patch_request=FunctionJobPatchRequest(
@@ -315,7 +311,6 @@ class FunctionJobService:
                     ),
                 ),
             )
-            return registered_job
 
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,
