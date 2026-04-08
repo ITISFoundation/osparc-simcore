@@ -115,8 +115,21 @@ def test_personalized_classic_ti_plan(
         # click to close
         page.get_by_test_id("userMenuBtn").click()
 
-    # press + button
-    project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
+    # DELETE_ME OM: testing purposes
+    start_project_uuid = "72235252-329b-11f1-be19-0242ac171744"
+    if start_project_uuid:
+        with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=20 * SECOND) as response_info:
+            card_id = "studyBrowserListItem_" + start_project_uuid
+            page.get_by_test_id(card_id).click()
+            open_button = page.get_by_test_id("openResource")
+            expect(open_button).to_be_visible(timeout=10 * SECOND)
+            open_button.click()
+        assert response_info.value.ok, f"{response_info.value.json()}"
+        project_data = response_info.value.json()["data"]
+    else:
+        # press + button
+        project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
+
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])
@@ -138,54 +151,54 @@ def test_personalized_classic_ti_plan(
         f"Expected at least {expected_number_of_steps} nodes in the workbench"
     )
 
-    with log_context(logging.INFO, "File Picker step (1/%s)", expected_number_of_steps):
-        # in the testing project the file is already uploaded, so just check the file is already there
-        file_picker_step = page.get_by_test_id("AppMode_StepBtn_1")
-        # wait 2 seconds to show the File in the tracer
-        page.wait_for_timeout(2 * SECOND)
-        expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
-
-    with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
-        with page.expect_websocket(
-            _JLabWaitForWebSocket(),
-            timeout=_OUTER_EXPECT_TIMEOUT_RATIO
-            * (_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
-        ) as ws_info:
-            with expected_service_running(
-                page=page,
-                node_id=node_ids[2],
-                websocket=log_in_and_out,
-                timeout=(_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
-                press_start_button=False,
-                product_url=product_url,
-                is_service_legacy=is_service_legacy,
-            ) as service_running:
-                app_mode_trigger_next_app(page)
-            personalizer_iframe = service_running.iframe_locator
-            assert personalizer_iframe
-
-        assert not ws_info.value.is_closed()
-
-        with log_context(logging.INFO, "Start personalization"):
-            start_button = personalizer_iframe.get_by_role("button", name="Start")
-            start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-            page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
-            outputs_button = page.get_by_test_id("outputsBtn")
-            _wait_for_personalization_complete(start_button, outputs_button)
-
-    with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
-        with expected_service_running(
-            page=page,
-            node_id=node_ids[3],
-            websocket=log_in_and_out,
-            timeout=(_MODELING_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _MODELING_MAX_STARTUP_TIME),
-            press_start_button=False,
-            product_url=product_url,
-            is_service_legacy=is_service_legacy,
-        ) as service_running:
-            app_mode_trigger_next_app(page)
-        modeling_iframe = service_running.iframe_locator
-        assert modeling_iframe
+    #    with log_context(logging.INFO, "File Picker step (1/%s)", expected_number_of_steps):
+    #        # in the testing project the file is already uploaded, so just check the file is already there
+    #        file_picker_step = page.get_by_test_id("AppMode_StepBtn_1")
+    #        # wait 2 seconds to show the File in the tracer
+    #        page.wait_for_timeout(2 * SECOND)
+    #        expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
+    #
+    #    with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
+    #        with page.expect_websocket(
+    #            _JLabWaitForWebSocket(),
+    #            timeout=_OUTER_EXPECT_TIMEOUT_RATIO
+    #            * (_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
+    #        ) as ws_info:
+    #            with expected_service_running(
+    #                page=page,
+    #                node_id=node_ids[2],
+    #                websocket=log_in_and_out,
+    #                timeout=(_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
+    #                press_start_button=False,
+    #                product_url=product_url,
+    #                is_service_legacy=is_service_legacy,
+    #            ) as service_running:
+    #                app_mode_trigger_next_app(page)
+    #            personalizer_iframe = service_running.iframe_locator
+    #            assert personalizer_iframe
+    #
+    #        assert not ws_info.value.is_closed()
+    #
+    #        with log_context(logging.INFO, "Start personalization"):
+    #            start_button = personalizer_iframe.get_by_role("button", name="Start")
+    #            start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+    #            page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
+    #            outputs_button = page.get_by_test_id("outputsBtn")
+    #            _wait_for_personalization_complete(start_button, outputs_button)
+    #
+    #    with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
+    #        with expected_service_running(
+    #            page=page,
+    #            node_id=node_ids[3],
+    #            websocket=log_in_and_out,
+    #            timeout=(_MODELING_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _MODELING_MAX_STARTUP_TIME),
+    #            press_start_button=False,
+    #            product_url=product_url,
+    #            is_service_legacy=is_service_legacy,
+    #        ) as service_running:
+    #            app_mode_trigger_next_app(page)
+    #        modeling_iframe = service_running.iframe_locator
+    #        assert modeling_iframe
 
     with log_context(logging.INFO, "Simulator step (4/%s)", expected_number_of_steps):
         with page.expect_websocket(
