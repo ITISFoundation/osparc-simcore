@@ -16,6 +16,7 @@ from ..invitations import api as invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
+from ..products.errors import ProductNotFoundError
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval
 from .exceptions import (
@@ -87,6 +88,25 @@ async def pre_register_user(
 
     assert len(found) == 1  # nosec
     return found[0]
+
+
+async def move_user_account_request_to_product(
+    app: web.Application,
+    *,
+    pre_registration_id: int,
+    new_product_name: ProductName,
+    moved_by: UserID,
+) -> None:
+    product_names = await products_service.list_products_names(app)
+    if new_product_name not in product_names:
+        raise ProductNotFoundError(product_name=new_product_name)
+
+    await _accounts_repository.update_pre_registration_product(
+        get_asyncpg_engine(app),
+        pre_registration_id=pre_registration_id,
+        new_product_name=new_product_name,
+        moved_by=moved_by,
+    )
 
 
 #
@@ -199,6 +219,7 @@ async def search_users_accounts(
             state=r.state,
             postal_code=r.postal_code,
             country=r.country,
+            product_name=r.product_name,
             extras=r.extras or {},
             invited_by=r.invited_by,
             pre_registration_id=r.id,
