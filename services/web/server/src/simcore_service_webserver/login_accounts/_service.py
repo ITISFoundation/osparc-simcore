@@ -1,21 +1,22 @@
 import asyncio
-import functools
 import logging
 from io import BytesIO
 from typing import Any
 
 from aiohttp import web
 from captcha.image import ImageCaptcha
-from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.emails import LowerCaseEmailStr
+from models_library.notifications import Channel
 from models_library.products import ProductName
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode
 
-from ..email.email_service import send_email_from_template
-from ..products import products_web
+from ..notifications._models import EmailContact
+from ..notifications._service import send_message_from_template
 from ..products.models import Product
 from ..users import _accounts_service
 from ..users.schemas import UserAccountRestPreRegister
@@ -24,86 +25,99 @@ _logger = logging.getLogger(__name__)
 
 
 async def send_close_account_email(
-    request: web.Request,
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
     user_email: EmailStr,
     user_first_name: str,
     retention_days: PositiveInt,
-):
-    template_name = "close_account.jinja2"
-    email_template_path = await products_web.get_product_template_path(request, template_name)
-    product: Product = products_web.get_current_product(request)
-
+    host: str,
+) -> None:
     try:
-        await send_email_from_template(
-            request,
-            from_=product.support_email,
-            to=user_email,
-            template=email_template_path,
+        await send_message_from_template(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[EmailContact(name=user_first_name, email=user_email)],
+            template_name="unregister",
             context={
-                "host": request.host,
-                "name": user_first_name.capitalize(),
-                "support_email": product.support_email,
+                "host": host,
+                "user": {
+                    "first_name": user_first_name.capitalize(),
+                    "user_name": user_first_name,
+                },
                 "retention_days": retention_days,
-                "product": product,
             },
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         _logger.exception(
-            "Failed while sending '%s' email to %s",
-            template_name,
-            f"{user_email=}",
+            **create_troubleshooting_log_kwargs(
+                f"Failed while sending 'unregister' email to {user_email}",
+                error=exc,
+                error_context={
+                    "user_email": user_email,
+                },
+            ),
         )
-
-
-def _json_encoder_and_dumps(obj: Any, **kwargs):
-    # NOTE: equivalent json_dumps(obj, default=jsonable_encode(pydantic_encoder(.))
-    return json_dumps(jsonable_encoder(obj), **kwargs)
 
 
 async def send_account_request_email_to_support(
-    request: web.Request,
+    app: web.Application,
     *,
+    product_name: ProductName,
     product: Product,
     request_form: dict[str, Any],
     ipinfo: dict,
-):
-    template_name = "request_account.jinja2"
+    host: str,
+) -> None:
     destination_email = product.product_owners_email or product.support_email
-    email_template_path = await products_web.get_product_template_path(request, template_name)
-    user_email: LowerCaseEmailStr | None
+    reply_to_email: LowerCaseEmailStr | None
     try:
-        user_email = TypeAdapter(LowerCaseEmailStr).validate_python(request_form.get("email"))
+        reply_to_email = TypeAdapter(LowerCaseEmailStr).validate_python(request_form.get("email"))
     except ValidationError:
-        user_email = None
+        reply_to_email = None
+
+    reply_to_contact = EmailContact(name="", email=reply_to_email) if reply_to_email else None
 
     try:
-        await send_email_from_template(
-            request,
-            from_=product.support_email,
-            to=destination_email,
-            reply_to=user_email,  # So that issue-tracker system ACK email is sent to the user that requests the account
-            template=email_template_path,
+        await send_message_from_template(
+            app,
+            user_id=None,
+            product_name=product_name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[EmailContact(name="", email=destination_email)],
+            reply_to=reply_to_contact,
+            template_name="account_requested",
             context={
-                "host": request.host.rstrip("/"),
-                "name": "product-owners",
-                "product": product.model_dump(
-                    include={
-                        "name",
-                        "display_name",
-                        "vendor",
-                        "is_payment_enabled",
-                    }
+                "host": host.rstrip("/"),
+                "product_info": jsonable_encoder(
+                    product.model_dump(
+                        include={
+                            "name",
+                            "display_name",
+                            "vendor",
+                            "is_payment_enabled",
+                        }
+                    )
                 ),
                 "request_form": request_form,
                 "ipinfo": ipinfo,
-                "dumps": functools.partial(_json_encoder_and_dumps, indent=1),
             },
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         _logger.exception(
-            "Failed while sending '%s' email to %s",
-            template_name,
-            f"{destination_email=}",
+            **create_troubleshooting_log_kwargs(
+                f"Failed to send 'account_requested' email to {destination_email}",
+                error=exc,
+                error_context={
+                    "product_name": product_name,
+                    "destination_email": destination_email,
+                },
+            ),
         )
 
 
