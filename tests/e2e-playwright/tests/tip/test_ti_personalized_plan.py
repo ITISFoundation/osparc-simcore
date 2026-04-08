@@ -61,6 +61,11 @@ _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
 )
 
+_SIM_COLOR_PENDING: Final[str] = "#FFA07A"
+_SIM_COLOR_STARTED: Final[str] = "#6969ff"
+_SIM_COLOR_SUCCESS: Final[str] = "#0090D0"
+_SIM_COLOR_FAILED: Final[str] = "#FF0000"
+
 
 @dataclass
 class _JLabWaitForWebSocket:
@@ -91,12 +96,36 @@ def _run_personalization(personalizer_iframe, page):
         _wait_for_personalization_complete(start_button, outputs_button)
 
 
+def _log_simulation_progress(simulator_iframe):
+    try:
+        progress_bar = simulator_iframe.locator(".progress-bar").first
+        progress_width = progress_bar.evaluate("el => el.style.width")
+
+        # Count jobs by background color in each column
+        pending = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_PENDING}']").count()
+        started = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_STARTED}']").count()
+        success = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_SUCCESS}']").count()
+        failed = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_FAILED}']").count()
+
+        logging.info(
+            "Simulation progress: %s | Pending=%d, Started=%d, Success=%d, Failed=%d",
+            progress_width,
+            pending,
+            started,
+            success,
+            failed,
+        )
+    except Exception:
+        logging.info("Could not extract simulation progress")
+
+
 @retry(
     stop=stop_after_attempt(30),
     wait=wait_fixed(60),
     reraise=True,
 )
-def _wait_for_simulation_complete(setup_button):
+def _wait_for_simulation_complete(setup_button, simulator_iframe):
+    _log_simulation_progress(simulator_iframe)
     icon_class = setup_button.locator("i").first.evaluate("el => el.className")
     if "fa-spinner" in icon_class:
         msg = f"Simulation still running: {icon_class=}"
@@ -128,8 +157,8 @@ def _run_simulations(simulator_iframe, page):
         expect(in_test_case_log.first).to_be_visible(timeout=5 * MINUTE)
         logging.info("'IN TEST CASE' log appeared — simulation setup is running")
 
-    with log_context(logging.INFO, "Wait for simulation setup to complete (up to 30 minutes)"):
-        _wait_for_simulation_complete(setup_button)
+    with log_context(logging.INFO, "Wait for simulation setup to complete"):
+        _wait_for_simulation_complete(setup_button, simulator_iframe)
 
     with log_context(logging.INFO, "Export results"):
         export_button = simulator_iframe.get_by_role("button", name="Export")
