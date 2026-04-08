@@ -5,13 +5,12 @@
 
 import asyncio
 import logging
-import re
 from contextlib import AsyncExitStack
 from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
-from aiohttp.test_utils import TestClient, make_mocked_request
+from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
@@ -40,9 +39,6 @@ from simcore_service_webserver.login.constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_LOGGED_IN,
 )
-from simcore_service_webserver.products import products_web
-from simcore_service_webserver.products.errors import UnknownProductError
-from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.user_preferences import user_preferences_service
 from twilio.base.exceptions import TwilioRestException
 from yarl import URL
@@ -376,47 +372,36 @@ async def test_can_register_same_phone_in_different_accounts(
 async def test_send_email_code(
     client: TestClient,
     faker: Faker,
-    capsys: pytest.CaptureFixture,
-    mocked_email_core_remove_comments: None,
+    mocker: MockerFixture,
 ):
-    request = make_mocked_request("GET", "/dummy", app=client.app)
-
-    with pytest.raises(UnknownProductError):
-        # NOTE: this is a fake request and did not go through middlewares
-        products_web.get_current_product(request)
-
-    user_email = faker.email()
-    support_email = faker.email()
-    code = generate_passcode()
-    first_name = faker.first_name()
-
-    await send_email_code(
-        request,
-        user_email=user_email,
-        support_email=support_email,
-        code=code,
-        first_name=first_name,
-        product=Product(
-            name="osparc",
-            display_name="The Foo Product",
-            host_regex=re.compile(r".+"),
-            base_url="https://osparc.io",
-            vendor={},
-            short_name="foo",
-            support_email=support_email,
-            support=None,
-            login_settings=ProductLoginSettingsDict(
-                LOGIN_2FA_REQUIRED=True,
-            ),
-            registration_email_template=None,
-        ),
+    mock_send = mocker.patch(
+        "simcore_service_webserver.login._twofa_service.notifications_service.send_message_from_template",
+        autospec=True,
     )
 
-    out, _ = capsys.readouterr()
-    parsed_context = parse_test_marks(out)
-    assert parsed_context["code"] == f"{code}"
-    assert parsed_context["name"] == first_name.capitalize()
-    assert parsed_context["support_email"] == support_email
+    user_email = faker.email()
+    code = generate_passcode()
+    first_name = faker.first_name()
+    user_name = faker.user_name()
+
+    assert client.app
+    await send_email_code(
+        client.app,
+        user_email=user_email,
+        code=code,
+        first_name=first_name,
+        user_name=user_name,
+        product_name="osparc",
+        host="osparc.io",
+    )
+
+    mock_send.assert_called_once()
+    call_kwargs = mock_send.call_args.kwargs
+    assert call_kwargs["template_name"] == "new_code"
+    assert call_kwargs["context"]["code"] == code
+    assert call_kwargs["context"]["host"] == "osparc.io"
+    assert call_kwargs["context"]["user"]["first_name"] == first_name
+    assert call_kwargs["context"]["user"]["user_name"] == user_name
 
 
 async def test_2fa_sms_failure_during_login(

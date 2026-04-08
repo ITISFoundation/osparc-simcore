@@ -166,12 +166,13 @@ async def login(request: web.Request):
     # otherwise create email f2a
     assert user_2fa_authentication_method == TwoFactorAuthenticationMethod.EMAIL  # nosec
     await _twofa_service.send_email_code(
-        request,
+        request.app,
         user_email=user["email"],
-        support_email=product.support_email,
         code=code,
         first_name=user["first_name"] or user["name"],
-        product=product,
+        user_name=user["name"],
+        product_name=product.name,
+        host=request.host,
         user_id=user["id"],
     )
     return envelope_response(
