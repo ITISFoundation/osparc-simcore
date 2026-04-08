@@ -24,3 +24,5 @@ queue_rules:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
       - "#review-threads-unresolved=0"
+merge_protections_settings:
+  reporting_method: check-runs
