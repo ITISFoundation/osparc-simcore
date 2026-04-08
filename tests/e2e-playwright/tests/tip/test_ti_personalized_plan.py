@@ -120,8 +120,8 @@ def _log_simulation_progress(simulator_iframe):
 
 
 @retry(
-    stop=stop_after_attempt(30),
-    wait=wait_fixed(60),
+    stop=stop_after_attempt(60),  # retry for up to 60 minutes, as simulations can be very long
+    wait=wait_fixed(60),  # wait 1 minute between retries to avoid spamming the page with checks
     reraise=True,
 )
 def _wait_for_simulation_complete(setup_button, simulator_iframe):
