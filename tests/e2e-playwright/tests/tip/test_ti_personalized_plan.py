@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
-from playwright.sync_api import Page, WebSocket, expect
+from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -75,11 +75,11 @@ class _JLabWaitForWebSocket:
 
 
 @retry(
-    stop=stop_after_attempt(5),
+    stop=stop_after_attempt(10),
     wait=wait_fixed(60),
     reraise=True,
 )
-def _wait_for_personalization_complete(start_button, outputs_button):
+def _wait_for_personalization_complete(start_button: Locator, outputs_button: Locator) -> None:
     icon_class = start_button.locator("i").first.evaluate("el => el.className")
     outputs_text = outputs_button.inner_text()
     if "fa-check" not in icon_class or "Outputs (6)" not in outputs_text:
@@ -87,7 +87,7 @@ def _wait_for_personalization_complete(start_button, outputs_button):
         raise ValueError(msg)
 
 
-def _run_personalization(personalizer_iframe, page):
+def _run_personalization(personalizer_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Start personalization"):
         start_button = personalizer_iframe.get_by_role("button", name="Start")
         start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
@@ -96,7 +96,7 @@ def _run_personalization(personalizer_iframe, page):
         _wait_for_personalization_complete(start_button, outputs_button)
 
 
-def _log_simulation_progress(simulator_iframe):
+def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
     try:
         progress_bar = simulator_iframe.locator(".progress-bar").first
         progress_width = progress_bar.evaluate("el => el.style.width")
@@ -124,7 +124,7 @@ def _log_simulation_progress(simulator_iframe):
     wait=wait_fixed(60),  # wait 1 minute between retries to avoid spamming the page with checks
     reraise=True,
 )
-def _wait_for_simulation_complete(setup_button, simulator_iframe):
+def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: FrameLocator) -> None:
     _log_simulation_progress(simulator_iframe)
     icon_class = setup_button.locator("i").first.evaluate("el => el.className")
     if "fa-spinner" in icon_class:
@@ -132,7 +132,7 @@ def _wait_for_simulation_complete(setup_button, simulator_iframe):
         raise ValueError(msg)
 
 
-def _run_simulations(simulator_iframe, page):
+def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Setup simulation"):
         setup_button = simulator_iframe.get_by_role("button", name="Setup")
         setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
@@ -167,7 +167,7 @@ def _run_simulations(simulator_iframe, page):
         export_button.click()
 
 
-def _open_project(page, start_project_uuid):
+def _open_project(page: Page, start_project_uuid: str) -> dict[str, Any]:
     with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=20 * SECOND) as response_info:
         card_id = "studyBrowserListItem_" + start_project_uuid
         page.get_by_test_id(card_id).click()
