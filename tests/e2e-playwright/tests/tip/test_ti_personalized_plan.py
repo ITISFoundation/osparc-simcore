@@ -136,17 +136,15 @@ def _run_simulations(simulator_iframe, page):
         export_button.click()
 
 
-def _open_or_create_project(page, start_project_uuid, create_tip_plan_from_dashboard):
-    if start_project_uuid:
-        with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=20 * SECOND) as response_info:
-            card_id = "studyBrowserListItem_" + start_project_uuid
-            page.get_by_test_id(card_id).click()
-            open_button = page.get_by_test_id("openResource")
-            expect(open_button).to_be_visible(timeout=10 * SECOND)
-            open_button.click()
-        assert response_info.value.ok, f"{response_info.value.json()}"
-        return response_info.value.json()["data"]
-    return create_tip_plan_from_dashboard("newPTIPlanButton")
+def _open_project(page, start_project_uuid):
+    with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=20 * SECOND) as response_info:
+        card_id = "studyBrowserListItem_" + start_project_uuid
+        page.get_by_test_id(card_id).click()
+        open_button = page.get_by_test_id("openResource")
+        expect(open_button).to_be_visible(timeout=10 * SECOND)
+        open_button.click()
+    assert response_info.value.ok, f"{response_info.value.json()}"
+    return response_info.value.json()["data"]
 
 
 def test_personalized_classic_ti_plan(
@@ -172,7 +170,10 @@ def test_personalized_classic_ti_plan(
     # testing purposes
     start_project_uuid = "72235252-329b-11f1-be19-0242ac171744"
     start_project_uuid = None
-    project_data = _open_or_create_project(page, start_project_uuid, create_tip_plan_from_dashboard)
+    if start_project_uuid:
+        _open_project(page, start_project_uuid)
+    else:
+        project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
 
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
