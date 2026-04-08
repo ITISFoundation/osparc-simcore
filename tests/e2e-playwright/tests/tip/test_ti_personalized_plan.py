@@ -119,6 +119,7 @@ def _run_simulations(simulator_iframe, page):
         except Exception:
             logging.info("Could not extract credits amount from dialog")
 
+        # Confirm, this will start the simulation
         confirm_button = simulator_iframe.get_by_role("button", name="Confirm")
         confirm_button.click()
 
