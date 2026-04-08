@@ -173,6 +173,7 @@ def test_personalized_classic_ti_plan(
     if start_project_uuid:
         _open_project(page, start_project_uuid)
     else:
+        # press + button
         project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
 
     assert "workbench" in project_data, "Expected workbench to be in project data!"
@@ -255,7 +256,6 @@ def test_personalized_classic_ti_plan(
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
             ) as service_running:
-                # DELETE_ME OM: in the testing project the simulator is already running
                 if not start_project_uuid:
                     app_mode_trigger_next_app(page)
             simulator_iframe = service_running.iframe_locator
