@@ -145,8 +145,10 @@ def _run_simulations(simulator_iframe, page):
             credits_match = re.search(r"([\d.]+)\s*credits", dialog_text)
             if credits_match:
                 logging.info("Estimated credits: %s", credits_match.group(1))
+            else:
+                logging.info("Estimated credits: could not parse from dialog")
         except Exception:
-            logging.info("Could not extract credits amount from dialog")
+            logging.info("Estimated credits: could not extract from dialog")
 
         # Confirm, this will start the simulation
         confirm_button = simulator_iframe.get_by_role("button", name="Confirm")
