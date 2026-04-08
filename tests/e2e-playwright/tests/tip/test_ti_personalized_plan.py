@@ -83,16 +83,47 @@ def _wait_for_personalization_complete(start_button, outputs_button):
 
 
 @retry(
-    stop=stop_after_attempt(5),
+    stop=stop_after_attempt(30),
     wait=wait_fixed(60),
     reraise=True,
 )
-def _wait_for_simulation_complete(setup_button, export_button):
+def _wait_for_simulation_complete(setup_button):
     icon_class = setup_button.locator("i").first.evaluate("el => el.className")
-    is_enabled = export_button.evaluate("el => !el.disabled")
-    if "fa-spinner" in icon_class or not is_enabled:
-        msg = f"Simulation still running: {icon_class=}, export enabled={is_enabled}"
+    if "fa-spinner" in icon_class:
+        msg = f"Simulation still running: {icon_class=}"
         raise ValueError(msg)
+
+
+def _run_simulation(simulator_iframe, page):
+    with log_context(logging.INFO, "Setup simulation"):
+        setup_button = simulator_iframe.get_by_role("button", name="Setup")
+        setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
+
+        # Wait for the credits confirmation dialog
+        credits_text = simulator_iframe.get_by_text("credits")
+        expect(credits_text.first).to_be_visible(timeout=2 * MINUTE)
+        try:
+            dialog_text = credits_text.first.inner_text()
+            credits_match = re.search(r"([\d.]+)\s*credits", dialog_text)
+            if credits_match:
+                logging.info("Estimated credits: %s", credits_match.group(1))
+        except Exception:
+            logging.info("Could not extract credits amount from dialog")
+
+        confirm_button = simulator_iframe.get_by_role("button", name="Confirm")
+        confirm_button.click()
+
+        # Wait for "IN TEST CASE" log to appear confirming setup started
+        in_test_case_log = simulator_iframe.get_by_text("IN TEST CASE")
+        expect(in_test_case_log.first).to_be_visible(timeout=5 * MINUTE)
+        logging.info("'IN TEST CASE' log appeared — simulation setup is running")
+
+    with log_context(logging.INFO, "Wait for simulation setup to complete (up to 30 minutes)"):
+        _wait_for_simulation_complete(setup_button)
+
+    with log_context(logging.INFO, "Export results"):
+        export_button = simulator_iframe.get_by_role("button", name="Export")
+        export_button.click()
 
 
 def test_personalized_classic_ti_plan(
@@ -223,6 +254,4 @@ def test_personalized_classic_ti_plan(
 
         assert not ws_info.value.is_closed()
 
-        with log_context(logging.INFO, "Setup simulation"):
-            setup_button = simulator_iframe.get_by_role("button", name="Setup")
-            setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
+        _run_simulation(simulator_iframe, page)
