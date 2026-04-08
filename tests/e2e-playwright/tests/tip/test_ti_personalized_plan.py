@@ -94,7 +94,7 @@ def _wait_for_simulation_complete(setup_button):
         raise ValueError(msg)
 
 
-def _run_simulation(simulator_iframe, page):
+def _run_simulations(simulator_iframe, page):
     with log_context(logging.INFO, "Setup simulation"):
         setup_button = simulator_iframe.get_by_role("button", name="Setup")
         setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
@@ -254,4 +254,4 @@ def test_personalized_classic_ti_plan(
 
         assert not ws_info.value.is_closed()
 
-        _run_simulation(simulator_iframe, page)
+        _run_simulations(simulator_iframe, page)
