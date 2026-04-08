@@ -215,7 +215,9 @@ def test_personalized_classic_ti_plan(
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
             ) as service_running:
-                app_mode_trigger_next_app(page)
+                # DELETE_ME OM: in the testing project the simulator is already running
+                if not start_project_uuid:
+                    app_mode_trigger_next_app(page)
             simulator_iframe = service_running.iframe_locator
             assert simulator_iframe
 
