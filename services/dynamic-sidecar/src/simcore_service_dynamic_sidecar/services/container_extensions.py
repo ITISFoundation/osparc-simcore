@@ -175,11 +175,11 @@ async def notify_path_change(
     """
     Informs that a path inside S3 changed and that an action needs to be taken in the container.
     """
-    if event_type == FileNotificationEventType.FILE_DELETED:
-        try:
-            await get_r_clone_mount_manager(app).refresh_path(f"{Path(path).parent}", recursive=recursive)
-        except NoMountFoundForRemotePathError:
-            mounted_volumes: MountedVolumes = app.state.mounted_volumes
+    try:
+        await get_r_clone_mount_manager(app).refresh_path(f"{Path(path).parent}", recursive=recursive)
+    except NoMountFoundForRemotePathError:
+        mounted_volumes: MountedVolumes = app.state.mounted_volumes
+        if event_type == FileNotificationEventType.FILE_DELETED:
             await _try_remove_from_disk_volumes(mounted_volumes, path)
-    else:
-        _logger.warning("Received unsupported event type '%s' for path '%s'", event_type, path)
+        else:
+            _logger.warning("Received unsupported event type '%s' for path '%s'", event_type, path)
