@@ -200,7 +200,7 @@ def test_personalized_classic_ti_plan(
     testing = True
     start_project_uuid = "72235252-329b-11f1-be19-0242ac171744" if testing else None
     if start_project_uuid:
-        _open_project(page, start_project_uuid)
+        project_data = _open_project(page, start_project_uuid)
     else:
         # press + button
         project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
