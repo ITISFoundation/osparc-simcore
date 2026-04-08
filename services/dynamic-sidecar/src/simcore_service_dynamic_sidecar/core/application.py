@@ -204,8 +204,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915
 
     setup_r_clone_mount_manager(app)
 
-    if application_settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING:
-        setup_file_notification_subscriber(app)
+    setup_file_notification_subscriber(app)
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
