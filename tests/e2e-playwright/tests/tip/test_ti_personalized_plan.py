@@ -198,7 +198,8 @@ def test_personalized_classic_ti_plan(
 
     # testing purposes
     testing = True
-    start_project_uuid = "72235252-329b-11f1-be19-0242ac171744" if testing else None
+    # start_project_uuid = "72235252-329b-11f1-be19-0242ac171744" if testing else None
+    start_project_uuid = "a169f104-1df8-11f1-93c4-0242ac100552" if testing else None
     if start_project_uuid:
         project_data = _open_project(page, start_project_uuid)
     else:
