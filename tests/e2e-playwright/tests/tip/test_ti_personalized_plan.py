@@ -82,6 +82,15 @@ def _wait_for_personalization_complete(start_button, outputs_button):
         raise ValueError(msg)
 
 
+def _run_personalization(personalizer_iframe, page):
+    with log_context(logging.INFO, "Start personalization"):
+        start_button = personalizer_iframe.get_by_role("button", name="Start")
+        start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+        page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
+        outputs_button = page.get_by_test_id("outputsBtn")
+        _wait_for_personalization_complete(start_button, outputs_button)
+
+
 @retry(
     stop=stop_after_attempt(30),
     wait=wait_fixed(60),
@@ -210,12 +219,7 @@ def test_personalized_classic_ti_plan(
     #
     #        assert not ws_info.value.is_closed()
     #
-    #        with log_context(logging.INFO, "Start personalization"):
-    #            start_button = personalizer_iframe.get_by_role("button", name="Start")
-    #            start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-    #            page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
-    #            outputs_button = page.get_by_test_id("outputsBtn")
-    #            _wait_for_personalization_complete(start_button, outputs_button)
+    #        _run_personalization(personalizer_iframe, page)
     #
     #    with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
     #        with expected_service_running(
