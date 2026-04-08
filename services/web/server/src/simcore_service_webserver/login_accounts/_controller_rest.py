@@ -106,10 +106,12 @@ async def request_product_account(request: web.Request):
     # if created send email to fogbugz or user itself
     fire_and_forget_task(
         _service.send_account_request_email_to_support(
-            request=request,
+            request.app,
+            product_name=product.name,
             product=product,
             request_form=body.form,
             ipinfo=_get_ipinfo(request),
+            host=request.host,
         ),
         task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
@@ -153,10 +155,13 @@ async def unregister_account(request: web.Request):
         # send email in the background
         fire_and_forget_task(
             _service.send_close_account_email(
-                request,
+                request.app,
+                product_name=product.name,
+                user_id=req_ctx.user_id,
                 user_email=credentials.email,
                 user_first_name=credentials.display_name,
                 retention_days=settings.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS,
+                host=request.host,
             ),
             task_suffix_name=f"{__name__}.unregister_account.send_close_account_email",
             fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
