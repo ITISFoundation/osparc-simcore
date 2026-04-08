@@ -141,7 +141,6 @@ def test_running_service_details_make_status(
 
     expected_running_service_details = {
         "boot_type": ServiceBootType.V2,
-        "data_mounting_enabled": scheduler_data.requires_data_mounting,
         "project_id": scheduler_data.project_id,
         "service_state": service_state,
         "service_message": service_message,

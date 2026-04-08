@@ -70,7 +70,6 @@ class RunningDynamicServiceDetails(ServiceDetails):
             )
         ),
     ] = ServiceBootType.V0
-    data_mounting_enabled: Annotated[bool, Field(description="True if data mounting is enabled")] = False
 
     host: Annotated[str, Field(description="the service swarm internal host name", alias="service_host")]
     internal_port: Annotated[PortInt, Field(description="the service swarm internal port", alias="service_port")]
@@ -118,7 +117,6 @@ class RunningDynamicServiceDetails(ServiceDetails):
                         "project_id": "32fb4eb6-ab30-11ef-9ee4-0242ac140008",
                         "service_uuid": "6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
                         "boot_type": "V2",
-                        "data_mounting_enabled": True,
                         "service_host": "dy-sidecar_6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
                         "service_port": 8888,
                         "service_state": "running",

@@ -49,9 +49,9 @@ SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES: Final[set[str]] = {_ALLOWED_PREFIX_API, _AL
 # e.g. `exports/123/<uuid>.zip`
 _EXPORT_S3_FILE_RE = rf"{_ALLOWED_PREFIX_EXPORTS}\/\d+\/{UUID_RE_BASE}\.zip"
 # e.g. `api/<uuid>/some/path`  or  `<uuid>/<uuid>/some/path`
-_API_S3_FILE_RE = rf"({_ALLOWED_PREFIX_API}|{UUID_RE_BASE})\/{UUID_RE_BASE}\/.+"
+_API_S3_FILE_RE = rf"({_ALLOWED_PREFIX_API}|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)"
 
-SIMCORE_S3_FILE_ID_RE = rf"^({_EXPORT_S3_FILE_RE})|({_API_S3_FILE_RE})$"
+SIMCORE_S3_FILE_ID_RE = rf"^({_EXPORT_S3_FILE_RE})|({_API_S3_FILE_RE}$)"
 
 
 SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
