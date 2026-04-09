@@ -25,7 +25,7 @@ from pytest_simcore.helpers.playwright import (
 )
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from .conftest import open_project_from_dashboard
+_OPEN_PROJECT_WAIT_TIME: Final[int] = 20 * SECOND
 
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
@@ -76,6 +76,17 @@ class _JLabWaitForWebSocket:
     def __call__(self, new_websocket: WebSocket) -> bool:
         with log_context(logging.DEBUG, msg=f"received {new_websocket=}"):
             return bool(re.search("/api/kernels/[^/]+/channels", new_websocket.url))
+
+
+def _open_project_from_dashboard(page: Page, start_project_uuid: str) -> None:
+    with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=_OPEN_PROJECT_WAIT_TIME) as response_info:
+        card_id = "studyBrowserListItem_" + start_project_uuid
+        page.get_by_test_id(card_id).click()
+        open_button = page.get_by_test_id("openResource")
+        expect(open_button).to_be_visible(timeout=_OPEN_PROJECT_WAIT_TIME)
+        open_button.click()
+    assert response_info.value.ok, f"{response_info.value.json()}"
+    return response_info.value.json()["data"]
 
 
 @retry(
@@ -196,7 +207,7 @@ def test_personalized_classic_ti_plan(
     # start_project_uuid = "a169f104-1df8-11f1-93c4-0242ac100552"
     start_project_uuid = None
     if start_project_uuid:
-        project_data = open_project_from_dashboard(page, start_project_uuid)
+        project_data = _open_project_from_dashboard(page, start_project_uuid)
     else:
         # press + button
         project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
