@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
@@ -130,7 +131,7 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
             success,
             failed,
         )
-    except Exception:
+    except PlaywrightError:
         logging.info("Could not extract simulation progress")
 
 
@@ -162,7 +163,7 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
                 logging.info("Estimated credits: %s", credits_match.group(1))
             else:
                 logging.info("Estimated credits: could not parse from dialog")
-        except Exception:
+        except PlaywrightError:
             logging.info("Estimated credits: could not extract from dialog")
 
         # Confirm, this will start the simulation
