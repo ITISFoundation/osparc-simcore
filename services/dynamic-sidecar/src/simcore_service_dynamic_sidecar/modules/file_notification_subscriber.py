@@ -79,7 +79,7 @@ async def _try_remove_from_disk_volumes(
     self_container = os.environ["HOSTNAME"]
     await run_command_in_container(
         self_container,
-        command=f"rm -rf '{local_path}'",
+        command=["rm", "-rf", f"{local_path}"],
         timeout=_TIMEOUT_REMOVAL.total_seconds(),
     )
     _logger.info("Removed '%s' from disk volume (no rclone mount found)", local_path)

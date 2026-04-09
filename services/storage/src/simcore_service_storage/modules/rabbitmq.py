@@ -38,7 +38,8 @@ def setup_rabbitmq(app: FastAPI) -> None:
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
-    return cast(RabbitMQClient, app.state.rabbitmq_client)
+    rabbit_client: RabbitMQClient = app.state.rabbitmq_client
+    return rabbit_client
 
 
 async def post_file_notification(
