@@ -25,6 +25,8 @@ from pytest_simcore.helpers.playwright import (
 )
 from tenacity import retry, stop_after_attempt, wait_fixed
 
+from .conftest import open_project_from_dashboard
+
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
 
@@ -169,17 +171,6 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         export_button.click()
 
 
-def _open_project(page: Page, start_project_uuid: str) -> dict[str, Any]:
-    with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=20 * SECOND) as response_info:
-        card_id = "studyBrowserListItem_" + start_project_uuid
-        page.get_by_test_id(card_id).click()
-        open_button = page.get_by_test_id("openResource")
-        expect(open_button).to_be_visible(timeout=10 * SECOND)
-        open_button.click()
-    assert response_info.value.ok, f"{response_info.value.json()}"
-    return response_info.value.json()["data"]
-
-
 def test_personalized_classic_ti_plan(
     page: Page,
     log_in_and_out: RobustWebSocket,
@@ -205,7 +196,7 @@ def test_personalized_classic_ti_plan(
     # start_project_uuid = "a169f104-1df8-11f1-93c4-0242ac100552"
     start_project_uuid = None
     if start_project_uuid:
-        project_data = _open_project(page, start_project_uuid)
+        project_data = open_project_from_dashboard(page, start_project_uuid)
     else:
         # press + button
         project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
