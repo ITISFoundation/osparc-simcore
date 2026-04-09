@@ -135,7 +135,7 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
 
 
 @retry(
-    stop=stop_after_attempt(60),  # retry for up to 60 minutes, as simulations can be very long
+    stop=stop_after_attempt(_SIMULATION_MAX_TIME // (60 * SECOND)),
     wait=wait_fixed(60),  # wait 1 minute between retries to avoid spamming the page with checks
     reraise=True,
 )
