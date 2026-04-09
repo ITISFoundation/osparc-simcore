@@ -728,7 +728,7 @@ qx.Class.define("osparc.utils.Utils", {
       return text;
     },
 
-    getReleaseLink: function() {
+    getReleaseNotesLink: function() {
       const rData = osparc.store.StaticInfo.getReleaseData();
       return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
     },
