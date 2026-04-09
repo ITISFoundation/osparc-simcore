@@ -28,8 +28,6 @@ import pytest_asyncio
 import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_webserver.email
-import simcore_service_webserver.email._core
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
@@ -58,7 +56,6 @@ from redis import Redis
 from servicelib import tracing
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
-from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
@@ -181,34 +178,6 @@ def app_environment(
                 "WEBSERVER_FOGBUGZ": "null",
             },
         )
-    )
-
-
-@pytest.fixture
-def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
-    # WARNING: this fixture is commonly overridden. Check before renaming.
-    async def _print_mail_to_stdout(
-        settings: SMTPSettings,
-        *,
-        sender: str,
-        recipient: str,
-        subject: str,
-        body: str,
-        **kwargs,
-    ):
-        print(
-            f"=== EMAIL FROM: {sender}\n",
-            f"=== EMAIL TO: {recipient}\n",
-            f"=== SUBJECT: {subject}\n",
-            f"=== BODY:\n{body}\n",
-            f"=== EXTRA:\n{kwargs}",
-        )
-
-    # pylint: disable=protected-access
-    monkeypatch.setattr(
-        simcore_service_webserver.email._core,  # noqa: SLF001
-        "_send_email",
-        _print_mail_to_stdout,
     )
 
 
