@@ -198,7 +198,6 @@ async def web_server(
     webserver_test_server_port: int,
     # tools
     aiohttp_server: Callable,
-    mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
     assert app_environment
