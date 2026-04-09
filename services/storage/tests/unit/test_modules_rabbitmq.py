@@ -10,10 +10,7 @@ from models_library.rabbitmq_messages import (
     FileNotificationMessage,
 )
 from pytest_mock import MockerFixture
-from simcore_service_storage.modules.rabbitmq import (
-    _try_parse_uuid,
-    post_file_notification,
-)
+from simcore_service_storage.modules.rabbitmq import post_file_notification
 
 
 @pytest.fixture()
@@ -22,13 +19,6 @@ def mock_app(mocker: MockerFixture) -> AsyncMock:
     mock_client = AsyncMock()
     app.state.rabbitmq_client = mock_client
     return app
-
-
-def test_try_parse_uuid():
-    valid = uuid.uuid4()
-    assert _try_parse_uuid(str(valid)) == valid
-    assert _try_parse_uuid("api") is None
-    assert _try_parse_uuid("not-a-uuid") is None
 
 
 async def test_post_file_notification_standard_file_id(mock_app: AsyncMock):
