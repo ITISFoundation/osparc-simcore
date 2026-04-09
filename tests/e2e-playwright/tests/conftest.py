@@ -307,6 +307,7 @@ def browser_context_args(
     return {
         **browser_context_args,
         "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
+        "viewport": {"width": 1600, "height": 900},  # HD+
     }
 
 
