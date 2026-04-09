@@ -32,6 +32,7 @@ from simcore_service_webserver.login._twofa_service import (
     delete_2fa_code,
     get_2fa_code,
     get_redis_validation_code_client,
+    notifications_service,
     send_email_code,
 )
 from simcore_service_webserver.login.constants import (
@@ -374,7 +375,7 @@ async def test_send_email_code(
     mocker: MockerFixture,
 ):
     mock_send = mocker.patch(
-        "simcore_service_webserver.login._twofa_service.notifications_service.send_message_from_template",
+        f"{notifications_service}.send_message_from_template",
         autospec=True,
     )
 
