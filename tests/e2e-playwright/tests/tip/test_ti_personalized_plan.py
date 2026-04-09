@@ -53,6 +53,8 @@ _SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _SIMULATOR_DOCKER_PULLING_MAX_TIME + _SIMULATOR_MAX_STARTUP_TIME
 )
 _SIMULATOR_SETUP_APPEARANCE_TIME: Final[int] = 10 * MINUTE
+_SIMULATOR_CREDITS_APPEARANCE_TIME: Final[int] = 2 * MINUTE
+_SIMULATOR_TEST_TEXT_APPEARANCE_TIME: Final[int] = 5 * MINUTE
 _SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
 
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
@@ -139,7 +141,7 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
 
         # Wait for the credits confirmation dialog
         credits_text = simulator_iframe.get_by_text("credits")
-        expect(credits_text.first).to_be_visible(timeout=2 * MINUTE)
+        expect(credits_text.first).to_be_visible(timeout=_SIMULATOR_CREDITS_APPEARANCE_TIME)
         try:
             dialog_text = credits_text.first.inner_text()
             credits_match = re.search(r"([\d.]+)\s*credits", dialog_text)
@@ -156,7 +158,7 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
 
         # Wait for "IN TEST CASE" log to appear confirming setup started
         in_test_case_log = simulator_iframe.get_by_text("IN TEST CASE")
-        expect(in_test_case_log.first).to_be_visible(timeout=5 * MINUTE)
+        expect(in_test_case_log.first).to_be_visible(timeout=_SIMULATOR_TEST_TEXT_APPEARANCE_TIME)
         logging.info("'IN TEST CASE' log appeared — simulation setup is running")
 
     with log_context(logging.INFO, "Wait for simulation setup to complete"):
