@@ -55,14 +55,14 @@ async def post_file_notification(
         parts = f"{file_id}".split("/")
 
         if parts[0] in SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES:
-            _logger.warning("Skip notification for file_id=%s starting with prefix %s", file_id, parts[0])
+            _logger.info("Skip notification for file_id=%s starting with prefix %s", file_id, parts[0])
             return
 
         project_id = ProjectID(parts[0]) if len(parts) > 0 else None
         node_id = NodeID(parts[1]) if len(parts) > 1 else None
 
         if project_id is None or node_id is None:
-            _logger.warning(
+            _logger.info(
                 "Skip notification for file_id=%s because project and node ids could not be extracted", file_id
             )
             return
