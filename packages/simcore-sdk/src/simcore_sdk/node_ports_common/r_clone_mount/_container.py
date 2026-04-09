@@ -284,7 +284,7 @@ class RemoteControlHttpClient:
         """for details refer to https://rclone.org/rc/#vfs-queue"""
         return await self._request("POST", "vfs/queue")
 
-    async def _post_rc_noop(self) -> dict:
+    async def _post_rc_noopauth(self) -> dict:
         """for details refer to https://rclone.org/rc/#rc-noopauth"""
         return await self._request("POST", "rc/noopauth")
 
@@ -327,7 +327,7 @@ class RemoteControlHttpClient:
 
     async def is_responsive(self) -> bool:
         try:
-            await self._post_rc_noop()
+            await self._post_rc_noopauth()
             return True
         except HTTPError:
             return False
