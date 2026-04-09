@@ -98,7 +98,7 @@ qx.Class.define("osparc.NewRelease", {
       const newRelease = new osparc.NewRelease();
       const title = osparc.product.Utils.isProduct("osparc") ? qx.locale.Manager.tr("New Version Released") : qx.locale.Manager.tr("New Version of Osparc Platform Released");
       const icon = osparc.product.Utils.getOsparcOImageSource();
-      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135, icon).set({
+      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 360, 135, icon).set({
         clickAwayClose: false,
         resizable: false,
         showClose: true
