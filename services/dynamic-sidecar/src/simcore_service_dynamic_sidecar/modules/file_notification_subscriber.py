@@ -1,24 +1,107 @@
 import functools
 import logging
+import os
+from datetime import timedelta
+from pathlib import Path
+from typing import Final
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import FileNotificationMessage
+from models_library.projects_nodes_io import StorageFileID
+from models_library.rabbitmq_messages import FileNotificationEventType, FileNotificationMessage
+from servicelib.container_utils import run_command_in_container
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
+from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePathError
 
 from ..core.rabbitmq import get_rabbitmq_client
 from ..core.settings import ApplicationSettings
-from ..services import container_extensions
+from ..modules.mounted_fs import MountedVolumes
+from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 
 _logger = logging.getLogger(__name__)
+
+_MIN_STORAGE_PATH_PARTS: Final[int] = 3
+_TIMEOUT_REMOVAL: Final[timedelta] = timedelta(seconds=5)
+
+
+def _resolve_local_path_from_storage_id(
+    mounted_volumes: MountedVolumes,
+    storage_path: StorageFileID,
+) -> Path | None:
+    """Maps a StorageFileID to a local disk path within mounted volumes."""
+    path_parts = storage_path.split("/")
+    if len(path_parts) < _MIN_STORAGE_PATH_PARTS:
+        return None
+
+    volume_name = path_parts[2]
+    relative_parts = path_parts[_MIN_STORAGE_PATH_PARTS:]
+
+    local_base: Path | None = None
+    if volume_name == mounted_volumes.inputs_path.name:
+        local_base = mounted_volumes.disk_inputs_path
+    elif volume_name == mounted_volumes.outputs_path.name:
+        local_base = mounted_volumes.disk_outputs_path
+    else:
+        for state_path, disk_state_path in zip(
+            mounted_volumes.state_paths,
+            mounted_volumes.disk_state_paths_iter(),
+            strict=True,
+        ):
+            if volume_name == state_path.name:
+                local_base = disk_state_path
+                break
+
+    if local_base is None:
+        return None
+
+    local_path = local_base / Path(*relative_parts) if relative_parts else local_base
+
+    resolved = local_path.resolve()
+    if not resolved.is_relative_to(local_base.resolve()):
+        _logger.warning("Resolved path '%s' is outside volume '%s'", resolved, local_base)
+        return None
+
+    return resolved
+
+
+async def _try_remove_from_disk_volumes(
+    mounted_volumes: MountedVolumes,
+    path: StorageFileID,
+) -> None:
+    """Removes the file or directory contents at the given storage path from disk volumes."""
+    local_path = _resolve_local_path_from_storage_id(mounted_volumes, path)
+    if local_path is None or not local_path.exists():
+        return
+
+    self_container = os.environ["HOSTNAME"]
+    await run_command_in_container(
+        self_container,
+        command=f"rm -rf '{local_path}'",
+        timeout=_TIMEOUT_REMOVAL.total_seconds(),
+    )
+    _logger.info("Removed '%s' from disk volume (no rclone mount found)", local_path)
+
+
+async def _notify_path_change(
+    app: FastAPI, *, event_type: FileNotificationEventType, path: StorageFileID, recursive: bool
+) -> None:
+    """
+    Informs that a path inside S3 changed and that an action needs to be taken in the container.
+    """
+    try:
+        await get_r_clone_mount_manager(app).refresh_path(f"{Path(path).parent}", recursive=recursive)
+    except NoMountFoundForRemotePathError:
+        mounted_volumes: MountedVolumes = app.state.mounted_volumes
+        if event_type == FileNotificationEventType.FILE_DELETED:
+            await _try_remove_from_disk_volumes(mounted_volumes, path)
+        else:
+            _logger.warning("Received unsupported event type '%s' for path '%s'", event_type, path)
 
 
 async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
     message = FileNotificationMessage.model_validate_json(data)
     _logger.debug("Received file notification: %s for file_id=%s", message.event_type, message.file_id)
-    await container_extensions.notify_path_change(
-        app=app, event_type=message.event_type, path=message.file_id, recursive=False
-    )
+    await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
     return True
 
 
