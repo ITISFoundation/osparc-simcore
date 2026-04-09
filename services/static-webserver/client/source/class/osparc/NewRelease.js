@@ -97,7 +97,11 @@ qx.Class.define("osparc.NewRelease", {
     popUpReleaseNotes: function() {
       const newRelease = new osparc.NewRelease();
       const title = osparc.product.Utils.isProduct("osparc") ? qx.locale.Manager.tr("New Version Released") : qx.locale.Manager.tr("New Version of Osparc Platform Released");
-      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const lightLogo = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
+      const icon = lightLogo ? "osparc/osparc-o-white.svg" : "osparc/osparc-o-black.svg";
+      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135, icon).set({
         clickAwayClose: false,
         resizable: false,
         showClose: true
