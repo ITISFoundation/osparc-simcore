@@ -103,6 +103,11 @@ qx.Class.define("osparc.NewRelease", {
         resizable: false,
         showClose: true
       });
+      win.getChildControl("icon").set({
+        width: 24,
+        height: 18,
+        scale: true
+      });
       newRelease.addListener("releaseNotesLoaded", () => {
         const vpWidth = document.documentElement.clientWidth;
         const vpHeight = document.documentElement.clientHeight;
