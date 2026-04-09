@@ -63,6 +63,7 @@ _SIM_COLOR_STARTED: Final[str] = "#6969ff"
 _SIM_COLOR_SUCCESS: Final[str] = "#0090D0"
 _SIM_COLOR_FAILED: Final[str] = "#FF0000"
 _SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
+_SIMULATION_EXPORT_MAX_TIME: Final[int] = 5 * MINUTE
 
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
@@ -147,9 +148,12 @@ def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: Frame
         raise ValueError(msg)
 
 
-def _export_simulation_results(simulator_iframe: FrameLocator) -> None:
-    export_button = simulator_iframe.get_by_role("button", name="Export")
-    export_button.click()
+@retry(
+    stop=stop_after_attempt(_SIMULATION_EXPORT_MAX_TIME // (60 * SECOND)),
+    wait=wait_fixed(60),
+    reraise=True,
+)
+def _wait_for_export_simulation_results(export_button: Locator, simulator_iframe: FrameLocator) -> None:
     # Wait for the export to complete, spinner is on the button while exporting
     icon_class = export_button.locator("i").first.evaluate("el => el.className")
     if "fa-spinner" in icon_class:
@@ -188,7 +192,9 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         _wait_for_simulation_complete(setup_button, simulator_iframe)
 
     with log_context(logging.INFO, "Export results"):
-        _export_simulation_results(simulator_iframe)
+        export_button = simulator_iframe.get_by_role("button", name="Export")
+        export_button.click()
+        _wait_for_export_simulation_results(export_button, simulator_iframe)
 
 
 def test_personalized_classic_ti_plan(
