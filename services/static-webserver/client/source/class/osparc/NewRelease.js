@@ -74,7 +74,7 @@ qx.Class.define("osparc.NewRelease", {
      * @param {String} url
      * @returns {String|null}
      */
-    toGitHubRawUrl: function(url) {
+    toGitHubRenderableUrl: function(url) {
       if (!url) {
         return null;
       }
@@ -137,7 +137,7 @@ qx.Class.define("osparc.NewRelease", {
      * @returns {Boolean} true if the dialog was opened, false otherwise.
      */
     openReleaseNotesDialog: function(releaseLink) {
-      const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
+      const rawUrl = osparc.NewRelease.toGitHubRenderableUrl(releaseLink);
       if (!rawUrl) {
         return false;
       }
@@ -150,10 +150,11 @@ qx.Class.define("osparc.NewRelease", {
     __loadingLabel: null,
 
     __buildLayout: function() {
-      const releaseLink = osparc.utils.Utils.getReleaseLink();
-      const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
+      const releaseLink = osparc.utils.Utils.getReleaseNotesLink();
+      const rawUrl = osparc.NewRelease.toGitHubRenderableUrl(releaseLink);
 
-      if (rawUrl) {
+      // Do not render release notes in TIP, go for the link version instead
+      if (rawUrl && !osparc.product.Utils.isTIPProduct()) {
         this.__addLoadingIndicator();
         this.__fetchAndRenderMarkdown(rawUrl, releaseLink);
       } else {

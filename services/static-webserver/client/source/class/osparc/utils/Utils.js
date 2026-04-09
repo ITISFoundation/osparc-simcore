@@ -737,7 +737,7 @@ qx.Class.define("osparc.utils.Utils", {
       let text = "osparc-simcore " + this.getReleaseTag();
       const platformName = osparc.store.StaticInfo.getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
-      const url = this.self().getReleaseLink();
+      const url = this.self().getReleaseNotesLink();
       const versionLink = new osparc.ui.basic.LinkLabel();
       versionLink.set({
         value: text,
