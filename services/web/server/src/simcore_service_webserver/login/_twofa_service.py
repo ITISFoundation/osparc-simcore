@@ -22,7 +22,7 @@ from settings_library.twilio import TwilioSettings
 from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
 
 from ..notifications import notifications_service
-from ..notifications._models import EmailContact
+from ..notifications.models import EmailContact
 from ..redis import get_redis_validation_code_client
 from .errors import SendingVerificationEmailError, SendingVerificationSmsError
 
