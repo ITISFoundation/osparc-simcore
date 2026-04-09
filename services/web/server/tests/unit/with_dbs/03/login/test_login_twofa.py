@@ -375,7 +375,7 @@ async def test_send_email_code(
     mocker: MockerFixture,
 ):
     mock_send = mocker.patch(
-        f"{notifications_service}.send_message_from_template",
+        f"{notifications_service.__name__}.send_message_from_template",
         autospec=True,
     )
 
