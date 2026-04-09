@@ -374,7 +374,6 @@ def test_fixed_issubclass_type_error_with_pydantic_models():
 def test_upgrade_failure_to_pydantic_settings_2_6(
     mock_env_devel_environment: EnvVarsDict,
 ):
-    # NOTE: .env-devel has WEBSERVER_TRACING={} and TRACING_* env vars
     class ProblematicSettings(BaseCustomSettings):
         WEBSERVER_TRACING: TracingSettings | None = None
 
