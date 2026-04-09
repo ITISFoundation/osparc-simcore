@@ -148,6 +148,16 @@ def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: Frame
         raise ValueError(msg)
 
 
+def _export_simulation_results(simulator_iframe: FrameLocator) -> None:
+    export_button = simulator_iframe.get_by_role("button", name="Export")
+    export_button.click()
+    # Wait for the export to complete, spinner is on the button while exporting
+    icon_class = export_button.locator("i").first.evaluate("el => el.className")
+    if "fa-spinner" in icon_class:
+        msg = f"Simulation is being exported: {icon_class=}"
+        raise ValueError(msg)
+
+
 def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Setup simulation"):
         setup_button = simulator_iframe.get_by_role("button", name="Setup")
@@ -179,8 +189,7 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         _wait_for_simulation_complete(setup_button, simulator_iframe)
 
     with log_context(logging.INFO, "Export results"):
-        export_button = simulator_iframe.get_by_role("button", name="Export")
-        export_button.click()
+        _export_simulation_results(simulator_iframe)
 
 
 def test_personalized_classic_ti_plan(
