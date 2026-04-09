@@ -176,15 +176,6 @@ def mock_rabbit_check(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_file_notification_subscriber(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.file_notification_subscriber.setup_file_notification_subscriber",
-        return_value=None,
-        autospec=True,
-    )
-
-
-@pytest.fixture
 def base_mock_envs(
     fast_long_running_tasks_cancellation: None,
     use_in_memory_redis: RedisSettings,
@@ -236,7 +227,6 @@ def mock_environment(
     mock_storage_check: None,
     mock_postgres_check: None,
     mock_rabbit_check: None,
-    mock_file_notification_subscriber: None,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
