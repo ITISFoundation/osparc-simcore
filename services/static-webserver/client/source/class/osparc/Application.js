@@ -270,7 +270,7 @@ qx.Class.define("osparc.Application", {
       let productName = osparc.product.Utils.getProductName();
       if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
         productName = "s4l";
-      } else if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+      } else if (osparc.product.Utils.isTIPProduct()) {
         productName = "tis";
       }
 
