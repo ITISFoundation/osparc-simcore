@@ -281,7 +281,7 @@ qx.Class.define("osparc.NewRelease", {
     __addFallbackLink: function(releaseLink) {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        value: this.tr("What's New in ") + releaseTag,
+        value: this.tr("What's New in oSparc ") + releaseTag,
         url: releaseLink,
         font: "link-label-14"
       });
