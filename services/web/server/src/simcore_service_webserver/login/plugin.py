@@ -2,7 +2,6 @@ import logging
 
 from aiohttp import web
 from pydantic import ValidationError
-from settings_library.email import SMTPSettings
 
 from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import (
@@ -15,8 +14,6 @@ from ..constants import (
     INDEX_RESOURCE_NAME,
 )
 from ..db.plugin import setup_db
-from ..email.plugin import setup_email
-from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
 from ..login_accounts.plugin import setup_login_account
 from ..login_auth.plugin import setup_login_auth
@@ -46,9 +43,7 @@ _logger = logging.getLogger(__name__)
 
 @ensure_single_setup(f"{__name__}.login_options", logger=_logger)
 def _setup_login_options(app: web.Application):
-    settings: SMTPSettings = get_email_plugin_settings(app)
-
-    cfg = settings.model_dump()
+    cfg = {}
     if INDEX_RESOURCE_NAME in app.router:
         cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
 
@@ -108,7 +103,6 @@ def setup_login(app: web.Application):
     setup_redis(app)
     setup_products(app)
     setup_rest(app)
-    setup_email(app)
     setup_invitations(app)
     setup_confirmation(app)
 

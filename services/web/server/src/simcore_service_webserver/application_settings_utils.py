@@ -109,15 +109,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
                 12 if getattr(app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None) else 0
             ),
         },
-        "smtp": {
-            "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
-            "port": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PORT", None),
-            "username": str(getattr(app_settings.WEBSERVER_EMAIL, "SMTP_USERNAME", None)),
-            "password": str(
-                getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PASSWORD", None)
-                and getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PASSWORD", SecretStr("")).get_secret_value()
-            ),
-        },
         "storage": {
             "enabled": app_settings.WEBSERVER_STORAGE is not None,
             "host": getattr(app_settings.WEBSERVER_STORAGE, "STORAGE_HOST", None),
