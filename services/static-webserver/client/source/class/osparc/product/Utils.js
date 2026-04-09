@@ -41,6 +41,10 @@ qx.Class.define("osparc.product.Utils", {
       );
     },
 
+    isTIPProduct: function() {
+      return (this.isProduct("tis") || this.isProduct("tiplite"));
+    },
+
     getStudyAlias: function(options = {}) {
       let alias = qx.locale.Manager.tr("project");
       if (options.plural) {
@@ -233,7 +237,7 @@ qx.Class.define("osparc.product.Utils", {
 
     forceNullCreditsColor: function(wallet) {
       // TIP is a product that can be used for free, so allow making 0 credits scenario more friendly.
-      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+      if (osparc.product.Utils.isTIPProduct()) {
         // Ideally, check if there was ever a transaction. If not, keep the indicator gray.
         // Note: Since we can't fetch payments per wallet, for now rely on the available credits.
         const credits = wallet.getCreditsAvailable();
@@ -272,7 +276,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showStudyPreview: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
+      if (this.isProduct("s4llite") || this.isTIPProduct()) {
         return false;
       }
       return true;
@@ -282,8 +286,7 @@ qx.Class.define("osparc.product.Utils", {
       return (
         this.isS4LProduct() ||
         this.isProduct("s4llite") ||
-        this.isProduct("tis") ||
-        this.isProduct("tiplite")
+        this.isTIPProduct()
       );
     },
 
@@ -292,14 +295,14 @@ qx.Class.define("osparc.product.Utils", {
         return true;
       }
 
-      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
+      if (this.isProduct("s4llite") || this.isTIPProduct()) {
         return false;
       }
       return true;
     },
 
     showPreferencesExperimental: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
+      if (this.isProduct("s4llite") || this.isTIPProduct()) {
         return false;
       }
       return true;
@@ -317,7 +320,7 @@ qx.Class.define("osparc.product.Utils", {
         return true;
       }
 
-      if (this.isProduct("tis") || this.isProduct("tiplite")) {
+      if (this.isTIPProduct()) {
         return false;
       }
       return true;
@@ -328,7 +331,7 @@ qx.Class.define("osparc.product.Utils", {
         return true;
       }
 
-      if (this.isProduct("tis") || this.isProduct("tiplite")) {
+      if (this.isTIPProduct()) {
         return false;
       }
       return true;
