@@ -63,7 +63,7 @@ async def test_post_file_notification_standard_file_id(mock_app: AsyncMock, proj
         "api/{uuid}/{uuid}/path/data.csv",
     ],
 )
-async def test_post_file_notification_skipped_prefeixes(mock_app: AsyncMock, file_id: str, faker: Faker):
+async def test_post_file_notification_skipped_prefixes(mock_app: AsyncMock, file_id: str, faker: Faker):
     await post_file_notification(
         mock_app,
         event_type=FileNotificationEventType.FILE_DELETED,
