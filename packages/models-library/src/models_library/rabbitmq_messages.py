@@ -331,7 +331,6 @@ class ComputationalPipelineStatusMessage(RabbitMessageBase, ProjectMessageBase):
 class FileNotificationEventType(StrAutoEnum):
     FILE_UPLOADED = auto()
     FILE_DELETED = auto()
-    FILE_MOVED = auto()
 
 
 class FileNotificationMessage(RabbitMessageBase):

@@ -85,5 +85,4 @@ def test_all_event_types_exist():
     assert set(FileNotificationEventType) == {
         FileNotificationEventType.FILE_UPLOADED,
         FileNotificationEventType.FILE_DELETED,
-        FileNotificationEventType.FILE_MOVED,
     }
