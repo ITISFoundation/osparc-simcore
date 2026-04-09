@@ -43,11 +43,11 @@ _logger = logging.getLogger(__name__)
 
 @ensure_single_setup(f"{__name__}.login_options", logger=_logger)
 def _setup_login_options(app: web.Application):
-    cfg = {}
+    login_redirect = "/"
     if INDEX_RESOURCE_NAME in app.router:
-        cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
+        login_redirect = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
 
-    app[LOGIN_OPTIONS_APPKEY] = LoginOptions(**cfg)
+    app[LOGIN_OPTIONS_APPKEY] = LoginOptions(LOGIN_REDIRECT=login_redirect)
 
 
 async def _resolve_login_settings_per_product(app: web.Application):
