@@ -449,6 +449,13 @@ qx.Class.define("osparc.product.Utils", {
       return osparc.utils.Utils.isDevelopmentPlatform();
     },
 
+    getOsparcOImageSource: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const lightLogo = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
+      return lightLogo ? "osparc/osparc-o-white.svg" : "osparc/osparc-o-black.svg";
+    },
+
     S4L_TOPICS: [
       {
         id: "other",
