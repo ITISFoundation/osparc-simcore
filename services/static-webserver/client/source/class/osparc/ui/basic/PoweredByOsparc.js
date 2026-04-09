@@ -81,11 +81,8 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
     },
 
     __resetSourcePath: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const textColor = colorManager.resolve("text");
-      const lightLogo = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
       this.getChildControl("logo").set({
-        source: lightLogo ? "osparc/osparc-o-white.svg" : "osparc/osparc-o-black.svg"
+        source: osparc.product.Utils.getOsparcOImageSource()
       });
       osparc.utils.Utils.setAltToImage(this.getChildControl("logo"), "powered-by-osparc");
     }
