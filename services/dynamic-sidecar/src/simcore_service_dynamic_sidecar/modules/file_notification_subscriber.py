@@ -10,7 +10,10 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType, FileNotificationMessage
 from servicelib.container_utils import run_command_in_container
 from servicelib.logging_utils import log_context
+from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
+from simcore_sdk.node_ports_common import filemanager
+from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePathError
 
 from ..core.rabbitmq import get_rabbitmq_client
@@ -82,6 +85,36 @@ async def _try_remove_from_disk_volumes(
     _logger.info("Removed '%s' from disk volume (no rclone mount found)", local_path)
 
 
+async def _try_pull_to_disk_volumes(
+    app: FastAPI,
+    mounted_volumes: MountedVolumes,
+    path: StorageFileID,
+) -> None:
+    """Downloads a file from S3 to the corresponding local disk volume."""
+    local_path = _resolve_local_path_from_storage_id(mounted_volumes, path)
+    if local_path is None:
+        return
+
+    settings: ApplicationSettings = app.state.settings
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+
+    async with ProgressBarData(
+        num_steps=1,
+        description=f"pulling {path}",
+    ) as progress_bar:
+        await filemanager.download_path_from_s3(
+            user_id=settings.DY_SIDECAR_USER_ID,
+            store_id=SIMCORE_LOCATION,
+            store_name=None,
+            s3_object=path,
+            local_path=local_path.parent,
+            io_log_redirect_cb=None,
+            r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
+            progress_bar=progress_bar,
+        )
+    _logger.info("Pulled '%s' from S3 to disk volume", path)
+
+
 async def _notify_path_change(
     app: FastAPI, *, event_type: FileNotificationEventType, path: StorageFileID, recursive: bool
 ) -> None:
@@ -92,10 +125,13 @@ async def _notify_path_change(
         await get_r_clone_mount_manager(app).refresh_path(f"{Path(path).parent}", recursive=recursive)
     except NoMountFoundForRemotePathError:
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
-        if event_type == FileNotificationEventType.FILE_DELETED:
-            await _try_remove_from_disk_volumes(mounted_volumes, path)
-        else:
-            _logger.warning("Received unsupported event type '%s' for path '%s'", event_type, path)
+        match event_type:
+            case FileNotificationEventType.FILE_UPLOADED:
+                await _try_pull_to_disk_volumes(app, mounted_volumes, path)
+            case FileNotificationEventType.FILE_DELETED:
+                await _try_remove_from_disk_volumes(mounted_volumes, path)
+            case _:
+                _logger.warning("Received unsupported event type '%s' for path '%s'", event_type, path)
 
 
 async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
