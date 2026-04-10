@@ -228,9 +228,16 @@ qx.Class.define("osparc.NewRelease", {
       } while (cleaned !== prev);
       // Convert height="N" on <img> tags to max-height style so images
       // scale down responsively but still respect their intended size cap.
-      cleaned = cleaned.replace(/<img\b([^>]*)\bheight="(\d+)"([^>]*)>/gi, (match, before, h, after) => {
-        // Remove any existing height attribute and inject max-height as inline style
-        return `<img${before}${after} style="max-height:${h}px;width:auto;">`;
+      cleaned = cleaned.replace(/<img\b([^>]*?)\bheight="(\d+)"([^>]*?)(\/?)>/gi, (match, before, h, after, slash) => {
+        const maxH = `max-height:${h}px`;
+        // Merge into existing style attribute if present, otherwise add a new one
+        let attrs = before + after;
+        if (/style\s*=\s*"/i.test(attrs)) {
+          attrs = attrs.replace(/style\s*=\s*"/i, `style="${maxH};`);
+        } else {
+          attrs += ` style="${maxH}"`;
+        }
+        return `<img${attrs}${slash}>`;
       });
       return cleaned;
     },
@@ -256,7 +263,7 @@ qx.Class.define("osparc.NewRelease", {
     },
 
     /**
-     * Sets CSS custom properties (--rn-text-muted)
+     * Sets CSS custom properties (--rn-text-muted, --rn-border)
      * on the document root, resolved from the current qooxdoo theme colors.
      */
     __applyThemeCssVars: function() {
