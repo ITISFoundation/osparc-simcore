@@ -74,7 +74,7 @@ qx.Class.define("osparc.NewRelease", {
      * @param {String} url
      * @returns {String|null}
      */
-    toGitHubRawUrl: function(url) {
+    toGitHubRenderableUrl: function(url) {
       if (!url) {
         return null;
       }
@@ -96,11 +96,17 @@ qx.Class.define("osparc.NewRelease", {
      */
     popUpReleaseNotes: function() {
       const newRelease = new osparc.NewRelease();
-      const title = qx.locale.Manager.tr("New Version Released");
-      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+      const title = osparc.product.Utils.isProduct("osparc") ? qx.locale.Manager.tr("New Version Released") : qx.locale.Manager.tr("New Version of oSparc Platform Released");
+      const icon = osparc.product.Utils.getOsparcOImageSource();
+      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 360, 135, icon).set({
         clickAwayClose: false,
         resizable: false,
         showClose: true
+      });
+      win.getChildControl("icon").set({
+        width: 24,
+        height: 18,
+        scale: true
       });
       newRelease.addListener("releaseNotesLoaded", () => {
         const vpWidth = document.documentElement.clientWidth;
@@ -131,7 +137,7 @@ qx.Class.define("osparc.NewRelease", {
      * @returns {Boolean} true if the dialog was opened, false otherwise.
      */
     openReleaseNotesDialog: function(releaseLink) {
-      const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
+      const rawUrl = osparc.NewRelease.toGitHubRenderableUrl(releaseLink);
       if (!rawUrl) {
         return false;
       }
@@ -144,10 +150,11 @@ qx.Class.define("osparc.NewRelease", {
     __loadingLabel: null,
 
     __buildLayout: function() {
-      const releaseLink = osparc.utils.Utils.getReleaseLink();
-      const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
+      const releaseLink = osparc.utils.Utils.getReleaseNotesLink();
+      const rawUrl = osparc.NewRelease.toGitHubRenderableUrl(releaseLink);
 
-      if (rawUrl) {
+      // Do not render release notes in TIP, go for the link version instead
+      if (rawUrl && !osparc.product.Utils.isTIPProduct()) {
         this.__addLoadingIndicator();
         this.__fetchAndRenderMarkdown(rawUrl, releaseLink);
       } else {
@@ -277,7 +284,7 @@ qx.Class.define("osparc.NewRelease", {
     __addFallbackLink: function(releaseLink) {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        value: this.tr("What's New in ") + releaseTag,
+        value: this.tr("What's New in oSparc ") + releaseTag,
         url: releaseLink,
         font: "link-label-14"
       });

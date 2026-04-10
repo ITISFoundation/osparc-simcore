@@ -35,16 +35,9 @@ from pydantic import TypeAdapter
 from simcore_postgres_database.models.funcapi_function_job_collections_to_function_jobs_table import (
     function_job_collections_to_function_jobs_table,
 )
-from simcore_postgres_database.models.funcapi_function_jobs_access_rights_table import (
-    function_jobs_access_rights_table,
-)
-from simcore_postgres_database.models.funcapi_function_jobs_table import (
-    function_jobs_table,
-)
-from simcore_postgres_database.utils_repos import (
-    pass_or_acquire_connection,
-    transaction_context,
-)
+from simcore_postgres_database.models.funcapi_function_jobs_access_rights_table import function_jobs_access_rights_table
+from simcore_postgres_database.models.funcapi_function_jobs_table import function_jobs_table
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy import Text, cast, func
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -56,9 +49,7 @@ from ._functions_permissions_repository import (
     check_user_api_access_rights,
     check_user_permissions,
 )
-from ._functions_table_cols import (
-    _FUNCTION_JOBS_TABLE_COLS,
-)
+from ._functions_table_cols import _FUNCTION_JOBS_TABLE_COLS
 
 _logger = logging.getLogger(__name__)
 
@@ -71,6 +62,8 @@ async def create_function_jobs(
     product_name: ProductName,
     function_jobs: list[FunctionJobDB],
 ) -> BatchCreateRegisteredFunctionJobsDB:
+    assert function_jobs, "function_jobs must not be empty"  # nosec
+
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
             app,
@@ -343,7 +336,9 @@ async def find_cached_function_jobs(
         )
 
         # Create a mapping from JSON inputs to jobs
-        _ensure_str = lambda x: x if isinstance(x, str) else json.dumps(x)
+        def _ensure_str(x: str | dict) -> str:
+            return x if isinstance(x, str) else json.dumps(x)
+
         jobs_by_input: dict[str, RegisteredFunctionJobDB] = {
             _ensure_str(row.inputs): RegisteredFunctionJobDB.model_validate(row) for row in results
         }

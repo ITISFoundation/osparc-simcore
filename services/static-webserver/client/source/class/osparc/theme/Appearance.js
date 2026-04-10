@@ -1290,6 +1290,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         decorator: "tooltip",
         padding: [5, 10],
+        maxWidth: 400,
         // showTimeout is themeable so it can be tuned
         // it was defaulted to 700 which was too short
         showTimeout: 1400,

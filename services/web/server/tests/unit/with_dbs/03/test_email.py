@@ -9,12 +9,12 @@ import json
 from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
+from common_library.json_serialization import json_dumps
 from common_library.users_enums import UserRole
 from faker import Faker
 from pydantic import ValidationError
@@ -32,9 +32,6 @@ from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTest
 from simcore_service_webserver.email.plugin import setup_email
 from simcore_service_webserver.login_accounts._controller_rest import (
     _get_ipinfo,
-)
-from simcore_service_webserver.login_accounts._service import (
-    _json_encoder_and_dumps,
 )
 
 
@@ -202,9 +199,9 @@ def test_render_templates(template_path: Path, faker: Faker):
             "code": "123",
             "reason": "no reason",
             "link": faker.url(),
-            "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
+            "product": {"name": "foobar", "display_name": "Foo Bar"},
             "retention_days": 30,
-            "dumps": functools.partial(_json_encoder_and_dumps, indent=1),
+            "dumps": functools.partial(json_dumps, indent=1),
             "request_form": fake_request_form,
             "ipinfo": _get_ipinfo(request),
             "extra_context": {"extra": "information"},

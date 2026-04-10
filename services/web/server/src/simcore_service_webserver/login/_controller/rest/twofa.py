@@ -97,12 +97,13 @@ async def resend_2fa_code(request: web.Request):
     else:
         assert resend_2fa_.via == "Email"  # nosec
         await _twofa_service.send_email_code(
-            request,
+            request.app,
             user_email=user["email"],
-            support_email=product.support_email,
             code=code,
             first_name=user["first_name"] or user["name"],
-            product=product,
+            user_name=user["name"],
+            product_name=product.name,
+            host=request.host,
             user_id=user["id"],
         )
 

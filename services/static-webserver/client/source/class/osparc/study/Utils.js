@@ -505,7 +505,7 @@ qx.Class.define("osparc.study.Utils", {
 
     guessIcon: function(studyData) {
       if (
-        (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) &&
+        (osparc.product.Utils.isTIPProduct()) &&
         ["app", "guided"].includes(studyData["ui"]["mode"])
       ) {
         return new Promise(resolve => resolve(this.__guessTIPIcon(studyData)));

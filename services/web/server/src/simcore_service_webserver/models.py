@@ -60,6 +60,6 @@ class ClientSessionHeaderParams(RequestParameters):
 
 
 class WebServerOwnerMetadata(OwnerMetadata):
-    user_id: UserID
+    user_id: UserID | None
     product_name: ProductName
     owner: Annotated[str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)] = APP_NAME

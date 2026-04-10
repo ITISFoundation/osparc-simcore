@@ -18,14 +18,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from playwright._impl._sync_base import EventContextManager
-from playwright.sync_api import (
-    APIRequestContext,
-    FrameLocator,
-    Locator,
-    Page,
-    Request,
-    WebSocket,
-)
+from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
@@ -319,10 +312,11 @@ _SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[timedelta] = timedelta(seconds=30)
 
 
 def _get_service_url(node_id: str, product_url: AnyUrl, *, is_legacy_service: bool) -> AnyUrl:
+    port_suffix = f":{product_url.port}" if product_url.port else ""
     return TypeAdapter(AnyUrl).validate_python(
-        f"{product_url.scheme}://{product_url.host}/x/{node_id}"
+        f"{product_url.scheme}://{product_url.host}{port_suffix}/x/{node_id}"
         if is_legacy_service
-        else f"{product_url.scheme}://{node_id}.services.{product_url.host}"
+        else f"{product_url.scheme}://{node_id}.services.{product_url.host}{port_suffix}"
     )
 
 
@@ -602,8 +596,10 @@ def wait_for_service_running(
     product_url: AnyUrl,
     is_service_legacy: bool,
 ) -> FrameLocator:
-    """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
-    In which case this will need further adjutment"""
+    """NOTE: if the service was already started this will not work as some of
+    the required websocket events will not be emitted again.
+    In which case this will need further adjustment
+    """
 
     started = arrow.utcnow()
     with contextlib.ExitStack() as stack:
@@ -631,6 +627,7 @@ def wait_for_service_running(
 
     if waiter and not waiter.success:
         pytest.fail("❌ Service failed starting!  ❌")
+
     wait_for_service_endpoint_responding(
         node_id,
         api_request_context=page.request,
@@ -641,6 +638,7 @@ def wait_for_service_running(
             _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
         ),
     )
+
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 

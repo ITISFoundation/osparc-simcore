@@ -142,6 +142,9 @@ class FunctionJobService:
         function: RegisteredFunction,
         job_input_list: list[JobInputs],
     ) -> list[PreRegisteredFunctionJobData]:
+        if not job_input_list:
+            return []
+
         if function.input_schema is not None:
             is_valid, validation_str = await self.validate_function_inputs(
                 function=function,

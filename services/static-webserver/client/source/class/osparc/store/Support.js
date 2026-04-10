@@ -255,9 +255,9 @@ qx.Class.define("osparc.store.Support", {
 
     __getReleaseInfo: function() {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
-      const releaseLink = osparc.utils.Utils.getReleaseLink();
+      const releaseLink = osparc.utils.Utils.getReleaseNotesLink();
       return {
-        label: qx.locale.Manager.tr("What's New in") + " " + releaseTag,
+        label: qx.locale.Manager.tr("What's New in oSparc ") + releaseTag,
         icon: "@FontAwesome5Solid/bullhorn/14",
         callback: () => {
           if (!osparc.NewRelease.openReleaseNotesDialog(releaseLink)) {
