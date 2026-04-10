@@ -150,10 +150,9 @@ async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
 
 def _is_source_dir_available(source_dir: Path) -> bool:
     try:
-        source_dir.exists()
+        return source_dir.exists()
     except Exception:  # pylint: disable=broad-exception-caught
         return False
-    return True
 
 
 async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails) -> None:
