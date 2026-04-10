@@ -226,6 +226,12 @@ qx.Class.define("osparc.NewRelease", {
         prev = cleaned;
         cleaned = cleaned.replace(/<([a-zA-Z][^>\n]*)\n\s*/g, "<$1 ");
       } while (cleaned !== prev);
+      // Convert height="N" on <img> tags to max-height style so images
+      // scale down responsively but still respect their intended size cap.
+      cleaned = cleaned.replace(/<img\b([^>]*)\bheight="(\d+)"([^>]*)>/gi, (match, before, h, after) => {
+        // Remove any existing height attribute and inject max-height as inline style
+        return `<img${before}${after} style="max-height:${h}px;width:auto;">`;
+      });
       return cleaned;
     },
 
