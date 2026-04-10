@@ -172,7 +172,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 	read -p "Enter your username: " USER_NAME; \
 	read -s -p "Enter your password: " PASSWORD; echo ""; \
 	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
-	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.ignore.txt" >> $@; \
+	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
 	if [ "$$BILLABLE" = "y" ]; then \
 		echo "--product-billable" >> $@; \
 	fi; \
@@ -255,7 +255,8 @@ define run_test
 	pytest -s $2 \
 		--color=yes \
 		--browser chromium \
-		--headed \
+		--tracing=on \
+		--output=$(PWD)/result.ignore \
 		$$TEST_ARGS
 endef
 
@@ -265,7 +266,8 @@ define run_test_on_chrome
 	pytest -s $2 \
 		--color=yes \
 		--browser-channel chrome \
-		--headed \
+		--tracing=on \
+		--output=$(PWD)/result.ignore \
 		$$TEST_ARGS
 endef
 
