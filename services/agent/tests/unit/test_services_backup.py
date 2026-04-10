@@ -3,6 +3,7 @@
 
 import asyncio
 import errno
+import re
 from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
 from typing import Final
@@ -168,4 +169,4 @@ async def test_store_in_s3_skips_backup_on_stale_fuse_mount(
             volume_name=volume,
             volume_details=volume_details,
         )
-        assert "is not available, skipping backup for volume" in caplog.text
+        assert re.search(r"Source directory .+ is not available, skipping backup for volume .+", caplog.text)
