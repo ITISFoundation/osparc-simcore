@@ -1,5 +1,4 @@
 import asyncio
-import errno
 import json
 import logging
 import socket
@@ -149,25 +148,10 @@ async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
         )
 
 
-def _source_dir_exists(source_dir: Path, volume_name: str) -> bool:
+def _is_source_dir_available(source_dir: Path) -> bool:
     try:
-        source_exists = Path(source_dir).exists()
-    except OSError as e:
-        if e.errno == errno.ENOTCONN:
-            _logger.warning(
-                "Volume mountpoint %s has a stale FUSE mount (transport endpoint not connected). "
-                "Skipping backup, volume %s will be removed.",
-                source_dir,
-                volume_name,
-            )
-            return False
-        raise
-    if not source_exists:
-        _logger.info(
-            "Volume mountpoint %s does not exist. Skipping backup, volume %s will be removed.",
-            source_dir,
-            volume_name,
-        )
+        source_dir.exists()
+    except Exception:  # pylint: disable=broad-exception-caught
         return False
     return True
 
@@ -175,7 +159,8 @@ def _source_dir_exists(source_dir: Path, volume_name: str) -> bool:
 async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails) -> None:
     source_dir = volume_details.mountpoint
 
-    if not _source_dir_exists(source_dir, volume_name):
+    if not _is_source_dir_available(source_dir):
+        _logger.info("Source directory %s is not available, skipping backup for volume %s", source_dir, volume_name)
         return
 
     exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
