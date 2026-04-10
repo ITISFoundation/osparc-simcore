@@ -84,6 +84,7 @@ async def _create_email_addressing(
     product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
+    reply_to: Contact | None = None,
 ) -> EmailAddressing:
     """Build email addressing (from/to) for all recipients.
 
@@ -111,6 +112,7 @@ async def _create_email_addressing(
     return EmailAddressing(
         from_=from_contact,
         to=to_contacts,
+        reply_to=reply_to,
     )
 
 
@@ -211,11 +213,12 @@ async def send_message(
 async def send_message_from_template(
     app: web.Application,
     *,
-    user_id: UserID,
+    user_id: UserID | None,
     product_name: ProductName,
     channel: Channel,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
+    reply_to: Contact | None = None,
     template_name: str,
     context: dict[str, Any],
 ) -> tuple[TaskUUID | GroupUUID, TaskName]:
@@ -226,6 +229,7 @@ async def send_message_from_template(
                 product_name=product_name,
                 group_ids=group_ids,
                 external_contacts=external_contacts,
+                reply_to=reply_to,
             )
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)

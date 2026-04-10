@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.80.0"
+    "version": "0.81.1"
   },
   "servers": [
     {
@@ -2709,6 +2709,22 @@
               ],
               "title": "Review Status"
             }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Name"
+            }
           }
         ],
         "responses": {
@@ -2721,6 +2737,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "The specified product_name override does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           }
         }
       }
@@ -2746,6 +2802,46 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2778,6 +2874,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2803,6 +2939,46 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2832,6 +3008,46 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_UserAccountPreviewRejectionGet_"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
                 }
               }
             }
@@ -2913,6 +3129,173 @@
                 }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/v0/admin/user-accounts:move": {
+      "post": {
+        "tags": [
+          "users",
+          "admin"
+        ],
+        "summary": "Move User Account",
+        "operationId": "move_user_account",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAccountMoveProduct"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The specified new_product_name does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/admin/products": {
+      "get": {
+        "tags": [
+          "users",
+          "admin"
+        ],
+        "summary": "List Products For User Accounts",
+        "operationId": "list_products_for_user_accounts",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_list_UserAccountProductOptionGet__"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2942,6 +3325,46 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_UserAccountGet_"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
                 }
               }
             }
@@ -19307,6 +19730,35 @@
         "type": "object",
         "title": "Envelope[list[UserAccountGet]]"
       },
+      "Envelope_list_UserAccountProductOptionGet__": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/UserAccountProductOptionGet"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[list[UserAccountProductOptionGet]]"
+      },
       "Envelope_list_UserGet__": {
         "properties": {
           "data": {
@@ -29132,6 +29584,17 @@
             ],
             "title": "Country"
           },
+          "productName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productname"
+          },
           "extras": {
             "additionalProperties": true,
             "type": "object",
@@ -29296,6 +29759,24 @@
         ],
         "title": "UserAccountGet"
       },
+      "UserAccountMoveProduct": {
+        "properties": {
+          "preRegistrationId": {
+            "type": "integer",
+            "title": "Preregistrationid"
+          },
+          "newProductName": {
+            "type": "string",
+            "title": "Newproductname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "preRegistrationId",
+          "newProductName"
+        ],
+        "title": "UserAccountMoveProduct"
+      },
       "UserAccountPreviewApproval": {
         "properties": {
           "email": {
@@ -29369,6 +29850,29 @@
         },
         "type": "object",
         "title": "UserAccountPreviewRejectionGet"
+      },
+      "UserAccountProductOptionGet": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "displayName": {
+            "type": "string",
+            "title": "Displayname"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "title": "Iscurrent",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "displayName"
+        ],
+        "title": "UserAccountProductOptionGet"
       },
       "UserAccountReject": {
         "properties": {
