@@ -2,16 +2,15 @@ import asyncio
 import json
 import logging
 import socket
-import tempfile
 from asyncio.streams import StreamReader
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 from textwrap import dedent
 from typing import Final
-from uuid import uuid4
 
+import aiofiles.tempfile
 import httpx
 from fastapi import FastAPI
 from servicelib.container_utils import run_command_in_container
@@ -37,8 +36,8 @@ acl = private
 """
 
 
-@contextmanager
-def _rclone_config_file(settings: ApplicationSettings) -> Iterator[Path]:
+@asynccontextmanager
+async def _rclone_config_file(settings: ApplicationSettings) -> AsyncIterator[Path]:
     config_content = _R_CLONE_CONFIG.format(
         destination_provider=resolve_provider(settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER),
         destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
@@ -46,12 +45,16 @@ def _rclone_config_file(settings: ApplicationSettings) -> Iterator[Path]:
         destination_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
         destination_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
     )
-    conf_path = Path(tempfile.gettempdir()) / f"rclone_config_{uuid4()}.ini"
-    conf_path.write_text(config_content)
-    try:
-        yield conf_path
-    finally:
-        conf_path.unlink(missing_ok=True)
+    async with aiofiles.tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".ini",
+        prefix="rclone_config_",
+        delete=True,
+        delete_on_close=False,
+    ) as tmp:
+        await tmp.write(config_content)
+        await tmp.flush()
+        yield Path(str(tmp.name))
 
 
 def _get_s3_path(s3_bucket: str, labels: DynamicServiceVolumeLabels) -> Path:
@@ -165,7 +168,7 @@ async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_d
     exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
     s3_path = _get_s3_path(settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels)
 
-    with _rclone_config_file(settings) as config_file_path:
+    async with _rclone_config_file(settings) as config_file_path:
         # listing files rclone will sync
         r_clone_ls = [
             "rclone",
