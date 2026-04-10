@@ -148,7 +148,7 @@ async def test_store_in_s3_skips_backup_on_stale_fuse_mount(
     caplog: pytest.LogCaptureFixture,
 ):
     caplog.clear()
-    caplog.set_level("WARNING")
+    caplog.set_level("INFO")
 
     node_id = uuid4()
     volumes = await create_dynamic_sidecar_volumes(node_id, False)  # noqa: FBT003
@@ -168,4 +168,4 @@ async def test_store_in_s3_skips_backup_on_stale_fuse_mount(
             volume_name=volume,
             volume_details=volume_details,
         )
-        assert "has a stale FUSE mount" in caplog.text
+        assert "is not available, skipping backup for volume" in caplog.text
