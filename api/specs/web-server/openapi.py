@@ -64,7 +64,6 @@ openapi_modules = [
         "_trash",
         "_workspaces",
         # maintenance ----
-        "_admin",
         "_diagnostics",
     )
 ]
