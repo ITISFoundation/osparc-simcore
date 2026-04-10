@@ -163,8 +163,16 @@ CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
 PERSONALIZED_TIP_INPUT_FILE := .e2e-playwright-personalizedtip-env.txt
 RSM_INPUT_FILE := .e2e-playwright-rsm-env.txt
 
+ALL_INPUT_FILES := \
+	$(SLEEPERS_INPUT_FILE) \
+	$(JUPYTER_LAB_INPUT_FILE) \
+	$(CLASSIC_TIP_INPUT_FILE) \
+	$(S4L_INPUT_FILE) \
+	$(PERSONALIZED_TIP_INPUT_FILE) \
+	$(RSM_INPUT_FILE)
+
 # Prompt the user for input and store it into variables
-$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE) $(RSM_INPUT_FILE):
+$(ALL_INPUT_FILES):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
 	read -p "Is the product lite [y/n]: " IS_LITE; \
@@ -255,8 +263,7 @@ define run_test
 	pytest -s $2 \
 		--color=yes \
 		--browser chromium \
-		--tracing=on \
-		--output=$(PWD)/result.ignore \
+		--headed \
 		$$TEST_ARGS
 endef
 
@@ -266,10 +273,9 @@ define run_test_on_chrome
 	pytest -s $2 \
 		--color=yes \
 		--browser-channel chrome \
-		--tracing=on \
-		--output=$(PWD)/result.ignore \
+		--headed \
 		$$TEST_ARGS
 endef
 
 clean:
-	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(S4L_TEMPLATE_INPUT_FILE) $(PERSONALIZED_TIP_INPUT_FILE) $(RSM_INPUT_FILE)
+	-@rm -rf $(ALL_INPUT_FILES)
