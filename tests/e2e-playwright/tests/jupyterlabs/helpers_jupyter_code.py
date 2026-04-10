@@ -7,7 +7,8 @@ from typing import Final
 from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER, FAIL_MARKER
 from playwright.sync_api import FrameLocator, expect
 from pydantic import ByteSize
-from pytest_simcore.helpers.logging_tools import log_context, timedelta_as_minute_second_ms
+from pytest_simcore.helpers.datetime_tools import timedelta_as_minute_second_ms
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import SECOND
 
 _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
