@@ -101,6 +101,7 @@ qx.Class.define("osparc.NewRelease", {
       const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 360, 135, icon).set({
         clickAwayClose: false,
         showClose: true,
+        resizable: false,
       });
       win.getChildControl("icon").set({
         width: 24,
@@ -117,8 +118,7 @@ qx.Class.define("osparc.NewRelease", {
           width: winWidth,
           height: winHeight,
           minHeight,
-          maxHeight: winHeight,
-          resizable: true
+          resizable: true,
         });
         win.moveTo(
           Math.round((vpWidth - winWidth) / 2),
@@ -257,6 +257,7 @@ qx.Class.define("osparc.NewRelease", {
       const colorMgr = qx.theme.manager.Color.getInstance();
       const root = document.documentElement.style;
       root.setProperty("--rn-text-muted", colorMgr.resolve("text-opa70"));
+      root.setProperty("--rn-border", colorMgr.resolve("text-opa70"));
     },
 
     __addDetailsLink: function(releaseLink) {
