@@ -28,7 +28,6 @@ def app_environment(
             "WEBSERVER_CATALOG": "null",
             "WEBSERVER_COMPUTATION": "null",
             "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_EMAIL": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "0",
             "WEBSERVER_LOGIN": "null",
