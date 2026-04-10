@@ -100,8 +100,7 @@ qx.Class.define("osparc.NewRelease", {
       const icon = osparc.product.Utils.getOsparcOImageSource();
       const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 360, 135, icon).set({
         clickAwayClose: false,
-        resizable: false,
-        showClose: true
+        showClose: true,
       });
       win.getChildControl("icon").set({
         width: 24,
