@@ -14165,55 +14165,6 @@
         }
       }
     },
-    "/v0/email:test": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Test Email",
-        "operationId": "test_email",
-        "parameters": [
-          {
-            "name": "x-simcore-products-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Simcore-Products-Name"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TestEmail"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/": {
       "get": {
         "tags": [
@@ -16905,55 +16856,6 @@
         "title": "DownloadLink",
         "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
       },
-      "EmailTestFailed": {
-        "properties": {
-          "test_name": {
-            "type": "string",
-            "title": "Test Name"
-          },
-          "error_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error Code"
-          },
-          "user_message": {
-            "type": "string",
-            "title": "User Message",
-            "default": "Email test failed"
-          }
-        },
-        "type": "object",
-        "required": [
-          "test_name"
-        ],
-        "title": "EmailTestFailed"
-      },
-      "EmailTestPassed": {
-        "properties": {
-          "fixtures": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Fixtures"
-          },
-          "info": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fixtures",
-          "info"
-        ],
-        "title": "EmailTestPassed"
-      },
       "EmptyModel": {
         "properties": {},
         "additionalProperties": false,
@@ -18477,35 +18379,6 @@
         },
         "type": "object",
         "title": "Envelope[TemplatePreviewGet]"
-      },
-      "Envelope_Union_EmailTestFailed__EmailTestPassed__": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EmailTestFailed"
-              },
-              {
-                "$ref": "#/components/schemas/EmailTestPassed"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[Union[EmailTestFailed, EmailTestPassed]]"
       },
       "Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__": {
         "properties": {
@@ -29153,47 +29026,6 @@
           "templateName"
         ],
         "title": "TemplateRefGet"
-      },
-      "TestEmail": {
-        "properties": {
-          "from_": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/LowerCaseEmailStr"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Email sender"
-          },
-          "to": {
-            "$ref": "#/components/schemas/LowerCaseEmailStr",
-            "description": "Email receiver"
-          },
-          "template_name": {
-            "type": "string",
-            "enum": [
-              "change_email_email.jinja2",
-              "new_2fa_code.jinja2",
-              "registration_email.jinja2",
-              "reset_password_email.jinja2"
-            ],
-            "title": "Template Name",
-            "default": "registration_email.jinja2"
-          },
-          "template_context": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Template Context",
-            "default": {}
-          }
-        },
-        "type": "object",
-        "required": [
-          "to"
-        ],
-        "title": "TestEmail"
       },
       "TextArea": {
         "properties": {
