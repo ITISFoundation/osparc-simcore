@@ -329,7 +329,7 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
         console.error("HTTP 429 Too Many Requests received from", url);
         return { __tooManyRequests: true };
       }
-      if (resp.statusText === 503) {
+      if (resp.status === 503) {
         console.log("SERVICE UNAVAILABLE");
       }
       console.log("RESP NOT OK", JSON.stringify(resp));
