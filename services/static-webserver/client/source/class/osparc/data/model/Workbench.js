@@ -829,6 +829,19 @@ qx.Class.define("osparc.data.model.Workbench", {
             patchData[changedFieldKey] = nodeData[changedFieldKey];
           });
         }
+        // Filter null values from inputs/outputs: the convention is that
+        // unset ports are absent from the dict, not null.
+        ["inputs", "outputs"].forEach(field => {
+          if (patchData[field] && typeof patchData[field] === "object") {
+            const filtered = {};
+            for (const key in patchData[field]) {
+              if (patchData[field][key] !== null) {
+                filtered[key] = patchData[field][key];
+              }
+            }
+            patchData[field] = filtered;
+          }
+        });
         const params = {
           url: {
             "studyId": this.getStudy().getUuid(),
