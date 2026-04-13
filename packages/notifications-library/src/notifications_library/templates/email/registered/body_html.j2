@@ -5,9 +5,14 @@
 <p>Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.</p>
 <p>Please activate your account via the link below:</p>
 <p>
-  <button style="{{ strong_button_style }}">
-    <a href="{{ link }}" style="{{ strong_button_link_style }}">Activate</a>
-  </button>
+  <!-- Bulletproof button: table-based for maximum email client compatibility -->
+  <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+      <td align="center" style="{{ strong_button_td_style }}">
+        <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">Activate</a>
+      </td>
+    </tr>
+  </table>
 </p>
 <p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
 <p>Best Regards,</p>

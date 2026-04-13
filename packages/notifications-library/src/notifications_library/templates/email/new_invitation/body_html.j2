@@ -4,10 +4,14 @@
 <p>Dear {{ user.first_name or user.user_name }},</p>
 <p>Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.</p>
 <p>
-  <!-- Many email clients strip or ignore certain CSS properties, including them inline -->
-  <button style="{{ strong_button_style }}">
-    <a href="{{ link }}" style="{{ strong_button_link_style }}">Register</a>
-  </button>
+  <!-- Bulletproof button: table-based for maximum email client compatibility -->
+  <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+      <td align="center" style="{{ strong_button_td_style }}">
+        <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">Register</a>
+      </td>
+    </tr>
+  </table>
 </p>
 <p>Please follow the on-screen information and proceed with your registration.</p>
 <p>If any problem should occur, please feel free to contact us at {{ product.support_email }}.</p>
