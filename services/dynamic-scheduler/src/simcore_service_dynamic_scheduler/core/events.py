@@ -25,7 +25,6 @@ from ..services.deferred_manager import deferred_manager_lifespan
 from ..services.director_v0 import director_v0_lifespan
 from ..services.director_v2 import director_v2_lifespan
 from ..services.fire_and_forget import fire_and_forget_lifespan
-from ..services.generic_scheduler import generic_scheduler_lifespan
 from ..services.notifier import get_notifier_lifespans
 from ..services.rabbitmq import rabbitmq_lifespan
 from ..services.redis import redis_lifespan
@@ -80,8 +79,6 @@ def create_app_lifespan(
 
     for lifespan in get_notifier_lifespans():
         app_lifespan.add(lifespan)
-
-    app_lifespan.add(generic_scheduler_lifespan)
 
     app_lifespan.add(service_tracker_lifespan)
     app_lifespan.add(deferred_manager_lifespan)
