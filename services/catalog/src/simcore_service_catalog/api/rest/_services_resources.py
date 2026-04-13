@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Annotated, Any, Final
 
 import yaml
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.docker import DockerGenericTag
 from models_library.groups import GroupAtDB
 from models_library.service_settings_labels import (
@@ -51,7 +51,8 @@ def _compute_service_available_boot_modes(
     """returns the service boot-modes.
     currently this uses the simcore.service.settings labels if available for backwards compatibility.
     if MPI is found, then boot mode is set to MPI, if GPU is found then boot mode is set to GPU, else to CPU.
-    In the future a dedicated label might be used, to add openMP for example. and to not abuse the resources of a service.
+    In the future a dedicated label might be used, to add openMP for example.
+    and to not abuse the resources of a service.
     Also these will be used in a project to allow the user to choose among different boot modes
     """
 
@@ -163,6 +164,7 @@ async def get_service_resources(
     default_service_resources: Annotated[ResourcesDict, Depends(get_default_service_resources)],
     services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
     user_groups: Annotated[list[GroupAtDB], Depends(list_user_groups)],
+    x_simcore_products_name: Annotated[str, Header(...)],
 ) -> ServiceResourcesDict:
     image_version = TypeAdapter(DockerGenericTag).validate_python(f"{service_key}:{service_version}")
     if is_function_service(service_key):
@@ -190,6 +192,7 @@ async def get_service_resources(
             service_key,
             service_version,
             tuple(user_groups),
+            x_simcore_products_name,
             allow_use_latest_service_version=True,
         )
         if user_specific_service_specs and user_specific_service_specs.service:
@@ -240,6 +243,7 @@ async def get_service_resources(
                 key,
                 version,
                 tuple(user_groups),
+                x_simcore_products_name,
                 allow_use_latest_service_version=True,
             )
             if user_specific_service_specs and user_specific_service_specs.service:

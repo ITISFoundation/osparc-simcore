@@ -74,7 +74,7 @@ qx.Class.define("osparc.NewRelease", {
      * @param {String} url
      * @returns {String|null}
      */
-    toGitHubRawUrl: function(url) {
+    toGitHubRenderableUrl: function(url) {
       if (!url) {
         return null;
       }
@@ -96,11 +96,17 @@ qx.Class.define("osparc.NewRelease", {
      */
     popUpReleaseNotes: function() {
       const newRelease = new osparc.NewRelease();
-      const title = qx.locale.Manager.tr("New Version Released");
-      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+      const title = osparc.product.Utils.isProduct("osparc") ? qx.locale.Manager.tr("New Version Released") : qx.locale.Manager.tr("New Version of oSparc Platform Released");
+      const icon = osparc.product.Utils.getOsparcOImageSource();
+      const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 360, 135, icon).set({
         clickAwayClose: false,
+        showClose: true,
         resizable: false,
-        showClose: true
+      });
+      win.getChildControl("icon").set({
+        width: 24,
+        height: 18,
+        scale: true
       });
       newRelease.addListener("releaseNotesLoaded", () => {
         const vpWidth = document.documentElement.clientWidth;
@@ -112,8 +118,7 @@ qx.Class.define("osparc.NewRelease", {
           width: winWidth,
           height: winHeight,
           minHeight,
-          maxHeight: winHeight,
-          resizable: true
+          resizable: true,
         });
         win.moveTo(
           Math.round((vpWidth - winWidth) / 2),
@@ -131,7 +136,7 @@ qx.Class.define("osparc.NewRelease", {
      * @returns {Boolean} true if the dialog was opened, false otherwise.
      */
     openReleaseNotesDialog: function(releaseLink) {
-      const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
+      const rawUrl = osparc.NewRelease.toGitHubRenderableUrl(releaseLink);
       if (!rawUrl) {
         return false;
       }
@@ -144,10 +149,11 @@ qx.Class.define("osparc.NewRelease", {
     __loadingLabel: null,
 
     __buildLayout: function() {
-      const releaseLink = osparc.utils.Utils.getReleaseLink();
-      const rawUrl = osparc.NewRelease.toGitHubRawUrl(releaseLink);
+      const releaseLink = osparc.utils.Utils.getReleaseNotesLink();
+      const rawUrl = osparc.NewRelease.toGitHubRenderableUrl(releaseLink);
 
-      if (rawUrl) {
+      // Do not render release notes in TIP, go for the link version instead
+      if (rawUrl && !osparc.product.Utils.isTIPProduct()) {
         this.__addLoadingIndicator();
         this.__fetchAndRenderMarkdown(rawUrl, releaseLink);
       } else {
@@ -220,6 +226,19 @@ qx.Class.define("osparc.NewRelease", {
         prev = cleaned;
         cleaned = cleaned.replace(/<([a-zA-Z][^>\n]*)\n\s*/g, "<$1 ");
       } while (cleaned !== prev);
+      // Convert height="N" on <img> tags to max-height style so images
+      // scale down responsively but still respect their intended size cap.
+      cleaned = cleaned.replace(/<img\b([^>]*?)\bheight="(\d+)"([^>]*?)(\/?)>/gi, (match, before, h, after, slash) => {
+        const maxH = `max-height:${h}px`;
+        // Merge into existing style attribute if present, otherwise add a new one
+        let attrs = before + after;
+        if (/style\s*=\s*"/i.test(attrs)) {
+          attrs = attrs.replace(/style\s*=\s*"/i, `style="${maxH};`);
+        } else {
+          attrs += ` style="${maxH}"`;
+        }
+        return `<img${attrs}${slash}>`;
+      });
       return cleaned;
     },
 
@@ -244,13 +263,14 @@ qx.Class.define("osparc.NewRelease", {
     },
 
     /**
-     * Sets CSS custom properties (--rn-text-muted)
+     * Sets CSS custom properties (--rn-text-muted, --rn-border)
      * on the document root, resolved from the current qooxdoo theme colors.
      */
     __applyThemeCssVars: function() {
       const colorMgr = qx.theme.manager.Color.getInstance();
       const root = document.documentElement.style;
       root.setProperty("--rn-text-muted", colorMgr.resolve("text-opa70"));
+      root.setProperty("--rn-border", colorMgr.resolve("text-opa70"));
     },
 
     __addDetailsLink: function(releaseLink) {
@@ -277,7 +297,7 @@ qx.Class.define("osparc.NewRelease", {
     __addFallbackLink: function(releaseLink) {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        value: this.tr("What's New in ") + releaseTag,
+        value: this.tr("What's New in oSparc ") + releaseTag,
         url: releaseLink,
         font: "link-label-14"
       });

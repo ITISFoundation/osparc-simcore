@@ -1,4 +1,4 @@
-aio-pika==9.5.5
+aio-pika==9.6.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.12.3
     # via
@@ -87,8 +87,6 @@ email-validator==2.2.0
     # via
     #   fastapi
     #   pydantic
-exceptiongroup==1.2.2
-    # via aio-pika
 fast-depends==3.0.8
     # via faststream
 fastapi==0.116.1

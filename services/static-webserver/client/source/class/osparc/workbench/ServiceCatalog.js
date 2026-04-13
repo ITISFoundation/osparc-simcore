@@ -52,6 +52,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       clickAwayClose: true
     });
 
+    osparc.utils.Utils.setIdToWidget(this, "serviceCatalogWindow");
+
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
 
     const catalogLayout = new qx.ui.layout.VBox();

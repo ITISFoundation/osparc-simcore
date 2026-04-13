@@ -1170,6 +1170,14 @@ qx.Class.define("osparc.data.Resources", {
           preRegister: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:pre-register"
+          },
+          getProducts: {
+            method: "GET",
+            url: statics.API + "/admin/products"
+          },
+          moveUserAccount: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:move"
           }
         }
       },

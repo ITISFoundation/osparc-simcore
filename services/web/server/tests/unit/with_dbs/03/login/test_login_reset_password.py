@@ -44,7 +44,6 @@ async def client(
     aiohttp_client: Callable,
     app_products_names: list[ProductName],
     disabled_setup_garbage_collector: MockType,
-    mocked_email_core_remove_comments: None,
     mocked_notifications_service_send_message_from_template: MockType,
     # fixtures above must run before `web_server`
     web_server: TestServer,

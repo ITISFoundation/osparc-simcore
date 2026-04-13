@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.80.0"
+    "version": "0.81.1"
   },
   "servers": [
     {
@@ -2709,6 +2709,22 @@
               ],
               "title": "Review Status"
             }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Name"
+            }
           }
         ],
         "responses": {
@@ -2721,6 +2737,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "The specified product_name override does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           }
         }
       }
@@ -2746,6 +2802,46 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2778,6 +2874,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2803,6 +2939,46 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2832,6 +3008,46 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_UserAccountPreviewRejectionGet_"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
                 }
               }
             }
@@ -2913,6 +3129,173 @@
                 }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/v0/admin/user-accounts:move": {
+      "post": {
+        "tags": [
+          "users",
+          "admin"
+        ],
+        "summary": "Move User Account",
+        "operationId": "move_user_account",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAccountMoveProduct"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The specified new_product_name does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/admin/products": {
+      "get": {
+        "tags": [
+          "users",
+          "admin"
+        ],
+        "summary": "List Products For User Accounts",
+        "operationId": "list_products_for_user_accounts",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_list_UserAccountProductOptionGet__"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -2942,6 +3325,46 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_UserAccountGet_"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
                 }
               }
             }
@@ -13742,55 +14165,6 @@
         }
       }
     },
-    "/v0/email:test": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Test Email",
-        "operationId": "test_email",
-        "parameters": [
-          {
-            "name": "x-simcore-products-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Simcore-Products-Name"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TestEmail"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/": {
       "get": {
         "tags": [
@@ -16482,55 +16856,6 @@
         "title": "DownloadLink",
         "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
       },
-      "EmailTestFailed": {
-        "properties": {
-          "test_name": {
-            "type": "string",
-            "title": "Test Name"
-          },
-          "error_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error Code"
-          },
-          "user_message": {
-            "type": "string",
-            "title": "User Message",
-            "default": "Email test failed"
-          }
-        },
-        "type": "object",
-        "required": [
-          "test_name"
-        ],
-        "title": "EmailTestFailed"
-      },
-      "EmailTestPassed": {
-        "properties": {
-          "fixtures": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Fixtures"
-          },
-          "info": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fixtures",
-          "info"
-        ],
-        "title": "EmailTestPassed"
-      },
       "EmptyModel": {
         "properties": {},
         "additionalProperties": false,
@@ -18055,35 +18380,6 @@
         "type": "object",
         "title": "Envelope[TemplatePreviewGet]"
       },
-      "Envelope_Union_EmailTestFailed__EmailTestPassed__": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EmailTestFailed"
-              },
-              {
-                "$ref": "#/components/schemas/EmailTestPassed"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[Union[EmailTestFailed, EmailTestPassed]]"
-      },
       "Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__": {
         "properties": {
           "data": {
@@ -19307,6 +19603,35 @@
         "type": "object",
         "title": "Envelope[list[UserAccountGet]]"
       },
+      "Envelope_list_UserAccountProductOptionGet__": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/UserAccountProductOptionGet"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[list[UserAccountProductOptionGet]]"
+      },
       "Envelope_list_UserGet__": {
         "properties": {
           "data": {
@@ -19580,6 +19905,45 @@
           "error"
         ],
         "title": "EnvelopedError"
+      },
+      "ErrorDict": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Loc"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "ctx": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ctx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ErrorDict",
+        "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
       },
       "ErrorGet": {
         "properties": {
@@ -20912,6 +21276,100 @@
             }
           }
         }
+      },
+      "InputID": {
+        "type": "string",
+        "pattern": "^[-_a-zA-Z0-9]+$"
+      },
+      "InputsDict-Input": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "contentMediaType": "application/json",
+              "contentSchema": {}
+            },
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/PortLink"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/InputID"
+        },
+        "type": "object"
+      },
+      "InputsDict-Output": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {},
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/PortLink"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/InputID"
+        },
+        "type": "object"
       },
       "InvitationCheck": {
         "properties": {
@@ -22247,21 +22705,19 @@
           "inputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/InputsDict-Input"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Inputs",
             "description": "values of input properties"
           },
           "inputsRequired": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "pattern": "^[-_a-zA-Z0-9]+$"
+                  "$ref": "#/components/schemas/InputID"
                 },
                 "type": "array"
               },
@@ -22275,6 +22731,12 @@
           "inputsUnits": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22287,6 +22749,12 @@
           "inputAccess": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AccessEnum"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22315,13 +22783,12 @@
           "outputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/OutputsDict-Input"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Outputs",
             "description": "values of output properties"
           },
           "outputNode": {
@@ -22480,21 +22947,19 @@
           "inputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/InputsDict-Output"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Inputs",
             "description": "values of input properties"
           },
           "inputsRequired": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "pattern": "^[-_a-zA-Z0-9]+$"
+                  "$ref": "#/components/schemas/InputID"
                 },
                 "type": "array"
               },
@@ -22508,6 +22973,12 @@
           "inputsUnits": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22520,6 +22991,12 @@
           "inputAccess": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AccessEnum"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
                 "type": "object"
               },
               {
@@ -22548,13 +23025,12 @@
           "outputs": {
             "anyOf": [
               {
-                "type": "object"
+                "$ref": "#/components/schemas/OutputsDict-Output"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Outputs",
             "description": "values of output properties"
           },
           "outputNode": {
@@ -22891,16 +23367,14 @@
             "title": "Label"
           },
           "inputs": {
-            "type": "object",
-            "title": "Inputs",
+            "$ref": "#/components/schemas/InputsDict-Input",
             "default": {}
           },
           "inputsRequired": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "pattern": "^[-_a-zA-Z0-9]+$"
+                  "$ref": "#/components/schemas/InputID"
                 },
                 "type": "array"
               },
@@ -23164,6 +23638,21 @@
               }
             ],
             "description": "the node's lock state"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "error details when the node is in a FAILED state"
           }
         },
         "additionalProperties": false,
@@ -23218,6 +23707,21 @@
               }
             ],
             "description": "the node's lock state"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "error details when the node is in a FAILED state"
           }
         },
         "additionalProperties": false,
@@ -23259,6 +23763,94 @@
           "running_time_in_hours"
         ],
         "title": "OsparcCreditsAggregatedByServiceGet"
+      },
+      "OutputID": {
+        "type": "string",
+        "pattern": "^[-_a-zA-Z0-9]+$"
+      },
+      "OutputsDict-Input": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "contentMediaType": "application/json",
+              "contentSchema": {}
+            },
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/OutputID"
+        },
+        "type": "object"
+      },
+      "OutputsDict-Output": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {},
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/components/schemas/SimCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DatCoreFileLink"
+            },
+            {
+              "$ref": "#/components/schemas/DownloadLink"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ]
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/OutputID"
+        },
+        "type": "object"
       },
       "PageLinks": {
         "properties": {
@@ -28435,47 +29027,6 @@
         ],
         "title": "TemplateRefGet"
       },
-      "TestEmail": {
-        "properties": {
-          "from_": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/LowerCaseEmailStr"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Email sender"
-          },
-          "to": {
-            "$ref": "#/components/schemas/LowerCaseEmailStr",
-            "description": "Email receiver"
-          },
-          "template_name": {
-            "type": "string",
-            "enum": [
-              "change_email_email.jinja2",
-              "new_2fa_code.jinja2",
-              "registration_email.jinja2",
-              "reset_password_email.jinja2"
-            ],
-            "title": "Template Name",
-            "default": "registration_email.jinja2"
-          },
-          "template_context": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Template Context",
-            "default": {}
-          }
-        },
-        "type": "object",
-        "required": [
-          "to"
-        ],
-        "title": "TestEmail"
-      },
       "TextArea": {
         "properties": {
           "minHeight": {
@@ -28619,6 +29170,9 @@
         ],
         "title": "UnitExtraInfoTier",
         "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
+      },
+      "UnitStr": {
+        "type": "string"
       },
       "UnregisterCheck": {
         "properties": {
@@ -28862,6 +29416,17 @@
             ],
             "title": "Country"
           },
+          "productName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productname"
+          },
           "extras": {
             "additionalProperties": true,
             "type": "object",
@@ -29026,6 +29591,24 @@
         ],
         "title": "UserAccountGet"
       },
+      "UserAccountMoveProduct": {
+        "properties": {
+          "preRegistrationId": {
+            "type": "integer",
+            "title": "Preregistrationid"
+          },
+          "newProductName": {
+            "type": "string",
+            "title": "Newproductname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "preRegistrationId",
+          "newProductName"
+        ],
+        "title": "UserAccountMoveProduct"
+      },
       "UserAccountPreviewApproval": {
         "properties": {
           "email": {
@@ -29099,6 +29682,29 @@
         },
         "type": "object",
         "title": "UserAccountPreviewRejectionGet"
+      },
+      "UserAccountProductOptionGet": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "displayName": {
+            "type": "string",
+            "title": "Displayname"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "title": "Iscurrent",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "displayName"
+        ],
+        "title": "UserAccountProductOptionGet"
       },
       "UserAccountReject": {
         "properties": {

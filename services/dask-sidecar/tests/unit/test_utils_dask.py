@@ -201,6 +201,6 @@ def test_task_resources(
 ):
     future = dask_client.submit(get_current_task_resources, resources=resources)
     received_resources = future.result(timeout=DASK_TESTING_TIMEOUT_S)
-    current_resources = _DEFAULT_MAX_RESOURCES
+    current_resources = {**_DEFAULT_MAX_RESOURCES}
     current_resources.update(resources)
     assert received_resources == current_resources

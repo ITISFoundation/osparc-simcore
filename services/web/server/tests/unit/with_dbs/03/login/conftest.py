@@ -20,7 +20,6 @@ from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.email import _core
 from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,
 )
@@ -149,18 +148,6 @@ async def unconfirmed_user(
         app=client.app,
     ) as user:
         yield user
-
-
-@pytest.fixture
-def mocked_email_core_remove_comments(mocker: MockerFixture):
-    def _do_not_remove_comments(html_string):
-        return html_string
-
-    mocker.patch(
-        f"{_core.__name__}._remove_comments",
-        autospec=True,
-        side_effect=_do_not_remove_comments,
-    )
 
 
 @pytest.fixture

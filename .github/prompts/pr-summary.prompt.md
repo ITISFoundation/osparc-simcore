@@ -4,7 +4,7 @@ description: Generates a PR summary, suitable for a PR against the current `mast
 model: GPT-4.1
 ---
 
-Generate a concise pull request summary by analyzing the git diff between the current branch and `master`. Follow these guidelines:
+Generate a concise pull request summary by analyzing the git diff between the current branch and upstream `master`. Follow these guidelines:
 
 ## Analysis Requirements
 1. **Examine the diff**: Review all changed files, added/removed code, and commit messages

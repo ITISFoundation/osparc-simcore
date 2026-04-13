@@ -42,7 +42,6 @@ from models_library.api_schemas_webserver.projects_nodes import (
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.basic_types import KeyIDStr
-from models_library.errors import ErrorDict
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID
@@ -628,7 +627,7 @@ async def update_project_node_resources_from_hardware_info(
         # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
         # less memory than the machine theoretical amount
         node_resources = await get_project_node_resources(
-            app, user_id, project_id, node_id, service_key, service_version
+            app, user_id, project_id, node_id, service_key, service_version, product_name
         )
         scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
         new_cpus_value, new_ram_value = estimate_dynamic_sidecar_resources_from_ec2_instance(
@@ -904,6 +903,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
             node_id=node_uuid,
             service_key=service_key,
             service_version=service_version,
+            product_name=product_name,
         )
         await dynamic_scheduler_service.run_dynamic_service(
             app=request.app,
@@ -930,7 +930,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
 
         project = await get_project_for_user(request.app, f"{project_uuid}", user_id, include_state=True)
 
-        await notify_project_node_update(request.app, project, node_uuid, errors=None)
+        await notify_project_node_update(request.app, project, node_uuid)
 
     await _safe_service_start()
 
@@ -964,7 +964,9 @@ async def add_project_node(
     )
 
     node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
-    default_resources = await catalog_service.get_service_resources(request.app, user_id, service_key, service_version)
+    default_resources = await catalog_service.get_service_resources(
+        request.app, user_id, service_key, service_version, product_name
+    )
     db_legacy: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     assert db_legacy  # nosec
     await db_legacy.add_project_node(
@@ -1240,10 +1242,10 @@ async def patch_project_node(
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
         for node_uuid in updated_project["workbench"]:
-            await notify_project_node_update(app, updated_project, node_uuid, errors=None)
+            await notify_project_node_update(app, updated_project, node_uuid)
         return
 
-    await notify_project_node_update(app, updated_project, node_id, errors=None)
+    await notify_project_node_update(app, updated_project, node_id)
 
 
 async def update_project_node_outputs(
@@ -1902,6 +1904,7 @@ async def get_project_node_resources(
     node_id: NodeID,
     service_key: str,
     service_version: str,
+    product_name: str,
 ) -> ServiceResourcesDict:
     db = ProjectDBAPI.get_from_app_context(app)
     try:
@@ -1909,7 +1912,9 @@ async def get_project_node_resources(
         node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
         if not node_resources:
             # get default resources
-            node_resources = await catalog_service.get_service_resources(app, user_id, service_key, service_version)
+            node_resources = await catalog_service.get_service_resources(
+                app, user_id, service_key, service_version, product_name
+            )
         return node_resources
 
     except ProjectNodesNodeNotFoundError as exc:
@@ -1934,7 +1939,9 @@ async def update_project_node_resources(
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
-            current_resources = await catalog_service.get_service_resources(app, user_id, service_key, service_version)
+            current_resources = await catalog_service.get_service_resources(
+                app, user_id, service_key, service_version, product_name
+            )
 
         validate_new_service_resources(current_resources, new_resources=resources)
         set_reservation_same_as_limit(resources)
@@ -2135,19 +2142,19 @@ async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
-    errors: list[ErrorDict] | None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
 
+    data: dict = {
+        "project_id": project["uuid"],
+        "node_id": f"{node_id}",
+        "data": project["workbench"][f"{node_id}"],
+    }
+
     message = SocketMessageDict(
         event_type=SOCKET_IO_NODE_UPDATED_EVENT,
-        data={
-            "project_id": project["uuid"],
-            "node_id": f"{node_id}",
-            "data": project["workbench"][f"{node_id}"],
-            "errors": errors,
-        },
+        data=data,
     )
 
     await _send_message_to_project_groups(app, project["uuid"], message)

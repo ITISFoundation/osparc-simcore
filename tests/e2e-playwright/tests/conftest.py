@@ -11,6 +11,7 @@ import logging
 import os
 import random
 import re
+import time
 import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
@@ -306,6 +307,7 @@ def browser_context_args(
     return {
         **browser_context_args,
         "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
+        "viewport": {"width": 1600, "height": 900},  # HD+
     }
 
 
@@ -616,8 +618,14 @@ def create_new_project_and_delete(
             logging.INFO,
             f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
-            response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
-            assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
+            for attempt in range(10):
+                response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
+                if response.status == 204:
+                    break
+                if response.status == 409 and attempt < 9:
+                    time.sleep(3)
+                    continue
+                assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5618#discussion_r1553943415

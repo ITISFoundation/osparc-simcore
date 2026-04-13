@@ -677,6 +677,7 @@ class ServicesRepository(BaseRepository):
         key: ServiceKey,
         version: ServiceVersion,
         groups: tuple[GroupAtDB, ...],
+        product_name: ProductName,
         *,
         allow_use_latest_service_version: bool = False,
     ) -> ServiceSpecifications | None:
@@ -705,6 +706,7 @@ class ServicesRepository(BaseRepository):
                         else True
                     )
                     & (services_specifications.c.gid.in_(group.gid for group in groups))
+                    & (services_specifications.c.product_name == product_name)
                 ),
             ):
                 try:
