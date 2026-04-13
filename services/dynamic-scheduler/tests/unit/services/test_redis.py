@@ -15,7 +15,6 @@ pytest_simcore_core_services_selection = [
 
 @pytest.fixture
 def app_environment(
-    disable_generic_scheduler_lifespan: None,
     disable_postgres_lifespan: None,
     disable_rabbitmq_lifespan: None,
     disable_deferred_manager_lifespan: None,
