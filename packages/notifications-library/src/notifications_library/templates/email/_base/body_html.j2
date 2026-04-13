@@ -63,9 +63,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}{% endblock %}</title>
-<style>
-{{ paragraph_style_block }}
-</style>
 </head>
 <body style="{{ body_style }}">
   <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
@@ -82,6 +79,9 @@
 
           <tr>
             <td class="content" style="{{ content_style }}">
+              <style>
+              {{ paragraph_style_block }}
+              </style>
               {% block content %}
               {% endblock %}
             </td>
