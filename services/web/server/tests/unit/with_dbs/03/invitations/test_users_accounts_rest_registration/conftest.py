@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import AsyncGenerator, AsyncIterator
-from typing import Any, TypedDict
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -34,13 +34,6 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.notifications._models import TemplatePreview, TemplateRef
-
-
-class SeededUserAccountsEmails(TypedDict):
-    pending_registered: str
-    pending_unregistered: str
-    reviewed_registered: str
-    reviewed_unregistered: str
 
 
 @pytest.fixture
@@ -163,7 +156,7 @@ async def seeded_user_accounts_for_registered_review_filters(
     product_name: ProductName,
     mock_invitations_service_http_api: AioResponsesMock,
     mock_notifications_preview_template: AsyncMock,
-) -> SeededUserAccountsEmails:
+) -> dict[str, str]:
     assert client.app
 
     async def _pre_register(email: str) -> None:

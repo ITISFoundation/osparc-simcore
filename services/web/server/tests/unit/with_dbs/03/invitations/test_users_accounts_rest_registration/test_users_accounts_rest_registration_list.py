@@ -26,7 +26,12 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.login import _auth_service
 
-from .conftest import SeededUserAccountsEmails
+
+class SeededUserAccountsEmails(TypedDict):
+    pending_registered: str
+    pending_unregistered: str
+    reviewed_registered: str
+    reviewed_unregistered: str
 
 
 class UserAccountsListQueryParams(TypedDict):
