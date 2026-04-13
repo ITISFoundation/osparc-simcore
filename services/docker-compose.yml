@@ -1491,14 +1491,14 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment: &notifications_environment
+    environment:
       <<:
         - *common_logging_environments
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
         - *tracing_open_telemetry_environments
-
+      NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
       NOTIFICATIONS_WORKER_MODE: "false"
@@ -1512,7 +1512,10 @@ services:
     hostname: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<:
-        - *notifications_environment
+        - *common_logging_environments
+        - *postgres_settings
+        - *rabbit_settings
+        - *redis_settings
         - *smtp_settings
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
