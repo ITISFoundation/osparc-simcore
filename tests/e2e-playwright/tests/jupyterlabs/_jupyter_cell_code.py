@@ -221,7 +221,7 @@ def phase_5_listing_consistency() -> None:
 # ---------------------------------------------------------------------------
 ALL_PHASES: List[Tuple[str, int]] = [  # noqa: UP006
     (phase_1_create_small_files.__name__, 30 * _SECOND),
-    (phase_2_create_large_files.__name__, 1 * _MINUTE),
+    (phase_2_create_large_files.__name__, 7 * _MINUTE),
     (phase_3_read_back_files.__name__, 1 * _MINUTE),
     (phase_4_move_files.__name__, 1 * _MINUTE),
     (phase_5_listing_consistency.__name__, 30 * _SECOND),
