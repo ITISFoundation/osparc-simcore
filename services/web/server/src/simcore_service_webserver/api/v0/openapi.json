@@ -2711,6 +2711,22 @@
             }
           },
           {
+            "name": "registered",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Registered"
+            }
+          },
+          {
             "name": "product_name",
             "in": "query",
             "required": false,
