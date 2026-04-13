@@ -27,7 +27,7 @@ from models_library.celery import (
     TaskStreamItem,
     TaskUUID,
 )
-from models_library.progress_bar import ProgressReport
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from pydantic import TypeAdapter
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
@@ -286,13 +286,35 @@ class CeleryTaskManager:
         if task_state in {TaskState.STARTED, TaskState.RETRY}:
             progress = await self._task_store.get_task_progress(task_key)
             if progress is not None:
-                return progress
+                return await self._enrich_progress_with_description(task_key, progress)
 
         if task_state in TASK_DONE_STATES:
-            return ProgressReport(actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE)
+            return await self._enrich_progress_with_description(
+                task_key,
+                ProgressReport(actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE),
+            )
 
         # task is pending
-        return ProgressReport(actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE)
+        return await self._enrich_progress_with_description(
+            task_key,
+            ProgressReport(actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE),
+        )
+
+    async def _enrich_progress_with_description(self, task_key: TaskKey, progress: ProgressReport) -> ProgressReport:
+        if progress.message is not None:
+            return progress
+        metadata = await self._task_store.get_task_metadata(task_key)
+        if metadata is not None and metadata.description is not None:
+            return progress.model_copy(
+                update={
+                    "message": ProgressStructuredMessage(
+                        description=metadata.description,
+                        current=progress.actual_value,
+                        total=int(progress.total),
+                    )
+                }
+            )
+        return progress
 
     @make_async()
     def _get_task_celery_state(self, task_key: TaskKey) -> TaskState:
