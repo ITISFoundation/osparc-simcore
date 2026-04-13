@@ -122,6 +122,10 @@ async def list_user_accounts(
         list[AccountRequestStatus] | None,
         doc("List of any account request statuses to filter by"),
     ] = None,
+    filter_registered: Annotated[
+        bool | None,
+        doc("Filters by registration completion status"),
+    ] = None,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
 ) -> Annotated[
@@ -141,6 +145,7 @@ async def list_user_accounts(
         engine,
         product_name=product_name,
         filter_any_account_request_status=filter_any_account_request_status,
+        filter_registered=filter_registered,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
     )

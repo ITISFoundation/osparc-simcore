@@ -469,6 +469,156 @@ async def test_list_users_accounts(  # noqa: PLR0915
         UserRole.PRODUCT_OWNER,
     ],
 )
+async def test_list_users_accounts_with_review_status_and_registered_filters(
+    client: TestClient,
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+    mock_notifications_preview_template: AsyncMock,
+):
+    assert client.app
+
+    list_url = client.app.router["list_users_accounts"].url_for()
+
+    async def _pre_register(email: str) -> None:
+        form_data = account_request_form.copy()
+        form_data["firstName"] = faker.first_name()
+        form_data["lastName"] = faker.last_name()
+        form_data["email"] = email
+
+        resp = await client.post(
+            "/v0/admin/user-accounts:pre-register",
+            json=form_data,
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+        )
+        await assert_status(resp, status.HTTP_200_OK)
+
+    async def _approve(email: str) -> None:
+        preview_url = client.app.router["preview_approval_user_account"].url_for()
+        resp = await client.post(
+            f"{preview_url}",
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+            json={
+                "email": email,
+                "invitation": {"trialAccountDays": 7},
+            },
+        )
+        preview_data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        approve_url = client.app.router["approve_user_account"].url_for()
+        resp = await client.post(
+            f"{approve_url}",
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+            json={"email": email, "invitationUrl": preview_data["invitationUrl"]},
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    async def _reject(email: str) -> None:
+        reject_url = client.app.router["reject_user_account"].url_for()
+        resp = await client.post(
+            f"{reject_url}",
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+            json={"email": email},
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # pending + unregistered
+    pending_unregistered_email = faker.email()
+    await _pre_register(pending_unregistered_email)
+
+    # pending + registered (anomaly): pre-register first, then create the user
+    pending_registered_email = faker.email()
+    await _pre_register(pending_registered_email)
+    await _auth_service.create_user(
+        client.app,
+        email=pending_registered_email,
+        password=DEFAULT_TEST_PASSWORD,
+        status_upon_creation=UserStatus.ACTIVE,
+        expires_at=None,
+    )
+
+    # reviewed + unregistered
+    reviewed_unregistered_email = faker.email()
+    await _pre_register(reviewed_unregistered_email)
+    await _reject(reviewed_unregistered_email)
+
+    # reviewed + registered
+    reviewed_registered_email = faker.email()
+    await _pre_register(reviewed_registered_email)
+    await _approve(reviewed_registered_email)
+    await _auth_service.create_user(
+        client.app,
+        email=reviewed_registered_email,
+        password=DEFAULT_TEST_PASSWORD,
+        status_upon_creation=UserStatus.ACTIVE,
+        expires_at=None,
+    )
+
+    scenarios = [
+        (
+            {"review_status": "PENDING", "registered": "true", "limit": 50, "offset": 0},
+            {pending_registered_email},
+            True,
+            {"PENDING"},
+        ),
+        (
+            {"review_status": "PENDING", "registered": "false", "limit": 50, "offset": 0},
+            {pending_unregistered_email},
+            False,
+            {"PENDING"},
+        ),
+        (
+            {"review_status": "REVIEWED", "registered": "true", "limit": 50, "offset": 0},
+            {reviewed_registered_email},
+            True,
+            {"APPROVED", "REJECTED"},
+        ),
+        (
+            {"review_status": "REVIEWED", "registered": "false", "limit": 50, "offset": 0},
+            {reviewed_unregistered_email},
+            False,
+            {"APPROVED", "REJECTED"},
+        ),
+    ]
+
+    for params, expected_emails, expected_registered, expected_review_statuses in scenarios:
+        resp = await client.get(
+            f"{list_url}",
+            params=params,
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+        )
+        assert resp.status == status.HTTP_200_OK
+        payload = await resp.json()
+        page = Page[UserAccountGet].model_validate(payload)
+
+        returned_emails = {u.email for u in page.data}
+        assert expected_emails.issubset(returned_emails)
+        assert all(u.registered is expected_registered for u in page.data)
+        assert all(u.account_request_status in expected_review_statuses for u in page.data)
+
+        # The total count must come from the filtered DB result, not from page length.
+        total_with_large_page = page.meta.total
+        resp = await client.get(
+            f"{list_url}",
+            params={**params, "limit": 1, "offset": 0},
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+        )
+        assert resp.status == status.HTTP_200_OK
+        paged_payload = await resp.json()
+        paged = Page[UserAccountGet].model_validate(paged_payload)
+        assert paged.meta.total == total_with_large_page
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.PRODUCT_OWNER,
+    ],
+)
 async def test_reject_user_account(
     client: TestClient,
     logged_user: UserInfoDict,

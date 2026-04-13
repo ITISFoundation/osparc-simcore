@@ -97,6 +97,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         request.app,
         product_name=target_product_name,
         filter_any_account_request_status=filter_any_account_request_status,
+        filter_registered=query_params.registered,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
     )
