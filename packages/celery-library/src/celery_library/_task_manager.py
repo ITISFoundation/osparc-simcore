@@ -370,6 +370,13 @@ class CeleryTaskManager:
             is_successful = group_result.successful() if is_done else False
 
             total_count = len(task_uuids)
+            progress_report = await self._enrich_progress_with_description(
+                group_key,
+                ProgressReport(
+                    actual_value=float(total_count) if is_done else float(completed_count),
+                    total=float(total_count),
+                ),
+            )
             return GroupStatus(
                 group_uuid=group_uuid,
                 task_uuids=task_uuids,
@@ -377,10 +384,7 @@ class CeleryTaskManager:
                 total_count=total_count,
                 is_done=is_done,
                 is_successful=is_successful,
-                progress_report=ProgressReport(
-                    actual_value=float(total_count) if is_done else float(completed_count),
-                    total=float(total_count),
-                ),
+                progress_report=progress_report,
             )
 
     async def _get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus:
