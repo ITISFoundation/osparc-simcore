@@ -289,7 +289,7 @@ services:
       retries: 3
 
   traefik:
-    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
+    image: "traefik:v3.6.7@sha256:a9890c898f379c1905ee5b28342f6b408dc863f08db2dab20e46c267d1ff463a"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
