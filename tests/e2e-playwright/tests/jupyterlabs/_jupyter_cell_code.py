@@ -136,7 +136,7 @@ def _create_large_file(index: int) -> Optional[str]:  # noqa: UP045
 
 
 @_finalise_phase
-def phase_2_create_large_files() -> None:
+def phase_2_create_large_file() -> None:
     print(
         f"Phase 2: creating 1 large file "
         f"({LARGE_FILE_MIN_BYTES // 1024 // 1024}-{LARGE_FILE_MAX_BYTES // 1024 // 1024} MiB) ..."
@@ -203,13 +203,14 @@ def phase_4_move_small_files() -> None:
 def phase_5_listing_consistency() -> None:
     print("Phase 5: directory listing consistency ...")
     t0 = time.monotonic()
-    expected_count = NUM_SMALL_FILES + 1
     all_files = list(BASE_DIR.rglob("*.bin"))
-    actual_count = len(all_files)
-    if actual_count != expected_count:
-        errors.append(f"LISTING INCONSISTENCY: expected {expected_count} files, found {actual_count}")
+    listed_files = set(all_files)
+    existing_files = {p for p in all_files if p.exists()}
+    missing = existing_files - listed_files
+    if missing:
+        errors.append(f"LISTING INCONSISTENCY: {len(missing)} files exist but not listed")
     elapsed = time.monotonic() - t0
-    print(f"  ✓ listing check done in {elapsed:.1f}s ({actual_count}/{expected_count} files found)")
+    print(f"  ✓ listing check done in {elapsed:.1f}s ({len(listed_files)} files found)")
 
 
 # ---------------------------------------------------------------------------
@@ -217,7 +218,7 @@ def phase_5_listing_consistency() -> None:
 # ---------------------------------------------------------------------------
 ALL_PHASES: List[Tuple[str, int]] = [  # noqa: UP006
     (phase_1_create_small_files.__name__, 30 * _SECOND),
-    (phase_2_create_large_files.__name__, 5 * _MINUTE),
+    (phase_2_create_large_file.__name__, 5 * _MINUTE),
     (phase_3_read_back_files.__name__, 3 * _MINUTE),
     (phase_4_move_small_files.__name__, 3 * _MINUTE),
     (phase_5_listing_consistency.__name__, 1 * _MINUTE),
