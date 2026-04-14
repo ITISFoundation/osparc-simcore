@@ -2,8 +2,10 @@ import contextlib
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from itertools import product
 from typing import TYPE_CHECKING, Final
 
+from common_library.json_serialization import json_dumps
 from models_library.celery import (
     WILDCARD,
     ExecutionMetadata,
@@ -25,9 +27,10 @@ _CELERY_TASK_DELIMTATOR: Final[str] = ":"
 
 _CELERY_TASK_PREFIX: Final[str] = "celery-task-"
 _CELERY_TASK_ID_KEY_ENCODING: Final[str] = "utf-8"
-_CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_EXEC_METADATA_KEY: Final[str] = "exec-meta"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
+_CELERY_TASK_INDEX_PREFIX: Final[str] = "celery-task-index-"
+_UUID_KEY_PREFIX: Final[str] = "uuid="
 
 # Redis list to store streamed results
 _CELERY_TASK_STREAM_PREFIX: Final[str] = "celery-task-stream-"
@@ -51,6 +54,37 @@ def _build_redis_stream_meta_key(task_key: TaskKey) -> str:
     return f"{_build_redis_stream_key(task_key)}{_CELERY_TASK_DELIMTATOR}{_CELERY_TASK_STREAM_METADATA}"
 
 
+def _without_uuid_token(task_or_group_key: TaskKey | GroupKey) -> str:
+    return _CELERY_TASK_DELIMTATOR.join(
+        token for token in task_or_group_key.split(_CELERY_TASK_DELIMTATOR) if not token.startswith(_UUID_KEY_PREFIX)
+    )
+
+
+def _build_redis_owner_index_key(owner_key_without_uuid: str) -> str:
+    return f"{_CELERY_TASK_INDEX_PREFIX}{owner_key_without_uuid}"
+
+
+def _build_redis_owner_index_key_for_query(owner_metadata: OwnerMetadata) -> str:
+    owner_key = owner_metadata.model_dump_key(task_or_group_uuid=WILDCARD)
+    return _build_redis_owner_index_key(_without_uuid_token(owner_key))
+
+
+def _build_redis_owner_index_keys_for_task(task_or_group_key: TaskKey | GroupKey) -> list[str]:
+    owner_tokens = [
+        token.split("=", maxsplit=1) for token in _without_uuid_token(task_or_group_key).split(_CELERY_TASK_DELIMTATOR)
+    ]
+    wildcard_value = json_dumps(WILDCARD)
+
+    keys: list[str] = []
+    for mask in product((False, True), repeat=len(owner_tokens)):
+        query_owner_key = _CELERY_TASK_DELIMTATOR.join(
+            f"{key}={wildcard_value if use_wildcard else value}"
+            for (key, value), use_wildcard in zip(owner_tokens, mask, strict=True)
+        )
+        keys.append(_build_redis_owner_index_key(query_owner_key))
+    return keys
+
+
 @dataclass(frozen=True)
 class RedisTaskStore:
     _redis_client_sdk: RedisClientSDK
@@ -62,15 +96,19 @@ class RedisTaskStore:
         task_keys: list[TaskKey],
         expiry: timedelta,
     ) -> None:
-        group_key = _build_redis_task_or_group_key(group_key)
+        redis_group_key = _build_redis_task_or_group_key(group_key)
         pipe = self._redis_client_sdk.redis.pipeline()
+        index_score = datetime.now(tz=UTC).timestamp()
+
         pipe.hset(
-            name=group_key,
+            name=redis_group_key,
             key=_CELERY_TASK_EXEC_METADATA_KEY,
             value=execution_metadata.model_dump_json(),
         )
+        for index_key in _build_redis_owner_index_keys_for_task(group_key):
+            pipe.zadd(index_key, {group_key: index_score})
 
-        # group tasks
+        # group sub-tasks: store hash only, no ZSET index (filtered out in list_tasks)
         for task_key, (task_execution_metadata, _) in zip(task_keys, execution_metadata.tasks, strict=True):
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
@@ -79,7 +117,7 @@ class RedisTaskStore:
             )
         await pipe.execute()
         await self._redis_client_sdk.redis.expire(
-            group_key,
+            redis_group_key,
             expiry,
         )
 
@@ -90,23 +128,29 @@ class RedisTaskStore:
         expiry: timedelta,
     ) -> None:
         redis_key = _build_redis_task_or_group_key(task_key)
-        await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.hset(
-                name=redis_key,
-                key=_CELERY_TASK_EXEC_METADATA_KEY,
-                value=execution_metadata.model_dump_json(),
-            )
+        index_score = datetime.now(tz=UTC).timestamp()
+
+        pipe = self._redis_client_sdk.redis.pipeline()
+        pipe.hset(
+            name=redis_key,
+            key=_CELERY_TASK_EXEC_METADATA_KEY,
+            value=execution_metadata.model_dump_json(),
         )
+        for index_key in _build_redis_owner_index_keys_for_task(task_key):
+            pipe.zadd(index_key, {task_key: index_score})
+        await pipe.execute()
+
         await self._redis_client_sdk.redis.expire(
             redis_key,
             expiry,
         )
 
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
+        redis_key = _build_redis_task_or_group_key(task_key)
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
-                _build_redis_task_or_group_key(task_key),
-                _CELERY_TASK_EXEC_METADATA_KEY,
+                name=redis_key,
+                key=_CELERY_TASK_EXEC_METADATA_KEY,
             )
         )
         if not raw_result:
@@ -143,23 +187,25 @@ class RedisTaskStore:
             return None
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
-        search_key = _CELERY_TASK_PREFIX + owner_metadata.model_dump_key(task_or_group_uuid=WILDCARD)
+        owner_index_key = _build_redis_owner_index_key_for_query(owner_metadata)
 
-        keys: list[str] = []
+        raw_members = await self._redis_client_sdk.redis.zrange(owner_index_key, 0, -1)
+        if not raw_members:
+            return []
+
+        members = [m.decode(_CELERY_TASK_ID_KEY_ENCODING) if isinstance(m, bytes) else m for m in raw_members]
+
         pipe = self._redis_client_sdk.redis.pipeline()
-        async for key in self._redis_client_sdk.redis.scan_iter(
-            match=search_key, count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
-        ):
-            # fake redis (tests) returns bytes, real redis returns str
-            dec_key = key.decode(_CELERY_TASK_ID_KEY_ENCODING) if isinstance(key, bytes) else key
-            keys.append(dec_key)
-            pipe.hget(dec_key, _CELERY_TASK_EXEC_METADATA_KEY)
+        for member in members:
+            pipe.hget(_build_redis_task_or_group_key(member), _CELERY_TASK_EXEC_METADATA_KEY)
 
         results = await pipe.execute()
 
         tasks = []
-        for key, raw_metadata in zip(keys, results, strict=True):
+        stale_members: list[str] = []
+        for member, raw_metadata in zip(members, results, strict=True):
             if raw_metadata is None:
+                stale_members.append(member)
                 continue
 
             with contextlib.suppress(ValidationError):
@@ -169,17 +215,22 @@ class RedisTaskStore:
 
                 tasks.append(
                     Task(
-                        uuid=OwnerMetadata.get_task_or_group_uuid(key),
+                        uuid=OwnerMetadata.get_task_or_group_uuid(member),
                         metadata=execution_metadata,
                     )
                 )
 
+        if stale_members:
+            await self._redis_client_sdk.redis.zrem(owner_index_key, *stale_members)
+
         return tasks
 
     async def remove_task(self, task_key: TaskKey) -> None:
-        await self._redis_client_sdk.redis.delete(
-            _build_redis_task_or_group_key(task_key),
-        )
+        pipe = self._redis_client_sdk.redis.pipeline()
+        pipe.delete(_build_redis_task_or_group_key(task_key))
+        for index_key in _build_redis_owner_index_keys_for_task(task_key):
+            pipe.zrem(index_key, task_key)
+        await pipe.execute()
 
     async def set_task_progress(self, task_key: TaskKey, report: ProgressReport) -> None:
         await handle_redis_returns_union_types(

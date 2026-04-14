@@ -251,6 +251,30 @@ async def test_listing_task_uuids_contains_submitted_task(
     assert any(task.uuid == task_uuid for task in tasks)
 
 
+async def test_listing_tasks_uses_zset_index_and_not_scan(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    task_uuid = await task_manager.submit_task(
+        TaskExecutionMetadata(
+            name=dreamer_task.__name__,
+        ),
+        owner_metadata=fake_owner_metadata,
+    )
+
+    def _forbid_scan_iter(*args, **kwargs):
+        msg = "list_tasks must not use redis.scan_iter"
+        raise AssertionError(msg)
+
+    redis_client = task_manager._task_store._redis_client_sdk.redis  # noqa: SLF001
+    monkeypatch.setattr(redis_client, "scan_iter", _forbid_scan_iter)
+
+    tasks = await task_manager.list_tasks(fake_owner_metadata)
+    assert any(task.uuid == task_uuid for task in tasks)
+
+
 async def test_filtering_listing_tasks(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
