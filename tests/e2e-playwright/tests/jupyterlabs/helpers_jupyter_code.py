@@ -5,15 +5,54 @@ from pathlib import Path
 from typing import Final
 
 from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER, FAIL_MARKER
-from playwright.sync_api import FrameLocator, expect
+from playwright.sync_api import FrameLocator, Locator, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import ByteSize
 from pytest_simcore.helpers.datetime_tools import timedelta_as_minute_second_ms
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import SECOND
 
 _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
+_DISMISS_DIALOG_POLL_MS: Final[int] = 2 * SECOND
 
 _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_code.py"
+
+
+def _dismiss_dialogs(iframe: FrameLocator) -> None:
+    """Dismiss any JupyterLab modal dialogs (e.g. 'File Changed') that may pop up."""
+    dialog = iframe.locator(".jp-Dialog")
+    if dialog.count() == 0:
+        return
+
+    for btn_name in ("Dismiss", "OK", "Overwrite", "Revert"):
+        btn = dialog.locator(f".jp-mod-accept:has-text('{btn_name}')")
+        if btn.count() > 0:
+            btn.first.click()
+            return
+
+
+def _expect_with_dialog_dismissal(iframe: FrameLocator, output_locator: Locator, timeout: int) -> None:
+    """Wait for *COMPLETE_MARKER* while periodically dismissing JupyterLab dialogs.
+
+    Playwright sync API is not thread-safe, so we poll on the main thread:
+    try a short ``expect`` wait, dismiss any dialogs, repeat until the
+    total *timeout* (ms) is exhausted.
+    """
+    remaining = timeout
+    last_error: AssertionError | PlaywrightTimeoutError | None = None
+    while remaining > 0:
+        wait_slice = min(_DISMISS_DIALOG_POLL_MS, remaining)
+        try:
+            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=wait_slice)
+            return
+        except (AssertionError, PlaywrightTimeoutError) as error:
+            last_error = error
+            remaining -= wait_slice
+            if remaining > 0:
+                _dismiss_dialogs(iframe)
+
+    if last_error is not None:
+        raise last_error
 
 
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
@@ -26,12 +65,16 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
         # count existing outputs so we can target the new cell's output by index
         output_count_before = iframe.locator(".jp-OutputArea-output").count()
 
+        _dismiss_dialogs(iframe)
+
         cell = iframe.get_by_label("files_creation.ipynb").get_by_role("textbox").last
         cell.fill(code)
         cell.press("Shift+Enter")
 
         output_locator = iframe.locator(".jp-OutputArea-output").nth(output_count_before)
-        expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=timeout)
+
+        _expect_with_dialog_dismissal(iframe, output_locator, timeout)
+
         expect(output_locator).not_to_contain_text(FAIL_MARKER)
 
         # scroll the notebook so the latest output is visible
