@@ -286,21 +286,21 @@ class CeleryTaskManager:
         if task_state in {TaskState.STARTED, TaskState.RETRY}:
             progress = await self._task_store.get_task_progress(task_key)
             if progress is not None:
-                return await self._enrich_progress_with_description(task_key, progress)
+                return await self._get_progress_with_description(task_key, progress)
 
         if task_state in TASK_DONE_STATES:
-            return await self._enrich_progress_with_description(
+            return await self._get_progress_with_description(
                 task_key,
                 ProgressReport(actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE),
             )
 
         # task is pending
-        return await self._enrich_progress_with_description(
+        return await self._get_progress_with_description(
             task_key,
             ProgressReport(actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE),
         )
 
-    async def _enrich_progress_with_description(self, task_key: TaskKey, progress: ProgressReport) -> ProgressReport:
+    async def _get_progress_with_description(self, task_key: TaskKey, progress: ProgressReport) -> ProgressReport:
         if progress.message is not None:
             return progress
         metadata = await self._task_store.get_task_metadata(task_key)
@@ -370,7 +370,7 @@ class CeleryTaskManager:
             is_successful = group_result.successful() if is_done else False
 
             total_count = len(task_uuids)
-            progress_report = await self._enrich_progress_with_description(
+            progress_report = await self._get_progress_with_description(
                 group_key,
                 ProgressReport(
                     actual_value=float(total_count) if is_done else float(completed_count),
