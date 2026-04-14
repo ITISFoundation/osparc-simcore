@@ -42,8 +42,9 @@ def _prepare_celery_messages(message: Message) -> list[dict[str, Any]]:
 
 def _get_task_description(message: Message) -> str | None:
     if message.channel == Channel.email:
-        assert isinstance(message, EmailMessage)  # nosec
-        return message.content.subject
+        if isinstance(message, EmailMessage):
+            return message.content.subject
+        return None
     return None
 
 
