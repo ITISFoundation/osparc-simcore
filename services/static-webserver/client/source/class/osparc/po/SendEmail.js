@@ -87,7 +87,7 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __populateEmailTemplates: function(selectBox) {
-      osparc.message.Messages.fetchEmailTemplates()
+      osparc.message.Messages.fetchEmailEmptyTemplate()
         .then(templates => {
           templates.forEach(template => {
             const templateName = template["ref"]["templateName"];
