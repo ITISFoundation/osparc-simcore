@@ -145,6 +145,7 @@ def setup_file_notification_subscriber(app: FastAPI) -> None:
     async def _startup() -> None:
         settings: ApplicationSettings = app.state.settings
         topic = f"{settings.DY_SIDECAR_PROJECT_ID}.{settings.DY_SIDECAR_NODE_ID}"
+        app.state.file_notification_queue = None
 
         with log_context(_logger, logging.INFO, msg=f"subscribing to file notifications with topic={topic}"):
             rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
@@ -157,10 +158,11 @@ def setup_file_notification_subscriber(app: FastAPI) -> None:
             app.state.file_notification_queue = subscribed_queue
 
     async def _stop() -> None:
-        queue_name: str = app.state.file_notification_queue
+        queue_name: str | None = app.state.file_notification_queue
         with log_context(_logger, logging.INFO, msg=f"unsubscribing from file notifications with queue={queue_name}"):
             rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-            await rabbit_client.unsubscribe(queue_name)
+            if queue_name is not None:
+                await rabbit_client.unsubscribe(queue_name)
 
     app.add_event_handler("startup", _startup)
     app.add_event_handler("shutdown", _stop)
