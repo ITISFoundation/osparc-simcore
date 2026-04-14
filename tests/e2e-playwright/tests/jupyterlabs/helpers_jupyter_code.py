@@ -5,14 +5,14 @@ from pathlib import Path
 from typing import Final
 
 from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER, FAIL_MARKER
-from playwright.sync_api import FrameLocator, expect
+from playwright.sync_api import FrameLocator, Locator, expect
 from pydantic import ByteSize
 from pytest_simcore.helpers.datetime_tools import timedelta_as_minute_second_ms
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import SECOND
 
 _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
-_DIMSMISS_DIALOG_POLL_S: Final[float] = timedelta(seconds=2).total_seconds()
+_DISMISS_DIALOG_POLL_MS: Final[int] = 2 * SECOND
 
 _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_code.py"
 
@@ -23,6 +23,26 @@ def _dismiss_dialogs(iframe: FrameLocator) -> None:
         btn = iframe.locator(f".jp-Dialog .jp-mod-accept:has-text('{btn_name}')")
         while btn.count() > 0:
             btn.first.click()
+
+
+def _expect_with_dialog_dismissal(iframe: FrameLocator, output_locator: Locator, timeout: int) -> None:
+    """Wait for *COMPLETE_MARKER* while periodically dismissing JupyterLab dialogs.
+
+    Playwright sync API is not thread-safe, so we poll on the main thread:
+    try a short ``expect`` wait, dismiss any dialogs, repeat until the
+    total *timeout* (ms) is exhausted.
+    """
+    remaining = timeout
+    while remaining > 0:
+        try:
+            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=min(_DISMISS_DIALOG_POLL_MS, remaining))
+            return
+        except (AssertionError, TimeoutError):
+            remaining -= _DISMISS_DIALOG_POLL_MS
+            _dismiss_dialogs(iframe)
+
+    # final attempt — raises the real error on failure
+    expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=_DISMISS_DIALOG_POLL_MS)
 
 
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
@@ -43,18 +63,7 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
 
         output_locator = iframe.locator(".jp-OutputArea-output").nth(output_count_before)
 
-        # poll for the marker, dismissing any dialogs that appear mid-execution
-        deadline = timeout
-        while deadline > 0:
-            _dismiss_dialogs(iframe)
-            try:
-                expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=_DIMSMISS_DIALOG_POLL_S)
-                break
-            except (AssertionError, TimeoutError):
-                deadline -= _DIMSMISS_DIALOG_POLL_S
-        else:
-            # final check — will raise the proper expect error on timeout
-            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=_DIMSMISS_DIALOG_POLL_S)
+        _expect_with_dialog_dismissal(iframe, output_locator, timeout)
 
         expect(output_locator).not_to_contain_text(FAIL_MARKER)
 
