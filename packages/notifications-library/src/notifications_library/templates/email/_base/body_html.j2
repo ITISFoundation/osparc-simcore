@@ -46,8 +46,8 @@
 {%- set product_company_address = footer.company_address if footer else '' -%}
 {%- set product_company_links = footer.company_links if footer else [] -%}
 {%- set strong_button_color = product.ui.strong_color | default(default_strong_color) -%}
-{%- set strong_button_td_style = "border-radius: 4px; background-color: " ~ strong_button_color ~ "; padding: 8px; text-align: center; color:white; border:none;  overflow:hidden; white-space:nowrap; outline:none;" -%}
-{%- set strong_button_link_style = "font-size: 16px; display: inline-block; color: #ffffff; text-decoration: none" -%}
+{%- set strong_button_td_style = "padding: 8px; text-align: center;" -%}
+{%- set strong_button_link_style = "font-size: 16px; display: inline-block; color: #ffffff; text-decoration: none; background-color: " ~ strong_button_color ~ "; padding: 8px 16px; border-radius: 4px; white-space: nowrap;" -%}
 {%- set paragraph_style_block -%}
   .content p {
     margin-top: 20px !important;
