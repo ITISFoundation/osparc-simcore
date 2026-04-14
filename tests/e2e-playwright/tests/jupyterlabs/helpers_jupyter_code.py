@@ -38,16 +38,20 @@ def _expect_with_dialog_dismissal(iframe: FrameLocator, output_locator: Locator,
     total *timeout* (ms) is exhausted.
     """
     remaining = timeout
+    last_error: AssertionError | TimeoutError | None = None
     while remaining > 0:
+        wait_slice = min(_DISMISS_DIALOG_POLL_MS, remaining)
         try:
-            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=min(_DISMISS_DIALOG_POLL_MS, remaining))
+            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=wait_slice)
             return
-        except (AssertionError, TimeoutError):
-            remaining -= _DISMISS_DIALOG_POLL_MS
-            _dismiss_dialogs(iframe)
+        except (AssertionError, TimeoutError) as error:
+            last_error = error
+            remaining -= wait_slice
+            if remaining > 0:
+                _dismiss_dialogs(iframe)
 
-    # final attempt — raises the real error on failure
-    expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=_DISMISS_DIALOG_POLL_MS)
+    if last_error is not None:
+        raise last_error
 
 
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
