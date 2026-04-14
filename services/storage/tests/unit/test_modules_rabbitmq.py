@@ -88,3 +88,27 @@ async def test_post_file_notification_does_not_raise_on_publish_error(
         user_id=1,
         file_id=file_id,
     )
+
+
+@pytest.mark.parametrize(
+    "file_id",
+    [
+        "{uuid}/invalid_node/data.csv",
+        "invalid_project/{uuid}/data.csv",
+        "invalid_project/invalid_node/data.csv",
+        "invalid_project/data.csv",
+        "data.csv",
+    ],
+)
+async def test_post_file_notification_warn_invalid_project_id_and_node_id(
+    mock_app: AsyncMock, file_id: str, faker: Faker
+):
+    await post_file_notification(
+        mock_app,
+        event_type=FileNotificationEventType.FILE_DELETED,
+        user_id=99,
+        file_id=file_id.format(uuid=faker.uuid4()),
+    )
+
+    mock_client = mock_app.state.rabbitmq_client
+    assert not mock_client.publish.called
