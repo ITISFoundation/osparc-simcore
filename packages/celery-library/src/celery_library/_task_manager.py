@@ -305,14 +305,14 @@ class CeleryTaskManager:
             return progress
         metadata = await self._task_store.get_task_metadata(task_key)
         if metadata is not None and metadata.description is not None:
-            return progress.model_copy(
-                update={
-                    "message": ProgressStructuredMessage(
-                        description=metadata.description,
-                        current=progress.actual_value,
-                        total=int(progress.total),
-                    )
-                }
+            return ProgressReport(
+                actual_value=progress.actual_value,
+                total=progress.total,
+                message=ProgressStructuredMessage(
+                    description=metadata.description,
+                    current=progress.actual_value,
+                    total=int(progress.total),
+                ),
             )
         return progress
 
