@@ -6,6 +6,7 @@ from typing import Final
 
 from _jupyter_cell_code import ALL_PHASES, COMPLETE_MARKER, FAIL_MARKER
 from playwright.sync_api import FrameLocator, Locator, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import ByteSize
 from pytest_simcore.helpers.datetime_tools import timedelta_as_minute_second_ms
 from pytest_simcore.helpers.logging_tools import log_context
@@ -38,13 +39,13 @@ def _expect_with_dialog_dismissal(iframe: FrameLocator, output_locator: Locator,
     total *timeout* (ms) is exhausted.
     """
     remaining = timeout
-    last_error: AssertionError | TimeoutError | None = None
+    last_error: AssertionError | PlaywrightTimeoutError | None = None
     while remaining > 0:
         wait_slice = min(_DISMISS_DIALOG_POLL_MS, remaining)
         try:
             expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=wait_slice)
             return
-        except (AssertionError, TimeoutError) as error:
+        except (AssertionError, PlaywrightTimeoutError) as error:
             last_error = error
             remaining -= wait_slice
             if remaining > 0:
