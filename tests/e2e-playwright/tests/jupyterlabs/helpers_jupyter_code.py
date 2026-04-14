@@ -19,10 +19,15 @@ _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_co
 
 def _dismiss_dialogs(iframe: FrameLocator) -> None:
     """Dismiss any JupyterLab modal dialogs (e.g. 'File Changed') that may pop up."""
+    dialog = iframe.locator(".jp-Dialog")
+    if dialog.count() == 0:
+        return
+
     for btn_name in ("Dismiss", "OK", "Overwrite", "Revert"):
-        btn = iframe.locator(f".jp-Dialog .jp-mod-accept:has-text('{btn_name}')")
-        while btn.count() > 0:
+        btn = dialog.locator(f".jp-mod-accept:has-text('{btn_name}')")
+        if btn.count() > 0:
             btn.first.click()
+            return
 
 
 def _expect_with_dialog_dismissal(iframe: FrameLocator, output_locator: Locator, timeout: int) -> None:
