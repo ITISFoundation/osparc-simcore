@@ -7,6 +7,11 @@
 {%- set email_container_style = "width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);" -%}
 {%- set header_style = "padding-bottom: 10px; margin-bottom: 20px;" -%}
 {%- set content_style = "color: #353638; font-size: 16px; line-height: 1.5; word-break: break-word;" -%}
+
+{%- set strong_button_color = product.ui.strong_color | default(default_strong_color) -%}
+{%- set strong_button_td_style = "border-radius: 4px; background-color: " ~ strong_button_color ~ "; padding: 10px; text-align: center; color:white; border:none;  overflow:hidden; white-space:nowrap; outline:none;" -%}
+{%- set strong_button_link_style = "font-size: 16px; display: inline-block; color: #ffffff; padding: 4px; text-decoration: none" -%}
+
 {%- set footer_style = "margin-top: 20px; padding-top: 15px; font-size: 14px; color: #353638;" -%}
 {%- set footer_social_link_style = "width: 28px; height: 28px; border-radius: 50%; background-color: #808080; color: #ffffff; text-decoration: none; display: block; text-align: center; line-height: 28px;" -%}
 {%- set footer_social_icon_wrapper_style = "display: block; width: 26px; height: 26px; margin: 3px auto 0;" -%}
@@ -45,8 +50,6 @@
 {%- set product_company_name = footer.company_name if footer else '' -%}
 {%- set product_company_address = footer.company_address if footer else '' -%}
 {%- set product_company_links = footer.company_links if footer else [] -%}
-{%- set strong_button_td_style = "border-radius: 4px; background-color: " ~ (product.ui.strong_color | default(default_strong_color)) ~ ";" -%}
-{%- set strong_button_link_style = "font-size: 16px; color: white; text-decoration: none; display: inline-block; padding: 10px 20px; text-align: center;" -%}
 {%- set paragraph_style_block -%}
   .content p {
     margin-top: 20px !important;
