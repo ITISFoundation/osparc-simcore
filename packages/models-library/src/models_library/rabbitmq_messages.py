@@ -2,7 +2,7 @@ import datetime
 import logging
 from abc import abstractmethod
 from decimal import Decimal
-from enum import Enum, IntEnum, auto
+from enum import IntEnum, auto
 from typing import Annotated, Any, Literal
 
 import arrow
@@ -26,10 +26,8 @@ type LogLevelInt = int
 type LogMessageStr = str
 
 
-class RabbitEventMessageType(str, Enum):
-    __slots__ = ()
-
-    RELOAD_IFRAME = "RELOAD_IFRAME"
+class RabbitEventMessageType(StrAutoEnum):
+    RELOAD_IFRAME = auto()
 
 
 class RabbitMessageBase(BaseModel):
