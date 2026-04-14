@@ -325,7 +325,11 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
     const resp = await fetch(url);
 
     if (!resp.ok) {
-      if (resp.statusText === 503) {
+      if (resp.status === 429) {
+        console.error("HTTP 429 Too Many Requests received from", url);
+        return { __tooManyRequests: true };
+      }
+      if (resp.status === 503) {
         console.log("SERVICE UNAVAILABLE");
       }
       console.log("RESP NOT OK", JSON.stringify(resp));
@@ -347,6 +351,10 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
     }
     return resp;
   }, host, endpoint, apiVersion);
+  if (resp && resp.__tooManyRequests) {
+    console.error("HTTP 429 Too Many Requests — exiting with code 173");
+    process.exit(173); // 429 mod 256
+  }
   return resp;
 }
 
