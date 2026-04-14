@@ -76,7 +76,7 @@ async def post_file_notification(
         node_id = NodeID(parts[1]) if len(parts) > 1 else None
 
         if project_id is None or node_id is None:
-            _logger.info(
+            _logger.warning(
                 "Skip notification for file_id=%s because project and node ids could not be extracted", file_id
             )
             return
