@@ -74,11 +74,11 @@ async def post_file_notification(
 
         try:
             project_id = ProjectID(parts[0]) if len(parts) > 0 else None
-        except (ValueError, ValidationError):
+        except ValueError:
             project_id = None
         try:
             node_id = NodeID(parts[1]) if len(parts) > 1 else None
-        except (ValueError, ValidationError):
+        except ValueError:
             node_id = None
 
         if project_id is None or node_id is None:

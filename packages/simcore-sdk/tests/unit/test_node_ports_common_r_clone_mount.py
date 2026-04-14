@@ -458,7 +458,7 @@ async def test_refresh_path(
         )
 
     # 1. create random files in S3
-    s3_create_files_checums: dict[Path, str] = dict(
+    s3_create_files_checksums: dict[Path, str] = dict(
         await asyncio.gather(
             *[
                 _upload_random_binary_file(
@@ -472,12 +472,12 @@ async def test_refresh_path(
             ]
         )
     )
-    assert len(s3_create_files_checums) == file_count
+    assert len(s3_create_files_checksums) == file_count
 
     s3_checksums = await _get_file_checksums_from_s3(s3_client, bucket_name, remote_path)
     assert len(s3_checksums) == file_count
 
-    assert s3_create_files_checums == s3_checksums
+    assert s3_create_files_checksums == s3_checksums
 
     # 2. ensure files are present on disk
     await r_clone_mount_manager.refresh_path(remote_path=f"{Path(remote_path) / sub_path}", recursive=recursive)
@@ -491,7 +491,7 @@ async def test_refresh_path(
     ):
         with attempt:
             local_checksums_2 = await _get_file_checksums_from_path(local_mount_path)
-            assert s3_create_files_checums == local_checksums_2
+            assert s3_create_files_checksums == local_checksums_2
 
     assert len(local_checksums_2) == file_count
 
