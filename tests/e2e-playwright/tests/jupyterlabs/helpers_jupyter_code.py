@@ -12,6 +12,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import SECOND
 
 _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
+_DIMSMISS_DIALOG_POLL_S: Final[float] = timedelta(seconds=2).total_seconds()
 
 _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_code.py"
 
@@ -44,17 +45,16 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
 
         # poll for the marker, dismissing any dialogs that appear mid-execution
         deadline = timeout
-        poll_interval = 2 * SECOND
         while deadline > 0:
             _dismiss_dialogs(iframe)
             try:
-                expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=poll_interval)
+                expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=_DIMSMISS_DIALOG_POLL_S)
                 break
             except (AssertionError, TimeoutError):
-                deadline -= poll_interval
+                deadline -= _DIMSMISS_DIALOG_POLL_S
         else:
             # final check — will raise the proper expect error on timeout
-            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=poll_interval)
+            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=_DIMSMISS_DIALOG_POLL_S)
 
         expect(output_locator).not_to_contain_text(FAIL_MARKER)
 
