@@ -39,7 +39,7 @@ _TENACITY_RETRY_PARAMS: dict = {
 }
 
 
-async def _fake_file_processor(celery_app: Celery, task_name: str, task_key: str, files: list[str]) -> str:
+async def fake_file_processor_impl(celery_app: Celery, task_name: str, task_key: str, files: list[str]) -> str:
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
@@ -57,9 +57,9 @@ async def _fake_file_processor(celery_app: Celery, task_name: str, task_key: str
 def fake_file_processor(task: Task, task_key: TaskKey, files: list[str]) -> str:
     assert task_key
     assert task.name
-    _logger.info("Calling _fake_file_processor")
+    _logger.info("Calling fake_file_processor_impl")
     return asyncio.run_coroutine_threadsafe(
-        _fake_file_processor(task.app, task.name, task.request.id, files),
+        fake_file_processor_impl(task.app, task.name, task.request.id, files),
         get_app_server(task.app).event_loop,
     ).result()
 
