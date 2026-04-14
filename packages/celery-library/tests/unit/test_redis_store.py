@@ -56,7 +56,7 @@ async def test_list_tasks_uses_zset_index_not_scan(
         expiry=timedelta(minutes=5),
     )
 
-    def _forbid_scan_iter(*_args, **_kwargs):
+    def _forbid_scan_iter(*_args: object, **_kwargs: object) -> None:
         msg = "list_tasks must not use redis.scan_iter"
         raise AssertionError(msg)
 
