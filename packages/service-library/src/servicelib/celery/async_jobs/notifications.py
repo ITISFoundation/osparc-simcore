@@ -45,7 +45,6 @@ async def submit_send_messages_task(
         GroupExecutionMetadata(
             name="send_messages",
             description=description,
-            ephemeral=description is None,
             tasks=[
                 (
                     GroupTaskExecutionMetadata(
