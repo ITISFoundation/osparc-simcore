@@ -54,6 +54,16 @@ async def test_confirmation_token_workflow(
     assert confirmation_link.startswith("https://example.com/auth/confirmation/")
     assert confirmation.code in confirmation_link
 
+    # Step 5: Verify X-Forwarded-Proto header is respected
+    request_behind_proxy = make_mocked_request(
+        "GET",
+        "http://example.com/auth/confirmation/{code}",
+        app=app,
+        headers={"Host": "example.com", "X-Forwarded-Proto": "https"},
+    )
+    confirmation_link_via_proxy = _confirmation_web.make_confirmation_link(request_behind_proxy, confirmation.code)
+    assert confirmation_link_via_proxy.startswith("https://example.com/auth/confirmation/")
+
 
 async def test_expired_confirmation_token(
     confirmation_service: ConfirmationService,
