@@ -300,10 +300,12 @@ class CeleryTaskManager:
             ProgressReport(actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE),
         )
 
-    async def _get_progress_with_description(self, task_key: TaskKey, progress: ProgressReport) -> ProgressReport:
+    async def _get_progress_with_description(
+        self, task_or_group_key: TaskKey | GroupKey, progress: ProgressReport
+    ) -> ProgressReport:
         if progress.message is not None:
             return progress
-        metadata = await self._task_store.get_task_metadata(task_key)
+        metadata = await self._task_store.get_task_metadata(task_or_group_key)
         if metadata is not None and metadata.description is not None:
             return progress.model_copy(
                 update={
