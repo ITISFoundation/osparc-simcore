@@ -32,6 +32,8 @@ MAX_LINK_CHUNK_BYTE_SIZE: Final[dict[LinkType, ByteSize]] = {
 
 MAX_CONCURRENT_S3_TASKS: Final[int] = 4
 
+MAX_CONCURRENT_FILE_DELETE_NOTIFICATIONS: Final[int] = 5
+
 
 # REST API ----------------------------
 MAX_CONCURRENT_REST_CALLS: Final[int] = 10
