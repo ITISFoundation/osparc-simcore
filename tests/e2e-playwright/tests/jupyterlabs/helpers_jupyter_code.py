@@ -16,6 +16,14 @@ _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
 _JUPYTER_CELL_CODE_PATH: Final[Path] = Path(__file__).parent / "_jupyter_cell_code.py"
 
 
+def _dismiss_dialogs(iframe: FrameLocator) -> None:
+    """Dismiss any JupyterLab modal dialogs (e.g. 'File Changed') that may pop up."""
+    for btn_name in ("Dismiss", "OK", "Overwrite", "Revert"):
+        btn = iframe.locator(f".jp-Dialog .jp-mod-accept:has-text('{btn_name}')")
+        while btn.count() > 0:
+            btn.first.click()
+
+
 def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_label: str, timeout: int) -> None:
     """Fill a new cell with *code*, execute it and wait for COMPLETE_MARKER."""
     with log_context(
@@ -26,12 +34,28 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
         # count existing outputs so we can target the new cell's output by index
         output_count_before = iframe.locator(".jp-OutputArea-output").count()
 
+        _dismiss_dialogs(iframe)
+
         cell = iframe.get_by_label("files_creation.ipynb").get_by_role("textbox").last
         cell.fill(code)
         cell.press("Shift+Enter")
 
         output_locator = iframe.locator(".jp-OutputArea-output").nth(output_count_before)
-        expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=timeout)
+
+        # poll for the marker, dismissing any dialogs that appear mid-execution
+        deadline = timeout
+        poll_interval = 2 * SECOND
+        while deadline > 0:
+            _dismiss_dialogs(iframe)
+            try:
+                expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=poll_interval)
+                break
+            except (AssertionError, TimeoutError):
+                deadline -= poll_interval
+        else:
+            # final check — will raise the proper expect error on timeout
+            expect(output_locator).to_contain_text(COMPLETE_MARKER, timeout=poll_interval)
+
         expect(output_locator).not_to_contain_text(FAIL_MARKER)
 
         # scroll the notebook so the latest output is visible

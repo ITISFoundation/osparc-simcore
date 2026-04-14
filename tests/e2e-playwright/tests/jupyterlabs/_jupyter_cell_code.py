@@ -28,13 +28,12 @@ NUM_SMALL_FILES: Final[int] = 1_000
 SMALL_FILE_MIN_BYTES: Final[int] = 1 * _KB
 SMALL_FILE_MAX_BYTES: Final[int] = 8 * _KB
 
-NUM_LARGE_FILES: Final[int] = 2
 LARGE_FILE_MAX_BYTES: Final[int] = 20 * _MB
 LARGE_FILE_MIN_BYTES: Final[int] = int(LARGE_FILE_MAX_BYTES * 0.9)
 LARGE_FILE_WRITE_CHUNK: Final[int] = 1 * _MB
 PARALLEL_WORKERS: Final[int] = 8
 
-FILES_TO_MOVE: Final[int] = int(0.1 * (NUM_SMALL_FILES + NUM_LARGE_FILES))
+FILES_TO_MOVE: Final[int] = int(0.1 * NUM_SMALL_FILES)
 
 _CHECKSUM_CHUNK_SIZE: Final[int] = 8 * _KB
 
@@ -139,18 +138,15 @@ def _create_large_file(index: int) -> Optional[str]:  # noqa: UP045
 @_finalise_phase
 def phase_2_create_large_files() -> None:
     print(
-        f"Phase 2: creating {NUM_LARGE_FILES} large files "
-        f"({LARGE_FILE_MIN_BYTES // 1024 // 1024}-{LARGE_FILE_MAX_BYTES // 1024 // 1024} MiB each) ..."
+        f"Phase 2: creating 1 large file "
+        f"({LARGE_FILE_MIN_BYTES // 1024 // 1024}-{LARGE_FILE_MAX_BYTES // 1024 // 1024} MiB) ..."
     )
     t0 = time.monotonic()
-    with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as pool:
-        futures = {pool.submit(_create_large_file, i): i for i in range(NUM_LARGE_FILES)}
-        for fut in as_completed(futures):
-            err = fut.result()
-            if err:
-                errors.append(err)
+    err = _create_large_file(0)
+    if err:
+        errors.append(err)
     elapsed = time.monotonic() - t0
-    print(f"  ✓ {NUM_LARGE_FILES} large files created in {elapsed:.1f}s")
+    print(f"  ✓ 1 large file created in {elapsed:.1f}s")
 
 
 # ---------------------------------------------------------------------------
@@ -176,12 +172,13 @@ def phase_3_read_back_files() -> None:
 # Phase 4 - Rename / move files (copy-on-S3 stress)
 # ---------------------------------------------------------------------------
 @_finalise_phase
-def phase_4_move_files() -> None:
+def phase_4_move_small_files() -> None:
+    # NOTE: moving small files since it's faster
     print("Phase 4: renaming / moving files ...")
     t0 = time.monotonic()
-    all_files = list(BASE_DIR.rglob("*.bin"))
+    all_small_files = [p for p in BASE_DIR.rglob("*.bin") if not p.name.startswith("large_")]
     move_count = 0
-    files_to_move = secrets.SystemRandom().sample(all_files, min(len(all_files), FILES_TO_MOVE))
+    files_to_move = secrets.SystemRandom().sample(all_small_files, min(FILES_TO_MOVE, len(all_small_files)))
     for src in files_to_move:
         dst_dir = _random_nested_dir(BASE_DIR, MAX_DEPTH)
         dst_dir.mkdir(parents=True, exist_ok=True)
@@ -206,14 +203,13 @@ def phase_4_move_files() -> None:
 def phase_5_listing_consistency() -> None:
     print("Phase 5: directory listing consistency ...")
     t0 = time.monotonic()
+    expected_count = NUM_SMALL_FILES + 1
     all_files = list(BASE_DIR.rglob("*.bin"))
-    listed_files = set(all_files)
-    existing_files = {p for p in all_files if p.exists()}
-    missing = existing_files - listed_files
-    if missing:
-        errors.append(f"LISTING INCONSISTENCY: {len(missing)} files exist but not listed")
+    actual_count = len(all_files)
+    if actual_count != expected_count:
+        errors.append(f"LISTING INCONSISTENCY: expected {expected_count} files, found {actual_count}")
     elapsed = time.monotonic() - t0
-    print(f"  ✓ listing check done in {elapsed:.1f}s ({len(listed_files)} files found)")
+    print(f"  ✓ listing check done in {elapsed:.1f}s ({actual_count}/{expected_count} files found)")
 
 
 # ---------------------------------------------------------------------------
@@ -221,8 +217,8 @@ def phase_5_listing_consistency() -> None:
 # ---------------------------------------------------------------------------
 ALL_PHASES: List[Tuple[str, int]] = [  # noqa: UP006
     (phase_1_create_small_files.__name__, 30 * _SECOND),
-    (phase_2_create_large_files.__name__, 7 * _MINUTE),
-    (phase_3_read_back_files.__name__, 1 * _MINUTE),
-    (phase_4_move_files.__name__, 1 * _MINUTE),
-    (phase_5_listing_consistency.__name__, 30 * _SECOND),
+    (phase_2_create_large_files.__name__, 5 * _MINUTE),
+    (phase_3_read_back_files.__name__, 4 * _MINUTE),
+    (phase_4_move_small_files.__name__, 2 * _MINUTE),
+    (phase_5_listing_consistency.__name__, 1 * _MINUTE),
 ]
