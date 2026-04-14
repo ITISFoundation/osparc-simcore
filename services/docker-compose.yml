@@ -289,7 +289,7 @@ services:
       retries: 3
 
   traefik:
-    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
+    image: "traefik:v3.6.7@sha256:a9890c898f379c1905ee5b28342f6b408dc863f08db2dab20e46c267d1ff463a"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
@@ -965,9 +965,6 @@ services:
 
       # WEBSERVER_DIRECTOR_V2
 
-      # WEBSERVER_EMAIL
-      WEBSERVER_EMAIL: ${WEBSERVER_EMAIL}
-
       WEBSERVER_EXPORTER: ${WEBSERVER_EXPORTER}
 
       # WEBSERVER_GARBAGE_COLLECTOR
@@ -1160,7 +1157,6 @@ services:
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_GC_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_GC_DIAGNOSTICS}
-      WEBSERVER_EMAIL: ${WB_GC_EMAIL}
       WEBSERVER_EXPORTER: ${WB_GC_EXPORTER}
       WEBSERVER_FOGBUGZ: "null"
       WEBSERVER_FOLDERS: ${WB_GC_FOLDERS}
@@ -1256,7 +1252,6 @@ services:
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: 0
       WEBSERVER_DIRECTOR_V2: "null"
-      WEBSERVER_EMAIL: "null"
       WEBSERVER_EXPORTER: "null"
       WEBSERVER_FOGBUGZ: "null"
       WEBSERVER_FOLDERS: 0
@@ -1328,7 +1323,6 @@ services:
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_DB_EL_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_DB_EL_DIAGNOSTICS}
-      WEBSERVER_EMAIL: ${WB_DB_EL_EMAIL}
       WEBSERVER_EXPORTER: ${WB_DB_EL_EXPORTER}
       WEBSERVER_FOLDERS: ${WB_DB_EL_FOLDERS}
       WEBSERVER_FRONTEND: ${WB_DB_EL_FRONTEND}
@@ -1497,14 +1491,14 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment: &notifications_environment
+    environment:
       <<:
         - *common_logging_environments
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
         - *tracing_open_telemetry_environments
-
+      NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
       NOTIFICATIONS_WORKER_MODE: "false"
@@ -1518,7 +1512,10 @@ services:
     hostname: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<:
-        - *notifications_environment
+        - *common_logging_environments
+        - *postgres_settings
+        - *rabbit_settings
+        - *redis_settings
         - *smtp_settings
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
