@@ -159,6 +159,7 @@ class ExecutorType(StrAutoEnum):
 class BaseExecutionMetadata(BaseModel):
     name: TaskName | GroupName
     type: ExecutorType
+    description: str | None = None
     ephemeral: bool = True
     queue: str = DEFAULT_QUEUE
 

@@ -18,12 +18,14 @@ from ._config_provider import MountRemoteType, get_config_content
 from ._container import ContainerManager, RemoteControlHttpClient
 from ._errors import (
     MountAlreadyStartedError,
+    NoMountFoundForRemotePathError,
 )
 from ._models import DelegateInterface, MountActivity, MountId
 from ._utils import get_mount_id
 
 _logger = logging.getLogger(__name__)
 
+_MIN_PATH_PARTS: Final[NonNegativeInt] = 3
 
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 _MOUNT_RESPONSIVE_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=6)
@@ -135,6 +137,9 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         )
         return self._consecutive_unresponsive_count < _CONSECUTIVE_UNRESPONSIVE_THRESHOLD
 
+    async def refresh_path(self, *, dir_to_refresh: str, recursive: bool) -> None:
+        await self._rc_http_client.post_vfs_refresh(dir_to_refresh, recursive=recursive)
+
 
 class RCloneMountManager:
     def __init__(
@@ -149,6 +154,7 @@ class RCloneMountManager:
         self.delegate = delegate
 
         self._tracked_mounts: dict[MountId, _TrackedMount] = {}
+        self._reverse_path_search: dict[MountId, StorageFileID] = {}
         self._task_ensure_mounts_working: asyncio.Task[None] | None = None
 
     async def ensure_mounted(
@@ -186,8 +192,11 @@ class RCloneMountManager:
                 index=index,
                 delegate=self.delegate,
             )
+
             await tracked_mount.start_mount()
+
             self._tracked_mounts[mount_id] = tracked_mount
+            self._reverse_path_search[mount_id] = remote_path
 
     def is_mount_tracked(self, local_mount_path: Path, index: NonNegativeInt) -> bool:
         mount_id = get_mount_id(local_mount_path, index)
@@ -197,10 +206,30 @@ class RCloneMountManager:
         with log_context(_logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True):
             mount_id = get_mount_id(local_mount_path, index)
             tracked_mount = self._tracked_mounts.pop(mount_id)
+            self._reverse_path_search.pop(mount_id)
 
             await tracked_mount.wait_for_all_transfers_to_complete()
 
             await tracked_mount.stop_mount()
+
+    async def refresh_path(self, remote_path: StorageFileID, *, recursive: bool = False) -> None:
+        with log_context(_logger, logging.INFO, f"refreshing mount for {remote_path=}", log_duration=True):
+            remote_path_parts = remote_path.split("/")
+            assert len(remote_path_parts) >= _MIN_PATH_PARTS, "Expected {project_id}/{node_id}/DIRECTORY_PATH"
+
+            base_s3_path = "/".join(remote_path_parts[:_MIN_PATH_PARTS])
+            tracked_mount: _TrackedMount | None = None
+
+            for mount_id, remote in self._reverse_path_search.items():
+                if base_s3_path == remote:
+                    tracked_mount = self._tracked_mounts[mount_id]
+                    break
+
+            if tracked_mount is None:
+                raise NoMountFoundForRemotePathError(remote_path=remote_path)
+
+            dir_to_refresh = "/".join(remote_path_parts[_MIN_PATH_PARTS:])
+            await tracked_mount.refresh_path(dir_to_refresh=dir_to_refresh, recursive=recursive)
 
     async def _worker_ensure_mount_is_responsive(self) -> None:
         mount_restored = False
