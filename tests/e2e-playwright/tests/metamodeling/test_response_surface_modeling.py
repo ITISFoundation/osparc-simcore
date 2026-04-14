@@ -260,6 +260,11 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
                 f"Failed to connect probe: {connect_probe_response.status} {connect_probe_response.text()}"
             )
 
+        # Wait for any pending auto-saves (from API node additions) to finish
+        # before renaming, otherwise the auto-save may overwrite the new name
+        with log_context(logging.INFO, "Wait for pending saves before rename"):
+            page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=5 * SECOND)
+
         with log_context(logging.INFO, "Rename project"):
             page.get_by_test_id("studyTitleRenamer").click()
             with page.expect_response(
@@ -272,9 +277,8 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
             patch_prj_rename_resp = patch_prj_rename_ctx.value
             assert patch_prj_rename_resp.status == 204, f"Expected 204 from PATCH, got {patch_prj_rename_resp.status}"
 
-        # if the project is being saved, wait until it's finished
-        with log_context(logging.INFO, "Wait until project is saved"):
-            # Wait for the saving icon to disappear
+        # Wait until the rename save is finished
+        with log_context(logging.INFO, "Wait until project is saved after rename"):
             page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=5 * SECOND)
 
     # 2. go back to dashboard
@@ -288,10 +292,16 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
     project_listing = list_projects_response.value.json()
     assert "data" in project_listing
     assert len(project_listing["data"]) > 0
-    # find the project we just created, it's the first one
-    our_project = project_listing["data"][0]
+    # find our project by UUID (don't assume position in listing)
+    our_project = next(
+        (p for p in project_listing["data"] if p["uuid"] == jsonifier_prj_uuid),
+        None,
+    )
+    assert our_project is not None, (
+        f"Project {jsonifier_prj_uuid} not found in listing: {[p['uuid'] for p in project_listing['data']]}"
+    )
     assert our_project["name"] == _STUDY_FUNCTION_NAME, (
-        f"Expected to find our project named {_STUDY_FUNCTION_NAME} in {project_listing}"
+        f"Expected project name '{_STUDY_FUNCTION_NAME}', got '{our_project['name']}'"
     )
 
     # 3. convert it to a function
@@ -530,5 +540,7 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
         ):
             page.get_by_test_id("dashboardBtn").click()
             page.get_by_test_id("confirmDashboardBtn").click()
+            assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
+            page.wait_for_timeout(2000)
             assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
             page.wait_for_timeout(2000)

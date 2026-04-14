@@ -2,8 +2,8 @@ import datetime
 import logging
 from abc import abstractmethod
 from decimal import Decimal
-from enum import Enum, IntEnum, auto
-from typing import Annotated, Any, Literal, TypeAlias
+from enum import IntEnum, auto
+from typing import Annotated, Any, Literal
 
 import arrow
 from common_library.basic_types import DEFAULT_FACTORY
@@ -13,7 +13,7 @@ from .conversations import ConversationGetDB, ConversationMessageID
 from .products import ProductName
 from .progress_bar import ProgressReport
 from .projects import ProjectID
-from .projects_nodes_io import NodeID
+from .projects_nodes_io import NodeID, StorageFileID
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceType, ServiceVersion
 from .services_resources import ServiceResourcesDict
@@ -22,14 +22,12 @@ from .users import UserID
 from .utils.enums import StrAutoEnum
 from .wallets import WalletID
 
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
+type LogLevelInt = int
+type LogMessageStr = str
 
 
-class RabbitEventMessageType(str, Enum):
-    __slots__ = ()
-
-    RELOAD_IFRAME = "RELOAD_IFRAME"
+class RabbitEventMessageType(StrAutoEnum):
+    RELOAD_IFRAME = auto()
 
 
 class RabbitMessageBase(BaseModel):
@@ -275,7 +273,7 @@ class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
     )
 
 
-RabbitResourceTrackingMessages: TypeAlias = (
+type RabbitResourceTrackingMessages = (
     RabbitResourceTrackingStartedMessage | RabbitResourceTrackingStoppedMessage | RabbitResourceTrackingHeartbeatMessage
 )
 
@@ -326,3 +324,25 @@ class ComputationalPipelineStatusMessage(RabbitMessageBase, ProjectMessageBase):
 
     def routing_key(self) -> str | None:
         return f"{self.project_id}.all_nodes"
+
+
+class FileNotificationEventType(StrAutoEnum):
+    FILE_UPLOADED = auto()
+    FILE_DELETED = auto()
+
+
+class FileNotificationMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.service.file-notifications"] = "io.simcore.service.file-notifications"
+
+    event_type: FileNotificationEventType
+    user_id: UserID
+    project_id: ProjectID
+    node_id: NodeID
+    file_id: StorageFileID
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
+
+    def routing_key(self) -> str | None:
+        return f"{self.project_id}.{self.node_id}"

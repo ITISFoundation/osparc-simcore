@@ -19,11 +19,13 @@ qx.Class.define("osparc.message.Messages", {
   type: "static",
 
   statics: {
-    fetchEmailTemplates: function() {
-      return osparc.data.Resources.fetch("notificationTemplates", "searchEmailTemplates")
-        .then(templates => {
-          return templates.filter(t => t.ref.templateName === "empty");
-        });
+    fetchEmailEmptyTemplate: function() {
+      const params = {
+        url: {
+          "templateName": "empty",
+        },
+      };
+      return osparc.data.Resources.fetch("notificationTemplates", "searchEmailTemplates", params);
     },
 
     fetchEmailPreview: function(templateName, context = {}) {
@@ -36,7 +38,7 @@ qx.Class.define("osparc.message.Messages", {
           "context": context,
         },
       };
-      return osparc.data.Resources.fetch("notificationTemplates", "previewTemplate", params)
+      return osparc.data.Resources.fetch("notificationTemplates", "previewTemplate", params);
     },
 
     sendMessage: function(groupIds, subject, bodyHtml, bodyText) {
