@@ -13,7 +13,7 @@ from .conversations import ConversationGetDB, ConversationMessageID
 from .products import ProductName
 from .progress_bar import ProgressReport
 from .projects import ProjectID
-from .projects_nodes_io import NodeID, SimcoreS3FileID
+from .projects_nodes_io import NodeID, StorageFileID
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceType, ServiceVersion
 from .services_resources import ServiceResourcesDict
@@ -340,7 +340,7 @@ class FileNotificationMessage(RabbitMessageBase):
     user_id: UserID
     project_id: ProjectID
     node_id: NodeID
-    file_id: SimcoreS3FileID
+    file_id: StorageFileID
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",

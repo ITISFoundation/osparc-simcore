@@ -44,7 +44,7 @@ async def test_post_file_notification_standard_file_id(mock_app: AsyncMock, proj
     )
 
     mock_client = mock_app.state.rabbitmq_client
-    mock_client.publish.assert_called_once()
+    assert mock_client.publish.call_count == 1
     call_args = mock_client.publish.call_args
     assert call_args[0][0] == FileNotificationMessage.get_channel_name()
     message = call_args[0][1]
@@ -72,7 +72,7 @@ async def test_post_file_notification_skipped_prefixes(mock_app: AsyncMock, file
     )
 
     mock_client = mock_app.state.rabbitmq_client
-    mock_client.publish.assert_not_called()
+    assert not mock_client.publish.called
 
 
 async def test_post_file_notification_does_not_raise_on_publish_error(
