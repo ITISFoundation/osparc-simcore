@@ -18,7 +18,7 @@ from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
 from ..products.errors import ProductNotFoundError
 from . import _accounts_repository, _users_repository
-from ._models import PreviewApproval
+from ._models import PreviewApproval, PreviewRejection
 from .exceptions import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
@@ -435,3 +435,47 @@ async def preview_approval_user_account(
         invitation_url=invitation_url,
         message_content=preview.message_content,
     )
+
+
+async def preview_rejection_user_account(
+    app: web.Application,
+    *,
+    rejection_email: str,
+    product_name: ProductName,
+) -> PreviewRejection:
+    """Preview the rejection notification for a user account.
+
+    Retrieves user pre-registration data and generates a preview of the
+    account_rejected email template.
+
+    Raises:
+        PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
+    """
+    found = await search_users_accounts(
+        app,
+        filter_by_email_glob=rejection_email,
+        product_name=product_name,
+        include_products=False,
+    )
+
+    if not found:
+        raise PendingPreRegistrationNotFoundError(email=rejection_email, product_name=product_name)
+
+    user_account = found[0]
+    assert user_account.email == rejection_email  # nosec
+
+    preview = await notifications_service.preview_template(
+        app=app,
+        product_name=product_name,
+        ref=TemplateRef(
+            channel=Channel.email,
+            template_name="account_rejected",
+        ),
+        context={
+            "user": {
+                "first_name": user_account.first_name,
+            },
+        },
+    )
+
+    return PreviewRejection(message_content=preview.message_content)

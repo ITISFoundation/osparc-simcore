@@ -5,7 +5,6 @@ from aiohttp import web
 from common_library.user_messages import user_message
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
-from models_library.api_schemas_webserver.notifications import MessageContentGet
 from models_library.api_schemas_webserver.users import (
     UserAccountApprove,
     UserAccountGet,
@@ -19,10 +18,8 @@ from models_library.api_schemas_webserver.users import (
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
 )
-from models_library.notifications import Channel
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -34,8 +31,6 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from ...._meta import API_VTAG
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
-from ....notifications import notifications_service
-from ....notifications._models import TemplateRef
 from ....products import products_service
 from ....products.errors import ProductNotFoundError
 from ....security.decorators import (
@@ -44,9 +39,6 @@ from ....security.decorators import (
 )
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
 from ... import _accounts_service
-from ...exceptions import (
-    PendingPreRegistrationNotFoundError,
-)
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import UserAccountRestPreRegister, UsersRequestContext
 
@@ -333,35 +325,13 @@ async def preview_rejection_user_account(request: web.Request) -> web.Response:
     assert req_ctx.product_name  # nosec
 
     rejection_data = await parse_request_body_as(UserAccountPreviewRejection, request)
-    found = await _accounts_service.search_users_accounts(
+
+    preview_result = await _accounts_service.preview_rejection_user_account(
         request.app,
-        filter_by_email_glob=rejection_data.email,
+        rejection_email=rejection_data.email,
         product_name=req_ctx.product_name,
-        include_products=False,
     )
 
-    if not found:
-        raise PendingPreRegistrationNotFoundError(email=rejection_data.email, product_name=req_ctx.product_name)
-
-    user_account = found[0]
-    assert user_account.email == rejection_data.email  # nosec
-
-    preview = await notifications_service.preview_template(
-        app=request.app,
-        product_name=req_ctx.product_name,
-        ref=TemplateRef(
-            channel=Channel.email,
-            template_name="account_rejected",
-        ),
-        context={
-            "user": {
-                "first_name": user_account.first_name,
-            },
-        },
-    )
-
-    response = UserAccountPreviewRejectionGet(
-        message_content=TypeAdapter(MessageContentGet).validate_python(preview.message_content),
-    )
+    response = UserAccountPreviewRejectionGet(**preview_result.model_dump())
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
