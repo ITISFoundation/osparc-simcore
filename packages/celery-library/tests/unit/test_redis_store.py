@@ -29,22 +29,30 @@ class _TestOwnerMetadata(OwnerMetadata):
 
 
 @pytest.fixture
-async def redis_task_store(
+async def redis_client_sdk(
     use_in_memory_redis: RedisSettings,
-) -> AsyncIterator[RedisTaskStore]:
+) -> AsyncIterator[RedisClientSDK]:
     redis_client_sdk = RedisClientSDK(
         use_in_memory_redis.build_redis_dsn(RedisDatabase.CELERY_TASKS),
         client_name="pytest_redis_store",
     )
     await redis_client_sdk.setup()
     try:
-        yield RedisTaskStore(redis_client_sdk)
+        yield redis_client_sdk
     finally:
         await redis_client_sdk.shutdown()
 
 
+@pytest.fixture
+async def redis_task_store(
+    redis_client_sdk: RedisClientSDK,
+) -> RedisTaskStore:
+    return RedisTaskStore(redis_client_sdk)
+
+
 async def test_list_tasks_uses_zset_index_not_scan(
     redis_task_store: RedisTaskStore,
+    redis_client_sdk: RedisClientSDK,
     monkeypatch: pytest.MonkeyPatch,
 ):
     owner = _TestOwnerMetadata(user_id=10001, product_name="osparc", owner="test-svc")
@@ -61,7 +69,7 @@ async def test_list_tasks_uses_zset_index_not_scan(
         raise AssertionError(msg)
 
     monkeypatch.setattr(
-        redis_task_store._redis_client_sdk.redis,  # noqa: SLF001
+        redis_client_sdk.redis,
         "scan_iter",
         _forbid_scan_iter,
     )
@@ -130,6 +138,7 @@ async def test_remove_task_cleans_up_zset_indexes(
 
 async def test_stale_zset_entries_are_pruned_on_list(
     redis_task_store: RedisTaskStore,
+    redis_client_sdk: RedisClientSDK,
 ):
     owner = _TestOwnerMetadata(user_id=10004, product_name="osparc", owner="test-svc")
     task_key = owner.model_dump_key(task_or_group_uuid=_faker.uuid4())
@@ -141,7 +150,7 @@ async def test_stale_zset_entries_are_pruned_on_list(
     )
 
     # Simulate hash expiry by deleting the hash directly (bypass remove_task)
-    redis = redis_task_store._redis_client_sdk.redis  # noqa: SLF001
+    redis = redis_client_sdk.redis
 
     await redis.delete(_build_redis_task_or_group_key(task_key))
 
