@@ -696,20 +696,34 @@ async def list_merged_pre_and_registered_users(
         else:
             order_by_clauses.append(sort_column.asc())
 
-    # Always add tie-breakers for deterministic ordering
-    # Primary tie-breaker: email (to handle duplicates from DISTINCT ON)
-    order_by_clauses.append(filtered_query_subq.c.email.asc())
+    # NOTE: PostgreSQL DISTINCT ON(email) requires email to be FIRST in ORDER BY
+    # So we reorder: email first (required), then user sort (if any), then user_id
+    final_order_by_clauses = []
+
+    # Email MUST be first due to DISTINCT ON(email) constraint
+    final_order_by_clauses.append(filtered_query_subq.c.email.asc())
+
+    # Add user-specified sort as tie-breaker (after email)
+    if sort_by:
+        sort_field = sort_by.field
+        sort_direction = sort_by.direction
+        sort_column = getattr(filtered_query_subq.c, sort_field)
+        if sort_direction.value == "desc":
+            final_order_by_clauses.append(sort_column.desc())
+        else:
+            final_order_by_clauses.append(sort_column.asc())
+
     # Secondary tie-breaker: user_id (ensures uniqueness when both are linked/unlinked accounts)
     # If user_id is None, this won't affect ordering but keeps it deterministic
     if hasattr(filtered_query_subq.c, "user_id"):
-        order_by_clauses.append(filtered_query_subq.c.user_id.asc().nullsfirst())
+        final_order_by_clauses.append(filtered_query_subq.c.user_id.asc().nullsfirst())
 
     # Add distinct on email to eliminate duplicates
     distinct_query = (
         sa.select(filtered_query_subq)
         .select_from(filtered_query_subq)
         .distinct(filtered_query_subq.c.email)
-        .order_by(*order_by_clauses)
+        .order_by(*final_order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )
