@@ -44,6 +44,9 @@ from ....security.decorators import (
 )
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
 from ... import _accounts_service
+from ...exceptions import (
+    PendingPreRegistrationNotFoundError,
+)
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import UserAccountRestPreRegister, UsersRequestContext
 
@@ -336,6 +339,10 @@ async def preview_rejection_user_account(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         include_products=False,
     )
+
+    if not found:
+        raise PendingPreRegistrationNotFoundError(email=rejection_data.email, product_name=req_ctx.product_name)
+
     user_account = found[0]
     assert user_account.email == rejection_data.email  # nosec
 
