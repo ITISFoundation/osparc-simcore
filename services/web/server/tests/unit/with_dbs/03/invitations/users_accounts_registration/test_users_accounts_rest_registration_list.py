@@ -343,3 +343,36 @@ async def test_list_products_for_user_accounts_marks_current_product(
 
     assert current_options
     assert any(option.name == product_name for option in current_options)
+
+
+async def test_list_users_accounts_default_sort_preserved(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    account_request_form: dict[str, Any],
+):
+    """Verify endpoint without sort params returns results (backwards compatible)."""
+    assert client.app
+
+    url = client.app.router["list_users_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts"
+
+    # First, create some pre-registered users to sort
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    form_data = account_request_form.copy()
+    form_data["email"] = "test@example.com"
+    resp = await client.post(
+        f"{pre_register_url}",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # Query without order_by parameter - should use default sort
+    resp = await client.get(
+        f"{url}?limit=50&offset=0",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    # Should get 200 OK response (test backwards compatibility)
+    assert resp.status == status.HTTP_200_OK

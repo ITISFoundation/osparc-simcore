@@ -128,6 +128,10 @@ async def list_user_accounts(
     ] = None,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
+    sort_by: Annotated[
+        Any | None,
+        doc("Sort order specification (OrderBy object with field and direction)"),
+    ] = None,
 ) -> Annotated[
     tuple[list[dict[str, Any]], int],
     doc("Tuple containing (list of user dictionaries, total count of users)"),
@@ -148,6 +152,7 @@ async def list_user_accounts(
         filter_registered=filter_registered,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
+        sort_by=sort_by,
     )
 
     # For each user, append additional information if needed

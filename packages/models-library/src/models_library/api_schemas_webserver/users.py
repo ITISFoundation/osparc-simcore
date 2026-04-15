@@ -26,6 +26,7 @@ from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, Primar
 from ..products import ProductName
 from ..rest_base import RequestParameters
 from ..rest_filters import Filters
+from ..rest_ordering import OrderBy, create_ordering_query_model_class
 from ..rest_pagination import PageQueryParameters
 from ..string_types import (
     GlobPatternSafeStr,
@@ -321,7 +322,28 @@ class UsersForAdminListFilter(Filters):
     model_config = ConfigDict(extra="forbid")
 
 
-class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
+UsersAccountListOrderParams = create_ordering_query_model_class(
+    ordering_fields={
+        "name",
+        "email",
+        "status",
+        "accountRequestedReviewedAt",
+        "preRegistrationCreated",
+    },
+    default=OrderBy(field=IDStr("email")),
+    ordering_fields_api_to_column_map={
+        "name": "first_name",
+        "accountRequestedReviewedAt": "account_request_reviewed_at",
+        "preRegistrationCreated": "created",
+    },
+)
+
+
+class UsersAccountListQueryParams(
+    UsersForAdminListFilter,
+    PageQueryParameters,
+    UsersAccountListOrderParams,  # type: ignore[misc, valid-type]
+): ...
 
 
 class _InvitationDetails(InputSchema):

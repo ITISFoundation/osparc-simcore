@@ -550,6 +550,7 @@ async def list_merged_pre_and_registered_users(
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
+    sort_by: Any | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
@@ -680,17 +681,35 @@ async def list_merged_pre_and_registered_users(
 
     filtered_query_subq = filtered_query.subquery()
 
+    # Build ORDER BY clause: apply user sort (if provided) with deterministic tie-breakers
+    order_by_clauses = []
+
+    if sort_by:
+        # sort_by is an OrderBy object with field and direction attributes
+        sort_field = sort_by.field  # Already mapped to DB column by factory
+        sort_direction = sort_by.direction  # OrderDirection enum
+
+        # Convert OrderDirection enum to SQLAlchemy order expression
+        sort_column = getattr(filtered_query_subq.c, sort_field)
+        if sort_direction.value == "desc":
+            order_by_clauses.append(sort_column.desc())
+        else:
+            order_by_clauses.append(sort_column.asc())
+
+    # Always add tie-breakers for deterministic ordering
+    # Primary tie-breaker: email (to handle duplicates from DISTINCT ON)
+    order_by_clauses.append(filtered_query_subq.c.email.asc())
+    # Secondary tie-breaker: user_id (ensures uniqueness when both are linked/unlinked accounts)
+    # If user_id is None, this won't affect ordering but keeps it deterministic
+    if hasattr(filtered_query_subq.c, "user_id"):
+        order_by_clauses.append(filtered_query_subq.c.user_id.asc().nullsfirst())
+
     # Add distinct on email to eliminate duplicates
     distinct_query = (
         sa.select(filtered_query_subq)
         .select_from(filtered_query_subq)
         .distinct(filtered_query_subq.c.email)
-        .order_by(
-            filtered_query_subq.c.email,
-            # Prioritize pre-registration records if duplicate emails exist
-            filtered_query_subq.c.is_pre_registered.desc(),
-            filtered_query_subq.c.created.desc(),
-        )
+        .order_by(*order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )
