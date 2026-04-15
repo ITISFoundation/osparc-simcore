@@ -21,12 +21,11 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.PRODUCT_OWNER,
-    ],
-)
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.PRODUCT_OWNER
+
+
 async def test_reject_user_account(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -45,8 +44,10 @@ async def test_reject_user_account(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = "some-reject-user@email.com"
 
+    url = client.app.router["pre_register_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -55,6 +56,7 @@ async def test_reject_user_account(
 
     # 2. Verify the user is in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts"
     resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -63,6 +65,7 @@ async def test_reject_user_account(
 
     # 3. Preview the rejection to get message content
     preview_url = client.app.router["preview_rejection_user_account"].url_for()
+    assert preview_url.path == "/v0/admin/user-accounts:preview-rejection"
     resp = await client.post(
         f"{preview_url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -73,6 +76,7 @@ async def test_reject_user_account(
 
     # 4. Reject the pre-registered user with message content
     url = client.app.router["reject_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:reject"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -91,6 +95,7 @@ async def test_reject_user_account(
 
     # 5. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts"
     resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     pending_data, _ = await assert_status(resp, status.HTTP_200_OK)
     pending_emails = [user["email"] for user in pending_data]
@@ -98,8 +103,10 @@ async def test_reject_user_account(
 
     # 6. Verify the user is now in REJECTED status
     # First get user details to check status
+    url = client.app.router["search_user_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts:search"
     resp = await client.get(
-        "/v0/admin/user-accounts:search",
+        f"{url}",
         params={"email": pre_registered_email},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -114,6 +121,7 @@ async def test_reject_user_account(
 
     # 7. Verify that a rejected user cannot be approved
     url = client.app.router["approve_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:approve"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -126,12 +134,6 @@ async def test_reject_user_account(
     assert resp.status == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.PRODUCT_OWNER,
-    ],
-)
 async def test_approve_user_account_with_full_invitation_details(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -154,8 +156,10 @@ async def test_approve_user_account_with_full_invitation_details(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    url = client.app.router["pre_register_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -163,6 +167,7 @@ async def test_approve_user_account_with_full_invitation_details(
 
     # 2. Preview approval to get the invitation URL and message content
     preview_url = client.app.router["preview_approval_user_account"].url_for()
+    assert preview_url.path == "/v0/admin/user-accounts:preview-approval"
     resp = await client.post(
         f"{preview_url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -187,6 +192,7 @@ async def test_approve_user_account_with_full_invitation_details(
         approve_payload["messageContent"] = message_content
 
     url = client.app.router["approve_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:approve"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -202,8 +208,10 @@ async def test_approve_user_account_with_full_invitation_details(
         assert call_kwargs["channel"] == Channel.email
 
     # 5. Verify the user account status and invitation data in extras
+    url = client.app.router["search_user_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts:search"
     resp = await client.get(
-        "/v0/admin/user-accounts:search",
+        f"{url}",
         params={"email": test_email},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -225,10 +233,6 @@ async def test_approve_user_account_with_full_invitation_details(
     assert invitation_data["product"] == product_name
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_approve_user_account_with_trial_days_only(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -250,8 +254,10 @@ async def test_approve_user_account_with_trial_days_only(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    url = client.app.router["pre_register_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -259,6 +265,7 @@ async def test_approve_user_account_with_trial_days_only(
 
     # 2. Preview approval to get the invitation URL
     preview_url = client.app.router["preview_approval_user_account"].url_for()
+    assert preview_url.path == "/v0/admin/user-accounts:preview-approval"
     resp = await client.post(
         f"{preview_url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -272,6 +279,7 @@ async def test_approve_user_account_with_trial_days_only(
 
     # 3. Approve the user with the invitation URL
     url = client.app.router["approve_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:approve"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -280,8 +288,10 @@ async def test_approve_user_account_with_trial_days_only(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # 3. Verify invitation data in extras
+    url = client.app.router["search_user_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts:search"
     resp = await client.get(
-        "/v0/admin/user-accounts:search",
+        f"{url}",
         params={"email": test_email},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -294,10 +304,6 @@ async def test_approve_user_account_with_trial_days_only(
     assert invitation_data["extra_credits_in_usd"] is None
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_approve_user_account_with_credits_only(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -319,8 +325,10 @@ async def test_approve_user_account_with_credits_only(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    url = client.app.router["pre_register_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -328,6 +336,7 @@ async def test_approve_user_account_with_credits_only(
 
     # 2. Preview approval to get the invitation URL
     preview_url = client.app.router["preview_approval_user_account"].url_for()
+    assert preview_url.path == "/v0/admin/user-accounts:preview-approval"
     resp = await client.post(
         f"{preview_url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -341,6 +350,7 @@ async def test_approve_user_account_with_credits_only(
 
     # 3. Approve the user with the invitation URL
     url = client.app.router["approve_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:approve"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -349,8 +359,10 @@ async def test_approve_user_account_with_credits_only(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # 3. Verify invitation data in extras
+    url = client.app.router["search_user_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts:search"
     resp = await client.get(
-        "/v0/admin/user-accounts:search",
+        f"{url}",
         params={"email": test_email},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -363,12 +375,6 @@ async def test_approve_user_account_with_credits_only(
     assert invitation_data["extra_credits_in_usd"] == 50.0
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.PRODUCT_OWNER,
-    ],
-)
 async def test_approve_user_account_without_invitation_url_fails(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -388,8 +394,10 @@ async def test_approve_user_account_without_invitation_url_fails(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    url = client.app.router["pre_register_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -397,6 +405,7 @@ async def test_approve_user_account_without_invitation_url_fails(
 
     # 2. Attempt to approve without invitationUrl — should fail with 422
     url = client.app.router["approve_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:approve"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -405,10 +414,6 @@ async def test_approve_user_account_without_invitation_url_fails(
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_create_user_auto_approves_pre_registration_with_recovery_metadata(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -437,8 +442,10 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
     test_email = account_request_form["email"]
 
     # 1. Pre-register via API -> creates PENDING record with form extras
+    url = client.app.router["pre_register_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{url}",
         json=account_request_form,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -477,8 +484,10 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
     )
 
     # 4. Verify via API
+    url = client.app.router["search_user_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts:search"
     resp = await client.get(
-        "/v0/admin/user-accounts:search",
+        f"{url}",
         params={"email": test_email},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
