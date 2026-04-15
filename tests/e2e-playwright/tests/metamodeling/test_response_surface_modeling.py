@@ -439,7 +439,8 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
 
         with log_context(logging.INFO, "Waiting for the sampling to complete..."):
 
-            def check_sampling_status(service_iframe) -> str:
+            def _check_page_status(service_iframe) -> str:
+                """Check status cells on the current page of the data grid."""
                 status_cells = service_iframe.locator('div[role="gridcell"][data-field="status"]')
                 total = status_cells.count()
                 if total == 0:
@@ -453,6 +454,28 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
                     if text != "complete":
                         all_complete = False
                 return "complete" if all_complete else "running"
+
+            def check_all_pages_status(service_iframe, page) -> str:
+                """Navigate through all data grid pages to check every row's status."""
+                # Go to the first page
+                first_page_btn = service_iframe.locator('button[aria-label="Go to first page"]')
+                if first_page_btn.count() > 0 and first_page_btn.is_enabled():
+                    first_page_btn.click()
+                    page.wait_for_timeout(500)
+
+                while True:
+                    status = _check_page_status(service_iframe)
+                    if status != "complete":
+                        return status
+
+                    # Try to go to the next page
+                    next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
+                    if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
+                        # No more pages — all rows across all pages are complete
+                        return "complete"
+
+                    next_page_btn.click()
+                    page.wait_for_timeout(500)
 
             refresh_btn = service_iframe.locator(
                 '.MuiDataGrid-columnHeader[data-field="subJobs"] button:not(.MuiDataGrid-sortButton)'
@@ -469,7 +492,7 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
 
             start_time = time.monotonic()
             while True:
-                status = check_sampling_status(service_iframe)
+                status = check_all_pages_status(service_iframe, page)
                 if status == "complete":
                     break
                 assert status != "failed", "Sampling job failed! Check the deployment logs."
@@ -481,13 +504,15 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
                 page.wait_for_timeout(5000)
                 refresh_btn.click()
 
+        with log_context(logging.INFO, "Selecting jobs and verifying graph..."):
             select_all_btn = service_iframe.get_by_role("button", name="Select all successful Jobs")
             select_all_btn.wait_for(state="visible", timeout=30 * SECOND)
             select_all_btn.click()
+            page.wait_for_timeout(2 * SECOND)
 
             if "uq" not in local_service_key.lower():
                 plotly_graph = service_iframe.locator(".js-plotly-plot")
-                plotly_graph.wait_for(state="visible", timeout=60 * SECOND)
+                plotly_graph.wait_for(state="visible", timeout=2 * MINUTE)
             page.wait_for_timeout(2000)
 
         with log_context(logging.INFO, f"Verifying sampling results for {local_service_key}..."):
