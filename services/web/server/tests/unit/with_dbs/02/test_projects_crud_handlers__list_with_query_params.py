@@ -7,7 +7,7 @@
 import json
 import random
 from collections import UserDict
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -34,6 +34,30 @@ from simcore_postgres_database.models.projects_to_folders import projects_to_fol
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+async def _create_folder_via_api(client: TestClient, name: str) -> FolderID:
+    """Create a folder using the REST API and return its ID."""
+    assert client.app
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(f"{url}", json={"name": name})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    return FolderID(data["folderId"])
+
+
+async def _move_project_to_folder(
+    client: TestClient,
+    project_uuid: str,
+    folder_id: FolderID | None,
+):
+    """Move a project into a folder (or back to root when folder_id is None)."""
+    assert client.app
+    url = client.app.router["replace_project_folder"].url_for(
+        folder_id="null" if folder_id is None else f"{folder_id}",
+        project_id=project_uuid,
+    )
+    resp = await client.put(f"{url}")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
 
 def standard_user_role() -> tuple[str, list[ParameterSet]]:
@@ -683,7 +707,6 @@ async def test_project_returns_to_root_after_folder_removal(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    postgres_db: sa.engine.Engine,
 ):
     """When a project's folder assignment is removed, it should reappear in root listing."""
     assert client.app
@@ -709,30 +732,8 @@ async def test_project_returns_to_root_after_folder_removal(
     assert data["_meta"]["total"] == 1
 
     # Create folder and move project into it
-    with postgres_db.connect() as con:
-        result = con.execute(
-            folders_v2.insert()
-            .values(
-                name="Temp Folder",
-                parent_folder_id=None,
-                user_id=logged_user["id"],
-                workspace_id=None,
-                product_name="osparc",
-                created_by_gid=logged_user["primary_gid"],
-            )
-            .returning(folders_v2.c.folder_id)
-        )
-        row = result.fetchone()
-        assert row is not None
-        folder_id = row[0]
-
-        con.execute(
-            projects_to_folders.insert().values(
-                folder_id=folder_id,
-                project_uuid=prj["uuid"],
-                user_id=logged_user["id"],
-            )
-        )
+    folder_id = await _create_folder_via_api(client, "Temp Folder")
+    await _move_project_to_folder(client, prj["uuid"], folder_id)
 
     # Project should no longer be in root
     resp = await client.get(f"{url}")
@@ -740,14 +741,8 @@ async def test_project_returns_to_root_after_folder_removal(
     assert resp.status == status.HTTP_200_OK
     assert data["_meta"]["total"] == 0
 
-    # Remove the folder assignment
-    with postgres_db.connect() as con:
-        con.execute(
-            projects_to_folders.delete().where(
-                (projects_to_folders.c.project_uuid == prj["uuid"])
-                & (projects_to_folders.c.user_id == logged_user["id"])
-            )
-        )
+    # Move project back to root
+    await _move_project_to_folder(client, prj["uuid"], folder_id=None)
 
     # Project should be back in root
     resp = await client.get(f"{url}")
@@ -755,43 +750,6 @@ async def test_project_returns_to_root_after_folder_removal(
     assert resp.status == status.HTTP_200_OK
     assert data["_meta"]["total"] == 1
     assert data["data"][0]["uuid"] == prj["uuid"]
-
-    # Cleanup
-    with postgres_db.connect() as con:
-        con.execute(projects_to_folders.delete())
-        con.execute(folders_v2.delete())
-
-
-@pytest.fixture()
-def _create_folder(
-    postgres_db: sa.engine.Engine,
-    logged_user: UserInfoDict,
-) -> Iterator[Callable[[str], FolderID]]:
-    """Factory fixture: creates folders by name and cleans up after."""
-
-    def _factory(name: str) -> FolderID:
-        with postgres_db.connect() as con:
-            result = con.execute(
-                folders_v2.insert()
-                .values(
-                    name=name,
-                    parent_folder_id=None,
-                    user_id=logged_user["id"],
-                    workspace_id=None,
-                    product_name="osparc",
-                    created_by_gid=logged_user["primary_gid"],
-                )
-                .returning(folders_v2.c.folder_id)
-            )
-            row = result.fetchone()
-            assert row is not None
-            return row[0]
-
-    yield _factory
-
-    with postgres_db.connect() as con:
-        con.execute(projects_to_folders.delete())
-        con.execute(folders_v2.delete())
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -804,8 +762,6 @@ async def test_multiple_folders_isolation(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    postgres_db: sa.engine.Engine,
-    _create_folder,
 ):
     """Projects in folder A must not appear in folder B or root.
     Exercises the INNER JOIN path with multiple distinct folder_id values."""
@@ -827,27 +783,14 @@ async def test_multiple_folders_isolation(
         created_projects.append(prj)
 
     # Create two folders
-    folder_a = _create_folder("Folder A")
-    folder_b = _create_folder("Folder B")
+    folder_a = await _create_folder_via_api(client, "Folder A")
+    folder_b = await _create_folder_via_api(client, "Folder B")
 
     # Place projects 0,1 in folder A and projects 2,3 in folder B
-    with postgres_db.connect() as con:
-        for prj in created_projects[:2]:
-            con.execute(
-                projects_to_folders.insert().values(
-                    folder_id=folder_a,
-                    project_uuid=prj["uuid"],
-                    user_id=logged_user["id"],
-                )
-            )
-        for prj in created_projects[2:4]:
-            con.execute(
-                projects_to_folders.insert().values(
-                    folder_id=folder_b,
-                    project_uuid=prj["uuid"],
-                    user_id=logged_user["id"],
-                )
-            )
+    for prj in created_projects[:2]:
+        await _move_project_to_folder(client, prj["uuid"], folder_a)
+    for prj in created_projects[2:4]:
+        await _move_project_to_folder(client, prj["uuid"], folder_b)
     # Projects 4,5 remain in root
 
     base_url = client.app.router["list_projects"].url_for()
@@ -895,8 +838,6 @@ async def test_root_listing_pagination_with_folder_split(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    postgres_db: sa.engine.Engine,
-    _create_folder,
 ):
     """Pagination total and pages must be correct after some projects are
     moved into a folder (NOT EXISTS path must not confuse the count)."""
@@ -918,16 +859,9 @@ async def test_root_listing_pagination_with_folder_split(
         created_projects.append(prj)
 
     # Move 4 projects into a folder
-    folder_id = _create_folder("Pagination Folder")
-    with postgres_db.connect() as con:
-        for prj in created_projects[:4]:
-            con.execute(
-                projects_to_folders.insert().values(
-                    folder_id=folder_id,
-                    project_uuid=prj["uuid"],
-                    user_id=logged_user["id"],
-                )
-            )
+    folder_id = await _create_folder_via_api(client, "Pagination Folder")
+    for prj in created_projects[:4]:
+        await _move_project_to_folder(client, prj["uuid"], folder_id)
 
     base_url = client.app.router["list_projects"].url_for()
 
@@ -965,8 +899,6 @@ async def test_search_respects_folder_scope(
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner: None,
-    postgres_db: sa.engine.Engine,
-    _create_folder,
 ):
     """A text search in root listing must not return projects that match
     the search term but are placed in a folder."""
@@ -996,15 +928,8 @@ async def test_search_respects_folder_scope(
     )
 
     # Move one into a folder
-    folder_id = _create_folder("Search Folder")
-    with postgres_db.connect() as con:
-        con.execute(
-            projects_to_folders.insert().values(
-                folder_id=folder_id,
-                project_uuid=prj_folder["uuid"],
-                user_id=logged_user["id"],
-            )
-        )
+    folder_id = await _create_folder_via_api(client, "Search Folder")
+    await _move_project_to_folder(client, prj_folder["uuid"], folder_id)
 
     base_url = client.app.router["list_projects"].url_for()
 
