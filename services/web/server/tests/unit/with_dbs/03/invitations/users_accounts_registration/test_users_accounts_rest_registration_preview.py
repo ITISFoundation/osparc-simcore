@@ -216,11 +216,11 @@ async def test_preview_approval_for_nonexistent_user(
         json=preview_payload,
     )
     # Nonexistent user triggers an error (bad request or not found)
-    assert resp.status in {
-        status.HTTP_200_OK,
-        status.HTTP_400_BAD_REQUEST,
-        status.HTTP_404_NOT_FOUND,
-    }
+    data, _ = await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+    assert isinstance(data, dict)
+    error_message = data.get("message") or data.get("error") or data.get("detail")
+    assert error_message is not None
+    assert "pre-registration" in error_message.lower() or "not found" in error_message.lower()
 
 
 async def test_preview_rejection_user_account(
@@ -297,8 +297,8 @@ async def test_preview_rejection_for_nonexistent_user(
         headers={X_PRODUCT_NAME_HEADER: product_name},
         json=preview_payload,
     )
-    # Should fail since the user doesn't exist
-    assert resp.status in {status.HTTP_404_NOT_FOUND, status.HTTP_500_INTERNAL_SERVER_ERROR}
+    # A missing pre-registration must be reported as a client error, not as an unhandled 500.
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
 
 
 @pytest.mark.parametrize(
