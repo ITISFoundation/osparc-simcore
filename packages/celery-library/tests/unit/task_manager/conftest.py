@@ -114,15 +114,11 @@ def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) 
     return f"completed-{num_results}-results"
 
 
-def noop_task(task: Task, task_key: TaskKey) -> str:
-    assert task_key
-    return "done"
-
-
+_RATE_LIMITED_NOOP_TASK_NAME: Final[str] = "rate_limited_noop_task"
 _RATE_LIMITED_NOOP_RATE: Final[str] = "6/m"  # NOTE: 6 tasks per minute
 
 
-def rate_limited_noop_task(task: Task, task_key: TaskKey) -> str:
+def noop_task(task: Task, task_key: TaskKey) -> str:
     assert task_key
     return "done"
 
@@ -135,7 +131,12 @@ def register_celery_tasks() -> Callable[[Celery], None]:
         register_task(celery_app, dreamer_task)
         register_task(celery_app, streaming_results_task)
         register_task(celery_app, noop_task)
-        register_task(celery_app, rate_limited_noop_task, rate_limit=_RATE_LIMITED_NOOP_RATE)
+        register_task(
+            celery_app,
+            noop_task,
+            task_name=_RATE_LIMITED_NOOP_TASK_NAME,
+            rate_limit=_RATE_LIMITED_NOOP_RATE,
+        )
 
     return _
 

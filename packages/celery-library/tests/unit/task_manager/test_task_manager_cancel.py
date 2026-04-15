@@ -22,7 +22,7 @@ from models_library.celery import (
 )
 
 from .conftest import (
-    rate_limited_noop_task,
+    noop_task,
     wait_for_task_not_pending,
     wait_for_task_success,
 )
@@ -37,7 +37,7 @@ async def test_cancel_single_task_calls_revoke(
     so the worker skips it entirely.
     """
     task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=rate_limited_noop_task.__name__),
+        TaskExecutionMetadata(name=noop_task.__name__),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -60,7 +60,7 @@ async def test_cancel_group_calls_revoke_for_each_task(
     num_tasks = 5
     group_tasks = [
         (
-            GroupTaskExecutionMetadata(name=rate_limited_noop_task.__name__),
+            GroupTaskExecutionMetadata(name=noop_task.__name__),
             {},
         )
         for _ in range(num_tasks)
@@ -97,7 +97,7 @@ async def test_new_task_succeeds_after_cancelling_rate_limited_group(
     num_tasks = 5
     group_tasks = [
         (
-            GroupTaskExecutionMetadata(name=rate_limited_noop_task.__name__),
+            GroupTaskExecutionMetadata(name=noop_task.__name__),
             {},
         )
         for _ in range(num_tasks)
@@ -114,7 +114,7 @@ async def test_new_task_succeeds_after_cancelling_rate_limited_group(
     await task_manager.cancel(fake_owner_metadata, group_uuid)
 
     new_task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=rate_limited_noop_task.__name__),
+        TaskExecutionMetadata(name=noop_task.__name__),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -134,7 +134,7 @@ async def test_new_task_succeeds_after_cancelling_single_rate_limited_task(
     completes successfully.
     """
     task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=rate_limited_noop_task.__name__),
+        TaskExecutionMetadata(name=noop_task.__name__),
         owner_metadata=fake_owner_metadata,
     )
 
@@ -142,7 +142,7 @@ async def test_new_task_succeeds_after_cancelling_single_rate_limited_task(
     await task_manager.cancel(fake_owner_metadata, task_uuid)
 
     new_task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=rate_limited_noop_task.__name__),
+        TaskExecutionMetadata(name=noop_task.__name__),
         owner_metadata=fake_owner_metadata,
     )
 
