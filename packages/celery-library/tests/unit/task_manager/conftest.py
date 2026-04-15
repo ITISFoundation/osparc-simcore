@@ -6,6 +6,7 @@ import logging
 import time
 from collections.abc import Callable
 from random import randint
+from typing import Final
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
@@ -118,7 +119,7 @@ def noop_task(task: Task, task_key: TaskKey) -> str:
     return "done"
 
 
-_RATE_LIMITED_NOOP_RATE = "6/m"  # NOTE: 6 tasks per minute
+_RATE_LIMITED_NOOP_RATE: Final[str] = "6/m"  # NOTE: 6 tasks per minute
 
 
 def rate_limited_noop_task(task: Task, task_key: TaskKey) -> str:
