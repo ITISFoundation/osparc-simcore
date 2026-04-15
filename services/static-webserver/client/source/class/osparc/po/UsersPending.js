@@ -314,7 +314,11 @@ qx.Class.define("osparc.po.UsersPending", {
       this.getChildControl("filter-users").exclude();
 
       const paramsPending = {};
-      const paramsReviewed = {};
+      const paramsReviewed = {
+        url: {
+          registered: "false", // only show reviewed users that are not yet registered
+        }
+      };
       Promise.all([
         osparc.data.Resources.getInstance().getAllPages("poUsers", paramsPending, "getPendingUsers"),
         osparc.data.Resources.getInstance().getAllPages("poUsers", paramsReviewed, "getReviewedUsers"),
