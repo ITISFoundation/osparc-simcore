@@ -16,7 +16,11 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 
-@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.PRODUCT_OWNER
+
+
 async def test_move_user_account_unknown_product_returns_409(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -29,8 +33,10 @@ async def test_move_user_account_unknown_product_returns_409(
     invalid_product_name = "nonexistent-product-xyz"
 
     # 1. Create a pending pre-registration so the move operation can be attempted
+    url = client.app.router["pre_register_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{url}",
         json=account_request_form,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )

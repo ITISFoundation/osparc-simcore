@@ -18,6 +18,11 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.login import _auth_service
 
 
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.PRODUCT_OWNER
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -63,12 +68,6 @@ async def test_access_rights_on_search_users_support_user_can_access_when_above_
 
 
 @pytest.mark.acceptance_test("pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138")
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.PRODUCT_OWNER,
-    ],
-)
 async def test_search_and_pre_registration(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -82,7 +81,9 @@ async def test_search_and_pre_registration(
     nullable_fields = {name: None for name, field in UserAccountGet.model_fields.items() if is_nullable(field)}
 
     # ONLY in `users` and NOT `users_pre_registration_details`
-    resp = await client.get("/v0/admin/user-accounts:search", params={"email": logged_user["email"]})
+    search_url = client.app.router["search_user_accounts"].url_for()
+    assert search_url.path == "/v0/admin/user-accounts:search"
+    resp = await client.get(f"{search_url}", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -112,11 +113,13 @@ async def test_search_and_pre_registration(
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    resp = await client.post("/v0/admin/user-accounts:pre-register", json=account_request_form)
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    assert pre_register_url.path == "/v0/admin/user-accounts:pre-register"
+    resp = await client.post(f"{pre_register_url}", json=account_request_form)
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
-        "/v0/admin/user-accounts:search",
+        f"{search_url}",
         params={"email": account_request_form["email"]},
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -138,7 +141,7 @@ async def test_search_and_pre_registration(
     )
 
     resp = await client.get(
-        "/v0/admin/user-accounts:search",
+        f"{search_url}",
         params={"email": account_request_form["email"]},
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)

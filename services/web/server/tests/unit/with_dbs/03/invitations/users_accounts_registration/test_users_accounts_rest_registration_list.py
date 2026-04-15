@@ -28,6 +28,11 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.login import _auth_service
 
 
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.PRODUCT_OWNER
+
+
 class SeededUserAccountsEmails(TypedDict):
     pending_registered: str
     pending_unregistered: str
@@ -42,12 +47,6 @@ class UserAccountsListQueryParams(TypedDict):
     offset: int
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.PRODUCT_OWNER,
-    ],
-)
 async def test_list_users_accounts(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
@@ -61,6 +60,9 @@ async def test_list_users_accounts(  # noqa: PLR0915
     assert client.app
 
     # 1. Create several pre-registered users
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    assert pre_register_url.path == "/v0/admin/user-accounts:pre-register"
+
     pre_registered_users = []
     for _ in range(5):  # Create 5 pre-registered users
         form_data = account_request_form.copy()
@@ -69,7 +71,7 @@ async def test_list_users_accounts(  # noqa: PLR0915
         form_data["email"] = faker.email()
 
         resp = await client.post(
-            "/v0/admin/user-accounts:pre-register",
+            f"{pre_register_url}",
             json=form_data,
             headers={X_PRODUCT_NAME_HEADER: product_name},
         )
@@ -78,6 +80,7 @@ async def test_list_users_accounts(  # noqa: PLR0915
 
     # Verify all pre-registered users are in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts"
     resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
@@ -97,6 +100,7 @@ async def test_list_users_accounts(  # noqa: PLR0915
 
     # First, preview approval to get the invitation URL
     preview_url = client.app.router["preview_approval_user_account"].url_for()
+    assert preview_url.path == "/v0/admin/user-accounts:preview-approval"
     resp = await client.post(
         f"{preview_url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -110,6 +114,7 @@ async def test_list_users_accounts(  # noqa: PLR0915
 
     # Then approve with the invitation URL
     url = client.app.router["approve_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:approve"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -130,6 +135,7 @@ async def test_list_users_accounts(  # noqa: PLR0915
     # 3. Test filtering by status
     # a. Check PENDING filter (should exclude the registered user)
     url = client.app.router["list_users_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts"
     resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
@@ -207,12 +213,6 @@ async def test_list_users_accounts(  # noqa: PLR0915
 
 
 @pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.PRODUCT_OWNER,
-    ],
-)
-@pytest.mark.parametrize(
     "params,expected_email_key,expected_registered,expected_review_statuses",
     [
         (
@@ -262,6 +262,7 @@ async def test_list_users_accounts_with_review_status_and_registered_filters(
     assert client.app
 
     list_url = client.app.router["list_users_accounts"].url_for()
+    assert list_url.path == "/v0/admin/user-accounts"
     query_params: dict[str, str | int] = {
         "review_status": params["review_status"],
         "registered": params["registered"],
@@ -296,7 +297,6 @@ async def test_list_users_accounts_with_review_status_and_registered_filters(
     assert paged.meta.total == total_with_large_page
 
 
-@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
 async def test_list_users_accounts_unknown_product_override_returns_409(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -321,7 +321,6 @@ async def test_list_users_accounts_unknown_product_override_returns_409(
     assert error_model.message == f"Invalid product '{invalid_product_name}'. The specified product does not exist."
 
 
-@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER])
 async def test_list_products_for_user_accounts_marks_current_product(
     client: TestClient,
     logged_user: UserInfoDict,

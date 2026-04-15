@@ -23,10 +23,11 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.PRODUCT_OWNER
+
+
 async def test_preview_approval_user_account(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -48,8 +49,10 @@ async def test_preview_approval_user_account(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    assert pre_register_url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{pre_register_url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -83,10 +86,6 @@ async def test_preview_approval_user_account(
     assert preview_result.message_content.body_html is not None or preview_result.message_content.body_text is not None
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_preview_approval_with_trial_days_only(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -108,8 +107,10 @@ async def test_preview_approval_with_trial_days_only(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    assert pre_register_url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{pre_register_url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -124,6 +125,7 @@ async def test_preview_approval_with_trial_days_only(
     }
 
     url = client.app.router["preview_approval_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-approval"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -136,10 +138,6 @@ async def test_preview_approval_with_trial_days_only(
     assert preview_result.message_content is not None
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_preview_approval_with_credits_only(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -161,8 +159,10 @@ async def test_preview_approval_with_credits_only(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    assert pre_register_url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{pre_register_url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -177,6 +177,7 @@ async def test_preview_approval_with_credits_only(
     }
 
     url = client.app.router["preview_approval_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-approval"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -189,10 +190,6 @@ async def test_preview_approval_with_credits_only(
     assert preview_result.message_content is not None
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_preview_approval_for_nonexistent_user(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -212,6 +209,7 @@ async def test_preview_approval_for_nonexistent_user(
     }
 
     url = client.app.router["preview_approval_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-approval"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -225,10 +223,6 @@ async def test_preview_approval_for_nonexistent_user(
     }
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_preview_rejection_user_account(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -249,8 +243,10 @@ async def test_preview_rejection_user_account(
     form_data["lastName"] = faker.last_name()
     form_data["email"] = test_email
 
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    assert pre_register_url.path == "/v0/admin/user-accounts:pre-register"
     resp = await client.post(
-        "/v0/admin/user-accounts:pre-register",
+        f"{pre_register_url}",
         json=form_data,
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
@@ -280,10 +276,6 @@ async def test_preview_rejection_user_account(
     assert preview_result.message_content.body_html is not None or preview_result.message_content.body_text is not None
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.PRODUCT_OWNER],
-)
 async def test_preview_rejection_for_nonexistent_user(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -299,6 +291,7 @@ async def test_preview_rejection_for_nonexistent_user(
     }
 
     url = client.app.router["preview_rejection_user_account"].url_for()
+    assert url.path == "/v0/admin/user-accounts:preview-rejection"
     resp = await client.post(
         f"{url}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
