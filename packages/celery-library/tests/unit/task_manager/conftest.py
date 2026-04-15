@@ -6,6 +6,7 @@ import logging
 import time
 from collections.abc import Callable
 from random import randint
+from typing import Final
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
@@ -113,6 +114,15 @@ def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) 
     return f"completed-{num_results}-results"
 
 
+_RATE_LIMITED_NOOP_TASK_NAME: Final[str] = "rate_limited_noop_task"
+_RATE_LIMITED_NOOP_RATE: Final[str] = "6/m"  # NOTE: 6 tasks per minute
+
+
+def noop_task(task: Task, task_key: TaskKey) -> str:
+    assert task_key
+    return "done"
+
+
 @pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
@@ -120,6 +130,13 @@ def register_celery_tasks() -> Callable[[Celery], None]:
         register_task(celery_app, failure_task)
         register_task(celery_app, dreamer_task)
         register_task(celery_app, streaming_results_task)
+        register_task(celery_app, noop_task)
+        register_task(
+            celery_app,
+            noop_task,
+            task_name=_RATE_LIMITED_NOOP_TASK_NAME,
+            rate_limit=_RATE_LIMITED_NOOP_RATE,
+        )
 
     return _
 
@@ -135,6 +152,19 @@ async def wait_for_task_success(
             status = await task_manager.get_status(owner_metadata, task_uuid)
             assert isinstance(status, TaskStatus)
             assert status.task_state == TaskState.SUCCESS
+
+
+async def wait_for_task_not_pending(
+    task_manager: TaskManager,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
+) -> None:
+    """Wait for a task to leave PENDING state (i.e. the worker picked it up)."""
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            status = await task_manager.get_status(owner_metadata, task_uuid)
+            assert isinstance(status, TaskStatus)
+            assert status.task_state != TaskState.PENDING
 
 
 async def wait_for_task_done(

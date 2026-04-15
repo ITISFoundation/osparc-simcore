@@ -236,7 +236,7 @@ class CeleryTaskManager:
                 for async_result in group_result.results or []:
                     task_key: TaskKey = async_result.id
                     await self._task_store.remove_task(task_key)
-                    await self._forget_task(task_key)
+                    await self._revoke_and_forget_task(task_key)
                 group_result.forget()
 
             await self._task_store.remove_task(group_key)
@@ -253,7 +253,7 @@ class CeleryTaskManager:
                 raise TaskOrGroupNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
 
             await self._task_store.remove_task(task_key)
-            await self._forget_task(task_key)
+            await self._revoke_and_forget_task(task_key)
 
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool:
         return await self._task_store.task_or_group_exists(task_or_group_key)
@@ -261,6 +261,12 @@ class CeleryTaskManager:
     @make_async()
     def _forget_task(self, task_key: TaskKey) -> None:
         self._app.AsyncResult(task_key).forget()
+
+    @make_async()
+    def _revoke_and_forget_task(self, task_key: TaskKey) -> None:
+        async_result = self._app.AsyncResult(task_key)
+        async_result.revoke()
+        async_result.forget()
 
     @handle_celery_errors
     async def _get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any:
