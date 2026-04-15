@@ -220,7 +220,11 @@ async def test_preview_approval_for_nonexistent_user(
 
     error_message = error.get("message") or error.get("error") or error.get("detail")
     assert error_message is not None
-    assert "pre-registration" in error_message.lower() or "not found" in error_message.lower()
+    assert (
+        "pending registration request" in error_message.lower()
+        or "pre-registration" in error_message.lower()
+        or "not found" in error_message.lower()
+    )
 
 
 async def test_preview_rejection_user_account(
