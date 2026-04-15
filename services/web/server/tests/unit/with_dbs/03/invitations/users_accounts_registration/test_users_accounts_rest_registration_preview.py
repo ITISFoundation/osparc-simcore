@@ -216,9 +216,9 @@ async def test_preview_approval_for_nonexistent_user(
         json=preview_payload,
     )
     # Nonexistent user triggers an error (bad request or not found)
-    data, _ = await assert_status(resp, status.HTTP_400_BAD_REQUEST)
-    assert isinstance(data, dict)
-    error_message = data.get("message") or data.get("error") or data.get("detail")
+    _, error = await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+
+    error_message = error.get("message") or error.get("error") or error.get("detail")
     assert error_message is not None
     assert "pre-registration" in error_message.lower() or "not found" in error_message.lower()
 
