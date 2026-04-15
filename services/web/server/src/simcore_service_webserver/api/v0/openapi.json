@@ -2671,6 +2671,18 @@
         "operationId": "list_users_accounts",
         "parameters": [
           {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "contentMediaType": "application/json",
+              "contentSchema": {},
+              "default": "{\"field\":\"email\",\"direction\":\"asc\"}",
+              "title": "Order By"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
