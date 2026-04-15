@@ -152,7 +152,7 @@ async def wait_for_task_success(
             assert status.task_state == TaskState.SUCCESS
 
 
-async def wait_for_task_started(
+async def wait_for_task_not_pending(
     task_manager: TaskManager,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,

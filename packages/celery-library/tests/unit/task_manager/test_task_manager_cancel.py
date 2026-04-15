@@ -24,7 +24,7 @@ from models_library.celery import (
 from .conftest import (
     noop_task,
     rate_limited_noop_task,
-    wait_for_task_started,
+    wait_for_task_not_pending,
     wait_for_task_success,
 )
 
@@ -139,7 +139,7 @@ async def test_new_task_succeeds_after_cancelling_single_rate_limited_task(
         owner_metadata=fake_owner_metadata,
     )
 
-    await wait_for_task_started(task_manager, fake_owner_metadata, task_uuid)
+    await wait_for_task_not_pending(task_manager, fake_owner_metadata, task_uuid)
     await task_manager.cancel(fake_owner_metadata, task_uuid)
 
     new_task_uuid = await task_manager.submit_task(
