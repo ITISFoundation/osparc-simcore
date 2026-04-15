@@ -7,7 +7,7 @@
 import json
 import random
 from collections import UserDict
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -671,3 +671,355 @@ async def test_list_and_patch_projects_with_template_type(  # noqa: PLR0915
             ),
         )
         await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_project_returns_to_root_after_folder_removal(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner: None,
+    postgres_db: sa.engine.Engine,
+):
+    """When a project's folder assignment is removed, it should reappear in root listing."""
+    assert client.app
+
+    project_data = deepcopy(fake_project)
+    project_data["name"] = "Movable Project"
+    project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-636700000001"
+    prj = await _new_project(
+        client,
+        logged_user["id"],
+        osparc_product_name,
+        tests_data_dir,
+        project_data,
+    )
+
+    base_url = client.app.router["list_projects"].url_for()
+
+    # Initially in root
+    url = base_url.with_query({"folder_id": "null"})
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 1
+
+    # Create folder and move project into it
+    with postgres_db.connect() as con:
+        result = con.execute(
+            folders_v2.insert()
+            .values(
+                name="Temp Folder",
+                parent_folder_id=None,
+                user_id=logged_user["id"],
+                workspace_id=None,
+                product_name="osparc",
+                created_by_gid=logged_user["primary_gid"],
+            )
+            .returning(folders_v2.c.folder_id)
+        )
+        row = result.fetchone()
+        assert row is not None
+        folder_id = row[0]
+
+        con.execute(
+            projects_to_folders.insert().values(
+                folder_id=folder_id,
+                project_uuid=prj["uuid"],
+                user_id=logged_user["id"],
+            )
+        )
+
+    # Project should no longer be in root
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 0
+
+    # Remove the folder assignment
+    with postgres_db.connect() as con:
+        con.execute(
+            projects_to_folders.delete().where(
+                (projects_to_folders.c.project_uuid == prj["uuid"])
+                & (projects_to_folders.c.user_id == logged_user["id"])
+            )
+        )
+
+    # Project should be back in root
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 1
+    assert data["data"][0]["uuid"] == prj["uuid"]
+
+    # Cleanup
+    with postgres_db.connect() as con:
+        con.execute(projects_to_folders.delete())
+        con.execute(folders_v2.delete())
+
+
+@pytest.fixture()
+def _create_folder(
+    postgres_db: sa.engine.Engine,
+    logged_user: UserInfoDict,
+) -> Iterator[Callable[[str], FolderID]]:
+    """Factory fixture: creates folders by name and cleans up after."""
+
+    def _factory(name: str) -> FolderID:
+        with postgres_db.connect() as con:
+            result = con.execute(
+                folders_v2.insert()
+                .values(
+                    name=name,
+                    parent_folder_id=None,
+                    user_id=logged_user["id"],
+                    workspace_id=None,
+                    product_name="osparc",
+                    created_by_gid=logged_user["primary_gid"],
+                )
+                .returning(folders_v2.c.folder_id)
+            )
+            row = result.fetchone()
+            assert row is not None
+            return row[0]
+
+    yield _factory
+
+    with postgres_db.connect() as con:
+        con.execute(projects_to_folders.delete())
+        con.execute(folders_v2.delete())
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_multiple_folders_isolation(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner: None,
+    postgres_db: sa.engine.Engine,
+    _create_folder,
+):
+    """Projects in folder A must not appear in folder B or root.
+    Exercises the INNER JOIN path with multiple distinct folder_id values."""
+    assert client.app
+
+    # Create 6 projects
+    created_projects = []
+    for i in range(6):
+        project_data = deepcopy(fake_project)
+        project_data["name"] = f"Project {i}"
+        project_data["uuid"] = f"d4d0eca3-d210-4db6-84f9-63670a0{i:05d}"
+        prj = await _new_project(
+            client,
+            logged_user["id"],
+            osparc_product_name,
+            tests_data_dir,
+            project_data,
+        )
+        created_projects.append(prj)
+
+    # Create two folders
+    folder_a = _create_folder("Folder A")
+    folder_b = _create_folder("Folder B")
+
+    # Place projects 0,1 in folder A and projects 2,3 in folder B
+    with postgres_db.connect() as con:
+        for prj in created_projects[:2]:
+            con.execute(
+                projects_to_folders.insert().values(
+                    folder_id=folder_a,
+                    project_uuid=prj["uuid"],
+                    user_id=logged_user["id"],
+                )
+            )
+        for prj in created_projects[2:4]:
+            con.execute(
+                projects_to_folders.insert().values(
+                    folder_id=folder_b,
+                    project_uuid=prj["uuid"],
+                    user_id=logged_user["id"],
+                )
+            )
+    # Projects 4,5 remain in root
+
+    base_url = client.app.router["list_projects"].url_for()
+
+    # Root listing: only projects 4,5
+    url = base_url.with_query({"folder_id": "null"})
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 2
+    root_uuids = {p["uuid"] for p in data["data"]}
+    assert root_uuids == {created_projects[4]["uuid"], created_projects[5]["uuid"]}
+
+    # Folder A: only projects 0,1
+    url = base_url.with_query({"folder_id": f"{folder_a}"})
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 2
+    folder_a_uuids = {p["uuid"] for p in data["data"]}
+    assert folder_a_uuids == {created_projects[0]["uuid"], created_projects[1]["uuid"]}
+
+    # Folder B: only projects 2,3
+    url = base_url.with_query({"folder_id": f"{folder_b}"})
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 2
+    folder_b_uuids = {p["uuid"] for p in data["data"]}
+    assert folder_b_uuids == {created_projects[2]["uuid"], created_projects[3]["uuid"]}
+
+    # No overlap between any of the three sets
+    assert root_uuids.isdisjoint(folder_a_uuids)
+    assert root_uuids.isdisjoint(folder_b_uuids)
+    assert folder_a_uuids.isdisjoint(folder_b_uuids)
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_root_listing_pagination_with_folder_split(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner: None,
+    postgres_db: sa.engine.Engine,
+    _create_folder,
+):
+    """Pagination total and pages must be correct after some projects are
+    moved into a folder (NOT EXISTS path must not confuse the count)."""
+    assert client.app
+
+    # Create 10 projects
+    created_projects = []
+    for i in range(10):
+        project_data = deepcopy(fake_project)
+        project_data["name"] = f"Paginated {i}"
+        project_data["uuid"] = f"d4d0eca3-d210-4db6-84f9-63670b1{i:05d}"
+        prj = await _new_project(
+            client,
+            logged_user["id"],
+            osparc_product_name,
+            tests_data_dir,
+            project_data,
+        )
+        created_projects.append(prj)
+
+    # Move 4 projects into a folder
+    folder_id = _create_folder("Pagination Folder")
+    with postgres_db.connect() as con:
+        for prj in created_projects[:4]:
+            con.execute(
+                projects_to_folders.insert().values(
+                    folder_id=folder_id,
+                    project_uuid=prj["uuid"],
+                    user_id=logged_user["id"],
+                )
+            )
+
+    base_url = client.app.router["list_projects"].url_for()
+
+    # Root should have 6 projects total
+    url = base_url.with_query({"folder_id": "null", "limit": "3", "offset": "0"})
+    resp = await client.get(f"{url}")
+    page1_data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert page1_data["_meta"]["total"] == 6
+    assert len(page1_data["data"]) == 3
+
+    # Second page
+    url = base_url.with_query({"folder_id": "null", "limit": "3", "offset": "3"})
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 6
+    assert len(data["data"]) == 3
+
+    # Collect all UUIDs across both pages — should be exactly 6 unique root projects
+    all_root_uuids = {p["uuid"] for p in page1_data["data"]} | {p["uuid"] for p in data["data"]}
+    assert len(all_root_uuids) == 6
+    # None of the folder projects should appear
+    folder_uuids = {prj["uuid"] for prj in created_projects[:4]}
+    assert all_root_uuids.isdisjoint(folder_uuids)
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_search_respects_folder_scope(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner: None,
+    postgres_db: sa.engine.Engine,
+    _create_folder,
+):
+    """A text search in root listing must not return projects that match
+    the search term but are placed in a folder."""
+    assert client.app
+
+    # Create two projects with "Findme" in name
+    prj_in_root_data = deepcopy(fake_project)
+    prj_in_root_data["name"] = "Findme Root Project"
+    prj_in_root_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670c000001"
+    prj_root = await _new_project(
+        client,
+        logged_user["id"],
+        osparc_product_name,
+        tests_data_dir,
+        prj_in_root_data,
+    )
+
+    prj_in_folder_data = deepcopy(fake_project)
+    prj_in_folder_data["name"] = "Findme Folder Project"
+    prj_in_folder_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670c000002"
+    prj_folder = await _new_project(
+        client,
+        logged_user["id"],
+        osparc_product_name,
+        tests_data_dir,
+        prj_in_folder_data,
+    )
+
+    # Move one into a folder
+    folder_id = _create_folder("Search Folder")
+    with postgres_db.connect() as con:
+        con.execute(
+            projects_to_folders.insert().values(
+                folder_id=folder_id,
+                project_uuid=prj_folder["uuid"],
+                user_id=logged_user["id"],
+            )
+        )
+
+    base_url = client.app.router["list_projects"].url_for()
+
+    # Search in root: should find only the root project
+    url = base_url.with_query({"folder_id": "null", "search": "Findme"})
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 1
+    assert data["data"][0]["uuid"] == prj_root["uuid"]
+
+    # Search in folder: should find only the folder project
+    url = base_url.with_query({"folder_id": f"{folder_id}", "search": "Findme"})
+    resp = await client.get(f"{url}")
+    data = await resp.json()
+    assert resp.status == status.HTTP_200_OK
+    assert data["_meta"]["total"] == 1
+    assert data["data"][0]["uuid"] == prj_folder["uuid"]
