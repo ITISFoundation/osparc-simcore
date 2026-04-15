@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.products import products
@@ -534,6 +535,58 @@ class MixedUserTestData:
     approved_reg_id: int
 
 
+@dataclass
+class SortingUserTestData:
+    emails_by_name_asc: list[str]
+    emails_by_email_desc: list[str]
+
+
+@pytest.fixture
+async def sorting_user_data(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
+) -> SortingUserTestData:
+    asyncpg_engine = get_asyncpg_engine(app)
+    created_by_user_id = product_owner_user["id"]
+
+    users_to_create = [
+        {
+            "email": "zeta@example.com",
+            "pre_first_name": "Alice",
+            "pre_last_name": "Zephyr",
+        },
+        {
+            "email": "alpha@example.com",
+            "pre_first_name": "Zoe",
+            "pre_last_name": "Alpha",
+        },
+        {
+            "email": "middle@example.com",
+            "pre_first_name": "Bob",
+            "pre_last_name": "Middle",
+        },
+    ]
+
+    for user_data in users_to_create:
+        pre_registration_id = await _accounts_repository.create_user_pre_registration(
+            asyncpg_engine,
+            email=user_data["email"],
+            created_by=created_by_user_id,
+            product_name=product_name,
+            pre_first_name=user_data["pre_first_name"],
+            pre_last_name=user_data["pre_last_name"],
+            institution="Sorting Institution",
+        )
+        pre_registration_details_db_cleanup.append(pre_registration_id)
+
+    return SortingUserTestData(
+        emails_by_name_asc=["zeta@example.com", "middle@example.com", "alpha@example.com"],
+        emails_by_email_desc=["zeta@example.com", "middle@example.com", "alpha@example.com"],
+    )
+
+
 @pytest.fixture
 async def mixed_user_data(
     app: web.Application,
@@ -917,6 +970,81 @@ async def test_list_merged_users_pagination(
     page1_emails = [user["email"] for user in page1_users]
     page2_emails = [user["email"] for user in page2_users]
     assert not set(page1_emails).intersection(set(page2_emails)), "Pages should have different users"
+
+
+@pytest.mark.parametrize(
+    "sort_by, expected_emails",
+    [
+        (
+            OrderBy(field="first_name", direction=OrderDirection.ASC),
+            ["zeta@example.com", "middle@example.com", "alpha@example.com"],
+        ),
+        (
+            OrderBy(field="email", direction=OrderDirection.DESC),
+            ["zeta@example.com", "middle@example.com", "alpha@example.com"],
+        ),
+    ],
+    ids=["sort-by-name-asc", "sort-by-email-desc"],
+)
+async def test_list_merged_users_sorting(
+    app: web.Application,
+    product_name: ProductName,
+    sorting_user_data: SortingUserTestData,
+    sort_by: OrderBy,
+    expected_emails: list[str],
+):
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    users_list, total_count = await _accounts_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_any_account_request_status=[AccountRequestStatus.PENDING],
+        filter_include_deleted=False,
+        pagination_limit=50,
+        pagination_offset=0,
+        sort_by=sort_by,
+    )
+
+    found_emails = [user["email"] for user in users_list if user["email"] in expected_emails]
+
+    assert total_count >= len(expected_emails)
+    assert found_emails == expected_emails
+
+
+async def test_list_merged_users_sorting_by_name_differs_from_email(
+    app: web.Application,
+    product_name: ProductName,
+    sorting_user_data: SortingUserTestData,
+):
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    users_by_name, _ = await _accounts_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_any_account_request_status=[AccountRequestStatus.PENDING],
+        filter_include_deleted=False,
+        pagination_limit=50,
+        pagination_offset=0,
+        sort_by=OrderBy(field="first_name", direction=OrderDirection.ASC),
+    )
+    users_by_email, _ = await _accounts_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_any_account_request_status=[AccountRequestStatus.PENDING],
+        filter_include_deleted=False,
+        pagination_limit=50,
+        pagination_offset=0,
+        sort_by=OrderBy(field="email", direction=OrderDirection.ASC),
+    )
+
+    emails_by_name = [user["email"] for user in users_by_name if user["email"] in sorting_user_data.emails_by_name_asc]
+    emails_by_email = [
+        user["email"] for user in users_by_email if user["email"] in sorting_user_data.emails_by_name_asc
+    ]
+
+    assert emails_by_name == sorting_user_data.emails_by_name_asc
+    assert emails_by_email == sorted(sorting_user_data.emails_by_name_asc)
+    assert emails_by_name != emails_by_email
 
 
 @pytest.mark.parametrize(

@@ -681,48 +681,43 @@ async def list_merged_pre_and_registered_users(
 
     filtered_query_subq = filtered_query.subquery()
 
-    # Build ORDER BY clause: apply user sort (if provided) with deterministic tie-breakers
-    order_by_clauses = []
+    # De-duplicate by email first while preserving the previous preference for
+    # pre-registered rows and the newest record per email.
+    dedupe_rank = sa.func.row_number().over(
+        partition_by=filtered_query_subq.c.email,
+        order_by=(
+            filtered_query_subq.c.is_pre_registered.desc(),
+            filtered_query_subq.c.created.desc(),
+            filtered_query_subq.c.user_id.asc().nullsfirst(),
+        ),
+    )
+    deduped_rows_subq = (
+        sa.select(filtered_query_subq, dedupe_rank.label("email_rank")).select_from(filtered_query_subq).subquery()
+    )
+    deduped_query_subq = (
+        sa.select(*[deduped_rows_subq.c[column.name] for column in filtered_query_subq.c])
+        .where(deduped_rows_subq.c.email_rank == 1)
+        .subquery()
+    )
 
-    if sort_by:
-        # sort_by is an OrderBy object with field and direction attributes
-        sort_field = sort_by.field  # Already mapped to DB column by factory
-        sort_direction = sort_by.direction  # OrderDirection enum
-
-        # Convert OrderDirection enum to SQLAlchemy order expression
-        sort_column = getattr(filtered_query_subq.c, sort_field)
-        if sort_direction.value == "desc":
-            order_by_clauses.append(sort_column.desc())
-        else:
-            order_by_clauses.append(sort_column.asc())
-
-    # NOTE: PostgreSQL DISTINCT ON(email) requires email to be FIRST in ORDER BY
-    # So we reorder: email first (required), then user sort (if any), then user_id
-    final_order_by_clauses = []
-
-    # Email MUST be first due to DISTINCT ON(email) constraint
-    final_order_by_clauses.append(filtered_query_subq.c.email.asc())
-
-    # Add user-specified sort as tie-breaker (after email)
+    # Apply the requested ordering after de-duplication.
     if sort_by:
         sort_field = sort_by.field
         sort_direction = sort_by.direction
-        sort_column = getattr(filtered_query_subq.c, sort_field)
-        if sort_direction.value == "desc":
-            final_order_by_clauses.append(sort_column.desc())
-        else:
-            final_order_by_clauses.append(sort_column.asc())
+        sort_column = getattr(deduped_query_subq.c, sort_field)
+        primary_order_clause = sort_column.desc() if sort_direction.value == "desc" else sort_column.asc()
+    else:
+        sort_field = "email"
+        primary_order_clause = deduped_query_subq.c.email.asc()
 
-    # Secondary tie-breaker: user_id (ensures uniqueness when both are linked/unlinked accounts)
-    # If user_id is None, this won't affect ordering but keeps it deterministic
-    if hasattr(filtered_query_subq.c, "user_id"):
-        final_order_by_clauses.append(filtered_query_subq.c.user_id.asc().nullsfirst())
+    final_order_by_clauses = [primary_order_clause]
+    if sort_field != "email":
+        final_order_by_clauses.append(deduped_query_subq.c.email.asc())
+    final_order_by_clauses.append(deduped_query_subq.c.user_id.asc().nullsfirst())
 
-    # Add distinct on email to eliminate duplicates
     distinct_query = (
-        sa.select(filtered_query_subq)
-        .select_from(filtered_query_subq)
-        .distinct(filtered_query_subq.c.email)
+        sa.select(deduped_query_subq)
+        .select_from(deduped_query_subq)
         .order_by(*final_order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
