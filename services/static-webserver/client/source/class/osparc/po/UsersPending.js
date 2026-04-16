@@ -128,7 +128,7 @@ qx.Class.define("osparc.po.UsersPending", {
           this.getChildControl("header-layout").add(control);
           break;
         case "intro-text":
-          control = new qx.ui.basic.Label(this.tr("List of pending users or approved/rejected, but not yet registered:")).set({
+          control = new qx.ui.basic.Label(this.tr("List of pending users or reviewed but not yet registered:")).set({
             font: "text-14",
             textColor: "text",
             allowGrowX: true
@@ -314,7 +314,11 @@ qx.Class.define("osparc.po.UsersPending", {
       this.getChildControl("filter-users").exclude();
 
       const paramsPending = {};
-      const paramsReviewed = {};
+      const paramsReviewed = {
+        url: {
+          registered: "false", // only show reviewed users that are not yet registered
+        }
+      };
       Promise.all([
         osparc.data.Resources.getInstance().getAllPages("poUsers", paramsPending, "getPendingUsers"),
         osparc.data.Resources.getInstance().getAllPages("poUsers", paramsReviewed, "getReviewedUsers"),

@@ -26,12 +26,15 @@ This is a multi-project monorepo with two main groups of projects in the folders
 ### File size
 
 - If a test file exceeds 1000 lines, split it into multiple files using descriptive name suffixes (e.g. `test_users_accounts_rest_registration.py` → `test_users_accounts_rest_registration_create.py`, `test_users_accounts_rest_registration_delete.py`, etc.).
-- If the split files share fixtures, move shared fixtures to a `conftest.py`. If the number of files warrants it, group them into a subfolder with its own `conftest.py` (e.g. `test_users_accounts_rest_registration/test_*.py` + `test_users_accounts_rest_registration/conftest.py`).
-```
+- If the split files share fixtures, move shared fixtures to a `conftest.py`. If the number of files warrants it, group them into a subfolder with its own `conftest.py`.
+- **Test file names must be unique across the entire project test tree**, regardless of which subfolder they live in. Generic names like `test_list.py`, `test_search.py`, or `test_create.py` are forbidden since they can easily collide with unrelated test files elsewhere. Always keep the full original filename as a prefix for the filename, even inside a dedicated subfolder. **Folder names should be a short version of the original test filename, without the `test_` prefix**:
+  - ✅ `users_accounts_rest_registration/test_users_accounts_rest_registration_search.py`
+  - ❌ `test_users_accounts_rest_registration/test_users_accounts_rest_registration_search.py`
+  - ❌ `users_accounts/test_search.py`
 
 ## How to Run Tests
 
 See the [`run-python-tests`](../skills/run-python-tests/SKILL.md) skill for the full step-by-step procedure.
 
 ---
-*Last updated: 2026-03-23*
+*Last updated: 2026-04-15*

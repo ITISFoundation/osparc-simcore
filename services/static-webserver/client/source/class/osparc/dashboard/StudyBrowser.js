@@ -669,8 +669,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
 
-    _folderSelected: function(folderId) {
-      this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, this.getCurrentWorkspaceId(), folderId);
+    _folderSelected: function(workspaceId, folderId) {
+      this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, workspaceId, folderId);
     },
 
     _folderUpdated: function() {

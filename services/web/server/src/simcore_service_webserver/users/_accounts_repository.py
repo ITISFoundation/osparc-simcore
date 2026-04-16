@@ -546,6 +546,7 @@ async def list_merged_pre_and_registered_users(
     *,
     product_name: ProductName,
     filter_any_account_request_status: list[AccountRequestStatus] | None = None,
+    filter_registered: bool | None = None,
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
@@ -563,6 +564,8 @@ async def list_merged_pre_and_registered_users(
         product_name: Product name to filter by
         filter_any_account_request_status: If provided, only returns users with account request status in this list
             (only pre-registered users with any of these statuses will be included)
+        filter_registered: If provided, filters records by registration completion
+            (True => linked to a user, False => not linked)
         filter_include_deleted: Whether to include deleted users
         pagination_limit: Maximum number of results to return
         pagination_offset: Number of results to skip (for pagination)
@@ -667,17 +670,26 @@ async def list_merged_pre_and_registered_users(
     merged_query: sa.sql.Select | sa.sql.CompoundSelect
     merged_query = pre_reg_query if filter_any_account_request_status else pre_reg_query.union_all(users_query)
 
-    # Add distinct on email to eliminate duplicates
+    # Apply optional registration linkage filter on the merged view before pagination/count
     merged_query_subq = merged_query.subquery()
+    filtered_query = sa.select(merged_query_subq).select_from(merged_query_subq)
+    if filter_registered is True:
+        filtered_query = filtered_query.where(merged_query_subq.c.user_id.is_not(None))
+    elif filter_registered is False:
+        filtered_query = filtered_query.where(merged_query_subq.c.user_id.is_(None))
+
+    filtered_query_subq = filtered_query.subquery()
+
+    # Add distinct on email to eliminate duplicates
     distinct_query = (
-        sa.select(merged_query_subq)
-        .select_from(merged_query_subq)
-        .distinct(merged_query_subq.c.email)
+        sa.select(filtered_query_subq)
+        .select_from(filtered_query_subq)
+        .distinct(filtered_query_subq.c.email)
         .order_by(
-            merged_query_subq.c.email,
+            filtered_query_subq.c.email,
             # Prioritize pre-registration records if duplicate emails exist
-            merged_query_subq.c.is_pre_registered.desc(),
-            merged_query_subq.c.created.desc(),
+            filtered_query_subq.c.is_pre_registered.desc(),
+            filtered_query_subq.c.created.desc(),
         )
         .limit(pagination_limit)
         .offset(pagination_offset)
@@ -685,7 +697,7 @@ async def list_merged_pre_and_registered_users(
 
     # Count query (for pagination)
     count_query = sa.select(sa.func.count().label("total")).select_from(
-        sa.select(merged_query_subq.c.email).select_from(merged_query_subq).distinct().subquery()
+        sa.select(filtered_query_subq.c.email).select_from(filtered_query_subq).distinct().subquery()
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
