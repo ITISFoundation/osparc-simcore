@@ -125,3 +125,6 @@ This skill **completes** with the generation and validation of the migration scr
 | Migration file not generated | Check the logs from `sc-pg review` for errors; verify model changes were saved to disk |
 | Migration missing some changes | Manually edit the migration file (Python code) to add missing operations (see Step 5) |
 | Adminer URL not accessible | Check Docker logs with `docker logs <postgres_container_id>` or look at `make setup-commit` output |
+
+---
+*Last updated: 2026-03-10*

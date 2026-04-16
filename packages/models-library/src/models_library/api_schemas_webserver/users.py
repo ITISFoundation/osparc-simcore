@@ -315,6 +315,7 @@ class UsersForAdminListFilter(Filters):
     #     CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
     #
     review_status: Literal["PENDING", "REVIEWED"] | None = None
+    registered: bool | None = None
     product_name: ProductName | None = None
 
     model_config = ConfigDict(extra="forbid")
