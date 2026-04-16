@@ -2,7 +2,6 @@ import contextlib
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from itertools import product
 from typing import TYPE_CHECKING, Final
 
 from models_library.celery import (
@@ -74,39 +73,18 @@ def _concrete_owner_fields(
     return sorted(pairs)
 
 
-def _build_redis_index_key_for_query(
+def _build_redis_index_key_for_owner(
     owner: str,
     user_id: int | None,
     product_name: str | None,
 ) -> str:
-    """Build the single sorted-set key used to answer a list_tasks query.
+    """Build a single sorted-set index key from the concrete owner fields.
 
-    Concrete fields are kept; missing (None) fields are omitted —
-    the sorted set was pre-populated for every field subset at creation time.
+    Used for both creation and querying — each task lives in exactly one
+    index, so the caller must supply the same fields at query time.
     """
     parts = [f"{k}={v}" for k, v in _concrete_owner_fields(owner, user_id, product_name)]
     return _build_redis_index_key(_CELERY_TASK_DELIMTATOR.join(parts))
-
-
-def _build_redis_index_keys_for_creation(
-    owner: str,
-    user_id: int | None,
-    product_name: str | None,
-) -> list[str]:
-    """Generate all 2^n sorted-set index keys for the given owner fields.
-
-    Every subset of the concrete fields gets its own key so that any query
-    specifying a subset of those fields can be answered with a single
-    sorted-set lookup.
-    """
-    fields = _concrete_owner_fields(owner, user_id, product_name)
-
-    keys: list[str] = []
-    for mask in product((False, True), repeat=len(fields)):
-        selected = [(k, v) for (k, v), include in zip(fields, mask, strict=True) if include]
-        suffix = _CELERY_TASK_DELIMTATOR.join(f"{k}={v}" for k, v in selected) if selected else ""
-        keys.append(_build_redis_index_key(suffix))
-    return keys
 
 
 @dataclass(frozen=True)
@@ -133,8 +111,8 @@ class RedisTaskStore:
             key=_CELERY_TASK_EXEC_METADATA_KEY,
             value=execution_metadata.model_dump_json(),
         )
-        for index_key in _build_redis_index_keys_for_creation(owner, user_id, product_name):
-            pipe.zadd(index_key, {group_key: index_score})
+        index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
+        pipe.zadd(index_key, {group_key: index_score})
 
         # group sub-tasks: store hash only, no ZSET index (filtered out in list_tasks)
         for task_key, (task_execution_metadata, _) in zip(task_keys, execution_metadata.tasks, strict=True):
@@ -168,8 +146,8 @@ class RedisTaskStore:
             key=_CELERY_TASK_EXEC_METADATA_KEY,
             value=execution_metadata.model_dump_json(),
         )
-        for index_key in _build_redis_index_keys_for_creation(owner, user_id, product_name):
-            pipe.zadd(index_key, {task_key: index_score})
+        index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
+        pipe.zadd(index_key, {task_key: index_score})
         await pipe.execute()
 
         await self._redis_client_sdk.redis.expire(
@@ -225,7 +203,7 @@ class RedisTaskStore:
         user_id: int | None = None,
         product_name: str | None = None,
     ) -> list[Task]:
-        owner_index_key = _build_redis_index_key_for_query(owner, user_id, product_name)
+        owner_index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
 
         raw_members = await self._redis_client_sdk.redis.zrange(owner_index_key, 0, -1)
         if not raw_members:
@@ -273,8 +251,8 @@ class RedisTaskStore:
     ) -> None:
         pipe = self._redis_client_sdk.redis.pipeline()
         pipe.delete(_build_redis_task_or_group_key(task_key))
-        for index_key in _build_redis_index_keys_for_creation(owner, user_id, product_name):
-            pipe.zrem(index_key, task_key)
+        index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
+        pipe.zrem(index_key, task_key)
         await pipe.execute()
 
     async def remove_task_hash(self, task_key: TaskKey) -> None:

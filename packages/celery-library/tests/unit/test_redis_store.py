@@ -74,13 +74,15 @@ async def test_list_tasks_uses_zset_index_not_scan(
     assert tasks[0].uuid == UUID(task_key)
 
 
-async def test_list_tasks_with_wildcard_filtering(
+async def test_list_tasks_filters_by_exact_owner_fields(
     redis_task_store: RedisTaskStore,
 ):
-    user_id = 42
     owner = "test-svc"
+    product = "osparc"
+    user_id = 42
     expected_tasks: list[Task] = []
 
+    # 5 tasks with same owner + product_name + user_id
     for _ in range(5):
         task_key = _faker.uuid4()
         await redis_task_store.create_task(
@@ -88,7 +90,7 @@ async def test_list_tasks_with_wildcard_filtering(
             TaskExecutionMetadata(name="my_task"),
             owner=owner,
             user_id=user_id,
-            product_name=_faker.word(),
+            product_name=product,
             expiry=timedelta(minutes=5),
         )
         expected_tasks.append(
@@ -98,6 +100,7 @@ async def test_list_tasks_with_wildcard_filtering(
             )
         )
 
+    # 3 tasks with a different user id
     for _ in range(3):
         task_key = _faker.uuid4()
         await redis_task_store.create_task(
@@ -105,13 +108,39 @@ async def test_list_tasks_with_wildcard_filtering(
             TaskExecutionMetadata(name="my_task"),
             owner=owner,
             user_id=_faker.pyint(min_value=100, max_value=200),
-            product_name=_faker.word(),
+            product_name=product,
             expiry=timedelta(minutes=5),
         )
 
-    # Query by owner + user_id only (product_name=None acts as wildcard)
-    tasks = await redis_task_store.list_tasks(owner=owner, user_id=user_id)
+    tasks = await redis_task_store.list_tasks(owner=owner, user_id=user_id, product_name=product)
     assert {t.uuid for t in tasks} == {t.uuid for t in expected_tasks}
+
+
+async def test_list_tasks_with_no_user_id(
+    redis_task_store: RedisTaskStore,
+):
+    """Internal notifications have no user_id."""
+    owner = "notifications-svc"
+    product = "osparc"
+
+    task_key = _faker.uuid4()
+    await redis_task_store.create_task(
+        task_key,
+        TaskExecutionMetadata(name="send_notification"),
+        owner=owner,
+        user_id=None,
+        product_name=product,
+        expiry=timedelta(minutes=5),
+    )
+
+    # Query without user_id matches
+    tasks = await redis_task_store.list_tasks(owner=owner, product_name=product)
+    assert len(tasks) == 1
+    assert tasks[0].uuid == UUID(task_key)
+
+    # Query with a user_id does NOT match
+    tasks = await redis_task_store.list_tasks(owner=owner, user_id=1, product_name=product)
+    assert len(tasks) == 0
 
 
 async def test_remove_task_cleans_up_zset_indexes(
