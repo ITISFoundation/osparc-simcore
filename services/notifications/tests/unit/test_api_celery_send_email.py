@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState, TaskStatus
+from models_library.celery import TaskExecutionMetadata, TaskState, TaskStatus
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api.celery.tasks import (
@@ -37,16 +37,12 @@ async def test_send_mail(
     smtp_mock_or_none: AsyncMock | None,
     faker: Faker,
 ):
-    owner_metadata = OwnerMetadata(
-        owner="test_service",
-    )
-
     user_email = faker.email()
     task_uuid = await task_manager.submit_task(
         TaskExecutionMetadata(
             name=send_email_message.__name__,
         ),
-        owner_metadata=owner_metadata,
+        owner="test_service",
         message=EmailMessage(
             from_=EmailContact(email=faker.email()),
             to=EmailContact(email=user_email),
@@ -60,7 +56,7 @@ async def test_send_mail(
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(owner_metadata, task_uuid)
+            status = await task_manager.get_status(task_uuid)
             assert isinstance(status, TaskStatus)  # nosec
             assert status.task_state == TaskState.SUCCESS
 

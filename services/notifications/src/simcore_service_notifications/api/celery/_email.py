@@ -2,6 +2,7 @@
 
 import logging
 from email.headerregistry import Address
+from typing import Any
 
 from celery import (  # type: ignore[import-untyped]
     Task,
@@ -26,6 +27,7 @@ async def send_email_message(
     task: Task,
     task_key: TaskKey,
     message: EmailMessage,
+    **_kwargs: Any,
 ) -> None:
     assert task  # nosec
     assert task_key  # nosec

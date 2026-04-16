@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Any
 
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.worker.app_server import get_app_server
@@ -43,6 +44,7 @@ async def delete_paths(
     user_id: UserID,
     location_id: LocationID,
     paths: set[Path],
+    **_kwargs: Any,
 ) -> None:
     assert task_key  # nosec
     with log_context(

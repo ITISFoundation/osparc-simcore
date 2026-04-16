@@ -20,7 +20,6 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobSchedulerError,
 )
 from models_library.celery import (
-    OwnerMetadata,
     TaskState,
     TaskStatus,
     TaskStreamItem,
@@ -39,12 +38,10 @@ _STREAM_STALL_THRESHOLD: Final[NonNegativeFloat] = timedelta(minutes=1).total_se
 async def cancel_task(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ):
     try:
         await task_manager.cancel(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=task_uuid,
         )
     except TaskOrGroupNotFoundError as exc:
@@ -56,18 +53,15 @@ async def cancel_task(
 async def get_task_result(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobResult:
     try:
         status = await task_manager.get_status(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=task_uuid,
         )
         if not status.is_done:
             raise JobNotDoneError(job_id=task_uuid)
         result = await task_manager.get_result(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=task_uuid,
         )
     except TaskOrGroupNotFoundError as exc:
@@ -99,12 +93,10 @@ async def get_task_result(
 async def get_task_status(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobStatus:
     try:
         task_status = await task_manager.get_status(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=task_uuid,
         )
     except TaskOrGroupNotFoundError as exc:
@@ -122,13 +114,11 @@ async def get_task_status(
 async def pull_task_stream_items(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
     limit: int = 50,
 ) -> tuple[list[TaskStreamItem], bool]:
     try:
         results, end, last_update = await task_manager.pull_task_stream_items(
-            owner_metadata=owner_metadata,
             task_uuid=task_uuid,
             limit=limit,
         )
@@ -148,11 +138,15 @@ async def pull_task_stream_items(
 async def list_tasks(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
+    owner: str,
+    user_id: int | None = None,
+    product_name: str | None = None,
 ) -> list[AsyncJobGet]:
     try:
         tasks = await task_manager.list_tasks(
-            owner_metadata=owner_metadata,
+            owner=owner,
+            user_id=user_id,
+            product_name=product_name,
         )
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

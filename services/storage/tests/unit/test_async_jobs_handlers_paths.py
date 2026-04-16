@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata, Wildcard
+from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -36,11 +36,6 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 type _IsFile = bool
-
-
-class TestOwnerMetadata(OwnerMetadata):
-    user_id: int | Wildcard
-    product_name: str | Wildcard
 
 
 def _filter_and_group_paths_one_level_deeper(paths: list[Path], prefix: Path) -> list[tuple[Path, _IsFile]]:
@@ -70,15 +65,14 @@ async def _assert_compute_path_size(
     async_job = await submit_job(
         task_manager,
         execution_metadata=TaskExecutionMetadata(name="compute_path_size"),
-        owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
-        location_id=location_id,
-        path=path,
+        owner="pytest_client_name",
         user_id=user_id,
         product_name=product_name,
+        location_id=location_id,
+        path=path,
     )
     async for job_composed_result in wait_and_get_job_result(
         task_manager,
-        owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         job_id=async_job.job_id,
         stop_after=datetime.timedelta(seconds=120),
     ):
@@ -104,14 +98,13 @@ async def _assert_delete_paths(
     async_job = await submit_job(
         task_manager,
         execution_metadata=TaskExecutionMetadata(name="delete_paths"),
-        owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
-        location_id=location_id,
+        owner="pytest_client_name",
         user_id=user_id,
+        location_id=location_id,
         paths=paths,
     )
     async for job_composed_result in wait_and_get_job_result(
         task_manager,
-        owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         job_id=async_job.job_id,
         stop_after=datetime.timedelta(seconds=120),
     ):

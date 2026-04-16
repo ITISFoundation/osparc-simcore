@@ -15,7 +15,6 @@ from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.celery import (
     TASK_DONE_STATES,
-    OwnerMetadata,
     TaskKey,
     TaskState,
     TaskStatus,
@@ -143,38 +142,35 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 async def wait_for_task_success(
     task_manager: TaskManager,
-    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> None:
     """Wait for a task to reach SUCCESS state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(owner_metadata, task_uuid)
+            status = await task_manager.get_status(task_uuid)
             assert isinstance(status, TaskStatus)
             assert status.task_state == TaskState.SUCCESS
 
 
 async def wait_for_task_not_pending(
     task_manager: TaskManager,
-    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> None:
     """Wait for a task to leave PENDING state (i.e. the worker picked it up)."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(owner_metadata, task_uuid)
+            status = await task_manager.get_status(task_uuid)
             assert isinstance(status, TaskStatus)
             assert status.task_state != TaskState.PENDING
 
 
 async def wait_for_task_done(
     task_manager: TaskManager,
-    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> None:
     """Wait for a task to reach any DONE state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(owner_metadata, task_uuid)
+            status = await task_manager.get_status(task_uuid)
             assert isinstance(status, TaskStatus)
             assert status.task_state in TASK_DONE_STATES

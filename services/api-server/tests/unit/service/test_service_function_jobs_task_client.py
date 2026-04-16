@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 
 import datetime
-import json
 from collections.abc import Callable
 from uuid import uuid4
 
@@ -70,7 +69,7 @@ async def create_mock_task_manager(
         )
         for state in list(TaskState)
     ]
-    + [TaskOrGroupNotFoundError(task_uuid=_faker.uuid4(), owner_metadata=json.dumps({"owner": "test-owner"}))],
+    + [TaskOrGroupNotFoundError(task_uuid=_faker.uuid4())],
 )
 @pytest.mark.parametrize("job_creation_task_id", [_faker.uuid4(), None])
 async def test_celery_status_conversion(

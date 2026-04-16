@@ -57,16 +57,13 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
-from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server._meta import API_VTAG, APP_NAME
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.api.dependencies.celery import (
     get_task_manager,
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
-from simcore_service_api_server.models.domain.celery_models import (
-    ApiServerOwnerMetadata,
-)
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
 )
@@ -130,6 +127,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
         job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
         x_simcore_parent_node_id: NodeID | None,
+        **_kwargs: Any,
     ) -> RegisteredFunctionJob:
         return RegisteredProjectFunctionJob(
             title=_faker.sentence(),
@@ -338,14 +336,12 @@ async def test_celery_error_propagation(
     user_identity: Identity,
     with_api_server_celery_worker: TestWorkController,
 ):
-    owner_metadata = ApiServerOwnerMetadata(
-        user_id=user_identity.user_id,
-        product_name=user_identity.product_name,
-    )
     task_manager = get_task_manager(app=app)
     task_uuid = await task_manager.submit_task(
         TaskExecutionMetadata(name="exception_task", queue=API_SERVER_CELERY_QUEUE_DEFAULT),
-        owner_metadata=owner_metadata,
+        owner=APP_NAME,
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
     )
 
     with pytest.raises(HTTPStatusError) as exc_info:

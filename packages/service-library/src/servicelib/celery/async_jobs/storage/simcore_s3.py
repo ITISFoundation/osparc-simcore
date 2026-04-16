@@ -4,7 +4,6 @@ from typing import Final, Literal
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.celery import (
-    OwnerMetadata,
     TaskExecutionMetadata,
 )
 from models_library.products import ProductName
@@ -22,7 +21,7 @@ class TaskQueueNames(StrEnum):
 
 async def submit_export_data(
     task_manager: TaskManager,
-    owner_metadata: OwnerMetadata,
+    owner: str,
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
@@ -42,7 +41,7 @@ async def submit_export_data(
             ephemeral=False,
             queue=TaskQueueNames.CPU_BOUND,
         ),
-        owner_metadata=owner_metadata,
+        owner=owner,
         user_id=user_id,
         product_name=product_name,
         paths_to_export=paths_to_export,

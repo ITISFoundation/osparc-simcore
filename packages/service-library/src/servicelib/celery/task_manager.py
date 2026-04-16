@@ -6,7 +6,6 @@ from models_library.celery import (
     GroupKey,
     GroupStatus,
     GroupUUID,
-    OwnerMetadata,
     Task,
     TaskExecutionMetadata,
     TaskKey,
@@ -23,22 +22,34 @@ class TaskManager(Protocol):
         self,
         execution_metadata: GroupExecutionMetadata,
         *,
-        owner_metadata: OwnerMetadata,
+        owner: str,
+        user_id: int | None = None,
+        product_name: str | None = None,
     ) -> tuple[GroupUUID, list[TaskUUID]]: ...
 
     async def submit_task(
-        self, execution_metadata: TaskExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params
+        self,
+        execution_metadata: TaskExecutionMetadata,
+        *,
+        owner: str,
+        user_id: int | None = None,
+        product_name: str | None = None,
+        **task_params,
     ) -> TaskUUID: ...
 
-    async def cancel(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> None: ...
+    async def cancel(self, task_or_group_uuid: TaskUUID | GroupUUID) -> None: ...
 
-    async def get_result(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> Any: ...
+    async def get_result(self, task_or_group_uuid: TaskUUID | GroupUUID) -> Any: ...
 
-    async def get_status(
-        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
-    ) -> TaskStatus | GroupStatus: ...
+    async def get_status(self, task_or_group_uuid: TaskUUID | GroupUUID) -> TaskStatus | GroupStatus: ...
 
-    async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
+    async def list_tasks(
+        self,
+        *,
+        owner: str,
+        user_id: int | None = None,
+        product_name: str | None = None,
+    ) -> list[Task]: ...
 
     async def set_task_progress(self, task_key: TaskKey, report: ProgressReport) -> None: ...
 
@@ -46,7 +57,6 @@ class TaskManager(Protocol):
 
     async def pull_task_stream_items(
         self,
-        owner_metadata: OwnerMetadata,
         task_uuid: TaskUUID,
         offset: int = 0,
         limit: int = 20,

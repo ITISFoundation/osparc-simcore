@@ -30,7 +30,7 @@ from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message_from_template as remote_send_message_from_template,
 )
 
-from ..models import WebServerOwnerMetadata
+from .._meta import APP_NAME
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
@@ -201,10 +201,9 @@ async def send_message(
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
         message=_RPC_MESSAGE_ADAPTER.validate_python(message.model_dump()),
-        owner_metadata=WebServerOwnerMetadata(
-            user_id=user_id,
-            product_name=product_name,
-        ),
+        owner=APP_NAME,
+        user_id=user_id,
+        product_name=product_name,
     )
 
     return response.task_or_group_uuid, response.task_name
@@ -244,10 +243,9 @@ async def send_message_from_template(
             TemplateRef(channel=channel, template_name=template_name).model_dump()
         ),
         context=enriched_context,
-        owner_metadata=WebServerOwnerMetadata(
-            user_id=user_id,
-            product_name=product_name,
-        ),
+        owner=APP_NAME,
+        user_id=user_id,
+        product_name=product_name,
     )
 
     return response.task_or_group_uuid, response.task_name

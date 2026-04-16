@@ -7,7 +7,6 @@ from celery_library._task_manager import CeleryTaskManager
 from celery_library.errors import TaskOrGroupNotFoundError
 from faker import Faker
 from models_library.celery import (
-    OwnerMetadata,
     TaskExecutionMetadata,
     TaskStreamItem,
     TaskUUID,
@@ -27,7 +26,8 @@ _faker = Faker()
 async def test_push_task_result_streams_data_during_execution(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    fake_owner_metadata: OwnerMetadata,
+    fake_owner: str,
+    fake_user_id: int,
 ):
     num_results = 3
 
@@ -36,7 +36,8 @@ async def test_push_task_result_streams_data_during_execution(
             name=streaming_results_task.__name__,
             ephemeral=False,  # Keep task available after completion for result pulling
         ),
-        owner_metadata=fake_owner_metadata,
+        owner=fake_owner,
+        user_id=fake_user_id,
         num_results=num_results,
     )
 
@@ -44,7 +45,7 @@ async def test_push_task_result_streams_data_during_execution(
     results = []
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            result, is_done, _ = await task_manager.pull_task_stream_items(fake_owner_metadata, task_uuid, limit=10)
+            result, is_done, _ = await task_manager.pull_task_stream_items(task_uuid, limit=10)
             results.extend(result)
             assert is_done
 
@@ -52,14 +53,14 @@ async def test_push_task_result_streams_data_during_execution(
     assert results == [TaskStreamItem(data=f"result-{i}") for i in range(num_results)]
 
     # Wait for task completion
-    await wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
+    await wait_for_task_success(task_manager, task_uuid)
 
     # Final task result should be available
-    final_result = await task_manager.get_result(fake_owner_metadata, task_uuid)
+    final_result = await task_manager.get_result(task_uuid)
     assert final_result == f"completed-{num_results}-results"
 
     # After task completion, try to pull any remaining results
-    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(fake_owner_metadata, task_uuid, limit=10)
+    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(task_uuid, limit=10)
     assert remaining_results == []
     assert is_done
 
@@ -67,7 +68,8 @@ async def test_push_task_result_streams_data_during_execution(
 async def test_pull_task_stream_items_with_limit(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    fake_owner_metadata: OwnerMetadata,
+    fake_owner: str,
+    fake_user_id: int,
 ):
     # Submit task with fewer results to make it more predictable
     task_uuid = await task_manager.submit_task(
@@ -75,16 +77,16 @@ async def test_pull_task_stream_items_with_limit(
             name=streaming_results_task.__name__,
             ephemeral=False,  # Keep task available after completion for result pulling
         ),
-        owner_metadata=fake_owner_metadata,
+        owner=fake_owner,
+        user_id=fake_user_id,
         num_results=5,
     )
 
     # Wait for task to complete
-    await wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
+    await wait_for_task_success(task_manager, task_uuid)
 
     # Pull all results in one go to avoid consumption issues
     all_results, is_done_final, _last_update_final = await task_manager.pull_task_stream_items(
-        fake_owner_metadata,
         task_uuid,
         limit=20,  # High limit to get all items
     )
@@ -102,12 +104,13 @@ async def test_pull_task_stream_items_with_limit(
 async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    fake_owner_metadata: OwnerMetadata,
+    fake_owner: str,
+    fake_user_id: int,
 ):
     fake_task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
 
     with pytest.raises(TaskOrGroupNotFoundError):
-        await task_manager.pull_task_stream_items(fake_owner_metadata, fake_task_uuid)
+        await task_manager.pull_task_stream_items(fake_task_uuid)
 
 
 async def test_push_task_stream_items_to_nonexistent_task_raises_error(

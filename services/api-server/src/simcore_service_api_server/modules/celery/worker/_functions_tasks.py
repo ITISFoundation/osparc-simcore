@@ -1,3 +1,5 @@
+from typing import Any
+
 from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
     Task,
 )
@@ -114,6 +116,7 @@ async def run_function(
     job_links: JobLinks,
     x_simcore_parent_project_uuid: ProjectID | None,
     x_simcore_parent_node_id: NodeID | None,
+    **_kwargs: Any,
 ) -> RegisteredFunctionJob:
     assert task_key  # nosec
     app = get_app_server(task.app).app

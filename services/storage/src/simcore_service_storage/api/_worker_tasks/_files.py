@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.worker.app_server import get_app_server
@@ -23,6 +24,7 @@ async def complete_upload_file(
     location_id: LocationID,
     file_id: StorageFileID,
     body: FileUploadCompletionBody,
+    **_kwargs: Any,
 ) -> FileMetaData:
     assert task_key  # nosec
     with log_context(

@@ -28,7 +28,9 @@ async def send_message(
     message_service = get_message_service(app)
     task_or_group_uuid, task_name = await message_service.send_message(
         message=request.message,
-        owner_metadata=request.owner_metadata,
+        owner=request.owner,
+        user_id=request.user_id,
+        product_name=request.product_name,
     )
     return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)
 
@@ -51,6 +53,8 @@ async def send_message_from_template(
         addressing=request.addressing,
         ref=TemplateRef(**request.template_ref.model_dump()),
         context=request.context,
-        owner_metadata=request.owner_metadata,
+        owner=request.owner,
+        user_id=request.user_id,
+        product_name=request.product_name,
     )
     return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)

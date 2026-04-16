@@ -39,7 +39,7 @@ class TaskSubmissionError(OsparcErrorMixin, Exception):
 
 
 class TaskOrGroupNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Task or group with uuid '{task_uuid}' and owner_metadata '{owner_metadata}' was not found"
+    msg_template = "Task or group with uuid '{task_uuid}' was not found"
 
 
 class TaskManagerError(OsparcErrorMixin, Exception):

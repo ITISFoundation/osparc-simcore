@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
 )
-from models_library.celery import OwnerMetadata, TaskState, TaskStatus, TaskUUID
+from models_library.celery import TaskState, TaskStatus, TaskUUID
 from models_library.functions import (
     FunctionJob,
     FunctionJobStatus,
@@ -263,7 +263,7 @@ async def test_get_function_job_status(
 ) -> None:
     _expected_return_status = status.HTTP_200_OK
 
-    async def _get_task_status(task_or_group_uuid: TaskUUID, owner_metadata: OwnerMetadata) -> TaskStatus:
+    async def _get_task_status(task_or_group_uuid: TaskUUID) -> TaskStatus:
         assert f"{task_or_group_uuid}" == job_creation_task_id
         return TaskStatus(
             task_uuid=task_or_group_uuid,

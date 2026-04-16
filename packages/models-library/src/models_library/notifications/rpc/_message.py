@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
-from ...celery import GroupUUID, OwnerMetadata, TaskUUID
+from ...celery import GroupUUID, TaskUUID
 from ._email import Addressing, Message
 from ._template import TemplateRef
 
@@ -15,7 +15,9 @@ class SendMessageRequest(BaseModel):
             description="Channel-specific message payload (e.g. EmailMessage for email).",
         ),
     ]
-    owner_metadata: OwnerMetadata | None = None
+    owner: str | None = None
+    user_id: int | None = None
+    product_name: str | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -43,11 +45,9 @@ class SendMessageRequest(BaseModel):
                                 "body_text": "Welcome to osparc!",
                             },
                         },
-                        "owner_metadata": {
-                            "user_id": 123,
-                            "product_name": "osparc",
-                            "owner": "notification-service",
-                        },
+                        "owner": "notification-service",
+                        "user_id": 123,
+                        "product_name": "osparc",
                     },
                 ]
             }
@@ -73,7 +73,9 @@ class SendMessageFromTemplateRequest(BaseModel):
             description="Template context variables. Must conform to the context_schema of the referenced template.",
         ),
     ]
-    owner_metadata: OwnerMetadata | None = None
+    owner: str | None = None
+    user_id: int | None = None
+    product_name: str | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -102,11 +104,9 @@ class SendMessageFromTemplateRequest(BaseModel):
                             "user": {"first_name": "John"},
                             "link": "https://osparc.io",
                         },
-                        "owner_metadata": {
-                            "user_id": 123,
-                            "product_name": "osparc",
-                            "owner": "notification-service",
-                        },
+                        "owner": "notification-service",
+                        "user_id": 123,
+                        "product_name": "osparc",
                     },
                 ]
             }
