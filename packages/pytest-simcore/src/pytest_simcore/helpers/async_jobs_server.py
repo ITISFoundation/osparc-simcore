@@ -91,8 +91,8 @@ class AsyncJobSideEffects:
         assert rabbitmq_rpc_client
         assert rpc_namespace
         assert owner
-        assert user_id is not None or user_id is None
-        assert product_name is not None or product_name is None
+        assert user_id is None or isinstance(user_id, int)
+        assert product_name is None or isinstance(product_name, str)
         assert filter_ is not None
 
         if self.exception is not None:
