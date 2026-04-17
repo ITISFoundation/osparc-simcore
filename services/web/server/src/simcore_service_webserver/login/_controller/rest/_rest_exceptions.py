@@ -1,5 +1,4 @@
 import logging
-from typing import Final
 
 from aiohttp import web
 from common_library.user_messages import user_message
@@ -14,6 +13,7 @@ from ....exception_handling import (
 )
 from ....groups import api as groups_service
 from ....products import products_service
+from ....products.errors import ProductNotFoundError
 from ....users.exceptions import AlreadyPreRegisteredError
 from ...constants import (
     MSG_2FA_UNAVAILABLE,
@@ -27,11 +27,6 @@ from ...errors import (
 )
 
 log = logging.getLogger(__name__)
-
-# Products involved in the sim4life.io / sim4life.science database merge.
-# Users that belong to multiple of these products get a targeted
-# wrong-password message informing them about unified login.
-_MERGED_PRODUCT_NAMES: Final[set[str]] = {"s4l", "s4llite"}
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     AlreadyPreRegisteredError: HttpErrorInfo(
@@ -53,19 +48,36 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-async def _is_user_affected_by_db_merge(app: web.Application, *, user_id: int) -> bool:
-    """Checks if user belongs to all products involved in the DB merge."""
+async def _should_show_login_tip(app: web.Application, *, user_id: int, product_name: str) -> bool:
+    """Show a login tip when the current product has ``marketing_login_tip_on_wrong_password``
+    enabled in its vendor config AND the user also belongs to another product
+    that does NOT have the flag enabled.
+    """
     try:
-        for product_name in _MERGED_PRODUCT_NAMES:
-            product = products_service.get_product(app, product_name=product_name)
-            if product.group_id is None or not await groups_service.is_user_in_group(
-                app, user_id=user_id, group_id=product.group_id
+        current_product = products_service.get_product(app, product_name=product_name)
+        vendor = current_product.vendor or {}
+        if not vendor.get("marketing_login_tip_on_wrong_password", False):
+            return False
+
+        for other_product in products_service.list_products(app):
+            if other_product.name == product_name:
+                continue
+            other_vendor = other_product.vendor or {}
+            if other_vendor.get("marketing_login_tip_on_wrong_password", False):
+                continue
+            if other_product.group_id is not None and await groups_service.is_user_in_group(
+                app, user_id=user_id, group_id=other_product.group_id
             ):
-                return False
-        return True
+                return True
+    except ProductNotFoundError:
+        log.debug(
+            "Product %s not found while checking login tip for user %s",
+            product_name,
+            user_id,
+        )
     except Exception:  # pylint: disable=broad-except
         log.warning(
-            "Failed to check merged-accounts status for user %s",
+            "Unexpected error checking login tip for user %s",
             user_id,
             exc_info=True,
         )
@@ -85,7 +97,12 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
 
     msg = MSG_WRONG_PASSWORD
     user_id: int | None = getattr(exception, "user_id", None)
-    if user_id is not None and await _is_user_affected_by_db_merge(request.app, user_id=user_id):
+    product_name: str | None = getattr(exception, "product_name", None)
+    if (
+        user_id is not None
+        and product_name is not None
+        and await _should_show_login_tip(request.app, user_id=user_id, product_name=product_name)
+    ):
         msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS
 
     return handle_aiohttp_web_http_error(

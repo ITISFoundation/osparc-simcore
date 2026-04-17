@@ -65,6 +65,9 @@ class Vendor(TypedDict, total=False):
     company_name: str
     company_address: str
     company_links: list[tuple[str, str]]  # list of (link_name, link_url)
+    marketing_login_tip_on_wrong_password: (
+        bool  # If True, show a tip on wrong password for users with accounts in other products
+    )
 
 
 class IssueTracker(TypedDict, total=True):
