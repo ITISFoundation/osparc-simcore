@@ -51,25 +51,15 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 async def _try_show_login_tip(app: web.Application, *, user_id: int, product_name: str) -> str | None:
     """Returns the suggested product display name when a login tip should be shown.
 
-    Checks if the current product has ``marketing_tip_fallback_product_on_wrong_password``
+    Checks if the current product has ``marketing_tip_fallback_products_on_wrong_password``
     configured with a list of product names. If the user belongs to any of those
-    products, returns the display name of the first (preferred) product.
+    products, returns the display name of the matching product.
     """
     try:
         current_product = products_service.get_product(app, product_name=product_name)
         vendor = current_product.vendor or {}
-        tip_products: list[str] = vendor.get("marketing_tip_fallback_product_on_wrong_password", [])
+        tip_products: list[str] = vendor.get("marketing_tip_fallback_products_on_wrong_password", [])
         if not tip_products:
-            return None
-
-        try:
-            fallback_display_name = products_service.get_product(app, product_name=tip_products[0]).display_name
-        except ProductNotFoundError:
-            _logger.debug(
-                "Fallback product %s not found while checking login tip for user %s",
-                tip_products[0],
-                user_id,
-            )
             return None
 
         for check_product_name in tip_products:
@@ -80,7 +70,7 @@ async def _try_show_login_tip(app: web.Application, *, user_id: int, product_nam
             if check_product.group_id is not None and await groups_service.is_user_in_group(
                 app, user_id=user_id, group_id=check_product.group_id
             ):
-                return fallback_display_name
+                return check_product.display_name
     except ProductNotFoundError:
         _logger.debug(
             "Product %s not found while checking login tip for user %s",

@@ -34,7 +34,7 @@ def _create_fake_product(
     product.name = name
     product.display_name = display_name or name
     product.group_id = group_id
-    product.vendor = {"marketing_tip_fallback_product_on_wrong_password": tip_products} if tip_products else {}
+    product.vendor = {"marketing_tip_fallback_products_on_wrong_password": tip_products} if tip_products else {}
     return product
 
 
