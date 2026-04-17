@@ -1,15 +1,24 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import json
 from collections.abc import Callable
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import make_mocked_request
+from simcore_service_webserver.constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.groups import api as groups_service
 from simcore_service_webserver.login._controller.rest._rest_exceptions import (
+    _handle_legacy_error_response,
     _try_show_login_tip,
 )
+from simcore_service_webserver.login.constants import (
+    MSG_WRONG_PASSWORD,
+    MSG_WRONG_PASSWORD_MERGED_ACCOUNTS,
+)
+from simcore_service_webserver.login.errors import WrongPasswordError
 from simcore_service_webserver.products import products_service
 from simcore_service_webserver.products.errors import ProductNotFoundError
 
@@ -180,3 +189,76 @@ async def test_tip_skips_unknown_listed_product(
 
     # preferred is s4l (first in list)
     assert result == "Sim4Life"
+
+
+# ---------------------------------------------------------------------------
+# Tests for _handle_legacy_error_response
+# ---------------------------------------------------------------------------
+
+
+def _make_request_with_product(app: web.Application, product_name: str) -> web.Request:
+    request = make_mocked_request("POST", "/v0/auth/login", app=app)
+    request[RQ_PRODUCT_KEY] = product_name
+    return request
+
+
+def _parse_enveloped_message(response: web.HTTPError) -> str:
+    assert response.text is not None
+    body = json.loads(response.text)
+    return body["error"]["message"]
+
+
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/private-issues/issues/535")
+async def test_handler_returns_merged_accounts_message_when_tip_applies(
+    mock_app: web.Application,
+    patch_products: Callable,
+    mock_is_user_in_group: AsyncMock,
+    s4llite_product: MagicMock,
+    s4l_product: MagicMock,
+):
+    patch_products([s4llite_product, s4l_product])
+    mock_is_user_in_group.return_value = True
+    request = _make_request_with_product(mock_app, "s4llite")
+
+    response = await _handle_legacy_error_response(request, WrongPasswordError(user_id=42))
+
+    assert response.status == 401
+    msg = _parse_enveloped_message(response)
+    expected = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product="Sim4Life")
+    assert msg == expected
+
+
+async def test_handler_returns_default_message_when_no_tip(
+    mock_app: web.Application,
+    patch_products: Callable,
+    mock_is_user_in_group: AsyncMock,
+):
+    # product with no tip configured
+    s4l = _create_fake_product(name="s4l", group_id=10)
+    patch_products([s4l])
+    request = _make_request_with_product(mock_app, "s4l")
+
+    response = await _handle_legacy_error_response(request, WrongPasswordError(user_id=42))
+
+    assert response.status == 401
+    msg = _parse_enveloped_message(response)
+    assert msg == MSG_WRONG_PASSWORD
+
+
+async def test_handler_returns_default_message_when_user_not_in_tip_products(
+    mock_app: web.Application,
+    patch_products: Callable,
+    mock_is_user_in_group: AsyncMock,
+    s4llite_product: MagicMock,
+    s4l_product: MagicMock,
+):
+    patch_products([s4llite_product, s4l_product])
+    # user is NOT in s4l group
+    mock_is_user_in_group.return_value = False
+    request = _make_request_with_product(mock_app, "s4llite")
+
+    response = await _handle_legacy_error_response(request, WrongPasswordError(user_id=42))
+
+    assert response.status == 401
+    msg = _parse_enveloped_message(response)
+    assert msg == MSG_WRONG_PASSWORD
