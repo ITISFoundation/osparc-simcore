@@ -550,6 +550,7 @@ async def list_merged_pre_and_registered_users(
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
+    sort_by: Any | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
@@ -680,17 +681,44 @@ async def list_merged_pre_and_registered_users(
 
     filtered_query_subq = filtered_query.subquery()
 
-    # Add distinct on email to eliminate duplicates
-    distinct_query = (
-        sa.select(filtered_query_subq)
-        .select_from(filtered_query_subq)
-        .distinct(filtered_query_subq.c.email)
-        .order_by(
-            filtered_query_subq.c.email,
-            # Prioritize pre-registration records if duplicate emails exist
+    # De-duplicate by email first while preserving the previous preference for
+    # pre-registered rows and the newest record per email.
+    dedupe_rank = sa.func.row_number().over(
+        partition_by=filtered_query_subq.c.email,
+        order_by=(
             filtered_query_subq.c.is_pre_registered.desc(),
             filtered_query_subq.c.created.desc(),
-        )
+            filtered_query_subq.c.user_id.asc().nullsfirst(),
+        ),
+    )
+    deduped_rows_subq = (
+        sa.select(filtered_query_subq, dedupe_rank.label("email_rank")).select_from(filtered_query_subq).subquery()
+    )
+    deduped_query_subq = (
+        sa.select(*[deduped_rows_subq.c[column.name] for column in filtered_query_subq.c])
+        .where(deduped_rows_subq.c.email_rank == 1)
+        .subquery()
+    )
+
+    # Apply the requested ordering after de-duplication.
+    if sort_by:
+        sort_field = sort_by.field
+        sort_direction = sort_by.direction
+        sort_column = getattr(deduped_query_subq.c, sort_field)
+        primary_order_clause = sort_column.desc() if sort_direction.value == "desc" else sort_column.asc()
+    else:
+        sort_field = "email"
+        primary_order_clause = deduped_query_subq.c.email.asc()
+
+    final_order_by_clauses = [primary_order_clause]
+    if sort_field != "email":
+        final_order_by_clauses.append(deduped_query_subq.c.email.asc())
+    final_order_by_clauses.append(deduped_query_subq.c.user_id.asc().nullsfirst())
+
+    distinct_query = (
+        sa.select(deduped_query_subq)
+        .select_from(deduped_query_subq)
+        .order_by(*final_order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )

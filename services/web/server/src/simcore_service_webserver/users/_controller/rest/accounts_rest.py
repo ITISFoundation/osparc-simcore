@@ -95,6 +95,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         filter_registered=query_params.registered,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
+        sort_by=query_params.order_by,
     )
 
     def _to_domain_model(account_details: dict[str, Any]) -> UserAccountGet:
