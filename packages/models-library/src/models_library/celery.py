@@ -172,7 +172,6 @@ class TaskStore(Protocol):
         Stale index entries are cleaned lazily by ``list_tasks``.
         Use this when the owner info is unavailable (e.g. cancel, ephemeral cleanup).
         """
-        ...
 
     async def set_task_progress(
         self,
