@@ -62,8 +62,7 @@ async def _should_show_login_tip(app: web.Application, *, user_id: int, product_
         if not tip_products:
             return None
 
-        fallback_product = products_service.get_product(app, product_name=tip_products[0])
-        fallback_display_name = fallback_product.display_name
+        fallback_display_name = products_service.get_product(app, product_name=tip_products[0]).display_name
 
         for check_product_name in tip_products:
             try:
