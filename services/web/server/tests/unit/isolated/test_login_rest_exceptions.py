@@ -187,8 +187,29 @@ async def test_tip_skips_unknown_listed_product(
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
-    # preferred is s4l (first in list)
     assert result == "Sim4Life"
+
+
+async def test_tip_returns_matching_product_not_first(
+    mock_app: web.Application,
+    patch_products: Callable,
+    mock_is_user_in_group: AsyncMock,
+):
+    """User belongs only to the second listed product; its display name is returned."""
+    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
+    osparc = _create_fake_product(name="osparc", display_name="o²S²PARC", group_id=30)
+    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l", "osparc"])
+    patch_products([s4llite, s4l, osparc])
+
+    async def _is_in_group(_app, *, user_id, group_id):
+        # user is only in osparc (group_id=30), not s4l (group_id=10)
+        return group_id == 30
+
+    mock_is_user_in_group.side_effect = _is_in_group
+
+    result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4llite")
+
+    assert result == "o²S²PARC"
 
 
 # ---------------------------------------------------------------------------
