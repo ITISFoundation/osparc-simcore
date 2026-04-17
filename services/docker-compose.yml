@@ -378,8 +378,6 @@ services:
       TEMPORAL_ADDRESS: temporal:7233
     networks:
       - default
-    volumes:
-      - ./temporalio/dynamicconfig:/etc/temporal/config/dynamicconfig
 
   #####################################
   ### Group simcore no dependencies ###
