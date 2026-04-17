@@ -51,14 +51,14 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 async def _should_show_login_tip(app: web.Application, *, user_id: int, product_name: str) -> str | None:
     """Returns the suggested product display name when a login tip should be shown.
 
-    Checks if the current product has ``marketing_login_tip_on_wrong_password``
+    Checks if the current product has ``marketing_tip_fallback_product_on_wrong_password``
     configured with a list of product names. If the user belongs to any of those
     products, returns the display name of the first (preferred) product.
     """
     try:
         current_product = products_service.get_product(app, product_name=product_name)
         vendor = current_product.vendor or {}
-        tip_products: list[str] = vendor.get("marketing_login_tip_on_wrong_password", [])
+        tip_products: list[str] = vendor.get("marketing_tip_fallback_product_on_wrong_password", [])
         if not tip_products:
             return None
 
