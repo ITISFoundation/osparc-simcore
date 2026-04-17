@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+from collections.abc import Callable
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -43,34 +44,45 @@ def mock_is_user_in_group(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     return mock
 
 
-def _patch_products(
-    monkeypatch: pytest.MonkeyPatch,
-    all_products: list[MagicMock],
-) -> None:
-    products_by_name = {p.name: p for p in all_products}
+@pytest.fixture
+def patch_products(monkeypatch: pytest.MonkeyPatch) -> Callable[[list[MagicMock]], None]:
+    def _patch(all_products: list[MagicMock]) -> None:
+        products_by_name = {p.name: p for p in all_products}
 
-    def _get_product(_app: web.Application, product_name: str) -> MagicMock:
-        if product_name not in products_by_name:
-            raise ProductNotFoundError(product_name=product_name)
-        return products_by_name[product_name]
+        def _get_product(_app: web.Application, product_name: str) -> MagicMock:
+            if product_name not in products_by_name:
+                raise ProductNotFoundError(product_name=product_name)
+            return products_by_name[product_name]
 
-    monkeypatch.setattr(
-        f"{products_service.__name__}.get_product",
-        _get_product,
-    )
+        monkeypatch.setattr(
+            f"{products_service.__name__}.get_product",
+            _get_product,
+        )
+
+    return _patch
+
+
+@pytest.fixture
+def s4l_product() -> MagicMock:
+    return _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
+
+
+@pytest.fixture
+def s4llite_product() -> MagicMock:
+    return _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
 
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/private-issues/issues/535")
 async def test_tip_returns_preferred_product_display_name(
     mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
+    patch_products: Callable,
     mock_is_user_in_group: AsyncMock,
+    s4l_product: MagicMock,
 ):
     # s4llite configured to suggest s4l; user belongs to s4l
     s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l", "osparc"])
-    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
     osparc = _create_fake_product(name="osparc", display_name="o²S²PARC", group_id=30)
-    _patch_products(monkeypatch, [s4llite, s4l, osparc])
+    patch_products([s4llite, s4l_product, osparc])
     mock_is_user_in_group.return_value = True
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4llite")
@@ -80,13 +92,13 @@ async def test_tip_returns_preferred_product_display_name(
 
 async def test_tip_not_shown_when_no_tip_configured(
     mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
+    patch_products: Callable,
     mock_is_user_in_group: AsyncMock,
+    s4llite_product: MagicMock,
 ):
     # s4l has no tip configured
     s4l = _create_fake_product(name="s4l", group_id=10)
-    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
-    _patch_products(monkeypatch, [s4l, s4llite])
+    patch_products([s4l, s4llite_product])
     mock_is_user_in_group.return_value = True
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4l")
@@ -96,14 +108,14 @@ async def test_tip_not_shown_when_no_tip_configured(
 
 async def test_tip_not_shown_when_user_not_in_listed_products(
     mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
+    patch_products: Callable,
     mock_is_user_in_group: AsyncMock,
+    s4llite_product: MagicMock,
+    s4l_product: MagicMock,
 ):
     # s4llite configured to check s4l, but user is NOT in s4l
-    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
-    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
-    _patch_products(monkeypatch, [s4llite, s4l])
-    mock_is_user_in_group.return_value = False
+    patch_products([s4llite_product, s4l_product])
+    # mock_is_user_in_group defaults to return_value=False
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
@@ -112,12 +124,12 @@ async def test_tip_not_shown_when_user_not_in_listed_products(
 
 async def test_tip_handles_db_error_gracefully(
     mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
+    patch_products: Callable,
     mock_is_user_in_group: AsyncMock,
+    s4llite_product: MagicMock,
+    s4l_product: MagicMock,
 ):
-    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
-    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
-    _patch_products(monkeypatch, [s4llite, s4l])
+    patch_products([s4llite_product, s4l_product])
     mock_is_user_in_group.side_effect = RuntimeError("DB connection failed")
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4llite")
@@ -127,10 +139,10 @@ async def test_tip_handles_db_error_gracefully(
 
 async def test_tip_handles_missing_current_product_gracefully(
     mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
+    patch_products: Callable,
     mock_is_user_in_group: AsyncMock,
 ):
-    _patch_products(monkeypatch, [])  # no products configured
+    patch_products([])  # no products configured
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="unknown")
 
@@ -139,13 +151,13 @@ async def test_tip_handles_missing_current_product_gracefully(
 
 async def test_tip_skips_listed_product_without_group_id(
     mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
+    patch_products: Callable,
     mock_is_user_in_group: AsyncMock,
+    s4llite_product: MagicMock,
 ):
     # s4llite configured to check s4l, but s4l has no group_id
-    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
-    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=None)
-    _patch_products(monkeypatch, [s4llite, s4l])
+    s4l_no_group = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=None)
+    patch_products([s4llite_product, s4l_no_group])
     mock_is_user_in_group.return_value = True
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4llite")
@@ -155,13 +167,13 @@ async def test_tip_skips_listed_product_without_group_id(
 
 async def test_tip_skips_unknown_listed_product(
     mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
+    patch_products: Callable,
     mock_is_user_in_group: AsyncMock,
+    s4l_product: MagicMock,
 ):
     # s4llite lists "nonexistent" and "s4l"; nonexistent is skipped, user is in s4l
     s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l", "nonexistent"])
-    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
-    _patch_products(monkeypatch, [s4llite, s4l])
+    patch_products([s4llite, s4l_product])
     mock_is_user_in_group.return_value = True
 
     result = await _try_show_login_tip(mock_app, user_id=42, product_name="s4llite")
