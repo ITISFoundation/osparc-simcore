@@ -1,4 +1,5 @@
 import logging
+from typing import Final
 
 from aiohttp import web
 from common_library.user_messages import user_message
@@ -30,7 +31,7 @@ log = logging.getLogger(__name__)
 # Products involved in the sim4life.io / sim4life.science database merge.
 # Users that belong to multiple of these products get a targeted
 # wrong-password message informing them about unified login.
-_MERGED_PRODUCT_NAMES: set[str] = {"s4l", "s4llite"}
+_MERGED_PRODUCT_NAMES: Final[set[str]] = {"s4l", "s4llite"}
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     AlreadyPreRegisteredError: HttpErrorInfo(
