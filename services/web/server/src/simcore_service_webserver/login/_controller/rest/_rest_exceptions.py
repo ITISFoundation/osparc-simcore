@@ -62,7 +62,15 @@ async def _try_show_login_tip(app: web.Application, *, user_id: int, product_nam
         if not tip_products:
             return None
 
-        fallback_display_name = products_service.get_product(app, product_name=tip_products[0]).display_name
+        try:
+            fallback_display_name = products_service.get_product(app, product_name=tip_products[0]).display_name
+        except ProductNotFoundError:
+            _logger.debug(
+                "Fallback product %s not found while checking login tip for user %s",
+                tip_products[0],
+                user_id,
+            )
+            return None
 
         for check_product_name in tip_products:
             try:
