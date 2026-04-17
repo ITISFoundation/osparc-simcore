@@ -1,7 +1,7 @@
 name: OPS Temporalio Maintenance Reminder
 
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - "services/dynamic-scheduler/workflows_signatures.json"
     types: [opened, synchronize]
