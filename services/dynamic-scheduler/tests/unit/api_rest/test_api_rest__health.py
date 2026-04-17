@@ -47,6 +47,18 @@ def mock_redis_client(
 
 
 @pytest.fixture
+def mock_temporalio_health_check(
+    mocker: MockerFixture,
+    temporalio_ok: bool,
+) -> None:
+    base_path = "simcore_service_dynamic_scheduler.api.rest._dependencies"
+    mocker.patch(
+        f"{base_path}.get_temporalio_health_check",
+        return_value=MockHealth(temporalio_ok),
+    )
+
+
+@pytest.fixture
 def mock_docker_api_proxy(mocker: MockerFixture, docker_api_proxy_ok: bool) -> None:
     base_path = "simcore_service_dynamic_scheduler.api.rest._health"
     mocker.patch(f"{base_path}.is_docker_api_proxy_ready", return_value=docker_api_proxy_ok)
@@ -57,19 +69,21 @@ def app_environment(
     mock_docker_api_proxy: None,
     mock_rabbitmq_clients: None,
     mock_redis_client: None,
+    mock_temporalio_health_check: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
 
 
 @pytest.mark.parametrize(
-    "rabbit_client_ok, rabbit_rpc_client_ok, redis_client_ok,, docker_api_proxy_ok, is_ok",
+    "rabbit_client_ok, rabbit_rpc_client_ok, redis_client_ok, docker_api_proxy_ok, temporalio_ok, is_ok",
     [
-        pytest.param(True, True, True, True, True, id="ok"),
-        pytest.param(False, True, True, True, False, id="rabbit_client_bad"),
-        pytest.param(True, False, True, True, False, id="rabbit_rpc_client_bad"),
-        pytest.param(True, True, False, True, False, id="redis_client_bad"),
-        pytest.param(True, True, True, False, False, id="docker_api_proxy_bad"),
+        pytest.param(True, True, True, True, True, True, id="ok"),
+        pytest.param(False, True, True, True, True, False, id="rabbit_client_bad"),
+        pytest.param(True, False, True, True, True, False, id="rabbit_rpc_client_bad"),
+        pytest.param(True, True, False, True, True, False, id="redis_client_bad"),
+        pytest.param(True, True, True, False, True, False, id="docker_api_proxy_bad"),
+        pytest.param(True, True, True, True, False, False, id="temporalio_bad"),
     ],
 )
 async def test_health(client: AsyncClient, is_ok: bool):

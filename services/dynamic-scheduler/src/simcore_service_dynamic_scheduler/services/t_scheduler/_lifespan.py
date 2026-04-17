@@ -12,6 +12,7 @@ from temporalio.worker import Worker
 from ...core.settings import ApplicationSettings
 from ._dependencies import get_temporalio_client, get_workflow_registry
 from ._engine import WorkflowEngine
+from ._health_check import TemporalHealthCheck, wait_till_temporalio_is_responsive
 from ._heartbeat import HeartbeatInterceptor
 from ._registry import WorkflowRegistry
 
@@ -22,12 +23,21 @@ async def _temporalio_client_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     temporalio_settings = settings.DYNAMIC_SCHEDULER_TEMPORALIO_SETTINGS
 
-    app.state.temporalio_client = await Client.connect(
+    client = await Client.connect(
         temporalio_settings.target_host,
         namespace=temporalio_settings.TEMPORALIO_NAMESPACE,
     )
+    app.state.temporalio_client = client
+
+    await wait_till_temporalio_is_responsive(client)
+
+    health_check = TemporalHealthCheck(client)
+    await health_check.setup()
+    app.state.temporalio_health_check = health_check
 
     yield {}
+
+    await health_check.shutdown()
 
 
 async def _temporalio_worker_lifespan(app: FastAPI) -> AsyncIterator[State]:

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from fastapi import FastAPI
 from temporalio.client import Client
 
+from ._health_check import TemporalHealthCheck
 from ._registry import WorkflowRegistry
 
 if TYPE_CHECKING:
@@ -24,3 +25,8 @@ def get_workflow_registry(app: FastAPI) -> WorkflowRegistry:
 def get_workflow_engine(app: FastAPI) -> WorkflowEngine:
     engine: WorkflowEngine = app.state.workflow_engine
     return engine
+
+
+def get_temporalio_health_check(app: FastAPI) -> TemporalHealthCheck:
+    health_check: TemporalHealthCheck = app.state.temporalio_health_check
+    return health_check
