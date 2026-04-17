@@ -26,7 +26,7 @@ from ...errors import (
     WrongPasswordError,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     AlreadyPreRegisteredError: HttpErrorInfo(
@@ -70,13 +70,13 @@ async def _should_show_login_tip(app: web.Application, *, user_id: int, product_
             ):
                 return True
     except ProductNotFoundError:
-        log.debug(
+        _logger.debug(
             "Product %s not found while checking login tip for user %s",
             product_name,
             user_id,
         )
     except Exception:  # pylint: disable=broad-except
-        log.warning(
+        _logger.warning(
             "Unexpected error checking login tip for user %s",
             user_id,
             exc_info=True,

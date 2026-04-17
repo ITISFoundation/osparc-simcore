@@ -97,9 +97,9 @@ MSG_WRONG_PASSWORD: Final[str] = user_message(
 )
 MSG_WRONG_PASSWORD_MERGED_ACCOUNTS: Final[str] = user_message(
     "The password does not match the one associated with this email address."
-    " Since sim4life.io and sim4life.science have been merged,"
-    " please use your sim4life.io credentials to log in."
-    " You can also reset your password if needed.",
+    " If you have accounts on multiple platforms, please note that your login"
+    " credentials have been unified. Try using the password from your other account,"
+    " or reset your password if needed.",
     _version=1,
 )
 MSG_WEAK_PASSWORD: Final[str] = user_message(
