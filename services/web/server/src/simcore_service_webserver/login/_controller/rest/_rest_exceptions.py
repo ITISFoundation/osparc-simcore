@@ -48,7 +48,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-async def _should_show_login_tip(app: web.Application, *, user_id: int, product_name: str) -> str | None:
+async def _try_show_login_tip(app: web.Application, *, user_id: int, product_name: str) -> str | None:
     """Returns the suggested product display name when a login tip should be shown.
 
     Checks if the current product has ``marketing_tip_fallback_product_on_wrong_password``
@@ -101,7 +101,7 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
 
     msg = MSG_WRONG_PASSWORD
     product_name = products_web.get_product_name(request)
-    suggested_product = await _should_show_login_tip(request.app, user_id=exception.user_id, product_name=product_name)
+    suggested_product = await _try_show_login_tip(request.app, user_id=exception.user_id, product_name=product_name)
     if suggested_product:
         msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product=suggested_product)
 
