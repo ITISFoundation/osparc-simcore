@@ -59,6 +59,7 @@ def _patch_products(
     )
 
 
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/private-issues/issues/535")
 async def test_tip_shown_when_flag_enabled_and_user_in_other_product(
     mock_app: web.Application,
     monkeypatch: pytest.MonkeyPatch,
