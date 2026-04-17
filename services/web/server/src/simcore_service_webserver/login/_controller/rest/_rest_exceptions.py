@@ -79,11 +79,11 @@ async def _should_show_login_tip(app: web.Application, *, user_id: int, product_
             product_name,
             user_id,
         )
-    except Exception:  # pylint: disable=broad-except
-        _logger.warning(
-            "Unexpected error checking login tip for user %s",
+    except Exception as exc:  # pylint: disable=broad-except
+        _logger.debug(
+            "Unexpected error checking login tip for user %s: %s",
             user_id,
-            exc_info=True,
+            exc,
         )
     return None
 
