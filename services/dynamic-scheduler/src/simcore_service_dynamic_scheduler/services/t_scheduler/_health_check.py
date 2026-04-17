@@ -53,15 +53,14 @@ class TemporalHealthCheck:
             if self._cancelled_event.is_set():
                 raise asyncio.CancelledError
 
-        self._task_health_check = asyncio.create_task(
-            _periodic_check_health(),
-            name=f"temporalio_health_check__{uuid4()}",
-        )
-
-        _logger.info("Temporalio health check started")
+        with log_context(_logger, level=logging.DEBUG, msg="setup temporal health check"):
+            self._task_health_check = asyncio.create_task(
+                _periodic_check_health(),
+                name=f"temporalio_health_check__{uuid4()}",
+            )
 
     async def shutdown(self) -> None:
-        with log_context(_logger, level=logging.DEBUG, msg="Shutdown TemporalHealthCheck"):
+        with log_context(_logger, level=logging.DEBUG, msg="shutdown temporal health check"):
             if self._task_health_check:
                 await self._started_event.wait()
                 self._cancelled_event.set()
