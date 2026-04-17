@@ -1,3 +1,5 @@
+from models_library.users import UserID
+
 from ..errors import WebServerBaseError
 
 
@@ -13,4 +15,5 @@ class SendingVerificationEmailError(LoginError):
 
 
 class WrongPasswordError(LoginError):
-    msg_template = "Invalid password provided"
+    msg_template = "Invalid password provided for user {user_id}"
+    user_id: UserID

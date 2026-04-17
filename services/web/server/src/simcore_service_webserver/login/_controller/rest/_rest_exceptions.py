@@ -12,7 +12,7 @@ from ....exception_handling import (
     to_exceptions_handlers_map,
 )
 from ....groups import api as groups_service
-from ....products import products_service
+from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
 from ....users.exceptions import AlreadyPreRegisteredError
 from ...constants import (
@@ -96,13 +96,8 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
     ), f"Expected WrongPasswordError, got {type(exception)}"
 
     msg = MSG_WRONG_PASSWORD
-    user_id: int | None = getattr(exception, "user_id", None)
-    product_name: str | None = getattr(exception, "product_name", None)
-    if (
-        user_id is not None
-        and product_name is not None
-        and await _should_show_login_tip(request.app, user_id=user_id, product_name=product_name)
-    ):
+    product_name = products_web.get_product_name(request)
+    if await _should_show_login_tip(request.app, user_id=exception.user_id, product_name=product_name):
         msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS
 
     return handle_aiohttp_web_http_error(
