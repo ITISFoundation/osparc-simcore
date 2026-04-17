@@ -97,9 +97,12 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
         exception, WrongPasswordError
     ), f"Expected WrongPasswordError, got {type(exception)}"
 
+    user_id = exception.error_context().get("user_id")
+    assert user_id is not None, "user_id must be present in error context"  # nosec
+
     msg = MSG_WRONG_PASSWORD
     product_name = products_web.get_product_name(request)
-    suggested_product = await _try_show_login_tip(request.app, user_id=exception.user_id, product_name=product_name)
+    suggested_product = await _try_show_login_tip(request.app, user_id=user_id, product_name=product_name)
     if suggested_product:
         msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product=suggested_product)
 
