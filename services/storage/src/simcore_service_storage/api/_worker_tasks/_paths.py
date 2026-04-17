@@ -60,7 +60,7 @@ async def delete_paths(
 
         for path in paths:
             try:
-                file_id = TypeAdapter(StorageFileID).validate_python(f"{path}")
+                file_id: StorageFileID = TypeAdapter(StorageFileID).validate_python(f"{path}")
                 file_ids.add(file_id)
             except ValidationError:
                 parts = Path(path).parts
