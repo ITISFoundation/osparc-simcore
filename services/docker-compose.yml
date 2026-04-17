@@ -375,6 +375,7 @@ services:
       POSTGRES_PWD: ${POSTGRES_PASSWORD}
       POSTGRES_SEEDS: postgres
       TEMPORAL_ADDRESS: temporal:7233
+      BIND_ON_IP: 0.0.0.0
     networks:
       - default
 
