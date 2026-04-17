@@ -30,7 +30,7 @@ from ._models import (
 )
 
 
-class SagaWorkflow:
+class SagaWorkflow:  # pylint:disable=too-many-instance-attributes
     def __init__(self) -> None:
         self._state: WorkflowState = WorkflowState.RUNNING
 

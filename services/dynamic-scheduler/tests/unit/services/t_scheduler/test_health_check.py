@@ -1,4 +1,6 @@
+# pylint:disable=broad-exception-raised
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
 
 import asyncio
 from unittest.mock import AsyncMock
