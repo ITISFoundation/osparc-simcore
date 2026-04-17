@@ -68,14 +68,14 @@ async def test_tip_returns_preferred_product_display_name(
 ):
     # s4llite configured to suggest s4l; user belongs to s4l
     s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l", "osparc"])
-    s4l = _create_fake_product(name="s4l", display_name="sim4life.io", group_id=10)
+    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
     osparc = _create_fake_product(name="osparc", display_name="o²S²PARC", group_id=30)
     _patch_products(monkeypatch, [s4llite, s4l, osparc])
     mock_is_user_in_group.return_value = True
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
-    assert result == "sim4life.io"
+    assert result == "Sim4Life"
 
 
 async def test_tip_not_shown_when_no_tip_configured(
@@ -101,7 +101,7 @@ async def test_tip_not_shown_when_user_not_in_listed_products(
 ):
     # s4llite configured to check s4l, but user is NOT in s4l
     s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
-    s4l = _create_fake_product(name="s4l", display_name="sim4life.science", group_id=10)
+    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
     _patch_products(monkeypatch, [s4llite, s4l])
     mock_is_user_in_group.return_value = False
 
@@ -116,7 +116,7 @@ async def test_tip_handles_db_error_gracefully(
     mock_is_user_in_group: AsyncMock,
 ):
     s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
-    s4l = _create_fake_product(name="s4l", display_name="sim4life.io", group_id=10)
+    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
     _patch_products(monkeypatch, [s4llite, s4l])
     mock_is_user_in_group.side_effect = RuntimeError("DB connection failed")
 
@@ -144,7 +144,7 @@ async def test_tip_skips_listed_product_without_group_id(
 ):
     # s4llite configured to check s4l, but s4l has no group_id
     s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
-    s4l = _create_fake_product(name="s4l", display_name="sim4life.io", group_id=None)
+    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=None)
     _patch_products(monkeypatch, [s4llite, s4l])
     mock_is_user_in_group.return_value = True
 
@@ -160,11 +160,11 @@ async def test_tip_skips_unknown_listed_product(
 ):
     # s4llite lists "nonexistent" and "s4l"; nonexistent is skipped, user is in s4l
     s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l", "nonexistent"])
-    s4l = _create_fake_product(name="s4l", display_name="sim4life.io", group_id=10)
+    s4l = _create_fake_product(name="s4l", display_name="Sim4Life", group_id=10)
     _patch_products(monkeypatch, [s4llite, s4l])
     mock_is_user_in_group.return_value = True
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
     # preferred is s4l (first in list)
-    assert result == "sim4life.io"
+    assert result == "Sim4Life"
