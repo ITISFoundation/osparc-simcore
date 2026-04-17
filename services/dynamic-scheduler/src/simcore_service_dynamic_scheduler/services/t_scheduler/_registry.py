@@ -38,8 +38,11 @@ class WorkflowRegistry:
             raise WorkflowNotFoundError(name=name, available=list(self._workflows))
         return self._workflows[name]
 
-    def all_workflows(self) -> list[type[SagaWorkflow]]:
+    def get_temporalio_workflows(self) -> list[type[SagaWorkflow]]:
         return list(self._workflows.values())
 
-    def all_activities(self) -> list[Callable[..., Coroutine[Any, Any, Any]]]:
+    def get_registered_workflows(self) -> dict[str, type[SagaWorkflow]]:
+        return self._workflows
+
+    def get_temporalio_activities(self) -> list[Callable[..., Coroutine[Any, Any, Any]]]:
         return list(self._activities)

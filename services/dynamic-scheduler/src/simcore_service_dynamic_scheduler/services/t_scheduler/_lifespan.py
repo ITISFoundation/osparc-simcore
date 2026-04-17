@@ -39,8 +39,8 @@ async def _temporalio_worker_lifespan(app: FastAPI) -> AsyncIterator[State]:
     worker = Worker(
         client,
         task_queue=temporalio_settings.TEMPORALIO_TASK_QUEUE,
-        workflows=registry.all_workflows(),
-        activities=registry.all_activities(),
+        workflows=registry.get_temporalio_workflows(),
+        activities=registry.get_temporalio_activities(),
         interceptors=[HeartbeatInterceptor()],
         graceful_shutdown_timeout=timedelta(seconds=temporalio_settings.TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT_S),
     )

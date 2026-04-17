@@ -17,10 +17,9 @@ def compute_workflows_signatures() -> str:
 
     snapshot: dict[str, dict[str, str]] = {"workflows": {}, "activities": {}}
 
-    for wf_cls in registry.all_workflows():
-        snapshot["workflows"][wf_cls.__name__] = _source_hash(wf_cls)
-
-    for act_fn in registry.all_activities():
-        snapshot["activities"][act_fn.__name__] = _source_hash(act_fn)
+    for name, wf_cls in registry.get_registered_workflows().items():
+        snapshot["workflows"][name] = _source_hash(wf_cls)
+        for act_fn in wf_cls.get_activities():
+            snapshot["activities"][f"{name}.{act_fn.__name__}"] = _source_hash(act_fn)
 
     return json.dumps(snapshot, indent=2, sort_keys=True) + "\n"
