@@ -126,7 +126,7 @@ class Compensation:
 
 
 @dataclass(frozen=True)
-class WorkflowStatus:
+class WorkflowStatus:  # pylint:disable=too-many-instance-attributes
     state: WorkflowState
     running_activities: set[str]
     completed_activities: set[str]

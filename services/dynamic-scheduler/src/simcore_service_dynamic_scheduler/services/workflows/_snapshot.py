@@ -1,12 +1,14 @@
 import hashlib
 import inspect
 import json
+from collections.abc import Callable
+from typing import Any
 
 from ..t_scheduler import WorkflowRegistry
 from ._lifespan import _register_workflows
 
 
-def _source_hash(obj: object) -> str:
+def _source_hash(obj: type[Any] | Callable[..., Any]) -> str:
     source = inspect.getsource(obj)
     return hashlib.sha256(source.encode()).hexdigest()[:16]
 
