@@ -97,8 +97,8 @@ MSG_WRONG_PASSWORD: Final[str] = user_message(
 )
 MSG_WRONG_PASSWORD_MERGED_ACCOUNTS: Final[str] = user_message(
     "The password does not match the one associated with this email address."
-    " If you have accounts on multiple platforms, please note that your login"
-    " credentials have been unified. Try using your {suggested_product} password.",
+    " If you have accounts on multiple platforms, you now benefit from a unified login."
+    " Please try using your {suggested_product} password.",
     _version=1,
 )
 MSG_WEAK_PASSWORD: Final[str] = user_message(
