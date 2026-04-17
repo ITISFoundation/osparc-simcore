@@ -167,10 +167,6 @@ services:
       - "8080"
       - "3025:3000"
 
-  temporal-ui:
-    ports:
-      - "8233:8080"
-
   webserver:
     environment: &webserver_environment_local
       <<: *common_environment
