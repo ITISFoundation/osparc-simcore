@@ -362,6 +362,35 @@ services:
       - default
       - interactive_services_subnet # for legacy dynamic services
 
+  temporal:
+    # Temporal server with auto schema setup — https://docs.temporal.io/self-hosted-guide
+    # Reuses the existing postgres service; auto-creates "temporal" and "temporal_visibility" databases.
+    image: temporalio/auto-setup:1.29.1
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+      TEMPORAL_ADDRESS: temporal:7233
+    networks:
+      - default
+    volumes:
+      - ./temporalio/dynamicconfig:/etc/temporal/config/dynamicconfig
+
+  temporal-ui:
+    # Temporal Web UI for workflow inspection and debugging — https://github.com/temporalio/ui
+    image: temporalio/ui:2.36.0
+    init: true
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:8233
+    networks:
+      - default
+
   #####################################
   ### Group simcore no dependencies ###
   #####################################
@@ -908,6 +937,11 @@ services:
       DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: ${DYNAMIC_SCHEDULER_UI_STORAGE_SECRET}
       DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: ${DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER}
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
+
+      TEMPORALIO_HOST: ${TEMPORALIO_HOST}
+      TEMPORALIO_NAMESPACE: ${TEMPORALIO_NAMESPACE}
+      TEMPORALIO_PORT: ${TEMPORALIO_PORT}
+      TEMPORALIO_TASK_QUEUE: ${TEMPORALIO_TASK_QUEUE}
 
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
