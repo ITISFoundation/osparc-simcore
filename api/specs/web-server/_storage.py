@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
@@ -48,7 +48,7 @@ router = APIRouter(
 # slashes, and when applying validation via `StorageFileID`
 # it raises an error. Before `StorageFileID`, `str` was the
 # type used in the OpenAPI specs.
-StorageFileIDStr: TypeAlias = str
+type StorageFileIDStr = str
 
 
 @router.get(
@@ -112,10 +112,10 @@ async def list_datasets_metadata(
 async def get_files_metadata(
     _path: Annotated[StorageLocationPathParams, Depends()],
     uuid_filter: str = "",
-    expand_dirs: bool = Query(
-        True,
-        description=("Automatic directory expansion. This will be replaced by pagination the future"),
-    ),
+    *,
+    expand_dirs: Annotated[
+        bool, Query(description=("Automatic directory expansion. This will be replaced by pagination the future"))
+    ] = True,
 ):
     """returns all the file meta data a user has access to (uuid_filter may be used)"""
 
@@ -128,10 +128,10 @@ async def get_files_metadata(
 async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
-    expand_dirs: bool = Query(
-        True,
-        description=("Automatic directory expansion. This will be replaced by pagination the future"),
-    ),
+    *,
+    expand_dirs: Annotated[
+        bool, Query(description=("Automatic directory expansion. This will be replaced by pagination the future"))
+    ] = True,
 ):
     """returns all the file meta data inside dataset with dataset_id"""
 
@@ -168,6 +168,7 @@ async def upload_file(
     file_id: StorageFileIDStr,
     file_size: ByteSize | None,
     link_type: LinkType = LinkType.PRESIGNED,
+    *,
     is_directory: bool = False,
 ):
     """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""

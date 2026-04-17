@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.81.1"
+    "version": "0.82.0"
   },
   "servers": [
     {
@@ -2708,6 +2708,22 @@
                 }
               ],
               "title": "Review Status"
+            }
+          },
+          {
+            "name": "registered",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Registered"
             }
           },
           {
@@ -12279,8 +12295,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12329,8 +12344,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -12378,8 +12392,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -12466,8 +12479,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12501,8 +12513,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12536,8 +12547,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12588,8 +12598,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -27169,7 +27178,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {
@@ -28323,6 +28332,9 @@
           "top_tracemalloc"
         ],
         "title": "StatusDiagnosticsGet"
+      },
+      "StorageFileIDStr": {
+        "type": "string"
       },
       "Structure": {
         "properties": {
