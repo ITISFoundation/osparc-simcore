@@ -65,7 +65,7 @@ class Vendor(TypedDict, total=False):
     company_name: str
     company_address: str
     company_links: list[tuple[str, str]]  # list of (link_name, link_url)
-    marketing_tip_fallback_product_on_wrong_password: (
+    marketing_tip_fallback_products_on_wrong_password: (
         list[str]  # list of product names to check; on wrong password, if user has an account
         # in any of these products, suggest using credentials from the first one
     )
