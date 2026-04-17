@@ -13,6 +13,7 @@ from settings_library.utils_cli import (
 
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings
+from .services.workflows._snapshot import compute_workflows_signatures
 
 _logger = logging.getLogger(__name__)
 
@@ -37,8 +38,8 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
     # The idea here is to have a command that can generate a **valid** `.env` file that can be used
     # to initialized the app. For that reason we fill required fields of the `ApplicationSettings` with
     # "fake" but valid values (e.g. generating a password or adding tags as `replace-with-api-key).
-    # Nonetheless, if the caller of this CLI has already some **valid** env vars in the environment we want to use them ...
-    # and that is why we use `os.environ`.
+    # Nonetheless, if the caller of this CLI has already some **valid** env vars
+    # in the environment we want to use them — and that is why we use `os.environ`.
 
     settings = ApplicationSettings.create_from_envs(
         DYNAMIC_SCHEDULER_RABBITMQ=os.environ.get(
@@ -80,3 +81,13 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
         show_secrets=True,
         exclude_unset=minimal,
     )
+
+
+@main.command()
+def workflows_signatures():
+    """Generates and displays the current workflow signatures JSON.
+
+    Usage:
+        $ simcore-service-dynamic-scheduler workflows-signatures > workflows_signatures.json
+    """
+    typer.echo(compute_workflows_signatures(), nl=False)

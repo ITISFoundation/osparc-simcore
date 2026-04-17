@@ -1,0 +1,24 @@
+name: OPS Temporalio Maintenance Reminder
+
+on:
+  pull_request:
+    paths:
+      - "services/dynamic-scheduler/workflows_signatures.json"
+    types: [opened, synchronize]
+
+jobs:
+  ops-temporalio-maintenance-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Post OPS maintenance comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          ./ci/github/helpers/ops-temporal-maintenance-comment.bash
+          "${{ github.repository }}"
+          "${{ github.event.pull_request.number }}"
