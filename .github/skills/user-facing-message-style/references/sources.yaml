@@ -1,0 +1,19 @@
+references:
+  SRC-01:
+    title: UX Writing Hub - Error Message Examples
+    url: https://uxwritinghub.com/error-message-examples/
+  SRC-02:
+    title: NN/g - Error-Message Guidelines
+    url: https://www.nngroup.com/articles/error-message-guidelines/
+  SRC-03:
+    title: CXL - Error Messages Best Practices
+    url: https://cxl.com/blog/error-messages/
+  SRC-04:
+    title: Atlassian Design - Writing Error Messages
+    url: https://atlassian.design/content/writing-guidelines/writing-error-messages/
+  SRC-05:
+    title: Microsoft Learn - Error Handling Guidelines
+    url: https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/devenv-error-handling-guidelines
+
+notes:
+  - Atlassian source is included for completeness; extraction can vary by tooling due to site rendering.
