@@ -62,8 +62,8 @@ async def _should_show_login_tip(app: web.Application, *, user_id: int, product_
         if not tip_products:
             return None
 
-        preferred_product = products_service.get_product(app, product_name=tip_products[0])
-        preferred_display_name = preferred_product.display_name
+        fallback_product = products_service.get_product(app, product_name=tip_products[0])
+        fallback_display_name = fallback_product.display_name
 
         for check_product_name in tip_products:
             try:
@@ -73,7 +73,7 @@ async def _should_show_login_tip(app: web.Application, *, user_id: int, product_
             if check_product.group_id is not None and await groups_service.is_user_in_group(
                 app, user_id=user_id, group_id=check_product.group_id
             ):
-                return preferred_display_name
+                return fallback_display_name
     except ProductNotFoundError:
         _logger.debug(
             "Product %s not found while checking login tip for user %s",
