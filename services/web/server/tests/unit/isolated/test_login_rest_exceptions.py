@@ -14,12 +14,17 @@ from simcore_service_webserver.products.errors import ProductNotFoundError
 
 
 def _create_fake_product(
-    *, name: str, group_id: int | None, marketing_login_tip_on_wrong_password: bool = False
+    *,
+    name: str,
+    display_name: str = "",
+    group_id: int | None,
+    tip_products: list[str] | None = None,
 ) -> MagicMock:
     product = MagicMock()
     product.name = name
+    product.display_name = display_name or name
     product.group_id = group_id
-    product.vendor = {"marketing_login_tip_on_wrong_password": True} if marketing_login_tip_on_wrong_password else {}
+    product.vendor = {"marketing_login_tip_on_wrong_password": tip_products} if tip_products else {}
     return product
 
 
@@ -53,75 +58,56 @@ def _patch_products(
         f"{products_service.__name__}.get_product",
         _get_product,
     )
-    monkeypatch.setattr(
-        f"{products_service.__name__}.list_products",
-        lambda _app: all_products,
-    )
 
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/private-issues/issues/535")
-async def test_tip_shown_when_flag_enabled_and_user_in_other_product(
+async def test_tip_returns_preferred_product_display_name(
     mock_app: web.Application,
     monkeypatch: pytest.MonkeyPatch,
     mock_is_user_in_group: AsyncMock,
 ):
-    # s4llite has the flag, s4l does not; user is in s4l
-    s4llite = _create_fake_product(name="s4llite", group_id=20, marketing_login_tip_on_wrong_password=True)
-    s4l = _create_fake_product(name="s4l", group_id=10)
-    _patch_products(monkeypatch, [s4llite, s4l])
+    # s4llite configured to suggest s4l; user belongs to s4l
+    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l", "osparc"])
+    s4l = _create_fake_product(name="s4l", display_name="sim4life.science", group_id=10)
+    osparc = _create_fake_product(name="osparc", display_name="o²S²PARC", group_id=30)
+    _patch_products(monkeypatch, [s4llite, s4l, osparc])
     mock_is_user_in_group.return_value = True
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
-    assert result is True
+    assert result == "sim4life.science"
 
 
-async def test_tip_not_shown_when_flag_disabled_on_current_product(
+async def test_tip_not_shown_when_no_tip_configured(
     mock_app: web.Application,
     monkeypatch: pytest.MonkeyPatch,
     mock_is_user_in_group: AsyncMock,
 ):
-    # s4l does NOT have the flag; even if user is in another product
+    # s4l has no tip configured
     s4l = _create_fake_product(name="s4l", group_id=10)
-    s4llite = _create_fake_product(name="s4llite", group_id=20, marketing_login_tip_on_wrong_password=True)
+    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
     _patch_products(monkeypatch, [s4l, s4llite])
     mock_is_user_in_group.return_value = True
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4l")
 
-    assert result is False
+    assert result is None
 
 
-async def test_tip_not_shown_when_user_not_in_any_other_product(
+async def test_tip_not_shown_when_user_not_in_listed_products(
     mock_app: web.Application,
     monkeypatch: pytest.MonkeyPatch,
     mock_is_user_in_group: AsyncMock,
 ):
-    # s4llite has the flag, but user is NOT in s4l
-    s4llite = _create_fake_product(name="s4llite", group_id=20, marketing_login_tip_on_wrong_password=True)
-    s4l = _create_fake_product(name="s4l", group_id=10)
+    # s4llite configured to check s4l, but user is NOT in s4l
+    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
+    s4l = _create_fake_product(name="s4l", display_name="sim4life.science", group_id=10)
     _patch_products(monkeypatch, [s4llite, s4l])
     mock_is_user_in_group.return_value = False
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
-    assert result is False
-
-
-async def test_tip_not_shown_when_other_product_also_has_flag(
-    mock_app: web.Application,
-    monkeypatch: pytest.MonkeyPatch,
-    mock_is_user_in_group: AsyncMock,
-):
-    # Both products have the flag — user in both, but tip should NOT show
-    s4llite = _create_fake_product(name="s4llite", group_id=20, marketing_login_tip_on_wrong_password=True)
-    s4l = _create_fake_product(name="s4l", group_id=10, marketing_login_tip_on_wrong_password=True)
-    _patch_products(monkeypatch, [s4llite, s4l])
-    mock_is_user_in_group.return_value = True
-
-    result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
-
-    assert result is False
+    assert result is None
 
 
 async def test_tip_handles_db_error_gracefully(
@@ -129,17 +115,17 @@ async def test_tip_handles_db_error_gracefully(
     monkeypatch: pytest.MonkeyPatch,
     mock_is_user_in_group: AsyncMock,
 ):
-    s4llite = _create_fake_product(name="s4llite", group_id=20, marketing_login_tip_on_wrong_password=True)
-    s4l = _create_fake_product(name="s4l", group_id=10)
+    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
+    s4l = _create_fake_product(name="s4l", display_name="sim4life.science", group_id=10)
     _patch_products(monkeypatch, [s4llite, s4l])
     mock_is_user_in_group.side_effect = RuntimeError("DB connection failed")
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
-    assert result is False
+    assert result is None
 
 
-async def test_tip_handles_missing_product_gracefully(
+async def test_tip_handles_missing_current_product_gracefully(
     mock_app: web.Application,
     monkeypatch: pytest.MonkeyPatch,
     mock_is_user_in_group: AsyncMock,
@@ -148,20 +134,37 @@ async def test_tip_handles_missing_product_gracefully(
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="unknown")
 
-    assert result is False
+    assert result is None
 
 
-async def test_tip_skips_other_product_without_group_id(
+async def test_tip_skips_listed_product_without_group_id(
     mock_app: web.Application,
     monkeypatch: pytest.MonkeyPatch,
     mock_is_user_in_group: AsyncMock,
 ):
-    # s4llite has the flag, s4l has no group_id — can't check membership
-    s4llite = _create_fake_product(name="s4llite", group_id=20, marketing_login_tip_on_wrong_password=True)
-    s4l = _create_fake_product(name="s4l", group_id=None)
+    # s4llite configured to check s4l, but s4l has no group_id
+    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l"])
+    s4l = _create_fake_product(name="s4l", display_name="sim4life.science", group_id=None)
     _patch_products(monkeypatch, [s4llite, s4l])
     mock_is_user_in_group.return_value = True
 
     result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
 
-    assert result is False
+    assert result is None
+
+
+async def test_tip_skips_unknown_listed_product(
+    mock_app: web.Application,
+    monkeypatch: pytest.MonkeyPatch,
+    mock_is_user_in_group: AsyncMock,
+):
+    # s4llite lists "nonexistent" and "s4l"; nonexistent is skipped, user is in s4l
+    s4llite = _create_fake_product(name="s4llite", group_id=20, tip_products=["s4l", "nonexistent"])
+    s4l = _create_fake_product(name="s4l", display_name="sim4life.science", group_id=10)
+    _patch_products(monkeypatch, [s4llite, s4l])
+    mock_is_user_in_group.return_value = True
+
+    result = await _should_show_login_tip(mock_app, user_id=42, product_name="s4llite")
+
+    # preferred is s4l (first in list)
+    assert result == "sim4life.science"

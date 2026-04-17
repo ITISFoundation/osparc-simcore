@@ -48,27 +48,32 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-async def _should_show_login_tip(app: web.Application, *, user_id: int, product_name: str) -> bool:
-    """Show a login tip when the current product has ``marketing_login_tip_on_wrong_password``
-    enabled in its vendor config AND the user also belongs to another product
-    that does NOT have the flag enabled.
+async def _should_show_login_tip(app: web.Application, *, user_id: int, product_name: str) -> str | None:
+    """Returns the suggested product display name when a login tip should be shown.
+
+    Checks if the current product has ``marketing_login_tip_on_wrong_password``
+    configured with a list of product names. If the user belongs to any of those
+    products, returns the display name of the first (preferred) product.
     """
     try:
         current_product = products_service.get_product(app, product_name=product_name)
         vendor = current_product.vendor or {}
-        if not vendor.get("marketing_login_tip_on_wrong_password", False):
-            return False
+        tip_products: list[str] = vendor.get("marketing_login_tip_on_wrong_password", [])
+        if not tip_products:
+            return None
 
-        for other_product in products_service.list_products(app):
-            if other_product.name == product_name:
+        preferred_product = products_service.get_product(app, product_name=tip_products[0])
+        preferred_display_name = preferred_product.display_name
+
+        for check_product_name in tip_products:
+            try:
+                check_product = products_service.get_product(app, product_name=check_product_name)
+            except ProductNotFoundError:
                 continue
-            other_vendor = other_product.vendor or {}
-            if other_vendor.get("marketing_login_tip_on_wrong_password", False):
-                continue
-            if other_product.group_id is not None and await groups_service.is_user_in_group(
-                app, user_id=user_id, group_id=other_product.group_id
+            if check_product.group_id is not None and await groups_service.is_user_in_group(
+                app, user_id=user_id, group_id=check_product.group_id
             ):
-                return True
+                return preferred_display_name
     except ProductNotFoundError:
         _logger.debug(
             "Product %s not found while checking login tip for user %s",
@@ -81,7 +86,7 @@ async def _should_show_login_tip(app: web.Application, *, user_id: int, product_
             user_id,
             exc_info=True,
         )
-    return False
+    return None
 
 
 async def _handle_legacy_error_response(request: web.Request, exception: Exception):
@@ -97,8 +102,9 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
 
     msg = MSG_WRONG_PASSWORD
     product_name = products_web.get_product_name(request)
-    if await _should_show_login_tip(request.app, user_id=exception.user_id, product_name=product_name):
-        msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS
+    suggested_product = await _should_show_login_tip(request.app, user_id=exception.user_id, product_name=product_name)
+    if suggested_product:
+        msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product=suggested_product)
 
     return handle_aiohttp_web_http_error(
         request=request,
