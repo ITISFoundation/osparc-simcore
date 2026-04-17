@@ -5,9 +5,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from aiohttp import web
+from simcore_service_webserver.groups import api as groups_service
 from simcore_service_webserver.login._controller.rest._rest_exceptions import (
     _is_user_affected_by_db_merge,
 )
+from simcore_service_webserver.products import products_service
 
 
 def _create_fake_product(*, group_id: int | None) -> MagicMock:
@@ -33,7 +35,7 @@ def mock_products(monkeypatch: pytest.MonkeyPatch) -> dict[str, MagicMock]:
         return products[product_name]
 
     monkeypatch.setattr(
-        "simcore_service_webserver.login._controller.rest._rest_exceptions.products_service.get_product",
+        f"{products_service.__name__}.get_product",
         _get_product,
     )
     return products
@@ -43,7 +45,7 @@ def mock_products(monkeypatch: pytest.MonkeyPatch) -> dict[str, MagicMock]:
 def mock_is_user_in_group(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     mock = AsyncMock(return_value=False)
     monkeypatch.setattr(
-        "simcore_service_webserver.login._controller.rest._rest_exceptions.groups_service.is_user_in_group",
+        f"{groups_service.__name__}.is_user_in_group",
         mock,
     )
     return mock
@@ -113,7 +115,7 @@ async def test_db_merge_check_handles_missing_product_gracefully(
         raise KeyError(product_name)
 
     monkeypatch.setattr(
-        "simcore_service_webserver.login._controller.rest._rest_exceptions.products_service.get_product",
+        f"{products_service.__name__}.get_product",
         _get_product,
     )
 
@@ -137,7 +139,7 @@ async def test_db_merge_check_skips_product_without_group_id(
         return products[product_name]
 
     monkeypatch.setattr(
-        "simcore_service_webserver.login._controller.rest._rest_exceptions.products_service.get_product",
+        f"{products_service.__name__}.get_product",
         _get_product,
     )
     mock_is_user_in_group.return_value = True
