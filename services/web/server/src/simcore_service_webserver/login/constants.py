@@ -32,7 +32,8 @@ MSG_EMAIL_SENT: Final[str] = user_message("We've sent an email to {email} with f
 MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
 MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
 MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
-    "You've recently requested a password reset. Please check your email for the reset link or wait before requesting another one.",
+    "You've recently requested a password reset. "
+    "Please check your email for the reset link or wait before requesting another one.",
     _version=1,
 )
 MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
@@ -63,7 +64,8 @@ MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[str] = user_message(
 )
 MSG_UNKNOWN_EMAIL: Final[str] = user_message("This email address is not registered.", _version=1)
 MSG_USER_DELETED: Final[str] = user_message(
-    "This account is scheduled for deletion. To reactivate it or for more information, please contact support: {support_email}",
+    "This account is scheduled for deletion. "
+    "To reactivate it or for more information, please contact support: {support_email}",
     _version=1,
 )
 MSG_USER_BANNED: Final[str] = user_message(
@@ -71,11 +73,13 @@ MSG_USER_BANNED: Final[str] = user_message(
     _version=1,
 )
 MSG_USER_EXPIRED: Final[str] = user_message(
-    "This account has expired and access is no longer available. Please contact support for assistance: {support_email}",
+    "This account has expired and access is no longer available. "
+    "Please contact support for assistance: {support_email}",
     _version=1,
 )
 MSG_USER_DISABLED: Final[str] = user_message(
-    "This account has been disabled and cannot be registered again. Please contact support for details: {support_email}",
+    "This account has been disabled and cannot be registered again. "
+    "Please contact support for details: {support_email}",
     _version=1,
 )
 MSG_WRONG_2FA_CODE__INVALID: Final[str] = user_message(
@@ -90,6 +94,13 @@ MSG_WRONG_CAPTCHA__INVALID: Final[str] = user_message("The CAPTCHA entered is in
 MSG_WRONG_PASSWORD: Final[str] = user_message(
     "The password does not match the one associated with this email address. Please try again.",
     _version=3,
+)
+MSG_WRONG_PASSWORD_MERGED_ACCOUNTS: Final[str] = user_message(
+    "The password does not match the one associated with this email address."
+    " Since sim4life.io and sim4life.science have been merged,"
+    " please use your sim4life.science credentials to log in."
+    " You can also reset your password if needed.",
+    _version=1,
 )
 MSG_WEAK_PASSWORD: Final[str] = user_message(
     "Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters for security.",
