@@ -220,10 +220,10 @@ async def test_send_message_from_template_passes_correct_template_ref(
     assert len(addressing.to) == 1
     assert addressing.to[0].email == external_contacts[0].email
 
-    # Verify owner_metadata
-    owner_metadata = call_kwargs["owner_metadata"]
-    assert owner_metadata.user_id == logged_user["id"]
-    assert owner_metadata.product_name == "osparc"
+    # Verify owner params
+    assert call_kwargs["owner"] is not None
+    assert call_kwargs["user_id"] == logged_user["id"]
+    assert call_kwargs["product_name"] == "osparc"
 
 
 async def test_send_message_from_template_unsupported_channel(

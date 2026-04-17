@@ -22,10 +22,8 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.fastapi.dependencies import get_app
 
+from ..._meta import APP_NAME
 from ...exceptions.backend_errors import CeleryTaskNotFoundError
-from ...models.domain.celery_models import (
-    ApiServerOwnerMetadata,
-)
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.authentication import get_current_user_id, get_product_name
@@ -73,12 +71,10 @@ async def list_tasks(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    owner_metadata = ApiServerOwnerMetadata(
+    tasks = await task_manager.list_tasks(
+        owner=APP_NAME,
         user_id=user_id,
         product_name=product_name,
-    )
-    tasks = await task_manager.list_tasks(
-        owner_metadata=owner_metadata,
     )
 
     app_router = app.router
@@ -110,17 +106,12 @@ async def list_tasks(
 async def get_task_status(
     task_uuid: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
+    _user_id: Annotated[UserID, Depends(get_current_user_id)],
+    _product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    owner_metadata = ApiServerOwnerMetadata(
-        user_id=user_id,
-        product_name=product_name,
-    )
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_status(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
@@ -150,17 +141,12 @@ async def get_task_status(
 async def cancel_task(
     task_uuid: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
+    _user_id: Annotated[UserID, Depends(get_current_user_id)],
+    _product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    owner_metadata = ApiServerOwnerMetadata(
-        user_id=user_id,
-        product_name=product_name,
-    )
     with _exception_mapper(task_uuid=task_uuid):
         await task_manager.cancel(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
@@ -186,18 +172,13 @@ async def cancel_task(
 async def get_task_result(
     task_uuid: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
+    _user_id: Annotated[UserID, Depends(get_current_user_id)],
+    _product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    owner_metadata = ApiServerOwnerMetadata(
-        user_id=user_id,
-        product_name=product_name,
-    )
 
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_status(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
@@ -208,7 +189,6 @@ async def get_task_result(
             )
 
         task_result = await task_manager.get_result(
-            owner_metadata=owner_metadata,
             task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 

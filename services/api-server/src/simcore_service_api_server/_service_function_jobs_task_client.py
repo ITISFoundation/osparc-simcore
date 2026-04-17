@@ -47,7 +47,6 @@ from .exceptions.backend_errors import (
     StudyJobOutputRequestButNotSucceededError,
 )
 from .models.api_resources import JobLinks
-from .models.domain.celery_models import ApiServerOwnerMetadata
 from .models.domain.functions import FunctionJobPatch
 from .models.schemas.functions import FunctionJobCreationTaskStatus
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
@@ -82,13 +81,9 @@ async def _celery_task_status(
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    owner_metadata = ApiServerOwnerMetadata(
-        user_id=user_id,
-        product_name=product_name,
-    )
     task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(f"{job_creation_task_id}")
     try:
-        task_status = await task_manager.get_status(owner_metadata=owner_metadata, task_or_group_uuid=task_uuid)
+        task_status = await task_manager.get_status(task_or_group_uuid=task_uuid)
         assert isinstance(task_status, TaskStatus)  # nosec
         return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskOrGroupNotFoundError as err:
@@ -99,7 +94,6 @@ async def _celery_task_status(
                 error=err,
                 error_context={
                     "task_uuid": task_uuid,
-                    "owner_metadata": owner_metadata,
                     "user_id": user_id,
                     "product_name": product_name,
                 },
@@ -324,11 +318,6 @@ class FunctionJobTaskClientService:
                 job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
             )
 
-            owner_metadata = ApiServerOwnerMetadata(
-                user_id=user_identity.user_id,
-                product_name=user_identity.product_name,
-                owner=APP_NAME,
-            )
             task_uuids = await logged_gather(
                 *(
                     self._celery_task_manager.submit_task(
@@ -337,7 +326,9 @@ class FunctionJobTaskClientService:
                             ephemeral=False,
                             queue=API_SERVER_CELERY_QUEUE_DEFAULT,
                         ),
-                        owner_metadata=owner_metadata,
+                        owner=APP_NAME,
+                        user_id=user_identity.user_id,
+                        product_name=user_identity.product_name,
                         user_identity=user_identity,
                         function=function,
                         pre_registered_function_job_data=pre_registered_function_job_data,

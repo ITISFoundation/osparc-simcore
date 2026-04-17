@@ -19,7 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     PresignedLink,
 )
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata
+from models_library.celery import TaskExecutionMetadata
 from models_library.generics import Envelope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -30,8 +30,8 @@ from servicelib.aiohttp.client_session import get_client_session
 from servicelib.logging_utils import log_context
 from yarl import URL
 
+from .._meta import APP_NAME
 from ..celery import get_task_manager
-from ..models import WebServerOwnerMetadata
 from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
 from .settings import StorageSettings, get_plugin_settings
@@ -107,12 +107,9 @@ async def copy_data_folders_from_project(
         async for job_composed_result in submit_job_and_wait(
             task_manager,
             execution_metadata=TaskExecutionMetadata(name="deep_copy_files_from_project"),
-            owner_metadata=OwnerMetadata.model_validate(
-                WebServerOwnerMetadata(
-                    user_id=user_id,
-                    product_name=product_name,
-                ).model_dump()
-            ),
+            owner=APP_NAME,
+            user_id=user_id,
+            product_name=product_name,
             body=TypeAdapter(FoldersBody).validate_python(
                 {
                     "source": source_project,
@@ -121,7 +118,6 @@ async def copy_data_folders_from_project(
                 }
             ),
             stop_after=datetime.timedelta(seconds=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
-            user_id=user_id,
         ):
             yield job_composed_result
 

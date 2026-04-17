@@ -43,7 +43,7 @@ async def _task_progress_cb(task: Task, task_key: TaskKey, report: ProgressRepor
 
 
 async def deep_copy_files_from_project(
-    task: Task, task_key: TaskKey, user_id: UserID, body: FoldersBody
+    task: Task, task_key: TaskKey, user_id: UserID, body: FoldersBody, **_kwargs: Any
 ) -> dict[str, Any]:
     with log_context(
         _logger,

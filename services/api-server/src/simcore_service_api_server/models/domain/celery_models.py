@@ -1,6 +1,3 @@
-from typing import Annotated
-
-from models_library.celery import OwnerMetadata
 from models_library.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
@@ -8,11 +5,7 @@ from models_library.functions import (
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
 )
-from models_library.products import ProductName
-from models_library.users import UserID
-from pydantic import Field, StringConstraints
 
-from ..._meta import APP_NAME
 from ...api.dependencies.authentication import Identity
 from ...models.api_resources import JobLinks
 from ...models.domain.functions import PreRegisteredFunctionJobData
@@ -31,9 +24,3 @@ pydantic_types_to_register = (
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
 )
-
-
-class ApiServerOwnerMetadata(OwnerMetadata):
-    user_id: UserID
-    product_name: ProductName
-    owner: Annotated[str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)] = APP_NAME
