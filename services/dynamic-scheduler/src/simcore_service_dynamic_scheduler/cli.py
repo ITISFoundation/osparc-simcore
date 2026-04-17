@@ -13,7 +13,7 @@ from settings_library.utils_cli import (
 
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings
-from .services.workflows._snapshot import compute_workflows_signatures
+from .services.workflows import compute_workflows_signatures
 
 _logger = logging.getLogger(__name__)
 
