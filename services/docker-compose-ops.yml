@@ -141,6 +141,18 @@ services:
       retries: 3
       start_period: 1m
 
+  temporal-ui:
+    # Temporal Web UI for workflow inspection and debugging — https://github.com/temporalio/ui
+    image: temporalio/ui:2.36.0
+    init: true
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:8233
+    ports:
+      - "8233:8080"
+    networks:
+      - simcore_default
+
   opentelemetry-collector:
     image: otel/opentelemetry-collector-contrib:0.105.0
     volumes:

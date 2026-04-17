@@ -70,6 +70,58 @@
           }
         }
       }
+    },
+    "/v1/ops/temporalio-workflows": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "List Workflows",
+        "description": "List all running Temporalio workflows on the scheduler task queue.",
+        "operationId": "list_workflows_v1_ops_temporalio_workflows_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunningWorkflowInfo"
+                  },
+                  "type": "array",
+                  "title": "Response List Workflows V1 Ops Temporalio Workflows Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ops/temporalio-workflows:shutdown": {
+      "post": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Shutdown Workflows",
+        "description": "Cancel all running Temporalio workflows, triggering saga compensation.",
+        "operationId": "shutdown_workflows_v1_ops_temporalio_workflows_shutdown_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object",
+                  "title": "Response Shutdown Workflows V1 Ops Temporalio Workflows Shutdown Post"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -239,6 +291,24 @@
           "service_state"
         ],
         "title": "RunningDynamicServiceDetails"
+      },
+      "RunningWorkflowInfo": {
+        "properties": {
+          "workflow_id": {
+            "type": "string",
+            "title": "Workflow Id"
+          },
+          "workflow_type": {
+            "type": "string",
+            "title": "Workflow Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workflow_id",
+          "workflow_type"
+        ],
+        "title": "RunningWorkflowInfo"
       },
       "ServiceBootType": {
         "type": "string",

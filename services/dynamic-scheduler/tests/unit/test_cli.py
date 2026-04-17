@@ -59,3 +59,9 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict, monk
         print(result.output)
         settings = ApplicationSettings(result.output)
         assert settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
+
+
+def test_workflows_signatures(cli_runner: CliRunner):
+    result = cli_runner.invoke(cli_main, "workflows-signatures")
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
+    assert result.stdout.strip()

@@ -18,6 +18,7 @@ def app_environment(
     disable_deferred_manager_lifespan: None,
     disable_notifier_lifespan: None,
     disable_status_monitor_lifespan: None,
+    disable_t_scheduler_lifespan: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
