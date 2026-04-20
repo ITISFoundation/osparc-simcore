@@ -82,7 +82,7 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       return { label: entry.label, color: resolvedColor };
     },
 
-    __showOverlay: function(rowElem, rowInfo) {
+    __showOverlay: function(rowElem, rowIndex, rowData) {
       const messageDiv = rowElem.children.item(this.__messageColPos);
       if (!messageDiv) {
         return;
@@ -90,7 +90,6 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
       this.__closeOverlay();
 
-      const rowData = rowInfo.rowData;
       const cellStyle = window.getComputedStyle(messageDiv);
       const rowStyle = window.getComputedStyle(rowElem);
       const rect = rowElem.getBoundingClientRect();
@@ -204,7 +203,7 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
       document.body.appendChild(overlay);
       this.__overlay = overlay;
-      this.__activeRowIndex = rowInfo.row;
+      this.__activeRowIndex = rowIndex;
 
       // Close when clicking outside
       this.__dismissHandler = function(e) {
@@ -229,12 +228,14 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
       const self = this;
       const rowIndex = rowInfo.row;
+      // Capture rowData now — rowInfo is a shared mutable object reused across rows
+      const rowData = rowInfo.rowData;
       rowElem.style.cursor = "pointer";
       rowElem.onclick = function() {
         if (self.__activeRowIndex === rowIndex) {
           self.__closeOverlay();
         } else {
-          self.__showOverlay(rowElem, rowInfo);
+          self.__showOverlay(rowElem, rowIndex, rowData);
         }
       };
     }
