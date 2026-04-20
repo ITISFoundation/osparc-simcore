@@ -298,7 +298,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
       resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
-      table.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(table, this.self().POS.MESSAGE));
+      table.setDataRowRenderer(new osparc.ui.table.rowrenderer.PopUpLogMessage(table, this.self().POS.MESSAGE));
 
       this.__applyFilters();
 
