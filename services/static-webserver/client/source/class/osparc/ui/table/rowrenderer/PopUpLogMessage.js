@@ -34,10 +34,10 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
   statics: {
     LOG_LEVEL_INFO: {
-      "-1": { label: "DEBUG", themeColor: "logger-debug-message" },
-      "0": { label: "INFO", themeColor: "logger-info-message" },
-      "1": { label: "WARNING", themeColor: "logger-warning-message" },
-      "2": { label: "ERROR", themeColor: "logger-error-message" },
+      "-1": { label: "DEBUG", textColor: "logger-debug-message", bgColor: "background-main-4" },
+      "0": { label: "INFO", textColor: "logger-info-message", bgColor: "background-main-4" },
+      "1": { label: "WARNING", textColor: "background-main-1", bgColor: "logger-warning-message" },
+      "2": { label: "ERROR", textColor: "background-main-1", bgColor: "logger-error-message" },
     },
   },
 
@@ -70,8 +70,8 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       const badge = new qx.ui.basic.Label(entry.label).set({
         font: "text-10",
         padding: [2, 8],
-        textColor: "text",
-        backgroundColor: entry.themeColor,
+        textColor: entry.textColor,
+        backgroundColor: entry.bgColor,
         decorator: "rounded",
         allowGrowY: false,
         allowGrowX: false,
