@@ -76,9 +76,6 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
         allowGrowY: false,
         allowGrowX: false,
       });
-      badge.getContentElement().setStyles({
-        "letter-spacing": "0.5px",
-      });
       return badge;
     },
 
@@ -94,7 +91,7 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
       // Container
       const popup = new qx.ui.container.Composite(new qx.ui.layout.VBox(4)).set({
-        backgroundColor: "background-main-2",
+        backgroundColor: "background-main-1",
         padding: 8,
         maxHeight: Math.round(window.innerHeight * 0.5),
         width: Math.round(rect.width),
@@ -123,7 +120,7 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
         }));
       }
 
-      // Origin
+      // Node
       if (rowData && rowData.label) {
         header.add(new qx.ui.basic.Label(rowData.label).set({
           font: "text-11",
@@ -137,7 +134,10 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       });
 
       // Copy button
-      const copyBtn = osparc.utils.Utils.getCopyButton();
+      const copyBtn = osparc.utils.Utils.getCopyButton().set({
+        backgroundColor: "transparent",
+        padding: 2,
+      });
       copyBtn.addListener("execute", () => {
         const text = osparc.widget.logger.LoggerView.printRow(rowData);
         osparc.utils.Utils.copyTextToClipboard(text);
@@ -146,8 +146,8 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
       // Close button
       const closeBtn = new qx.ui.form.Button(null, "@MaterialIcons/close/14").set({
+        backgroundColor: "transparent",
         allowGrowY: false,
-        appearance: "form-button-outlined",
         padding: 2,
       });
       closeBtn.addListener("execute", () => this.__closePopup());
