@@ -69,9 +69,15 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       }
       const badge = new qx.ui.basic.Label(entry.label).set({
         font: "text-10",
-        padding: [1, 6],
+        padding: [2, 8],
         textColor: "text",
         backgroundColor: entry.themeColor,
+        decorator: "rounded",
+        allowGrowY: false,
+        allowGrowX: false,
+      });
+      badge.getContentElement().setStyles({
+        "letter-spacing": "0.5px",
       });
       return badge;
     },
@@ -97,9 +103,11 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       });
 
       // Header
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle",
-      }));
+      })).set({
+        paddingBottom: 4,
+      });
 
       // Log level badge
       const badge = this.__createBadge(rowData);
@@ -137,18 +145,23 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       header.add(copyBtn);
 
       // Close button
-      const closeBtn = new qx.ui.form.Button(null, "@MaterialIcons/close/12").set({
+      const closeBtn = new qx.ui.form.Button(null, "@MaterialIcons/close/14").set({
         allowGrowY: false,
-        padding: 3,
-        maxWidth: 20,
+        appearance: "form-button-outlined",
+        padding: 2,
       });
       closeBtn.addListener("execute", () => this.__closePopup());
       header.add(closeBtn);
 
       popup.add(header);
 
-      // Separator
-      popup.add(new qx.ui.menu.Separator());
+      // Divider
+      const divider = new qx.ui.core.Widget().set({
+        height: 1,
+        backgroundColor: "text-opa30",
+        allowGrowY: false,
+      });
+      popup.add(divider);
 
       // Message body (scrollable)
       const scroll = new qx.ui.container.Scroll();

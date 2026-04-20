@@ -25,10 +25,10 @@
  *   - some log type filtering buttons
  * - log messages table
  *
- * Log messages have two inputs: "Origin" and "Message".
+ * Log messages have two inputs: "Node" and "Message".
  *
- *   Depending on the log level, "Origin"'s color will change, also "Message"s coming from the same
- * origin will be rendered with the same color.
+ *   Depending on the log level, "Node"'s color will change, also "Message"s coming from the same
+ * node will be rendered with the same color.
  *
  * *Example*
  *
