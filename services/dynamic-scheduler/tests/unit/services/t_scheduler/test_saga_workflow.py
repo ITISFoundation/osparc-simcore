@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 from simcore_service_dynamic_scheduler.services.t_scheduler import (
     WorkflowEngine,
     get_workflow_engine,
@@ -25,6 +26,7 @@ from simcore_service_dynamic_scheduler.services.t_scheduler._models import (
     CompensationStarted,
     Decision,
     DecisionReceived,
+    ResolutionSignal,
     StateChanged,
     WorkflowEventBase,
     WorkflowState,
@@ -1083,6 +1085,68 @@ async def test_parallel_double_fail_skip_both(
         compensated=set(),
         skipped={"step_failing", "step_failing_b"},
         steps_total=3,
+    )
+
+
+async def test_parallel_double_fail_ignores_unknown_signal_and_rollbacks_both(
+    workflow_engine: WorkflowEngine,
+    parallel_double_fail_workflow: type[SagaWorkflow],
+    app: FastAPI,
+    call_log: list[str],
+    log_key: str,
+    await_workflow_failed: Callable[[str], Coroutine[Any, Any, None]],
+    mocker: MockerFixture,
+):
+    """Unknown signal is ignored while waiting.
+
+    Rolling back both parallel failures also triggers the secondary-failure warning.
+    """
+
+    warning_mock = mocker.patch(
+        "simcore_service_dynamic_scheduler.services.t_scheduler._base_workflow.workflow.logger.warning"
+    )
+
+    wf_id = "test-double-fail-unknown-signal-rollback-both"
+    await workflow_engine.start(
+        parallel_double_fail_workflow.__name__,
+        workflow_id=wf_id,
+        context={"log_key": log_key},
+    )
+
+    await _assert_state_waiting_intervention(workflow_engine, wf_id)
+
+    # Bypass WorkflowEngine validation to hit SagaWorkflow.resolve() unknown-signal branch.
+    client = get_temporalio_client(app)
+    handle = client.get_workflow_handle(wf_id)
+    await handle.signal(
+        "resolve",
+        ResolutionSignal(activity_name="not_a_real_activity", decision=Decision.SKIP),
+    )
+
+    # Unknown signal must be ignored: workflow stays in waiting-intervention and both failures remain unresolved.
+    await _assert_state_waiting_intervention(workflow_engine, wf_id)
+    status = await workflow_engine.status(wf_id)
+    assert "step_failing" in status.failed_activities
+    assert "step_failing_b" in status.failed_activities
+
+    # Resolve both failed activities as rollback; this creates two parallel failures.
+    await workflow_engine.signal(wf_id, activity_name="step_failing", decision=Decision.ROLLBACK)
+    await workflow_engine.signal(wf_id, activity_name="step_failing_b", decision=Decision.ROLLBACK)
+
+    await await_workflow_failed(wf_id)
+
+    warning_messages = [call.args[0] for call in warning_mock.call_args_list if call.args]
+    assert any("Ignoring signal for" in message for message in warning_messages)
+    assert any("Parallel activity %s also failed" in message for message in warning_messages)
+
+    assert_call_log_order(
+        call_log,
+        [
+            "execute:a",
+            _Unordered("execute:failing", "execute:failing_b"),
+            _Unordered(_Optional("compensate:failing"), _Optional("compensate:failing_b")),
+            "compensate:a",
+        ],
     )
 
 
