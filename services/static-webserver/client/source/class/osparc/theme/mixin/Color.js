@@ -48,9 +48,6 @@ qx.Theme.define("osparc.theme.mixin.Color", {
 
     "visual-blue": "#007fd4", // Visual Studio blue
 
-    "logger-warning-message": "warning-yellow",
-    "logger-error-message": "failed-red",
-
     "workbench-edge": "#787878",
     "workbench-edge-selected": "busy-orange",
 
