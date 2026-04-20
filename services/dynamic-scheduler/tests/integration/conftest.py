@@ -39,8 +39,6 @@ from temporalio.common import RetryPolicy
 _DEFAULT_RETRY = RetryPolicy(maximum_attempts=1)
 _DEFAULT_TIMEOUT = timedelta(seconds=10)
 
-_WORKFLOWS_MODULE: Final[str] = "simcore_service_dynamic_scheduler.services.workflows"
-
 
 # ── flaky activity state (keyed by workflow_id for thread safety) ────
 _flaky_attempt_counts: dict[str, int] = {}
@@ -248,6 +246,7 @@ _TEST_WORKFLOW_CLASSES: list[type[SagaWorkflow]] = [
 def register_test_workflows(mocker: MockerFixture) -> None:
     """Patch _register_workflows to call the original production registration
     first, then register integration-test workflows on top."""
+    workflows_module = "simcore_service_dynamic_scheduler.services.workflows"
 
     def _register_with_test_workflows(registry: WorkflowRegistry) -> None:
         _register_production_workflows(registry)
@@ -255,7 +254,7 @@ def register_test_workflows(mocker: MockerFixture) -> None:
             registry.register(name=wf_cls.__name__, workflow_cls=wf_cls)
 
     mocker.patch(
-        f"{_WORKFLOWS_MODULE}._lifespan._register_workflows",
+        f"{workflows_module}._lifespan._register_workflows",
         new=_register_with_test_workflows,
     )
 
