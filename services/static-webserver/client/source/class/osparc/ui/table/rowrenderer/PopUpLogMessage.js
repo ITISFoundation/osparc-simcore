@@ -34,10 +34,26 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
   statics: {
     LOG_LEVEL_INFO: {
-      "-1": { label: "DEBUG", textColor: "logger-debug-message", bgColor: "background-main-4" },
-      "0": { label: "INFO", textColor: "logger-info-message", bgColor: "background-main-4" },
-      "1": { label: "WARNING", textColor: "background-main-1", bgColor: "logger-warning-message" },
-      "2": { label: "ERROR", textColor: "background-main-1", bgColor: "logger-error-message" },
+      "-1": {
+        label: "DEBUG",
+        textColor: "white",
+        bgColor: "product-color"
+      },
+      "0": {
+        label: "INFO",
+        textColor: "white",
+        bgColor: "product-color"
+      },
+      "1": {
+        label: "WARNING",
+        textColor: "black",
+        bgColor: "warning-yellow"
+      },
+      "2": {
+        label: "ERROR",
+        textColor: "black",
+        bgColor: "failed-red"
+      },
     },
   },
 
@@ -96,7 +112,6 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
         maxHeight: Math.round(window.innerHeight * 0.5),
         width: Math.round(rect.width),
         zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
-        decorator: "material-textfield",
       });
 
       // Header
