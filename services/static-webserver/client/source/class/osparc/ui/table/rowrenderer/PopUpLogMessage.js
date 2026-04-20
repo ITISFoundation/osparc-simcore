@@ -16,10 +16,10 @@
 ************************************************************************ */
 
 /**
- * Row renderer for the Logger table that shows a floating overlay with
+ * Row renderer for the Logger table that shows a popup with
  * the full log message, timestamp, origin, and log level when a row is clicked.
  *
- * Uses a fixed-position overlay appended to document.body, which avoids
+ * The popup is added to the application root to avoid
  * qooxdoo table pane clipping constraints (overflow:hidden at multiple levels).
  */
 qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
@@ -30,9 +30,7 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
     this.__table = table;
     this.__messageColPos = messageColPos;
-    this.__overlay = null;
-    this.__dismissHandler = null;
-    this.__scrollDismissHandler = null;
+    this.__popup = null;
     this.__activeRowIndex = null;
   },
 
@@ -48,28 +46,22 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
   members: {
     __table: null,
     __messageColPos: null,
-    __overlay: null,
-    __dismissHandler: null,
-    __scrollDismissHandler: null,
+    __popup: null,
     __activeRowIndex: null,
 
-    __closeOverlay: function() {
-      if (this.__overlay && this.__overlay.parentNode) {
-        this.__overlay.parentNode.removeChild(this.__overlay);
+    __closePopup: function() {
+      if (this.__popup) {
+        const root = qx.core.Init.getApplication().getRoot();
+        if (root.indexOf(this.__popup) >= 0) {
+          root.remove(this.__popup);
+        }
+        this.__popup.dispose();
+        this.__popup = null;
       }
-      this.__overlay = null;
       this.__activeRowIndex = null;
-      if (this.__dismissHandler) {
-        document.removeEventListener("mousedown", this.__dismissHandler, true);
-        this.__dismissHandler = null;
-      }
-      if (this.__scrollDismissHandler) {
-        document.removeEventListener("scroll", this.__scrollDismissHandler, true);
-        this.__scrollDismissHandler = null;
-      }
     },
 
-    __getLogLevelBadge: function(rowData) {
+    __createBadge: function(rowData) {
       if (!rowData || rowData.logLevel == null) {
         return null;
       }
@@ -77,173 +69,148 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       if (!entry) {
         return null;
       }
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const resolvedColor = colorManager.resolve(entry.themeColor);
-      return { label: entry.label, color: resolvedColor };
+      const badge = new qx.ui.basic.Label(entry.label).set({
+        font: "text-10",
+        padding: [1, 6],
+        textColor: "text",
+        backgroundColor: entry.themeColor,
+      });
+      return badge;
     },
 
-    __showOverlay: function(rowElem, rowIndex, rowData) {
+    __showPopup: function(rowElem, rowIndex, rowData) {
       const messageDiv = rowElem.children.item(this.__messageColPos);
       if (!messageDiv) {
         return;
       }
 
-      this.__closeOverlay();
+      this.__closePopup();
 
-      const cellStyle = window.getComputedStyle(messageDiv);
-      const rowStyle = window.getComputedStyle(rowElem);
       const rect = rowElem.getBoundingClientRect();
-      const bgColor = rowElem.style.backgroundColor || rowStyle.backgroundColor || "#222";
 
-      // Build overlay
-      const overlay = document.createElement("div");
-      const baseStyles = [
-        "position: fixed",
-        "left: " + rect.left + "px",
-        "width: " + rect.width + "px",
-        "max-height: 50vh",
-        "overflow-y: auto",
-        "padding: 8px",
-        "border-radius: 4px",
-        "border: 1px solid rgba(255,255,255,0.15)",
-        "box-shadow: 0 6px 20px rgba(0,0,0,0.4)",
-        "z-index: 100000",
-        "font-family: " + cellStyle.fontFamily,
-        "font-size: " + cellStyle.fontSize,
-        "color: " + cellStyle.color,
-        "background-color: " + bgColor,
-      ];
+      // Container
+      const popup = new qx.ui.container.Composite(new qx.ui.layout.VBox(4)).set({
+        backgroundColor: "background-main-2",
+        padding: 8,
+        maxHeight: Math.round(window.innerHeight * 0.5),
+        width: Math.round(rect.width),
+        zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
+        decorator: "material-textfield",
+      });
 
-      // If the row is in the bottom half of the viewport, render the overlay above
-      const viewportHeight = window.innerHeight;
-      if (rect.bottom > viewportHeight * 0.65) {
-        baseStyles.push("bottom: " + (viewportHeight - rect.bottom) + "px");
-      } else {
-        baseStyles.push("top: " + rect.top + "px");
-      }
-
-      overlay.style.cssText = baseStyles.join("; ");
-
-      // Header row: [badge] [timestamp] [origin] ... [x]
-      const header = document.createElement("div");
-      header.style.cssText = [
-        "display: flex",
-        "align-items: center",
-        "gap: 8px",
-        "margin-bottom: 6px",
-        "padding-bottom: 6px",
-        "border-bottom: 1px solid rgba(255,255,255,0.12)",
-        "font-size: 11px",
-        "opacity: 0.85",
-      ].join("; ");
+      // Header
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+        alignY: "middle",
+      }));
 
       // Log level badge
-      const badgeInfo = this.__getLogLevelBadge(rowData);
-      if (badgeInfo) {
-        const badge = document.createElement("span");
-        badge.textContent = badgeInfo.label;
-        badge.style.cssText = [
-          "background-color: " + badgeInfo.color,
-          "color: #000",
-          "padding: 1px 6px",
-          "border-radius: 3px",
-          "font-weight: 600",
-          "font-size: 10px",
-          "letter-spacing: 0.5px",
-        ].join("; ");
-        header.appendChild(badge);
+      const badge = this.__createBadge(rowData);
+      if (badge) {
+        header.add(badge);
       }
 
       // Timestamp
       if (rowData && rowData.timeStamp) {
-        const time = document.createElement("span");
-        time.textContent = rowData.timeStamp;
-        time.style.cssText = "opacity: 0.7; font-variant-numeric: tabular-nums";
-        header.appendChild(time);
+        header.add(new qx.ui.basic.Label(String(rowData.timeStamp)).set({
+          font: "text-11",
+          textColor: "text-opa70",
+        }));
       }
 
       // Origin
       if (rowData && rowData.label) {
-        const origin = document.createElement("span");
-        origin.textContent = rowData.label;
-        origin.style.cssText = "opacity: 0.7; margin-left: auto";
-        header.appendChild(origin);
+        header.add(new qx.ui.basic.Label(rowData.label).set({
+          font: "text-11",
+          textColor: "text-opa70",
+        }));
       }
 
-      // Copy button (FontAwesome5 copy icon, matching the app's standard clipboard button)
-      const copyBtn = document.createElement("span");
-      copyBtn.textContent = "\uf0c5";
-      copyBtn.title = "Copy to clipboard";
-      copyBtn.style.cssText = [
-        "font-family: FontAwesome5Solid, FontAwesome5Free",
-        "cursor: pointer",
-        "font-size: 12px",
-        "line-height: 1",
-        "opacity: 0.6",
-        "padding: 0 2px",
-      ].join("; ");
-      copyBtn.onclick = function(e) {
-        e.stopPropagation();
+      // Spacer
+      header.add(new qx.ui.core.Spacer(), { flex: 1 });
+
+      // Copy button
+      const copyBtn = osparc.utils.Utils.getCopyButton();
+      copyBtn.addListener("execute", () => {
         const text = osparc.widget.logger.LoggerView.printRow(rowData);
         osparc.utils.Utils.copyTextToClipboard(text);
-        // Check mark icon (FontAwesome5)
-        copyBtn.textContent = "\uf00c";
-        setTimeout(function() {
-          copyBtn.textContent = "\uf0c5";
-        }, 1500);
-      };
-      header.appendChild(copyBtn);
+      });
+      header.add(copyBtn);
 
       // Close button
-      const closeBtn = document.createElement("span");
-      closeBtn.textContent = "\u00d7";
-      closeBtn.style.cssText = [
-        "margin-left: auto",
-        "cursor: pointer",
-        "font-size: 16px",
-        "line-height: 1",
-        "opacity: 0.6",
-        "padding: 0 2px",
-      ].join("; ");
-      const self = this;
-      closeBtn.onclick = function(e) {
-        e.stopPropagation();
-        self.__closeOverlay();
-      };
-      header.appendChild(closeBtn);
+      const closeBtn = new qx.ui.form.Button(null, "@MaterialIcons/close/12").set({
+        allowGrowY: false,
+        padding: 3,
+        maxWidth: 20,
+      });
+      closeBtn.addListener("execute", () => this.__closePopup());
+      header.add(closeBtn);
 
-      overlay.appendChild(header);
+      popup.add(header);
 
-      // Message body
-      const body = document.createElement("div");
-      body.innerHTML = messageDiv.innerHTML;
-      body.style.cssText = [
-        "white-space: pre-wrap",
-        "word-break: break-word",
-        "user-select: text",
-        "line-height: 1.5",
-      ].join("; ");
-      overlay.appendChild(body);
+      // Separator
+      popup.add(new qx.ui.menu.Separator());
 
-      document.body.appendChild(overlay);
-      this.__overlay = overlay;
+      // Message body (scrollable)
+      const scroll = new qx.ui.container.Scroll();
+      const messageLabel = new qx.ui.basic.Label(messageDiv.innerHTML).set({
+        rich: true,
+        selectable: true,
+        wrap: true,
+      });
+      scroll.add(messageLabel);
+      popup.add(scroll, { flex: 1 });
+
+      // Position: anchor to row, flip above if near bottom
+      const root = qx.core.Init.getApplication().getRoot();
+      const viewportHeight = window.innerHeight;
+      let top;
+      if (rect.bottom > viewportHeight * 0.65) {
+        // Place above: we'll adjust after rendering
+        top = Math.max(0, Math.round(rect.top) - 200);
+      } else {
+        top = Math.round(rect.top);
+      }
+      root.add(popup, {
+        left: Math.round(rect.left),
+        top: top,
+      });
+
+      // Adjust position after popup is rendered and has actual height
+      if (rect.bottom > viewportHeight * 0.65) {
+        popup.addListenerOnce("appear", () => {
+          const bounds = popup.getBounds();
+          if (bounds) {
+            const adjustedTop = Math.max(0, Math.round(rect.bottom) - bounds.height);
+            root.setWidgetLeft(popup, Math.round(rect.left));
+            root.setWidgetTop(popup, adjustedTop);
+          }
+        });
+      }
+
+      this.__popup = popup;
       this.__activeRowIndex = rowIndex;
 
-      // Close when clicking outside
-      this.__dismissHandler = function(e) {
-        if (!overlay.contains(e.target)) {
-          self.__closeOverlay();
-        }
-      };
-      setTimeout(function() {
-        document.addEventListener("mousedown", self.__dismissHandler, true);
-      }, 0);
-
       // Close on scroll since the fixed position becomes stale
-      this.__scrollDismissHandler = function() {
-        self.__closeOverlay();
+      const scrollHandler = () => {
+        this.__closePopup();
+        document.removeEventListener("scroll", scrollHandler, true);
       };
-      document.addEventListener("scroll", this.__scrollDismissHandler, true);
+      document.addEventListener("scroll", scrollHandler, true);
+
+      // Close on click outside
+      popup.addListenerOnce("appear", () => {
+        const clickHandler = e => {
+          const popupElem = popup.getContentElement().getDomElement();
+          if (popupElem && !popupElem.contains(e.target)) {
+            this.__closePopup();
+            document.removeEventListener("mousedown", clickHandler, true);
+          }
+        };
+        setTimeout(() => document.addEventListener("mousedown", clickHandler, true), 0);
+        popup.addListenerOnce("disappear", () => {
+          document.removeEventListener("mousedown", clickHandler, true);
+        });
+      });
     },
 
     // overridden
@@ -257,9 +224,9 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       rowElem.style.cursor = "pointer";
       rowElem.onclick = function() {
         if (self.__activeRowIndex === rowIndex) {
-          self.__closeOverlay();
+          self.__closePopup();
         } else {
-          self.__showOverlay(rowElem, rowIndex, rowData);
+          self.__showPopup(rowElem, rowIndex, rowData);
         }
       };
     }
