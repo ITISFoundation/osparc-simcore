@@ -66,6 +66,7 @@ def app_environment(
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     remove_redis_data: None,
+    disable_t_scheduler_lifespan: None,
 ) -> EnvVarsDict:
     return app_environment
 

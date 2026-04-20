@@ -49,6 +49,7 @@ def app_environment(
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     remove_redis_data: None,
+    disable_t_scheduler_lifespan: None,
 ) -> EnvVarsDict:
     to_set = {
         "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
@@ -68,8 +69,8 @@ def reset_nicegui_app() -> None:
 
     # below is based on nicegui.testing.general_fixtures.nicegui_reset_globals
 
-    from nicegui import Client, app
-    from starlette.routing import Route
+    from nicegui import Client, app  # noqa: PLC0415
+    from starlette.routing import Route  # noqa: PLC0415
 
     for route in list(app.routes):
         if isinstance(route, Route) and route.path.startswith("/_nicegui/auto/static/"):
@@ -140,7 +141,7 @@ async def app_runner(
 @pytest.fixture
 def download_playwright_browser() -> None:
     subprocess.run(
-        ["playwright", "install", "chromium"],
+        ["playwright", "install", "chromium"],  # noqa: S607
         check=True,
     )
 
