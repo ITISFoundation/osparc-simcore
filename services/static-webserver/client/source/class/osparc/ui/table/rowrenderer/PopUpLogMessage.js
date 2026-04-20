@@ -103,7 +103,7 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
         "width: " + rect.width + "px",
         "max-height: 50vh",
         "overflow-y: auto",
-        "padding: 8px 12px",
+        "padding: 8px",
         "border-radius: 4px",
         "border: 1px solid rgba(255,255,255,0.15)",
         "box-shadow: 0 6px 20px rgba(0,0,0,0.4)",
@@ -169,6 +169,30 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
         origin.style.cssText = "opacity: 0.7; margin-left: auto";
         header.appendChild(origin);
       }
+
+      // Copy button (FontAwesome5 copy icon, matching the app's standard clipboard button)
+      const copyBtn = document.createElement("span");
+      copyBtn.textContent = "\uf0c5";
+      copyBtn.title = "Copy to clipboard";
+      copyBtn.style.cssText = [
+        "font-family: FontAwesome5Solid, FontAwesome5Free",
+        "cursor: pointer",
+        "font-size: 12px",
+        "line-height: 1",
+        "opacity: 0.6",
+        "padding: 0 2px",
+      ].join("; ");
+      copyBtn.onclick = function(e) {
+        e.stopPropagation();
+        const text = osparc.widget.logger.LoggerView.printRow(rowData);
+        osparc.utils.Utils.copyTextToClipboard(text);
+        // Check mark icon (FontAwesome5)
+        copyBtn.textContent = "\uf00c";
+        setTimeout(function() {
+          copyBtn.textContent = "\uf0c5";
+        }, 1500);
+      };
+      header.appendChild(copyBtn);
 
       // Close button
       const closeBtn = document.createElement("span");
