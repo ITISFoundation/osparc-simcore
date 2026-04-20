@@ -1696,6 +1696,44 @@ jobs:
         with:
           flags: integrationtests
 
+  integration-test-dynamic-scheduler:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.dynamic-scheduler == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] dynamic-scheduler"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.13"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: "backend"
+      - name: install
+        run: ./ci/github/integration-testing/dynamic-scheduler.bash install
+      - name: test
+        run: ./ci/github/integration-testing/dynamic-scheduler.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/dynamic-scheduler/test_failures
+      - uses: codecov/codecov-action@v6
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: integrationtests
+
   integration-tests:
     # NOTE: this is a github required status check!
     if: ${{ always() }}
@@ -1703,6 +1741,7 @@ jobs:
       [
         integration-test-director-v2-01,
         integration-test-director-v2-02,
+        integration-test-dynamic-scheduler,
         integration-test-dynamic-sidecar,
         integration-test-docker-api-proxy,
         integration-test-simcore-sdk,
