@@ -37,11 +37,11 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
   },
 
   statics: {
-    LOG_LEVEL_COLORS: {
-      "-1": { label: "DEBUG", color: "#888" },
-      "0": { label: "INFO", color: "#4fc3f7" },
-      "1": { label: "WARNING", color: "#ffb74d" },
-      "2": { label: "ERROR", color: "#ef5350" },
+    LOG_LEVEL_INFO: {
+      "-1": { label: "DEBUG", themeColor: "logger-debug-message" },
+      "0": { label: "INFO", themeColor: "logger-info-message" },
+      "1": { label: "WARNING", themeColor: "logger-warning-message" },
+      "2": { label: "ERROR", themeColor: "logger-error-message" },
     },
   },
 
@@ -73,11 +73,13 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       if (!rowData || rowData.logLevel == null) {
         return null;
       }
-      const entry = this.self().LOG_LEVEL_COLORS[String(rowData.logLevel)];
+      const entry = this.self().LOG_LEVEL_INFO[String(rowData.logLevel)];
       if (!entry) {
         return null;
       }
-      return { label: entry.label, color: entry.color };
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const resolvedColor = colorManager.resolve(entry.themeColor);
+      return { label: entry.label, color: resolvedColor };
     },
 
     __showOverlay: function(rowElem, rowInfo) {
