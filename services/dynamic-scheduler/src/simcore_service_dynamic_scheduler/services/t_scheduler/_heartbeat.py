@@ -1,4 +1,5 @@
 # pylint:disable=redefined-builtin
+# pylint:disable=no-self-use
 
 import asyncio
 import contextlib
