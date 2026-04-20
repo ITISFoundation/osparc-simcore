@@ -78,6 +78,8 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
   },
 
   statics: {
+    MAX_ROWS: 2000,
+
     getLevelIcon: function(logLevel) {
       const logLevels = osparc.widget.logger.LoggerView.LOG_LEVELS;
       let iconSource = "";
@@ -121,6 +123,11 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
 
         this.__rawData.push(newRow);
       });
+
+      const max = this.self().MAX_ROWS;
+      if (this.__rawData.length > max) {
+        this.__rawData.splice(0, this.__rawData.length - max);
+      }
     },
 
     nodeLabelChanged: function(nodeId, newLabel) {
