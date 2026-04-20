@@ -62,8 +62,22 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
     __messageColPos: null,
     __popup: null,
     __activeRowIndex: null,
+    __scrollHandler: null,
+    __clickHandler: null,
+
+    __removeGlobalListeners: function() {
+      if (this.__scrollHandler) {
+        document.removeEventListener("scroll", this.__scrollHandler, true);
+        this.__scrollHandler = null;
+      }
+      if (this.__clickHandler) {
+        document.removeEventListener("mousedown", this.__clickHandler, true);
+        this.__clickHandler = null;
+      }
+    },
 
     __closePopup: function() {
+      this.__removeGlobalListeners();
       if (this.__popup) {
         const root = qx.core.Init.getApplication().getRoot();
         if (root.indexOf(this.__popup) >= 0) {
@@ -96,11 +110,6 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
     },
 
     __showPopup: function(rowElem, rowIndex, rowData) {
-      const messageDiv = rowElem.children.item(this.__messageColPos);
-      if (!messageDiv) {
-        return;
-      }
-
       this.__closePopup();
 
       const rect = rowElem.getBoundingClientRect();
@@ -180,7 +189,7 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
       // Message body (scrollable)
       const scroll = new qx.ui.container.Scroll();
-      const messageLabel = new qx.ui.basic.Label(messageDiv.innerHTML).set({
+      const messageLabel = new qx.ui.basic.Label(rowData.msgRich || rowData.msg || "").set({
         rich: true,
         selectable: true,
         wrap: true,
@@ -221,29 +230,22 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       this.__activeRowIndex = rowIndex;
 
       // Close on scroll since the fixed position becomes stale
-      const scrollHandler = () => {
-        this.__closePopup();
-        document.removeEventListener("scroll", scrollHandler, true);
-      };
-      document.addEventListener("scroll", scrollHandler, true);
+      this.__scrollHandler = () => this.__closePopup();
+      document.addEventListener("scroll", this.__scrollHandler, true);
 
       // Close on click outside
-      const clickHandler = e => {
+      this.__clickHandler = e => {
         if (popup.isDisposed()) {
-          document.removeEventListener("mousedown", clickHandler, true);
+          this.__removeGlobalListeners();
           return;
         }
         const popupElem = popup.getContentElement().getDomElement();
         if (popupElem && !popupElem.contains(e.target)) {
-          document.removeEventListener("mousedown", clickHandler, true);
           this.__closePopup();
         }
       };
       popup.addListenerOnce("appear", () => {
-        setTimeout(() => document.addEventListener("mousedown", clickHandler, true), 0);
-      });
-      popup.addListenerOnce("disappear", () => {
-        document.removeEventListener("mousedown", clickHandler, true);
+        setTimeout(() => document.addEventListener("mousedown", this.__clickHandler, true), 0);
       });
     },
 
