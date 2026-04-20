@@ -15,6 +15,15 @@ from simcore_service_resource_usage_tracker.api.rest._health import HealthCheckE
 from simcore_service_resource_usage_tracker.api.rest._meta import _Meta
 
 
+def _mock_health_client(mocker: MockerFixture, healthy: bool, target_function: str) -> None:
+    rabbitmq_mock = mocker.Mock(spec=RabbitMQClient)
+    rabbitmq_mock.healthy = healthy
+    mocker.patch(
+        f"simcore_service_resource_usage_tracker.services.modules.rabbitmq.{target_function}",
+        return_value=rabbitmq_mock,
+    )
+
+
 def test_healthcheck(
     disabled_database: None,
     disabled_prometheus: None,
@@ -24,18 +33,18 @@ def test_healthcheck(
     client: TestClient,
     mocker: MockerFixture,
 ):
-    rabbitmq_mock = mocker.Mock(spec=RabbitMQClient)
-    rabbitmq_mock.healthy = True
-    mocker.patch(
-        "simcore_service_resource_usage_tracker.services.modules.rabbitmq.get_rabbitmq_client",
-        return_value=rabbitmq_mock,
-    )
+    _mock_health_client(mocker, healthy=True, target_function="get_rabbitmq_client")
+    _mock_health_client(mocker, healthy=True, target_function="get_rabbitmq_rpc_client")
 
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert response.text.startswith("simcore_service_resource_usage_tracker.api.rest._health@")
 
 
+@pytest.mark.parametrize(
+    "rabbit_client_healthy, rabbitmq_rpc_client_healthy",
+    [(False, False), (False, True), (True, False)],
+)
 def test_healthcheck__unhealthy(
     disabled_database: None,
     disabled_prometheus: None,
@@ -44,13 +53,11 @@ def test_healthcheck__unhealthy(
     mocked_setup_rabbitmq: mock.MagicMock,
     client: TestClient,
     mocker: MockerFixture,
+    rabbit_client_healthy: bool,
+    rabbitmq_rpc_client_healthy: bool,
 ):
-    rabbitmq_mock = mocker.Mock(spec=RabbitMQClient)
-    rabbitmq_mock.healthy = False
-    mocker.patch(
-        "simcore_service_resource_usage_tracker.services.modules.rabbitmq.get_rabbitmq_client",
-        return_value=rabbitmq_mock,
-    )
+    _mock_health_client(mocker, healthy=rabbit_client_healthy, target_function="get_rabbitmq_client")
+    _mock_health_client(mocker, healthy=rabbitmq_rpc_client_healthy, target_function="get_rabbitmq_rpc_client")
 
     with pytest.raises(HealthCheckError):
         client.get("/")

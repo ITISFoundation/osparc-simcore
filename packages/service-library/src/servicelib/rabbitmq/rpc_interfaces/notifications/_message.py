@@ -1,8 +1,11 @@
 import logging
 from typing import Any
 
+from models_library.celery import OwnerMetadata
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
+    Addressing,
+    Message,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
@@ -22,12 +25,16 @@ _logger = logging.getLogger(__name__)
 async def send_message(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    message: dict[str, Any],
+    message: Message,
+    owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("send_message"),
-        request=SendMessageRequest(message=message),
+        request=SendMessageRequest(
+            message=message,
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
+        ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec
     return result
@@ -38,17 +45,19 @@ async def send_message(
 async def send_message_from_template(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    envelope: dict[str, Any],
+    addressing: Addressing,
     template_ref: TemplateRef,
     context: dict[str, Any],
+    owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("send_message_from_template"),
         request=SendMessageFromTemplateRequest(
             template_ref=template_ref,
-            envelope=envelope,
+            addressing=addressing,
             context=context,
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec

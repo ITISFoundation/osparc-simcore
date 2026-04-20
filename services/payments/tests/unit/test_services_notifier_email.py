@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import logging
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -28,10 +29,12 @@ from simcore_service_payments.services.notifier_email import (
     EmailProvider,
     _create_email_session,
     _create_user_email,
+    _get_invoice_pdf,
     _PaymentData,
     _ProductData,
     _UserData,
 )
+from tenacity.wait import wait_none
 
 
 @pytest.fixture
@@ -93,10 +96,8 @@ def mocked_get_invoice_pdf_response(
 
 @pytest.fixture
 def transaction(faker: Faker, successful_transaction: dict[str, Any]) -> PaymentsTransactionsDB:
-    kwargs = {
-        k: successful_transaction[k] for k in PaymentsTransactionsDB.model_fields.keys() if k in successful_transaction
-    }
-    return PaymentsTransactionsDB(**kwargs)
+    valid_keys = successful_transaction.keys() & PaymentsTransactionsDB.model_fields.keys()
+    return PaymentsTransactionsDB(**{k: successful_transaction[k] for k in valid_keys})
 
 
 async def test_send_email_workflow(
@@ -139,8 +140,8 @@ async def test_send_email_workflow(
     payment_data = _PaymentData(
         price_dollars=f"{transaction.price_dollars:.2f}",
         osparc_credits=f"{transaction.osparc_credits:.2f}",
-        invoice_url=transaction.invoice_url,
-        invoice_pdf_url=transaction.invoice_pdf_url,
+        invoice_url=str(transaction.invoice_url),
+        invoice_pdf_url=str(transaction.invoice_pdf_url),
     )
 
     msg = await _create_user_email(env, user_data, payment_data, product_data)
@@ -194,3 +195,101 @@ async def test_email_provider(
 
     if smtp_mock_or_none:
         assert smtp_mock_or_none.called
+
+
+async def test_create_user_email_logs_timeout_and_url_on_read_timeout(
+    app_environment: EnvVarsDict,
+    faker: Faker,
+    transaction: PaymentsTransactionsDB,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+):
+    """When _get_invoice_pdf raises ReadTimeout, the log must include timeout value and URL."""
+
+    invoice_pdf_url = transaction.invoice_pdf_url
+    assert invoice_pdf_url
+
+    # Mock _get_invoice_pdf to raise ReadTimeout with request metadata
+    request = httpx.Request("GET", str(invoice_pdf_url))
+    request.extensions = {"timeout": {"read": 10.0, "write": 10.0, "connect": 10.0, "pool": 10.0}}
+    mocker.patch(
+        "simcore_service_payments.services.notifier_email._get_invoice_pdf",
+        side_effect=httpx.ReadTimeout("Read timed out", request=request),
+    )
+
+    env = Environment(
+        loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+    user_data = _UserData(
+        first_name=faker.first_name(),
+        last_name=faker.last_name(),
+        email=user_email,
+    )
+    vendor: Vendor = product["vendor"]
+    product_data = _ProductData(  # type: ignore
+        product_name=product_name,
+        display_name=product["display_name"],
+        vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
+        support_email=product["support_email"],
+    )
+    payment_data = _PaymentData(
+        price_dollars=f"{transaction.price_dollars:.2f}",
+        osparc_credits=f"{transaction.osparc_credits:.2f}",
+        invoice_url=str(transaction.invoice_url),
+        invoice_pdf_url=str(transaction.invoice_pdf_url),
+    )
+
+    with caplog.at_level(logging.ERROR):
+        msg = await _create_user_email(env, user_data, payment_data, product_data)
+
+    # Email is still created (sent without attachment)
+    assert msg is not None
+    assert msg["Subject"]
+
+    # No attachment is added when fetching invoice PDF times out
+    attachments = (
+        list(msg.iter_attachments())
+        if hasattr(msg, "iter_attachments")
+        else [part for part in msg.walk() if part.get_content_disposition() == "attachment" or part.get_filename()]
+    )
+    assert attachments == []
+
+    # Log includes ReadTimeout-specific info
+    assert "ReadTimeout fetching invoice PDF" in caplog.text
+    assert str(invoice_pdf_url) in caplog.text
+    assert "timeout" in caplog.text.lower()
+
+
+async def test_get_invoice_pdf_retries_on_retryable_http_status(
+    transaction: PaymentsTransactionsDB,
+    respx_mock: respx.MockRouter,
+    mocker: MockerFixture,
+):
+    invoice_pdf_url = transaction.invoice_pdf_url
+    assert invoice_pdf_url
+
+    request = httpx.Request("GET", str(invoice_pdf_url))
+    route = respx_mock.get(str(invoice_pdf_url)).mock(
+        side_effect=[
+            httpx.Response(status.HTTP_503_SERVICE_UNAVAILABLE, request=request),
+            httpx.Response(
+                status.HTTP_200_OK,
+                content=b"%PDF-1.4",
+                headers={
+                    "Content-Type": "application/pdf",
+                    "Content-Disposition": 'attachment; filename="test-attachment.pdf"',
+                },
+                request=request,
+            ),
+        ]
+    )
+    mocker.patch.object(_get_invoice_pdf.retry, "wait", new=wait_none())
+
+    response = await _get_invoice_pdf(str(invoice_pdf_url))
+
+    assert response.status_code == status.HTTP_200_OK
+    assert route.call_count == 2

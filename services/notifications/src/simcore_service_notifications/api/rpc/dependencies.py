@@ -3,6 +3,7 @@ from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
 
 from ...clients.celery import get_task_manager
+from ...core.settings import ApplicationSettings
 from ...renderers import JinjaRenderer, Renderer
 from ...repositories import FileTemplateRepository, TemplateRepository
 from ...services import MessageService, TemplateService
@@ -33,7 +34,10 @@ def get_message_service(
     app: FastAPI,
     template_service: TemplateService | None = None,
 ) -> MessageService:
+    settings: ApplicationSettings = app.state.settings
+
     return MessageService(
         template_service if template_service is not None else get_template_service(),
         get_task_manager(app),
+        settings,
     )

@@ -19,7 +19,8 @@ from models_library.api_schemas_webserver.notifications import (
     TemplateGet,
     TemplatePreviewGet,
 )
-from models_library.notifications import ChannelType
+from models_library.notifications import Channel
+from models_library.notifications.errors import NotificationsTooManyRecipientsError
 from models_library.notifications.rpc import (
     PreviewTemplateResponse,
     SearchTemplatesResponse,
@@ -41,7 +42,7 @@ def fake_template_preview_response(faker: Faker) -> PreviewTemplateResponse:
     """Create a fake template preview response"""
     return PreviewTemplateResponse(
         ref=TemplateRef(
-            channel=ChannelType.email,
+            channel=Channel.email,
             template_name="test_template",
         ),
         message_content={
@@ -57,7 +58,7 @@ def fake_template_response(faker: Faker) -> SearchTemplatesResponse:
     """Create a fake template response"""
     return SearchTemplatesResponse(
         ref=TemplateRef(
-            channel=ChannelType.email,
+            channel=Channel.email,
             template_name="test_template",
         ),
         context_schema={
@@ -225,6 +226,37 @@ async def test_send_message_with_different_inputs(
             assert task.task_id
 
 
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
+async def test_send_message_too_many_recipients(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
+    mocker: MockerFixture,
+):
+    """Test that send_message returns 400 when too many recipients are provided"""
+    assert client.app
+    url = client.app.router["send_message"].url_for()
+
+    mocked_notifications_rpc_client.patch(
+        f"{_service.__name__}.remote_send_message",
+        side_effect=NotificationsTooManyRecipientsError(num_recipients=100, max_recipients=50),
+    )
+
+    async with create_test_users(1, None) as users:
+        body = {
+            "channel": "email",
+            "groupIds": [users[0]["primary_gid"]],
+            "content": fake_email_content,
+        }
+
+        response = await client.post(url.path, json=body)
+        _, error = await assert_status(response, status.HTTP_400_BAD_REQUEST)
+        assert error
+        assert "The number of recipients" in error["message"]
+
+
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
@@ -303,7 +335,7 @@ async def test_preview_template_success(
 
     # Validate response structure
     preview = TemplatePreviewGet.model_validate(data)
-    assert preview.ref.channel == ChannelType.email
+    assert preview.ref.channel == Channel.email
     assert preview.ref.template_name == "test_template"
     assert preview.message_content
 
@@ -324,7 +356,7 @@ async def test_preview_template_enriches_context_with_product_data(
         f"{_service.__name__}.remote_preview_template",
         return_value=PreviewTemplateResponse(
             ref=TemplateRef(
-                channel=ChannelType.email,
+                channel=Channel.email,
                 template_name="test",
             ),
             message_content={"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
@@ -411,7 +443,7 @@ async def test_search_templates_no_filters(
     # Validate response structure
     templates = TypeAdapter(list[TemplateGet]).validate_python(data)
     assert len(templates) == 1
-    assert templates[0].ref.channel == ChannelType.email
+    assert templates[0].ref.channel == Channel.email
     assert templates[0].ref.template_name == "test_template"
     assert templates[0].context_schema
 

@@ -2,6 +2,7 @@ import logging
 from typing import Any, cast
 
 import sqlalchemy as sa
+import sqlalchemy.exc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
@@ -20,6 +21,14 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+
+from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
+from .exceptions import (
+    PreRegistrationAlreadyLinkedToAccountError,
+    PreRegistrationAlreadyReviewedError,
+    PreRegistrationDuplicateInProductError,
+    PreRegistrationNotFoundError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -264,6 +273,129 @@ async def review_user_pre_registration(
         )
 
 
+async def get_pre_registration_by_id(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    pre_registration_id: int,
+    with_for_update: bool = False,
+) -> dict[str, Any] | None:
+    query = sa.select(
+        users_pre_registration_details.c.id,
+        users_pre_registration_details.c.pre_email,
+        users_pre_registration_details.c.product_name,
+        users_pre_registration_details.c.user_id,
+        users_pre_registration_details.c.account_request_status,
+        users_pre_registration_details.c.extras,
+    ).where(users_pre_registration_details.c.id == pre_registration_id)
+
+    if with_for_update:
+        query = query.with_for_update()
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        row = result.mappings().one_or_none()
+        return dict(row) if row else None
+
+
+async def check_pre_registration_email_exists_in_product(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    email: str,
+    product_name: ProductName,
+    exclude_pre_registration_id: int | None = None,
+) -> bool:
+    conditions = [
+        users_pre_registration_details.c.pre_email == email,
+        users_pre_registration_details.c.product_name == product_name,
+    ]
+    if exclude_pre_registration_id is not None:
+        conditions.append(users_pre_registration_details.c.id != exclude_pre_registration_id)
+
+    query = sa.select(sa.exists().where(sa.and_(*conditions)))
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        return bool(result.scalar_one())
+
+
+async def update_pre_registration_product(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    pre_registration_id: int,
+    new_product_name: ProductName,
+    moved_by: UserID,
+) -> None:
+    async with transaction_context(engine, connection) as conn:
+        pre_registration = await get_pre_registration_by_id(
+            engine,
+            conn,
+            pre_registration_id=pre_registration_id,
+            with_for_update=True,
+        )
+        if pre_registration is None:
+            raise PreRegistrationNotFoundError(pre_registration_id=pre_registration_id)
+
+        current_status = pre_registration["account_request_status"]
+        if current_status != AccountRequestStatus.PENDING:
+            raise PreRegistrationAlreadyReviewedError(
+                pre_registration_id=pre_registration_id,
+                status=f"{current_status}",
+            )
+
+        existing_user_id = pre_registration["user_id"]
+        if existing_user_id is not None:
+            raise PreRegistrationAlreadyLinkedToAccountError(
+                pre_registration_id=pre_registration_id,
+                user_id=existing_user_id,
+            )
+
+        current_product_name = pre_registration["product_name"]
+        if current_product_name == new_product_name:
+            return
+
+        pre_email = pre_registration["pre_email"]
+        assert pre_email is not None  # nosec
+
+        current_extras = pre_registration["extras"]
+        audit_entry = ExtrasAuditEntry.create_now(
+            source="po_center:move_product",
+            confidence="high",
+            notes=f"Moved from '{current_product_name}' to '{new_product_name}' by user {moved_by}",
+        )
+        merged_extras = merge_audit_entry_into_extras(
+            current_extras=current_extras,
+            key="product_move",
+            entry=audit_entry,
+        )
+
+        # Duplicate detection is enforced at DB level on update. We intentionally
+        # rely on the constraint + IntegrityError mapping here to avoid TOCTOU races
+        # that can happen with a separate pre-check query under concurrency.
+        try:
+            await conn.execute(
+                users_pre_registration_details.update()
+                .values(
+                    product_name=new_product_name,
+                    extras=merged_extras,
+                )
+                .where(users_pre_registration_details.c.id == pre_registration_id)
+            )
+        except sqlalchemy.exc.IntegrityError as exc:
+            _logger.debug(
+                "IntegrityError while moving pre-registration %s to product %s: %s",
+                pre_registration_id,
+                new_product_name,
+                exc,
+            )
+            raise PreRegistrationDuplicateInProductError(
+                email=pre_email,
+                product_name=new_product_name,
+            ) from exc
+
+
 #
 # PRE AND REGISTERED USERS
 #
@@ -362,6 +494,7 @@ async def search_merged_pre_and_registered_users(
         users_pre_registration_details.c.state,
         users_pre_registration_details.c.postal_code,
         users_pre_registration_details.c.country,
+        users_pre_registration_details.c.product_name,
         users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
         users_pre_registration_details.c.extras,
         users_pre_registration_details.c.account_request_status,
@@ -413,6 +546,7 @@ async def list_merged_pre_and_registered_users(
     *,
     product_name: ProductName,
     filter_any_account_request_status: list[AccountRequestStatus] | None = None,
+    filter_registered: bool | None = None,
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
@@ -430,6 +564,8 @@ async def list_merged_pre_and_registered_users(
         product_name: Product name to filter by
         filter_any_account_request_status: If provided, only returns users with account request status in this list
             (only pre-registered users with any of these statuses will be included)
+        filter_registered: If provided, filters records by registration completion
+            (True => linked to a user, False => not linked)
         filter_include_deleted: Whether to include deleted users
         pagination_limit: Maximum number of results to return
         pagination_offset: Number of results to skip (for pagination)
@@ -469,6 +605,7 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.state,
             users_pre_registration_details.c.postal_code,
             users_pre_registration_details.c.country,
+            users_pre_registration_details.c.product_name,
             users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.created,
@@ -504,6 +641,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("state"),
             sa.literal(None).label("postal_code"),
             sa.literal(None).label("country"),
+            sa.literal(None).label("product_name"),
             sa.literal(None).label("pre_reg_user_id"),
             sa.literal(None).label("extras"),
             users.c.created_at.label("created"),
@@ -532,17 +670,26 @@ async def list_merged_pre_and_registered_users(
     merged_query: sa.sql.Select | sa.sql.CompoundSelect
     merged_query = pre_reg_query if filter_any_account_request_status else pre_reg_query.union_all(users_query)
 
-    # Add distinct on email to eliminate duplicates
+    # Apply optional registration linkage filter on the merged view before pagination/count
     merged_query_subq = merged_query.subquery()
+    filtered_query = sa.select(merged_query_subq).select_from(merged_query_subq)
+    if filter_registered is True:
+        filtered_query = filtered_query.where(merged_query_subq.c.user_id.is_not(None))
+    elif filter_registered is False:
+        filtered_query = filtered_query.where(merged_query_subq.c.user_id.is_(None))
+
+    filtered_query_subq = filtered_query.subquery()
+
+    # Add distinct on email to eliminate duplicates
     distinct_query = (
-        sa.select(merged_query_subq)
-        .select_from(merged_query_subq)
-        .distinct(merged_query_subq.c.email)
+        sa.select(filtered_query_subq)
+        .select_from(filtered_query_subq)
+        .distinct(filtered_query_subq.c.email)
         .order_by(
-            merged_query_subq.c.email,
+            filtered_query_subq.c.email,
             # Prioritize pre-registration records if duplicate emails exist
-            merged_query_subq.c.is_pre_registered.desc(),
-            merged_query_subq.c.created.desc(),
+            filtered_query_subq.c.is_pre_registered.desc(),
+            filtered_query_subq.c.created.desc(),
         )
         .limit(pagination_limit)
         .offset(pagination_offset)
@@ -550,7 +697,7 @@ async def list_merged_pre_and_registered_users(
 
     # Count query (for pagination)
     count_query = sa.select(sa.func.count().label("total")).select_from(
-        sa.select(merged_query_subq.c.email).select_from(merged_query_subq).distinct().subquery()
+        sa.select(filtered_query_subq.c.email).select_from(filtered_query_subq).distinct().subquery()
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:

@@ -1,7 +1,6 @@
 import datetime
 from contextlib import suppress
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypeAlias,
     TypedDict,
 )
 
@@ -38,7 +37,7 @@ class RunMetadataDict(TypedDict, total=False):
     project_metadata: ProjectMetadataDict
 
 
-Iteration: TypeAlias = PositiveInt
+type Iteration = PositiveInt
 
 
 class CompRunsAtDB(BaseModel):
@@ -57,20 +56,21 @@ class CompRunsAtDB(BaseModel):
     scheduled: datetime.datetime | None
     processed: datetime.datetime | None
     dag_adjacency_list: dict[str, list[str]]
+    last_result_changed: datetime.datetime | None
 
     @field_validator("result", mode="before")
     @classmethod
     def convert_result_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
             # try to convert to a StateType, if it fails the validations will continue
-            # and pydantic will try to convert it to a RunninState later on
+            # and pydantic will try to convert it to a RunningState later on
             with suppress(ValueError):
                 v = StateType(v)
         if isinstance(v, StateType):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    @field_validator("created", "modified", "started", "ended")
+    @field_validator("created", "modified", "started", "ended", "last_result_changed")
     @classmethod
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
         if v is not None and v.tzinfo is None:
@@ -104,6 +104,7 @@ class CompRunsAtDB(BaseModel):
                     "scheduled": None,
                     "processed": None,
                     "dag_adjacency_list": {},
+                    "last_result_changed": "2021-03-01T13:07:34.191610",
                 },
                 {
                     "run_id": 432,
@@ -120,6 +121,7 @@ class CompRunsAtDB(BaseModel):
                     "scheduled": None,
                     "processed": None,
                     "dag_adjacency_list": {},
+                    "last_result_changed": "2021-03-01T13:07:34.191610",
                 },
                 {
                     "run_id": 43243,
@@ -143,6 +145,7 @@ class CompRunsAtDB(BaseModel):
                     "scheduled": None,
                     "processed": None,
                     "dag_adjacency_list": {"4f15c166-cd27-5d7b-8277-af5ad6e0a7e1": []},
+                    "last_result_changed": "2021-03-01T13:07:34.191610",
                 },
                 {
                     "run_id": 43243,
@@ -163,6 +166,7 @@ class CompRunsAtDB(BaseModel):
                         "901b3ad0-4dc2-4f97-94c2-07621d862baa": [],
                         "5e463365-2f8e-4b74-883e-97b0a1ae7798": [],
                     },
+                    "last_result_changed": "2021-03-01T13:07:34.191610",
                 },
             ]
         },

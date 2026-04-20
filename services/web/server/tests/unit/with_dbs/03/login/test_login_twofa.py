@@ -5,18 +5,18 @@
 
 import asyncio
 import logging
-import re
 from contextlib import AsyncExitStack
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
-from aiohttp.test_utils import TestClient, make_mocked_request
+from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
+from pytest_simcore.helpers.webserver_login import NewUser
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
@@ -32,6 +32,7 @@ from simcore_service_webserver.login._twofa_service import (
     delete_2fa_code,
     get_2fa_code,
     get_redis_validation_code_client,
+    notifications_service,
     send_email_code,
 )
 from simcore_service_webserver.login.constants import (
@@ -39,11 +40,9 @@ from simcore_service_webserver.login.constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_LOGGED_IN,
 )
-from simcore_service_webserver.products import products_web
-from simcore_service_webserver.products.errors import UnknownProductError
-from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.user_preferences import user_preferences_service
 from twilio.base.exceptions import TwilioRestException
+from yarl import URL
 
 
 @pytest.fixture
@@ -120,15 +119,14 @@ async def test_2fa_code_operations(client: TestClient):
 
 
 @pytest.mark.acceptance_test
-async def test_workflow_register_and_login_with_2fa(
+async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     client: TestClient,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
     confirmation_repository: ConfirmationRepository,
-    capsys: pytest.CaptureFixture,
     user_email: str,
     user_password: str,
     user_phone_number: str,
     mocked_twilio_service: dict[str, MockType],
-    mocked_email_core_remove_comments: None,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -147,14 +145,14 @@ async def test_workflow_register_and_login_with_2fa(
     )
     await assert_status(response, status.HTTP_200_OK)
 
-    # check email was sent
-    def _get_confirmation_link_from_email():
-        out, _ = capsys.readouterr()
-        link = parse_link(out)
-        assert "/auth/confirmation/" in str(link)
-        return link
+    # retrieves sent link from notification service mock
+    mocked_notifications_service_send_message_from_template.assert_called_once()
+    notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
+    assert notification_context["link"] is not None
+    confirmation_url = URL(notification_context["link"]).path
+    assert "/auth/confirmation/" in f"{confirmation_url}"
 
-    url = _get_confirmation_link_from_email()
+    url = confirmation_url
 
     # 2. confirmation
     response = await client.get(f"{url}")
@@ -287,10 +285,11 @@ async def test_workflow_register_and_login_with_2fa(
     assert data["parameters"]["message"]
     assert data["parameters"]["expiration_2fa"]
 
-    out, _ = capsys.readouterr()
-    parsed_context = parse_test_marks(out)
-    assert parsed_context["name"] == user["name"]
-    assert "support" in parsed_context["support_email"]
+    # assert email was sent via notifications service
+    email_call = mocked_notifications_service_send_message_from_template.call_args_list[-1]
+    email_context = email_call.kwargs["context"]
+    assert email_context["user"]["first_name"] == (user["first_name"] or user["name"])
+    assert email_context["user"]["user_name"] == user["name"]
 
     # login (2FA Disabled) ---------------------------------------------------------
     await user_preferences_service.set_frontend_user_preference(
@@ -373,47 +372,36 @@ async def test_can_register_same_phone_in_different_accounts(
 async def test_send_email_code(
     client: TestClient,
     faker: Faker,
-    capsys: pytest.CaptureFixture,
-    mocked_email_core_remove_comments: None,
+    mocker: MockerFixture,
 ):
-    request = make_mocked_request("GET", "/dummy", app=client.app)
-
-    with pytest.raises(UnknownProductError):
-        # NOTE: this is a fake request and did not go through middlewares
-        products_web.get_current_product(request)
-
-    user_email = faker.email()
-    support_email = faker.email()
-    code = generate_passcode()
-    first_name = faker.first_name()
-
-    await send_email_code(
-        request,
-        user_email=user_email,
-        support_email=support_email,
-        code=code,
-        first_name=first_name,
-        product=Product(
-            name="osparc",
-            display_name="The Foo Product",
-            host_regex=re.compile(r".+"),
-            base_url="https://osparc.io",
-            vendor={},
-            short_name="foo",
-            support_email=support_email,
-            support=None,
-            login_settings=ProductLoginSettingsDict(
-                LOGIN_2FA_REQUIRED=True,
-            ),
-            registration_email_template=None,
-        ),
+    mock_send = mocker.patch(
+        f"{notifications_service.__name__}.send_message_from_template",
+        autospec=True,
     )
 
-    out, _ = capsys.readouterr()
-    parsed_context = parse_test_marks(out)
-    assert parsed_context["code"] == f"{code}"
-    assert parsed_context["name"] == first_name.capitalize()
-    assert parsed_context["support_email"] == support_email
+    user_email = faker.email()
+    code = generate_passcode()
+    first_name = faker.first_name()
+    user_name = faker.user_name()
+
+    assert client.app
+    await send_email_code(
+        client.app,
+        user_email=user_email,
+        code=code,
+        first_name=first_name,
+        user_name=user_name,
+        product_name="osparc",
+        host="osparc.io",
+    )
+
+    mock_send.assert_called_once()
+    call_kwargs = mock_send.call_args.kwargs
+    assert call_kwargs["template_name"] == "new_code"
+    assert call_kwargs["context"]["code"] == code
+    assert call_kwargs["context"]["host"] == "osparc.io"
+    assert call_kwargs["context"]["user"]["first_name"] == first_name
+    assert call_kwargs["context"]["user"]["user_name"] == user_name
 
 
 async def test_2fa_sms_failure_during_login(

@@ -558,10 +558,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 ## DOCKER PULL/PUSH  -------------------------------
-#
-# TODO: cannot push modified/untracked
-# TODO: cannot push disceted
-#
+
 .PHONY: pull-version
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG

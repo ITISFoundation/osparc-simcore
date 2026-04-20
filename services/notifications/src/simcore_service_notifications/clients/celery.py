@@ -7,37 +7,24 @@ from celery_library.types import register_celery_types
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from servicelib.celery.task_manager import TaskManager
-from servicelib.redis import RedisClientSDK
-from settings_library.redis import RedisDatabase
+from settings_library.celery import CelerySettings
 
 from ..core.settings import ApplicationSettings
+from .redis import get_redis_client
 
 
 async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
-    celery_settings = settings.NOTIFICATIONS_CELERY
-
-    assert celery_settings is not None  # nosec
-
-    redis_client_sdk = RedisClientSDK(
-        celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
-        client_name="notifications_celery_tasks",
-    )
-    app.state.celery_tasks_redis_client_sdk = redis_client_sdk
-    await redis_client_sdk.setup()
+    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
+    celery_settings: CelerySettings = settings.NOTIFICATIONS_CELERY
 
     app.state.task_manager = CeleryTaskManager(
-        create_app(celery_settings),
-        celery_settings,
-        RedisTaskStore(redis_client_sdk),
+        create_app(celery_settings), celery_settings, RedisTaskStore(get_redis_client(app))
     )
 
     register_celery_types()
 
     yield {}
-
-    if redis_client_sdk:
-        await redis_client_sdk.shutdown()
 
 
 def get_task_manager(app: FastAPI) -> TaskManager:

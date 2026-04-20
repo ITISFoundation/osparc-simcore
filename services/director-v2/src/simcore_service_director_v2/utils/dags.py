@@ -126,9 +126,16 @@ def _node_needs_computation(graph_data: nx.classes.reportviews.NodeDataView, nod
 
 async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     graph_data: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
-    for node_id in nx.algorithms.dag.topological_sort(complete_dag):
-        if graph_data[node_id]["node_class"] is NodeClass.COMPUTATIONAL:
-            await _compute_node_states(graph_data, node_id)
+    # Build a subgraph of only computational nodes for topological ordering.
+    # The complete_dag may contain cycles among dynamic services (which is valid),
+    # but those cycles prevent topological_sort on the full graph. Since we only
+    # process computational nodes, we only need *their* ordering to be acyclic.
+    # State lookups (hash, dependencies) still use graph_data from the complete DAG,
+    # so dynamic-node data remains accessible.
+    comp_nodes = [n for n, d in graph_data if d["node_class"] is NodeClass.COMPUTATIONAL]
+    comp_subgraph = complete_dag.subgraph(comp_nodes)
+    for node_id in nx.algorithms.dag.topological_sort(comp_subgraph):
+        await _compute_node_states(graph_data, node_id)
 
 
 async def create_minimal_computational_graph_based_on_selection(
@@ -258,6 +265,11 @@ async def compute_pipeline_details(
                 progress=(
                     node_id_to_comp_task[node_id].progress
                     if node_id in node_id_to_comp_task and node_id_to_comp_task[node_id].progress is not None
+                    else None
+                ),
+                errors=(
+                    node_id_to_comp_task[node_id].errors
+                    if node_id in node_id_to_comp_task and node_id_to_comp_task[node_id].errors
                     else None
                 ),
             )

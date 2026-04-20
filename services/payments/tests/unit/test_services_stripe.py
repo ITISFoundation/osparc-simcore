@@ -33,7 +33,7 @@ def app_environment(
     with_disabled_postgres: None,
     external_stripe_environment: EnvVarsDict,
 ):
-    # set environs
+    # set environs for the app and for the external stripe API
     return setenvs_from_dict(
         monkeypatch,
         {**app_environment, **external_stripe_environment},

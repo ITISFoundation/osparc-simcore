@@ -315,6 +315,8 @@ class UsersForAdminListFilter(Filters):
     #     CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
     #
     review_status: Literal["PENDING", "REVIEWED"] | None = None
+    registered: bool | None = None
+    product_name: ProductName | None = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -358,6 +360,11 @@ class UserAccountReject(InputSchema):
     message_content: MessageContent | None = None
 
 
+class UserAccountMoveProduct(InputSchema):
+    pre_registration_id: int
+    new_product_name: ProductName
+
+
 class UserAccountPreviewRejection(InputSchema):
     email: EmailStr
 
@@ -395,6 +402,12 @@ class UserAccountSearchQueryParams(RequestParameters):
         return self
 
 
+class UserAccountProductOptionGet(OutputSchema):
+    name: ProductName
+    display_name: str
+    is_current: bool = False
+
+
 class UserAccountGet(OutputSchema):
     # ONLY for admins
     first_name: str | None
@@ -407,6 +420,7 @@ class UserAccountGet(OutputSchema):
     state: Annotated[str | None, Field(description="State, province, canton, ...")]
     postal_code: str | None
     country: str | None
+    product_name: ProductName | None = None
     extras: Annotated[
         dict[str, Any],
         Field(

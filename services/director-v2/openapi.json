@@ -89,23 +89,23 @@
               }
             }
           },
-          "404": {
-            "description": "Project or pricing details not found"
+          "200": {
+            "description": "Pipeline is up-to-date, nothing was started"
           },
-          "406": {
-            "description": "Cluster not found"
+          "404": {
+            "description": "Project/cluster/pricing details not found"
           },
           "503": {
-            "description": "Service not available"
-          },
-          "422": {
-            "description": "Configuration error"
+            "description": "Service not available or configuration error"
           },
           "402": {
             "description": "Payment required"
           },
           "409": {
-            "description": "Project already started"
+            "description": "Project already started or contains deprecated services"
+          },
+          "422": {
+            "description": "Invalid computation request (e.g. missing collection_run_id)"
           }
         }
       }
@@ -2088,6 +2088,45 @@
         ],
         "title": "DynamicSidecarStatus"
       },
+      "ErrorDict": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Loc"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "ctx": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ctx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ErrorDict",
+        "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
+      },
       "GetProjectInactivityResponse": {
         "properties": {
           "is_inactive": {
@@ -2494,6 +2533,21 @@
               }
             ],
             "description": "the node's lock state"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "error details when the node is in a FAILED state"
           }
         },
         "additionalProperties": false,
@@ -2841,7 +2895,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {

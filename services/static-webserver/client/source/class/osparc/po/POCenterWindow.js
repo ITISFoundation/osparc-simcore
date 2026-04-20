@@ -25,8 +25,10 @@ qx.Class.define("osparc.po.POCenterWindow", {
     const height = 700;
     this.set({
       width,
-      height
+      height,
     });
+
+    this.setEscapeClose(false);
 
     const poCenter = new osparc.po.POCenter(openPage);
     this._setTabbedView(poCenter);

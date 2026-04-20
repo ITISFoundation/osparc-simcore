@@ -1,4 +1,4 @@
-aio-pika==9.5.8
+aio-pika==9.6.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -216,7 +216,7 @@ pyyaml==6.0.3
     #   bokeh
     #   dask
     #   distributed
-redis==7.0.1
+redis==7.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

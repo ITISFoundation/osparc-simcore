@@ -43,6 +43,14 @@ from .ssm import get_ssm_client
 _logger = logging.getLogger(__name__)
 
 
+def _log_instance(instance: EC2InstanceData) -> str:
+    """Consistent instance identifier for log messages with enough info
+    to locate the instance in AWS and in our logging facilities."""
+    user_id = instance.tags.get("user_id", "N/A")
+    wallet_id = instance.tags.get("wallet_id", "N/A")
+    return f"[id={instance.id} dns={instance.aws_private_dns} user_id={user_id} wallet_id={wallet_id}]"
+
+
 def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime | None:
     if last_heartbeat := instance.tags.get(
         HEARTBEAT_TAG_KEY,
@@ -98,8 +106,8 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
             else:
                 _logger.info(
                     "%s has still %ss before being terminateable",
-                    f"{instance.id=}",
-                    f"{(allowed_time_to_wait - elapsed_time_since_heartbeat).total_seconds()}",
+                    _log_instance(instance),
+                    f"{(allowed_time_to_wait - elapsed_time_since_heartbeat).total_seconds():.0f}",
                 )
         else:
             elapsed_time_since_startup = arrow.utcnow().datetime - instance.launch_time
@@ -113,99 +121,98 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
     return terminateable_instances.union(worker_instances)
 
 
-async def check_clusters(app: FastAPI) -> None:
-    primary_instances = await get_all_clusters(app)
-
-    connected_instances = {
-        instance
-        for instance in primary_instances
-        if await ping_scheduler(get_scheduler_url(instance), get_scheduler_auth(app))
-    }
-
-    # set instance heartbeat if scheduler is busy
+async def _heartbeat_connected_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
+    """Update heartbeat for all connected clusters. Log busy ones."""
     for instance in connected_instances:
         with log_catch(_logger, reraise=False):
-            # NOTE: some connected instance could in theory break between these 2 calls, therefore this is silenced and will
-            # be handled in the next call to check_clusters
+            # NOTE: a connected instance could break between these 2 calls;
+            # silenced and handled next cycle
             if await is_scheduler_busy(get_scheduler_url(instance), get_scheduler_auth(app)):
-                _logger.info(
-                    "%s is running tasks",
-                    f"{instance.id=} for {instance.tags=}",
-                )
+                _logger.info("%s is running tasks", _log_instance(instance))
                 await set_instance_heartbeat(app, instance=instance)
-    # clean any cluster that is not doing anything
+
+
+async def _terminate_idle_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
     if terminateable_instances := await _find_terminateable_instances(app, connected_instances):
         await delete_clusters(app, instances=terminateable_instances)
 
-    # analyse disconnected instances (currently starting or broken)
-    disconnected_instances = primary_instances - connected_instances
 
-    # starting instances do not have a heartbeat set but sometimes might fail and should be terminated
-    starting_instances = {
-        instance for instance in disconnected_instances if _get_instance_last_heartbeat(instance) is None
-    }
-    # remove instances that were starting for too long
+async def _handle_starting_clusters(app: FastAPI, starting_instances: set[EC2InstanceData]) -> None:
+    if not starting_instances:
+        return
+
+    _logger.info(
+        "Found %d starting instances (no heartbeat, awaiting deployment): %s",
+        len(starting_instances),
+        [_log_instance(i) for i in starting_instances],
+    )
+
+    # terminate instances that have been starting for too long
     if terminateable_instances := await _find_terminateable_instances(app, starting_instances):
-        _logger.warning(
-            "The following clusters'primary EC2 were starting for too long and will be terminated now "
-            "(either because a cluster was started and is not needed anymore, or there is an issue): '%s",
-            f"{[i.id for i in terminateable_instances]}",
-        )
+        for instance in terminateable_instances:
+            elapsed = arrow.utcnow().datetime - instance.launch_time
+            _logger.warning(
+                "Stalled startup, will terminate (started but never connected): %s elapsed=%ss",
+                _log_instance(instance),
+                f"{elapsed.total_seconds():.0f}",
+            )
         await delete_clusters(app, instances=terminateable_instances)
 
-    # NOTE: transmit command to start docker swarm/stack if needed
-    # once the instance is connected to the SSM server,
-    # use ssm client to send the command to these instances,
-    # we send a command that contain:
-    # the docker-compose file in binary,
-    # the call to init the docker swarm and the call to deploy the stack
+    # deploy docker stack to instances that still need it
     instances_in_need_of_deployment = {
         i for i in starting_instances - terminateable_instances if DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY not in i.tags
     }
-
     if instances_in_need_of_deployment:
-        app_settings = get_application_settings(app)
-        ssm_client = get_ssm_client(app)
-        ec2_client = get_ec2_client(app)
-        instances_in_need_of_deployment_ssm_connection_state = await limited_gather(
-            *[ssm_client.is_instance_connected_to_ssm_server(i.id) for i in instances_in_need_of_deployment],
-            reraise=False,
-            log=_logger,
-            limit=20,
+        await _deploy_to_instances(app, instances_in_need_of_deployment)
+
+
+async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) -> None:
+    ssm_client = get_ssm_client(app)
+    ssm_connection_states = await limited_gather(
+        *[ssm_client.is_instance_connected_to_ssm_server(i.id) for i in instances],
+        reraise=False,
+        log=_logger,
+        limit=20,
+    )
+    ssm_ready = [i for i, c in zip(instances, ssm_connection_states, strict=True) if c is True]
+    ssm_not_ready = [i for i, c in zip(instances, ssm_connection_states, strict=True) if c is not True]
+    if ssm_not_ready:
+        _logger.info(
+            "SSM not ready for %d instances (will retry next check): %s",
+            len(ssm_not_ready),
+            [_log_instance(i) for i in ssm_not_ready],
         )
-        ec2_connected_to_ssm_server = [
-            i
-            for i, c in zip(
-                instances_in_need_of_deployment,
-                instances_in_need_of_deployment_ssm_connection_state,
-                strict=True,
-            )
-            if c is True
-        ]
-        started_instances_ready_for_command = ec2_connected_to_ssm_server
-        if started_instances_ready_for_command:
-            # we need to send 1 command per machine here, as the user_id/wallet_id changes
-            for i in started_instances_ready_for_command:
-                ssm_command = await ssm_client.send_command(
-                    [i.id],
-                    command=create_deploy_cluster_stack_script(
+
+    app_settings = get_application_settings(app)
+    ec2_client = get_ec2_client(app)
+    # Each instance is handled independently so a failure on one does not block the others
+    for instance in ssm_ready:
+        with log_catch(_logger, reraise=False):
+            ssm_command = await ssm_client.send_command(
+                [instance.id],
+                command=create_deploy_cluster_stack_script(
+                    app_settings,
+                    cluster_machines_name_prefix=get_cluster_name(
                         app_settings,
-                        cluster_machines_name_prefix=get_cluster_name(
-                            app_settings,
-                            user_id=user_id_from_instance_tags(i.tags),
-                            wallet_id=wallet_id_from_instance_tags(i.tags),
-                            is_manager=False,
-                        ),
-                        additional_custom_tags={
-                            USER_ID_TAG_KEY: i.tags[USER_ID_TAG_KEY],
-                            WALLET_ID_TAG_KEY: i.tags[WALLET_ID_TAG_KEY],
-                            ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
-                        },
+                        user_id=user_id_from_instance_tags(instance.tags),
+                        wallet_id=wallet_id_from_instance_tags(instance.tags),
+                        is_manager=False,
                     ),
-                    command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
-                )
+                    additional_custom_tags={
+                        USER_ID_TAG_KEY: instance.tags[USER_ID_TAG_KEY],
+                        WALLET_ID_TAG_KEY: instance.tags[WALLET_ID_TAG_KEY],
+                        ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
+                    },
+                ),
+                command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
+            )
+            _logger.info(
+                "Deployment command sent: %s command_id=%s",
+                _log_instance(instance),
+                ssm_command.command_id,
+            )
             await ec2_client.set_instances_tags(
-                started_instances_ready_for_command,
+                [instance],
                 tags={
                     DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
                         ssm_command.command_id
@@ -213,12 +220,38 @@ async def check_clusters(app: FastAPI) -> None:
                 },
             )
 
-    # the remaining instances are broken (they were at some point connected but now not anymore)
-    broken_instances = disconnected_instances - starting_instances
+
+async def _handle_broken_clusters(app: FastAPI, broken_instances: set[EC2InstanceData]) -> None:
+    if not broken_instances:
+        return
+
+    _logger.warning(
+        "Found %d broken instances (were connected but now disconnected): %s",
+        len(broken_instances),
+        [_log_instance(i) for i in broken_instances],
+    )
     if terminateable_instances := await _find_terminateable_instances(app, broken_instances):
-        _logger.error(
-            "The following clusters'primary EC2 were found as unresponsive "
-            "(TIP: there is something wrong here, please inform support) and will be terminated now: '%s",
-            f"{[i.id for i in terminateable_instances]}",
-        )
+        for instance in terminateable_instances:
+            elapsed = arrow.utcnow().datetime - instance.launch_time
+            _logger.error(
+                "Terminating unresponsive instance: %s uptime=%ss"
+                " (TIP: was connected but became unresponsive, please check instance logs)",
+                _log_instance(instance),
+                f"{elapsed.total_seconds():.0f}",
+            )
         await delete_clusters(app, instances=terminateable_instances)
+
+
+async def check_clusters(app: FastAPI) -> None:
+    primary_instances = await get_all_clusters(app)
+    connected = {i for i in primary_instances if await ping_scheduler(get_scheduler_url(i), get_scheduler_auth(app))}
+    disconnected = primary_instances - connected
+
+    await _heartbeat_connected_clusters(app, connected)
+    await _terminate_idle_clusters(app, connected)
+
+    starting = {i for i in disconnected if _get_instance_last_heartbeat(i) is None}
+    await _handle_starting_clusters(app, starting)
+
+    broken = disconnected - starting
+    await _handle_broken_clusters(app, broken)

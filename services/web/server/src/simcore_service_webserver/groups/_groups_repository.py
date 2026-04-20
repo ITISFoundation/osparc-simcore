@@ -30,7 +30,7 @@ from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.models import groups, user_to_groups, users
+from ..db.models import groups, user_to_groups
 from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import UserNotFoundError
 from .exceptions import (
@@ -241,7 +241,7 @@ async def get_all_user_groups(
             )
             .where(user_to_groups.c.uid == user_id)
         )
-        return [Group.model_validate(row) async for row in result]
+        return [Group.model_validate(row) async for row in result.mappings()]
 
 
 async def get_ids_of_all_user_groups(

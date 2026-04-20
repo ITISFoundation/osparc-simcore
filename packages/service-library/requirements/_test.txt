@@ -68,9 +68,7 @@ frozenlist==1.8.0
     #   aiohttp
     #   aiosignal
 greenlet==3.3.2
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   sqlalchemy
+    # via sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -225,7 +223,7 @@ pyyaml==6.0.3
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   jsonschema-path
-redis==7.3.0
+redis==7.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -268,7 +266,6 @@ sortedcontainers==2.4.0
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_aiohttp.txt
     #   -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy

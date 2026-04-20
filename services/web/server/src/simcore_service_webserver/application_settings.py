@@ -20,7 +20,6 @@ from pydantic.fields import Field
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
-from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
 from settings_library.rabbit import RabbitSettings
@@ -244,7 +243,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    WEBSERVER_EMAIL: Annotated[SMTPSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
     WEBSERVER_EXPORTER: Annotated[
         ExporterSettings | None,
         Field(
@@ -419,7 +417,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_NOTIFICATIONS: bool = True
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PROFILING: bool = False
-    WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True

@@ -31,20 +31,17 @@ def make_async(
     return decorator
 
 
-_AwaitableResult = TypeVar("_AwaitableResult")
+@overload
+async def maybe_await[AwaitableResult](obj: Awaitable[AwaitableResult]) -> AwaitableResult: ...
 
 
 @overload
-async def maybe_await(obj: Awaitable[_AwaitableResult]) -> _AwaitableResult: ...
+async def maybe_await[AwaitableResult](obj: AwaitableResult) -> AwaitableResult: ...
 
 
-@overload
-async def maybe_await(obj: _AwaitableResult) -> _AwaitableResult: ...
-
-
-async def maybe_await(
-    obj: Awaitable[_AwaitableResult] | _AwaitableResult,
-) -> _AwaitableResult:
+async def maybe_await[AwaitableResult](
+    obj: Awaitable[AwaitableResult] | AwaitableResult,
+) -> AwaitableResult:
     """Helper function to handle both async and sync database results.
 
     This function allows code to work with both aiopg (async) and asyncpg (sync) result methods

@@ -4,7 +4,9 @@
 
 
 import json
+import uuid
 from collections.abc import AsyncIterable, Iterator
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
@@ -23,6 +25,7 @@ from simcore_service_webserver.login._confirmation_repository import (
 )
 from simcore_service_webserver.login._confirmation_service import ConfirmationService
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
+from simcore_service_webserver.notifications import notifications_service
 
 
 @pytest.fixture
@@ -38,7 +41,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_GROUPS": "1",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PRODUCTS": "1",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "1",  # for login notifications
             "WEBSERVER_STUDIES_DISPATCHER": "null",
@@ -149,14 +151,13 @@ async def unconfirmed_user(
 
 
 @pytest.fixture
-def mocked_email_core_remove_comments(mocker: MockerFixture):
-    def _do_not_remove_comments(html_string):
-        return html_string
-
-    mocker.patch(
-        "simcore_service_webserver.email._core._remove_comments",
+def mocked_notifications_service_send_message_from_template(
+    mocker: MockerFixture,
+) -> AsyncMock:
+    return mocker.patch(
+        f"{notifications_service.__name__}.send_message_from_template",
         autospec=True,
-        side_effect=_do_not_remove_comments,
+        return_value=(uuid.uuid4(), "send_message_from_template"),
     )
 
 

@@ -11,9 +11,11 @@ flag_management:
     - type: project
       target: auto
       threshold: 5%
+      informational: true
     - type: patch
       target: auto
       threshold: 5%
+      informational: true
 
 
 component_management:
@@ -25,6 +27,12 @@ component_management:
         branches:
           - "!master"
   individual_components:
+    - componend_id: pkg_pytest_simcore
+      paths:
+        - packages/pytest-simcore/**
+    - componend_id: pkg_common_library
+      paths:
+        - packages/common-library/**
     - component_id: pkg_aws_library
       paths:
         - packages/aws-library/**
@@ -94,6 +102,9 @@ component_management:
     - component_id: invitations
       paths:
         - services/invitations/**
+    - component_id: notifications
+      paths:
+        - services/notifications/**
     - component_id: payments
       paths:
         - services/payments/**

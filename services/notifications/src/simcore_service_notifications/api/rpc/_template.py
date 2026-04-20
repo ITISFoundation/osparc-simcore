@@ -1,7 +1,7 @@
 from dataclasses import asdict
 
 from fastapi import FastAPI
-from models_library.notifications import ChannelType
+from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -51,7 +51,7 @@ async def preview_template(
 async def search_templates(
     app: FastAPI,
     *,
-    channel: ChannelType | None,
+    channel: Channel | None,
     template_name: str | None,
 ) -> list[SearchTemplatesResponse]:
     """
