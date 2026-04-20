@@ -22,21 +22,20 @@ class EmailChannelHandler(ChannelHandler):
     def prepare_messages(message: EmailMessage) -> list[dict[str, Any]]:
         content_dict = message.content.model_dump()
         from_dict = message.addressing.from_.model_dump()
+        bcc_dict = message.addressing.bcc.model_dump() if message.addressing.bcc else None
         reply_to_dict = message.addressing.reply_to.model_dump() if message.addressing.reply_to else None
 
         recipients = _interleave_recipients_by_domain(message.addressing.to)
-
-        bcc_dict = message.addressing.bcc.model_dump() if message.addressing.bcc else None
 
         payload_base: dict[str, Any] = {
             "channel": message.channel,
             "from": from_dict,
             "content": content_dict,
         }
-        if reply_to_dict:
-            payload_base["reply_to"] = reply_to_dict
         if bcc_dict:
             payload_base["bcc"] = bcc_dict
+        if reply_to_dict:
+            payload_base["reply_to"] = reply_to_dict
 
         return [
             CeleryEmailMessage.model_validate({**payload_base, "to": recipient.model_dump()}).model_dump(by_alias=True)

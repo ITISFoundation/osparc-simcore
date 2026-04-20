@@ -33,8 +33,8 @@ async def send_email_message(
     msg = EmailMessage(
         from_=EmailContact(**message.from_.model_dump()),
         to=EmailContact(**message.to.model_dump()),
-        reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
         bcc=EmailContact(**message.bcc.model_dump()) if message.bcc else None,
+        reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
         content=EmailContent(**message.content.model_dump()),
     )
 
