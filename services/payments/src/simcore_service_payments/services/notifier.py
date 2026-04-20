@@ -7,6 +7,7 @@ from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.utils import fire_and_forget_task
 
+from ..core.settings import ApplicationSettings
 from ..db.payment_users_repo import PaymentsUsersRepo
 from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
@@ -72,6 +73,8 @@ class NotifierService(SingletonInAppStateMixin):
 
 
 def setup_notifier(app: FastAPI):
+    app_settings: ApplicationSettings = app.state.settings
+
     async def _on_startup() -> None:
         assert app.state.external_socketio  # nosec
 
@@ -83,6 +86,7 @@ def setup_notifier(app: FastAPI):
             EmailProvider(
                 rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
                 users_repo=PaymentsUsersRepo(get_engine(app)),
+                bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
             ),
         ]
 

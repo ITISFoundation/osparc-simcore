@@ -9,6 +9,7 @@ from models_library.notifications.rpc import (
     TemplateRef,
 )
 from models_library.users import UserID
+from pydantic import EmailStr
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message_from_template,
@@ -28,9 +29,11 @@ class EmailProvider(NotificationProvider):
         self,
         rabbitmq_rpc_client: RabbitMQRPCClient,
         users_repo: PaymentsUsersRepo,
+        bcc_email: EmailStr | None = None,
     ):
         self._rabbitmq_rpc_client = rabbitmq_rpc_client
         self._users_repo = users_repo
+        self._bcc_email = bcc_email
 
     async def notify_payment_completed(
         self,
@@ -59,6 +62,7 @@ class EmailProvider(NotificationProvider):
                         email=data.email,
                     )
                 ],
+                bcc=EmailContact(name="", email=self._bcc_email) if self._bcc_email else None,
             )
 
             context: dict = {

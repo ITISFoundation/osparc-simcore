@@ -7,6 +7,7 @@ from common_library.logging.logging_utils_filtering import LoggerName, MessageSu
 from models_library.basic_types import NonNegativeDecimal
 from pydantic import (
     AliasChoices,
+    EmailStr,
     Field,
     HttpUrl,
     PositiveFloat,
@@ -134,6 +135,13 @@ class ApplicationSettings(_BaseApplicationSettings):
             description="Based on this variable is the auto recharge functionality in Payment service enabled",
         ),
     ] = False
+
+    PAYMENTS_BCC_EMAIL: Annotated[
+        EmailStr | None,
+        Field(
+            description="Special email for finance department. Currently used to BCC invoices.",
+        ),
+    ] = None
 
     PAYMENTS_RABBITMQ: Annotated[
         RabbitSettings,

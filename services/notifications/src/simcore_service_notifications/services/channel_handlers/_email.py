@@ -26,6 +26,8 @@ class EmailChannelHandler(ChannelHandler):
 
         recipients = _interleave_recipients_by_domain(message.addressing.to)
 
+        bcc_dict = message.addressing.bcc.model_dump() if message.addressing.bcc else None
+
         payload_base: dict[str, Any] = {
             "channel": message.channel,
             "from": from_dict,
@@ -33,6 +35,8 @@ class EmailChannelHandler(ChannelHandler):
         }
         if reply_to_dict:
             payload_base["reply_to"] = reply_to_dict
+        if bcc_dict:
+            payload_base["bcc"] = bcc_dict
 
         return [
             CeleryEmailMessage.model_validate({**payload_base, "to": recipient.model_dump()}).model_dump(by_alias=True)

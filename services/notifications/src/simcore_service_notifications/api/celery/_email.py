@@ -34,6 +34,7 @@ async def send_email_message(
         from_=EmailContact(**message.from_.model_dump()),
         to=EmailContact(**message.to.model_dump()),
         reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
+        bcc=EmailContact(**message.bcc.model_dump()) if message.bcc else None,
         content=EmailContent(**message.content.model_dump()),
     )
 
@@ -49,6 +50,7 @@ async def send_email_message(
                     content_text=msg.content.body_text,
                     content_html=msg.content.body_html,
                     reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
+                    bcc=[_to_address(msg.bcc)] if msg.bcc else None,
                     extra_headers=settings.SMTP_EXTRA_HEADERS,
                 )
             )
