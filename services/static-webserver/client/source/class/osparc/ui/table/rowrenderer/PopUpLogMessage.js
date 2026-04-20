@@ -17,7 +17,7 @@
 
 /**
  * Row renderer for the Logger table that shows a popup with
- * the full log message, timestamp, origin, and log level when a row is clicked.
+ * the full log message, timestamp, Node label, and log level when a row is clicked.
  *
  * The popup is added to the application root to avoid
  * qooxdoo table pane clipping constraints (overflow:hidden at multiple levels).
