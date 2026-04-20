@@ -26,7 +26,7 @@
  *
  * <pre class='javascript'>
  *   let tableModel = this.__logModel = new osparc.widget.logger.LoggerTable();
- *   tableModel.setColumns(["Level", "Time", "Node", "Message"], ["level", "time", "who", "whatRich"]);
+ *   tableModel.setColumns(["Level", "Time", "Node", "Message"], ["level", "time", "who", "msgRich"]);
  *   let custom = {
  *     tableColumnModel : function(obj) {
  *       return new qx.ui.table.columnmodel.Resize(obj);
