@@ -30,8 +30,6 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
 
     this.__table = table;
     this.__messageColPos = messageColPos;
-    this.__popup = null;
-    this.__activeRowIndex = null;
   },
 
   statics: {
@@ -126,7 +124,9 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       }
 
       // Spacer
-      header.add(new qx.ui.core.Spacer(), { flex: 1 });
+      header.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       // Copy button
       const copyBtn = osparc.utils.Utils.getCopyButton();
@@ -181,8 +181,10 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
           const bounds = popup.getBounds();
           if (bounds) {
             const adjustedTop = Math.max(0, Math.round(rect.bottom) - bounds.height);
-            root.setWidgetLeft(popup, Math.round(rect.left));
-            root.setWidgetTop(popup, adjustedTop);
+            popup.setLayoutProperties({
+              left: Math.round(rect.left),
+              top: adjustedTop,
+            });
           }
         });
       }
@@ -198,18 +200,22 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       document.addEventListener("scroll", scrollHandler, true);
 
       // Close on click outside
-      popup.addListenerOnce("appear", () => {
-        const clickHandler = e => {
-          const popupElem = popup.getContentElement().getDomElement();
-          if (popupElem && !popupElem.contains(e.target)) {
-            this.__closePopup();
-            document.removeEventListener("mousedown", clickHandler, true);
-          }
-        };
-        setTimeout(() => document.addEventListener("mousedown", clickHandler, true), 0);
-        popup.addListenerOnce("disappear", () => {
+      const clickHandler = e => {
+        if (popup.isDisposed()) {
           document.removeEventListener("mousedown", clickHandler, true);
-        });
+          return;
+        }
+        const popupElem = popup.getContentElement().getDomElement();
+        if (popupElem && !popupElem.contains(e.target)) {
+          document.removeEventListener("mousedown", clickHandler, true);
+          this.__closePopup();
+        }
+      };
+      popup.addListenerOnce("appear", () => {
+        setTimeout(() => document.addEventListener("mousedown", clickHandler, true), 0);
+      });
+      popup.addListenerOnce("disappear", () => {
+        document.removeEventListener("mousedown", clickHandler, true);
       });
     },
 
