@@ -28,7 +28,7 @@ from simcore_service_dynamic_scheduler.services.t_scheduler._models import (
     WorkflowStatus,
 )
 from temporalio.client import WorkflowFailureError
-from tenacity import retry, stop_after_delay, wait_fixed
+from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -54,18 +54,23 @@ async def _poll_status(
     poll_interval_s: float = 0.5,
 ) -> WorkflowStatus:
     """Poll ``engine.status()`` until the workflow reaches *target_state*."""
+    status: WorkflowStatus | None = None
 
-    @retry(stop=stop_after_delay(timeout_s), wait=wait_fixed(poll_interval_s), reraise=True)
-    async def _wait() -> WorkflowStatus:
-        status = await engine.status(workflow_id)
-        assert status.state == target_state, (
-            f"Expected {target_state}, got {status.state} "
-            f"(running={status.running_activities}, "
-            f"failed={status.failed_activities})"
-        )
-        return status
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(timeout_s),
+        wait=wait_fixed(poll_interval_s),
+        reraise=True,
+    ):
+        with attempt:
+            status = await engine.status(workflow_id)
+            assert status.state == target_state, (
+                f"Expected {target_state}, got {status.state} "
+                f"(running={status.running_activities}, "
+                f"failed={status.failed_activities})"
+            )
 
-    return await _wait()
+    assert status is not None
+    return status
 
 
 async def _await_workflow_result(
@@ -78,6 +83,26 @@ async def _await_workflow_result(
     client = engine._client  # noqa: SLF001
     handle = client.get_workflow_handle(workflow_id)
     return await asyncio.wait_for(handle.result(), timeout=timeout_s)
+
+
+async def _await_no_running_workflows(
+    engine: WorkflowEngine,
+    workflow_ids: set[str],
+    *,
+    timeout_s: float = 10,
+    poll_interval_s: float = 0.5,
+) -> None:
+    """Poll until the provided workflows disappear from Temporal's running list."""
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(timeout_s),
+        wait=wait_fixed(poll_interval_s),
+        reraise=True,
+    ):
+        with attempt:
+            running = await engine.list_running_workflows()
+            running_ids = {wf.workflow_id for wf in running}
+            still_running = workflow_ids & running_ids
+            assert not still_running, f"Still reported as running: {sorted(still_running)}"
 
 
 # ── tests ─────────────────────────────────────────────────────────────
@@ -274,7 +299,5 @@ async def test_concurrent_workflow_burst(
         assert result["b_result"] == "done_b", f"Workflow burst-{i} failed"
         assert result["c_result"] == "done_c", f"Workflow burst-{i} failed"
 
-    # No running workflows should remain
-    running = await engine.list_running_workflows()
-    burst_running = [wf for wf in running if wf.workflow_id.startswith("burst-")]
-    assert burst_running == []
+    # Temporal workflow listing is eventually consistent, so poll until our burst workflows disappear.
+    await _await_no_running_workflows(engine, set(wf_ids))
