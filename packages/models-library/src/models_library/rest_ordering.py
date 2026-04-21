@@ -1,4 +1,4 @@
-from typing import Annotated, Any, ClassVar, Generic
+from typing import Annotated, Any, ClassVar, Generic, cast
 
 from common_library.json_serialization import json_dumps
 from pydantic import (
@@ -221,7 +221,7 @@ class OrderingQueryParams(BaseModel, Generic[TField]):  # noqa: UP046
     def _apply_field_name_map(self) -> "OrderingQueryParams[TField]":
         if self._field_name_map:
             for clause in self.order_by:
-                mapped = self._field_name_map.get(clause.field)
+                mapped = self._field_name_map.get(str(clause.field))
                 if mapped is not None:
-                    clause.field = mapped  # type: ignore[assignment]
+                    clause.field = cast(TField, mapped)
         return self
