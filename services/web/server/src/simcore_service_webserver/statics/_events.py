@@ -83,7 +83,7 @@ async def create_cached_indexes(app: web.Application) -> None:
                 f"Could not fetch index from static server at {url!s}. Stopping application boot",
                 error=err,
                 error_context={"url": url},
-                tip="This is a test error",
+                tip="Check that the static webserver is running and reachable at the configured URL",
             )
             raise RuntimeError(msg) from err
 
