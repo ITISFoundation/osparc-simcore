@@ -4,6 +4,7 @@ from ._account_requested import AccountRequestedTemplateContext
 from ._change_email import ChangeEmailTemplateContext
 from ._credit_reimbursement import CreditReimbursementTemplateContext
 from ._empty import EmptyTemplateContext
+from ._new_code import NewCodeTemplateContext
 from ._registered import RegisteredTemplateContext
 from ._reset_password import ResetPasswordTemplateContext
 from ._unregister import UnregisterTemplateContext
@@ -15,6 +16,7 @@ __all__: tuple[str, ...] = (
     "ChangeEmailTemplateContext",
     "CreditReimbursementTemplateContext",
     "EmptyTemplateContext",
+    "NewCodeTemplateContext",
     "RegisteredTemplateContext",
     "ResetPasswordTemplateContext",
     "UnregisterTemplateContext",
