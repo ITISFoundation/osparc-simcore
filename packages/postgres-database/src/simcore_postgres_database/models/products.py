@@ -36,10 +36,6 @@ class VendorUI(TypedDict, total=True):
     strong_color: str  # vendor main color
 
 
-type _ServiceKey = str
-type _ReleaseNotesURL = str
-
-
 class Vendor(TypedDict, total=False):
     """
         Brand information about the vendor
@@ -61,10 +57,6 @@ class Vendor(TypedDict, total=False):
     # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
     # (used for the platform's release notes)
     release_notes_url_template: str
-
-    # a mapping between service key and release notes url
-    # (used for resolving a service's release notes url in the frontend)
-    services_release_notes_urls: dict[_ServiceKey, _ReleaseNotesURL]
 
     ui: VendorUI
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
@@ -253,6 +253,8 @@ class _BaseServiceGetV2(ServiceSummary):
         Field(default_factory=dict),
     ] = DEFAULT_FACTORY
 
+    release_notes_url: HttpUrl | None = None
+
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
@@ -294,8 +296,10 @@ class ServiceGetV2(_BaseServiceGetV2):
         list[ServiceRelease],
         Field(
             default_factory=list,
-            description="history of releases for this service at this point in time, starting from the newest to the oldest."
-            " It includes current release.",
+            description=(
+                "history of releases for this service at this point in time, "
+                "starting from the newest to the oldest. It includes current release."
+            ),
             json_schema_extra={"default": []},
         ),
     ] = DEFAULT_FACTORY
@@ -362,14 +366,14 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-PageRpcLatestServiceGet: TypeAlias = PageRpc[
+type PageRpcLatestServiceGet = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
     # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
     # and will fail to serialize/deserialize these parameters when transmitted/received
     LatestServiceGet
 ]
 
-PageRpcServiceRelease: TypeAlias = PageRpc[
+type PageRpcServiceRelease = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
     # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
     # and will fail to serialize/deserialize these parameters when transmitted/received
@@ -379,7 +383,7 @@ PageRpcServiceRelease: TypeAlias = PageRpc[
 # Create PageRpc types
 PageRpcServiceSummary = PageRpc[ServiceSummary]
 
-ServiceResourcesGet: TypeAlias = ServiceResourcesDict
+type ServiceResourcesGet = ServiceResourcesDict
 
 
 class ServiceUpdateV2(CatalogInputSchema):
@@ -394,9 +398,11 @@ class ServiceUpdateV2(CatalogInputSchema):
     deprecated: datetime | None = None
 
     classifiers: list[str] | None = None
-    quality: dict[str, Any] = {}
+    quality: dict[str, Any] = Field(default_factory=dict)
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
+
+    release_notes_url: HttpUrl | None = None
 
     model_config = ConfigDict(
         extra="forbid",
