@@ -22,13 +22,7 @@ from ._models import (
 
 
 class WorkflowEngine:
-    """Public API for managing Temporalio saga workflows.
-
-    Obtain an instance via ``get_workflow_engine(app)`` — both are
-    importable from ``services.t_scheduler``.
-    All interaction with workflows — starting, querying, cancelling,
-    signalling — should go through this class.
-    """
+    """Public API for managing Temporalio saga workflows."""
 
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
@@ -120,8 +114,8 @@ class WorkflowEngine:
                 ``ROLLBACK`` to trigger compensation.
 
         Raises:
-            ValueError: If *activity_name* is not in the workflow's
-                failed activities.
+            ActivityNotInFailedError: If *activity_name* is not in the
+                workflow's failed activities.
         """
         status = await self.status(workflow_id)
         if activity_name not in status.failed_activities:
