@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import statistics
+import sys
 import time
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
@@ -431,7 +432,7 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
     # For a more robust, although less efficient, measure of central tendency, see median().
     ref_elapsed_ns = statistics.median(public_elapsed_times)
     elapsed_ns = statistics.median(admin_elapsed_times)
-    elapsed_ratio = elapsed_ns / max(ref_elapsed_ns, 1)
+    elapsed_ratio = elapsed_ns / max(ref_elapsed_ns, sys.float_info.min)
 
     # NOTE: 150% more wrt reference (basically ~ 2.5x more !!!!!!!!!!!)
     # and this is mocking the access to the database!
