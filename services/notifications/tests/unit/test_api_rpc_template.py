@@ -1,5 +1,7 @@
 # pylint: disable=unused-argument
 
+from typing import Any
+
 import pytest
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
@@ -102,3 +104,44 @@ async def test_preview_template_invalid_context(
 
         with pytest.raises((NotificationsTemplateContextValidationError,)):
             await preview_template(rpc_client, ref=ref, context=context)
+
+
+async def test_preview_new_code_template_renders_without_errors(
+    fake_product_data: dict[str, Any],
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="new_code")
+    # Exact context shape sent by webserver's send_email_code
+    context = {
+        "user": {
+            "first_name": "John",
+            "user_name": "john_doe",
+        },
+        "host": "https://example.com",
+        "code": "123456",
+        "product": fake_product_data,
+    }
+
+    response = await preview_template(rpc_client, ref=ref, context=context)
+    assert isinstance(response, PreviewTemplateResponse)
+    assert response.ref.template_name == "new_code"
+    assert isinstance(response.message_content, dict)
+    # Verify the rendered content contains the expected values
+    assert "123456" in response.message_content["subject"]
+    assert "John" in response.message_content["body_text"]
+    assert "https://example.com" in response.message_content["body_text"]
+
+
+async def test_preview_new_code_template_invalid_context(
+    fake_product_data: dict[str, Any],
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="new_code")
+    # Missing required fields 'user', 'host', 'code'
+    context = {
+        "invalid_key": "invalid_value",
+        "product": fake_product_data,
+    }
+
+    with pytest.raises(NotificationsTemplateContextValidationError):
+        await preview_template(rpc_client, ref=ref, context=context)
