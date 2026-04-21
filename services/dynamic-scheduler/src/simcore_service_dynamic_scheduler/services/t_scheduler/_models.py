@@ -104,7 +104,7 @@ class Step:
     )
     timeout: timedelta = field(default_factory=lambda: timedelta(seconds=60))
     on_failure: FailurePolicy = FailurePolicy.ROLLBACK
-    heartbeat_interval: timedelta = field(default_factory=lambda: timedelta(seconds=5))
+    heartbeat_timeout: timedelta = field(default_factory=lambda: timedelta(seconds=30))
 
 
 @dataclass(frozen=True)

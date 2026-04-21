@@ -200,7 +200,7 @@ class SagaWorkflow:  # pylint:disable=too-many-instance-attributes
                         context,
                         start_to_close_timeout=step.timeout,
                         retry_policy=step.retry,
-                        heartbeat_timeout=timedelta(seconds=30),
+                        heartbeat_timeout=step.heartbeat_timeout,
                     )
                 except ActivityError as err:
                     self._record(ActivityFailed(activity_name=name, error=f"{err}"))
