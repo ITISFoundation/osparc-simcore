@@ -263,7 +263,6 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         node_uuid=path_params.node_id,
         outputs=node_outputs.outputs,
         run_hash=None,
-        node_errors=None,
         ui_changed_keys=ui_changed_keys,
         client_session_id=header_params.client_session_id,
     )
@@ -310,7 +309,7 @@ async def _stop_dynamic_service_task(
             dynamic_service_stop.user_id,
             include_state=True,
         )
-        await _projects_service.notify_project_node_update(app, project, dynamic_service_stop.node_id, errors=None)
+        await _projects_service.notify_project_node_update(app, project, dynamic_service_stop.node_id)
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
@@ -439,6 +438,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
         node_id=path_params.node_id,
         service_key=project["workbench"][f"{path_params.node_id}"]["key"],
         service_version=project["workbench"][f"{path_params.node_id}"]["version"],
+        product_name=req_ctx.product_name,
     )
     return envelope_json_response(resources)
 

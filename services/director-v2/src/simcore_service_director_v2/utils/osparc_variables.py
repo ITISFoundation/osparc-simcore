@@ -1,14 +1,18 @@
 import asyncio
 import inspect
-from collections.abc import Callable
-from typing import Any, Final, NamedTuple, TypeAlias
+from collections.abc import Callable, Coroutine
+from typing import Any, Final, NamedTuple
 
 from models_library.utils.specs_substitution import SubstitutionValue
-from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 
-ContextDict: TypeAlias = dict[str, Any]
-ContextGetter: TypeAlias = Callable[[ContextDict], Any]
+from ..modules.osparc_variables._errors import (
+    OsparcVariableResolveError,
+    OsparcVariableResolveTimeoutError,
+)
+
+type ContextDict = dict[str, Any]
+type ContextGetter = Callable[[ContextDict], Any]
 
 
 class CaptureError(ValueError): ...
@@ -86,7 +90,33 @@ class OsparcVariablesTable:
         return {k: self._variables_getters[k] for k in selection}
 
 
-_HANDLERS_TIMEOUT: Final[NonNegativeInt] = 4
+_HANDLERS_TIMEOUT: Final[float] = 10
+
+
+def _get_handler_name(handler: Callable[..., Any]) -> str:
+    return getattr(handler, "__qualname__", getattr(handler, "__name__", type(handler).__name__))
+
+
+async def _resolve_one_variable_with_timeout(
+    key: str,
+    handler_name: str,
+    coro: Coroutine[Any, Any, Any],
+    *,
+    timeout_seconds: float,
+) -> Any:
+    try:
+        return await asyncio.wait_for(coro, timeout=timeout_seconds)
+    except TimeoutError as exc:
+        raise OsparcVariableResolveTimeoutError(
+            variable_key=key,
+            handler_name=handler_name,
+            timeout_seconds=timeout_seconds,
+        ) from exc
+    except Exception as exc:
+        raise OsparcVariableResolveError(
+            variable_key=key,
+            handler_name=handler_name,
+        ) from exc
 
 
 async def resolve_variables_from_context(
@@ -106,6 +136,9 @@ async def resolve_variables_from_context(
         resolve_in_parallel -- sometimes the variable_getters cannot be ran in parallel,
             for example due to race conditions,
             for those situations set to False (default: {True})
+    Raises:
+        OsparcVariableResolveError: if any of the handlers raises an exception during the resolution
+        OsparcVariableResolveTimeoutError: if any of the handlers raises a TimeoutError during the resolution
     """
     # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
@@ -119,8 +152,12 @@ async def resolve_variables_from_context(
         if isinstance(value, RequestTuple):
             handler, kwargs = value
             coro = handler(**kwargs)
-            # extra wrap to control timeout
-            coros[key] = asyncio.wait_for(coro, timeout=_HANDLERS_TIMEOUT)
+            coros[key] = _resolve_one_variable_with_timeout(
+                key,
+                _get_handler_name(handler),
+                coro,
+                timeout_seconds=_HANDLERS_TIMEOUT,
+            )
         else:
             environs[key] = value
 
@@ -129,8 +166,7 @@ async def resolve_variables_from_context(
         *coros.values(),
         max_concurrency=0 if resolve_in_parallel else 1,
     )
-    for handler_key, handler_value in zip(coros.keys(), values, strict=True):
-        environs[handler_key] = handler_value
+    environs.update(zip(coros.keys(), values, strict=True))
 
     assert set(environs.keys()) == set(variables_getters.keys())  # nosec
     return environs

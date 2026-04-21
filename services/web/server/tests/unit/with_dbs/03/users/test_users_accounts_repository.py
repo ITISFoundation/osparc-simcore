@@ -13,6 +13,8 @@ from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
 from models_library.users import UserID
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -445,8 +447,77 @@ async def test_create_pre_registration_with_existing_user_linking(
     # When False, user_id should be None
     if expected_linked:
         assert reg["user_id"] == existing_user_id, "Should be linked to the existing user"
+        assert reg["account_request_status"] == AccountRequestStatus.PENDING
+        assert reg["account_request_reviewed_by"] is None
+        assert reg["account_request_reviewed_at"] is None
     else:
         assert reg["user_id"] is None, "Should NOT be linked to any user"
+        assert reg["account_request_status"] == AccountRequestStatus.PENDING
+        assert reg["account_request_reviewed_by"] is None
+        assert reg["account_request_reviewed_at"] is None
+
+
+async def test_create_pre_registration_auto_approves_if_existing_user_in_requested_product(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
+):
+    """Test that linked existing users are auto-approved only when already in the requested product group."""
+    asyncpg_engine = get_asyncpg_engine(app)
+    existing_user_id = product_owner_user["id"]
+    existing_user_email = product_owner_user["email"]
+
+    async with asyncpg_engine.begin() as conn:
+        product_group_id = await conn.scalar(sa.select(products.c.group_id).where(products.c.name == product_name))
+        if product_group_id is None:
+            product_group_id = await conn.scalar(
+                sa.insert(groups)
+                .values(
+                    name=f"product-group-{product_name}-{existing_user_id}",
+                    description=f"Product group for {product_name}",
+                    type=GroupType.STANDARD,
+                )
+                .returning(groups.c.gid)
+            )
+            assert product_group_id is not None
+            await conn.execute(
+                sa.update(products).where(products.c.name == product_name).values(group_id=product_group_id)
+            )
+
+        user_in_group = await conn.scalar(
+            sa.select(user_to_groups.c.uid).where(
+                (user_to_groups.c.uid == existing_user_id) & (user_to_groups.c.gid == product_group_id)
+            )
+        )
+        if user_in_group is None:
+            await conn.execute(sa.insert(user_to_groups).values(uid=existing_user_id, gid=product_group_id))
+
+    pre_registration_id = await _accounts_repository.create_user_pre_registration(
+        asyncpg_engine,
+        email=existing_user_email,
+        created_by=existing_user_id,
+        product_name=product_name,
+        link_to_existing_user=True,
+        pre_first_name="Product",
+        pre_last_name="Member",
+    )
+    pre_registration_details_db_cleanup.append(pre_registration_id)
+
+    registrations, count = await _accounts_repository.list_user_pre_registrations(
+        asyncpg_engine,
+        filter_by_pre_email=existing_user_email,
+        filter_by_product_name=product_name,
+    )
+
+    assert count == 1
+    assert len(registrations) == 1
+    reg = registrations[0]
+    assert reg["id"] == pre_registration_id
+    assert reg["user_id"] == existing_user_id
+    assert reg["account_request_status"] == AccountRequestStatus.APPROVED
+    assert reg["account_request_reviewed_by"] == existing_user_id
+    assert reg["account_request_reviewed_at"] is not None
 
 
 @dataclass
@@ -474,7 +545,7 @@ async def mixed_user_data(
 
     Creates:
     1. A pre-registered only user (PENDING)
-    2. A pre-registration for the existing product owner (linked)
+    2. A pre-registration for the existing product owner (linked and pending)
     3. A pre-registered user in APPROVED state
 
     Returns a dataclass with created IDs and emails for verification and cleanup.
@@ -656,6 +727,7 @@ async def test_list_merged_users_linked_user(
     assert product_owner["first_name"] == "Owner", "Should use pre-registration first name"
     assert product_owner["user_name"] is not None, "Should include user_name from users table"
     assert product_owner["status"] is not None, "Should include status from users table"
+    assert product_owner["account_request_status"] == AccountRequestStatus.PENDING
     assert product_owner["created_by"] == mixed_user_data.created_by_user_id
 
 
@@ -676,7 +748,7 @@ async def test_list_merged_users_filter_pending(
     )
 
     # Assert
-    # Only pending pre-registrations should be included (default status is PENDING)
+    # Only pending pre-registrations should be included
     assert pending_count == 2
     assert len(pending_users) == 2
     pending_emails = [user["email"] for user in pending_users]
@@ -706,8 +778,11 @@ async def test_list_merged_users_filter_approved(
     # Only approved pre-registrations should be included
     assert approved_count == 1
     assert len(approved_users) == 1
-    assert approved_users[0]["email"] == mixed_user_data.approved_email
-    assert approved_users[0]["account_request_status"] == AccountRequestStatus.APPROVED
+    approved_emails = {user["email"] for user in approved_users}
+    assert approved_emails == {
+        mixed_user_data.approved_email,
+    }
+    assert all(user["account_request_status"] == AccountRequestStatus.APPROVED for user in approved_users)
 
 
 async def test_list_merged_users_multiple_statuses(
@@ -737,6 +812,71 @@ async def test_list_merged_users_multiple_statuses(
     assert mixed_user_data.pre_reg_email in mixed_status_emails
     assert mixed_user_data.product_owner_email in mixed_status_emails
     assert mixed_user_data.approved_email in mixed_status_emails
+
+
+@pytest.mark.parametrize(
+    "filter_statuses,filter_registered,expected_present,expected_absent",
+    [
+        (
+            [AccountRequestStatus.PENDING],
+            True,
+            ["product_owner_email"],
+            ["pre_reg_email", "approved_email"],
+        ),
+        (
+            [AccountRequestStatus.PENDING],
+            False,
+            ["pre_reg_email"],
+            ["product_owner_email", "approved_email"],
+        ),
+        (
+            [AccountRequestStatus.APPROVED],
+            False,
+            ["approved_email"],
+            ["pre_reg_email", "product_owner_email"],
+        ),
+        (
+            [AccountRequestStatus.APPROVED],
+            True,
+            [],
+            ["pre_reg_email", "product_owner_email", "approved_email"],
+        ),
+    ],
+)
+async def test_list_merged_users_with_registered_filter(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+    filter_statuses: list[AccountRequestStatus],
+    filter_registered: bool,
+    expected_present: list[str],
+    expected_absent: list[str],
+):
+    """Test account request status and registered filters in combination."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    users_list, total_count = await _accounts_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_any_account_request_status=filter_statuses,
+        filter_registered=filter_registered,
+        filter_include_deleted=False,
+        pagination_limit=100,
+        pagination_offset=0,
+    )
+
+    # Assert count and page payload are aligned under filter constraints
+    assert total_count == len(users_list)
+
+    found_emails = {user["email"] for user in users_list}
+
+    for expected_attr in expected_present:
+        assert getattr(mixed_user_data, expected_attr) in found_emails
+
+    for expected_attr in expected_absent:
+        assert getattr(mixed_user_data, expected_attr) not in found_emails
+
+    assert all((user["user_id"] is not None) is filter_registered for user in users_list)
 
 
 async def test_list_merged_users_pagination(

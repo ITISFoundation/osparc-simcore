@@ -4,9 +4,9 @@
 
 {# Styles #}
 {%- set body_style = "font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 1.5; color: #353638; margin: 0; padding: 0; background-color: #ffffff;" -%}
-{%- set email_container_style = "max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);" -%}
+{%- set email_container_style = "width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);" -%}
 {%- set header_style = "padding-bottom: 10px; margin-bottom: 20px;" -%}
-{%- set content_style = "color: #353638; font-size: 16px; line-height: 1.5;" -%}
+{%- set content_style = "color: #353638; font-size: 16px; line-height: 1.5; word-break: break-word;" -%}
 {%- set footer_style = "margin-top: 20px; padding-top: 15px; font-size: 14px; color: #353638;" -%}
 {%- set footer_social_link_style = "width: 28px; height: 28px; border-radius: 50%; background-color: #808080; color: #ffffff; text-decoration: none; display: block; text-align: center; line-height: 28px;" -%}
 {%- set footer_social_icon_wrapper_style = "display: block; width: 26px; height: 26px; margin: 3px auto 0;" -%}
@@ -25,7 +25,7 @@
 {%- set footer_share_icon_wrapper_style = "display: inline-block; width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; line-height: 1;" -%}
 {%- set footer_share_label_style = "display: inline-block; vertical-align: middle; line-height: 20px;" -%}
 {%- set footer_share_td_style = "padding: 4px 5px;" -%}
-{%- set footer_share_badge_style = "width: 22px; height: 22px; border-radius: 3px; background-color: #353638; color: #ffffff; font-size: 12px; display: inline-flex; align-items: center; justify-content: center;" -%}
+{%- set footer_share_badge_style = "width: 22px; height: 22px; border-radius: 3px; background-color: #353638; color: #ffffff; font-size: 12px; display: inline-block; text-align: center; vertical-align: middle; line-height: 22px;" -%}
 {# zimbra doesn't support the svgs :(
   "facebook": '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 320 512" aria-hidden="true" focusable="false"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path fill="#ffffff" d="M80 299.3l0 212.7 116 0 0-212.7 86.5 0 18-97.8-104.5 0 0-34.6c0-51.7 20.3-71.5 72.7-71.5 16.3 0 29.4 .4 37 1.2l0-88.7C291.4 4 256.4 0 236.2 0 129.3 0 80 50.5 80 159.4l0 42.1-66 0 0 97.8 66 0z"/></svg>',
   "twitter": '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path fill="#ffffff" d="M357.2 48L427.8 48 273.6 224.2 455 464 313 464 201.7 318.6 74.5 464 3.8 464 168.7 275.5-5.2 48 140.4 48 240.9 180.9 357.2 48zM332.4 421.8l39.1 0-252.4-333.8-42 0 255.3 333.8z"/></svg>',
@@ -33,8 +33,8 @@
 #}
 {%- set footer_share_icon_svgs = {
   "facebook": '<img src="https://cdn.simpleicons.org/facebook/white" alt="Facebook" width="16" height="16" border="0" style="display: block; border: 0;">',
-  "twitter": '<img src="https://cdn.simpleicons.org/x/white" alt="Twitter" width="14" height="14" border="0" style="display: block; border: 0; padding-top: 1px">',
-  "linkedin": '<img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" width="16" height="16" border="0" style="display: block; border: 0; maring-top=-2px">'
+  "twitter": '<img src="https://cdn.simpleicons.org/x/white" alt="Twitter" width="14" height="14" border="0" style="display: block; border: 0; padding-top: 1px;">',
+  "linkedin": '<img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" width="16" height="16" border="0" style="display: block; border: 0;">'
 } -%}
 {%- set footer_company_text_style = "margin: 4px 0; color: #bbbbbb; font-size: 12px;" -%}
 {%- set footer_links_separator_style = "margin: 0 8px; color: #bbbbbb;" -%}
@@ -45,8 +45,9 @@
 {%- set product_company_name = footer.company_name if footer else '' -%}
 {%- set product_company_address = footer.company_address if footer else '' -%}
 {%- set product_company_links = footer.company_links if footer else [] -%}
-{%- set strong_button_style = "cursor: pointer; background-color: " ~ (product.ui.strong_color | default(default_strong_color)) ~ "; color: white; padding: 10px; border: none; border-radius: 4px; overflow: hidden; white-space: nowrap; user-select: none; touch-action: none; outline: none;" -%}
-{%- set strong_button_link_style = "font-size: 16px; color: white; text-decoration: none; display: block; width: 100%; height: 100%; text-align: center;" -%}
+{%- set strong_button_color = product.ui.strong_color | default(default_strong_color) -%}
+{%- set strong_button_td_style = "padding: 8px; text-align: left;" -%}
+{%- set strong_button_link_style = "font-size: 16px; display: inline-block; color: #ffffff; text-decoration: none; background-color: " ~ strong_button_color ~ "; padding: 8px 16px; border-radius: 4px; white-space: nowrap;" -%}
 {%- set paragraph_style_block -%}
   .content p {
     margin-top: 20px !important;
@@ -71,7 +72,7 @@
         <table width="600" border="0" cellpadding="20" cellspacing="0" style="{{ email_container_style }}">
           <tr>
             <td style="{{ header_style }}">
-              <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
+              <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #ffffff; padding: 4px; border-radius: 8px;">
                 <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px; border: 0; display: block;">
               </a>
             </td>

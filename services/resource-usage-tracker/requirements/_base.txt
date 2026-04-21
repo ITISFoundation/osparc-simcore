@@ -1,4 +1,4 @@
-aio-pika==9.4.1
+aio-pika==9.6.2
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -719,7 +719,7 @@ pyyaml==6.0.3
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
-redis==5.2.1
+redis==7.4.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -904,13 +904,13 @@ typer==0.16.1
     #   -r requirements/_base.in
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiobotocore==2.25.0
+types-aiobotocore==3.3.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-types-aiobotocore-ec2==2.25.0
+types-aiobotocore-ec2==3.3.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.25.0
+types-aiobotocore-s3==3.3.0
     # via types-aiobotocore
-types-aiobotocore-ssm==2.25.0
+types-aiobotocore-ssm==3.3.0
     # via types-aiobotocore
 types-awscrt==0.20.5
     # via botocore-stubs

@@ -13,7 +13,7 @@ from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_utils import log_catch
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 
 from .._meta import PROJECT_NAME
 from ..models.schemas.jobs import JobID, JobLog
@@ -30,11 +30,13 @@ class ApiServerHealthChecker:
         *,
         log_distributor: LogDistributor,
         rabbit_client: RabbitMQClient,
+        rabbitmq_rpc_client: RabbitMQRPCClient,
         timeout_seconds: PositiveFloat,
         allowed_health_check_failures: PositiveInt,
     ) -> None:
         self._log_distributor: LogDistributor = log_distributor
         self._rabbit_client: RabbitMQClient = rabbit_client
+        self._rabbitmq_rpc_client: RabbitMQRPCClient = rabbitmq_rpc_client
         self._timeout_seconds = timeout_seconds
         self._allowed_health_check_failures = allowed_health_check_failures
 
@@ -66,8 +68,10 @@ class ApiServerHealthChecker:
 
     @property
     def healthy(self) -> bool:
-        return self._rabbit_client.healthy and (
-            self._health_check_failure_count <= self._allowed_health_check_failures
+        return (
+            self._rabbit_client.healthy
+            and self._rabbitmq_rpc_client.healthy
+            and (self._health_check_failure_count <= self._allowed_health_check_failures)
         )  # https://github.com/ITISFoundation/osparc-simcore/pull/6662
 
     @property

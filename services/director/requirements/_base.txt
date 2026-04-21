@@ -1,4 +1,4 @@
-aio-pika==9.4.3
+aio-pika==9.6.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.12.3
     # via
@@ -408,7 +408,7 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
-redis==5.2.1
+redis==7.4.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

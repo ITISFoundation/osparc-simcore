@@ -15,7 +15,6 @@ from models_library.groups import GroupAtDB, GroupID
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services import (
@@ -32,6 +31,7 @@ from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 
 from ..models.services_db import (
     ReleaseDBGet,
@@ -68,7 +68,7 @@ def _merge_specs(
     merged_spec = {}
     for spec in itertools.chain([everyone_spec], team_specs.values(), [user_spec]):
         if spec is not None:
-            merged_spec.update(spec.model_dump(include={"sidecar", "service"}))
+            merged_spec.update(spec.model_dump(include={"sidecar", "service", "comments"}))
     return merged_spec
 
 
@@ -651,7 +651,7 @@ class ServicesRepository(BaseRepository):
                 async with self.db_engine.begin() as conn:
                     result = await conn.execute(on_update_stmt)
                     assert result  # nosec
-            except ForeignKeyViolation:
+            except IntegrityError:
                 _logger.warning(
                     "The service %s:%s is missing from services_meta_data",
                     rights.key,
@@ -677,13 +677,15 @@ class ServicesRepository(BaseRepository):
         key: ServiceKey,
         version: ServiceVersion,
         groups: tuple[GroupAtDB, ...],
+        product_name: ProductName,
         *,
         allow_use_latest_service_version: bool = False,
     ) -> ServiceSpecifications | None:
         """returns the service specifications for service 'key:version' and for 'groups'
             returns None if nothing found
 
-        :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned, defaults to False
+        :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned,
+        defaults to False
         """
         _logger.debug("getting specifications from db for %s", f"{key}:{version} for {groups=}")
         gid_to_group_map = {group.gid: group for group in groups}
@@ -704,6 +706,7 @@ class ServicesRepository(BaseRepository):
                         else True
                     )
                     & (services_specifications.c.gid.in_(group.gid for group in groups))
+                    & (services_specifications.c.product_name == product_name)
                 ),
             ):
                 try:

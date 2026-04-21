@@ -33,6 +33,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     this.__buildLayout();
   },
 
+  properties: {
+    activeFilters: {
+      check: "Object",
+      init: {},
+      nullable: false,
+      event: "changeActiveFilters",
+      apply: "__applyActiveFilters",
+    },
+  },
+
   events: {
     "templatesContext": "qx.event.type.Event",
     "publicTemplatesContext": "qx.event.type.Event",
@@ -472,7 +482,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
 
       // hypertools filter
-      const button = new qx.ui.toolbar.RadioButton("Hypertools", null);
+      const button = new qx.ui.toolbar.RadioButton("Hypertool", null);
       button.exclude();
       osparc.store.Templates.getHypertools()
         .then(hypertools => {
@@ -497,10 +507,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         radioGroup.add(btn);
         btn.addListener("execute", () => {
           const checked = btn.getValue();
-          this.fireDataEvent("changeAppType", {
-            appType: checked ? btn.appType : null,
-            label: checked ? btn.getLabel() : null
-          });
+          if (checked) {
+            this.fireDataEvent("changeAppType", {
+              appType: btn.appType,
+              label: btn.getLabel()
+            });
+          } else {
+            this.fireDataEvent("changeAppType", null);
+          }
         }, this);
       });
 
@@ -508,23 +522,37 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     },
     /* /SERVICE TYPE */
 
-    filterChanged: function(filterData) {
-      if ("sharedWith" in filterData) {
-        const foundBtn = this.__sharedWithButtons.find(btn => btn.id === filterData["sharedWith"]);
-        if (foundBtn) {
-          foundBtn.setValue(true);
+    __applyActiveFilters: function(filterData) {
+      this.__sharedWithButtons.forEach(btn => {
+        btn.setValue(Boolean(
+          filterData["sharedWith"] &&
+          filterData["sharedWith"]["id"] &&
+          filterData["sharedWith"]["id"] === btn.id
+        ));
+      });
+      // if there no sharedWith filter, select "show-all"
+      if (this.__sharedWithButtons.every(btn => !btn.getValue())) {
+        const showAllBtn = this.__sharedWithButtons.find(btn => btn.id === "show-all");
+        if (showAllBtn) {
+          showAllBtn.setValue(true);
         }
       }
-      if ("tags" in filterData) {
-        this.__tagButtons.forEach(btn => {
-          btn.setValue(filterData["tags"].includes(btn.id));
-        });
-      }
-      if ("appType" in filterData) {
-        this.__appTypeButtons.forEach(btn => {
-          btn.setValue(filterData["appType"] === btn.appType);
-        });
-      }
-    }
+
+      this.__tagButtons.forEach(btn => {
+        btn.setValue(Boolean(
+          filterData["tags"] &&
+          filterData["tags"]["id"] &&
+          filterData["tags"]["id"].includes(btn.id)
+        ));
+      });
+
+      this.__appTypeButtons.forEach(btn => {
+        btn.setValue(Boolean(
+          filterData["appType"] &&
+          filterData["appType"]["id"] &&
+          filterData["appType"]["id"] === btn.appType
+        ));
+      });
+    },
   }
 });

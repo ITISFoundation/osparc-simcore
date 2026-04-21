@@ -80,3 +80,7 @@ class UserCredentialsTuple(NamedTuple):
 class PreviewApproval(BaseModel):
     invitation_url: str
     message_content: dict[str, Any]
+
+
+class PreviewRejection(BaseModel):
+    message_content: dict[str, Any]

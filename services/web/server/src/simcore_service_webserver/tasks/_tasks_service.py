@@ -4,7 +4,7 @@ from typing import Final
 
 from celery_library.errors import (
     TaskManagerError,
-    TaskNotFoundError,
+    TaskOrGroupNotFoundError,
     TransferableCeleryError,
     decode_celery_transferable_error,
 )
@@ -47,7 +47,7 @@ async def cancel_task(
             owner_metadata=owner_metadata,
             task_or_group_uuid=task_uuid,
         )
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -66,11 +66,11 @@ async def get_task_result(
         )
         if not status.is_done:
             raise JobNotDoneError(job_id=task_uuid)
-        result = await task_manager.get_task_result(
+        result = await task_manager.get_result(
             owner_metadata=owner_metadata,
-            task_uuid=task_uuid,
+            task_or_group_uuid=task_uuid,
         )
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -107,7 +107,7 @@ async def get_task_status(
             owner_metadata=owner_metadata,
             task_or_group_uuid=task_uuid,
         )
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -132,7 +132,7 @@ async def pull_task_stream_items(
             task_uuid=task_uuid,
             limit=limit,
         )
-    except TaskNotFoundError as exc:
+    except TaskOrGroupNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

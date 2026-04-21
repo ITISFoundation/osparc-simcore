@@ -86,7 +86,7 @@ async def create_project(
         project_nodes={
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
-                required_resources=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
+                required_resources=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore
                 key=node_info.get("key"),
                 version=node_info.get("version"),
                 label=node_info.get("label"),

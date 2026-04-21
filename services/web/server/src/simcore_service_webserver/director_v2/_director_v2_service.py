@@ -24,7 +24,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..application_settings import get_application_settings
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
@@ -72,7 +72,7 @@ async def create_or_update_pipeline(
     }
 
     try:
-        computation_task_out = await request_director_v2(
+        computation_task_out, _ = await request_director_v2(
             app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
         )
         assert isinstance(computation_task_out, dict)  # nosec
@@ -158,7 +158,7 @@ async def delete_pipeline(
             "user_id": user_id,
             "force": force,
         },
-    )
+    )  # status code ignored
 
 
 #
@@ -174,7 +174,7 @@ async def get_batch_tasks_outputs(
 ) -> TasksOutputs:
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
-    response_payload = await request_director_v2(
+    response_payload, _ = await request_director_v2(
         app,
         "POST",
         url=(settings.base_url / f"computations/{project_id}/tasks/-/outputs:batchGet"),
@@ -237,8 +237,10 @@ async def get_wallet_info(
             product_name=product_name,
         )
     else:
-        # This function is used also when we are synchronizing the projects/projects_nodes with the comp_pipelines/comp_tasks tables in director-v2
-        # In situations where a project is connected to a wallet, but the user does not have access to it and is performing an action such as
+        # This function is used also when we are synchronizing the projects/projects_nodes
+        # with the comp_pipelines/comp_tasks tables in director-v2
+        # In situations where a project is connected to a wallet, but the user does not have access to it and
+        # is performing an action such as
         # upgrading the service version, we still want to retrieve the wallet info and pass it to director-v2.
         wallet = await wallets_service.get_wallet_with_available_credits(
             app, wallet_id=project_wallet_id, product_name=product_name
@@ -257,7 +259,7 @@ async def get_group_properties(
     product_name: ProductName,
     user_id: UserID,
 ) -> GroupExtraProperties:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with get_asyncpg_engine(app).connect() as conn:
         return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
             conn, user_id=user_id, product_name=product_name
         )

@@ -12,6 +12,8 @@ import logging
 
 import twilio.rest  # type: ignore[import-untyped]
 from aiohttp import web
+from models_library.notifications import Channel
+from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
@@ -19,9 +21,9 @@ from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
 
-from ..products.models import Product
+from ..notifications import notifications_service
+from ..notifications.models import EmailContact
 from ..redis import get_redis_validation_code_client
-from ._emails_service import get_template_path, send_email_from_template
 from .errors import SendingVerificationEmailError, SendingVerificationSmsError
 
 log = logging.getLogger(__name__)
@@ -147,27 +149,37 @@ class EmailError(RuntimeError):
 
 @log_decorator(log, level=logging.DEBUG)
 async def send_email_code(
-    request: web.Request,
+    app: web.Application,
+    *,
     user_email: str,
-    support_email: str,
     code: str,
     first_name: str,
-    product: Product,
+    user_name: str,
+    product_name: ProductName,
+    host: str,
     user_id: UserID | None = None,
 ):
     try:
-        email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
-        await send_email_from_template(
-            request,
-            from_=support_email,
-            to=user_email,
-            template=email_template_path,
+        await notifications_service.send_message_from_template(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[
+                EmailContact(
+                    name=first_name,
+                    email=user_email,
+                )
+            ],
+            template_name="new_code",
             context={
-                "host": request.host,
+                "user": {
+                    "first_name": first_name,
+                    "user_name": user_name,
+                },
+                "host": host,
                 "code": code,
-                "name": first_name,
-                "support_email": support_email,
-                "product": product,
             },
         )
     except Exception as exc:

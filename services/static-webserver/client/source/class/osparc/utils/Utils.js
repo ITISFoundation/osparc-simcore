@@ -728,7 +728,7 @@ qx.Class.define("osparc.utils.Utils", {
       return text;
     },
 
-    getReleaseLink: function() {
+    getReleaseNotesLink: function() {
       const rData = osparc.store.StaticInfo.getReleaseData();
       return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
     },
@@ -737,7 +737,7 @@ qx.Class.define("osparc.utils.Utils", {
       let text = "osparc-simcore " + this.getReleaseTag();
       const platformName = osparc.store.StaticInfo.getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
-      const url = this.self().getReleaseLink();
+      const url = this.self().getReleaseNotesLink();
       const versionLink = new osparc.ui.basic.LinkLabel();
       versionLink.set({
         value: text,

@@ -52,7 +52,6 @@ def app_environment(
             "WEBSERVER_GROUPS": "1",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PRODUCTS": "1",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "0",

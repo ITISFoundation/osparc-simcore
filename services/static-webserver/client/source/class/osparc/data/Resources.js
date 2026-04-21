@@ -1141,11 +1141,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           getPendingUsers: {
             method: "GET",
-            url: statics.API + "/admin/user-accounts?review_status=PENDING"
+            url: statics.API + "/admin/user-accounts?review_status=PENDING&offset={offset}&limit={limit}"
           },
           getReviewedUsers: {
             method: "GET",
-            url: statics.API + "/admin/user-accounts?review_status=REVIEWED"
+            url: statics.API + "/admin/user-accounts?review_status=REVIEWED&offset={offset}&limit={limit}&registered={registered}"
           },
           previewApproval: {
             method: "POST",
@@ -1170,15 +1170,27 @@ qx.Class.define("osparc.data.Resources", {
           preRegister: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:pre-register"
+          },
+          getProducts: {
+            method: "GET",
+            url: statics.API + "/admin/products"
+          },
+          moveUserAccount: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:move"
           }
         }
       },
       "notificationTemplates": {
         useCache: true,
         endpoints: {
-          searchEmailTemplates: {
+          getEmailTemplates: {
             method: "GET",
             url: statics.API + "/notifications/templates:search?channel=email"
+          },
+          searchEmailTemplates: {
+            method: "GET",
+            url: statics.API + "/notifications/templates:search?channel=email&template_name={templateName}"
           },
           previewTemplate: {
             method: "POST",

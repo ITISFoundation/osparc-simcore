@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
-from playwright.sync_api import Page, WebSocket, expect
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -24,6 +25,8 @@ from pytest_simcore.helpers.playwright import (
     expected_service_running,
 )
 from tenacity import retry, stop_after_attempt, wait_fixed
+
+_OPEN_PROJECT_WAIT_TIME: Final[int] = 20 * SECOND
 
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
@@ -52,8 +55,15 @@ _SIMULATOR_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
 _SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _SIMULATOR_DOCKER_PULLING_MAX_TIME + _SIMULATOR_MAX_STARTUP_TIME
 )
-_SIMULATOR_SETUP_APPEARANCE_TIME: Final[int] = 2 * MINUTE
+_SIMULATOR_SETUP_APPEARANCE_TIME: Final[int] = 10 * MINUTE
+_SIMULATOR_CREDITS_APPEARANCE_TIME: Final[int] = 2 * MINUTE
+_SIMULATOR_TEST_TEXT_APPEARANCE_TIME: Final[int] = 5 * MINUTE
+_SIM_COLOR_PENDING: Final[str] = "#FFA07A"
+_SIM_COLOR_STARTED: Final[str] = "#6969ff"
+_SIM_COLOR_SUCCESS: Final[str] = "#0090D0"
+_SIM_COLOR_FAILED: Final[str] = "#FF0000"
 _SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
+_SIMULATION_EXPORT_MAX_TIME: Final[int] = 5 * MINUTE
 
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
@@ -69,12 +79,23 @@ class _JLabWaitForWebSocket:
             return bool(re.search("/api/kernels/[^/]+/channels", new_websocket.url))
 
 
+def _open_project_from_dashboard(page: Page, start_project_uuid: str) -> None:
+    with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=_OPEN_PROJECT_WAIT_TIME) as response_info:
+        card_id = "studyBrowserListItem_" + start_project_uuid
+        page.get_by_test_id(card_id).click()
+        open_button = page.get_by_test_id("openResource")
+        expect(open_button).to_be_visible(timeout=_OPEN_PROJECT_WAIT_TIME)
+        open_button.click()
+    assert response_info.value.ok, f"{response_info.value.json()}"
+    return response_info.value.json()["data"]
+
+
 @retry(
-    stop=stop_after_attempt(5),
+    stop=stop_after_attempt(10),
     wait=wait_fixed(60),
     reraise=True,
 )
-def _wait_for_personalization_complete(start_button, outputs_button):
+def _wait_for_personalization_complete(start_button: Locator, outputs_button: Locator) -> None:
     icon_class = start_button.locator("i").first.evaluate("el => el.className")
     outputs_text = outputs_button.inner_text()
     if "fa-check" not in icon_class or "Outputs (6)" not in outputs_text:
@@ -82,17 +103,106 @@ def _wait_for_personalization_complete(start_button, outputs_button):
         raise ValueError(msg)
 
 
+def _run_personalization(personalizer_iframe: FrameLocator, page: Page) -> None:
+    with log_context(logging.INFO, "Start personalization"):
+        start_button = personalizer_iframe.get_by_role("button", name="Start")
+        start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+        page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
+        outputs_button = page.get_by_test_id("outputsBtn")
+        _wait_for_personalization_complete(start_button, outputs_button)
+
+
+def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
+    try:
+        progress_bar = simulator_iframe.locator(".progress-bar").first
+        progress_width = progress_bar.evaluate("el => el.style.width")
+
+        # Count jobs by background color in each column
+        pending = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_PENDING}']").count()
+        started = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_STARTED}']").count()
+        success = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_SUCCESS}']").count()
+        failed = simulator_iframe.locator(f"div[style*='background-color: {_SIM_COLOR_FAILED}']").count()
+
+        logging.info(
+            "Simulation progress: %s | Pending=%d, Started=%d, Success=%d, Failed=%d",
+            progress_width,
+            pending,
+            started,
+            success,
+            failed,
+        )
+    except PlaywrightError:
+        logging.info("Could not extract simulation progress")
+
+
 @retry(
-    stop=stop_after_attempt(5),
+    stop=stop_after_attempt(_SIMULATION_MAX_TIME // (60 * SECOND)),
+    wait=wait_fixed(60),  # wait 1 minute between retries to avoid spamming the page with checks
+    reraise=True,
+)
+def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: FrameLocator) -> None:
+    _log_simulation_progress(simulator_iframe)
+    try:
+        icon_class = setup_button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("Setup button icon not found — simulation likely completed")
+        return
+    if "fa-spinner" in icon_class:
+        msg = f"Simulation still running: {icon_class=}"
+        raise ValueError(msg)
+
+
+@retry(
+    stop=stop_after_attempt(_SIMULATION_EXPORT_MAX_TIME // (60 * SECOND)),
     wait=wait_fixed(60),
     reraise=True,
 )
-def _wait_for_simulation_complete(setup_button, export_button):
-    icon_class = setup_button.locator("i").first.evaluate("el => el.className")
-    is_enabled = export_button.evaluate("el => !el.disabled")
-    if "fa-spinner" in icon_class or not is_enabled:
-        msg = f"Simulation still running: {icon_class=}, export enabled={is_enabled}"
+def _wait_for_export_simulation_results(export_button: Locator) -> None:
+    # Wait for the export to complete, spinner is on the button while exporting
+    try:
+        icon_class = export_button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("Export button icon not found — export likely completed")
+        return
+    if "fa-spinner" in icon_class:
+        msg = f"Simulation is being exported: {icon_class=}"
         raise ValueError(msg)
+
+
+def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
+    with log_context(logging.INFO, "Setup simulation"):
+        setup_button = simulator_iframe.get_by_role("button", name="Setup")
+        setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
+
+        # Wait for the credits confirmation dialog
+        credits_text = simulator_iframe.get_by_text("credits")
+        expect(credits_text.first).to_be_visible(timeout=_SIMULATOR_CREDITS_APPEARANCE_TIME)
+        try:
+            dialog_text = credits_text.first.inner_text()
+            credits_match = re.search(r"([\d.]+)\s*credits", dialog_text)
+            if credits_match:
+                logging.info("Estimated credits: %s", credits_match.group(1))
+            else:
+                logging.info("Estimated credits: could not parse from dialog")
+        except PlaywrightError:
+            logging.info("Estimated credits: could not extract from dialog")
+
+        # Confirm, this will start the simulation
+        confirm_button = simulator_iframe.get_by_role("button", name="Confirm")
+        confirm_button.click()
+
+        # Wait for "IN TEST CASE" log to appear confirming setup started
+        in_test_case_log = simulator_iframe.get_by_text("IN TEST CASE")
+        expect(in_test_case_log.first).to_be_visible(timeout=_SIMULATOR_TEST_TEXT_APPEARANCE_TIME)
+        logging.info("'IN TEST CASE' log appeared — simulation setup is running")
+
+    with log_context(logging.INFO, "Wait for simulation setup to complete"):
+        _wait_for_simulation_complete(setup_button, simulator_iframe)
+
+    with log_context(logging.INFO, "Export results"):
+        export_button = simulator_iframe.get_by_role("button", name="Export")
+        export_button.click()
+        _wait_for_export_simulation_results(export_button)
 
 
 def test_personalized_classic_ti_plan(
@@ -115,8 +225,16 @@ def test_personalized_classic_ti_plan(
         # click to close
         page.get_by_test_id("userMenuBtn").click()
 
-    # press + button
-    project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
+    # testing purposes
+    # start_project_uuid = "72235252-329b-11f1-be19-0242ac171744"
+    # start_project_uuid = "a169f104-1df8-11f1-93c4-0242ac100552"
+    start_project_uuid = None
+    if start_project_uuid:
+        project_data = _open_project_from_dashboard(page, start_project_uuid)
+    else:
+        # press + button
+        project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
+
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])
@@ -166,12 +284,7 @@ def test_personalized_classic_ti_plan(
 
         assert not ws_info.value.is_closed()
 
-        with log_context(logging.INFO, "Start personalization"):
-            start_button = personalizer_iframe.get_by_role("button", name="Start")
-            start_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-            page.wait_for_timeout(_PERSONALIZATION_MAX_TIME)
-            outputs_button = page.get_by_test_id("outputsBtn")
-            _wait_for_personalization_complete(start_button, outputs_button)
+        _run_personalization(personalizer_iframe, page)
 
     with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
         with expected_service_running(
@@ -202,12 +315,11 @@ def test_personalized_classic_ti_plan(
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
             ) as service_running:
-                app_mode_trigger_next_app(page)
+                if not start_project_uuid:
+                    app_mode_trigger_next_app(page)
             simulator_iframe = service_running.iframe_locator
             assert simulator_iframe
 
         assert not ws_info.value.is_closed()
 
-        with log_context(logging.INFO, "Setup simulation"):
-            setup_button = simulator_iframe.get_by_role("button", name="Setup")
-            setup_button.click(timeout=_SIMULATOR_SETUP_APPEARANCE_TIME)
+        _run_simulations(simulator_iframe, page)

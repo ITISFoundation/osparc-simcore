@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import json
-import warnings
 from collections.abc import AsyncIterator, Iterator
 from typing import Final
 
@@ -11,7 +10,7 @@ import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -169,11 +168,6 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
 
 
 @pytest.fixture(scope="module")
-def postgres_dsn_url(postgres_dsn: PostgresTestConfig) -> str:
-    return "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn)
-
-
-@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
@@ -189,33 +183,10 @@ def postgres_db(
 
 
 @pytest.fixture
-async def aiopg_engine(
-    postgres_db: sa.engine.Engine,
-) -> AsyncIterator:
-    """An aiopg engine connected to an initialized database"""
-    from aiopg.sa import create_engine
-
-    engine = await create_engine(str(postgres_db.url))
-
-    warnings.warn(
-        "The 'aiopg_engine' fixture is deprecated and will be removed in a future release. "
-        "Please use 'asyncpg_engine' fixture instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    yield engine
-
-    if engine:
-        engine.close()
-        await engine.wait_closed()
-
-
-@pytest.fixture
 async def sqlalchemy_async_engine(
     postgres_db: sa.engine.Engine,
 ) -> AsyncIterator[AsyncEngine]:
     # NOTE: prevent having to import this if latest sqlalchemy not installed
-    from sqlalchemy.ext.asyncio import create_async_engine
 
     engine = create_async_engine(f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg"))
     assert engine

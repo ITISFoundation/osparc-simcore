@@ -6,7 +6,7 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
-from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt
@@ -14,10 +14,11 @@ from pydantic import PositiveInt
 from ..db.plugin import get_asyncpg_engine
 from ..invitations import api as invitations_service
 from ..notifications import notifications_service
-from ..notifications._models import EmailContact
+from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
+from ..products.errors import ProductNotFoundError
 from . import _accounts_repository, _users_repository
-from ._models import PreviewApproval
+from ._models import PreviewApproval, PreviewRejection
 from .exceptions import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
@@ -89,6 +90,25 @@ async def pre_register_user(
     return found[0]
 
 
+async def move_user_account_request_to_product(
+    app: web.Application,
+    *,
+    pre_registration_id: int,
+    new_product_name: ProductName,
+    moved_by: UserID,
+) -> None:
+    product_names = await products_service.list_products_names(app)
+    if new_product_name not in product_names:
+        raise ProductNotFoundError(product_name=new_product_name)
+
+    await _accounts_repository.update_pre_registration_product(
+        get_asyncpg_engine(app),
+        pre_registration_id=pre_registration_id,
+        new_product_name=new_product_name,
+        moved_by=moved_by,
+    )
+
+
 #
 # USER ACCOUNTS
 #
@@ -101,6 +121,10 @@ async def list_user_accounts(
     filter_any_account_request_status: Annotated[
         list[AccountRequestStatus] | None,
         doc("List of any account request statuses to filter by"),
+    ] = None,
+    filter_registered: Annotated[
+        bool | None,
+        doc("Filters by registration completion status"),
     ] = None,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
@@ -121,6 +145,7 @@ async def list_user_accounts(
         engine,
         product_name=product_name,
         filter_any_account_request_status=filter_any_account_request_status,
+        filter_registered=filter_registered,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
     )
@@ -199,6 +224,7 @@ async def search_users_accounts(
             state=r.state,
             postal_code=r.postal_code,
             country=r.country,
+            product_name=r.product_name,
             extras=r.extras or {},
             invited_by=r.invited_by,
             pre_registration_id=r.id,
@@ -281,7 +307,7 @@ async def approve_user_account(
             app,
             user_id=reviewer_id,
             product_name=product_name,
-            channel=ChannelType.email,
+            channel=Channel.email,
             group_ids=None,
             external_contacts=[EmailContact(email=pre_registration_email)],
             content=message_content,
@@ -337,7 +363,7 @@ async def reject_user_account(
             app,
             user_id=reviewer_id,
             product_name=product_name,
-            channel=ChannelType.email,
+            channel=Channel.email,
             group_ids=None,
             external_contacts=[EmailContact(email=pre_registration_email)],
             content=message_content,
@@ -390,7 +416,7 @@ async def preview_approval_user_account(
         app=app,
         product_name=product_name,
         ref=TemplateRef(
-            channel=ChannelType.email,
+            channel=Channel.email,
             template_name="account_approved",
         ),
         context={
@@ -409,3 +435,47 @@ async def preview_approval_user_account(
         invitation_url=invitation_url,
         message_content=preview.message_content,
     )
+
+
+async def preview_rejection_user_account(
+    app: web.Application,
+    *,
+    rejection_email: str,
+    product_name: ProductName,
+) -> PreviewRejection:
+    """Preview the rejection notification for a user account.
+
+    Retrieves user pre-registration data and generates a preview of the
+    account_rejected email template.
+
+    Raises:
+        PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
+    """
+    found = await search_users_accounts(
+        app,
+        filter_by_email_glob=rejection_email,
+        product_name=product_name,
+        include_products=False,
+    )
+
+    if not found:
+        raise PendingPreRegistrationNotFoundError(email=rejection_email, product_name=product_name)
+
+    user_account = found[0]
+    assert user_account.email == rejection_email  # nosec
+
+    preview = await notifications_service.preview_template(
+        app=app,
+        product_name=product_name,
+        ref=TemplateRef(
+            channel=Channel.email,
+            template_name="account_rejected",
+        ),
+        context={
+            "user": {
+                "first_name": user_account.first_name,
+            },
+        },
+    )
+
+    return PreviewRejection(message_content=preview.message_content)

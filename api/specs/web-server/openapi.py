@@ -58,14 +58,12 @@ openapi_modules = [
         "_projects_tags",
         "_projects_wallet",
         "_projects_workspaces",
-        "_publications",
         "_resource_usage",
         "_statics",
         "_storage",
         "_trash",
         "_workspaces",
         # maintenance ----
-        "_admin",
         "_diagnostics",
     )
 ]

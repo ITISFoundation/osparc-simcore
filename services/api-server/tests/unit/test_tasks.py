@@ -61,7 +61,7 @@ async def test_get_task_status(
 ):
     task_id = f"{_faker.uuid4()}"
     response = await client.get(f"/v0/tasks/{task_id}", auth=auth)
-    assert mock_task_manager.get_task_status.called
+    assert mock_task_manager.get_status.called
     assert response.status_code == status.HTTP_200_OK
     TaskStatus.model_validate_json(response.text)
 
@@ -73,7 +73,7 @@ async def test_cancel_task(
 ):
     task_id = f"{_faker.uuid4()}"
     response = await client.post(f"/v0/tasks/{task_id}:cancel", auth=auth)
-    assert mock_task_manager.cancel_task.called
+    assert mock_task_manager.cancel.called
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
@@ -85,8 +85,8 @@ async def test_get_task_result(
     task_id = f"{_faker.uuid4()}"
     response = await client.get(f"/v0/tasks/{task_id}/result", auth=auth)
     assert response.status_code == status.HTTP_200_OK
-    assert mock_task_manager.get_task_result.called
-    assert f"{mock_task_manager.get_task_result.call_args[1]['task_uuid']}" == task_id
+    assert mock_task_manager.get_result.called
+    assert f"{mock_task_manager.get_result.call_args[1]['task_or_group_uuid']}" == task_id
 
 
 @pytest.mark.parametrize(

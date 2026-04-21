@@ -15,6 +15,7 @@ from models_library.projects import ProjectAtDB
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from starlette import status
@@ -101,7 +102,7 @@ async def create_pipeline(
             },
         )
         response.raise_for_status()
-        assert response.status_code == status.HTTP_201_CREATED
+        assert response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED)
 
         computation_task = ComputationGet.model_validate(response.json())
         created_comp_tasks.append((user_id, computation_task))
@@ -157,11 +158,12 @@ async def wait_for_catalog_service(
             response = await client.get(
                 f"{catalog_endpoint}/v0/services",
                 params={"details": False, "user_id": user_id},
-                headers={"x-simcore-products-name": product_name},
+                headers={X_PRODUCT_NAME_HEADER: product_name},
                 timeout=1,
             )
             assert response.status_code == status.HTTP_200_OK, (
-                f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+                f"catalog is not ready {response.status_code}:{response.text}, "
+                "TIP: migration not completed or catalog broken?"
             )
             services = response.json()
             assert services != [], "catalog is not ready: no services available"

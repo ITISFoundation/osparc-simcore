@@ -156,6 +156,9 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     from ..api.rpc.routes import setup_rpc_api_routes
     from ..models.shared_store import setup_shared_store
     from ..modules.attribute_monitor import setup_attribute_monitor
+    from ..modules.file_notification_subscriber import (
+        setup_file_notification_subscriber,
+    )
     from ..modules.inputs import setup_inputs
     from ..modules.long_running_tasks import setup_long_running_tasks
     from ..modules.mounted_fs import setup_mounted_fs
@@ -200,6 +203,8 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     setup_user_services_preferences(app)
 
     setup_r_clone_mount_manager(app)
+
+    setup_file_notification_subscriber(app)
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)

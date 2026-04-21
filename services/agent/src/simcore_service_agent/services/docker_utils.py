@@ -1,11 +1,9 @@
-import asyncio
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Final
 
-from aiocache import cached  # type: ignore[import-untyped]
 from aiodocker import DockerError
 from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
@@ -15,6 +13,7 @@ from models_library.api_schemas_directorv2.services import (
 )
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.r_clone_utils import get_r_clone_version
 from starlette import status
 
 from ..core.settings import ApplicationSettings
@@ -157,23 +156,10 @@ def _find_volumes_root(path: Path) -> Path:
     return Path(*parts[: first_occurrence + 1])
 
 
-@cached()
-async def _get_rclone_version() -> str:
-    proc = await asyncio.create_subprocess_exec(
-        "rclone",
-        "--version",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, _ = await proc.communicate()
-    first_line = stdout.decode().split("\n")[0]
-    return first_line.split()[1].lstrip("v")
-
-
 async def _try_lazy_unmount(docker: Docker, mountpoint: Path) -> None:
     volumes_root = _find_volumes_root(mountpoint)
 
-    r_clone_version = await _get_rclone_version()
+    r_clone_version = await get_r_clone_version()
 
     container = await docker.containers.run(
         config={

@@ -359,6 +359,22 @@ qx.Class.define("osparc.data.model.Node", {
       }
       return Array.from(linkedNodeIds);
     },
+
+    getRuntimeErrorHint: function(error) {
+      let hint = null;
+      if (error && error["type"]) {
+        if (error["type"] === "runtime.oom") {
+          if (osparc.store.StaticInfo.isBillableProduct()) {
+            hint = "Tip: Consider selecting a higher pricing tier with more resources, or contact support for assistance.";
+          } else {
+            hint = "Tip: Try increasing the RAM limit in the service's resource settings, or reduce the input data size.";
+          }
+        } else if (error["type"] === "runtime.timeout") {
+          hint = "Tip: The service appeared to be hanging or was not producing any log output. It might have an internal issue or was wrongly configured.";
+        }
+      }
+      return hint;
+    },
   },
 
   members: {
@@ -540,8 +556,8 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
         this.__populateInputOutputData(nodeData);
-        this.populateProgress(nodeData);
-        this.populateState(nodeData);
+        this.__populateProgress(nodeData);
+        this.__populateState(nodeData);
         if (nodeData.bootOptions) {
           this.setBootOptions(nodeData.bootOptions);
         }
@@ -553,6 +569,20 @@ qx.Class.define("osparc.data.model.Node", {
         // do not initialize the logger and iframe if the study isn't open
         this.__initLogger();
         this.initIframeHandler();
+      }
+    },
+
+    nodeUpdated: function(nodeUpdatedData) {
+      const nodeData = nodeUpdatedData["data"];
+      if (nodeData && !osparc.data.model.Node.isFrontend(this.getMetadata())) {
+        this.setOutputData(nodeData.outputs);
+        this.__populateProgress(nodeData);
+        this.__populateState(nodeData);
+      }
+
+      if ("errors" in nodeUpdatedData) {
+        const errors = nodeUpdatedData["errors"];
+        this.setErrors(errors);
       }
     },
 
@@ -583,7 +613,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setInputsRequired(nodeData.inputsRequired || []);
     },
 
-    populateProgress: function(nodeData) {
+    __populateProgress: function(nodeData) {
       if ("progress" in nodeData) {
         const progress = Number.parseInt(nodeData["progress"]);
         const oldProgress = this.getStatus().getProgress();
@@ -597,9 +627,14 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    populateState: function(nodeData) {
+    __populateState: function(nodeData) {
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
+
+        // errors can also be part of the state, so we need to check them here as well
+        if ("errors" in nodeData.state) {
+          this.setErrors(nodeData.state.errors);
+        }
       }
     },
 
@@ -824,7 +859,12 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __applyErrors: function(errors) {
+    __applyErrors: function(errors, oldErrors) {
+      // check new errors are different from old errors to avoid unnecessary UI updates
+      if (JSON.stringify(errors) === JSON.stringify(oldErrors)) {
+        return;
+      }
+
       if (errors && errors.length) {
         errors.forEach(error => {
           const loc = error["loc"];
@@ -851,6 +891,18 @@ qx.Class.define("osparc.data.model.Node", {
 
             // errors to logger
             this.fireDataEvent("showInLogger", errorMsgData);
+
+            // show troubleshooting tips for specific error types
+            const hintMessage = osparc.data.model.Node.getRuntimeErrorHint(error);
+            if (hintMessage) {
+              const hintedMsg = error["msg"] + "\n" + hintMessage;
+              osparc.FlashMessenger.logAs(hintMessage, "WARNING");
+              this.fireDataEvent("showInLogger", {
+                nodeId: this.getNodeId(),
+                msg: hintedMsg,
+                level: "WARNING"
+              });
+            }
           }
         });
       } else if (this.hasInputs()) {
@@ -1533,9 +1585,15 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           case "outputs": {
             const updatedPortKey = path.split("/")[4];
-            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
-            currentOutputs[updatedPortKey] = value;
-            this.setOutputData(currentOutputs);
+            // "remove" ops have no value field, so value is undefined.
+            if (op === "remove" && this.isFilePicker()) {
+              // Reset File Picker
+              osparc.file.FilePicker.resetOutputValue(this);
+            } else {
+              const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
+              currentOutputs[updatedPortKey] = value;
+              this.setOutputData(currentOutputs);
+            }
             break;
           }
           case "progress":
@@ -1591,7 +1649,8 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
 
-      return filteredNodeEntry;
+      // return a deep clone of the object to avoid modifications to the original object
+      return osparc.utils.Utils.deepCloneObject(filteredNodeEntry);
     },
 
     serializeUI: function() {

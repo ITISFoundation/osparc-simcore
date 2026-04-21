@@ -254,7 +254,7 @@ qx.Class.define("osparc.study.Utils", {
       return parameters;
     },
 
-    extractFunctionableParameters: function(workbench) {
+    extractParametersForFunction: function(workbench) {
       // - for now, only float types are allowed
       const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isParameter(srv) && srv["key"].includes("parameter/number"));
       return parameters;
@@ -265,7 +265,7 @@ qx.Class.define("osparc.study.Utils", {
       return parameters;
     },
 
-    extractFunctionableProbes: function(workbench) {
+    extractProbesForFunction: function(workbench) {
       // - for now, only float types are allowed
       const parameters = Object.values(workbench).filter(srv => osparc.data.model.Node.isProbe(srv) && srv["key"].includes("probe/number"));
       return parameters;
@@ -375,6 +375,11 @@ qx.Class.define("osparc.study.Utils", {
         return false;
       },
 
+      isProjectOpen: function(state) {
+        const projectStatus = this.getProjectStatus(state);
+        return projectStatus === "OPENED";
+      },
+
       getCurrentGroupIds: function(state) {
         const shareState = this.__getShareState(state);
         if (shareState && "currentUserGroupids" in shareState) {
@@ -440,19 +445,22 @@ qx.Class.define("osparc.study.Utils", {
       return [false].includes(blocked);
     },
 
-    canShowBillingOptions: function(studyData) {
+    canEnableBillingOptions: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return ["IN_DEBT", false].includes(blocked);
+      const isProjectOpen = this.state.isProjectOpen(studyData["state"]);
+      return ["IN_DEBT", false].includes(blocked) && !isProjectOpen;
     },
 
-    canShowServiceUpdates: function(studyData) {
+    canEnableServiceUpdates: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return [false].includes(blocked);
+      const isProjectOpen = this.state.isProjectOpen(studyData["state"]);
+      return [false].includes(blocked) && !isProjectOpen;
     },
 
-    canShowServiceBootOptions: function(studyData) {
+    canEnableServiceBootOptions: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return [false].includes(blocked);
+      const isProjectOpen = this.state.isProjectOpen(studyData["state"]);
+      return [false].includes(blocked) && !isProjectOpen;
     },
 
     canShowStudyData: function(studyData) {
@@ -470,17 +478,20 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeDeleted: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return ["UNKNOWN_SERVICES", false].includes(blocked);
+      const isProjectOpen = this.state.isProjectOpen(studyData["state"]);
+      return ["UNKNOWN_SERVICES", false].includes(blocked) && !isProjectOpen;
     },
 
     canBeDuplicated: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return [false].includes(blocked);
+      const isProjectOpen = this.state.isProjectOpen(studyData["state"]);
+      return [false].includes(blocked) && !isProjectOpen;
     },
 
     canBeExported: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return ["UNKNOWN_SERVICES", false].includes(blocked);
+      const isProjectOpen = this.state.isProjectOpen(studyData["state"]);
+      return ["UNKNOWN_SERVICES", false].includes(blocked) && !isProjectOpen;
     },
 
     canMoveTo: function(studyData) {
@@ -494,7 +505,7 @@ qx.Class.define("osparc.study.Utils", {
 
     guessIcon: function(studyData) {
       if (
-        (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) &&
+        (osparc.product.Utils.isTIPProduct()) &&
         ["app", "guided"].includes(studyData["ui"]["mode"])
       ) {
         return new Promise(resolve => resolve(this.__guessTIPIcon(studyData)));
