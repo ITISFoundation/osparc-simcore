@@ -423,7 +423,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
     __createReleaseNotesUrl: function() {
       const url = this.getService()["releaseNotesUrl"];
       if (url) {
-        const link = new osparc.ui.basic.LinkLabel(url, url);
+        const link = new osparc.ui.basic.LinkLabel(url, url).set({
+          font: "link-label-14",
+          toolTipText: url,
+          width: 220,
+        });
         return link;
       }
       return new qx.ui.basic.Label(this.tr("Not set"));
