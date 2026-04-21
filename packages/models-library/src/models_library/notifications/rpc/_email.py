@@ -10,6 +10,11 @@ class EmailContact(BaseModel):
     email: EmailStr
 
 
+class EmailAttachment(BaseModel):
+    content: bytes
+    filename: str
+
+
 class EmailContent(BaseModel):
     subject: Annotated[str, Field(min_length=1, max_length=998)]
     body_html: str | None = None
@@ -21,6 +26,8 @@ class EmailAddressing(BaseModel):
     to: list[EmailContact]
     bcc: EmailContact | None = None
     reply_to: EmailContact | None = None
+
+    attachments: list[EmailAttachment] | None = None
 
     model_config = ConfigDict(
         frozen=True,
