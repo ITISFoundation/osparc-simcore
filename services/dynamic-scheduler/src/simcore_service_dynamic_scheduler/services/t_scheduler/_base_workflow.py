@@ -61,7 +61,7 @@ class SagaWorkflow:  # pylint:disable=too-many-instance-attributes
 
     @classmethod
     def get_activities(cls) -> list[Callable[..., Coroutine[Any, Any, Any]]]:
-        instance = cls.__new__(cls)
+        instance = cls()
         activities: list[Callable[..., Coroutine[Any, Any, Any]]] = []
         for entry in instance.steps():
             steps = entry.steps if isinstance(entry, Parallel) else [entry]
