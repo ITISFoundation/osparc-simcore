@@ -6,14 +6,10 @@
 from typing import Any
 
 import pytest
-import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_users import MixedUserTestData
-from simcore_postgres_database.models.users_details import (
-    users_pre_registration_details,
-)
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.users import _accounts_repository
 
@@ -131,14 +127,6 @@ async def test_list_user_pre_registrations(
     )
     assert count == 3
     assert len(page2_registrations) == 1
-
-    # Clean up
-    async with asyncpg_engine.connect() as conn:
-        for pre_reg_id in pre_reg_ids:
-            await conn.execute(
-                sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.id == pre_reg_id)
-            )
-        await conn.commit()
 
 
 async def test_list_merged_users_all_users(

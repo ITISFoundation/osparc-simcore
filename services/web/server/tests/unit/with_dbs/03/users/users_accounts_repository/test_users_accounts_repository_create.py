@@ -127,13 +127,6 @@ async def test_review_user_pre_registration(
     assert reg["created_by_name"] == product_owner_user["name"]
     assert reg["reviewed_by_name"] == product_owner_user["name"]
 
-    # Clean up
-    async with asyncpg_engine.connect() as conn:
-        await conn.execute(
-            sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.id == pre_registration_id)
-        )
-        await conn.commit()
-
 
 async def test_review_user_pre_registration_with_invitation_extras(
     app: web.Application,

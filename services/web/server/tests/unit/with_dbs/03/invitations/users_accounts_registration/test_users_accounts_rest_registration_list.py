@@ -384,7 +384,6 @@ async def test_list_users_accounts_sorting_by_multiple_fields(
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
     account_request_form: dict[str, Any],
-    faker: Faker,
 ):
     """Demonstrate sorting by two different fields: email ascending and name ascending."""
     assert client.app

@@ -34,10 +34,11 @@ class SortingUserTestData:
     emails_by_name_asc: list[str]
 
 
-# WARNING: DO NOT use UserDict is already in
-# https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):
-# NOTE: this is modified dict version of
-# packages/postgres-database/src/simcore_postgres_database/models/users.py for testing purposes
+# WARNING: DO NOT use UserDict. It already exists in:
+# https://docs.python.org/3/library/collections.html#collections.UserDict
+# NOTE: this is a modified dict version of
+# packages/postgres-database/src/simcore_postgres_database/models/users.py
+# for testing purposes
 class _UserInfoDictRequired(TypedDict, total=True):
     id: int
     name: str
