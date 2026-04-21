@@ -1,4 +1,4 @@
-"""Context model for the 'new_code' email template."""
+"""Context model for the 'new_2fa_code' email template."""
 
 from models_library.notifications import Channel
 from pydantic import BaseModel
@@ -11,8 +11,8 @@ class User(BaseModel):
     user_name: str
 
 
-@register_template_context(channel=Channel.email, template_name="new_code")
-class NewCodeTemplateContext(BaseTemplateContext):
+@register_template_context(channel=Channel.email, template_name="new_2fa_code")
+class New2faCodeTemplateContext(BaseTemplateContext):
     user: User
     host: str
     code: str

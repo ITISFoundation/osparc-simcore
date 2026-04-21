@@ -106,11 +106,11 @@ async def test_preview_template_invalid_context(
             await preview_template(rpc_client, ref=ref, context=context)
 
 
-async def test_preview_new_code_template_renders_without_errors(
+async def test_preview_new_2fa_code_template_renders_without_errors(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
 ):
-    ref = TemplateRef(channel=Channel.email, template_name="new_code")
+    ref = TemplateRef(channel=Channel.email, template_name="new_2fa_code")
     context = {
         "user": {
             "first_name": "John",
@@ -123,7 +123,7 @@ async def test_preview_new_code_template_renders_without_errors(
 
     response = await preview_template(rpc_client, ref=ref, context=context)
     assert isinstance(response, PreviewTemplateResponse)
-    assert response.ref.template_name == "new_code"
+    assert response.ref.template_name == "new_2fa_code"
     assert isinstance(response.message_content, dict)
     # Verify the rendered content contains the expected values
     assert "123456" in response.message_content["subject"]
@@ -131,11 +131,11 @@ async def test_preview_new_code_template_renders_without_errors(
     assert "https://example.com" in response.message_content["body_text"]
 
 
-async def test_preview_new_code_template_invalid_context(
+async def test_preview_new_2fa_code_template_invalid_context(
     fake_product_data: dict[str, Any],
     rpc_client: RabbitMQRPCClient,
 ):
-    ref = TemplateRef(channel=Channel.email, template_name="new_code")
+    ref = TemplateRef(channel=Channel.email, template_name="new_2fa_code")
     # Missing required fields 'user', 'host', 'code'
     context = {
         "invalid_key": "invalid_value",
