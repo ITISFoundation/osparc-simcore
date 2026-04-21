@@ -892,7 +892,7 @@ services:
   dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    # Must be greater than TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT_S (default 30s)
+    # Must be greater than TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT (default 30s)
     # to allow the Temporalio worker to finish running activities before Docker sends SIGKILL.
     stop_grace_period: 45s
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"

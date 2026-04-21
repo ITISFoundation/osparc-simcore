@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator
-from datetime import timedelta
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
@@ -52,7 +51,7 @@ async def _temporalio_worker_lifespan(app: FastAPI) -> AsyncIterator[State]:
         workflows=registry.get_temporalio_workflows(),
         activities=registry.get_temporalio_activities(),
         interceptors=[HeartbeatInterceptor()],
-        graceful_shutdown_timeout=timedelta(seconds=temporalio_settings.TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT_S),
+        graceful_shutdown_timeout=temporalio_settings.TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT,
     )
 
     worker_task = asyncio.create_task(worker.run())

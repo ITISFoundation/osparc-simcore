@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import cached_property
 from typing import Annotated
 
@@ -28,16 +29,16 @@ class TemporalioSettings(BaseCustomSettings):
         Field(description="Temporalio task queue name"),
     ] = "dynamic-scheduler"
 
-    TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT_S: Annotated[
-        int,
+    TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT: Annotated[
+        timedelta,
         Field(
             description=(
-                "Seconds the Temporalio worker waits for running activities to complete "
+                "Time the Temporalio worker waits for running activities to complete "
                 "before cancelling them during shutdown. "
                 "Must be less than docker-compose stop_grace_period for the service."
             ),
         ),
-    ] = 30
+    ] = timedelta(seconds=30)
 
     @cached_property
     def target_host(self) -> str:
