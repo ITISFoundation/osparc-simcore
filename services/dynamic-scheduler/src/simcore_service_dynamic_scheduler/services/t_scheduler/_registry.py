@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable, Coroutine
+from copy import deepcopy
 from typing import Any
 
 from ._base_workflow import SagaWorkflow
@@ -42,7 +43,7 @@ class WorkflowRegistry:
         return list(self._workflows.values())
 
     def get_registered_workflows(self) -> dict[str, type[SagaWorkflow]]:
-        return self._workflows
+        return deepcopy(self._workflows)
 
     def get_temporalio_activities(self) -> list[Callable[..., Coroutine[Any, Any, Any]]]:
         return list(self._activities)
