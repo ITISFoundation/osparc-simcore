@@ -366,24 +366,22 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-type PageRpcLatestServiceGet = PageRpc[
-    # WARNING: keep this definition in models_library and not in the RPC interface
-    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
-    # and will fail to serialize/deserialize these parameters when transmitted/received
-    LatestServiceGet
-]
+# WARNING: keep this definition in models_library and not in the RPC interface
+# otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
+# and will fail to serialize/deserialize these parameters when transmitted/received
+# NOTE: Do NOT use `type X = ...` (PEP 695) here — it creates a TypeAliasType that
+# does not expose the .create() classmethod at runtime.
+PageRpcLatestServiceGet = PageRpc[LatestServiceGet]
 
-type PageRpcServiceRelease = PageRpc[
-    # WARNING: keep this definition in models_library and not in the RPC interface
-    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
-    # and will fail to serialize/deserialize these parameters when transmitted/received
-    ServiceRelease
-]
+# WARNING: keep this definition in models_library and not in the RPC interface
+# otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
+# and will fail to serialize/deserialize these parameters when transmitted/received
+PageRpcServiceRelease = PageRpc[ServiceRelease]
 
 # Create PageRpc types
 PageRpcServiceSummary = PageRpc[ServiceSummary]
 
-type ServiceResourcesGet = ServiceResourcesDict
+ServiceResourcesGet = ServiceResourcesDict
 
 
 class ServiceUpdateV2(CatalogInputSchema):
