@@ -111,7 +111,6 @@ async def test_preview_new_code_template_renders_without_errors(
     rpc_client: RabbitMQRPCClient,
 ):
     ref = TemplateRef(channel=Channel.email, template_name="new_code")
-    # Exact context shape sent by webserver's send_email_code
     context = {
         "user": {
             "first_name": "John",
