@@ -1,4 +1,5 @@
 import contextlib
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, TypedDict
 
@@ -14,8 +15,29 @@ from .faker_factories import DEFAULT_TEST_PASSWORD
 from .postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
-# WARNING: DO NOT use UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):
-# NOTE: this is modified dict version of packages/postgres-database/src/simcore_postgres_database/models/users.py for testing purposes
+@dataclass
+class MixedUserTestData:
+    """Test data for user pre-registration tests with mixed states."""
+
+    created_by_user_id: UserID
+    product_owner_email: str
+    product_owner_id: UserID
+    pre_reg_email: str
+    pre_reg_id: int
+    owner_pre_reg_id: int
+    approved_email: str
+    approved_reg_id: int
+
+
+@dataclass
+class SortingUserTestData:
+    emails_by_name_asc: list[str]
+
+
+# WARNING: DO NOT use UserDict is already in
+# https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):
+# NOTE: this is modified dict version of
+# packages/postgres-database/src/simcore_postgres_database/models/users.py for testing purposes
 class _UserInfoDictRequired(TypedDict, total=True):
     id: int
     name: str
