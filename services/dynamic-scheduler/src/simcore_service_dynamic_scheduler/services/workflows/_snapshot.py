@@ -1,8 +1,9 @@
 import hashlib
 import inspect
-import json
 from collections.abc import Callable
 from typing import Any
+
+from common_library.json_serialization import json_dumps
 
 from ..t_scheduler import WorkflowRegistry
 from ._lifespan import _register_workflows
@@ -24,4 +25,4 @@ def compute_workflows_signatures() -> str:
         for act_fn in wf_cls.get_activities():
             snapshot["activities"][f"{name}.{act_fn.__name__}"] = _source_hash(act_fn)
 
-    return json.dumps(snapshot, indent=2, sort_keys=True) + "\n"
+    return json_dumps(snapshot, indent=2, sort_keys=True) + "\n"
