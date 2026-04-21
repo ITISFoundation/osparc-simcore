@@ -15025,6 +15025,20 @@
             "type": "object",
             "title": "Quality"
           },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
+          },
           "release": {
             "$ref": "#/components/schemas/ServiceRelease",
             "description": "release information of current (latest) service"
@@ -15347,6 +15361,20 @@
             "type": "object",
             "title": "Quality"
           },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
+          },
           "history": {
             "items": {
               "$ref": "#/components/schemas/ServiceRelease"
@@ -15573,8 +15601,7 @@
           "quality": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Quality",
-            "default": {}
+            "title": "Quality"
           },
           "accessRights": {
             "anyOf": [
@@ -15592,6 +15619,20 @@
               }
             ],
             "title": "Accessrights"
+          },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
           }
         },
         "type": "object",

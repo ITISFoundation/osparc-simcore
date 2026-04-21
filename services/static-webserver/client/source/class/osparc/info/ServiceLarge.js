@@ -427,6 +427,9 @@ qx.Class.define("osparc.info.ServiceLarge", {
           font: "link-label-14",
           toolTipText: url,
           width: 220,
+          maxWidth: 220,
+          wrap: false,
+          allowGrowX: false,
         });
         return link;
       }
