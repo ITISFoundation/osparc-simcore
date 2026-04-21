@@ -77,7 +77,7 @@ async def _try_show_login_fallbacks_on_wrong_password(
     except Exception as exc:  # pylint: disable=broad-except
         _logger.exception(
             **create_troubleshooting_log_kwargs(
-                "Unexpected error checking login",
+                "Unexpected error checking fallback products for wrong password",
                 error=exc,
                 error_context={
                     "user_id": user_id,
