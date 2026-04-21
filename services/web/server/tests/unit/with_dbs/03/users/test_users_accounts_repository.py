@@ -984,7 +984,7 @@ async def test_list_merged_users_pagination(
             ["zeta@example.com", "middle@example.com", "alpha@example.com"],
         ),
     ],
-    ids=["sort-by-name-asc", "sort-by-email-desc"],
+    ids=["sort-by-first-name-asc", "sort-by-email-desc"],
 )
 async def test_list_merged_users_sorting(
     app: web.Application,
