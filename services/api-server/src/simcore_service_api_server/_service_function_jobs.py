@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import jsonschema
 from common_library.exclude import as_dict_exclude_none
@@ -26,7 +27,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from pydantic import TypeAdapter, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
@@ -51,6 +52,20 @@ def join_inputs(
 
     # last dict will override defaults
     return {**default_inputs, **function_inputs}
+
+
+def ensure_rpc_serializable(inputs: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Ensure inputs/outputs dict contains only pickle-safe primitives for RPC transport.
+
+    The api-server's ArgumentTypes union includes Pydantic models (e.g. File) that
+    live in the api-server namespace. These cannot be deserialized by the webserver
+    since it lacks that module. This function converts any BaseModel instances to
+    plain JSON-serializable dicts before sending over RabbitMQ RPC.
+    """
+    if inputs is None:
+        return None
+
+    return {k: v.model_dump(mode="json") if isinstance(v, BaseModel) else v for k, v in inputs.items()}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -145,7 +160,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=input_.values,
+                    inputs=ensure_rpc_serializable(input_.values),
                     outputs=None,
                     project_job_id=None,
                     job_creation_task_id=None,
@@ -165,7 +180,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=input_.values,
+                    inputs=ensure_rpc_serializable(input_.values),
                     outputs=None,
                     solver_job_id=None,
                     job_creation_task_id=None,

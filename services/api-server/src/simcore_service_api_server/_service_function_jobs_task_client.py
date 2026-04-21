@@ -38,7 +38,7 @@ from servicelib.utils import logged_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._meta import APP_NAME
-from ._service_function_jobs import FunctionJobService
+from ._service_function_jobs import FunctionJobService, ensure_rpc_serializable
 from ._service_functions import FunctionService
 from ._service_jobs import JobService
 from .api.dependencies.authentication import Identity
@@ -291,7 +291,7 @@ class FunctionJobTaskClientService:
             function_job_id=function_job.uid,
             user_id=self.user_id,
             product_name=self.product_name,
-            outputs=new_outputs,
+            outputs=ensure_rpc_serializable(new_outputs),
             check_write_permissions=False,
         )
 
@@ -312,7 +312,7 @@ class FunctionJobTaskClientService:
             user_id=user_identity.user_id,
             product_name=user_identity.product_name,
             function_id=function.uid,
-            inputs=TypeAdapter(FunctionInputsList).validate_python(inputs),
+            inputs=TypeAdapter(FunctionInputsList).validate_python([ensure_rpc_serializable(i) for i in inputs]),
             status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
         )
 
