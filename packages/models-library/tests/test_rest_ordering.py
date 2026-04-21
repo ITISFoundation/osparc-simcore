@@ -1,3 +1,5 @@
+# pylint: disable=no-self-use
+
 import pickle
 from typing import ClassVar, Literal
 

@@ -3,7 +3,8 @@
 These are pure unit tests — no database connection required.
 """
 
-import re
+# pylint: disable=no-self-use
+
 from typing import Literal
 
 import pytest
@@ -123,7 +124,7 @@ class TestAssertLiteralKeysMatchColumnMap:
             "name": _test_table.c.name,
             "email": _test_table.c.email,
         }
-        with pytest.raises(AssertionError, match=re.escape("missing from column_map.*created_at")):
+        with pytest.raises(AssertionError, match="missing from column_map.*created_at"):  # noqa: RUF043
             assert_literal_keys_match_column_map(MyField, column_map)
 
     def test_extra_in_map(self):
@@ -132,7 +133,7 @@ class TestAssertLiteralKeysMatchColumnMap:
             "name": _test_table.c.name,
             "email": _test_table.c.email,
         }
-        with pytest.raises(AssertionError, match=re.escape("not in Literal type.*email")):
+        with pytest.raises(AssertionError, match="not in Literal type.*email"):  # noqa: RUF043
             assert_literal_keys_match_column_map(MyField, column_map)
 
     def test_both_missing_and_extra(self):
