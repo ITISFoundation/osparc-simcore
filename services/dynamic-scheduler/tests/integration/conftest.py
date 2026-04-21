@@ -272,13 +272,13 @@ def app_environment(
             **docker_compose_service_dynamic_scheduler_env_vars,
             "DYNAMIC_SCHEDULER_TRACING": "null",
             "TEMPORALIO_HOST": host,
-            "TEMPORALIO_PORT": str(get_service_published_port("temporal", 7233)),
+            "TEMPORALIO_PORT": f"{get_service_published_port('temporal', 7233)}",
             "POSTGRES_HOST": host,
-            "POSTGRES_PORT": str(get_service_published_port("postgres", 5432)),
+            "POSTGRES_PORT": f"{get_service_published_port('postgres', 5432)}",
             "RABBIT_HOST": host,
-            "RABBIT_PORT": str(get_service_published_port("rabbit", 5672)),
+            "RABBIT_PORT": f"{get_service_published_port('rabbit', 5672)}",
             "REDIS_HOST": host,
-            "REDIS_PORT": str(get_service_published_port("redis", 6379)),
+            "REDIS_PORT": f"{get_service_published_port('redis', 6379)}",
         },
     )
 
