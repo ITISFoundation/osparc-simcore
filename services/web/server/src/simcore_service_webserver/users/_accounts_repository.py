@@ -5,6 +5,7 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
+from models_library.list_operations import OrderClause
 from models_library.products import ProductName
 from models_library.users import (
     UserID,
@@ -555,7 +556,7 @@ async def list_merged_pre_and_registered_users(
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
-    sort_by: Any | None = None,
+    sort_by: list[OrderClause] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
