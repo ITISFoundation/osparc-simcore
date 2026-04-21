@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -26,7 +26,7 @@ from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, Primar
 from ..products import ProductName
 from ..rest_base import RequestParameters
 from ..rest_filters import Filters
-from ..rest_ordering import OrderBy, create_ordering_query_model_class
+from ..rest_ordering import OrderingQueryParams
 from ..rest_pagination import PageQueryParameters
 from ..string_types import (
     GlobPatternSafeStr,
@@ -322,27 +322,30 @@ class UsersForAdminListFilter(Filters):
     model_config = ConfigDict(extra="forbid")
 
 
-UsersAccountListOrderParams = create_ordering_query_model_class(
-    ordering_fields={
-        "name",
-        "email",
-        "status",
-        "accountRequestedReviewedAt",
-        "preRegistrationCreated",
-    },
-    default=OrderBy(field=IDStr("email")),
-    ordering_fields_api_to_column_map={
+type UserAccountSortableField = Literal[
+    "name",
+    "email",
+    "status",
+    "accountRequestedReviewedAt",
+    "preRegistrationCreated",
+]
+
+
+class UsersAccountListOrderParams(
+    OrderingQueryParams[UserAccountSortableField],
+):
+    _default_order_by: ClassVar[str] = "email"
+    _field_name_map: ClassVar[dict[str, str]] = {
         "name": "first_name",
         "accountRequestedReviewedAt": "account_request_reviewed_at",
         "preRegistrationCreated": "created",
-    },
-)
+    }
 
 
 class UsersAccountListQueryParams(
     UsersForAdminListFilter,
     PageQueryParameters,
-    UsersAccountListOrderParams,  # type: ignore[misc, valid-type]
+    UsersAccountListOrderParams,
 ): ...
 
 

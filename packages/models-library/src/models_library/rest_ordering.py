@@ -188,7 +188,15 @@ class OrderingQueryParams(BaseModel, Generic[TField]):  # noqa: UP046
         list[OrderClause[TField]],
         BeforeValidator(_parse_order_by),
         Field(
-            description="Comma-separated list of field names with optional direction prefix (+ for asc, - for desc)."
+            description="Comma-separated list of field names with optional direction prefix (+ for asc, - for desc).",
+            json_schema_extra={
+                "examples": [
+                    "-created_at,name,+gender",
+                    "name",
+                    "-modified_at",
+                    "",
+                ],
+            },
         ),
     ] = ""  # type: ignore[assignment]
 

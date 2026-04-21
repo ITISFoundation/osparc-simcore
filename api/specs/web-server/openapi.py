@@ -100,6 +100,23 @@ def main():
 
     openapi = create_openapi_specs(app, remove_main_sections=False)
 
+    # Enrich order_by query params with description and examples.
+    # FastAPI's Depends() pattern strips Query() metadata, so we patch the spec.
+    _order_by_description = (
+        "Comma-separated list of field names for sorting. "
+        "Prefix with '-' for descending, '+' or no prefix for ascending."
+    )
+    _order_by_examples = ["-name,email", "email", "-status"]
+    for path_item in openapi.get("paths", {}).values():
+        for operation in path_item.values():
+            if not isinstance(operation, dict):
+                continue
+            for param in operation.get("parameters", []):
+                if param.get("name") == "order_by" and param.get("in") == "query":
+                    param["description"] = _order_by_description
+                    param["schema"]["description"] = _order_by_description
+                    param["schema"]["examples"] = _order_by_examples
+
     # .json
     oas_path = webserver_resources.get_path("api/v0/openapi.json").resolve()
     if not oas_path.exists():

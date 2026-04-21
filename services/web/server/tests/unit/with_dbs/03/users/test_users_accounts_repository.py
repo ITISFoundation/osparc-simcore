@@ -11,8 +11,8 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
+from models_library.list_operations import OrderClause, OrderDirection
 from models_library.products import ProductName
-from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.products import products
@@ -976,11 +976,11 @@ async def test_list_merged_users_pagination(
     "sort_by, expected_emails",
     [
         (
-            OrderBy(field="first_name", direction=OrderDirection.ASC),
+            [OrderClause(field="first_name", direction=OrderDirection.ASC)],
             ["zeta@example.com", "middle@example.com", "alpha@example.com"],
         ),
         (
-            OrderBy(field="email", direction=OrderDirection.DESC),
+            [OrderClause(field="email", direction=OrderDirection.DESC)],
             ["zeta@example.com", "middle@example.com", "alpha@example.com"],
         ),
     ],
@@ -990,7 +990,7 @@ async def test_list_merged_users_sorting(
     app: web.Application,
     product_name: ProductName,
     sorting_user_data: SortingUserTestData,
-    sort_by: OrderBy,
+    sort_by: list[OrderClause],
     expected_emails: list[str],
 ):
     asyncpg_engine = get_asyncpg_engine(app)
@@ -1025,7 +1025,7 @@ async def test_list_merged_users_sorting_by_name_differs_from_email(
         filter_include_deleted=False,
         pagination_limit=50,
         pagination_offset=0,
-        sort_by=OrderBy(field="first_name", direction=OrderDirection.ASC),
+        sort_by=[OrderClause(field="first_name", direction=OrderDirection.ASC)],
     )
     users_by_email, _ = await _accounts_repository.list_merged_pre_and_registered_users(
         asyncpg_engine,
@@ -1034,7 +1034,7 @@ async def test_list_merged_users_sorting_by_name_differs_from_email(
         filter_include_deleted=False,
         pagination_limit=50,
         pagination_offset=0,
-        sort_by=OrderBy(field="email", direction=OrderDirection.ASC),
+        sort_by=[OrderClause(field="email", direction=OrderDirection.ASC)],
     )
 
     emails_by_name = [user["email"] for user in users_by_name if user["email"] in sorting_user_data.emails_by_name_asc]

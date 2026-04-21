@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
 from typing import Any, Literal, TypedDict
 from unittest.mock import AsyncMock
 
@@ -410,7 +409,7 @@ async def test_list_users_accounts_sorting_by_multiple_fields(
     # Test 1: Sort by email ascending
     resp = await client.get(
         f"{url}",
-        params={"order_by": json.dumps({"field": "email", "direction": "asc"}), "limit": 50, "offset": 0},
+        params={"order_by": "email", "limit": 50, "offset": 0},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
     assert resp.status == status.HTTP_200_OK
@@ -420,7 +419,7 @@ async def test_list_users_accounts_sorting_by_multiple_fields(
     # Test 2: Sort by name ascending
     resp = await client.get(
         f"{url}",
-        params={"order_by": json.dumps({"field": "name", "direction": "asc"}), "limit": 50, "offset": 0},
+        params={"order_by": "name", "limit": 50, "offset": 0},
         headers={X_PRODUCT_NAME_HEADER: product_name},
     )
     assert resp.status == status.HTTP_200_OK

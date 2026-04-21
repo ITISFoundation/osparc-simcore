@@ -2676,11 +2676,15 @@
             "required": false,
             "schema": {
               "type": "string",
-              "contentMediaType": "application/json",
-              "contentSchema": {},
-              "default": "{\"field\":\"email\",\"direction\":\"asc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -5100,8 +5104,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"created\",\"direction\":\"asc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -5176,8 +5187,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"created\",\"direction\":\"asc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -5252,8 +5270,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"start\",\"direction\":\"asc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -5556,8 +5581,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"modified\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -5703,8 +5735,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"modified\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -6205,8 +6244,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"modified\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -6964,8 +7010,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"display_name\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -7154,8 +7207,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"purchased_at\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -7333,8 +7393,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"started_at\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -8148,8 +8215,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"last_change_date\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -8797,8 +8871,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"last_change_date\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "limit",
@@ -11214,8 +11295,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"started_at\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "wallet_id",
@@ -11374,8 +11462,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"started_at\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "wallet_id",
@@ -13543,8 +13638,15 @@
               "contentMediaType": "application/json",
               "contentSchema": {},
               "default": "{\"field\":\"modified\",\"direction\":\"desc\"}",
-              "title": "Order By"
-            }
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
           },
           {
             "name": "filters",

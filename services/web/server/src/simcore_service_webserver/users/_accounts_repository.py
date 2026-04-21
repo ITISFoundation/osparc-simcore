@@ -15,6 +15,11 @@ from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
+from simcore_postgres_database.utils_ordering import (
+    OrderByDict,
+    OrderDirection,
+    create_ordering_clauses,
+)
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -702,16 +707,24 @@ async def list_merged_pre_and_registered_users(
 
     # Apply the requested ordering after de-duplication.
     if sort_by:
-        sort_field = sort_by.field
-        sort_direction = sort_by.direction
-        sort_column = getattr(deduped_query_subq.c, sort_field)
-        primary_order_clause = sort_column.desc() if sort_direction.value == "desc" else sort_column.asc()
+        order_by_dicts: list[OrderByDict] = [
+            {"field": c.field, "direction": OrderDirection(c.direction.value)} for c in sort_by
+        ]
+        column_map = {
+            "first_name": deduped_query_subq.c.first_name,
+            "email": deduped_query_subq.c.email,
+            "status": deduped_query_subq.c.status,
+            "account_request_reviewed_at": deduped_query_subq.c.account_request_reviewed_at,
+            "created": deduped_query_subq.c.created,
+        }
+        primary_clauses = create_ordering_clauses(order_by_dicts, column_map)
+        sort_fields = {c.field for c in sort_by}
     else:
-        sort_field = "email"
-        primary_order_clause = deduped_query_subq.c.email.asc()
+        primary_clauses = [deduped_query_subq.c.email.asc()]
+        sort_fields = {"email"}
 
-    final_order_by_clauses = [primary_order_clause]
-    if sort_field != "email":
+    final_order_by_clauses = list(primary_clauses)
+    if "email" not in sort_fields:
         final_order_by_clauses.append(deduped_query_subq.c.email.asc())
     final_order_by_clauses.append(deduped_query_subq.c.user_id.asc().nullsfirst())
 

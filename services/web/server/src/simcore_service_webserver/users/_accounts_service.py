@@ -6,6 +6,7 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
+from models_library.list_operations import OrderClause
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -129,8 +130,8 @@ async def list_user_accounts(
     pagination_limit: int = 50,
     pagination_offset: int = 0,
     sort_by: Annotated[
-        Any | None,
-        doc("Sort order specification (OrderBy object with field and direction)"),
+        list[OrderClause] | None,
+        doc("Sort order as list of OrderClause"),
     ] = None,
 ) -> Annotated[
     tuple[list[dict[str, Any]], int],
