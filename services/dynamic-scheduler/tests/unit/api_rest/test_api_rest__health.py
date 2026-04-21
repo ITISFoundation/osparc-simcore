@@ -47,7 +47,7 @@ def mock_redis_client(
 
 
 @pytest.fixture
-def mock_temporalio_health_check(
+def mock_temporalio_client(
     mocker: MockerFixture,
     temporalio_ok: bool,
 ) -> None:
@@ -69,7 +69,7 @@ def app_environment(
     mock_docker_api_proxy: None,
     mock_rabbitmq_clients: None,
     mock_redis_client: None,
-    mock_temporalio_health_check: None,
+    mock_temporalio_client: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
