@@ -187,7 +187,7 @@ async def test_preview_paid_template_renders_with_optional_fields_missing(
         "payment": {
             "price_dollars": "10.00",
             "osparc_credits": "100.00",
-            "invoice_url": None,
+            "invoice_url": "https://example.com/invoice/1",
         },
         "product": fake_product_data,
     }
