@@ -1,7 +1,7 @@
 import logging
 import re
 from pathlib import PurePosixPath
-from typing import Final
+from typing import Any, Final
 from urllib.parse import urlparse
 
 import httpx
@@ -103,8 +103,8 @@ def _build_product_context(
     product_name: str,
     display_name: str,
     support_email: str,
-    vendor: dict | None,
-) -> dict:
+    vendor: dict[str, Any] | None,
+) -> dict[str, Any]:
     """Build the product template context from the product's vendor JSON.
 
     Mirrors the shape produced by ``services/web/server`` so the shared email
