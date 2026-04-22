@@ -197,6 +197,7 @@ async def test_email_provider_attaches_invoice_pdf(
     pdf_filename = "Invoice-INV-001.pdf"
     mocker.patch(
         "simcore_service_payments.services.notifier_email._download_invoice_pdf",
+        new_callable=AsyncMock,
         return_value=(pdf_bytes, pdf_filename),
     )
 
