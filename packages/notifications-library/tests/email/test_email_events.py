@@ -116,7 +116,7 @@ def template_extra_data(  # noqa: C901, PLR0911
                 "host": host_url,
                 "link": f"{host_url}?change-email={code}",
             }
-        case "new_code":
+        case "new_2fa_code":
             return {
                 "host": host_url,
                 "code": code,
@@ -185,7 +185,7 @@ def template_attachments(
         "account_requested",
         "account_rejected",
         "change_email",
-        "new_code",
+        "new_2fa_code",
         "new_invitation",
         "paid",
         "registered",

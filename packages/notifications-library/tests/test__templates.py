@@ -13,7 +13,7 @@ from notifications_library._templates import (
     [
         "account_requested",
         "change_email",
-        "new_code",
+        "new_2fa_code",
         "new_invitation",
         "paid",
         "registered",
