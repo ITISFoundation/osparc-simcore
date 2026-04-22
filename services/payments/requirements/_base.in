@@ -15,7 +15,6 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-aiosmtplib # notifier
 cryptography
 Jinja2 # notifier
 packaging
