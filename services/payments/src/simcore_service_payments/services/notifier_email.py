@@ -1,8 +1,12 @@
 import logging
+import re
+from pathlib import PurePosixPath
+from typing import Final
 from urllib.parse import urlparse
 
 import httpx
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from fastapi import status
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.notifications import Channel
 from models_library.notifications.rpc import (
@@ -17,6 +21,12 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message_from_template,
 )
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from ..db.payment_users_repo import PaymentsUsersRepo
 from ..models.db import PaymentsTransactionsDB
@@ -26,25 +36,66 @@ _logger = logging.getLogger(__name__)
 
 _PAID_TEMPLATE_NAME = "paid"
 
+_INVOICE_PDF_TIMEOUT_SECONDS: Final[float] = 10.0
+_INVOICE_PDF_RETRY_ATTEMPTS: Final[int] = 5
+_INVOICE_PDF_RETRY_WAIT_MIN_SECONDS: Final[int] = 4
+_INVOICE_PDF_RETRY_WAIT_MAX_SECONDS: Final[int] = 10
+_INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
+_DEFAULT_INVOICE_FILENAME: Final[str] = "invoice.pdf"
+_CONTENT_DISPOSITION_FILENAME_PATTERN: Final = re.compile(r'filename="(?P<filename>[^"]+)"')
 
-async def _download_invoice_pdf(url: str) -> bytes | None:
-    """Download invoice PDF content from the given URL. Returns None on failure."""
+
+def _retry_if_invoice_pdf_error(exception: BaseException) -> bool:
+    if isinstance(exception, (httpx.ConnectError, httpx.ReadTimeout)):
+        return True
+    if isinstance(exception, httpx.HTTPStatusError):
+        return exception.response.status_code in {
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status.HTTP_502_BAD_GATEWAY,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            status.HTTP_504_GATEWAY_TIMEOUT,
+        }
+    return False
+
+
+@retry(
+    retry=retry_if_exception(_retry_if_invoice_pdf_error),
+    wait=wait_exponential(
+        multiplier=1,
+        min=_INVOICE_PDF_RETRY_WAIT_MIN_SECONDS,
+        max=_INVOICE_PDF_RETRY_WAIT_MAX_SECONDS,
+    ),
+    stop=stop_after_attempt(_INVOICE_PDF_RETRY_ATTEMPTS),
+    reraise=True,
+)
+async def _fetch_invoice_pdf(url: str) -> httpx.Response:
+    async with httpx.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
+        response = await client.get(url)
+        response.raise_for_status()
+    return response
+
+
+def _extract_filename_from_response(response: httpx.Response, url: str) -> str:
+    content_disposition = response.headers.get("content-disposition", "")
+    match = _CONTENT_DISPOSITION_FILENAME_PATTERN.search(content_disposition)
+    if match:
+        return match.group("filename")
+
+    url_filename = PurePosixPath(urlparse(url).path).name
+    if url_filename.lower().endswith(".pdf"):
+        return url_filename
+    return _DEFAULT_INVOICE_FILENAME
+
+
+async def _download_invoice_pdf(url: str) -> tuple[bytes, str] | None:
+    """Download invoice PDF and resolve its filename. Returns None on failure."""
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, follow_redirects=True, timeout=30.0)
-            response.raise_for_status()
-            return response.content
+        response = await _fetch_invoice_pdf(url)
     except httpx.HTTPError:
         _logger.warning("Failed to download invoice PDF from %s", url, exc_info=True)
         return None
-
-
-def _extract_pdf_filename(url: str) -> str:
-    path = urlparse(url).path
-    filename = path.rsplit("/", maxsplit=1)[-1] if "/" in path else ""
-    if filename and filename.lower().endswith(".pdf"):
-        return filename
-    return "invoice.pdf"
+    return response.content, _extract_filename_from_response(response, url)
 
 
 def _build_product_context(
@@ -107,57 +158,58 @@ class EmailProvider(NotificationProvider):
             )
             return
 
+        data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
+
+        attachments: list[EmailAttachment] = []
+        if payment.invoice_pdf_url:
+            downloaded = await _download_invoice_pdf(str(payment.invoice_pdf_url))
+            if downloaded is not None:
+                pdf_content, pdf_filename = downloaded
+                attachments.append(
+                    EmailAttachment(
+                        content=pdf_content,
+                        filename=pdf_filename,
+                    )
+                )
+
+        full_name = " ".join(part for part in (data.first_name, data.last_name) if part) or (data.user_name or "")
+
+        addressing = EmailAddressing(
+            from_=EmailContact(
+                name=f"{data.display_name} support",
+                email=data.support_email,
+            ),
+            to=[
+                EmailContact(
+                    name=full_name,
+                    email=data.email,
+                )
+            ],
+            bcc=EmailContact(name="", email=self._bcc_email) if self._bcc_email else None,
+            attachments=attachments or None,
+        )
+
+        context: dict = {
+            "user": {
+                "first_name": data.first_name,
+                "last_name": data.last_name,
+                "user_name": data.user_name,
+                "email": data.email,
+            },
+            "payment": {
+                "price_dollars": f"{payment.price_dollars:.2f}",
+                "osparc_credits": f"{payment.osparc_credits:.2f}",
+                "invoice_url": f"{payment.invoice_url}" if payment.invoice_url else None,
+            },
+            "product": _build_product_context(
+                product_name=data.product_name,
+                display_name=data.display_name,
+                support_email=data.support_email,
+                vendor=data.vendor,
+            ),
+        }
+
         try:
-            data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
-
-            attachments: list[EmailAttachment] = []
-            if payment.invoice_pdf_url:
-                pdf_content = await _download_invoice_pdf(str(payment.invoice_pdf_url))
-                if pdf_content:
-                    attachments.append(
-                        EmailAttachment(
-                            content=pdf_content,
-                            filename=_extract_pdf_filename(str(payment.invoice_pdf_url)),
-                        )
-                    )
-
-            full_name = " ".join(part for part in (data.first_name, data.last_name) if part) or (data.user_name or "")
-
-            addressing = EmailAddressing(
-                from_=EmailContact(
-                    name=f"{data.display_name} support",
-                    email=data.support_email,
-                ),
-                to=[
-                    EmailContact(
-                        name=full_name,
-                        email=data.email,
-                    )
-                ],
-                bcc=EmailContact(name="", email=self._bcc_email) if self._bcc_email else None,
-                attachments=attachments or None,
-            )
-
-            context: dict = {
-                "user": {
-                    "first_name": data.first_name,
-                    "last_name": data.last_name,
-                    "user_name": data.user_name,
-                    "email": data.email,
-                },
-                "payment": {
-                    "price_dollars": f"{payment.price_dollars:.2f}",
-                    "osparc_credits": f"{payment.osparc_credits:.2f}",
-                    "invoice_url": f"{payment.invoice_url}" if payment.invoice_url else None,
-                },
-                "product": _build_product_context(
-                    product_name=data.product_name,
-                    display_name=data.display_name,
-                    support_email=data.support_email,
-                    vendor=data.vendor,
-                ),
-            }
-
             await send_message_from_template(
                 self._rabbitmq_rpc_client,
                 addressing=addressing,
@@ -167,7 +219,6 @@ class EmailProvider(NotificationProvider):
                 ),
                 context=context,
             )
-
         except Exception as exc:  # pylint: disable=broad-except
             _logger.exception(
                 **create_troubleshooting_log_kwargs(

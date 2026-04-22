@@ -7,6 +7,7 @@ import logging
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 from faker import Faker
 from models_library.products import ProductName
@@ -17,8 +18,11 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.models.db import PaymentsTransactionsDB
+from simcore_service_payments.services import notifier_email as notifier_email_module
 from simcore_service_payments.services.notifier_email import (
     EmailProvider,
+    _download_invoice_pdf,
+    _extract_filename_from_response,
 )
 
 
@@ -187,9 +191,10 @@ async def test_email_provider_attaches_invoice_pdf(
 ):
     # transaction fixture has invoice_pdf_url set; stub the PDF download
     pdf_bytes = b"%PDF-1.4 fake-pdf-content \x00\x01\xff"
+    pdf_filename = "Invoice-INV-001.pdf"
     mocker.patch(
         "simcore_service_payments.services.notifier_email._download_invoice_pdf",
-        return_value=pdf_bytes,
+        return_value=(pdf_bytes, pdf_filename),
     )
 
     users_repo = PaymentsUsersRepo(MagicMock())
@@ -220,9 +225,75 @@ async def test_email_provider_attaches_invoice_pdf(
     assert len(addressing.attachments) == 1
     attachment = addressing.attachments[0]
     assert attachment.content == pdf_bytes
-    assert attachment.filename.endswith(".pdf")
+    assert attachment.filename == pdf_filename
 
     # JSON-serialization across RPC boundary preserves bytes via base64 encoding
     dumped = addressing.model_dump(mode="json")
     assert isinstance(dumped["attachments"][0]["content"], str)
     assert type(addressing).model_validate(dumped).attachments[0].content == pdf_bytes
+
+
+@pytest.mark.parametrize(
+    "url, content_disposition, expected",
+    [
+        # Filename from Content-Disposition wins
+        (
+            "https://files.stripe.com/abc/xyz",
+            'attachment; filename="Invoice-INV-1234.pdf"',
+            "Invoice-INV-1234.pdf",
+        ),
+        # No header → fall back to URL last segment when it ends with .pdf
+        (
+            "https://example.com/path/MyInvoice.pdf",
+            "",
+            "MyInvoice.pdf",
+        ),
+        # Otherwise default
+        (
+            "https://example.com/abc/xyz",
+            "",
+            "invoice.pdf",
+        ),
+        (
+            "https://example.com/",
+            "",
+            "invoice.pdf",
+        ),
+    ],
+)
+def test_extract_filename_from_response(url: str, content_disposition: str, expected: str):
+    headers = {"content-disposition": content_disposition} if content_disposition else {}
+    response = httpx.Response(status_code=200, headers=headers)
+    assert _extract_filename_from_response(response, url) == expected
+
+
+async def test_download_invoice_pdf_returns_none_on_http_error(
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    mocker.patch.object(
+        notifier_email_module,
+        "_fetch_invoice_pdf",
+        side_effect=httpx.ConnectError("boom"),
+    )
+    assert await _download_invoice_pdf(faker.url()) is None
+
+
+async def test_download_invoice_pdf_returns_content_and_filename(
+    mocker: MockerFixture,
+):
+    pdf_bytes = b"%PDF-1.4 ..."
+    response = httpx.Response(
+        status_code=200,
+        content=pdf_bytes,
+        headers={"content-disposition": 'attachment; filename="receipt.pdf"'},
+    )
+    mocker.patch.object(
+        notifier_email_module,
+        "_fetch_invoice_pdf",
+        return_value=response,
+    )
+
+    downloaded = await _download_invoice_pdf("https://example.com/x")
+
+    assert downloaded == (pdf_bytes, "receipt.pdf")
