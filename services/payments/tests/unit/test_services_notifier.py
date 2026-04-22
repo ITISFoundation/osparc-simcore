@@ -26,7 +26,6 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_payments.models.db import PaymentsTransactionsDB
-from simcore_service_payments.models.db_to_api import to_payments_api_model
 from simcore_service_payments.services.notifier import NotifierService
 from simcore_service_payments.services.rabbitmq import get_rabbitmq_settings
 from socketio import AsyncServer
@@ -111,7 +110,7 @@ async def notify_payment(app: FastAPI, user_id: UserID) -> Callable[[], Awaitabl
             **random_payment_transaction(user_id=user_id, completed_at=arrow.utcnow().datetime)
         )
         notifier: NotifierService = NotifierService.get_from_app_state(app)
-        await notifier.notify_payment_completed(user_id=transaction.user_id, payment=to_payments_api_model(transaction))
+        await notifier.notify_payment_completed(user_id=transaction.user_id, payment=transaction)
 
     return _
 
