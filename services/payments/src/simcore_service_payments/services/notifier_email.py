@@ -35,28 +35,31 @@ from .notifier_abc import NotificationProvider
 _logger = logging.getLogger(__name__)
 
 _PAID_TEMPLATE_NAME = "paid"
-
-_INVOICE_PDF_TIMEOUT_SECONDS: Final[float] = 10.0
-_INVOICE_PDF_RETRY_ATTEMPTS: Final[int] = 5
-_INVOICE_PDF_RETRY_WAIT_MIN_SECONDS: Final[int] = 4
-_INVOICE_PDF_RETRY_WAIT_MAX_SECONDS: Final[int] = 10
-_INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
 _DEFAULT_INVOICE_FILENAME: Final[str] = "invoice.pdf"
-_CONTENT_DISPOSITION_FILENAME_PATTERN: Final = re.compile(r'filename="(?P<filename>[^"]+)"')
 
 
 def _retry_if_invoice_pdf_error(exception: BaseException) -> bool:
     if isinstance(exception, (httpx.ConnectError, httpx.ReadTimeout)):
         return True
     if isinstance(exception, httpx.HTTPStatusError):
-        return exception.response.status_code in {
+        return exception.response.status_code in (
             status.HTTP_429_TOO_MANY_REQUESTS,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             status.HTTP_502_BAD_GATEWAY,
             status.HTTP_503_SERVICE_UNAVAILABLE,
             status.HTTP_504_GATEWAY_TIMEOUT,
-        }
+        )
     return False
+
+
+_INVOICE_PDF_TIMEOUT_SECONDS: Final[float] = 10.0
+_INVOICE_PDF_RETRY_ATTEMPTS: Final[int] = 5
+_INVOICE_PDF_RETRY_WAIT_MIN_SECONDS: Final[int] = 4
+_INVOICE_PDF_RETRY_WAIT_MAX_SECONDS: Final[int] = 10
+
+# Worst case for repeated read timeouts is about 70 seconds total:
+# 5 attempts * 10 seconds timeout + waits of 4 + 4 + 4 + 8 seconds.
+_INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
 
 
 @retry(
@@ -69,16 +72,19 @@ def _retry_if_invoice_pdf_error(exception: BaseException) -> bool:
     stop=stop_after_attempt(_INVOICE_PDF_RETRY_ATTEMPTS),
     reraise=True,
 )
-async def _fetch_invoice_pdf(url: str) -> httpx.Response:
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
     async with httpx.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
-        response = await client.get(url)
-        response.raise_for_status()
-    return response
+        _response = await client.get(invoice_pdf)
+        _response.raise_for_status()
+    return _response
 
 
-def _extract_filename_from_response(response: httpx.Response, url: str) -> str:
+_INVOICE_FILE_NAME_PATTERN: Final = re.compile(r'filename="(?P<filename>[^"]+)"')
+
+
+def _extract_file_name(response: httpx.Response, url: str) -> str:
     content_disposition = response.headers.get("content-disposition", "")
-    match = _CONTENT_DISPOSITION_FILENAME_PATTERN.search(content_disposition)
+    match = _INVOICE_FILE_NAME_PATTERN.search(content_disposition)
     if match:
         return match.group("filename")
 
@@ -91,11 +97,11 @@ def _extract_filename_from_response(response: httpx.Response, url: str) -> str:
 async def _download_invoice_pdf(url: str) -> tuple[bytes, str] | None:
     """Download invoice PDF and resolve its filename. Returns None on failure."""
     try:
-        response = await _fetch_invoice_pdf(url)
+        response = await _get_invoice_pdf(url)
     except httpx.HTTPError:
         _logger.warning("Failed to download invoice PDF from %s", url, exc_info=True)
         return None
-    return response.content, _extract_filename_from_response(response, url)
+    return response.content, _extract_file_name(response, url)
 
 
 def _build_product_context(

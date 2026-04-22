@@ -23,7 +23,7 @@ from simcore_service_payments.services import notifier_email as notifier_email_m
 from simcore_service_payments.services.notifier_email import (
     EmailProvider,
     _download_invoice_pdf,
-    _extract_filename_from_response,
+    _extract_file_name,
 )
 
 
@@ -307,10 +307,10 @@ async def test_email_provider_propagates_bcc(
         ),
     ],
 )
-def test_extract_filename_from_response(url: str, content_disposition: str, expected: str):
+def test_extract_file_name(url: str, content_disposition: str, expected: str):
     headers = {"content-disposition": content_disposition} if content_disposition else {}
     response = httpx.Response(status_code=200, headers=headers)
-    assert _extract_filename_from_response(response, url) == expected
+    assert _extract_file_name(response, url) == expected
 
 
 async def test_download_invoice_pdf_returns_none_on_http_error(
@@ -319,7 +319,7 @@ async def test_download_invoice_pdf_returns_none_on_http_error(
 ):
     mocker.patch.object(
         notifier_email_module,
-        "_fetch_invoice_pdf",
+        "_get_invoice_pdf",
         new_callable=AsyncMock,
         side_effect=httpx.ConnectError("boom"),
     )
@@ -337,7 +337,7 @@ async def test_download_invoice_pdf_returns_content_and_filename(
     )
     mocker.patch.object(
         notifier_email_module,
-        "_fetch_invoice_pdf",
+        "_get_invoice_pdf",
         new_callable=AsyncMock,
         return_value=response,
     )
