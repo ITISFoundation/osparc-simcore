@@ -19,7 +19,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.models.db import PaymentsTransactionsDB
-from simcore_service_payments.services import notifier_email as notifier_email_module
+from simcore_service_payments.services import notifier_email
 from simcore_service_payments.services.notifier_email import (
     EmailProvider,
     _download_invoice_pdf,
@@ -56,7 +56,7 @@ def mock_rabbitmq_rpc_client() -> AsyncMock:
 @pytest.fixture
 def mock_send_message_from_template(mocker: MockerFixture) -> AsyncMock:
     return mocker.patch(
-        "simcore_service_payments.services.notifier_email.send_message_from_template",
+        f"{notifier_email.__name__}.send_message_from_template",
         new_callable=AsyncMock,
     )
 
@@ -167,7 +167,7 @@ async def test_email_provider_logs_on_rpc_failure(
     )
 
     mocker.patch(
-        "simcore_service_payments.services.notifier_email.send_message_from_template",
+        f"{notifier_email.__name__}.send_message_from_template",
         side_effect=RuntimeError("RPC connection failed"),
     )
 
@@ -196,7 +196,7 @@ async def test_email_provider_attaches_invoice_pdf(
     pdf_bytes = b"%PDF-1.4 fake-pdf-content \x00\x01\xff"
     pdf_filename = "Invoice-INV-001.pdf"
     mocker.patch(
-        "simcore_service_payments.services.notifier_email._download_invoice_pdf",
+        f"{notifier_email.__name__}._download_invoice_pdf",
         new_callable=AsyncMock,
         return_value=(pdf_bytes, pdf_filename),
     )
@@ -318,7 +318,7 @@ async def test_download_invoice_pdf_returns_none_on_http_error(
     faker: Faker,
 ):
     mocker.patch.object(
-        notifier_email_module,
+        notifier_email,
         "_get_invoice_pdf",
         new_callable=AsyncMock,
         side_effect=httpx.ConnectError("boom"),
@@ -336,7 +336,7 @@ async def test_download_invoice_pdf_returns_content_and_filename(
         headers={"content-disposition": 'attachment; filename="receipt.pdf"'},
     )
     mocker.patch.object(
-        notifier_email_module,
+        notifier_email,
         "_get_invoice_pdf",
         new_callable=AsyncMock,
         return_value=response,
