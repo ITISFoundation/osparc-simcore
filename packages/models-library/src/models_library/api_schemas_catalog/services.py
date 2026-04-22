@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
@@ -369,19 +369,13 @@ class ServiceGetV2(_BaseServiceGetV2):
 # WARNING: keep this definition in models_library and not in the RPC interface
 # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
 # and will fail to serialize/deserialize these parameters when transmitted/received
-# NOTE: Do NOT use `type X = ...` (PEP 695) here — it creates a TypeAliasType that
-# does not expose the .create() classmethod at runtime.
-PageRpcLatestServiceGet = PageRpc[LatestServiceGet]
-
-# WARNING: keep this definition in models_library and not in the RPC interface
-# otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
-# and will fail to serialize/deserialize these parameters when transmitted/received
-PageRpcServiceRelease = PageRpc[ServiceRelease]
+PageRpcLatestServiceGet: TypeAlias = PageRpc[LatestServiceGet]  # noqa: UP040
+PageRpcServiceRelease: TypeAlias = PageRpc[ServiceRelease]  # noqa: UP040
 
 # Create PageRpc types
-PageRpcServiceSummary = PageRpc[ServiceSummary]
+PageRpcServiceSummary: TypeAlias = PageRpc[ServiceSummary]  # noqa: UP040
 
-ServiceResourcesGet = ServiceResourcesDict
+ServiceResourcesGet: TypeAlias = ServiceResourcesDict  # noqa: UP040
 
 
 class ServiceUpdateV2(CatalogInputSchema):
