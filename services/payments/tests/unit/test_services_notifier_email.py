@@ -320,6 +320,7 @@ async def test_download_invoice_pdf_returns_none_on_http_error(
     mocker.patch.object(
         notifier_email_module,
         "_fetch_invoice_pdf",
+        new_callable=AsyncMock,
         side_effect=httpx.ConnectError("boom"),
     )
     assert await _download_invoice_pdf(faker.url()) is None
@@ -337,6 +338,7 @@ async def test_download_invoice_pdf_returns_content_and_filename(
     mocker.patch.object(
         notifier_email_module,
         "_fetch_invoice_pdf",
+        new_callable=AsyncMock,
         return_value=response,
     )
 
