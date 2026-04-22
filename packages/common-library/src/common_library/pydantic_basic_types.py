@@ -1,37 +1,11 @@
-import base64
-import binascii
 from re import Pattern
 from typing import Annotated, Final
 
-from pydantic import BeforeValidator, Field, PlainSerializer
+from pydantic import Field
 from pydantic_core import core_schema
 
 # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
 type RegisteredPortInt = Annotated[int, Field(gt=1024, lt=65535)]
-
-
-def _decode_base64(value: object) -> object:
-    if isinstance(value, str):
-        try:
-            return base64.b64decode(value, validate=True)
-        except (binascii.Error, ValueError) as err:
-            msg = f"Invalid base64-encoded string: {err}"
-            raise ValueError(msg) from err
-    return value
-
-
-def _encode_base64(value: bytes) -> str:
-    return base64.b64encode(value).decode("ascii")
-
-
-# Raw bytes that are JSON-safe: validated from raw bytes or base64-encoded strings,
-# always serialized as a base64-encoded string (in both python and json modes).
-# Use this for binary fields that travel across JSON boundaries (RPC, Celery, REST).
-type Base64EncodedBytes = Annotated[
-    bytes,
-    BeforeValidator(_decode_base64),
-    PlainSerializer(_encode_base64, return_type=str, when_used="always"),
-]
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""

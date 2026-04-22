@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from common_library.pydantic_basic_types import Base64EncodedBytes
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from .. import Channel
@@ -12,7 +11,7 @@ class EmailContact(BaseModel):
 
 
 class EmailAttachment(BaseModel):
-    content: Base64EncodedBytes
+    content: bytes
     filename: str
 
 
