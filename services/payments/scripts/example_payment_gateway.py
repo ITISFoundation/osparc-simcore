@@ -231,7 +231,7 @@ def create_payment_router():
             invoice_pdf="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
             saved=None,
         )
-        await _ack_request(f"v1/payments/{id}:ack", acked.model_dump(mode="json"), settings)
+        await _ack_request(f"/v1/payments/{id}:ack", acked.model_dump(mode="json"), settings)
 
     @router.post(
         "/cancel",
@@ -302,7 +302,7 @@ def create_payment_method_router():
             message=f"Fake Payment-method saved {card_number_masked}",
         )
         await _ack_request(
-            f"v1/payments-methods/{id}:ack",
+            f"/v1/payments-methods/{id}:ack",
             acked.model_dump(mode="json"),
             settings,
         )

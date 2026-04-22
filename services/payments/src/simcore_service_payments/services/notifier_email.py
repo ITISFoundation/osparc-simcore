@@ -112,9 +112,11 @@ def _build_product_context(
     """
     vendor = vendor or {}
     ui = vendor.get("ui") or {}
+    vendor_name = vendor.get("name")
     return {
         "product_name": product_name,
         "display_name": display_name,
+        "vendor_display_inline": f"{vendor_name}" if vendor_name is not None else "IT'IS Foundation",
         "support_email": support_email,
         "homepage_url": vendor.get("url"),
         "ui": {
@@ -189,7 +191,7 @@ class EmailProvider(NotificationProvider):
             attachments=attachments or None,
         )
 
-        context: dict = {
+        context: dict[str, Any] = {
             "user": {
                 "first_name": data.first_name,
                 "last_name": data.last_name,
@@ -199,7 +201,7 @@ class EmailProvider(NotificationProvider):
             "payment": {
                 "price_dollars": f"{payment.price_dollars:.2f}",
                 "osparc_credits": f"{payment.osparc_credits:.2f}",
-                "invoice_url": f"{payment.invoice_url}" if payment.invoice_url else None,
+                "invoice_url": f"{payment.invoice_url}" if payment.invoice_url else "",
             },
             "product": _build_product_context(
                 product_name=data.product_name,

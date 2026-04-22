@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -56,7 +57,7 @@ def mock_rabbitmq_rpc_client() -> AsyncMock:
 def mock_send_message_from_template(mocker: MockerFixture) -> AsyncMock:
     return mocker.patch(
         "simcore_service_payments.services.notifier_email.send_message_from_template",
-        return_value=AsyncMock(),
+        new_callable=AsyncMock,
     )
 
 
@@ -77,8 +78,9 @@ async def test_email_provider_sends_on_success(
     mocker.patch.object(
         users_repo,
         "get_notification_data",
-        return_value=MagicMock(
+        return_value=SimpleNamespace(
             payment_id=transaction.payment_id,
+            user_name="jdoe",
             first_name=user_first_name,
             last_name=user_last_name,
             email=user_email,
@@ -151,8 +153,9 @@ async def test_email_provider_logs_on_rpc_failure(
     mocker.patch.object(
         users_repo,
         "get_notification_data",
-        return_value=MagicMock(
+        return_value=SimpleNamespace(
             payment_id=transaction.payment_id,
+            user_name="jdoe",
             first_name=user_first_name,
             last_name=user_last_name,
             email=user_email,
@@ -201,8 +204,9 @@ async def test_email_provider_attaches_invoice_pdf(
     mocker.patch.object(
         users_repo,
         "get_notification_data",
-        return_value=MagicMock(
+        return_value=SimpleNamespace(
             payment_id=transaction.payment_id,
+            user_name="jdoe",
             first_name=user_first_name,
             last_name=user_last_name,
             email=user_email,
@@ -231,6 +235,47 @@ async def test_email_provider_attaches_invoice_pdf(
     dumped = addressing.model_dump(mode="json")
     assert isinstance(dumped["attachments"][0]["content"], str)
     assert type(addressing).model_validate(dumped).attachments[0].content == pdf_bytes
+
+
+async def test_email_provider_propagates_bcc(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
+    transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+):
+    users_repo = PaymentsUsersRepo(MagicMock())
+    mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=SimpleNamespace(
+            payment_id=transaction.payment_id,
+            user_name="jdoe",
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+        ),
+    )
+
+    bcc = "billing@example.com"
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo, bcc_email=bcc)
+
+    await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+
+    assert mock_send_message_from_template.called
+    addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
+    assert addressing.bcc is not None
+    assert addressing.bcc.email == bcc
 
 
 @pytest.mark.parametrize(
