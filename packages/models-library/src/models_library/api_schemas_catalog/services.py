@@ -373,7 +373,7 @@ PageRpcLatestServiceGet: TypeAlias = PageRpc[LatestServiceGet]  # noqa: UP040
 PageRpcServiceRelease: TypeAlias = PageRpc[ServiceRelease]  # noqa: UP040
 
 # Create PageRpc types
-PageRpcServiceSummary: TypeAlias = PageRpc[ServiceSummary]  # noqa: UP040
+PageRpcServiceSummary = PageRpc[ServiceSummary]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict  # noqa: UP040
 
