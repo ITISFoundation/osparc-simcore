@@ -1,7 +1,7 @@
 import base64
 import binascii
 from re import Pattern
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, Final
 
 from pydantic import BeforeValidator, Field, PlainSerializer
 from pydantic_core import core_schema
