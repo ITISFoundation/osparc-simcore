@@ -162,6 +162,11 @@ class EmailProvider(NotificationProvider):
 
         attachments: list[EmailAttachment] = []
         if payment.invoice_pdf_url:
+            _logger.info(
+                "Downloading invoice PDF from %s for payment %s",
+                payment.invoice_pdf_url,
+                payment.payment_id,
+            )
             downloaded = await _download_invoice_pdf(str(payment.invoice_pdf_url))
             if downloaded is not None:
                 pdf_content, pdf_filename = downloaded
@@ -171,6 +176,11 @@ class EmailProvider(NotificationProvider):
                         filename=pdf_filename,
                     )
                 )
+        else:
+            _logger.info(
+                "No invoice PDF URL for payment %s, skipping attachment",
+                payment.payment_id,
+            )
 
         full_name = " ".join(part for part in (data.first_name, data.last_name) if part) or (data.user_name or "")
 

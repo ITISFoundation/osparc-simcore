@@ -228,6 +228,7 @@ def create_payment_router():
             success=True,
             message=f"Fake Payment {id}",
             invoice_url="https://fakeimg.pl/300/",
+            invoice_pdf="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
             saved=None,
         )
         await _ack_request(f"v1/payments/{id}:ack", acked.model_dump(mode="json"), settings)
