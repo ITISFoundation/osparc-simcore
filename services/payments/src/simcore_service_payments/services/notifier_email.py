@@ -71,20 +71,14 @@ def _build_product_context(
             "strong_color": ui.get("strong_color"),
         },
         "footer": {
-            "social_links": [
-                {"name": name, "url": url}
-                for name, url in vendor.get("footer_social_links", []) or []
-            ],
+            "social_links": [{"name": name, "url": url} for name, url in vendor.get("footer_social_links", []) or []],
             "share_links": [
                 {"name": name, "label": label, "url": url}
                 for name, label, url in vendor.get("footer_share_links", []) or []
             ],
             "company_name": vendor.get("company_name", "") or "",
             "company_address": vendor.get("company_address", "") or "",
-            "company_links": [
-                {"name": name, "url": url}
-                for name, url in vendor.get("company_links", []) or []
-            ],
+            "company_links": [{"name": name, "url": url} for name, url in vendor.get("company_links", []) or []],
         },
     }
 
@@ -127,9 +121,7 @@ class EmailProvider(NotificationProvider):
                         )
                     )
 
-            full_name = " ".join(
-                part for part in (data.first_name, data.last_name) if part
-            ) or (data.user_name or "")
+            full_name = " ".join(part for part in (data.first_name, data.last_name) if part) or (data.user_name or "")
 
             addressing = EmailAddressing(
                 from_=EmailContact(
@@ -156,7 +148,7 @@ class EmailProvider(NotificationProvider):
                 "payment": {
                     "price_dollars": f"{payment.price_dollars:.2f}",
                     "osparc_credits": f"{payment.osparc_credits:.2f}",
-                    "invoice_url": f"{payment.invoice_url}",
+                    "invoice_url": f"{payment.invoice_url}" if payment.invoice_url else None,
                 },
                 "product": _build_product_context(
                     product_name=data.product_name,
