@@ -1,11 +1,11 @@
 from re import Pattern
-from typing import Annotated, Final
+from typing import Annotated, Final, TypeAlias
 
 from pydantic import Field
 from pydantic_core import core_schema
 
 # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
-type RegisteredPortInt = Annotated[int, Field(gt=1024, lt=65535)]
+RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
