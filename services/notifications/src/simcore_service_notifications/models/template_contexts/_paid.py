@@ -16,7 +16,7 @@ class User(BaseModel):
 class Payment(BaseModel):
     price_dollars: str
     osparc_credits: str
-    invoice_url: str
+    invoice_url: str | None
 
 
 @register_template_context(channel=Channel.email, template_name="paid")
