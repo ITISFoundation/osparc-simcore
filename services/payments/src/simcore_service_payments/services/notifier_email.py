@@ -207,7 +207,7 @@ class EmailProvider(NotificationProvider):
             "payment": {
                 "price_dollars": f"{payment.price_dollars:.2f}",
                 "osparc_credits": f"{payment.osparc_credits:.2f}",
-                "invoice_url": f"{payment.invoice_url}" if payment.invoice_url else "",
+                "invoice_url": f"{payment.invoice_url}",
             },
             "product": _build_product_context(
                 product_name=data.product_name,

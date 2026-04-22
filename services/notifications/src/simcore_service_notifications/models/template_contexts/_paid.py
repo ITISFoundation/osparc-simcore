@@ -1,7 +1,7 @@
 """Context model for the 'paid' email template."""
 
 from models_library.notifications import Channel
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 from ..template import BaseTemplateContext, register_template_context
 
@@ -16,7 +16,7 @@ class User(BaseModel):
 class Payment(BaseModel):
     price_dollars: str
     osparc_credits: str
-    invoice_url: str | None
+    invoice_url: HttpUrl
 
 
 @register_template_context(channel=Channel.email, template_name="paid")
