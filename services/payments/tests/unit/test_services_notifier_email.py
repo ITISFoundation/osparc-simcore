@@ -231,9 +231,9 @@ async def test_email_provider_attaches_invoice_pdf(
     assert attachment.content == pdf_bytes
     assert attachment.filename == pdf_filename
 
-    # JSON-serialization across RPC boundary preserves bytes via base64 encoding
-    dumped = addressing.model_dump(mode="json")
-    assert isinstance(dumped["attachments"][0]["content"], str)
+    # round-trip through model serialization preserves bytes
+    dumped = addressing.model_dump()
+    assert dumped["attachments"][0]["content"] == pdf_bytes
     assert type(addressing).model_validate(dumped).attachments[0].content == pdf_bytes
 
 
