@@ -77,15 +77,15 @@ def setup_notifier(app: FastAPI):
 
     async def _on_startup() -> None:
         assert app.state.external_socketio  # nosec
-
+        engine = get_engine(app)
         providers: list[NotificationProvider] = [
             WebSocketProvider(
                 sio_manager=app.state.external_socketio,
-                users_repo=PaymentsUsersRepo(get_engine(app)),
+                users_repo=PaymentsUsersRepo(engine),
             ),
             EmailProvider(
                 rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
-                users_repo=PaymentsUsersRepo(get_engine(app)),
+                users_repo=PaymentsUsersRepo(engine),
                 bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
             ),
         ]
