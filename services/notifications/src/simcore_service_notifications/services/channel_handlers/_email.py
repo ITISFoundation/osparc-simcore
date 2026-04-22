@@ -28,9 +28,7 @@ class EmailChannelHandler(ChannelHandler):
         recipients = _interleave_recipients_by_domain(message.addressing.to)
 
         attachments_list = (
-            [a.model_dump() for a in message.addressing.attachments]
-            if message.addressing.attachments
-            else None
+            [a.model_dump() for a in message.addressing.attachments] if message.addressing.attachments else None
         )
 
         payload_base: dict[str, Any] = {
@@ -47,6 +45,8 @@ class EmailChannelHandler(ChannelHandler):
             payload_base["attachments"] = attachments_list
 
         return [
-            CeleryEmailMessage.model_validate({**payload_base, "to": recipient.model_dump()}).model_dump(by_alias=True)
+            CeleryEmailMessage.model_validate({**payload_base, "to": recipient.model_dump()}).model_dump(
+                by_alias=True, exclude_none=True
+            )
             for recipient in recipients
         ]
