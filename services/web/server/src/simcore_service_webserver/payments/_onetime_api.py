@@ -13,7 +13,6 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.basic_types import IDStr
-from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -26,8 +25,6 @@ from simcore_postgres_database.utils_payments import insert_init_payment_transac
 from yarl import URL
 
 from ..db.plugin import get_asyncpg_engine
-from ..notifications._models import EmailContact
-from ..notifications._service import send_message_from_template
 from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
 from ..users import users_service
@@ -108,47 +105,6 @@ async def _fake_init_payment(
     )
 
 
-async def _send_paid_email(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    user_email: str,
-    product_name: ProductName,
-    payment: PaymentTransaction,
-) -> None:
-    """Sends the 'paid' confirmation email via the notifications service."""
-    try:
-        full_name = await users_service.get_user_fullname(app, user_id=user_id)
-        first_name = full_name.get("first_name") or ""
-        last_name = full_name.get("last_name") or ""
-        recipient_name = f"{first_name} {last_name}".strip() or user_email
-
-        await send_message_from_template(
-            app,
-            user_id=user_id,
-            product_name=product_name,
-            channel=Channel.email,
-            group_ids=None,
-            external_contacts=[EmailContact(name=recipient_name, email=user_email)],
-            template_name="paid",
-            context={
-                "user": {
-                    "first_name": first_name or None,
-                    "last_name": last_name or None,
-                    "user_name": recipient_name,
-                    "email": user_email,
-                },
-                "payment": {
-                    "price_dollars": f"{payment.price_dollars:.2f}",
-                    "osparc_credits": f"{payment.osparc_credits:.2f}",
-                    "invoice_url": f"{payment.invoice_url}" if payment.invoice_url else "",
-                },
-            },
-        )
-    except Exception as exc:  # pylint: disable=broad-except
-        _logger.exception("Failed to send 'paid' email for payment %s: %s", payment.payment_id, exc)
-
-
 async def _ack_creation_of_wallet_payment(
     app: web.Application,
     *,
@@ -182,16 +138,6 @@ async def _ack_creation_of_wallet_payment(
         await notify_payment_completed(app, user_id=transaction.user_id, payment=payment)
 
     if completion_state == PaymentTransactionState.SUCCESS:
-        # send confirmation email via the notifications service
-        if notify_enabled:
-            await _send_paid_email(
-                app,
-                user_id=transaction.user_id,
-                user_email=transaction.user_email,
-                product_name=transaction.product_name,
-                payment=payment,
-            )
-
         # notifying RUT
         user_wallet = await get_wallet_by_user(
             app, transaction.user_id, transaction.wallet_id, transaction.product_name
