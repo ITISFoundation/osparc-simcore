@@ -170,3 +170,59 @@ async def test_email_provider_logs_on_rpc_failure(
         await provider.notify_payment_completed(user_id=user_id, payment=transaction)
 
     assert "Failed to send payment completed email notification" in caplog.text
+
+
+async def test_email_provider_attaches_invoice_pdf(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
+    transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+):
+    # transaction fixture has invoice_pdf_url set; stub the PDF download
+    pdf_bytes = b"%PDF-1.4 fake-pdf-content \x00\x01\xff"
+    mocker.patch(
+        "simcore_service_payments.services.notifier_email._download_invoice_pdf",
+        return_value=pdf_bytes,
+    )
+
+    users_repo = PaymentsUsersRepo(MagicMock())
+    mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=MagicMock(
+            payment_id=transaction.payment_id,
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+        ),
+    )
+
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
+
+    await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+
+    assert mock_send_message_from_template.called
+    addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
+
+    # attachment is forwarded to the notifications service with the original bytes
+    assert addressing.attachments is not None
+    assert len(addressing.attachments) == 1
+    attachment = addressing.attachments[0]
+    assert attachment.content == pdf_bytes
+    assert attachment.filename.endswith(".pdf")
+
+    # JSON-serialization across RPC boundary preserves bytes via base64 encoding
+    dumped = addressing.model_dump(mode="json")
+    assert isinstance(dumped["attachments"][0]["content"], str)
+    assert type(addressing).model_validate(dumped).attachments[0].content == pdf_bytes

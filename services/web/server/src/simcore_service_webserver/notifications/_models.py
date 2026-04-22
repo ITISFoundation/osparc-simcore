@@ -2,6 +2,7 @@ from email.utils import parseaddr
 from typing import Annotated, Any, Self
 
 from common_library.network import replace_email_parts
+from common_library.pydantic_basic_types import Base64EncodedBytes
 from models_library.notifications import Channel, TemplateName
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -64,7 +65,7 @@ class EmailContact(BaseModel):
 
 
 class EmailAttachment(BaseModel):
-    content: bytes
+    content: Base64EncodedBytes
     filename: str
 
     model_config = ConfigDict(
