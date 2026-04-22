@@ -16,7 +16,6 @@
 
 
 cryptography
-Jinja2 # notifier
 packaging
 python-jose
 python-multipart
