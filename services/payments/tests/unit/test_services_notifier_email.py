@@ -136,6 +136,27 @@ async def test_email_provider_skips_non_success(
     assert not mock_send_message_from_template.called
 
 
+async def test_email_provider_skips_when_invoice_url_missing(
+    app_environment: EnvVarsDict,
+    faker: Faker,
+    user_id: UserID,
+    transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+    caplog: pytest.LogCaptureFixture,
+):
+    users_repo = PaymentsUsersRepo(MagicMock())
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
+
+    transaction_without_invoice = transaction.model_copy(update={"invoice_url": None})
+
+    with caplog.at_level(logging.WARNING):
+        await provider.notify_payment_completed(user_id=user_id, payment=transaction_without_invoice)
+
+    assert not mock_send_message_from_template.called
+    assert "No email sent for payment without invoice_url" in caplog.text
+
+
 async def test_email_provider_logs_on_rpc_failure(
     app_environment: EnvVarsDict,
     mocker: MockerFixture,

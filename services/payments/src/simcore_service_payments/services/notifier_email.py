@@ -204,6 +204,20 @@ class EmailProvider(NotificationProvider):
             )
             return
 
+        if payment.invoice_url is None:
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "No email sent for payment without invoice_url",
+                    error=RuntimeError("Payment has no invoice_url"),
+                    error_context={
+                        "user_id": user_id,
+                        "payment_id": payment.payment_id,
+                    },
+                    tip="The payment gateway acknowledgement did not include an invoice URL.",
+                )
+            )
+            return
+
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
 
         attachments: list[EmailAttachment] = []
