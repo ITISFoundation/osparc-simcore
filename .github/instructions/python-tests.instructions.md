@@ -10,6 +10,9 @@ This is a multi-project monorepo with two main groups of projects in the folders
 ### General
 
 - Use `pytest` for all tests.
+- Prefer flat, module-level `test_*` functions over class-based test grouping.
+- Do not use `class Test...` containers for grouping tests.
+- When flattening or adding tests, use descriptive function name prefixes (e.g. `test_ordering_query_params_defaults_*`) to preserve grouping intent.
 - Do not add return type annotations to `test_*` functions. All non-test helpers must be fully annotated.
 
 ### Fixtures
@@ -46,4 +49,4 @@ This is a multi-project monorepo with two main groups of projects in the folders
 See the [`run-python-tests`](../skills/run-python-tests/SKILL.md) skill for the full step-by-step procedure.
 
 ---
-*Last updated: 2026-04-15*
+*Last updated: 2026-04-23*
