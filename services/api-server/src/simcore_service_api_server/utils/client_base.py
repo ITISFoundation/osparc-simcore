@@ -81,5 +81,5 @@ def setup_client_instance(
         if api_obj:
             await api_obj.client.aclose()
 
-    app.add_event_handler("startup", _create_instance)
-    app.add_event_handler("shutdown", _cleanup_instance)
+    app.router.on_startup.append(_create_instance)
+    app.router.on_shutdown.append(_cleanup_instance)

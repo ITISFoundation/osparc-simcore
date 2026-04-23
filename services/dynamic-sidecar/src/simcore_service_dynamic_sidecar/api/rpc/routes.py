@@ -34,4 +34,4 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
         for router in ROUTERS:
             await rpc_client.register_router(router, rpc_namespace, app)
 
-    app.add_event_handler("startup", startup)
+    app.router.on_startup.append(startup)

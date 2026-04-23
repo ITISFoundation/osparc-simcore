@@ -30,8 +30,8 @@ def setup_client_session(
         assert isinstance(session, httpx.AsyncClient)  # nosec
         await session.aclose()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_client_session(app: FastAPI) -> httpx.AsyncClient:

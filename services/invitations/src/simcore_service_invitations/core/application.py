@@ -67,7 +67,7 @@ def create_app(
     async def _on_shutdown() -> None:
         print(APP_FINISHED_BANNER_MSG, flush=True)
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)
 
     return app

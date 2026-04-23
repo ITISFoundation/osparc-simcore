@@ -325,7 +325,7 @@ def mock_redis(mocker: MockerFixture) -> None:
         async def on_startup() -> None:
             app.state.redis_clients_manager = mock
 
-        app.add_event_handler("startup", on_startup)
+        app.router.on_startup.append(on_startup)
 
     mocker.patch("simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup)
 

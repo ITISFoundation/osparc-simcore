@@ -42,8 +42,8 @@ def setup(app: FastAPI) -> None:
         if app.state.ssm_client:
             await cast(SimcoreSSMAPI, app.state.ssm_client).close()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_ssm_client(app: FastAPI) -> SimcoreSSMAPI:

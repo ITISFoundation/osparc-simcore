@@ -83,8 +83,8 @@ def setup_prometheus_instrumentation(app: FastAPI):
         with log_catch(_logger, reraise=False):
             await cancel_wait_task(app.state.instrumentation_task)
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_instrumentation(app: FastAPI) -> ApiServerPrometheusInstrumentation:

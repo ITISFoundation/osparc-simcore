@@ -664,5 +664,5 @@ def setup_long_running_tasks(app: FastAPI) -> None:
         for handler in task_context:
             TaskRegistry.unregister(handler)
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(_on_shutdown)

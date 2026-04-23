@@ -34,8 +34,8 @@ def setup(app: FastAPI) -> None:
             if redis_client_sdk:
                 await redis_client_sdk.shutdown()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_redis_lock_client(app: FastAPI) -> RedisClientSDK:

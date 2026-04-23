@@ -15,7 +15,7 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.instrumentation = DirectorV2Instrumentation(registry=registry)
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)
 
 
 def get_instrumentation(app: FastAPI) -> DirectorV2Instrumentation:

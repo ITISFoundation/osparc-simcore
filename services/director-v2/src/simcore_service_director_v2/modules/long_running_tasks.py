@@ -15,8 +15,8 @@ def setup(app: FastAPI):
         long_running_client_helper: LongRunningClientHelper = app.state.long_running_client_helper
         await long_running_client_helper.shutdown()
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)
 
 
 def get_long_running_client_helper(app: FastAPI) -> LongRunningClientHelper:

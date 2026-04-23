@@ -70,12 +70,12 @@ def setup_rabbit(
     async def on_startup() -> None:
         await connect(app)
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)
 
     async def on_shutdown() -> None:
         await disconnect(app)
 
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

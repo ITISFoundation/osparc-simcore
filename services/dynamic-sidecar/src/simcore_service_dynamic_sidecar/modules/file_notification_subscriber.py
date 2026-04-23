@@ -164,5 +164,5 @@ def setup_file_notification_subscriber(app: FastAPI) -> None:
             if queue_name is not None:
                 await rabbit_client.unsubscribe(queue_name)
 
-    app.add_event_handler("startup", _startup)
-    app.add_event_handler("shutdown", _stop)
+    app.router.on_startup.append(_startup)
+    app.router.on_shutdown.append(_stop)

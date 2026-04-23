@@ -146,5 +146,5 @@ def setup_prometheus_metrics(app: FastAPI) -> None:
         user_service_metrics: UserServicesMetrics = app.state.user_service_metrics
         await user_service_metrics.stop()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)

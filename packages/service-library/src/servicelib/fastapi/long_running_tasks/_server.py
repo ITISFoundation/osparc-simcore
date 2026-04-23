@@ -58,8 +58,8 @@ def setup(
             long_running_manager: FastAPILongRunningManager = app.state.long_running_manager
             await long_running_manager.teardown()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
     # add error handlers
     # NOTE: Exception handler can not be added during the on_startup script, otherwise not working correctly

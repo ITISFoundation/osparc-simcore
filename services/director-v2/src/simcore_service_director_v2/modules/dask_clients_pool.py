@@ -176,5 +176,5 @@ def setup(app: FastAPI, settings: ComputationalBackendSettings) -> None:
         if app.state.dask_clients_pool:
             await app.state.dask_clients_pool.delete()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)

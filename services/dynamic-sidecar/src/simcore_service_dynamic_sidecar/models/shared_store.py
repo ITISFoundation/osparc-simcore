@@ -113,7 +113,7 @@ def setup_shared_store(app: FastAPI) -> None:
             settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR, store_file_name=STORE_FILE_NAME
         )
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)
 
 
 def get_shared_store(app: FastAPI) -> SharedStore:

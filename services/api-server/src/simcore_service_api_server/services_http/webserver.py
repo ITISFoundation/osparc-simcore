@@ -686,5 +686,5 @@ def setup(
     async def _on_shutdown() -> None:
         _logger.debug("Webserver closed successfully")
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)

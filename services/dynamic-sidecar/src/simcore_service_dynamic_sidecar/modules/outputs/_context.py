@@ -53,4 +53,4 @@ def setup_outputs_context(app: FastAPI) -> None:
 
         app.state.outputs_context = OutputsContext(outputs_path=mounted_volumes.disk_outputs_path)
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)

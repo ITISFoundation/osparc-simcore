@@ -30,7 +30,7 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
             register_celery_types()
             register_pydantic_types(FileUploadCompletionBody, FoldersBody)
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)
 
 
 def get_task_manager_from_app(app: FastAPI) -> CeleryTaskManager:

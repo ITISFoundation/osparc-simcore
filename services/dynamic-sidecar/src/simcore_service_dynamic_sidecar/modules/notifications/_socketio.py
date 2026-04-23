@@ -26,5 +26,5 @@ def setup_socketio(app: FastAPI):
         if external_socketio := getattr(app.state, "external_socketio"):  # noqa: B009
             await cleanup_socketio_async_pubsub_manager(server_manager=external_socketio)
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)

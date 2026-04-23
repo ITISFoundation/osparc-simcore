@@ -38,5 +38,5 @@ def setup_postgres(app: FastAPI):
         assert app.state.engine  # nosec
         await close_db_connection(app)
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)

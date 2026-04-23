@@ -57,8 +57,8 @@ def setup(
         del client
         logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 @dataclass

@@ -20,4 +20,4 @@ def setup_inputs(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.inputs_state = InputsState()
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)

@@ -41,5 +41,5 @@ def setup_auto_recharge_listener(app: FastAPI):
             await _unsubscribe_consumer(app, *app.state.auto_recharge_rabbitmq_consumer)
         app.state.auto_recharge_rabbitmq_consumer = None
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)

@@ -109,8 +109,8 @@ def setup_prometheus_instrumentation(app: FastAPI) -> CollectorRegistry:
     def _on_shutdown() -> None:
         _shutdown(app)
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)
 
     prometheus_metrics = app.state.prometheus_metrics
     assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
