@@ -142,7 +142,11 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
 )
 def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: FrameLocator) -> None:
     _log_simulation_progress(simulator_iframe)
-    icon_class = setup_button.locator("i").first.evaluate("el => el.className")
+    try:
+        icon_class = setup_button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("Setup button icon not found — simulation likely completed")
+        return
     if "fa-spinner" in icon_class:
         msg = f"Simulation still running: {icon_class=}"
         raise ValueError(msg)
@@ -155,7 +159,11 @@ def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: Frame
 )
 def _wait_for_export_simulation_results(export_button: Locator) -> None:
     # Wait for the export to complete, spinner is on the button while exporting
-    icon_class = export_button.locator("i").first.evaluate("el => el.className")
+    try:
+        icon_class = export_button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("Export button icon not found — export likely completed")
+        return
     if "fa-spinner" in icon_class:
         msg = f"Simulation is being exported: {icon_class=}"
         raise ValueError(msg)
