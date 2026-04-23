@@ -47,11 +47,11 @@ async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
-    for handler in app.router.on_startup:
-        await handler()
+    from ._close_and_save_service import _run_handlers
+
+    await _run_handlers(app.router.on_startup)
     yield app
-    for handler in app.router.on_shutdown:
-        await handler()
+    await _run_handlers(app.router.on_shutdown)
 
 
 ### PROJECT SAVE STATE
