@@ -57,7 +57,6 @@ def app_environment(
 ):
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
-    monkeypatch.delenv("PAYMENTS_EMAIL", raising=False)
 
     return setenvs_from_dict(
         monkeypatch,

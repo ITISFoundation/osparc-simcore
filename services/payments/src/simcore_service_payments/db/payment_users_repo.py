@@ -37,6 +37,7 @@ class PaymentsUsersRepo(BaseRepository):
         if row := await self._get(
             sa.select(
                 payments_transactions.c.payment_id,
+                users.c.name.label("user_name"),
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
