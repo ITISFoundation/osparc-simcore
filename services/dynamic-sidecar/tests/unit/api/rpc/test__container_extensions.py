@@ -428,7 +428,7 @@ def mock_aiodocker_containers_get(mocker: MockerFixture, faker: Faker) -> int:
     mock_status_code = faker.random_int(1, 999)
 
     async def mock_get(*args: str, **kwargs: Any) -> None:
-        raise aiodocker.exceptions.DockerError(status=mock_status_code, data={"message": "aiodocker_mocked_error"})
+        raise aiodocker.exceptions.DockerError(mock_status_code, "aiodocker_mocked_error")
 
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
 
