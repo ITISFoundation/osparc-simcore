@@ -32,8 +32,6 @@ class TaskManager(Protocol):
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
         **task_params,
     ) -> TaskUUID: ...
 

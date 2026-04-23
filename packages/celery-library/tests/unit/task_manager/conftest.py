@@ -6,7 +6,7 @@ import logging
 import time
 from collections.abc import Callable
 from random import randint
-from typing import Final
+from typing import Any, Final
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
@@ -59,7 +59,7 @@ async def _fake_file_processor(celery_app: Celery, task_name: str, task_key: str
     return "archive.zip"
 
 
-def fake_file_processor(task: Task, task_key: TaskKey, files: list[str]) -> str:
+def fake_file_processor(task: Task, task_key: TaskKey, files: list[str], **_kwargs: Any) -> str:
     assert task_key
     assert task.name
     _logger.info("Calling _fake_file_processor")
@@ -73,14 +73,14 @@ class MyError(OsparcErrorMixin, Exception):
     msg_template = "Something strange happened: {msg}"
 
 
-def failure_task(task: Task, task_key: TaskKey) -> None:
+def failure_task(task: Task, task_key: TaskKey, **_kwargs: Any) -> None:
     assert task_key
     assert task
     msg = "BOOM!"
     raise MyError(msg=msg)
 
 
-async def dreamer_task(task: Task, task_key: TaskKey) -> list[int]:
+async def dreamer_task(task: Task, task_key: TaskKey, **_kwargs: Any) -> list[int]:
     numbers = []
     for _ in range(30):
         numbers.append(randint(1, 90))  # noqa: S311
@@ -88,7 +88,7 @@ async def dreamer_task(task: Task, task_key: TaskKey) -> list[int]:
     return numbers
 
 
-def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) -> str:
+def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5, **_kwargs: Any) -> str:
     assert task_key
     assert task.name
 
@@ -117,7 +117,7 @@ _RATE_LIMITED_NOOP_TASK_NAME: Final[str] = "rate_limited_noop_task"
 _RATE_LIMITED_NOOP_RATE: Final[str] = "6/m"  # NOTE: 6 tasks per minute
 
 
-def noop_task(task: Task, task_key: TaskKey) -> str:
+def noop_task(task: Task, task_key: TaskKey, **_kwargs: Any) -> str:
     assert task_key
     return "done"
 

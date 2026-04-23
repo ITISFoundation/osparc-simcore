@@ -202,14 +202,18 @@ class CeleryTaskManager:
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
         **task_params,
     ) -> TaskUUID:
+        # NOTE: ``user_id`` and ``product_name`` are not dedicated parameters of
+        # this method. When present in ``task_params`` they are observed (not
+        # consumed) to build the owner index key, then forwarded to the worker
+        # as part of ``task_params`` like any other task argument.
+        user_id: int | None = task_params.get("user_id")
+        product_name: str | None = task_params.get("product_name")
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Submit {execution_metadata.name=}: {owner=} {user_id=} {product_name=} {task_params=}",
+            msg=f"Submit {execution_metadata.name=}: {owner=} {task_params=}",
         ):
             task_uuid, task_key = self._create_task_ids()
             expiry = self._get_task_expiry(execution_metadata)
@@ -223,16 +227,10 @@ class CeleryTaskManager:
                     product_name=product_name,
                     expiry=expiry,
                 )
-                # Forward non-None owner fields so workers can access user_id/product_name
-                _owner_kwargs: dict[str, Any] = {}
-                if user_id is not None:
-                    _owner_kwargs["user_id"] = user_id
-                if product_name is not None:
-                    _owner_kwargs["product_name"] = product_name
                 self._app.send_task(
                     execution_metadata.name,
                     task_id=task_key,
-                    kwargs={"task_key": task_key} | _owner_kwargs | task_params,
+                    kwargs={"task_key": task_key} | task_params,
                     queue=execution_metadata.queue,
                 )
             except CeleryError as exc:
