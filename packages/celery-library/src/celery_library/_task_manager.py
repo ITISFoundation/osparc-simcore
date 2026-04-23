@@ -202,21 +202,25 @@ class CeleryTaskManager:
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
+        user_id: int | None = None,
+        product_name: str | None = None,
         **task_params,
     ) -> TaskUUID:
-        # NOTE: ``user_id`` and ``product_name`` are not dedicated parameters of
-        # this method. When present in ``task_params`` they are observed (not
-        # consumed) to build the owner index key, then forwarded to the worker
-        # as part of ``task_params`` like any other task argument.
-        user_id: int | None = task_params.get("user_id")
-        product_name: str | None = task_params.get("product_name")
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Submit {execution_metadata.name=}: {owner=} {task_params=}",
+            msg=f"Submit {execution_metadata.name=}: {owner=} {user_id=} {product_name=} {task_params=}",
         ):
             task_uuid, task_key = self._create_task_ids()
             expiry = self._get_task_expiry(execution_metadata)
+
+            # Merge owner fields into the worker payload alongside ``task_key``.
+            # This avoids forcing every worker to declare them while still
+            # forwarding them to those that do.
+            if user_id is not None:
+                task_params.setdefault("user_id", user_id)
+            if product_name is not None:
+                task_params.setdefault("product_name", product_name)
 
             try:
                 await self._task_store.create_task(
