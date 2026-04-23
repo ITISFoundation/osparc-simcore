@@ -133,9 +133,13 @@ mypy-extensions==1.1.0
 numpy==2.4.4
     # via -r requirements/_test.in
 openapi-schema-validator==0.6.3
-    # via openapi-spec-validator
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   openapi-spec-validator
 openapi-spec-validator==0.7.2
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 packaging==26.1
     # via
     #   -c requirements/_aiohttp.txt

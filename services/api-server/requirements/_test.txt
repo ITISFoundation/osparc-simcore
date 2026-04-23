@@ -241,9 +241,13 @@ mypy-extensions==1.1.0
 networkx==2.8.8
     # via cfn-lint
 openapi-schema-validator==0.2.3
-    # via openapi-spec-validator
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   openapi-spec-validator
 openapi-spec-validator==0.4.0
-    # via moto
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   moto
 packaging==26.1
     # via
     #   -c requirements/_base.txt
