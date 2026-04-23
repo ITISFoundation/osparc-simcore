@@ -86,6 +86,17 @@ def _patch_node_properties(key: str, node: dict):
         node[new_key] = node[key]
         node.pop(key)
 
+    # Pydantic 2.11+ changed UploadFile schema from {type:string, format:binary}
+    # to {type:string, contentMediaType:application/octet-stream}. Restore the
+    # OAS 3.0-compatible representation to keep backward compatibility.
+    if (
+        key == "contentMediaType"
+        and node.get("type") == "string"
+        and node.get("contentMediaType") == "application/octet-stream"
+    ):
+        del node["contentMediaType"]
+        node["format"] = "binary"
+
     # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
     if node_type := node.get("type"):
         if key in ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"):

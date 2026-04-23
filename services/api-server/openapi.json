@@ -8629,8 +8629,8 @@
         "properties": {
           "file": {
             "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
+            "title": "File",
+            "format": "binary"
           }
         },
         "type": "object",
@@ -9819,6 +9819,13 @@
           }
         },
         "type": "object",
+        "required": [
+          "first",
+          "last",
+          "self",
+          "next",
+          "prev"
+        ],
         "title": "Links"
       },
       "LogLevelInt": {
