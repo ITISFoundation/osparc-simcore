@@ -19,9 +19,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = ()
 
 def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=app_settings.INVITATIONS_TRACING
-    )
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=app_settings.INVITATIONS_TRACING)
     logging_lifespan = create_logging_lifespan(
         log_format_local_dev_enabled=app_settings.INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.INVITATIONS_LOG_FILTER_MAPPING,
