@@ -114,18 +114,6 @@ FORM_HTML = """
 </html>
 """
 
-ERROR_HTTP = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Error {0}</title>
-</head>
-<body>
-    <h1>{0}</h1>
-</body>
-</html>
-"""
-
 
 @dataclass
 class PaymentForm:
@@ -136,56 +124,37 @@ class PaymentForm:
 
 
 class PaymentsAuth(httpx.Auth):
-    def __init__(self, username, password):
+    requires_response_body = True
+
+    def __init__(self, username: str, password: str, base_url: str):
         self.form_data = {"username": username, "password": password}
-        self.token = Token(access_token="Undefined", token_type="bearer")
-
-    def build_request_access_token(self):
-        return httpx.Request(
-            "POST",
-            "/v1/token",
-            data=self.form_data,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-
-    def update_tokens(self, response):
-        assert response.status_code == status.HTTP_200_OK  # nosec
-        token = Token(**response.json())
-        assert token.token_type == "bearer"  # nosec
-        self.token = token
+        self.base_url = base_url.rstrip("/")
 
     def auth_flow(self, request):
         response = yield request
         if response.status_code == status.HTTP_401_UNAUTHORIZED:
-            tokens_response = yield self.build_request_access_token()
-            self.update_tokens(tokens_response)
-
-            request.headers["Authorization"] = f"Bearer {self.token.access_token}"
+            token_response = yield httpx.Request(
+                "POST",
+                f"{self.base_url}/v1/token",
+                data=self.form_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            token = Token(**token_response.json())
+            request.headers["Authorization"] = f"Bearer {token.access_token}"
             yield request
 
 
-async def ack_payment(id_: PaymentID, acked: AckPayment, settings: Settings):
-    async with httpx.AsyncClient() as client:
-        await client.post(
-            f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments/{id_}:ack",
-            json=acked.model_dump(),
-            auth=PaymentsAuth(
-                username=settings.PAYMENTS_USERNAME,
-                password=settings.PAYMENTS_PASSWORD.get_secret_value(),
-            ),
-        )
-
-
-async def ack_payment_method(id_: PaymentMethodID, acked: AckPaymentMethod, settings: Settings):
-    async with httpx.AsyncClient() as client:
-        await client.post(
-            f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments-methods/{id_}:ack",
-            json=acked.model_dump(),
-            auth=PaymentsAuth(
-                username=settings.PAYMENTS_USERNAME,
-                password=settings.PAYMENTS_PASSWORD.get_secret_value(),
-            ),
-        )
+async def _ack_request(path: str, body: dict, settings: Settings):
+    auth = PaymentsAuth(
+        settings.PAYMENTS_USERNAME,
+        settings.PAYMENTS_PASSWORD.get_secret_value(),
+        base_url=f"{settings.PAYMENTS_SERVICE_API_BASE_URL}",
+    )
+    async with httpx.AsyncClient(
+        base_url=f"{settings.PAYMENTS_SERVICE_API_BASE_URL}",
+        auth=auth,
+    ) as client:
+        await client.post(path, json=body)
 
 
 #
@@ -259,9 +228,10 @@ def create_payment_router():
             success=True,
             message=f"Fake Payment {id}",
             invoice_url="https://fakeimg.pl/300/",
+            invoice_pdf="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
             saved=None,
         )
-        await ack_payment(id_=id, acked=acked, settings=settings)
+        await _ack_request(f"/v1/payments/{id}:ack", acked.model_dump(mode="json"), settings)
 
     @router.post(
         "/cancel",
@@ -331,7 +301,11 @@ def create_payment_method_router():
             success=True,
             message=f"Fake Payment-method saved {card_number_masked}",
         )
-        await ack_payment_method(id_=id, acked=acked, settings=settings)
+        await _ack_request(
+            f"/v1/payments-methods/{id}:ack",
+            acked.model_dump(mode="json"),
+            settings,
+        )
 
     # CRUD payment-methods
     @router.post(
