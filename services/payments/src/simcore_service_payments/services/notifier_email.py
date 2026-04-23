@@ -94,12 +94,44 @@ def _extract_file_name(response: httpx.Response, url: str) -> str:
     return _DEFAULT_INVOICE_FILENAME
 
 
-async def _download_invoice_pdf(url: str) -> tuple[bytes, str] | None:
+async def _download_invoice_pdf(
+    url: str,
+    *,
+    user_id: UserID,
+    payment_id: str,
+    product_name: str,
+) -> tuple[bytes, str] | None:
     """Download invoice PDF and resolve its filename. Returns None on failure."""
+    context: dict[str, Any] = {
+        "user": user_id,
+        "payment": payment_id,
+        "product": product_name,
+    }
     try:
         response = await _get_invoice_pdf(url)
-    except httpx.HTTPError:
-        _logger.warning("Failed to download invoice PDF from %s", url, exc_info=True)
+    except httpx.ReadTimeout as exc:
+        timeout_info = exc.request.extensions.get("timeout", "unknown")
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                "ReadTimeout fetching invoice PDF. Email sent w/o attached pdf invoice",
+                error=exc,
+                error_context={
+                    "url": f"{exc.request.url}",
+                    "timeout": timeout_info,
+                    **context,
+                },
+                tip="Consider increasing _INVOICE_PDF_TIMEOUT if this happens frequently",
+            )
+        )
+        return None
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                "Failed to download invoice PDF. Email sent w/o attached pdf invoice",
+                error=exc,
+                error_context={"url": f"{url}", **context},
+            )
+        )
         return None
     return response.content, _extract_file_name(response, url)
 
@@ -176,7 +208,12 @@ class EmailProvider(NotificationProvider):
 
         attachments: list[EmailAttachment] = []
         if payment.invoice_pdf_url:
-            downloaded = await _download_invoice_pdf(f"{payment.invoice_pdf_url}")
+            downloaded = await _download_invoice_pdf(
+                f"{payment.invoice_pdf_url}",
+                user_id=user_id,
+                payment_id=payment.payment_id,
+                product_name=data.product_name,
+            )
             if downloaded is not None:
                 pdf_content, pdf_filename = downloaded
                 attachments.append(
