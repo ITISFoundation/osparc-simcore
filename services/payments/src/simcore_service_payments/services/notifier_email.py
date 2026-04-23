@@ -176,7 +176,7 @@ class EmailProvider(NotificationProvider):
 
         attachments: list[EmailAttachment] = []
         if payment.invoice_pdf_url:
-            downloaded = await _download_invoice_pdf(str(payment.invoice_pdf_url))
+            downloaded = await _download_invoice_pdf(f"{payment.invoice_pdf_url}")
             if downloaded is not None:
                 pdf_content, pdf_filename = downloaded
                 attachments.append(
