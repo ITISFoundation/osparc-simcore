@@ -51,7 +51,7 @@ def setup_diagnostics(app: web.Application):
 
     if settings.DIAGNOSTICS_HEALTHCHECK_ENABLED:
         healthcheck = app[HEALTHCHECK_APPKEY]
-        healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
+        healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)  # type: ignore[arg-type]
 
     # adds other diagnostic routes: healthcheck, etc
     app.router.add_routes(_handlers.routes)

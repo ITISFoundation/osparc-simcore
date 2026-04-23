@@ -48,7 +48,7 @@ def get_api_client(client_type: type[BaseServiceClientApi]) -> Callable:
         if client_obj is None:
             raise HTTPException(
                 status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"{client_type.service_name.title()} service was disabled",
+                detail=f"{client_type.service_name.title()} service was disabled",  # type: ignore[misc]
             )
 
         assert isinstance(client_obj, client_type)  # nosec

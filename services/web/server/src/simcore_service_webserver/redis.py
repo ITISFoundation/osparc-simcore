@@ -61,7 +61,7 @@ async def setup_redis_client(app: web.Application):
     )
 
     healthcheck = app[HEALTHCHECK_APPKEY]
-    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
+    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)  # type: ignore[arg-type]
 
     await manager.setup()
 

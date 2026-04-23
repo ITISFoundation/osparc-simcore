@@ -99,7 +99,7 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
             _api, file_id, filename = value.path.split("/")
             assert _api == "api"  # nosec
             input_values[name] = File(
-                id=file_id,  # type: ignore[arg-type]
+                id=file_id,
                 filename=filename,
                 e_tag=value.e_tag,
             )
