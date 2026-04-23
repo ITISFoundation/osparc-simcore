@@ -129,7 +129,7 @@ async def managed_container(
                     logging.DEBUG,
                     msg=f"Removing container {name}:{container.id} for {config.image}",
                 ):
-                    await container.delete(remove=True, v=True, force=True)
+                    await container.delete(v=True, force=True)
             _logger.info("Completed run of %s", config.image)
         except DockerError:
             _logger.exception(
