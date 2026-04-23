@@ -10,7 +10,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.13.3
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -34,7 +34,7 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -62,7 +62,7 @@ botocore==1.40.61
     #   s3transfer
 botocore-stubs==1.42.41
     # via types-aiobotocore
-certifi==2026.2.25
+certifi==2026.4.22
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -71,11 +71,11 @@ cffi==2.0.0
     # via cryptography
 cfn-lint==1.41.0
     # via moto
-charset-normalizer==3.4.6
+charset-normalizer==3.4.7
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.3.1
+click==8.3.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -84,7 +84,7 @@ coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.5
+cryptography==46.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
@@ -95,7 +95,7 @@ docker==7.1.0
     #   moto
 execnet==2.1.2
     # via pytest-xdist
-faker==40.11.0
+faker==40.15.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -112,13 +112,13 @@ frozenlist==1.8.0
     #   aiosignal
 graphql-core==3.2.8
     # via moto
-greenlet==3.3.2
+greenlet==3.4.0
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
 icdiff==2.0.10
     # via pytest-icdiff
-idna==3.11
+idna==3.13
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -137,13 +137,13 @@ jmespath==1.1.0
     #   aiobotocore
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.6.4
     # via moto
 jsonpatch==1.33
     # via cfn-lint
 jsonpath-ng==1.8.0
     # via moto
-jsonpointer==3.0.0
+jsonpointer==3.1.1
     # via jsonpatch
 jsonschema==4.26.0
     # via
@@ -160,9 +160,9 @@ jsonschema-specifications==2025.9.1
     #   openapi-schema-validator
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-librt==0.8.1
+librt==0.9.0
     # via mypy
-mako==1.3.10
+mako==1.3.11
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -184,7 +184,7 @@ multidict==6.7.1
     #   aiobotocore
     #   aiohttp
     #   yarl
-mypy==1.19.1
+mypy==1.20.2
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -194,14 +194,14 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via moto
-packaging==26.0
+packaging==26.1
     # via
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest
 pathable==0.4.4
     # via jsonschema-path
-pathspec==1.0.4
+pathspec==1.1.0
     # via mypy
 pluggy==1.6.0
     # via
@@ -228,13 +228,13 @@ pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   -c requirements/_base.txt
     #   pytest
 pyparsing==3.3.2
     # via moto
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -246,7 +246,7 @@ pytest==9.0.2
     #   pytest-xdist
 pytest-asyncio==1.3.0
     # via -r requirements/_test.in
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
@@ -285,9 +285,9 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2026.2.28
+regex==2026.4.4
     # via cfn-lint
-requests==2.32.5
+requests==2.33.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -325,17 +325,17 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
     # via pytest-sugar
-types-aiobotocore==3.3.0
+types-aiobotocore==3.5.0
     # via -r requirements/_test.in
-types-aiobotocore-s3==3.3.0
+types-aiobotocore-s3==3.5.0
     # via types-aiobotocore
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260409
     # via -r requirements/_test.in
 types-awscrt==0.31.3
     # via botocore-stubs
-types-requests==2.32.4.20260107
+types-requests==2.33.0.20260408
     # via types-tqdm
-types-tqdm==4.67.3.20260303
+types-tqdm==4.67.3.20260408
     # via -r requirements/_test.in
 typing-extensions==4.15.0
     # via
@@ -361,13 +361,14 @@ urllib3==2.6.3
     #   requests
     #   responses
     #   types-requests
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors
     #   moto
 wrapt==1.17.3
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiobotocore
     #   aws-xray-sdk
