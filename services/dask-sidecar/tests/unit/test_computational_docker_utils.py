@@ -179,7 +179,7 @@ async def test__try_parse_progress(
     [
         KeyError("testkey"),
         asyncio.CancelledError("testcancel"),
-        aiodocker.DockerError(status=404, data={"message": None}),
+        aiodocker.DockerError(404, "{\"message\": null}"),
     ],
     ids=str,
 )
@@ -221,7 +221,7 @@ async def test_managed_container_always_removes_container(
                 raise exception_type
         # check the container was deleted
         mocked_aiodocker.assert_has_calls(
-            calls=[call().__aenter__().containers.create().delete(remove=True, v=True, force=True)]
+            calls=[call().__aenter__().containers.create().delete(v=True, force=True)]
         )
 
 
@@ -246,7 +246,7 @@ async def test_managed_container_with_broken_container_raises_docker_exception(
     )
     mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
     mocked_aiodocker.return_value.__aenter__.return_value.containers.create.return_value.delete.side_effect = (
-        aiodocker.DockerError("bad", {"message": "pytest fake bad message"})
+        aiodocker.DockerError(500, "pytest fake bad message")
     )
     async with aiodocker.Docker() as docker_client:
         with pytest.raises(aiodocker.DockerError, match="pytest fake bad message"):
