@@ -31,7 +31,14 @@ def _resolve_local_path_from_storage_id(
     mounted_volumes: MountedVolumes,
     storage_path: StorageFileID,
 ) -> Path | None:
-    """Maps a StorageFileID to a local disk path within mounted volumes."""
+    """Maps a StorageFileID to a local disk path within mounted volumes.
+
+    Only state volumes are resolved. Inputs and outputs are intentionally ignored:
+    - outputs are produced by this node; reacting to a notification about them would
+      rewrite the file under the outputs watcher and trigger an upload loop
+      (see also the rclone path which only acts on explicitly registered mounts).
+    - inputs are handled via the rclone mount path when applicable.
+    """
     path_parts = storage_path.split("/")
     if len(path_parts) < _MIN_STORAGE_PATH_PARTS:
         return None
@@ -39,20 +46,18 @@ def _resolve_local_path_from_storage_id(
     volume_name = path_parts[2]
     relative_parts = path_parts[_MIN_STORAGE_PATH_PARTS:]
 
-    local_base: Path | None = None
-    if volume_name == mounted_volumes.inputs_path.name:
-        local_base = mounted_volumes.disk_inputs_path
-    elif volume_name == mounted_volumes.outputs_path.name:
-        local_base = mounted_volumes.disk_outputs_path
-    else:
-        for state_path, disk_state_path in zip(
-            mounted_volumes.state_paths,
-            mounted_volumes.disk_state_paths_iter(),
-            strict=True,
-        ):
-            if volume_name == state_path.name:
-                local_base = disk_state_path
-                break
+    local_base: Path | None = next(
+        (
+            disk
+            for state_path, disk in zip(
+                mounted_volumes.state_paths,
+                mounted_volumes.disk_state_paths_iter(),
+                strict=True,
+            )
+            if volume_name == state_path.name
+        ),
+        None,
+    )
 
     if local_base is None:
         return None
