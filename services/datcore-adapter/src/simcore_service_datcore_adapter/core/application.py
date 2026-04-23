@@ -64,10 +64,10 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     # events
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("startup", create_start_app_handler(app))
-    app.add_event_handler("shutdown", create_stop_app_handler(app))
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_startup.append(create_start_app_handler(app))
+    app.router.on_shutdown.append(create_stop_app_handler(app))
+    app.router.on_shutdown.append(on_shutdown)
 
     # Routing
     setup_rest_api_routes(app)

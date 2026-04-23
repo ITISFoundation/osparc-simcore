@@ -46,8 +46,8 @@ def setup(app: FastAPI) -> None:
         if app.state.ec2_client:
             await cast(SimcoreEC2API, app.state.ec2_client).close()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_ec2_client(app: FastAPI) -> SimcoreEC2API:

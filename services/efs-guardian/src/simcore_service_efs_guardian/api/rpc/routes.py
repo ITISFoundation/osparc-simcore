@@ -29,5 +29,5 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 
 def setup_rpc_routes(app: FastAPI) -> None:
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
+    app.router.on_startup.append(on_app_startup(app))
+    app.router.on_shutdown.append(on_app_shutdown(app))

@@ -133,8 +133,8 @@ def create_app(
         )
 
     # setup app
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
     if settings.API_SERVER_PROFILING:
         initialize_profiler(app)

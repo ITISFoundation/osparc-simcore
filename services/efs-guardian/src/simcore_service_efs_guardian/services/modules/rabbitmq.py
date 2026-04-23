@@ -32,8 +32,8 @@ def setup(app: FastAPI) -> None:
         if app.state.rabbitmq_rpc_client:
             await app.state.rabbitmq_rpc_client.close()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

@@ -31,8 +31,8 @@ def setup(app: FastAPI) -> None:
         await client.aclose()
         del app.state.dynamic_services_client
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 @dataclass

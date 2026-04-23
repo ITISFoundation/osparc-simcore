@@ -35,7 +35,7 @@ def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
     mock_aiodocker: mock.MagicMock,
 ):
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.side_effect = aiodocker.exceptions.DockerError(
-        status="testing bad status", data={"message": "error when running"}
+        500, "error when running"
     )
     assert num_available_gpus() == 0
 

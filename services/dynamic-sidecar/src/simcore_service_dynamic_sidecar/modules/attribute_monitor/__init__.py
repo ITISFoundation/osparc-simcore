@@ -21,8 +21,8 @@ def setup_attribute_monitor(app: FastAPI) -> None:
         if attribute_monitor is not None:
             await attribute_monitor.stop()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 __all__: tuple[str, ...] = ("setup_attribute_monitor",)

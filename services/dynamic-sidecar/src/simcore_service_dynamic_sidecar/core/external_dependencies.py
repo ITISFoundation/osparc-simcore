@@ -32,4 +32,4 @@ def setup_check_dependencies(app: FastAPI) -> None:
         if failed:
             raise CouldNotReachExternalDependenciesError(failed=failed)
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)

@@ -2,7 +2,7 @@ amqp==5.3.1
     # via
     #   -c requirements/_base.txt
     #   kombu
-anyio==4.9.0
+anyio==4.13.0
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -10,7 +10,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-billiard==4.2.3
+billiard==4.2.4
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -18,18 +18,18 @@ celery==5.6.3
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-certifi==2025.1.31
+certifi==2026.4.22
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.1
+charset-normalizer==3.4.7
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.2.1
+click==8.3.3
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -59,9 +59,9 @@ docker==7.1.0
     #   -r requirements/_test.in
     #   pytest-celery
     #   pytest-docker-tools
-faker==40.11.0
+faker==40.15.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.35.1
     # via -r requirements/_test.in
 h11==0.16.0
     # via
@@ -76,7 +76,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-idna==3.10
+idna==3.13
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -89,7 +89,7 @@ kombu==5.6.2
     #   -c requirements/_base.txt
     #   celery
     #   pytest-celery
-packaging==24.2
+packaging==26.1
     # via
     #   -c requirements/_base.txt
     #   kombu
@@ -102,15 +102,15 @@ prompt-toolkit==3.0.52
     # via
     #   -c requirements/_base.txt
     #   click-repl
-psutil==7.0.0
+psutil==7.2.2
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-pygments==2.19.1
+pygments==2.20.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -121,7 +121,7 @@ pytest-asyncio==1.3.0
     # via -r requirements/_test.in
 pytest-celery==1.3.0
     # via -r requirements/_test.in
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-docker-tools==3.1.9
     # via pytest-celery
@@ -133,7 +133,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   celery
-python-dotenv==1.1.0
+python-dotenv==1.2.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -142,7 +142,7 @@ redis==6.4.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-requests==2.32.4
+requests==2.33.1
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -153,15 +153,14 @@ six==1.17.0
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via fakeredis
-tenacity==9.0.0
+tenacity==9.1.4
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-tzdata==2025.2
+tzdata==2026.1
     # via
     #   -c requirements/_base.txt
     #   kombu
@@ -181,7 +180,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.2.14
+wcwidth==0.6.0
     # via
     #   -c requirements/_base.txt
     #   prompt-toolkit

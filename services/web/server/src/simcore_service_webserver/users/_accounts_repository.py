@@ -270,7 +270,7 @@ async def review_user_pre_registration(
 
             # Merge with invitation extras
             merged_extras = {**current_extras, **invitation_extras}
-            update_values["extras"] = merged_extras
+            update_values["extras"] = merged_extras  # type: ignore[assignment]
 
         await conn.execute(
             users_pre_registration_details.update()

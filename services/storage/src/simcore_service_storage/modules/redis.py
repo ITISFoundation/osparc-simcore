@@ -29,8 +29,8 @@ def setup(app: FastAPI) -> None:
         redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
         await redis_clients_manager.shutdown()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_redis_client_manager(app: FastAPI) -> RedisClientsManager:

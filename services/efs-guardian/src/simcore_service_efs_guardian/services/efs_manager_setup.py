@@ -40,8 +40,8 @@ def setup(app: FastAPI) -> None:
         if app.state.efs_manager:
             ...
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def get_efs_manager(app: FastAPI) -> EfsManager:

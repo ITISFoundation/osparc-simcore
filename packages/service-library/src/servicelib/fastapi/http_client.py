@@ -50,8 +50,8 @@ class BaseHTTPApi(HasClientSetupInterface):
 
 class AttachLifespanMixin(HasClientSetupInterface):
     def attach_lifespan_to(self, app: FastAPI) -> None:
-        app.add_event_handler("startup", self.setup_client)
-        app.add_event_handler("shutdown", self.teardown_client)
+        app.router.on_startup.append(self.setup_client)
+        app.router.on_shutdown.append(self.teardown_client)
 
 
 class HealthMixinMixin(HasClientInterface):

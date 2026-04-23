@@ -80,8 +80,8 @@ def setup_outputs_watcher(app: FastAPI) -> None:
         if outputs_watcher is not None:
             await outputs_watcher.shutdown()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 async def disable_event_propagation(app: FastAPI) -> None:

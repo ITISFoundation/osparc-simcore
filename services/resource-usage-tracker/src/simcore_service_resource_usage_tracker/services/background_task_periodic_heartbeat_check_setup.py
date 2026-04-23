@@ -73,5 +73,5 @@ def _on_app_shutdown(
 
 
 def setup(app: FastAPI) -> None:
-    app.add_event_handler("startup", _on_app_startup(app))
-    app.add_event_handler("shutdown", _on_app_shutdown(app))
+    app.router.on_startup.append(_on_app_startup(app))
+    app.router.on_shutdown.append(_on_app_shutdown(app))

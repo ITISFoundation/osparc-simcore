@@ -199,7 +199,7 @@ def setup_tracing(app: FastAPI, tracing_config: TracingConfig) -> None:
     def _on_shutdown() -> None:
         _shutdown()
 
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_shutdown.append(_on_shutdown)
 
 
 def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):

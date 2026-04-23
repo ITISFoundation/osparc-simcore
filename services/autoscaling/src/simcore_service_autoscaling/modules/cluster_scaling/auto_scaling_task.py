@@ -64,5 +64,5 @@ def setup(app: FastAPI) -> None:
     ):
         _logger.warning("the autoscaling background task is disabled by settings, nothing will happen!")
         return
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
+    app.router.on_startup.append(on_app_startup(app))
+    app.router.on_shutdown.append(on_app_shutdown(app))

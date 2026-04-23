@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.5.0
     # via pre-commit
-click==8.3.1
+click==8.3.3
     # via
     #   black
     #   typer
@@ -16,17 +16,17 @@ dill==0.4.1
     # via pylint
 distlib==0.4.0
     # via virtualenv
-filelock==3.25.2
+filelock==3.29.0
     # via
     #   python-discovery
     #   virtualenv
-identify==2.6.18
+identify==2.6.19
     # via pre-commit
 isort==8.0.1
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
-librt==0.8.1
+librt==0.9.0
     # via mypy
 markdown-it-py==4.0.0
     # via rich
@@ -34,7 +34,7 @@ mccabe==0.7.0
     # via pylint
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.19.1
+mypy==1.20.2
     # via -r requirements/../../../requirements/devenv.txt
 mypy-extensions==1.1.0
     # via
@@ -42,30 +42,30 @@ mypy-extensions==1.1.0
     #   mypy
 nodeenv==1.10.0
     # via pre-commit
-packaging==26.0
+packaging==26.1
     # via
     #   -c requirements/_test.txt
     #   black
-pathspec==1.0.4
+pathspec==1.1.0
     # via
     #   black
     #   mypy
-platformdirs==4.9.4
+platformdirs==4.9.6
     # via
     #   -c requirements/_test.txt
     #   black
     #   pylint
     #   python-discovery
     #   virtualenv
-pre-commit==4.5.1
+pre-commit==4.6.0
     # via -r requirements/../../../requirements/devenv.txt
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   -c requirements/_test.txt
     #   rich
 pylint==4.0.5
     # via -r requirements/../../../requirements/devenv.txt
-python-discovery==1.1.3
+python-discovery==1.2.2
     # via virtualenv
 pytokens==0.4.1
     # via black
@@ -74,20 +74,20 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pre-commit
-rich==14.3.3
+rich==15.0.0
     # via typer
-ruff==0.15.6
+ruff==0.15.11
     # via -r requirements/../../../requirements/devenv.txt
 shellingham==1.5.4
     # via typer
 tomlkit==0.14.0
     # via pylint
-typer==0.24.1
+typer==0.24.2
     # via -r requirements/_tools.in
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==21.2.0
+virtualenv==21.2.4
     # via pre-commit

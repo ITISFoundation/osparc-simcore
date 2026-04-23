@@ -12,6 +12,7 @@ from typing import Generic, TypeAlias, TypeVar
 from fastapi import Query
 from fastapi_pagination.customization import CustomizedPage, UseName, UseParamsFields
 from fastapi_pagination.links import LimitOffsetPage as _LimitOffsetPage
+from fastapi_pagination.links.bases import Links as _Links
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -27,6 +28,22 @@ from pydantic import (
 )
 
 T = TypeVar("T")
+
+
+def _links_schema_backward_compat(schema: dict) -> None:
+    """fastapi-pagination >=0.14 changed Links fields to have default=None,
+    which removes them from the JSON Schema ``required`` array. This restores
+    the previous behaviour so that the public OpenAPI spec stays backward-compatible.
+    """
+    if "properties" in schema:
+        schema["required"] = list(schema["properties"].keys())
+    for prop in schema.get("properties", {}).values():
+        prop.pop("default", None)
+        prop.pop("examples", None)
+
+
+_Links.model_config["json_schema_extra"] = _links_schema_backward_compat
+_Links.model_rebuild(force=True)
 
 Page = CustomizedPage[
     _LimitOffsetPage[T],

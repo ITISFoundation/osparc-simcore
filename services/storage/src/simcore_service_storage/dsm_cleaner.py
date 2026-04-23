@@ -67,5 +67,5 @@ def setup_dsm_cleaner(app: FastAPI) -> None:
         assert isinstance(app.state.dsm_cleaner_task, asyncio.Task)  # nosec
         await cancel_wait_task(app.state.dsm_cleaner_task)
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)

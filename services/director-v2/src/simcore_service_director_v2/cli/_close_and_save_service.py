@@ -1,5 +1,6 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from inspect import iscoroutinefunction
 from typing import Final
 
 import rich
@@ -35,15 +36,23 @@ _MIN: Final[PositiveFloat] = 60
 HEADING: Final[str] = "[green]*[/green]"
 
 
+async def _run_handlers(handlers: list[Callable]) -> None:
+    for handler in handlers:
+        if iscoroutinefunction(handler):
+            await handler()
+        else:
+            handler()
+
+
 @asynccontextmanager
 async def _minimal_app() -> AsyncIterator[FastAPI]:
     app = FastAPI()
 
     setup(app)
 
-    await app.router.startup()
+    await _run_handlers(app.router.on_startup)
     yield app
-    await app.router.shutdown()
+    await _run_handlers(app.router.on_shutdown)
 
 
 async def _track_and_display(

@@ -18,4 +18,4 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
         ):
             await rpc_client.register_router(router, PAYMENTS_RPC_NAMESPACE, app)
 
-    app.add_event_handler("startup", _on_startup)
+    app.router.on_startup.append(_on_startup)

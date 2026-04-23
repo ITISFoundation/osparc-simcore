@@ -125,5 +125,5 @@ def setup_background_log_fetcher(app: FastAPI) -> None:
         await app.state.background_log_fetcher.stop_fetcher()
         logger.info("stopped background container log fetcher")
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)

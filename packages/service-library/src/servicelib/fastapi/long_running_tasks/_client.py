@@ -220,4 +220,4 @@ def setup(
             router_prefix=router_prefix, default_timeout=http_requests_timeout
         )
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)

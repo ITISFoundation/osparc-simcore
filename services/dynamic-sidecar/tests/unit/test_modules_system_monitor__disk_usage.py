@@ -18,7 +18,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
-from psutil._common import sdiskusage
+from psutil._ntuples import sdiskusage
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes

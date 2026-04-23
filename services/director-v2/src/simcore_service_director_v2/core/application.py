@@ -138,7 +138,7 @@ def create_base_app(
 
     app.include_router(api_router)
 
-    app.add_event_handler("shutdown", logging_shutdown_event)
+    app.router.on_shutdown.append(logging_shutdown_event)
 
     return app
 
@@ -221,8 +221,8 @@ def create_app(  # noqa: C901
         initialize_profiler(app)
 
     # setup app --
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
     _set_exception_handlers(app)
 
     return app

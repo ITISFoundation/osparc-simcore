@@ -1,8 +1,8 @@
-blosc==1.11.3
+blosc==1.11.4
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
-click==8.3.1
+click==8.3.3
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -12,16 +12,16 @@ cloudpickle==3.1.2
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2025.11.0
+dask==2026.3.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
     #   distributed
-distributed==2025.11.0
+distributed==2026.3.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-fsspec==2025.10.0
+fsspec==2026.3.0
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -46,11 +46,11 @@ msgpack==1.1.2
     # via
     #   -c requirements/./_base.txt
     #   distributed
-numpy==2.3.5
+numpy==2.4.4
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
-packaging==25.0
+packaging==26.1
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -59,7 +59,7 @@ partd==1.4.2
     # via
     #   -c requirements/./_base.txt
     #   dask
-psutil==7.1.3
+psutil==7.2.2
     # via
     #   -c requirements/./_base.txt
     #   distributed
@@ -82,7 +82,7 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.2
+tornado==6.5.5
     # via
     #   -c requirements/./_base.txt
     #   distributed

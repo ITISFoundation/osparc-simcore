@@ -35,7 +35,7 @@ def test_get_service_metadata(meta_api: osparc.MetaApi, api_client: osparc.ApiCl
 
     assert expected_api_version <= current_api_version
 
-    meta, status_code, headers = meta_api.get_service_metadata_with_http_info()
+    response = meta_api.get_service_metadata_with_http_info()
 
-    assert isinstance(meta, osparc.Meta)
-    assert status_code == 200
+    assert isinstance(response.data, osparc.Meta)
+    assert response.status_code == 200

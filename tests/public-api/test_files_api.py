@@ -21,7 +21,7 @@ def test_upload_file(files_api: osparc.FilesApi, tmp_path: Path):
     assert isinstance(input_file, osparc.File)
     time.sleep(2)  # let time to upload to S3
 
-    assert UUID(input_file.id), "Valid uuid ir required"
+    assert UUID(str(input_file.id)), "Valid uuid ir required"
     assert input_file.filename == input_path.name
 
     # these two are EXPERIMENTAL. Not reliable!

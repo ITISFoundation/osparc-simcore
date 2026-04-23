@@ -236,8 +236,8 @@ def setup_r_clone_mount_manager(app: FastAPI):
         r_clone_mount_manager: RCloneMountManager = app.state.r_clone_mount_manager
         await r_clone_mount_manager.teardown()
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app.router.on_startup.append(_on_startup)
+    app.router.on_shutdown.append(_on_shutdown)
 
 
 def get_r_clone_mount_manager(app: FastAPI) -> RCloneMountManager:

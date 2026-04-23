@@ -38,4 +38,4 @@ def setup_user_services_preferences(app: FastAPI) -> None:
             else:
                 _logger.warning("user service preferences not mounted")
 
-    app.add_event_handler("startup", on_startup)
+    app.router.on_startup.append(on_startup)

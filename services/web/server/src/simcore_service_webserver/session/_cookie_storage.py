@@ -66,7 +66,7 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         # WARNING: the code below is taken and adapted from the superclass
         # implementation `EncryptedCookieStorage.save_cookie`
         # Adjust in case the base library changes.
-        assert aiohttp_session.__version__ == "2.11.0"  # nosec
+        assert aiohttp_session.__version__ == "2.12.1"  # nosec
         # --------------------------------------------------------
 
         if max_age is not None:

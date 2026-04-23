@@ -262,7 +262,7 @@ def setup(app: FastAPI):
         - **lifespan variables**: produced before a service is started and cleaned up after it finishes
         (e.g. API tokens)
     """
-    app.add_event_handler("startup", functools.partial(OsparcSessionVariablesTable.create, app))
+    app.router.on_startup.append(functools.partial(OsparcSessionVariablesTable.create, app))
 
 
 #

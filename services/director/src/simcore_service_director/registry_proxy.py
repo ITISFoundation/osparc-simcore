@@ -259,8 +259,8 @@ def setup(app: FastAPI) -> None:
         if app.state.auto_cache_task:
             await cancel_wait_task(app.state.auto_cache_task)
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.router.on_startup.append(on_startup)
+    app.router.on_shutdown.append(on_shutdown)
 
 
 def _get_prefix(service_type: ServiceType) -> str:

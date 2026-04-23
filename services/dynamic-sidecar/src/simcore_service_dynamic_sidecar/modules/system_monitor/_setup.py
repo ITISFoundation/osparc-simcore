@@ -42,4 +42,4 @@ def setup_system_monitor(app: FastAPI) -> None:
         async def on_startup() -> None:
             await _display_current_disk_usage(app)
 
-        app.add_event_handler("startup", on_startup)
+        app.router.on_startup.append(on_startup)
