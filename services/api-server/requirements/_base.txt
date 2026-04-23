@@ -241,13 +241,14 @@ fastapi==0.136.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
+    #   fastapi-pagination
 fastapi-cli==0.0.24
     # via fastapi
 fastapi-cloud-cli==0.17.0
     # via fastapi-cli
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fastapi-pagination==0.12.34
+fastapi-pagination==0.15.12
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/_base.in

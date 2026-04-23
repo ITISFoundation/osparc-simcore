@@ -35,6 +35,8 @@ aws-sam-translator<1.56.0
 # #   aws-sam-translator>=1.57.0 (from cfn-lint==0.72.10->-c ./constraints.txt (line 33))
 cfn-lint<0.72.1
 
-# the osparc client currently requires fastapi-pagination<0.13.0 as it requires links fields in the response (from version 0.13.0 they are all optional)
+# fastapi-pagination>=0.14.2 imports request_response from fastapi.routing
+# which is required for FastAPI>=0.128 (fastapi_inner_astack support).
+# links fields remain present and required in the schema from 0.14.2+.
 # https://github.com/ITISFoundation/osparc-simcore/issues/8254
-fastapi-pagination<0.13.0
+fastapi-pagination>=0.14.2
