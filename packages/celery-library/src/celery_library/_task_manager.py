@@ -400,7 +400,7 @@ class CeleryTaskManager:
 
             # Get task UUIDs from the group result
             # AsyncResult objects have .id attribute containing the task key (UUID string)
-            task_uuids = [
+            task_uuids: list[TaskUUID] = [
                 TypeAdapter(TaskUUID).validate_python(async_result.id) for async_result in (group_result.results or [])
             ]
 
