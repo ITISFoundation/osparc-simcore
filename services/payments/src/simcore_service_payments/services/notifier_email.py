@@ -159,7 +159,7 @@ class EmailProvider(NotificationProvider):
         payment: PaymentsTransactionsDB,
     ) -> None:
         if payment.state != "SUCCESS":
-            _logger.debug(
+            _logger.warning(
                 "No email sent for non-SUCCESS payment: user_id=%s payment_id=%s state=%s",
                 user_id,
                 payment.payment_id,
