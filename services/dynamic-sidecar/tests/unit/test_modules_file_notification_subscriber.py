@@ -187,27 +187,29 @@ def test_resolve_local_path_for_inputs_and_outputs_returns_none(
     assert _resolve_local_path_from_storage_id(mounted_volumes, storage_id) is None
 
 
-def test_resolve_local_path_for_unknown_volume_returns_none(
+@pytest.mark.parametrize(
+    "storage_id_template",
+    [
+        pytest.param(
+            "{project_id}/{node_id}/not-a-volume/file.bin",
+            id="unknown-volume",
+        ),
+        pytest.param(
+            "only/two",
+            id="too-few-parts",
+        ),
+        pytest.param(
+            f"{{project_id}}/{{node_id}}/{_STATE_PATH_A.name}/../../etc/passwd",
+            id="path-traversal",
+        ),
+    ],
+)
+def test_resolve_local_path_returns_none_on_invalid_storage_ids(
     mounted_volumes: MountedVolumes,
     project_id: ProjectID,
     node_id: NodeID,
+    storage_id_template: str,
 ):
-    storage_id = _make_storage_id(project_id, node_id, "not-a-volume", "file.bin")
-
-    assert _resolve_local_path_from_storage_id(mounted_volumes, storage_id) is None
-
-
-def test_resolve_local_path_with_too_few_parts_returns_none(
-    mounted_volumes: MountedVolumes,
-):
-    assert _resolve_local_path_from_storage_id(mounted_volumes, "only/two") is None
-
-
-def test_resolve_local_path_rejects_path_traversal(
-    mounted_volumes: MountedVolumes,
-    project_id: ProjectID,
-    node_id: NodeID,
-):
-    storage_id = _make_storage_id(project_id, node_id, _STATE_PATH_A.name, "..", "..", "etc", "passwd")
+    storage_id = storage_id_template.format(project_id=project_id, node_id=node_id)
 
     assert _resolve_local_path_from_storage_id(mounted_volumes, storage_id) is None
