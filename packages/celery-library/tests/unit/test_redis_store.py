@@ -6,7 +6,10 @@ from uuid import UUID
 
 import pytest
 from celery_library.backends import RedisTaskStore
-from celery_library.backends._redis import _build_redis_task_or_group_key
+from celery_library.backends._redis import (
+    _build_redis_index_key_for_owner,
+    _build_redis_task_or_group_key,
+)
 from faker import Faker
 from models_library.celery import (
     Task,
@@ -186,3 +189,54 @@ async def test_stale_zset_entries_are_pruned_on_list(
     assert await redis_task_store.list_tasks(owner="test-svc", user_id=10004, product_name="osparc") == []
     # Second list confirms the ZSET is clean
     assert await redis_task_store.list_tasks(owner="test-svc", user_id=10004, product_name="osparc") == []
+
+
+async def test_index_key_has_ttl_and_only_grows(
+    redis_task_store: RedisTaskStore,
+    redis_client_sdk: RedisClientSDK,
+):
+    """The ZSET index key must have a TTL bounded by the longest member expiry,
+    so it cannot grow unboundedly when ``list_tasks`` is never called.
+    """
+    owner, user_id, product = "test-svc", 10005, "osparc"
+    index_key = _build_redis_index_key_for_owner(owner, user_id, product)
+    redis = redis_client_sdk.redis
+
+    short_expiry = timedelta(minutes=1)
+    long_expiry = timedelta(hours=1)
+
+    # First add with a short expiry: index key gets a TTL ~ short_expiry
+    await redis_task_store.create_task(
+        _faker.uuid4(),
+        TaskExecutionMetadata(name="my_task"),
+        owner=owner,
+        user_id=user_id,
+        product_name=product,
+        expiry=short_expiry,
+    )
+    ttl_after_short = await redis.ttl(index_key)
+    assert 0 < ttl_after_short <= int(short_expiry.total_seconds())
+
+    # Add a longer-lived task: TTL must be extended to cover it
+    await redis_task_store.create_task(
+        _faker.uuid4(),
+        TaskExecutionMetadata(name="my_task"),
+        owner=owner,
+        user_id=user_id,
+        product_name=product,
+        expiry=long_expiry,
+    )
+    ttl_after_long = await redis.ttl(index_key)
+    assert ttl_after_long >= int(long_expiry.total_seconds()) - 1
+
+    # Add another short-lived task: TTL must NOT shrink below the long task's lifetime
+    await redis_task_store.create_task(
+        _faker.uuid4(),
+        TaskExecutionMetadata(name="my_task"),
+        owner=owner,
+        user_id=user_id,
+        product_name=product,
+        expiry=short_expiry,
+    )
+    ttl_after_second_short = await redis.ttl(index_key)
+    assert ttl_after_second_short >= int(long_expiry.total_seconds()) - 5

@@ -91,6 +91,19 @@ def _build_redis_index_key_for_owner(
 class RedisTaskStore:
     _redis_client_sdk: RedisClientSDK
 
+    async def _refresh_index_key_ttl(self, index_key: str, expiry: timedelta) -> None:
+        """Ensure the index key TTL is at least ``expiry``.
+
+        ``EXPIRE ... GT`` cannot be used because Redis treats a key with no TTL
+        as having infinite TTL for the purpose of the GT comparison, so it would
+        leave the index key persistent on first creation. We instead read the
+        current TTL and only extend it.
+        """
+        current_ttl = await self._redis_client_sdk.redis.ttl(index_key)
+        # ttl returns: -2 (no key), -1 (no TTL), or remaining seconds.
+        if current_ttl < int(expiry.total_seconds()):
+            await self._redis_client_sdk.redis.expire(index_key, expiry)
+
     async def create_group(
         self,
         group_key: GroupKey,
@@ -126,6 +139,7 @@ class RedisTaskStore:
             redis_group_key,
             expiry,
         )
+        await self._refresh_index_key_ttl(index_key, expiry)
 
     async def create_task(
         self,
@@ -154,6 +168,7 @@ class RedisTaskStore:
             redis_key,
             expiry,
         )
+        await self._refresh_index_key_ttl(index_key, expiry)
 
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
         redis_key = _build_redis_task_or_group_key(task_key)
