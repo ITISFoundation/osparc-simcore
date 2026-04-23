@@ -160,10 +160,15 @@ class EmailProvider(NotificationProvider):
     ) -> None:
         if payment.state != "SUCCESS":
             _logger.warning(
-                "No email sent for non-SUCCESS payment: user_id=%s payment_id=%s state=%s",
-                user_id,
-                payment.payment_id,
-                payment.state,
+                **create_troubleshooting_log_kwargs(
+                    "No email sent for non-SUCCESS payment",
+                    error=RuntimeError(f"Payment state is {payment.state}, expected SUCCESS"),
+                    error_context={
+                        "user_id": user_id,
+                        "payment_id": payment.payment_id,
+                        "state": payment.state,
+                    },
+                )
             )
             return
 
