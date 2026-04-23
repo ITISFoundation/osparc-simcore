@@ -345,7 +345,15 @@ async def test_download_invoice_pdf_returns_none_on_http_error(
         new_callable=AsyncMock,
         side_effect=httpx.ConnectError("boom"),
     )
-    assert await _download_invoice_pdf(faker.url()) is None
+    assert (
+        await _download_invoice_pdf(
+            faker.url(),
+            user_id=1,
+            payment_id="pt_test",
+            product_name="osparc",
+        )
+        is None
+    )
 
 
 async def test_download_invoice_pdf_returns_content_and_filename(
@@ -364,6 +372,11 @@ async def test_download_invoice_pdf_returns_content_and_filename(
         return_value=response,
     )
 
-    downloaded = await _download_invoice_pdf("https://example.com/x")
+    downloaded = await _download_invoice_pdf(
+        "https://example.com/x",
+        user_id=1,
+        payment_id="pt_test",
+        product_name="osparc",
+    )
 
     assert downloaded == (pdf_bytes, "receipt.pdf")
