@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.82.0"
+    "version": "0.83.0"
   },
   "servers": [
     {
@@ -2670,6 +2670,22 @@
         "summary": "List Users Accounts",
         "operationId": "list_users_accounts",
         "parameters": [
+          {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
+          },
           {
             "name": "limit",
             "in": "query",
