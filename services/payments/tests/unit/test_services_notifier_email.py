@@ -168,6 +168,7 @@ async def test_email_provider_logs_on_rpc_failure(
 
     mocker.patch(
         f"{notifier_email.__name__}.send_message_from_template",
+        new_callable=AsyncMock,
         side_effect=RuntimeError("RPC connection failed"),
     )
 
