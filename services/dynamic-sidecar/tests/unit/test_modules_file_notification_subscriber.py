@@ -100,15 +100,6 @@ async def test_handle_file_notification_with_optional_ids(
     )
 
 
-# --- Tests for _resolve_local_path_from_storage_id ---------------------------------
-#
-# Regression coverage for the bind-mount upload loop:
-# - state volumes MUST resolve correctly (cross-node sync still works)
-# - inputs/outputs volumes MUST return None (avoids the producer-side feedback loop
-#   where a notification about our own upload would re-write the file under the
-#   outputs watcher and re-trigger an upload).
-
-
 _INPUTS_PATH = Path("/inputs")
 _OUTPUTS_PATH = Path("/outputs")
 _STATE_PATH_A = Path("/workspace/state-a")
@@ -134,32 +125,28 @@ def _make_storage_id(project_id: ProjectID, node_id: NodeID, volume_name: str, *
     return "/".join((f"{project_id}", f"{node_id}", volume_name, *parts))
 
 
+@pytest.mark.parametrize(
+    "state_path_index, sub_parts",
+    [
+        pytest.param(0, ("sub", "file.bin"), id="first-state-volume-with-subdir"),
+        pytest.param(1, ("file.bin",), id="second-state-volume-flat"),
+    ],
+)
 def test_resolve_local_path_for_state_volume_resolves_correctly(
     mounted_volumes: MountedVolumes,
     project_id: ProjectID,
     node_id: NodeID,
+    state_path_index: int,
+    sub_parts: tuple[str, ...],
 ):
-    storage_id = _make_storage_id(project_id, node_id, _STATE_PATH_A.name, "sub", "file.bin")
-
-    resolved = _resolve_local_path_from_storage_id(mounted_volumes, storage_id)
-
-    assert resolved is not None
-    expected = (mounted_volumes.disk_state_paths_iter().__next__() / "sub" / "file.bin").resolve()
-    assert resolved == expected
-
-
-def test_resolve_local_path_for_second_state_volume_resolves_correctly(
-    mounted_volumes: MountedVolumes,
-    project_id: ProjectID,
-    node_id: NodeID,
-):
-    storage_id = _make_storage_id(project_id, node_id, _STATE_PATH_B.name, "file.bin")
-
-    resolved = _resolve_local_path_from_storage_id(mounted_volumes, storage_id)
-
-    assert resolved is not None
+    state_paths = [_STATE_PATH_A, _STATE_PATH_B]
     state_disk_paths = list(mounted_volumes.disk_state_paths_iter())
-    expected = (state_disk_paths[1] / "file.bin").resolve()
+    storage_id = _make_storage_id(project_id, node_id, state_paths[state_path_index].name, *sub_parts)
+
+    resolved = _resolve_local_path_from_storage_id(mounted_volumes, storage_id)
+
+    assert resolved is not None
+    expected = state_disk_paths[state_path_index].joinpath(*sub_parts).resolve()
     assert resolved == expected
 
 
