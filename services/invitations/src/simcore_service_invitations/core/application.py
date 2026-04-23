@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     initialize_prometheus_instrumentation,
 )
@@ -21,9 +22,15 @@ from . import events, exceptions_handlers
 from .settings import ApplicationSettings
 
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(
+    settings: ApplicationSettings | None = None,
+    logging_lifespan: Lifespan | None = None,
+    tracing_config: TracingConfig | None = None,
+) -> FastAPI:
     settings = settings or ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.INVITATIONS_TRACING)
+    tracing_config = tracing_config or TracingConfig.create(
+        service_name=APP_NAME, tracing_settings=settings.INVITATIONS_TRACING
+    )
 
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
@@ -32,7 +39,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled, see below
-        lifespan=events.create_app_lifespan(settings=settings, tracing_config=tracing_config),
+        lifespan=events.create_app_lifespan(
+            settings=settings, logging_lifespan=logging_lifespan
+        ),
     )
     override_fastapi_openapi_method(app)
 
