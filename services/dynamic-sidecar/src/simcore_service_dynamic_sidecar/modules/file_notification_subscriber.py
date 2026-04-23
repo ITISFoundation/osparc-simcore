@@ -46,15 +46,18 @@ def _resolve_local_path_from_storage_id(
     volume_name = path_parts[2]
     relative_parts = path_parts[_MIN_STORAGE_PATH_PARTS:]
 
-    local_base: Path | None = None
-    for state_path, disk_state_path in zip(
-        mounted_volumes.state_paths,
-        mounted_volumes.disk_state_paths_iter(),
-        strict=True,
-    ):
-        if volume_name == state_path.name:
-            local_base = disk_state_path
-            break
+    local_base: Path | None = next(
+        (
+            disk
+            for state_path, disk in zip(
+                mounted_volumes.state_paths,
+                mounted_volumes.disk_state_paths_iter(),
+                strict=True,
+            )
+            if volume_name == state_path.name
+        ),
+        None,
+    )
 
     if local_base is None:
         return None
