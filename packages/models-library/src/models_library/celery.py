@@ -141,6 +141,7 @@ class TaskStore(Protocol):
         user_id: int | None = None,
         product_name: str | None = None,
         expiry: timedelta,
+        index: bool = True,
     ) -> None: ...
 
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...

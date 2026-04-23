@@ -127,7 +127,10 @@ class RedisTaskStore:
         index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
         pipe.zadd(index_key, {group_key: index_score})
 
-        # group sub-tasks: store hash only, no ZSET index (filtered out in list_tasks)
+        # Sub-task hashes are stored so they can be looked up by UUID, but they
+        # are intentionally NOT added to the owner index: the parent group is
+        # the listable unit. ``create_task`` is called with ``index=False`` for
+        # each sub-task in ``TaskManager.submit_group``.
         for task_key, (task_execution_metadata, _) in zip(task_keys, execution_metadata.tasks, strict=True):
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
@@ -150,6 +153,7 @@ class RedisTaskStore:
         user_id: int | None = None,
         product_name: str | None = None,
         expiry: timedelta,
+        index: bool = True,
     ) -> None:
         redis_key = _build_redis_task_or_group_key(task_key)
         index_score = datetime.now(tz=UTC).timestamp()
@@ -160,15 +164,18 @@ class RedisTaskStore:
             key=_CELERY_TASK_EXEC_METADATA_KEY,
             value=execution_metadata.model_dump_json(),
         )
-        index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
-        pipe.zadd(index_key, {task_key: index_score})
+        index_key: str | None = None
+        if index:
+            index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
+            pipe.zadd(index_key, {task_key: index_score})
         await pipe.execute()
 
         await self._redis_client_sdk.redis.expire(
             redis_key,
             expiry,
         )
-        await self._refresh_index_key_ttl(index_key, expiry)
+        if index_key is not None:
+            await self._refresh_index_key_ttl(index_key, expiry)
 
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
         redis_key = _build_redis_task_or_group_key(task_key)

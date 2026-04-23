@@ -240,3 +240,39 @@ async def test_index_key_has_ttl_and_only_grows(
     )
     ttl_after_second_short = await redis.ttl(index_key)
     assert ttl_after_second_short >= int(long_expiry.total_seconds()) - 5
+
+
+async def test_create_task_with_index_false_skips_owner_index(
+    redis_task_store: RedisTaskStore,
+    redis_client_sdk: RedisClientSDK,
+):
+    """Group sub-tasks must not appear in the owner index (they are listed via
+    their parent group), so ``create_task(index=False)`` must skip the zadd.
+    """
+    owner, user_id, product = "test-svc", 10006, "osparc"
+    indexed_key = _faker.uuid4()
+    sub_task_key = _faker.uuid4()
+
+    await redis_task_store.create_task(
+        indexed_key,
+        TaskExecutionMetadata(name="my_task"),
+        owner=owner,
+        user_id=user_id,
+        product_name=product,
+        expiry=timedelta(minutes=5),
+    )
+    await redis_task_store.create_task(
+        sub_task_key,
+        TaskExecutionMetadata(name="my_sub_task"),
+        owner=owner,
+        user_id=user_id,
+        product_name=product,
+        expiry=timedelta(minutes=5),
+        index=False,
+    )
+
+    # Sub-task hash exists (so status/result lookups by UUID still work)...
+    assert await redis_client_sdk.redis.exists(_build_redis_task_or_group_key(sub_task_key)) == 1
+    # ...but only the indexed task appears in the owner listing.
+    listed = await redis_task_store.list_tasks(owner=owner, user_id=user_id, product_name=product)
+    assert {t.uuid for t in listed} == {UUID(indexed_key)}

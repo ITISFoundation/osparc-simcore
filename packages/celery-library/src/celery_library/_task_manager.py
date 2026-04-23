@@ -162,6 +162,9 @@ class CeleryTaskManager:
                         user_id=user_id,
                         product_name=product_name,
                         expiry=expiry,
+                        # Group sub-tasks are listed via their parent group, so they
+                        # must not appear in the owner's task index.
+                        index=False,
                     )
 
                 group_result: GroupResult = group(sigs).apply_async()
