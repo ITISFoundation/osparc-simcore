@@ -63,13 +63,13 @@ async def _process_action(action: str, payload: Any) -> Any:
     return None
 
 
-def sync_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
+def sync_job(task: Task, task_key: TaskKey, action: Action, payload: Any, **_kwargs: Any) -> Any:
     _ = task
     _ = task_key
     return asyncio.run(_process_action(action, payload))
 
 
-async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
+async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any, **_kwargs: Any) -> Any:
     _ = task
     _ = task_key
     return await _process_action(action, payload)
