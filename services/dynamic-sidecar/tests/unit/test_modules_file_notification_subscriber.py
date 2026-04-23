@@ -1,5 +1,6 @@
 # pylint:disable=redefined-outer-name
 
+from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
@@ -10,11 +11,14 @@ from models_library.rabbitmq_messages import (
     FileNotificationEventType,
     FileNotificationMessage,
 )
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.file_notification_subscriber import (
     _handle_file_notification,
+    _resolve_local_path_from_storage_id,
 )
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 
 @pytest.fixture()
@@ -94,3 +98,116 @@ async def test_handle_file_notification_with_optional_ids(
     mock_notify_path_change.assert_awaited_once_with(
         app=None, event_type=FileNotificationEventType.FILE_UPLOADED, path=file_id, recursive=False
     )
+
+
+# --- Tests for _resolve_local_path_from_storage_id ---------------------------------
+#
+# Regression coverage for the bind-mount upload loop:
+# - state volumes MUST resolve correctly (cross-node sync still works)
+# - inputs/outputs volumes MUST return None (avoids the producer-side feedback loop
+#   where a notification about our own upload would re-write the file under the
+#   outputs watcher and re-trigger an upload).
+
+
+_INPUTS_PATH = Path("/inputs")
+_OUTPUTS_PATH = Path("/outputs")
+_STATE_PATH_A = Path("/workspace/state-a")
+_STATE_PATH_B = Path("/workspace/state-b")
+
+
+@pytest.fixture()
+def mounted_volumes(tmp_path: Path, faker: Faker, node_id: NodeID) -> MountedVolumes:
+    return MountedVolumes(
+        service_run_id=ServiceRunID(faker.uuid4()),
+        node_id=node_id,
+        inputs_path=_INPUTS_PATH,
+        outputs_path=_OUTPUTS_PATH,
+        user_preferences_path=None,
+        state_paths=[_STATE_PATH_A, _STATE_PATH_B],
+        state_exclude=set(),
+        compose_namespace="test-namespace",
+        dy_volumes=tmp_path,
+    )
+
+
+def _make_storage_id(project_id: ProjectID, node_id: NodeID, volume_name: str, *parts: str) -> str:
+    return "/".join((f"{project_id}", f"{node_id}", volume_name, *parts))
+
+
+def test_resolve_local_path_for_state_volume_resolves_correctly(
+    mounted_volumes: MountedVolumes,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    storage_id = _make_storage_id(project_id, node_id, _STATE_PATH_A.name, "sub", "file.bin")
+
+    resolved = _resolve_local_path_from_storage_id(mounted_volumes, storage_id)
+
+    assert resolved is not None
+    expected = (mounted_volumes.disk_state_paths_iter().__next__() / "sub" / "file.bin").resolve()
+    assert resolved == expected
+
+
+def test_resolve_local_path_for_second_state_volume_resolves_correctly(
+    mounted_volumes: MountedVolumes,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    storage_id = _make_storage_id(project_id, node_id, _STATE_PATH_B.name, "file.bin")
+
+    resolved = _resolve_local_path_from_storage_id(mounted_volumes, storage_id)
+
+    assert resolved is not None
+    state_disk_paths = list(mounted_volumes.disk_state_paths_iter())
+    expected = (state_disk_paths[1] / "file.bin").resolve()
+    assert resolved == expected
+
+
+@pytest.mark.parametrize(
+    "volume_path",
+    [
+        pytest.param(_INPUTS_PATH, id="inputs"),
+        pytest.param(_OUTPUTS_PATH, id="outputs"),
+    ],
+)
+def test_resolve_local_path_for_inputs_and_outputs_returns_none(
+    mounted_volumes: MountedVolumes,
+    project_id: ProjectID,
+    node_id: NodeID,
+    volume_path: Path,
+):
+    """Regression: inputs/outputs volumes MUST NOT be resolved by the bind-mount fallback.
+
+    Resolving outputs would cause the dynamic-sidecar to download (via the file-notification
+    fallback) the file it just uploaded, into the very directory the outputs watcher is
+    observing — re-triggering the upload and producing an infinite loop.
+    """
+    storage_id = _make_storage_id(project_id, node_id, volume_path.name, "some-file.txt")
+
+    assert _resolve_local_path_from_storage_id(mounted_volumes, storage_id) is None
+
+
+def test_resolve_local_path_for_unknown_volume_returns_none(
+    mounted_volumes: MountedVolumes,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    storage_id = _make_storage_id(project_id, node_id, "not-a-volume", "file.bin")
+
+    assert _resolve_local_path_from_storage_id(mounted_volumes, storage_id) is None
+
+
+def test_resolve_local_path_with_too_few_parts_returns_none(
+    mounted_volumes: MountedVolumes,
+):
+    assert _resolve_local_path_from_storage_id(mounted_volumes, "only/two") is None
+
+
+def test_resolve_local_path_rejects_path_traversal(
+    mounted_volumes: MountedVolumes,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    storage_id = _make_storage_id(project_id, node_id, _STATE_PATH_A.name, "..", "..", "etc", "passwd")
+
+    assert _resolve_local_path_from_storage_id(mounted_volumes, storage_id) is None
