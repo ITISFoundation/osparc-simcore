@@ -85,6 +85,7 @@ def _aggregate(
         },
         "classifiers": service_db.classifiers,
         "quality": service_db.quality,
+        "release_notes_url": (HttpUrl(service_db.release_notes_url) if service_db.release_notes_url else None),
         # NOTE: history/release field is removed
     }
 
@@ -237,7 +238,10 @@ async def _get_services_manifests(
                     limit=limit,
                     offset=offset,
                 ),
-                tip="This might be due to malfunction of the background-task or that this call was done while the sync was taking place",
+                tip=(
+                    "This might be due to malfunction of the background-task or that this "
+                    "call was done while the sync was taking place"
+                ),
             )
         )
         # NOTE: tests should fail if this happens but it is not a critical error so it is ignored in production
