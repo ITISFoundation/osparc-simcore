@@ -152,7 +152,7 @@ When refactoring, move business logic from controllers to services (e.g., extrac
 
 ### FastAPI Patterns
 
-* Use **lifespan events** (via `LifespanManager` from `fastapi_lifespan_manager`) instead of deprecated `app.add_event_handler("startup"/shutdown")`.
+* Use **lifespan events** (via `LifespanManager` from `fastapi_lifespan_manager`) instead of deprecated `app.add_event_handler("startup"/"shutdown")`.
 * Structure lifespans as `async def _my_lifespan(app: FastAPI) -> AsyncIterator[State]` functions that yield state dicts.
 * Compose lifespans in a `create_app_lifespan(...)` factory function that adds them in order.
 * Use `initialize_prometheus_instrumentation` (not `setup_prometheus_instrumentation`).
