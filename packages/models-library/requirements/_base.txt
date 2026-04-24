@@ -17,7 +17,10 @@ idna==3.13
 jsonref==1.1.0
     # via -r requirements/_base.in
 jsonschema==4.26.0
-    # via -r requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
 orjson==3.11.8

@@ -50,7 +50,7 @@ s3fs<2026.0                                   # CalVer major bump (follows fsspe
 starlette<1.0                                 # 1.0 removes add_event_handler, on_event etc.
 swagger-ui-py<25.0                            # 25.x CalVer major bump
 twilio<9.0                                    # 9.x major rewrite of the SDK
-
+jsonschema==4.26.0
 
 
 # wrapt 2.0 causes pip resolver to downgrade important packages (e.g. aioboto3, aiobotocore, aiofiles)

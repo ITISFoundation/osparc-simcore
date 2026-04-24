@@ -6,14 +6,18 @@ aiohttp==3.13.5
     #   -r requirements.in
 aiosignal==1.4.0
     # via aiohttp
-annotated-types==0.7.0
-    # via pydantic
 attrs==25.4.0
     # via
     #   -c ../../requirements/constraints.txt
     #   aiohttp
     #   jsonschema
     #   referencing
+certifi==2026.4.22
+    # via
+    #   -c ../../requirements/constraints.txt
+    #   requests
+charset-normalizer==3.4.7
+    # via requests
 coverage==7.13.5
     # via
     #   -r requirements.in
@@ -23,17 +27,20 @@ frozenlist==1.8.0
     #   aiohttp
     #   aiosignal
 idna==3.13
-    # via yarl
+    # via
+    #   requests
+    #   yarl
 iniconfig==2.3.0
     # via pytest
 isodate==0.7.2
     # via openapi-core
-jsonschema==4.24.1
+jsonschema==4.26.0
     # via
+    #   -c ../../requirements/constraints.txt
     #   openapi-core
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.4.5
+jsonschema-path==0.3.4
     # via
     #   openapi-core
     #   openapi-spec-validator
@@ -51,17 +58,17 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-openapi-core==0.23.1
+openapi-core==0.22.0
     # via -r requirements.in
-openapi-schema-validator==0.8.1
+openapi-schema-validator==0.6.3
     # via
     #   openapi-core
     #   openapi-spec-validator
-openapi-spec-validator==0.8.4
+openapi-spec-validator==0.7.2
     # via openapi-core
 packaging==26.1
     # via pytest
-pathable==0.5.0
+pathable==0.4.4
     # via jsonschema-path
 pluggy==1.6.0
     # via
@@ -71,19 +78,6 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-pydantic==2.11.10
-    # via
-    #   -c ../../requirements/constraints.txt
-    #   openapi-schema-validator
-    #   openapi-spec-validator
-    #   pydantic-settings
-pydantic-core==2.33.2
-    # via pydantic
-pydantic-settings==2.7.0
-    # via
-    #   -c ../../requirements/constraints.txt
-    #   openapi-schema-validator
-    #   openapi-spec-validator
 pygments==2.20.0
     # via pytest
 pytest==9.0.3
@@ -101,18 +95,17 @@ pytest-instafail==0.5.0
     # via -r requirements.in
 pytest-sugar==1.1.1
     # via -r requirements.in
-python-dotenv==1.2.2
-    # via pydantic-settings
 pyyaml==6.0.3
     # via
     #   -c ../../requirements/constraints.txt
     #   jsonschema-path
-referencing==0.37.0
+referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-    #   openapi-schema-validator
+requests==2.33.1
+    # via jsonschema-path
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rpds-py==0.30.0
@@ -124,13 +117,11 @@ six==1.17.0
 termcolor==3.3.0
     # via pytest-sugar
 typing-extensions==4.15.0
+    # via openapi-core
+urllib3==2.6.3
     # via
-    #   openapi-core
-    #   pydantic
-    #   pydantic-core
-    #   typing-inspection
-typing-inspection==0.4.2
-    # via pydantic
+    #   -c ../../requirements/constraints.txt
+    #   requests
 werkzeug==3.1.8
     # via openapi-core
 yarl==1.23.0
