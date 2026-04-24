@@ -243,15 +243,9 @@ class _BaseServiceGetV2(ServiceSummary):
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: Annotated[
-        list[str] | None,
-        Field(default_factory=list),
-    ] = DEFAULT_FACTORY
+    classifiers: Annotated[list[str] | None, Field(default_factory=list)] = DEFAULT_FACTORY
 
-    quality: Annotated[
-        dict[str, Any],
-        Field(default_factory=dict),
-    ] = DEFAULT_FACTORY
+    quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
 
     release_notes_url: HttpUrl | None = None
 
@@ -390,7 +384,7 @@ class ServiceUpdateV2(CatalogInputSchema):
     deprecated: datetime | None = None
 
     classifiers: list[str] | None = None
-    quality: dict[str, Any] = Field(default_factory=dict)
+    quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
 
