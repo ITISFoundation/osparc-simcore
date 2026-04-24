@@ -83,7 +83,10 @@
 
 "a:redis":
   - changed-files:
-      - any-glob-to-any-file: services/redis/**
+      - any-glob-to-any-file:
+          - packages/settings-library/src/settings_library/redis.py
+          - packages/service-library/src/servicelib/redis/**
+          - packages/pytest-simcore/src/pytest_simcore/redis_service.py
 
 "a:resource-usage-tracker":
   - changed-files:
