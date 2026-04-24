@@ -1,6 +1,6 @@
 """Configures front-end statics
 
-Typically dumped in statics.json
+Typically dumped in static-frontend-data.json
 """
 
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict

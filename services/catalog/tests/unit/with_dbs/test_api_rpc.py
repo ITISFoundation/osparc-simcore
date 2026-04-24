@@ -25,7 +25,7 @@ from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging import version
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -326,12 +326,15 @@ async def test_rpc_catalog_client_workflow(
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
-        update=ServiceUpdateV2(
-            name="foo",
-            description="bar",
-            icon=random_icon_url(faker),
-            version_display="this is a nice version",
-            description_ui=True,  # owner activates wiki view
+        update=TypeAdapter(ServiceUpdateV2).validate_python(
+            {
+                "name": "foo",
+                "description": "bar",
+                "icon": random_icon_url(faker),
+                "version_display": "this is a nice version",
+                "description_ui": True,  # owner activates wiki view
+                "release_notes_url": "https://example.com/release-notes",
+            }
         ),
     )
 
@@ -343,6 +346,7 @@ async def test_rpc_catalog_client_workflow(
     assert updated.version_display == "this is a nice version"
     assert updated.icon is not None
     assert not updated.classifiers
+    assert f"{updated.release_notes_url}" == "https://example.com/release-notes"
 
     got = await catalog_rpc.get_service(
         rpc_client,

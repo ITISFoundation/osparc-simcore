@@ -284,6 +284,18 @@ qx.Class.define("osparc.info.ServiceLarge", {
         },
       };
 
+      if (canIWrite) {
+        infoLayout["RELEASE_NOTES_URL"] = {
+          label: this.tr("Release Notes URL"),
+          view: this.__createReleaseNotesUrl(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit release notes URL")),
+            callback: this.__openReleaseNotesUrlEditor,
+            ctx: this,
+          },
+        };
+      }
+
       if (this.getNodeId()) {
         infoLayout["SERVICE_ID"] = {
           label: this.tr("Service ID"),
@@ -406,6 +418,33 @@ qx.Class.define("osparc.info.ServiceLarge", {
         })
         .catch(err => console.error(err));
       return resourcesLayout;
+    },
+
+    __createReleaseNotesUrl: function() {
+      const url = this.getService()["releaseNotesUrl"];
+      if (url) {
+        const link = new osparc.ui.basic.LinkLabel(url, url).set({
+          font: "link-label-14",
+          toolTipText: url,
+          width: 220,
+          maxWidth: 220,
+          wrap: false,
+          allowGrowX: false,
+        });
+        return link;
+      }
+      return new qx.ui.basic.Label(this.tr("Not set"));
+    },
+
+    __openReleaseNotesUrlEditor: function() {
+      const urlEditor = new osparc.widget.Renamer(this.getService()["releaseNotesUrl"] || "", null, this.tr("Edit Release Notes URL"));
+      urlEditor.addListener("labelChanged", e => {
+        urlEditor.close();
+        const newUrl = e.getData()["newLabel"];
+        this.__patchService("releaseNotesUrl", newUrl || null);
+      }, this);
+      urlEditor.center();
+      urlEditor.open();
     },
 
     __openIconEditor: function() {
