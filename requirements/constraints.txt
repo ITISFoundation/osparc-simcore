@@ -37,6 +37,31 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 # TODO: includes async features https://docs.sqlalchemy.org/en/14/changelog/migration_20.html
 sqlalchemy<2.0
 
+# Major upgrades deferred — each will be handled in a dedicated follow-up PR
+# with the required code changes.
+aiobotocore<3.0                               # 3.x changes async API surface
+attrs<26.0                                    # 26.x drops legacy APIs
+cffi<2.0                                      # 2.0 rewrites the C backend
+dask<2026.0                                   # CalVer major bump
+deepdiff<9.0                                  # 9.x ships type stubs and changes API
+distributed<2026.0                            # CalVer major bump (follows dask)
+gunicorn<25.0                                 # 25.x changes worker lifecycle
+markdown-it-py<4.0                            # 4.x drops deprecated plugin APIs
+nicegui<3.0                                   # 3.x large rewrite
+pycountry<26.0                                # 26.x new data format
+pycparser<3.0                                 # 3.0 drops Python <3.10 compat, API changes
+rich<15.0                                     # 15.x changes console/markup APIs
+s3fs<2026.0                                   # CalVer major bump (follows fsspec)
+setuptools<82.0                               # 82.x removes deprecated pkg_resources features
+starlette<1.0                                 # 1.0 removes add_event_handler, on_event etc.
+swagger-ui-py<25.0                            # 25.x CalVer major bump
+twilio<9.0                                    # 9.x major rewrite of the SDK
+websockets<16.0                               # 16.x removes legacy APIs
+
+
+# wrapt 2.0 causes pip resolver to downgrade important packages (e.g. aioboto3, aiobotocore, aiofiles)
+# because some transitive deps have not yet declared compatibility with wrapt>=2
+wrapt<2.0
 
 
 #

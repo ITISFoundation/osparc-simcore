@@ -1,14 +1,17 @@
 attrs==25.4.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   referencing
-cffi==2.0.0
-    # via cryptography
+cffi==1.17.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   cryptography
 coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.5
+cryptography==46.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   types-paramiko
@@ -16,7 +19,7 @@ iniconfig==2.3.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-packaging==26.0
+packaging==26.1
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -25,20 +28,22 @@ pluggy==1.6.0
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-cov
-pycparser==3.0
-    # via cffi
-pygments==2.19.2
+pycparser==2.23
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   cffi
+pygments==2.20.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
@@ -57,15 +62,15 @@ rpds-py==0.30.0
     #   referencing
 termcolor==3.3.0
     # via pytest-sugar
-types-docker==7.1.0.20260109
+types-docker==7.1.0.20260409
     # via -r requirements/_test.in
-types-jsonschema==4.26.0.20260202
+types-jsonschema==4.26.0.20260408
     # via -r requirements/_test.in
-types-paramiko==4.0.0.20250822
+types-paramiko==4.0.0.20260408
     # via types-docker
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260408
     # via -r requirements/_test.in
-types-requests==2.32.4.20260107
+types-requests==2.33.0.20260408
     # via types-docker
 urllib3==2.6.3
     # via

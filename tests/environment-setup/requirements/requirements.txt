@@ -2,7 +2,7 @@ annotated-types==0.7.0
     # via pydantic
 iniconfig==2.3.0
     # via pytest
-packaging==26.0
+packaging==26.1
     # via pytest
 pluggy==1.6.0
     # via pytest
@@ -20,9 +20,9 @@ pydantic==2.11.10
     #   -r requirements/requirements.in
 pydantic-core==2.33.2
     # via pydantic
-pygments==2.19.2
+pygments==2.20.0
     # via pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/requirements.in
     #   pytest-asyncio
