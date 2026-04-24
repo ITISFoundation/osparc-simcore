@@ -34,7 +34,7 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
