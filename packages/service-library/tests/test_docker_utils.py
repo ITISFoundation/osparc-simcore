@@ -1,4 +1,6 @@
 # pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+
 from datetime import UTC, datetime
 
 import pytest
