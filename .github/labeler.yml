@@ -115,15 +115,17 @@
           - services/web/server/src/simcore_service_webserver/api_keys/**
 
 # =====================================================================
-# Frontend (Qooxdoo client + static-webserver wrapper)
+# Frontend
 # =====================================================================
 "a:frontend":
   - changed-files:
-      - any-glob-to-any-file: services/static-webserver/**
+      - any-glob-to-any-file: services/static-webserver/client/**
 
 "a:static-webserver":
   - changed-files:
-      - any-glob-to-any-file: services/static-webserver/**
+      - any-glob-to-any-file:
+          - services/static-webserver/**
+          - '!services/static-webserver/client/**'
 
 javascript:
   - changed-files:
