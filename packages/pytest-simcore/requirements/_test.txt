@@ -164,13 +164,17 @@ types-aiofiles==25.1.0.20260409
     # via -r requirements/_test.in
 typing-extensions==4.15.0
     # via
+    #   aiosignal
+    #   anyio
     #   fastapi
     #   mypy
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
     #   pyee
+    #   pytest-asyncio
     #   sqlalchemy2-stubs
+    #   starlette
     #   typing-inspection
 typing-inspection==0.4.2
     # via

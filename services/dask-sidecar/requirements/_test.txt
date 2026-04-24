@@ -194,12 +194,6 @@ propcache==0.4.1
     #   yarl
 py-partiql-parser==0.6.3
     # via moto
-pyasynchat==1.0.5
-    # via pyftpdlib
-pyasyncore==1.0.5
-    # via
-    #   pyasynchat
-    #   pyftpdlib
 pycparser==3.0
     # via cffi
 pydantic==2.11.10
@@ -318,10 +312,16 @@ types-s3transfer==0.16.0
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
+    #   aiosignal
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic
     #   pydantic-core
+    #   pyopenssl
+    #   pytest-asyncio
+    #   types-aioboto3
+    #   types-aiobotocore
+    #   types-aiobotocore-s3
     #   typing-inspection
 typing-inspection==0.4.2
     # via

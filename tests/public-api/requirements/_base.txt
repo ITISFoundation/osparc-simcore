@@ -88,6 +88,7 @@ typer==0.24.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.15.0
     # via
+    #   anyio
     #   osparc-client
     #   pydantic
     #   pydantic-core

@@ -136,7 +136,6 @@ jsonpointer==3.1.1
     # via jsonpatch
 jsonschema==4.26.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   jsonschema-spec
@@ -308,6 +307,7 @@ types-s3transfer==0.16.0
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   fastapi
@@ -317,6 +317,12 @@ typing-extensions==4.15.0
     #   pint
     #   pydantic
     #   pydantic-core
+    #   pytest-asyncio
+    #   referencing
+    #   starlette
+    #   types-aioboto3
+    #   types-aiobotocore
+    #   types-boto3
     #   typing-inspection
 typing-inspection==0.4.2
     # via

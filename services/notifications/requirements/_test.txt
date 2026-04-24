@@ -161,6 +161,11 @@ tenacity==9.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
+typing-extensions==4.14.1
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   pytest-asyncio
 tzdata==2025.2
     # via
     #   -c requirements/_base.txt

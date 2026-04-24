@@ -69,6 +69,7 @@ termcolor==3.3.0
     # via pytest-sugar
 typing-extensions==4.15.0
     # via
+    #   anyio
     #   pydantic
     #   pydantic-core
     #   typing-inspection

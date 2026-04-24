@@ -178,18 +178,6 @@ jsonref==1.1.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==4.26.0
     # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2025.9.1
@@ -487,6 +475,8 @@ types-awscrt==0.31.3
 typing-extensions==4.15.0
     # via
     #   aiodebug
+    #   aiosignal
+    #   anyio
     #   fast-depends
     #   faststream
     #   grpcio
@@ -498,6 +488,11 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   referencing
+    #   types-aiobotocore
+    #   types-aiobotocore-ec2
+    #   types-aiobotocore-s3
+    #   types-aiobotocore-ssm
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic

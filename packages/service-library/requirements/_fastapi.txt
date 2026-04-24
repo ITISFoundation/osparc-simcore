@@ -155,6 +155,7 @@ typer==0.24.2
     #   fastapi-cloud-cli
 typing-extensions==4.15.0
     # via
+    #   anyio
     #   fastapi
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
@@ -162,6 +163,7 @@ typing-extensions==4.15.0
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
+    #   starlette
     #   typing-inspection
 typing-inspection==0.4.2
     # via

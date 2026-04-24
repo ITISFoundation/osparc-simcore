@@ -125,9 +125,11 @@ tenacity==9.1.4
 typing-extensions==4.15.0
     # via
     #   jsf
+    #   locust
     #   locust-plugins
     #   pydantic
     #   pydantic-core
+    #   referencing
     #   typing-inspection
 typing-inspection==0.4.2
     # via

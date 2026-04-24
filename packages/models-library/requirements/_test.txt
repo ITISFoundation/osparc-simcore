@@ -92,5 +92,7 @@ typing-extensions==4.15.0
     #   flexcache
     #   flexparser
     #   pint
+    #   pytest-asyncio
+    #   referencing
 yarl==1.23.0
     # via -r requirements/_test.in

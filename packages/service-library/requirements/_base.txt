@@ -111,14 +111,7 @@ importlib-metadata==8.7.1
 jsonref==1.1.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==4.26.0
-    # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
 markdown-it-py==4.0.0
@@ -327,6 +320,8 @@ typer==0.24.2
 typing-extensions==4.15.0
     # via
     #   aiodebug
+    #   aiosignal
+    #   anyio
     #   fast-depends
     #   faststream
     #   grpcio
@@ -338,6 +333,7 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   referencing
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic

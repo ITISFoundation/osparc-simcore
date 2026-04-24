@@ -159,8 +159,10 @@ types-psycopg2==2.9.21.20260422
 typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   mypy
     #   pyee
+    #   pytest-asyncio
     #   sqlalchemy2-stubs
 urllib3==2.6.3
     # via

@@ -73,6 +73,7 @@ tomlkit==0.14.0
 typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   mypy
 virtualenv==21.2.4
     # via pre-commit

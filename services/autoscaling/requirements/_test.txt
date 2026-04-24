@@ -327,10 +327,17 @@ types-pyyaml==6.0.12.20260408
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic
     #   pydantic-core
+    #   pytest-asyncio
+    #   types-aiobotocore
+    #   types-aiobotocore-ec2
+    #   types-aiobotocore-iam
+    #   types-aiobotocore-s3
+    #   types-aiobotocore-ssm
     #   typing-inspection
 typing-inspection==0.4.2
     # via
