@@ -28,10 +28,8 @@ isort==8.0.1
     #   pylint
 librt==0.9.0
     # via mypy
-markdown-it-py==3.0.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   rich
+markdown-it-py==4.0.0
+    # via rich
 mccabe==0.7.0
     # via pylint
 mdurl==0.1.2

@@ -4,11 +4,8 @@ annotated-types==0.7.0
     # via pydantic
 click==8.3.3
     # via typer
-markdown-it-py==3.0.0
-    # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   rich
+markdown-it-py==4.0.0
+    # via rich
 mdurl==0.1.2
     # via markdown-it-py
 orjson==3.11.8

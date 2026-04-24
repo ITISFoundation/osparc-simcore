@@ -62,9 +62,8 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-referencing==0.35.1
+referencing==0.37.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 rpds-py==0.30.0

@@ -54,13 +54,11 @@ coverage==7.13.5
     # via pytest-cov
 dask==2025.11.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   distributed
 distributed==2025.11.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   dask
 docker==7.1.0

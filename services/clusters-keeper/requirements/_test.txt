@@ -63,10 +63,8 @@ certifi==2025.11.12
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   cryptography
+cffi==2.0.0
+    # via cryptography
 cfn-lint==1.41.0
     # via moto
 charset-normalizer==3.4.4
@@ -81,7 +79,7 @@ coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.0
+cryptography==46.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
@@ -220,10 +218,8 @@ psutil==7.1.3
     #   -r requirements/_test.in
 py-partiql-parser==0.6.3
     # via moto
-pycparser==2.23
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   cffi
+pycparser==3.0
+    # via cffi
 pydantic==2.11.10
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -278,7 +274,6 @@ redis==7.4.0
     #   fakeredis
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path
@@ -307,10 +302,8 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==81.0.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   moto
+setuptools==82.0.1
+    # via moto
 six==1.17.0
     # via
     #   -c requirements/_base.txt

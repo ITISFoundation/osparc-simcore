@@ -74,7 +74,6 @@ certifi==2024.8.30
     #   requests
 cffi==1.17.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   cryptography
     #   pact-python-ffi
@@ -284,7 +283,6 @@ pyasn1==0.6.3
     #   rsa
 pycparser==2.22
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   cffi
 pygments==2.18.0
@@ -347,10 +345,8 @@ redis==6.4.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-referencing==0.35.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   types-jsonschema
+referencing==0.37.0
+    # via types-jsonschema
 requests==2.32.4
     # via
     #   -c requirements/_base.txt
@@ -373,7 +369,6 @@ sarif-om==1.0.4
     # via cfn-lint
 setuptools==80.9.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   moto

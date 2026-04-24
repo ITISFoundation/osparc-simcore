@@ -105,16 +105,16 @@ jsonschema==4.26.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
+    #   jsonschema-spec
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.4
+jsonschema-spec==0.1.3
     # via openapi-spec-validator
 jsonschema-specifications==2025.9.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   jsonschema
-    #   openapi-schema-validator
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
 librt==0.9.0
@@ -133,9 +133,9 @@ mypy-extensions==1.1.0
     # via mypy
 numpy==2.4.4
     # via -r requirements/_test.in
-openapi-schema-validator==0.6.3
+openapi-schema-validator==0.4.3
     # via openapi-spec-validator
-openapi-spec-validator==0.7.2
+openapi-spec-validator==0.5.5
     # via -r requirements/_test.in
 packaging==26.1
     # via
@@ -144,7 +144,7 @@ packaging==26.1
     #   -c requirements/_fastapi.txt
     #   pytest
 pathable==0.4.4
-    # via jsonschema-path
+    # via jsonschema-spec
 pathspec==1.1.0
     # via mypy
 pillow==12.2.0
@@ -223,25 +223,22 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
-    #   jsonschema-path
+    #   jsonschema-spec
 redis==7.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-referencing==0.35.1
+referencing==0.37.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   jsonschema
-    #   jsonschema-path
     #   jsonschema-specifications
 requests==2.33.1
     # via
     #   -c requirements/_base.txt
     #   docker
-    #   jsonschema-path
 respx==0.23.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
@@ -287,6 +284,7 @@ typing-extensions==4.15.0
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
+    #   jsonschema-spec
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==2.6.3

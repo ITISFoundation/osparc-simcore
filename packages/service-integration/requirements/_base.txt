@@ -64,13 +64,8 @@ jsonschema==4.26.0
     #   -r requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
-markdown-it-py==3.0.0
-    # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   rich
+markdown-it-py==4.0.0
+    # via rich
 markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
@@ -137,12 +132,8 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   cookiecutter
-referencing==0.35.1
+referencing==0.37.0
     # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.33.1

@@ -4,15 +4,13 @@ attrs==25.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-docker
-cffi==1.17.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   cryptography
+cffi==2.0.0
+    # via cryptography
 coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.0
+cryptography==46.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   types-paramiko
@@ -39,10 +37,8 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pycparser==2.23
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   cffi
+pycparser==3.0
+    # via cffi
 pygments==2.20.0
     # via pytest
 pytest==9.0.3

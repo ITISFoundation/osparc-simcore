@@ -63,9 +63,8 @@ pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-referencing==0.35.1
+referencing==0.37.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.33.1
