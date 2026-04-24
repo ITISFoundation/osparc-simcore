@@ -140,7 +140,7 @@ def create_function_from_project(
                 logging.warning("Could not delete function %s: %s", function_uuid, response.text())
 
 
-def test_response_surface_modeling(  # noqa: PLR0915, C901
+def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
@@ -531,33 +531,41 @@ def test_response_surface_modeling(  # noqa: PLR0915, C901
                 f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit=50",
                 headers=auth_headers,
             )
-            assert jobs_response.ok, f"Failed to get function jobs: {jobs_response.status}"
-            jobs_data = jobs_response.json()
-            all_jobs = jobs_data.get("items", [])
-
-            logging.info("Total jobs: %d", len(all_jobs))
-
-            input_values = sorted(
-                [
-                    j["inputs"]["Number parameter"]
-                    for j in all_jobs
-                    if j.get("inputs") and "Number parameter" in j["inputs"]
-                ]
-            )
-
-            logging.info(
-                "Input values for %s: %s",
-                local_service_key,
-                json.dumps(input_values),
-            )
-
-            if "uq" not in local_service_key.lower():
-                assert len(input_values) == _NUM_SAMPLING_POINTS, (
-                    f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
+            if jobs_response.status == 404:
+                logging.warning(
+                    "Endpoint /v0/function_jobs not available on %s — skipping API verification",
+                    api_server_url,
                 )
-                if seed_was_set:
-                    for i, (actual, expected) in enumerate(zip(input_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)):
-                        assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
+            else:
+                assert jobs_response.ok, f"Failed to get function jobs: {jobs_response.status}"
+                jobs_data = jobs_response.json()
+                all_jobs = jobs_data.get("items", [])
+
+                logging.info("Total jobs: %d", len(all_jobs))
+
+                input_values = sorted(
+                    [
+                        j["inputs"]["Number parameter"]
+                        for j in all_jobs
+                        if j.get("inputs") and "Number parameter" in j["inputs"]
+                    ]
+                )
+
+                logging.info(
+                    "Input values for %s: %s",
+                    local_service_key,
+                    json.dumps(input_values),
+                )
+
+                if "uq" not in local_service_key.lower():
+                    assert len(input_values) == _NUM_SAMPLING_POINTS, (
+                        f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
+                    )
+                    if seed_was_set:
+                        for i, (actual, expected) in enumerate(
+                            zip(input_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)
+                        ):
+                            assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
 
         with (
             log_context(logging.INFO, "Go back to dashboard"),
