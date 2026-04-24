@@ -14,6 +14,7 @@ from .notifier_abc import NotificationProvider
 from .notifier_email import EmailProvider
 from .notifier_ws import WebSocketProvider
 from .postgres import get_engine
+from .rabbitmq import get_rabbitmq_rpc_client
 
 _logger = logging.getLogger(__name__)
 
@@ -76,22 +77,18 @@ def setup_notifier(app: FastAPI):
 
     async def _on_startup() -> None:
         assert app.state.external_socketio  # nosec
-
+        engine = get_engine(app)
         providers: list[NotificationProvider] = [
             WebSocketProvider(
                 sio_manager=app.state.external_socketio,
-                users_repo=PaymentsUsersRepo(get_engine(app)),
+                users_repo=PaymentsUsersRepo(engine),
+            ),
+            EmailProvider(
+                rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
+                users_repo=PaymentsUsersRepo(engine),
+                bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
             ),
         ]
-
-        if email_settings := app_settings.PAYMENTS_EMAIL:
-            providers.append(
-                EmailProvider(
-                    email_settings,
-                    users_repo=PaymentsUsersRepo(get_engine(app)),
-                    bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
-                )
-            )
 
         notifier = NotifierService(*providers)
         notifier.set_to_app_state(app)

@@ -144,3 +144,70 @@ async def test_preview_new_2fa_code_template_invalid_context(
 
     with pytest.raises(NotificationsTemplateContextValidationError):
         await preview_template(rpc_client, ref=ref, context=context)
+
+
+async def test_preview_paid_template_renders_without_errors(
+    fake_product_data: dict[str, Any],
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="paid")
+    context = {
+        "user": {
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "user_name": "jane_doe",
+            "email": "jane@example.com",
+        },
+        "payment": {
+            "price_dollars": "25.00",
+            "osparc_credits": "250.00",
+            "invoice_url": "https://example.com/invoice/1",
+        },
+        "product": fake_product_data,
+    }
+
+    response = await preview_template(rpc_client, ref=ref, context=context)
+    assert isinstance(response, PreviewTemplateResponse)
+    assert response.ref.template_name == "paid"
+    assert isinstance(response.message_content, dict)
+    assert "25.00" in response.message_content["subject"]
+    assert "250.00" in response.message_content["subject"]
+    assert "Jane" in response.message_content["body_text"]
+
+
+async def test_preview_paid_template_renders_with_optional_fields_missing(
+    fake_product_data: dict[str, Any],
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="paid")
+    context = {
+        "user": {
+            "user_name": "jdoe",
+        },
+        "payment": {
+            "price_dollars": "10.00",
+            "osparc_credits": "100.00",
+            "invoice_url": "https://example.com/invoice/1",
+        },
+        "product": fake_product_data,
+    }
+
+    response = await preview_template(rpc_client, ref=ref, context=context)
+    assert isinstance(response, PreviewTemplateResponse)
+    assert response.ref.template_name == "paid"
+    assert "jdoe" in response.message_content["body_text"]
+
+
+async def test_preview_paid_template_invalid_context(
+    fake_product_data: dict[str, Any],
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="paid")
+    # Missing required 'user' and 'payment' fields
+    context = {
+        "invalid_key": "invalid_value",
+        "product": fake_product_data,
+    }
+
+    with pytest.raises(NotificationsTemplateContextValidationError):
+        await preview_template(rpc_client, ref=ref, context=context)
