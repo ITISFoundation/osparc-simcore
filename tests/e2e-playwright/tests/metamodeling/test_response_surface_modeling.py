@@ -140,7 +140,7 @@ def create_function_from_project(
                 logging.warning("Could not delete function %s: %s", function_uuid, response.text())
 
 
-def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
+def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: disable=too-many-branches
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
@@ -315,6 +315,44 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
         "mmux-vite-app-uq-write",
     ]
 
+    def _check_page_status(service_iframe) -> str:
+        """Check status cells on the current page of the data grid."""
+        status_cells = service_iframe.locator('div[role="gridcell"][data-field="status"]')
+        total = status_cells.count()
+        if total == 0:
+            return "running"
+        all_complete = True
+        for i in range(total):
+            text = (status_cells.nth(i).text_content() or "").lower().strip()
+            logging.info("STATUS CELL TEXT %d: %s", i, text)
+            if text in _FAILED_STATES:
+                return "failed"
+            if text != "complete":
+                all_complete = False
+        return "complete" if all_complete else "running"
+
+    def check_all_pages_status(service_iframe, page) -> str:
+        """Navigate through all data grid pages to check every row's status."""
+        # Go to the first page
+        first_page_btn = service_iframe.locator('button[aria-label="Go to first page"]')
+        if first_page_btn.count() > 0 and first_page_btn.is_enabled():
+            first_page_btn.click()
+            page.wait_for_timeout(500)
+
+        while True:
+            status = _check_page_status(service_iframe)
+            if status != "complete":
+                return status
+
+            # Try to go to the next page
+            next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
+            if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
+                # No more pages — all rows across all pages are complete
+                return "complete"
+
+            next_page_btn.click()
+            page.wait_for_timeout(500)
+
     for local_service_key in service_keys:
         with log_context(
             logging.INFO,
@@ -438,45 +476,6 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             toast.wait_for(state="visible", timeout=120000)
 
         with log_context(logging.INFO, "Waiting for the sampling to complete..."):
-
-            def _check_page_status(service_iframe) -> str:
-                """Check status cells on the current page of the data grid."""
-                status_cells = service_iframe.locator('div[role="gridcell"][data-field="status"]')
-                total = status_cells.count()
-                if total == 0:
-                    return "running"
-                all_complete = True
-                for i in range(total):
-                    text = (status_cells.nth(i).text_content() or "").lower().strip()
-                    logging.info("STATUS CELL TEXT %d: %s", i, text)
-                    if text in _FAILED_STATES:
-                        return "failed"
-                    if text != "complete":
-                        all_complete = False
-                return "complete" if all_complete else "running"
-
-            def check_all_pages_status(service_iframe, page) -> str:
-                """Navigate through all data grid pages to check every row's status."""
-                # Go to the first page
-                first_page_btn = service_iframe.locator('button[aria-label="Go to first page"]')
-                if first_page_btn.count() > 0 and first_page_btn.is_enabled():
-                    first_page_btn.click()
-                    page.wait_for_timeout(500)
-
-                while True:
-                    status = _check_page_status(service_iframe)
-                    if status != "complete":
-                        return status
-
-                    # Try to go to the next page
-                    next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
-                    if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
-                        # No more pages — all rows across all pages are complete
-                        return "complete"
-
-                    next_page_btn.click()
-                    page.wait_for_timeout(500)
-
             refresh_btn = service_iframe.locator(
                 '.MuiDataGrid-columnHeader[data-field="subJobs"] button:not(.MuiDataGrid-sortButton)'
             )
