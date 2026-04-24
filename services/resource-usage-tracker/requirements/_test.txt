@@ -18,6 +18,7 @@ asgi-lifespan==2.1.0
     #   -r requirements/_test.in
 attrs==23.2.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
@@ -64,7 +65,7 @@ coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.5
+cryptography==46.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
@@ -73,9 +74,9 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==40.11.0
+faker==40.15.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.35.1
     # via -r requirements/_test.in
 flask==3.1.3
     # via
@@ -124,13 +125,13 @@ jmespath==1.0.1
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.6.4
     # via moto
 jsonpatch==1.33
     # via cfn-lint
 jsonpath-ng==1.8.0
     # via moto
-jsonpointer==3.0.0
+jsonpointer==3.1.1
     # via jsonpatch
 jsonschema==4.25.1
     # via
@@ -147,9 +148,9 @@ jsonschema-specifications==2023.7.1
     #   openapi-schema-validator
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-librt==0.8.1
+librt==0.9.0
     # via mypy
-lupa==2.6
+lupa==2.8
     # via fakeredis
 mako==1.3.10
     # via
@@ -167,7 +168,7 @@ moto==5.1.22
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-mypy==1.19.1
+mypy==1.20.2
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -183,7 +184,7 @@ packaging==24.0
     #   pytest
 pathable==0.4.4
     # via jsonschema-path
-pathspec==1.0.4
+pathspec==1.1.0
     # via mypy
 pluggy==1.6.0
     # via
@@ -211,7 +212,7 @@ pyparsing==3.1.2
     # via
     #   -c requirements/_base.txt
     #   moto
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -220,7 +221,7 @@ pytest==9.0.2
     #   pytest-sugar
 pytest-asyncio==1.3.0
     # via -r requirements/_test.in
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-mock==3.15.1
     # via -r requirements/_test.in
@@ -252,7 +253,6 @@ redis==7.4.0
     #   fakeredis
 referencing==0.29.3
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path
@@ -273,7 +273,7 @@ requests-mock==1.12.1
     # via -r requirements/_test.in
 responses==0.26.0
     # via moto
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
@@ -312,7 +312,7 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
     # via pytest-sugar
-types-requests==2.32.4.20260107
+types-requests==2.33.0.20260408
     # via -r requirements/_test.in
 typing-extensions==4.14.1
     # via
@@ -323,6 +323,7 @@ typing-extensions==4.14.1
     #   mypy
     #   pydantic
     #   pydantic-core
+    #   pytest-asyncio
     #   sqlalchemy2-stubs
     #   typing-inspection
 typing-inspection==0.4.1
@@ -338,13 +339,14 @@ urllib3==2.6.3
     #   requests
     #   responses
     #   types-requests
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors
     #   moto
 wrapt==1.16.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-xray-sdk
 xmltodict==1.0.4

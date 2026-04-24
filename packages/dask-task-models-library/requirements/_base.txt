@@ -6,9 +6,15 @@ arrow==1.4.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 attrs==25.4.0
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   referencing
-click==8.3.1
+click==8.3.3
     # via
     #   dask
     #   distributed
@@ -27,10 +33,12 @@ dnspython==2.8.0
     # via email-validator
 email-validator==2.3.0
     # via pydantic
-fsspec==2026.2.0
+fsspec==2026.3.0
     # via dask
-idna==3.11
+idna==3.13
     # via email-validator
+importlib-metadata==9.0.0
+    # via dask
 jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -58,7 +66,7 @@ mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.1.2
     # via distributed
-orjson==3.11.7
+orjson==3.11.8
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -70,7 +78,7 @@ orjson==3.11.7
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-packaging==26.0
+packaging==26.1
     # via
     #   dask
     #   distributed
@@ -112,7 +120,7 @@ pydantic-settings==2.7.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-pygments==2.19.2
+pygments==2.20.0
     # via rich
 python-dateutil==2.9.0.post0
     # via arrow
@@ -128,7 +136,11 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   dask
     #   distributed
-referencing==0.35.1
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+rich==14.3.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -136,10 +148,6 @@ referencing==0.35.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   jsonschema
-    #   jsonschema-specifications
-rich==14.3.3
-    # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
 rpds-py==0.30.0
@@ -161,17 +169,18 @@ toolz==1.1.0
     #   partd
 tornado==6.5.5
     # via distributed
-typer==0.24.1
+typer==0.24.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.15.0
     # via
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   referencing
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-tzdata==2025.3
+tzdata==2026.1
     # via arrow
 urllib3==2.6.3
     # via
@@ -184,3 +193,5 @@ urllib3==2.6.3
     #   distributed
 zict==3.0.0
     # via distributed
+zipp==3.23.1
+    # via importlib-metadata
