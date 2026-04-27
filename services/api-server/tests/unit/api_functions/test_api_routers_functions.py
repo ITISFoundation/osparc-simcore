@@ -12,7 +12,6 @@ from uuid import uuid4
 import httpx
 import pytest
 import respx
-from celery import Task
 from celery_library import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
@@ -43,6 +42,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
 from servicelib.celery.app_server import BaseAppServer
+from servicelib.celery.task_context import TaskContext
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -387,12 +387,8 @@ async def test_run_project_function(
     capture: str,
     mock_dependency_get_celery_task_manager: MockType,
 ) -> None:
-    def _get_app_server(celery_app: Any) -> FastAPI:
-        app_server = mocker.Mock(spec=BaseAppServer)
-        app_server.app = app
-        return app_server
-
-    mocker.patch.object(_functions_tasks, "get_app_server", _get_app_server)
+    app_server = mocker.Mock(spec=BaseAppServer)
+    app_server.app = app
 
     def _get_task_manager(app: FastAPI) -> CeleryTaskManager:
         return mock_dependency_get_celery_task_manager
@@ -480,7 +476,7 @@ async def test_run_project_function(
     )
 
     job = await _functions_tasks.run_function(
-        task=MagicMock(spec=Task),
+        task=MagicMock(spec=TaskContext, app_server=app_server),
         user_identity=user_identity,
         function=fake_registered_project_function,
         pre_registered_function_job_data=pre_registered_function_job_data,
