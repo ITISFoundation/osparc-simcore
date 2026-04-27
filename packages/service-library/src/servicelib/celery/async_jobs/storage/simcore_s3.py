@@ -35,7 +35,7 @@ async def submit_export_data(
         case _:
             msg = f"Invalid export_as value: {export_as}"
             raise ValueError(msg)
-    task_uuid = await task_manager.submit_task(
+    task_id = await task_manager.submit_task(
         TaskExecutionMetadata(
             name=task_name,
             ephemeral=False,
@@ -46,4 +46,4 @@ async def submit_export_data(
         product_name=product_name,
         paths_to_export=paths_to_export,
     )
-    return AsyncJobGet(job_id=task_uuid, job_name=task_name)
+    return AsyncJobGet(job_id=task_id, job_name=task_name)

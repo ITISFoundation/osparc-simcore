@@ -83,19 +83,19 @@ async def _celery_task_status(
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    task_uuid = _TASK_ID_ADAPTER.validate_python(job_creation_task_id)
+    task_id = _TASK_ID_ADAPTER.validate_python(job_creation_task_id)
     try:
-        task_status = await task_manager.get_status(task_id=task_uuid)
+        task_status = await task_manager.get_status(task_id=task_id)
         assert isinstance(task_status, TaskStatus)  # nosec
         return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskNotFoundError as err:
-        user_msg = f"Job creation task not found for task_uuid={job_creation_task_id!r}."
+        user_msg = f"Job creation task not found for task_id={job_creation_task_id!r}."
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 user_msg,
                 error=err,
                 error_context={
-                    "task_uuid": job_creation_task_id,
+                    "task_id": job_creation_task_id,
                     "user_id": user_id,
                     "product_name": product_name,
                 },
@@ -320,7 +320,7 @@ class FunctionJobTaskClientService:
                 job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
             )
 
-            task_uuids = await logged_gather(
+            task_ids = await logged_gather(
                 *(
                     self._celery_task_manager.submit_task(
                         TaskExecutionMetadata(
@@ -356,7 +356,7 @@ class FunctionJobTaskClientService:
                         solver_job_id=None,
                     )
                     for task_id, pre_registered_function_job_data in zip(
-                        task_uuids, pre_registered_function_job_data_list, strict=False
+                        task_ids, pre_registered_function_job_data_list, strict=False
                     )
                 ],
             )

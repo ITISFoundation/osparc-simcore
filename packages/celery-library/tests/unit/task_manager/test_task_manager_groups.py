@@ -48,7 +48,7 @@ async def test_submit_group_all_tasks_complete_successfully(
         for i in range(num_tasks)
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         execution_metadata=GroupExecutionMetadata(
             name="fake_file_processing_group",
             tasks=group_tasks,
@@ -58,15 +58,15 @@ async def test_submit_group_all_tasks_complete_successfully(
     )
 
     assert group_id is not None
-    assert len(task_uuids) == num_tasks
+    assert len(task_ids) == num_tasks
 
     # Wait for all tasks to complete
-    for task_uuid in task_uuids:
-        await wait_for_task_success(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_success(task_manager, task_id)
 
     # Verify all results
-    for task_uuid in task_uuids:
-        result = await task_manager.get_result(task_uuid)
+    for task_id in task_ids:
+        result = await task_manager.get_result(task_id)
         assert result == "archive.zip"
 
 
@@ -86,10 +86,10 @@ async def test_submit_group_tasks_appear_in_listing(
         for _ in range(num_tasks)
     ]
 
-    task_uuids: list[TaskID] = []
+    task_ids: list[TaskID] = []
 
     try:
-        _, task_uuids = await task_manager.submit_group(
+        _, task_ids = await task_manager.submit_group(
             GroupExecutionMetadata(
                 name="tasks_group",
                 tasks=group_tasks,
@@ -102,13 +102,13 @@ async def test_submit_group_tasks_appear_in_listing(
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 tasks = await task_manager.list_tasks(owner=fake_owner, user_id=fake_user_id)
-                task_uuids_from_list = {task.uuid for task in tasks}
-                assert all(uuid not in task_uuids_from_list for uuid in task_uuids)
+                task_ids_from_list = {task.uuid for task in tasks}
+                assert all(uuid not in task_ids_from_list for uuid in task_ids)
     finally:
         # Clean up
-        for task_uuid in task_uuids:
+        for task_id in task_ids:
             with contextlib.suppress(TaskNotFoundError):
-                await task_manager.cancel(task_uuid)
+                await task_manager.cancel(task_id)
 
 
 async def test_submit_group_with_mixed_task_types(
@@ -133,7 +133,7 @@ async def test_submit_group_with_mixed_task_types(
         ),
     ]
 
-    _, task_uuids = await task_manager.submit_group(
+    _, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="mixed_tasks_group",
             tasks=group_tasks,
@@ -142,18 +142,18 @@ async def test_submit_group_with_mixed_task_types(
         user_id=fake_user_id,
     )
 
-    assert len(task_uuids) == 3
+    assert len(task_ids) == 3
 
     # Wait for all tasks to complete
-    for task_uuid in task_uuids:
-        await wait_for_task_success(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_success(task_manager, task_id)
 
     # Verify first two tasks return "archive.zip"
-    assert await task_manager.get_result(task_uuids[0]) == "archive.zip"
-    assert await task_manager.get_result(task_uuids[1]) == "archive.zip"
+    assert await task_manager.get_result(task_ids[0]) == "archive.zip"
+    assert await task_manager.get_result(task_ids[1]) == "archive.zip"
 
     # Verify streaming task result
-    result = await task_manager.get_result(task_uuids[2])
+    result = await task_manager.get_result(task_ids[2])
     assert result == "completed-2-results"
 
 
@@ -173,7 +173,7 @@ async def test_submit_group_can_cancel_individual_tasks(
         for _ in range(num_tasks)
     ]
 
-    _, task_uuids = await task_manager.submit_group(
+    _, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="cancellable_tasks_group",
             tasks=group_tasks,
@@ -186,15 +186,15 @@ async def test_submit_group_can_cancel_individual_tasks(
     await asyncio.sleep(2.0)
 
     # Cancel the first task
-    await task_manager.cancel(task_uuids[0])
+    await task_manager.cancel(task_ids[0])
 
     # Verify first task is gone
     with pytest.raises(TaskNotFoundError):
-        await task_manager.get_status(task_uuids[0])
+        await task_manager.get_status(task_ids[0])
 
     # Cancel remaining tasks
-    for task_uuid in task_uuids[1:]:
-        await task_manager.cancel(task_uuid)
+    for task_id in task_ids[1:]:
+        await task_manager.cancel(task_id)
 
 
 async def test_cancelling_a_group_cancels_all_tasks(
@@ -212,7 +212,7 @@ async def test_cancelling_a_group_cancels_all_tasks(
         for _ in range(num_tasks)
     ]
 
-    group_uuid, task_uuids = await task_manager.submit_group(
+    group_uuid, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="cancellable_group",
             tasks=group_tasks,
@@ -231,9 +231,9 @@ async def test_cancelling_a_group_cancels_all_tasks(
         await task_manager.get_status(group_uuid)
 
     # All individual tasks should also be gone
-    for task_uuid in task_uuids:
+    for task_id in task_ids:
         with pytest.raises(TaskNotFoundError):
-            await task_manager.get_status(task_uuid)
+            await task_manager.get_status(task_id)
 
 
 async def test_submit_group_with_failures(
@@ -258,7 +258,7 @@ async def test_submit_group_with_failures(
         ),
     ]
 
-    _, task_uuids = await task_manager.submit_group(
+    _, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="group_with_failures",
             tasks=group_tasks,
@@ -267,18 +267,18 @@ async def test_submit_group_with_failures(
         user_id=fake_user_id,
     )
 
-    assert len(task_uuids) == 3
+    assert len(task_ids) == 3
 
     # Wait for all tasks to finish
-    for task_uuid in task_uuids:
-        await wait_for_task_done(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_done(task_manager, task_id)
 
     # Verify successful tasks
-    assert await task_manager.get_result(task_uuids[0]) == "archive.zip"
-    assert await task_manager.get_result(task_uuids[2]) == "archive.zip"
+    assert await task_manager.get_result(task_ids[0]) == "archive.zip"
+    assert await task_manager.get_result(task_ids[2]) == "archive.zip"
 
     # Verify failed task
-    result = await task_manager.get_result(task_uuids[1])
+    result = await task_manager.get_result(task_ids[1])
     assert isinstance(result, TransferableCeleryError)
     assert "Something strange happened: BOOM!" in f"{result}"
 
@@ -299,7 +299,7 @@ async def test_submit_group_with_ephemeral_tasks(
         for i in range(num_tasks)
     ]
 
-    _, task_uuids = await task_manager.submit_group(
+    _, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="ephemeral_tasks_group",
             tasks=group_tasks,
@@ -308,20 +308,20 @@ async def test_submit_group_with_ephemeral_tasks(
         user_id=fake_user_id,
     )
 
-    assert len(task_uuids) == num_tasks
+    assert len(task_ids) == num_tasks
 
     # Wait for all tasks to complete and get results (which should clean them up)
-    for task_uuid in task_uuids:
-        await wait_for_task_success(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_success(task_manager, task_id)
 
         # Getting the result should trigger cleanup for ephemeral tasks
-        result = await task_manager.get_result(task_uuid)
+        result = await task_manager.get_result(task_id)
         assert result == "archive.zip"
 
-    for task_uuid in task_uuids:
+    for task_id in task_ids:
         # Second attempt to get result should fail as ephemeral tasks are cleaned up
         with pytest.raises(TaskNotFoundError):
-            await task_manager.get_status(task_uuid)
+            await task_manager.get_status(task_id)
 
 
 async def test_submit_empty_group(
@@ -330,7 +330,7 @@ async def test_submit_empty_group(
     fake_owner: str,
     fake_user_id: int,
 ):
-    _, task_uuids = await task_manager.submit_group(
+    _, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="empty_group",
             tasks=[],
@@ -339,7 +339,7 @@ async def test_submit_empty_group(
         user_id=fake_user_id,
     )
 
-    assert task_uuids == []
+    assert task_ids == []
 
 
 async def test_get_group_status_returns_status_for_running_group(
@@ -358,7 +358,7 @@ async def test_get_group_status_returns_status_for_running_group(
         for _ in range(num_tasks)
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="running_tasks_group",
             tasks=group_tasks,
@@ -376,15 +376,15 @@ async def test_get_group_status_returns_status_for_running_group(
 
         assert isinstance(task_status, TaskStatus)
         assert task_status.task_id == group_id
-        assert task_status.children == task_uuids
+        assert task_status.children == task_ids
         assert task_status.total_count == num_tasks
         assert task_status.completed_count >= 0
         assert task_status.completed_count <= num_tasks
     finally:
         # Clean up
-        for task_uuid in task_uuids:
+        for task_id in task_ids:
             with contextlib.suppress(TaskNotFoundError):
-                await task_manager.cancel(task_uuid)
+                await task_manager.cancel(task_id)
 
 
 async def test_get_group_status_returns_done_when_all_tasks_complete(
@@ -403,7 +403,7 @@ async def test_get_group_status_returns_done_when_all_tasks_complete(
         for i in range(num_tasks)
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="fast_tasks_group",
             tasks=group_tasks,
@@ -413,15 +413,15 @@ async def test_get_group_status_returns_done_when_all_tasks_complete(
     )
 
     # Wait for all tasks to complete
-    for task_uuid in task_uuids:
-        await wait_for_task_success(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_success(task_manager, task_id)
 
     # Get group status
     task_status = await task_manager.get_status(group_id)
 
     assert isinstance(task_status, TaskStatus)
     assert task_status.task_id == group_id
-    assert task_status.children == task_uuids
+    assert task_status.children == task_ids
     assert task_status.total_count == num_tasks
     assert task_status.completed_count == num_tasks
     assert task_status.is_done
@@ -446,7 +446,7 @@ async def test_get_group_status_successful_false_when_task_fails(
         ),
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="failing_tasks_group",
             tasks=group_tasks,
@@ -456,15 +456,15 @@ async def test_get_group_status_successful_false_when_task_fails(
     )
 
     # Wait for all tasks to finish
-    for task_uuid in task_uuids:
-        await wait_for_task_done(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_done(task_manager, task_id)
 
     # Get group status
     task_status = await task_manager.get_status(group_id)
 
     assert isinstance(task_status, TaskStatus)
     assert task_status.task_id == group_id
-    assert task_status.children == task_uuids
+    assert task_status.children == task_ids
     assert task_status.total_count == 2
     assert task_status.is_done
     # NOTE: one task failed
@@ -500,7 +500,7 @@ async def test_get_group_status_tracks_progress(
         for i in range(num_tasks)
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="long_running_tasks_group",
             tasks=group_tasks,
@@ -531,9 +531,9 @@ async def test_get_group_status_tracks_progress(
         assert task_status.is_successful
     finally:
         # Clean up
-        for task_uuid in task_uuids:
+        for task_id in task_ids:
             with contextlib.suppress(TaskNotFoundError):
-                await task_manager.cancel(task_uuid)
+                await task_manager.cancel(task_id)
 
 
 async def test_get_group_status_with_empty_group(
@@ -570,15 +570,15 @@ async def test_get_result_dispatches_to_task_result(
     fake_owner: str,
     fake_user_id: int,
 ):
-    task_uuid = await task_manager.submit_task(
+    task_id = await task_manager.submit_task(
         TaskExecutionMetadata(name=fake_file_processor.__name__),
         owner=fake_owner,
         user_id=fake_user_id,
         files=["file1"],
     )
-    await wait_for_task_success(task_manager, task_uuid)
+    await wait_for_task_success(task_manager, task_id)
 
-    result = await task_manager.get_result(task_uuid)
+    result = await task_manager.get_result(task_id)
     assert result == "archive.zip"
 
 
@@ -596,14 +596,14 @@ async def test_get_result_dispatches_to_group_result(
         for i in range(2)
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(name="result_dispatch_group", tasks=group_tasks),
         owner=fake_owner,
         user_id=fake_user_id,
     )
 
-    for task_uuid in task_uuids:
-        await wait_for_task_success(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_success(task_manager, task_id)
 
     result = await task_manager.get_result(group_id)
     assert isinstance(result, list)
@@ -637,14 +637,14 @@ async def test_get_group_result_returns_all_results(
         for i in range(num_tasks)
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(name="all_results_group", tasks=group_tasks),
         owner=fake_owner,
         user_id=fake_user_id,
     )
 
-    for task_uuid in task_uuids:
-        await wait_for_task_success(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_success(task_manager, task_id)
 
     results = await task_manager.get_result(group_id)
     assert results == ["archive.zip"] * num_tasks
@@ -667,14 +667,14 @@ async def test_get_group_result_with_failures(
         ),
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(name="failures_result_group", tasks=group_tasks),
         owner=fake_owner,
         user_id=fake_user_id,
     )
 
-    for task_uuid in task_uuids:
-        await wait_for_task_done(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_done(task_manager, task_id)
 
     results = await task_manager.get_result(group_id)
     assert len(results) == 2
@@ -698,14 +698,14 @@ async def test_get_group_result_with_ephemeral_cleans_up(
         for i in range(num_tasks)
     ]
 
-    group_id, task_uuids = await task_manager.submit_group(
+    group_id, task_ids = await task_manager.submit_group(
         GroupExecutionMetadata(name="ephemeral_result_group", tasks=group_tasks, ephemeral=True),
         owner=fake_owner,
         user_id=fake_user_id,
     )
 
-    for task_uuid in task_uuids:
-        await wait_for_task_success(task_manager, task_uuid)
+    for task_id in task_ids:
+        await wait_for_task_success(task_manager, task_id)
 
     # First call returns results and triggers cleanup
     results = await task_manager.get_result(group_id)

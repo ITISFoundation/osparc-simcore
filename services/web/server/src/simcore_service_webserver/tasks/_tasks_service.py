@@ -38,14 +38,14 @@ _STREAM_STALL_THRESHOLD: Final[NonNegativeFloat] = timedelta(minutes=1).total_se
 async def cancel_task(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskID,
+    task_id: TaskID,
 ):
     try:
         await task_manager.cancel(
-            task_id=task_uuid,
+            task_id=task_id,
         )
     except TaskNotFoundError as exc:
-        raise JobMissingError(job_id=task_uuid) from exc
+        raise JobMissingError(job_id=task_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
@@ -53,19 +53,19 @@ async def cancel_task(
 async def get_task_result(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskID,
+    task_id: TaskID,
 ) -> AsyncJobResult:
     try:
         status = await task_manager.get_status(
-            task_id=task_uuid,
+            task_id=task_id,
         )
         if not status.is_done:
-            raise JobNotDoneError(job_id=task_uuid)
+            raise JobNotDoneError(job_id=task_id)
         result = await task_manager.get_result(
-            task_id=task_uuid,
+            task_id=task_id,
         )
     except TaskNotFoundError as exc:
-        raise JobMissingError(job_id=task_uuid) from exc
+        raise JobMissingError(job_id=task_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
@@ -85,7 +85,7 @@ async def get_task_result(
         if exception is None:
             _logger.warning("Was not expecting '%s': '%s'", exc_type, exc_msg)
 
-        raise JobError(job_id=task_uuid, exc_type=exc_type, exc_msg=exc_msg)
+        raise JobError(job_id=task_id, exc_type=exc_type, exc_msg=exc_msg)
 
     return AsyncJobResult(result=result)
 
@@ -93,19 +93,19 @@ async def get_task_result(
 async def get_task_status(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskID,
+    task_id: TaskID,
 ) -> AsyncJobStatus:
     try:
         task_status = await task_manager.get_status(
-            task_id=task_uuid,
+            task_id=task_id,
         )
     except TaskNotFoundError as exc:
-        raise JobMissingError(job_id=task_uuid) from exc
+        raise JobMissingError(job_id=task_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     return AsyncJobStatus(
-        job_id=task_uuid,
+        job_id=task_id,
         progress=task_status.progress_report,
         done=task_status.is_done,
     )
@@ -114,16 +114,16 @@ async def get_task_status(
 async def pull_task_stream_items(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskID,
+    task_id: TaskID,
     limit: int = 50,
 ) -> tuple[list[TaskStreamItem], bool]:
     try:
         results, end, last_update = await task_manager.pull_task_stream_items(
-            task_uuid=task_uuid,
+            task_id=task_id,
             limit=limit,
         )
     except TaskNotFoundError as exc:
-        raise JobMissingError(job_id=task_uuid) from exc
+        raise JobMissingError(job_id=task_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 

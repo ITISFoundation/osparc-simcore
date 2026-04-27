@@ -65,7 +65,7 @@ class MessageService:
         description = _get_task_description(message)
 
         if num_recipients == 1:
-            task_uuid, task_name = await submit_send_message_task(
+            task_id, task_name = await submit_send_message_task(
                 self.task_manager,
                 owner=resolved_owner,
                 user_id=user_id,
@@ -73,7 +73,7 @@ class MessageService:
                 message=messages[0],
                 description=description,
             )
-            return task_uuid, task_name
+            return task_id, task_name
 
         max_recipients = self.settings.NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE
         if num_recipients > max_recipients:

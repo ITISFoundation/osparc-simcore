@@ -45,14 +45,14 @@ _TENACITY_RETRY_PARAMS: dict = {
 }
 
 
-async def _fake_file_processor(celery_app: Celery, task_name: str, task_uuid: TaskID, files: list[str]) -> str:
+async def _fake_file_processor(celery_app: Celery, task_name: str, task_id: TaskID, files: list[str]) -> str:
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
             await get_app_server(celery_app).task_manager.set_task_progress(
-                task_uuid=task_uuid,
+                task_id=task_id,
                 report=ProgressReport(actual_value=n / len(files)),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
@@ -89,7 +89,7 @@ async def dreamer_task(task: TaskContext, **_kwargs: Any) -> list[int]:
 
 
 def streaming_results_task(task: Task, num_results: int = 5, **_kwargs: Any) -> str:
-    task_uuid: TaskID = UUID(task.request.id)
+    task_id: TaskID = UUID(task.request.id)
     assert task.name
 
     async def _stream_results(sleep_interval: float) -> None:
@@ -98,14 +98,14 @@ def streaming_results_task(task: Task, num_results: int = 5, **_kwargs: Any) -> 
             result_data = f"result-{i}"
             result_item = TaskStreamItem(data=result_data)
             await app_server.task_manager.push_task_stream_items(
-                task_uuid,
+                task_id,
                 result_item,
             )
             _logger.info("Pushed result %d: %s", i, result_data)
             await asyncio.sleep(sleep_interval)
 
         # Mark the stream as done
-        await app_server.task_manager.set_task_stream_done(task_uuid)
+        await app_server.task_manager.set_task_stream_done(task_id)
 
     # Run the streaming in the event loop
     asyncio.run_coroutine_threadsafe(_stream_results(0.5), get_app_server(task.app).event_loop).result()
@@ -142,35 +142,35 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 async def wait_for_task_success(
     task_manager: TaskManager,
-    task_uuid: TaskID,
+    task_id: TaskID,
 ) -> None:
     """Wait for a task to reach SUCCESS state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_uuid)
+            status = await task_manager.get_status(task_id)
             assert isinstance(status, TaskStatus)
             assert status.task_state == TaskState.SUCCESS
 
 
 async def wait_for_task_not_pending(
     task_manager: TaskManager,
-    task_uuid: TaskID,
+    task_id: TaskID,
 ) -> None:
     """Wait for a task to leave PENDING state (i.e. the worker picked it up)."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_uuid)
+            status = await task_manager.get_status(task_id)
             assert isinstance(status, TaskStatus)
             assert status.task_state != TaskState.PENDING
 
 
 async def wait_for_task_done(
     task_manager: TaskManager,
-    task_uuid: TaskID,
+    task_id: TaskID,
 ) -> None:
     """Wait for a task to reach any DONE state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_uuid)
+            status = await task_manager.get_status(task_id)
             assert isinstance(status, TaskStatus)
             assert status.task_state in TASK_DONE_STATES

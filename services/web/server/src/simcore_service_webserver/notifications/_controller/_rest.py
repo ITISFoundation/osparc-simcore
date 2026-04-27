@@ -25,9 +25,9 @@ routes = web.RouteTableDef()
 _notifications_prefix = f"/{API_VTAG}/notifications"
 
 
-def _get_async_job_href(request: web.Request, route: str, task_uuid: UUID) -> str:
-    task_id = f"{task_uuid}"
-    path = f"{request.app.router[route].url_for(task_id=task_id)}"
+def _get_async_job_href(request: web.Request, route: str, task_id: UUID) -> str:
+    str_task_id = f"{task_id}"
+    path = f"{request.app.router[route].url_for(task_id=str_task_id)}"
     return f"{request.url.with_path(path)}"
 
 

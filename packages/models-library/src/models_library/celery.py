@@ -79,7 +79,7 @@ class TaskStreamItem(BaseModel):
 
 
 class Task(BaseModel):
-    uuid: TaskID
+    id: TaskID
     metadata: ExecutionMetadata
 
     @staticmethod
@@ -119,9 +119,9 @@ class Task(BaseModel):
 class TaskStore(Protocol):
     async def create_group(
         self,
-        group_uuid: TaskID,
+        task_id: TaskID,
         execution_metadata: GroupExecutionMetadata,
-        task_uuids: list[TaskID],
+        children_task_ids: list[TaskID],
         *,
         owner: str,
         user_id: int | None = None,
@@ -131,7 +131,7 @@ class TaskStore(Protocol):
 
     async def create_task(
         self,
-        task_uuid: TaskID,
+        task_id: TaskID,
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
@@ -143,9 +143,9 @@ class TaskStore(Protocol):
 
     async def task_exists(self, task_id: TaskID) -> bool: ...
 
-    async def get_task_metadata(self, task_uuid: TaskID) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None: ...
 
-    async def get_task_progress(self, task_uuid: TaskID) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
     async def list_tasks(
         self,
@@ -157,7 +157,7 @@ class TaskStore(Protocol):
 
     async def remove_task(
         self,
-        task_uuid: TaskID,
+        task_id: TaskID,
         *,
         owner: str,
         user_id: int | None = None,
@@ -173,18 +173,18 @@ class TaskStore(Protocol):
 
     async def set_task_progress(
         self,
-        task_uuid: TaskID,
+        task_id: TaskID,
         report: ProgressReport,
     ) -> None: ...
 
-    async def set_task_stream_done(self, task_uuid: TaskID) -> None: ...
+    async def set_task_stream_done(self, task_id: TaskID) -> None: ...
 
-    async def set_task_stream_last_update(self, task_uuid: TaskID) -> None: ...
+    async def set_task_stream_last_update(self, task_id: TaskID) -> None: ...
 
-    async def push_task_stream_items(self, task_uuid: TaskID, *item: TaskStreamItem) -> None: ...
+    async def push_task_stream_items(self, task_id: TaskID, *item: TaskStreamItem) -> None: ...
 
     async def pull_task_stream_items(
-        self, task_uuid: TaskID, limit: int
+        self, task_id: TaskID, limit: int
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
 
 

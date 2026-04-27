@@ -82,7 +82,7 @@ async def test_send_message_from_template_with_external_contacts(
         EmailContact(name=faker.name(), email=faker.email()),
     ]
 
-    task_uuid, task_name = await send_message_from_template(
+    task_id, task_name = await send_message_from_template(
         client.app,
         user_id=logged_user["id"],
         product_name="osparc",
@@ -93,7 +93,7 @@ async def test_send_message_from_template_with_external_contacts(
         context=fake_template_context,
     )
 
-    assert task_uuid == mocked_send_message_from_template_rpc.task_id
+    assert task_id == mocked_send_message_from_template_rpc.task_id
     assert task_name == mocked_send_message_from_template_rpc.task_name
 
 
@@ -111,7 +111,7 @@ async def test_send_message_from_template_with_group_ids(
     async with create_test_users(2, None) as users:
         group_ids = [int(user["primary_gid"]) for user in users]
 
-        task_uuid, task_name = await send_message_from_template(
+        task_id, task_name = await send_message_from_template(
             client.app,
             user_id=logged_user["id"],
             product_name="osparc",
@@ -122,7 +122,7 @@ async def test_send_message_from_template_with_group_ids(
             context=fake_template_context,
         )
 
-        assert task_uuid == mocked_send_message_from_template_rpc.task_id
+        assert task_id == mocked_send_message_from_template_rpc.task_id
         assert task_name == mocked_send_message_from_template_rpc.task_name
 
 

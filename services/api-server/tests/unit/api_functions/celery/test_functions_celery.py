@@ -336,7 +336,7 @@ async def test_celery_error_propagation(
     with_api_server_celery_worker: TestWorkController,
 ):
     task_manager = get_task_manager(app=app)
-    task_uuid = await task_manager.submit_task(
+    task_id = await task_manager.submit_task(
         TaskExecutionMetadata(name="exception_task", queue=API_SERVER_CELERY_QUEUE_DEFAULT),
         owner=APP_NAME,
         user_id=user_identity.user_id,
@@ -344,7 +344,7 @@ async def test_celery_error_propagation(
     )
 
     with pytest.raises(HTTPStatusError) as exc_info:
-        await _wait_for_task_result(client, auth, f"{task_uuid}")
+        await _wait_for_task_result(client, auth, f"{task_id}")
 
     assert exc_info.value.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 

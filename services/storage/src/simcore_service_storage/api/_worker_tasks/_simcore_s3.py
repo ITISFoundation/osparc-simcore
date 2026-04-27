@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 
 async def _task_progress_cb(task: TaskContext, report: ProgressReport) -> None:
     await task.app_server.task_manager.set_task_progress(
-        task_uuid=task.id,
+        task_id=task.id,
         report=report,
     )
 

@@ -46,11 +46,11 @@ _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 
 @contextmanager
-def _exception_mapper(task_uuid: TaskID):
+def _exception_mapper(task_id: TaskID):
     try:
         yield
     except TaskNotFoundError as exc:
-        raise CeleryTaskNotFoundError(task_id=task_uuid) from exc
+        raise CeleryTaskNotFoundError(task_id=task_id) from exc
 
 
 @router.get(
@@ -80,11 +80,11 @@ async def list_tasks(
     app_router = app.router
     data = [
         TaskGet(
-            task_id=f"{task.uuid}",
+            task_id=f"{task.id}",
             task_name=task.metadata.name,
-            status_href=app_router.url_path_for("get_task_status", task_uuid=f"{task.uuid}"),
-            abort_href=app_router.url_path_for("cancel_task", task_uuid=f"{task.uuid}"),
-            result_href=app_router.url_path_for("get_task_result", task_uuid=f"{task.uuid}"),
+            status_href=app_router.url_path_for("get_task_status", task_id=f"{task.id}"),
+            abort_href=app_router.url_path_for("cancel_task", task_id=f"{task.id}"),
+            result_href=app_router.url_path_for("get_task_result", task_id=f"{task.id}"),
         )
         for task in tasks
     ]
@@ -92,7 +92,7 @@ async def list_tasks(
 
 
 @router.get(
-    "/{task_uuid}",
+    "/{task_id}",
     response_model=TaskStatus,
     responses=_DEFAULT_TASK_STATUS_CODES,
     description=create_route_description(
@@ -104,15 +104,15 @@ async def list_tasks(
     include_in_schema=True,
 )
 async def get_task_status(
-    task_uuid: AsyncJobId,
+    task_id: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
     _user_id: Annotated[UserID, Depends(get_current_user_id)],
     _product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    with _exception_mapper(task_uuid=task_uuid):
+    with _exception_mapper(task_id=task_id):
         task_status = await task_manager.get_status(
-            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_id}"),
         )
 
     assert isinstance(task_status, CeleryTaskStatus)  # nosec
@@ -127,7 +127,7 @@ async def get_task_status(
 
 
 @router.post(
-    "/{task_uuid}:cancel",
+    "/{task_id}:cancel",
     status_code=status.HTTP_204_NO_CONTENT,
     responses=_DEFAULT_TASK_STATUS_CODES,
     description=create_route_description(
@@ -139,20 +139,20 @@ async def get_task_status(
     include_in_schema=True,
 )
 async def cancel_task(
-    task_uuid: AsyncJobId,
+    task_id: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
     _user_id: Annotated[UserID, Depends(get_current_user_id)],
     _product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    with _exception_mapper(task_uuid=task_uuid):
+    with _exception_mapper(task_id=task_id):
         await task_manager.cancel(
-            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_id}"),
         )
 
 
 @router.get(
-    "/{task_uuid}/result",
+    "/{task_id}/result",
     response_model=TaskResult,
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -170,16 +170,16 @@ async def cancel_task(
     include_in_schema=True,
 )
 async def get_task_result(
-    task_uuid: AsyncJobId,
+    task_id: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
     _user_id: Annotated[UserID, Depends(get_current_user_id)],
     _product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
 
-    with _exception_mapper(task_uuid=task_uuid):
+    with _exception_mapper(task_id=task_id):
         task_status = await task_manager.get_status(
-            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_id}"),
         )
 
         if not task_status.is_done:
@@ -189,13 +189,13 @@ async def get_task_result(
             )
 
         task_result = await task_manager.get_result(
-            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_id}"),
         )
 
         assert isinstance(task_status, CeleryTaskStatus)  # nosec
         if task_status.task_state == TaskState.FAILURE:
             assert isinstance(task_result, Exception)
-            user_error_msg = f"The execution of task {task_uuid} failed"
+            user_error_msg = f"The execution of task {task_id} failed"
             support_id = create_error_code(task_result)
             _logger.exception(
                 **create_troubleshooting_log_kwargs(

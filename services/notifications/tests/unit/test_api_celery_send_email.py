@@ -44,7 +44,7 @@ async def test_send_mail(
     faker: Faker,
 ):
     user_email = faker.email()
-    task_uuid = await task_manager.submit_task(
+    task_id = await task_manager.submit_task(
         TaskExecutionMetadata(
             name=send_email_message.__name__,
         ),
@@ -62,7 +62,7 @@ async def test_send_mail(
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_uuid)
+            status = await task_manager.get_status(task_id)
             assert isinstance(status, TaskStatus)  # nosec
             assert status.task_state == TaskState.SUCCESS
 
@@ -83,7 +83,7 @@ async def test_send_mail_with_bcc_and_attachment(
     attachment_content = faker.binary(length=128)
     attachment_filename = "invoice.pdf"
 
-    task_uuid = await task_manager.submit_task(
+    task_id = await task_manager.submit_task(
         TaskExecutionMetadata(name=send_email_message.__name__),
         owner="test_service",
         message=EmailMessage(
@@ -103,7 +103,7 @@ async def test_send_mail_with_bcc_and_attachment(
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_uuid)
+            status = await task_manager.get_status(task_id)
             assert isinstance(status, TaskStatus)  # nosec
             assert status.task_state == TaskState.SUCCESS
 

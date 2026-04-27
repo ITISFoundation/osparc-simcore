@@ -280,7 +280,7 @@ async def complete_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
 
-    task_uuid = await task_manager.submit_task(
+    task_id = await task_manager.submit_task(
         TaskExecutionMetadata(
             name=remote_complete_upload_file.__name__,
         ),
@@ -299,7 +299,7 @@ async def complete_upload_file(
                     "is_completed_upload_file",
                     location_id=f"{location_id}",
                     file_id=file_id,
-                    future_id=f"{task_uuid}",
+                    future_id=f"{task_id}",
                 ),
                 safe=":/",
             ),
