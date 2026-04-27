@@ -166,12 +166,9 @@ def register_task[**P_Task, R_Task](
 ) -> None: ...
 
 
-def register_task[**P_Task, R_Task](
+def register_task(
     app: Celery,
-    fn: (
-        Callable[Concatenate[TaskContext, P_Task], Coroutine[Any, Any, R_Task]]
-        | Callable[Concatenate[Task, P_Task], R_Task]
-    ),
+    fn: Callable[..., Any],
     task_name: str | None = None,
     rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
@@ -189,7 +186,7 @@ def register_task[**P_Task, R_Task](
         delay_between_retries -- dealy between each attempt in case of error (default: {_DEFAULT_WAIT_BEFORE_RETRY})
         dont_autoretry_for -- exceptions that should not be retried when raised by the task
     """
-    wrapped_fn: Callable[Concatenate[Task, P_Task], R_Task]
+    wrapped_fn: Callable[..., Any]
     if inspect.iscoroutinefunction(fn):
         wrapped_fn = _async_task_wrapper(app)(fn)
     else:
