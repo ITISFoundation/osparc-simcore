@@ -284,7 +284,11 @@ class CeleryTaskManager:
     @make_async()
     def _revoke_and_forget_task(self, task_id: TaskID) -> None:
         async_result = self._app.AsyncResult(f"{task_id}")
-        async_result.revoke()
+        # Avoid revoking already-finished tasks: ``revoke()`` broadcasts to all
+        # workers and grows their in-memory revoked-tasks set, which is
+        # wasteful (and noisy in the logs) when the task is already done.
+        if not async_result.ready():
+            async_result.revoke()
         async_result.forget()
 
     @handle_celery_errors

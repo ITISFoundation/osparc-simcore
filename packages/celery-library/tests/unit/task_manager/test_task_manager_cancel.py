@@ -42,9 +42,39 @@ async def test_cancel_single_task_calls_revoke(
         user_id=fake_user_id,
     )
 
-    with patch("celery.result.AsyncResult.revoke") as mock_revoke:
+    with (
+        patch("celery.result.AsyncResult.ready", return_value=False),
+        patch("celery.result.AsyncResult.revoke") as mock_revoke,
+    ):
         await task_manager.cancel(task_id)
         mock_revoke.assert_called_once()
+
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.get_status(task_id)
+
+
+async def test_cancel_single_task_skips_revoke_when_already_finished(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner: str,
+    fake_user_id: int,
+):
+    """An already-finished task must not be revoked: revoke() broadcasts to
+    all workers and grows their in-memory revoked-tasks set, which is
+    wasteful (and noisy) when the task is already done.
+    """
+    task_id = await task_manager.submit_task(
+        TaskExecutionMetadata(name=noop_task.__name__),
+        owner=fake_owner,
+        user_id=fake_user_id,
+    )
+
+    with (
+        patch("celery.result.AsyncResult.ready", return_value=True),
+        patch("celery.result.AsyncResult.revoke") as mock_revoke,
+    ):
+        await task_manager.cancel(task_id)
+        mock_revoke.assert_not_called()
 
     with pytest.raises(TaskNotFoundError):
         await task_manager.get_status(task_id)
@@ -77,7 +107,10 @@ async def test_cancel_group_calls_revoke_for_each_task(
         user_id=fake_user_id,
     )
 
-    with patch("celery.result.AsyncResult.revoke") as mock_revoke:
+    with (
+        patch("celery.result.AsyncResult.ready", return_value=False),
+        patch("celery.result.AsyncResult.revoke") as mock_revoke,
+    ):
         await task_manager.cancel(group_id)
         assert mock_revoke.call_count == num_tasks
 
