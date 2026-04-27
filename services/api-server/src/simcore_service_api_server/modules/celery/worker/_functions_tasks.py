@@ -1,13 +1,10 @@
 from typing import Any
 
-from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
-    Task,
-)
-from celery_library.worker.app_server import get_app_server
 from fastapi import FastAPI
 from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from servicelib.celery.task_context import TaskContext
 
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 
@@ -105,7 +102,7 @@ async def _assemble_function_job_service(
 
 
 async def run_function(
-    task: Task,
+    task: TaskContext,
     *,
     user_identity: Identity,
     function: RegisteredFunction,
@@ -116,8 +113,7 @@ async def run_function(
     x_simcore_parent_node_id: NodeID | None,
     **_kwargs: Any,
 ) -> RegisteredFunctionJob:
-    assert task.request.id  # nosec
-    app = get_app_server(task.app).app
+    app = task.app_server.app
     function_job_service = await _assemble_function_job_service(app=app, user_identity=user_identity)
 
     return await function_job_service.run_function(

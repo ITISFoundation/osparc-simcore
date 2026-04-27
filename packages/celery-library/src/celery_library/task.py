@@ -11,6 +11,7 @@ from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from models_library.celery import TaskUUID
 from pydantic import NonNegativeInt, TypeAdapter
+from servicelib.celery.task_context import TaskContext
 
 from .errors import encode_celery_transferable_error
 from .worker.app_server import get_app_server
@@ -35,29 +36,34 @@ class TaskAbortedError(Exception): ...
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
-    [Callable[Concatenate[Task, P], Coroutine[Any, Any, R]]],
+    [Callable[Concatenate[TaskContext, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[Task, P], R],
 ]:
     def decorator(
-        coro: Callable[Concatenate[Task, P], Coroutine[Any, Any, R]],
+        coro: Callable[Concatenate[TaskContext, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[Task, P], R]:
         @wraps(coro)
         def wrapper(task: Task, *args: P.args, **kwargs: P.kwargs) -> R:
             app_server = get_app_server(app)
-            # NOTE: task.request is a thread local object, so we need to pass the id explicitly
+            # NOTE: task.request is a thread local object, so we need to capture it here
             assert task.request.id is not None  # nosec
-            task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(task.request.id)
+            assert task.name is not None  # nosec
+            task_context = TaskContext(
+                id=TypeAdapter(TaskUUID).validate_python(task.request.id),
+                name=task.name,
+                app_server=app_server,
+            )
 
-            async def _run_task(task_uuid: TaskUUID) -> R:
+            async def _run_task(task_context: TaskContext) -> R:
                 try:
                     async with asyncio.TaskGroup() as tg:
                         async_io_task = tg.create_task(
-                            coro(task, *args, **kwargs),
+                            coro(task_context, *args, **kwargs),
                         )
 
                         async def _abort_monitor():
                             while not async_io_task.done():
-                                if not await app_server.task_manager.task_or_group_exists(task_uuid):
+                                if not await app_server.task_manager.task_or_group_exists(task_context.id):
                                     await cancel_wait_task(
                                         async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
@@ -81,7 +87,7 @@ def _async_task_wrapper(
                     raise other_errors.exceptions[0] from eg
 
             return asyncio.run_coroutine_threadsafe(
-                _run_task(task_uuid),
+                _run_task(task_context),
                 app_server.event_loop,
             ).result()
 
@@ -137,7 +143,7 @@ def _error_handling(
 @overload
 def register_task[**P_Task, R_Task](
     app: Celery,
-    fn: Callable[Concatenate[Task, P_Task], Coroutine[Any, Any, R_Task]],
+    fn: Callable[Concatenate[TaskContext, P_Task], Coroutine[Any, Any, R_Task]],
     task_name: str | None = None,
     rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
@@ -162,7 +168,7 @@ def register_task[**P_Task, R_Task](
 
 def register_task(  # type: ignore[misc]
     app: Celery,
-    fn: (Callable[Concatenate[Task, P], Coroutine[Any, Any, R]] | Callable[Concatenate[Task, P], R]),
+    fn: (Callable[Concatenate[TaskContext, P], Coroutine[Any, Any, R]] | Callable[Concatenate[Task, P], R]),
     task_name: str | None = None,
     rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,

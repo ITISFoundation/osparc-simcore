@@ -23,6 +23,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobMissingError,
 )
 from models_library.celery import TaskExecutionMetadata
+from servicelib.celery.task_context import TaskContext
 from servicelib.celery.task_manager import TaskManager
 from tenacity import (
     AsyncRetrying,
@@ -68,7 +69,7 @@ def sync_job(task: Task, action: Action, payload: Any, **_kwargs: Any) -> Any:
     return asyncio.run(_process_action(action, payload))
 
 
-async def async_job(task: Task, action: Action, payload: Any, **_kwargs: Any) -> Any:
+async def async_job(task: TaskContext, action: Action, payload: Any, **_kwargs: Any) -> Any:
     _ = task
     return await _process_action(action, payload)
 

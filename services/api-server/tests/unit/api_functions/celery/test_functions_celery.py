@@ -15,7 +15,7 @@ from typing import Any
 import httpx
 import pytest
 import respx
-from celery import Celery, Task  # type: ignore # pylint: disable=no-name-in-module
+from celery import Celery  # type: ignore # pylint: disable=no-name-in-module
 from celery.contrib.testing.worker import TestWorkController  # type: ignore
 from celery_library.task import register_task
 from celery_library.types import register_pydantic_types
@@ -53,6 +53,7 @@ from models_library.users import UserID
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
+from servicelib.celery.task_context import TaskContext
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -117,7 +118,7 @@ async def _wait_for_task_result(
 
 def _register_fake_run_function_task() -> Callable[[Celery], None]:
     async def run_function(
-        task: Task,
+        task: TaskContext,
         *,
         user_identity: Identity,
         function: RegisteredFunction,
@@ -308,7 +309,7 @@ async def test_with_fake_run_function(
 
 def _register_exception_task(exception: Exception) -> Callable[[Celery], None]:
     async def exception_task(
-        task: Task,
+        task: TaskContext,
     ):
         raise exception
 

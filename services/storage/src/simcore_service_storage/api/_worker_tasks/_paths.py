@@ -2,13 +2,12 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from celery import Task  # type: ignore[import-untyped]
-from celery_library.worker.app_server import get_app_server
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from servicelib.celery.task_context import TaskContext
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
@@ -20,36 +19,35 @@ _logger = logging.getLogger(__name__)
 
 
 async def compute_path_size(
-    task: Task,
+    task: TaskContext,
     user_id: UserID,
     product_name: ProductName,
     location_id: LocationID,
     path: Path,
+    **_kwargs: Any,
 ) -> ByteSize:
-    assert task.request.id  # nosec
     with log_context(
         _logger,
         logging.INFO,
         msg=f"computing path size {user_id=}, {location_id=}, {path=}",
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
+        dsm = get_dsm_provider(task.app_server.app).get(location_id)
         return await dsm.compute_path_size(user_id, product_name, path=Path(path))
 
 
 async def delete_paths(
-    task: Task,
+    task: TaskContext,
     user_id: UserID,
     location_id: LocationID,
     paths: set[Path],
     **_kwargs: Any,
 ) -> None:
-    assert task.request.id  # nosec
     with log_context(
         _logger,
         logging.INFO,
         msg=f"delete {paths=} in {location_id=} for {user_id=}",
     ):
-        app = get_app_server(task.app).app
+        app = task.app_server.app
         dsm = get_dsm_provider(app).get(location_id)
         files_ids: set[StorageFileID] = {TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths}
         await limited_gather(

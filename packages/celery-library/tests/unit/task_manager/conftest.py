@@ -22,6 +22,7 @@ from models_library.celery import (
     TaskUUID,
 )
 from models_library.progress_bar import ProgressReport
+from servicelib.celery.task_context import TaskContext
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from tenacity import (
@@ -79,7 +80,7 @@ def failure_task(task: Task, **_kwargs: Any) -> None:
     raise MyError(msg=msg)
 
 
-async def dreamer_task(task: Task, **_kwargs: Any) -> list[int]:
+async def dreamer_task(task: TaskContext, **_kwargs: Any) -> list[int]:
     numbers = []
     for _ in range(30):
         numbers.append(randint(1, 90))  # noqa: S311
