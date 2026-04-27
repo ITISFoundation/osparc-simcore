@@ -43,16 +43,16 @@ _logger = logging.getLogger(__name__)
 # --- key builders ---
 
 
-def _build_redis_task_key(uuid: TaskID) -> str:
-    return f"{_CELERY_TASK_PREFIX}{uuid}"
+def _build_redis_task_key(task_id: TaskID) -> str:
+    return f"{_CELERY_TASK_PREFIX}{task_id}"
 
 
-def _build_redis_stream_key(task_uuid: TaskID) -> str:
-    return f"{_CELERY_TASK_STREAM_PREFIX}{task_uuid}"
+def _build_redis_stream_key(task_id: TaskID) -> str:
+    return f"{_CELERY_TASK_STREAM_PREFIX}{task_id}"
 
 
-def _build_redis_stream_meta_key(task_uuid: TaskID) -> str:
-    return f"{_build_redis_stream_key(task_uuid)}{_CELERY_TASK_DELIMTATOR}{_CELERY_TASK_STREAM_METADATA}"
+def _build_redis_stream_meta_key(task_id: TaskID) -> str:
+    return f"{_build_redis_stream_key(task_id)}{_CELERY_TASK_DELIMTATOR}{_CELERY_TASK_STREAM_METADATA}"
 
 
 def _build_redis_index_key(suffix: str) -> str:
