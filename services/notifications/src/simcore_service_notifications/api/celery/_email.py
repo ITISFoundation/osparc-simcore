@@ -7,6 +7,7 @@ from celery import (  # type: ignore[import-untyped]
     Task,
 )
 from celery_library.worker.app_server import get_app_server
+from common_library.network import extract_email_domain
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from notifications_library._email import (
@@ -27,13 +28,13 @@ def _to_address(address: EmailContact) -> Address:
 
 
 def _resolve_smtp_settings(smtp_by_domain: dict[str, SMTPSettings], from_email: str) -> SMTPSettings:
-    domain = from_email.rpartition("@")[2].lower()
+    domain = extract_email_domain(from_email).lower()
     smtp_by_domain_lc = {k.lower(): v for k, v in smtp_by_domain.items()}
-    try:
-        return smtp_by_domain_lc[domain]
-    except KeyError as e:
+    settings = smtp_by_domain_lc.get(domain)
+    if settings is None:
         msg = f"No SMTP settings configured for domain '{domain}' (from='{from_email}')"
-        raise ValueError(msg) from e
+        raise ValueError(msg)
+    return settings
 
 
 async def send_email_message(
