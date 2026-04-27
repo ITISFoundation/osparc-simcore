@@ -80,19 +80,18 @@ async def _celery_task_status(
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    task_uuid: TaskID = TypeAdapter(TaskID).validate_python(f"{job_creation_task_id}")
     try:
-        task_status = await task_manager.get_status(task_id=task_uuid)
+        task_status = await task_manager.get_status(task_id=job_creation_task_id)
         assert isinstance(task_status, TaskStatus)  # nosec
         return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskNotFoundError as err:
-        user_msg = f"Job creation task not found for task_uuid={task_uuid!r}."
+        user_msg = f"Job creation task not found for task_uuid={job_creation_task_id!r}."
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 user_msg,
                 error=err,
                 error_context={
-                    "task_uuid": task_uuid,
+                    "task_uuid": job_creation_task_id,
                     "user_id": user_id,
                     "product_name": product_name,
                 },
