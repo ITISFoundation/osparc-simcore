@@ -6,7 +6,6 @@ from email.headerregistry import Address
 from celery import (  # type: ignore[import-untyped]
     Task,
 )
-from celery_library.worker.app_server import get_app_server
 from common_library.network import extract_email_domain
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
@@ -55,8 +54,7 @@ async def send_email_message(
     )
 
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
-        app_server = get_app_server(task.app)
-        app_settings: ApplicationSettings = app_server.app.state.settings
+        app_settings = ApplicationSettings.create_from_envs()
         settings = _resolve_smtp_settings(app_settings.NOTIFICATIONS_EMAIL, msg.from_.email)
 
         async with create_email_session(settings=settings) as smtp:
