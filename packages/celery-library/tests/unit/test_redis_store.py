@@ -74,7 +74,7 @@ async def test_list_tasks_uses_zset_index_not_scan(
 
     tasks = await redis_task_store.list_tasks(owner="test-svc", user_id=10001, product_name="osparc")
     assert len(tasks) == 1
-    assert tasks[0].uuid == task_id
+    assert tasks[0].id == task_id
 
 
 async def test_list_tasks_filters_by_exact_owner_fields(
@@ -98,7 +98,7 @@ async def test_list_tasks_filters_by_exact_owner_fields(
         )
         expected_tasks.append(
             Task(
-                uuid=task_id,
+                id=task_id,
                 metadata=TaskExecutionMetadata(name="my_task"),
             )
         )
@@ -116,7 +116,7 @@ async def test_list_tasks_filters_by_exact_owner_fields(
         )
 
     tasks = await redis_task_store.list_tasks(owner=owner, user_id=user_id, product_name=product)
-    assert {t.uuid for t in tasks} == {t.uuid for t in expected_tasks}
+    assert {t.id for t in tasks} == {t.id for t in expected_tasks}
 
 
 async def test_list_tasks_with_no_user_id(
@@ -139,7 +139,7 @@ async def test_list_tasks_with_no_user_id(
     # Query without user_id matches
     tasks = await redis_task_store.list_tasks(owner=owner, product_name=product)
     assert len(tasks) == 1
-    assert tasks[0].uuid == task_id
+    assert tasks[0].id == task_id
 
     # Query with a user_id does NOT match
     tasks = await redis_task_store.list_tasks(owner=owner, user_id=1, product_name=product)
