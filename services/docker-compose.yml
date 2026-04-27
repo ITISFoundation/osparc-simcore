@@ -64,14 +64,6 @@ x-s3-settings: &s3_settings
   S3_REGION: ${S3_REGION}
   S3_SECRET_KEY: ${S3_SECRET_KEY}
 
-x-smtp-settings: &smtp_settings
-  SMTP_HOST: ${SMTP_HOST}
-  SMTP_PORT: ${SMTP_PORT}
-  SMTP_USERNAME: ${SMTP_USERNAME}
-  SMTP_PASSWORD: ${SMTP_PASSWORD}
-  SMTP_PROTOCOL: ${SMTP_PROTOCOL}
-  SMTP_EXTRA_HEADERS: ${SMTP_EXTRA_HEADERS}
-
 ## simcore stack services
 
 x-catalog-settings: &catalog_settings
@@ -920,7 +912,6 @@ services:
         - *rabbit_settings
         - *redis_settings
         - *resource_usage_tracker_settings
-        - *smtp_settings
         - *storage_settings
         - *tracing_open_telemetry_environments
         - *webserver_diagnostics_environments
@@ -1539,7 +1530,6 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *resource_usage_tracker_settings
-        - *smtp_settings
         - *tracing_open_telemetry_environments
 
       PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: ${PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES}
