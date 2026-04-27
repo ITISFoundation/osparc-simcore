@@ -33,6 +33,8 @@ def with_smtp_extra_headers(
         {
             "SMTP_HOST": "mailpit",
             "SMTP_PORT": "1025",
+            "SMTP_USERNAME": "it_doesnt_matter",
+            "SMTP_PASSWORD": "it_doesnt_matter",
             "SMTP_EXTRA_HEADERS": json.dumps(headers),
         },
     )
