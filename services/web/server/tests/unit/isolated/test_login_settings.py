@@ -2,11 +2,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import os
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from settings_library.email import SMTPSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 from simcore_service_webserver.login.settings import (
+    LoginOptions,
     LoginSettings,
     LoginSettingsForProduct,
 )
@@ -103,6 +108,22 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
     errors = exc_info.value.errors()
     assert len(errors) == 1
     assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
+
+
+def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
+    settings = SMTPSettings.create_from_envs()
+
+    cfg = settings.model_dump(exclude_unset=True)
+
+    for env_name in cfg:
+        assert env_name in os.environ
+
+    cfg = settings.model_dump()
+
+    config = LoginOptions(**cfg)
+    print(config.model_dump_json(indent=1))
+
+    assert not hasattr(config, "SMTP_SENDER"), "was deprecated and now we use product"
 
 
 def test_product_login_settings_in_plugin_settings():

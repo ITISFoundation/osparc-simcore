@@ -99,8 +99,10 @@ aiormq==6.9.4
     # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
-aiosmtplib==5.1.0
-    # via -r requirements/../../../../packages/notifications-library/requirements/_base.in
+aiosmtplib==1.1.6
+    # via
+    #   -r requirements/../../../../packages/notifications-library/requirements/_base.in
+    #   -r requirements/_base.in
 alembic==1.8.1
     # via
     #   -r requirements/../../../../packages/notifications-library/requirements/../../../packages/postgres-database/requirements/_base.in
@@ -379,6 +381,8 @@ idna==3.3
     #   yarl
 importlib-metadata==8.0.0
     # via opentelemetry-api
+jinja-app-loader==1.0.2
+    # via -r requirements/_base.in
 jinja2==3.1.6
     # via
     #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
