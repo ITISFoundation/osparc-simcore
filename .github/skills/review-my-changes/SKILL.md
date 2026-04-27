@@ -1,11 +1,11 @@
 ---
-name: review-my-code
+name: review-my-changes
 description: 'Perform an initial pull request review on the current branch. Use when: reviewing a PR, code review, checking branch changes before merge, verifying coding standards compliance, finding security issues, reviewing software design decisions, pre-merge review.'
 ---
 
-# Pull Request Review
+# Review My Changes
 
-Performs a structured code review of the current branch against `master`. The review checks for coding standards violations, software design issues, and security flaws.
+Performs a structured code review of the current branch against `master`. The review checks for coding standards, software design, security, test coverage, and code correctness.
 
 ## When to Use
 
