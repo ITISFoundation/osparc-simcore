@@ -7,6 +7,7 @@ import time
 from collections.abc import Callable
 from random import randint
 from typing import Any, Final
+from uuid import UUID
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
@@ -63,7 +64,7 @@ def fake_file_processor(task: Task, files: list[str], **_kwargs: Any) -> str:
     assert task.name
     _logger.info("Calling _fake_file_processor")
     return asyncio.run_coroutine_threadsafe(
-        _fake_file_processor(task.app, task.name, TaskUUID(task.request.id), files),
+        _fake_file_processor(task.app, task.name, UUID(task.request.id), files),
         get_app_server(task.app).event_loop,
     ).result()
 
@@ -87,7 +88,7 @@ async def dreamer_task(task: Task, **_kwargs: Any) -> list[int]:
 
 
 def streaming_results_task(task: Task, num_results: int = 5, **_kwargs: Any) -> str:
-    task_uuid: TaskUUID = TaskUUID(task.request.id)
+    task_uuid: TaskUUID = UUID(task.request.id)
     assert task.name
 
     async def _stream_results(sleep_interval: float) -> None:
