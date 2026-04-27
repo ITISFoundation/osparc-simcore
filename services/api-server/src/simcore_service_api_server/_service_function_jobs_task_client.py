@@ -146,10 +146,10 @@ class FunctionJobTaskClientService:
         for function_job_wso in function_jobs_list_ws:
             if function_job_wso.outputs is None or (
                 function_job_wso.status.status
-                not in (
+                not in {
                     RunningState.SUCCESS,
                     RunningState.FAILED,
-                )
+                }
             ):
                 function_job_wso.status = await self.inspect_function_job(
                     function=await self._function_service.get_function(
@@ -348,11 +348,11 @@ class FunctionJobTaskClientService:
                     FunctionJobPatch(
                         function_class=function.function_class,
                         function_job_id=pre_registered_function_job_data.function_job_id,
-                        job_creation_task_id=TaskID(task_uuid),
+                        job_creation_task_id=f"{task_id}",
                         project_job_id=None,
                         solver_job_id=None,
                     )
-                    for task_uuid, pre_registered_function_job_data in zip(
+                    for task_id, pre_registered_function_job_data in zip(
                         task_uuids, pre_registered_function_job_data_list, strict=False
                     )
                 ],
