@@ -1,5 +1,7 @@
 import contextlib
+import itertools
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
@@ -76,13 +78,40 @@ def _build_redis_index_key_for_owner(
     user_id: int | None,
     product_name: str | None,
 ) -> str:
-    """Build a single sorted-set index key from the concrete owner fields.
+    """Build a single sorted-set index key from the supplied owner fields.
 
-    Used for both creation and querying — each task lives in exactly one
-    index, so the caller must supply the same fields at query time.
+    Used for querying — the same key is produced at creation time for the
+    matching subset of fields, so a query with a partial set of fields
+    (``None`` acting as a wildcard) hits a dedicated secondary index.
     """
     parts = [f"{k}={v}" for k, v in _concrete_owner_fields(owner, user_id, product_name)]
     return _build_redis_index_key(_CELERY_TASK_DELIMTATOR.join(parts))
+
+
+def _iter_redis_index_keys_for_owner(
+    owner: str,
+    user_id: int | None,
+    product_name: str | None,
+) -> Iterator[str]:
+    """Yield one index key per subset of the concrete owner fields.
+
+    ``owner`` is always part of every subset; the optional fields
+    (``user_id``, ``product_name``) are independently included or omitted,
+    so a task with all fields set is added to ``2 ** k`` secondary indexes
+    (where ``k`` is the number of non-``None`` optional fields). This lets
+    ``list_tasks`` answer queries with any partial combination of owner
+    fields in ``O(log N)`` against a single sorted set.
+    """
+    optional: list[tuple[str, str | int | None]] = [
+        ("user_id", user_id),
+        ("product_name", product_name),
+    ]
+    concrete_optional = [(name, value) for name, value in optional if value is not None]
+    for size in range(len(concrete_optional) + 1):
+        for combo in itertools.combinations(concrete_optional, size):
+            kwargs: dict[str, str | int | None] = {"user_id": None, "product_name": None}
+            kwargs.update(dict(combo))
+            yield _build_redis_index_key_for_owner(owner, **kwargs)  # type: ignore[arg-type]
 
 
 @dataclass(frozen=True)
@@ -122,8 +151,9 @@ class RedisTaskStore:
             key=_CELERY_TASK_EXEC_METADATA_KEY,
             value=execution_metadata.model_dump_json(),
         )
-        index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
-        pipe.zadd(index_key, {f"{group_uuid}": index_score})
+        index_keys = list(_iter_redis_index_keys_for_owner(owner, user_id, product_name))
+        for index_key in index_keys:
+            pipe.zadd(index_key, {f"{group_uuid}": index_score})
 
         # Sub-task hashes are stored so they can be looked up by UUID, but they
         # are intentionally NOT added to the owner index: the parent group is
@@ -140,7 +170,8 @@ class RedisTaskStore:
             redis_group_key,
             expiry,
         )
-        await self._refresh_index_key_ttl(index_key, expiry)
+        for index_key in index_keys:
+            await self._refresh_index_key_ttl(index_key, expiry)
 
     async def create_task(
         self,
@@ -162,17 +193,18 @@ class RedisTaskStore:
             key=_CELERY_TASK_EXEC_METADATA_KEY,
             value=execution_metadata.model_dump_json(),
         )
-        index_key: str | None = None
+        index_keys: list[str] = []
         if index:
-            index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
-            pipe.zadd(index_key, {f"{task_uuid}": index_score})
+            index_keys = list(_iter_redis_index_keys_for_owner(owner, user_id, product_name))
+            for index_key in index_keys:
+                pipe.zadd(index_key, {f"{task_uuid}": index_score})
         await pipe.execute()
 
         await self._redis_client_sdk.redis.expire(
             redis_key,
             expiry,
         )
-        if index_key is not None:
+        for index_key in index_keys:
             await self._refresh_index_key_ttl(index_key, expiry)
 
     async def get_task_metadata(self, task_uuid: TaskID) -> ExecutionMetadata | None:
@@ -274,8 +306,8 @@ class RedisTaskStore:
     ) -> None:
         pipe = self._redis_client_sdk.redis.pipeline()
         pipe.delete(_build_redis_task_key(task_uuid))
-        index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
-        pipe.zrem(index_key, f"{task_uuid}")
+        for index_key in _iter_redis_index_keys_for_owner(owner, user_id, product_name):
+            pipe.zrem(index_key, f"{task_uuid}")
         await pipe.execute()
 
     async def remove_task_hash(self, task_id: TaskID) -> None:

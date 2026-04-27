@@ -124,8 +124,8 @@ async def test_filtering_listing_tasks(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    user_id = 42
-    owner = "test-owner"
+    user_id = _faker.pyint(min_value=1000, max_value=9999)
+    owner = f"test-owner-{_faker.uuid4()}"
     expected_task_uuids: set[TaskID] = set()
     all_task_uuids: list[TaskID] = []
 
