@@ -151,4 +151,4 @@ async def list_tasks(
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    return [AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks]
+    return [AsyncJobGet(job_id=task.id, job_name=task.metadata.name) for task in tasks]
