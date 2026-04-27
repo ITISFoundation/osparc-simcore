@@ -88,7 +88,7 @@ class Task(BaseModel):
             {
                 "examples": [
                     {
-                        "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
                         "metadata": {
                             "name": "task1",
                             "type": "TASK",
@@ -97,7 +97,7 @@ class Task(BaseModel):
                         },
                     },
                     {
-                        "uuid": "223e4567-e89b-12d3-a456-426614174001",
+                        "id": "223e4567-e89b-12d3-a456-426614174001",
                         "metadata": {
                             "name": "task2",
                             "type": "GROUP_TASK",
@@ -106,7 +106,7 @@ class Task(BaseModel):
                         },
                     },
                     {
-                        "uuid": "323e4567-e89b-12d3-a456-426614174002",
+                        "id": "323e4567-e89b-12d3-a456-426614174002",
                         "metadata": {"name": "group1", "type": "GROUP", "tasks": []},
                     },
                 ]
