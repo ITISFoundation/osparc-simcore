@@ -288,7 +288,7 @@ class RedisTaskStore:
 
                 tasks.append(
                     Task(
-                        uuid=member_uuid,
+                        id=member_uuid,
                         metadata=execution_metadata,
                     )
                 )
