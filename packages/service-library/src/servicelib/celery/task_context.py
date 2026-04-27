@@ -1,17 +1,12 @@
 from dataclasses import dataclass
 
-from models_library.celery import TaskID
+from models_library.celery import TaskID, TaskName
 
 from .app_server import BaseAppServer
 
 
 @dataclass(frozen=True, slots=True)
 class TaskContext:
-    """Framework-agnostic context passed to async tasks registered via ``register_task``.
-
-    Decouples user task code from the underlying Celery ``Task`` object.
-    """
-
     id: TaskID
-    name: str
+    name: TaskName
     app_server: BaseAppServer

@@ -2,14 +2,14 @@ import asyncio
 import threading
 from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from ..celery.task_manager import TaskManager
 
 T = TypeVar("T")
 
 
-class BaseAppServer(ABC, Generic[T]):
+class BaseAppServer[T](ABC):
     def __init__(self, app: T) -> None:
         self._app: T = app
         self._shutdown_event: asyncio.Event = asyncio.Event()
