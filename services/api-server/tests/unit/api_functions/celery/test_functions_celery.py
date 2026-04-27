@@ -24,7 +24,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
-from models_library.celery import TaskExecutionMetadata, TaskKey
+from models_library.celery import TaskExecutionMetadata
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
@@ -118,7 +118,6 @@ async def _wait_for_task_result(
 def _register_fake_run_function_task() -> Callable[[Celery], None]:
     async def run_function(
         task: Task,
-        task_key: TaskKey,
         *,
         user_identity: Identity,
         function: RegisteredFunction,
@@ -310,7 +309,6 @@ async def test_with_fake_run_function(
 def _register_exception_task(exception: Exception) -> Callable[[Celery], None]:
     async def exception_task(
         task: Task,
-        task_id: TaskKey,
     ):
         raise exception
 

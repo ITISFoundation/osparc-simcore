@@ -13,12 +13,10 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 
 type Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
-type TaskKey = str
 type TaskName = Name
 type TaskParams = dict[str, Any]
 type TaskUUID = UUID
 
-type GroupKey = str
 type GroupName = Name
 type GroupUUID = UUID
 
@@ -122,9 +120,9 @@ class Task(BaseModel):
 class TaskStore(Protocol):
     async def create_group(
         self,
-        group_key: GroupKey,
+        group_uuid: GroupUUID,
         execution_metadata: GroupExecutionMetadata,
-        task_keys: list[TaskKey],
+        task_uuids: list[TaskUUID],
         *,
         owner: str,
         user_id: int | None = None,
@@ -134,7 +132,7 @@ class TaskStore(Protocol):
 
     async def create_task(
         self,
-        task_key: TaskKey,
+        task_uuid: TaskUUID,
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
@@ -144,11 +142,11 @@ class TaskStore(Protocol):
         index: bool = True,
     ) -> None: ...
 
-    async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...
+    async def task_or_group_exists(self, task_or_group_uuid: TaskUUID | GroupUUID) -> bool: ...
 
-    async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(self, task_uuid: TaskUUID) -> ExecutionMetadata | None: ...
 
-    async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_uuid: TaskUUID) -> ProgressReport | None: ...
 
     async def list_tasks(
         self,
@@ -160,14 +158,14 @@ class TaskStore(Protocol):
 
     async def remove_task(
         self,
-        task_key: TaskKey,
+        task_uuid: TaskUUID,
         *,
         owner: str,
         user_id: int | None = None,
         product_name: str | None = None,
     ) -> None: ...
 
-    async def remove_task_hash(self, task_key: TaskKey) -> None:
+    async def remove_task_hash(self, task_or_group_uuid: TaskUUID | GroupUUID) -> None:
         """Remove only the task hash from the store, without cleaning sorted-set indexes.
 
         Stale index entries are cleaned lazily by ``list_tasks``.
@@ -176,18 +174,18 @@ class TaskStore(Protocol):
 
     async def set_task_progress(
         self,
-        task_key: TaskKey,
+        task_uuid: TaskUUID,
         report: ProgressReport,
     ) -> None: ...
 
-    async def set_task_stream_done(self, task_key: TaskKey) -> None: ...
+    async def set_task_stream_done(self, task_uuid: TaskUUID) -> None: ...
 
-    async def set_task_stream_last_update(self, task_key: TaskKey) -> None: ...
+    async def set_task_stream_last_update(self, task_uuid: TaskUUID) -> None: ...
 
-    async def push_task_stream_items(self, task_key: TaskKey, *item: TaskStreamItem) -> None: ...
+    async def push_task_stream_items(self, task_uuid: TaskUUID, *item: TaskStreamItem) -> None: ...
 
     async def pull_task_stream_items(
-        self, task_key: TaskKey, limit: int
+        self, task_uuid: TaskUUID, limit: int
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
 
 

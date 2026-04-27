@@ -9,8 +9,8 @@ from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 from celery import Celery, Task  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
-from models_library.celery import TaskKey
-from pydantic import NonNegativeInt
+from models_library.celery import TaskUUID
+from pydantic import NonNegativeInt, TypeAdapter
 
 from .errors import encode_celery_transferable_error
 from .worker.app_server import get_app_server
@@ -46,8 +46,9 @@ def _async_task_wrapper(
             app_server = get_app_server(app)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
+            task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(task.request.id)
 
-            async def _run_task(task_key: TaskKey) -> R:
+            async def _run_task(task_uuid: TaskUUID) -> R:
                 try:
                     async with asyncio.TaskGroup() as tg:
                         async_io_task = tg.create_task(
@@ -56,7 +57,7 @@ def _async_task_wrapper(
 
                         async def _abort_monitor():
                             while not async_io_task.done():
-                                if not await app_server.task_manager.task_or_group_exists(task_key):
+                                if not await app_server.task_manager.task_or_group_exists(task_uuid):
                                     await cancel_wait_task(
                                         async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
@@ -80,7 +81,7 @@ def _async_task_wrapper(
                     raise other_errors.exceptions[0] from eg
 
             return asyncio.run_coroutine_threadsafe(
-                _run_task(task.request.id),
+                _run_task(task_uuid),
                 app_server.event_loop,
             ).result()
 
@@ -136,7 +137,7 @@ def _error_handling(
 @overload
 def register_task[**P_Task, R_Task](
     app: Celery,
-    fn: Callable[Concatenate[Task, TaskKey, P_Task], Coroutine[Any, Any, R_Task]],
+    fn: Callable[Concatenate[Task, P_Task], Coroutine[Any, Any, R_Task]],
     task_name: str | None = None,
     rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
@@ -161,7 +162,7 @@ def register_task[**P_Task, R_Task](
 
 def register_task(  # type: ignore[misc]
     app: Celery,
-    fn: (Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]] | Callable[Concatenate[Task, P], R]),
+    fn: (Callable[Concatenate[Task, P], Coroutine[Any, Any, R]] | Callable[Concatenate[Task, P], R]),
     task_name: str | None = None,
     rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,

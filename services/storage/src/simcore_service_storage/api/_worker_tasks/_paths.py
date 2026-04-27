@@ -4,7 +4,6 @@ from typing import Any
 
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.worker.app_server import get_app_server
-from models_library.celery import TaskKey
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType
@@ -22,13 +21,12 @@ _logger = logging.getLogger(__name__)
 
 async def compute_path_size(
     task: Task,
-    task_key: TaskKey,
     user_id: UserID,
     product_name: ProductName,
     location_id: LocationID,
     path: Path,
 ) -> ByteSize:
-    assert task_key  # nosec
+    assert task.request.id  # nosec
     with log_context(
         _logger,
         logging.INFO,
@@ -40,13 +38,12 @@ async def compute_path_size(
 
 async def delete_paths(
     task: Task,
-    task_key: TaskKey,
     user_id: UserID,
     location_id: LocationID,
     paths: set[Path],
     **_kwargs: Any,
 ) -> None:
-    assert task_key  # nosec
+    assert task.request.id  # nosec
     with log_context(
         _logger,
         logging.INFO,

@@ -7,7 +7,6 @@ from typing import Any
 from celery import (  # type: ignore[import-untyped]
     Task,
 )
-from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from notifications_library._email import (
     add_attachments,
@@ -26,12 +25,11 @@ def _to_address(address: EmailContact) -> Address:
 
 async def send_email_message(
     task: Task,
-    task_key: TaskKey,
     message: EmailMessage,
     **_kwargs: Any,
 ) -> None:
     assert task  # nosec
-    assert task_key  # nosec
+    assert task.request.id  # nosec
 
     msg = EmailMessage(
         from_=EmailContact(**message.from_.model_dump()),

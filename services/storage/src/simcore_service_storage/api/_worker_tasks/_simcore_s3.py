@@ -15,8 +15,8 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.celery import (
-    TaskKey,
     TaskStreamItem,
+    TaskUUID,
 )
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
@@ -33,18 +33,19 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 _logger = logging.getLogger(__name__)
 
 
-async def _task_progress_cb(task: Task, task_key: TaskKey, report: ProgressReport) -> None:
+async def _task_progress_cb(task: Task, task_uuid: TaskUUID, report: ProgressReport) -> None:
     worker = get_app_server(task.app).task_manager
     assert task.name  # nosec
     await worker.set_task_progress(
-        task_key=task_key,
+        task_uuid=task_uuid,
         report=report,
     )
 
 
 async def deep_copy_files_from_project(
-    task: Task, task_key: TaskKey, user_id: UserID, body: FoldersBody, **_kwargs: Any
+    task: Task, user_id: UserID, body: FoldersBody, **_kwargs: Any
 ) -> dict[str, Any]:
+    task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(task.request.id)
     with log_context(
         _logger,
         logging.INFO,
@@ -55,7 +56,7 @@ async def deep_copy_files_from_project(
         async with ProgressBarData(
             num_steps=1,
             description="copying files",
-            progress_report_cb=functools.partial(_task_progress_cb, task, task_key),
+            progress_report_cb=functools.partial(_task_progress_cb, task, task_uuid),
         ) as task_progress:
             await dsm.deep_copy_project_simcore_s3(
                 user_id,
@@ -70,7 +71,6 @@ async def deep_copy_files_from_project(
 
 async def export_data(
     task: Task,
-    task_key: TaskKey,
     *,
     user_id: UserID,
     product_name: ProductName,
@@ -79,11 +79,12 @@ async def export_data(
     """
     AccessRightError: in case user can't access project
     """
+    task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(task.request.id)
     with log_context(
         _logger,
         logging.INFO,
         "export data task (%s) (for user=%s) from selection: %s",
-        task_key,
+        task_uuid,
         user_id,
         paths_to_export,
     ):
@@ -96,12 +97,12 @@ async def export_data(
 
         async def _progress_cb(report: ProgressReport) -> None:
             assert task.name  # nosec
-            await get_app_server(task.app).task_manager.set_task_progress(task_key, report)
-            _logger.debug("'%s' progress %s", task_key, report.percent_value)
+            await get_app_server(task.app).task_manager.set_task_progress(task_uuid, report)
+            _logger.debug("'%s' progress %s", task_uuid, report.percent_value)
 
         async with ProgressBarData(
             num_steps=1,
-            description=f"'{task_key}' export data",
+            description=f"'{task_uuid}' export data",
             progress_report_cb=_progress_cb,
         ) as progress_bar:
             return await dsm.create_s3_export(
@@ -114,7 +115,6 @@ async def export_data(
 
 async def export_data_as_download_link(
     task: Task,
-    task_key: TaskKey,
     *,
     user_id: UserID,
     product_name: ProductName,
@@ -125,7 +125,6 @@ async def export_data_as_download_link(
     """
     s3_object = await export_data(
         task=task,
-        task_key=task_key,
         user_id=user_id,
         product_name=product_name,
         paths_to_export=paths_to_export,
@@ -141,7 +140,6 @@ async def export_data_as_download_link(
 
 async def search(
     task: Task,
-    task_key: TaskKey,
     *,
     user_id: UserID,
     product_name: ProductName,
@@ -149,10 +147,11 @@ async def search(
     name_pattern: str,
     modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
 ) -> None:
+    task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(task.request.id)
     with log_context(
         _logger,
         logging.INFO,
-        f"'{task_key}' search file {name_pattern=}",
+        f"'{task_uuid}' search file {name_pattern=}",
     ):
         app_server = get_app_server(task.app)
         dsm = get_dsm_provider(app_server.app).get(SimcoreS3DataManager.get_location_id())
@@ -169,7 +168,7 @@ async def search(
         ):
             if not items:
                 # NOTE: still set the last update time to signal progress in search
-                await app_server.task_manager.set_task_stream_last_update(task_key)
+                await app_server.task_manager.set_task_stream_last_update(task_uuid)
                 continue
 
             data = [
@@ -189,8 +188,8 @@ async def search(
             ]
 
             await app_server.task_manager.push_task_stream_items(
-                task_key,
+                task_uuid,
                 *data,
             )
 
-    await app_server.task_manager.set_task_stream_done(task_key)
+    await app_server.task_manager.set_task_stream_done(task_uuid)

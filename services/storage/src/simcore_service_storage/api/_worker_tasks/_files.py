@@ -6,7 +6,6 @@ from celery_library.worker.app_server import get_app_server
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
 )
-from models_library.celery import TaskKey
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from servicelib.logging_utils import log_context
@@ -19,14 +18,13 @@ _logger = logging.getLogger(__name__)
 
 async def complete_upload_file(
     task: Task,
-    task_key: TaskKey,
     user_id: UserID,
     location_id: LocationID,
     file_id: StorageFileID,
     body: FileUploadCompletionBody,
     **_kwargs: Any,
 ) -> FileMetaData:
-    assert task_key  # nosec
+    assert task.request.id  # nosec
     with log_context(
         _logger,
         logging.INFO,

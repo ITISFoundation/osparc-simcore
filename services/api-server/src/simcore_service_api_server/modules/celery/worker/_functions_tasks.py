@@ -5,7 +5,6 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 )
 from celery_library.worker.app_server import get_app_server
 from fastapi import FastAPI
-from models_library.celery import TaskKey
 from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -107,7 +106,6 @@ async def _assemble_function_job_service(
 
 async def run_function(
     task: Task,
-    task_key: TaskKey,
     *,
     user_identity: Identity,
     function: RegisteredFunction,
@@ -118,7 +116,7 @@ async def run_function(
     x_simcore_parent_node_id: NodeID | None,
     **_kwargs: Any,
 ) -> RegisteredFunctionJob:
-    assert task_key  # nosec
+    assert task.request.id  # nosec
     app = get_app_server(task.app).app
     function_job_service = await _assemble_function_job_service(app=app, user_identity=user_identity)
 
