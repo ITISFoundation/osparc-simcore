@@ -68,14 +68,6 @@ session:
   secret_key: ${SESSION_SECRET_KEY}
 security:
   enabled: true
-smtp:
-  enabled: true
-  host: ${SMTP_HOST}
-  password: null
-  port: ${SMTP_PORT}
-  sender: OSPARC support <support@osparc.io>
-  tls: false
-  username: null
 socketio:
   enabled: true
 statics:

@@ -223,12 +223,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         envs["LOGIN_REGISTRATION_INVITATION_REQUIRED"] = section.get("registration_invitation_required")
         envs["LOGIN_REGISTRATION_CONFIRMATION_REQUIRED"] = section.get("registration_confirmation_required")
 
-    if section := cfg.get("smtp"):
-        envs["SMTP_HOST"] = section.get("host")
-        envs["SMTP_PORT"] = section.get("port")
-        envs["SMTP_USERNAME"] = section.get("username")
-        envs["SMTP_PASSWORD"] = section.get("password")
-
     if section := cfg.get("storage"):
         _set_if_disabled("WEBSERVER_STORAGE", section)
 
