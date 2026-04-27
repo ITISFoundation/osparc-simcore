@@ -95,7 +95,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_EMAIL: Annotated[
-        dict[str, SMTPSettings],
+        dict[str, SMTPSettings] | None,
         Field(
             description=(
                 "Per-domain SMTP settings. The key is the domain extracted from the "
@@ -104,7 +104,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 '{"osparc.io": {"SMTP_HOST": "smtp.osparc.io", "SMTP_PORT": 25, ...}}'
             ),
         ),
-    ]
+    ] = None
 
     @field_validator("LOG_LEVEL")
     @classmethod
