@@ -28,7 +28,14 @@ def with_smtp_extra_headers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> dict[str, str]:
     headers = {"x-ses-tenant": "test-tenant"}
-    setenvs_from_dict(monkeypatch, {"SMTP_EXTRA_HEADERS": json.dumps(headers)})
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SMTP_HOST": "mailpit",
+            "SMTP_PORT": "1025",
+            "SMTP_EXTRA_HEADERS": json.dumps(headers),
+        },
+    )
     return headers
 
 
