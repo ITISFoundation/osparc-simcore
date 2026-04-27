@@ -105,7 +105,7 @@ coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.5
+cryptography==47.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
@@ -118,9 +118,9 @@ docker==7.1.0
     #   moto
     #   pytest-celery
     #   pytest-docker-tools
-faker==40.11.0
+faker==40.15.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.35.1
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -178,13 +178,13 @@ jmespath==1.0.1
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.6.4
     # via moto
 jsonpatch==1.33
     # via cfn-lint
 jsonpath-ng==1.8.0
     # via moto
-jsonpointer==3.0.0
+jsonpointer==3.1.1
     # via jsonpatch
 jsonref==1.1.0
     # via
@@ -210,9 +210,9 @@ kombu==5.6.2
     #   pytest-celery
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-librt==0.8.1
+librt==0.9.0
     # via mypy
-lupa==2.6
+lupa==2.8
     # via fakeredis
 markupsafe==3.0.2
     # via
@@ -229,13 +229,13 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.19.1
+mypy==1.20.2
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
 networkx==3.6.1
     # via cfn-lint
-numpy==2.4.3
+numpy==2.4.4
     # via pandas
 openapi-schema-validator==0.6.3
     # via openapi-spec-validator
@@ -246,11 +246,11 @@ packaging==24.2
     #   -c requirements/_base.txt
     #   kombu
     #   pytest
-pandas==3.0.1
+pandas==3.0.2
     # via -r requirements/_test.in
 pathable==0.4.4
     # via jsonschema-path
-pathspec==1.0.4
+pathspec==1.1.1
     # via mypy
 pluggy==1.6.0
     # via
@@ -291,7 +291,7 @@ pygments==2.19.1
     #   pytest
 pyparsing==3.3.2
     # via moto
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -305,7 +305,7 @@ pytest-asyncio==1.3.0
     # via -r requirements/_test.in
 pytest-celery==1.3.0
     # via -r requirements/_test.in
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-docker-tools==3.1.9
     # via pytest-celery
@@ -351,7 +351,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2026.2.28
+regex==2026.4.4
     # via cfn-lint
 requests==2.32.4
     # via
@@ -362,7 +362,7 @@ requests==2.32.4
     #   responses
 responses==0.26.0
     # via moto
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
@@ -406,7 +406,7 @@ tenacity==9.0.0
     #   pytest-celery
 termcolor==3.3.0
     # via pytest-sugar
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260409
     # via -r requirements/_test.in
 typing-extensions==4.14.1
     # via
@@ -450,7 +450,7 @@ wcwidth==0.2.13
     # via
     #   -c requirements/_base.txt
     #   prompt-toolkit
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors
