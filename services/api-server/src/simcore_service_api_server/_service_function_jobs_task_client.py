@@ -72,16 +72,20 @@ def join_inputs(
     return {**default_inputs, **function_inputs}
 
 
+_TASK_ID_ADAPTER: TypeAdapter[TaskID] = TypeAdapter(TaskID)
+
+
 async def _celery_task_status(
-    job_creation_task_id: TaskID | None,
+    job_creation_task_id: str | None,
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
+    task_uuid = _TASK_ID_ADAPTER.validate_python(job_creation_task_id)
     try:
-        task_status = await task_manager.get_status(task_id=job_creation_task_id)
+        task_status = await task_manager.get_status(task_id=task_uuid)
         assert isinstance(task_status, TaskStatus)  # nosec
         return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskNotFoundError as err:
