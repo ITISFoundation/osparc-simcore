@@ -114,10 +114,10 @@ async def test_listing_task_ids_contains_submitted_task(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             tasks = await task_manager.list_tasks(owner=fake_owner, user_id=fake_user_id)
-            assert any(task.uuid == task_id for task in tasks)
+            assert any(task.id == task_id for task in tasks)
 
     tasks = await task_manager.list_tasks(owner=fake_owner, user_id=fake_user_id)
-    assert any(task.uuid == task_id for task in tasks)
+    assert any(task.id == task_id for task in tasks)
 
 
 async def test_filtering_listing_tasks(

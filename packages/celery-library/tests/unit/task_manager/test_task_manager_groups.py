@@ -102,7 +102,7 @@ async def test_submit_group_tasks_appear_in_listing(
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 tasks = await task_manager.list_tasks(owner=fake_owner, user_id=fake_user_id)
-                task_ids_from_list = {task.uuid for task in tasks}
+                task_ids_from_list = {task.id for task in tasks}
                 assert all(uuid not in task_ids_from_list for uuid in task_ids)
     finally:
         # Clean up
