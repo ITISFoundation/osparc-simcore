@@ -6,7 +6,7 @@ aiohttp==3.13.3
     #   -r requirements/_aiohttp.in
 aiosignal==1.4.0
     # via aiohttp
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -r requirements/_aiohttp.in
     #   aiohttp

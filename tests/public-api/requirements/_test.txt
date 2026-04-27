@@ -11,7 +11,7 @@ aiosignal==1.4.0
     # via aiohttp
 anyio==4.12.1
     # via httpx
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   aiohttp
     #   jsonschema

@@ -238,6 +238,7 @@ def list_latest_services_stmt(
             services_meta_data.c.modified,
             services_meta_data.c.deprecated,
             services_meta_data.c.quality,
+            services_meta_data.c.release_notes_url,
         )
         .join(
             cte,
@@ -268,6 +269,8 @@ def list_latest_services_stmt(
         # tags
         latest_stmt.c.classifiers,
         latest_stmt.c.quality,
+        # release notes
+        latest_stmt.c.release_notes_url,
         # lifetime
         latest_stmt.c.created,
         latest_stmt.c.modified,
@@ -333,6 +336,8 @@ def get_service_stmt(
             # tags
             services_meta_data.c.classifiers,
             services_meta_data.c.quality,
+            # release notes
+            services_meta_data.c.release_notes_url,
             # lifetime
             services_meta_data.c.created,
             services_meta_data.c.modified,
