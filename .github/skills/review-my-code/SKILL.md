@@ -1,5 +1,5 @@
 ---
-name: pr-review
+name: review-my-code
 description: 'Perform an initial pull request review on the current branch. Use when: reviewing a PR, code review, checking branch changes before merge, verifying coding standards compliance, finding security issues, reviewing software design decisions, pre-merge review.'
 ---
 
@@ -50,7 +50,7 @@ Follow these phases **strictly and in order**. Do not skip phases or combine the
 
 ### Phase 2: Analysis
 
-Analyze every changed file in the diff. For each file, perform **all three** of the following checks:
+Analyze every changed file in the diff. For each file, perform **all five** of the following checks:
 
 #### Check 1 — Coding Standards Compliance
 
@@ -92,6 +92,32 @@ Scan for common vulnerabilities (OWASP Top 10 and Python-specific):
 - Use of `eval()`, `exec()`, or `__import__()` with user input
 - Debug code left in (e.g., `print()` without `# noqa: T201`, commented-out security checks)
 
+#### Check 4 — Test Coverage of Critical Code
+
+Identify critical or complex code paths in the changes and verify they have adequate test coverage:
+- **New business logic** — Are service-layer functions covered by unit tests?
+- **Edge cases** — Do tests cover error paths, boundary conditions, and empty/null inputs?
+- **New endpoints** — Are there integration tests for new or modified API routes?
+- **Complex conditionals** — Are branching paths exercised by different test cases?
+- **Data transformations** — Are serialization/deserialization and model conversions tested?
+
+For any critical code path that lacks tests, suggest specific test cases the developer should add. Include concrete test function signatures and describe what each test should assert.
+
+#### Check 5 — Snippet Verification
+
+When you encounter small, self-contained logic (e.g., pure functions, data transformations, regex patterns, serialization round-trips) that can be verified in isolation, test it by running:
+```bash
+python -c "<snippet>"
+```
+
+This is useful for:
+- Verifying regex patterns match expected inputs
+- Checking serialization/deserialization round-trips
+- Validating string formatting or template logic
+- Confirming type coercion behaves as expected
+
+**Environment requirement**: If the snippet requires project dependencies that are not available in the current Python environment, do **not** attempt to install them. Instead, ask the user to set up the environment with all dependencies installed, then retry.
+
 ---
 
 ### Phase 3: Report
@@ -103,7 +129,7 @@ After completing the full analysis, produce a **summary report** structured as f
 
 **Branch**: <branch-name>
 **Files changed**: <count>
-**Checks performed**: Coding Standards, Software Design, Security
+**Checks performed**: Coding Standards, Software Design, Security, Test Coverage, Snippet Verification
 
 ### Overview
 <1-3 sentence summary of the overall quality of the changes>
