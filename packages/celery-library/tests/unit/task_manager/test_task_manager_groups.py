@@ -7,15 +7,14 @@ import contextlib
 import pytest
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library._task_manager import CeleryTaskManager
-from celery_library.errors import TaskOrGroupNotFoundError, TransferableCeleryError
+from celery_library.errors import TaskNotFoundError, TransferableCeleryError
 from faker import Faker
 from models_library.celery import (
     GroupExecutionMetadata,
-    GroupStatus,
     GroupTaskExecutionMetadata,
-    GroupUUID,
     TaskExecutionMetadata,
-    TaskUUID,
+    TaskID,
+    TaskStatus,
 )
 from pydantic import TypeAdapter
 from tenacity import AsyncRetrying
@@ -87,7 +86,7 @@ async def test_submit_group_tasks_appear_in_listing(
         for _ in range(num_tasks)
     ]
 
-    task_uuids: list[TaskUUID] = []
+    task_uuids: list[TaskID] = []
 
     try:
         _, task_uuids = await task_manager.submit_group(
@@ -108,7 +107,7 @@ async def test_submit_group_tasks_appear_in_listing(
     finally:
         # Clean up
         for task_uuid in task_uuids:
-            with contextlib.suppress(TaskOrGroupNotFoundError):
+            with contextlib.suppress(TaskNotFoundError):
                 await task_manager.cancel(task_uuid)
 
 
@@ -190,7 +189,7 @@ async def test_submit_group_can_cancel_individual_tasks(
     await task_manager.cancel(task_uuids[0])
 
     # Verify first task is gone
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_status(task_uuids[0])
 
     # Cancel remaining tasks
@@ -228,12 +227,12 @@ async def test_cancelling_a_group_cancels_all_tasks(
     await task_manager.cancel(group_uuid)
 
     # Group itself should no longer exist
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_status(group_uuid)
 
     # All individual tasks should also be gone
     for task_uuid in task_uuids:
-        with pytest.raises(TaskOrGroupNotFoundError):
+        with pytest.raises(TaskNotFoundError):
             await task_manager.get_status(task_uuid)
 
 
@@ -321,7 +320,7 @@ async def test_submit_group_with_ephemeral_tasks(
 
     for task_uuid in task_uuids:
         # Second attempt to get result should fail as ephemeral tasks are cleaned up
-        with pytest.raises(TaskOrGroupNotFoundError):
+        with pytest.raises(TaskNotFoundError):
             await task_manager.get_status(task_uuid)
 
 
@@ -373,18 +372,18 @@ async def test_get_group_status_returns_status_for_running_group(
         await asyncio.sleep(1.0)
 
         # Get group status while tasks are running
-        group_status = await task_manager.get_status(group_id)
+        task_status = await task_manager.get_status(group_id)
 
-        assert isinstance(group_status, GroupStatus)
-        assert group_status.group_uuid == group_id
-        assert group_status.task_uuids == task_uuids
-        assert group_status.total_count == num_tasks
-        assert group_status.completed_count >= 0
-        assert group_status.completed_count <= num_tasks
+        assert isinstance(task_status, TaskStatus)
+        assert task_status.task_id == group_id
+        assert task_status.children == task_uuids
+        assert task_status.total_count == num_tasks
+        assert task_status.completed_count >= 0
+        assert task_status.completed_count <= num_tasks
     finally:
         # Clean up
         for task_uuid in task_uuids:
-            with contextlib.suppress(TaskOrGroupNotFoundError):
+            with contextlib.suppress(TaskNotFoundError):
                 await task_manager.cancel(task_uuid)
 
 
@@ -418,15 +417,15 @@ async def test_get_group_status_returns_done_when_all_tasks_complete(
         await wait_for_task_success(task_manager, task_uuid)
 
     # Get group status
-    group_status = await task_manager.get_status(group_id)
+    task_status = await task_manager.get_status(group_id)
 
-    assert isinstance(group_status, GroupStatus)
-    assert group_status.group_uuid == group_id
-    assert group_status.task_uuids == task_uuids
-    assert group_status.total_count == num_tasks
-    assert group_status.completed_count == num_tasks
-    assert group_status.is_done
-    assert group_status.is_successful
+    assert isinstance(task_status, TaskStatus)
+    assert task_status.task_id == group_id
+    assert task_status.children == task_uuids
+    assert task_status.total_count == num_tasks
+    assert task_status.completed_count == num_tasks
+    assert task_status.is_done
+    assert task_status.is_successful
 
 
 async def test_get_group_status_successful_false_when_task_fails(
@@ -461,16 +460,16 @@ async def test_get_group_status_successful_false_when_task_fails(
         await wait_for_task_done(task_manager, task_uuid)
 
     # Get group status
-    group_status = await task_manager.get_status(group_id)
+    task_status = await task_manager.get_status(group_id)
 
-    assert isinstance(group_status, GroupStatus)
-    assert group_status.group_uuid == group_id
-    assert group_status.task_uuids == task_uuids
-    assert group_status.total_count == 2
-    assert group_status.is_done
+    assert isinstance(task_status, TaskStatus)
+    assert task_status.task_id == group_id
+    assert task_status.children == task_uuids
+    assert task_status.total_count == 2
+    assert task_status.is_done
     # NOTE: one task failed
-    assert group_status.completed_count == 1
-    assert not group_status.is_successful
+    assert task_status.completed_count == 1
+    assert not task_status.is_successful
 
 
 async def test_get_group_status_with_nonexistent_group_raises_error(
@@ -479,9 +478,9 @@ async def test_get_group_status_with_nonexistent_group_raises_error(
     fake_owner: str,
     fake_user_id: int,
 ):
-    fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
+    fake_group_uuid = TypeAdapter(TaskID).validate_python(_faker.uuid4())
 
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_status(fake_group_uuid)
 
 
@@ -513,27 +512,27 @@ async def test_get_group_status_tracks_progress(
     try:
         # Check status repeatedly until group completes, tracking progress
         previous_completed = 0
-        group_status = None
+        task_status = None
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                group_status = await task_manager.get_status(group_id)
+                task_status = await task_manager.get_status(group_id)
 
-                assert isinstance(group_status, GroupStatus)
+                assert isinstance(task_status, TaskStatus)
                 # Progress should never go backwards
-                assert group_status.completed_count >= previous_completed
-                previous_completed = group_status.completed_count
+                assert task_status.completed_count >= previous_completed
+                previous_completed = task_status.completed_count
 
                 # Keep retrying until done
-                assert group_status.is_done
+                assert task_status.is_done
 
         # Verify final status
-        assert group_status is not None
-        assert group_status.total_count == num_tasks
-        assert group_status.is_successful
+        assert task_status is not None
+        assert task_status.total_count == num_tasks
+        assert task_status.is_successful
     finally:
         # Clean up
         for task_uuid in task_uuids:
-            with contextlib.suppress(TaskOrGroupNotFoundError):
+            with contextlib.suppress(TaskNotFoundError):
                 await task_manager.cancel(task_uuid)
 
 
@@ -554,15 +553,15 @@ async def test_get_group_status_with_empty_group(
     )
 
     # Get group status
-    group_status = await task_manager.get_status(group_id)
+    task_status = await task_manager.get_status(group_id)
 
-    assert isinstance(group_status, GroupStatus)
-    assert group_status.group_uuid == group_id
-    assert group_status.task_uuids == []
-    assert group_status.total_count == 0
-    assert group_status.completed_count == 0
-    assert group_status.is_done
-    assert group_status.is_successful
+    assert isinstance(task_status, TaskStatus)
+    assert task_status.task_id == group_id
+    assert task_status.children == []
+    assert task_status.total_count == 0
+    assert task_status.completed_count == 0
+    assert task_status.is_done
+    assert task_status.is_successful
 
 
 async def test_get_result_dispatches_to_task_result(
@@ -618,8 +617,8 @@ async def test_get_result_with_nonexistent_uuid_raises_error(
     fake_owner: str,
     fake_user_id: int,
 ):
-    fake_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
-    with pytest.raises(TaskOrGroupNotFoundError):
+    fake_uuid = TypeAdapter(TaskID).validate_python(_faker.uuid4())
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_result(fake_uuid)
 
 
@@ -713,7 +712,7 @@ async def test_get_group_result_with_ephemeral_cleans_up(
     assert results == ["archive.zip"] * num_tasks
 
     # Second call should fail because the group was cleaned up
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_result(group_id)
 
 
@@ -723,6 +722,6 @@ async def test_get_group_result_with_nonexistent_group_raises_error(
     fake_owner: str,
     fake_user_id: int,
 ):
-    fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
-    with pytest.raises(TaskOrGroupNotFoundError):
+    fake_group_uuid = TypeAdapter(TaskID).validate_python(_faker.uuid4())
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_result(fake_group_uuid)

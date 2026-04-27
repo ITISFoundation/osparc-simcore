@@ -16,10 +16,10 @@ from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.celery import (
     TASK_DONE_STATES,
+    TaskID,
     TaskState,
     TaskStatus,
     TaskStreamItem,
-    TaskUUID,
 )
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.task_context import TaskContext
@@ -45,7 +45,7 @@ _TENACITY_RETRY_PARAMS: dict = {
 }
 
 
-async def _fake_file_processor(celery_app: Celery, task_name: str, task_uuid: TaskUUID, files: list[str]) -> str:
+async def _fake_file_processor(celery_app: Celery, task_name: str, task_uuid: TaskID, files: list[str]) -> str:
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
@@ -89,7 +89,7 @@ async def dreamer_task(task: TaskContext, **_kwargs: Any) -> list[int]:
 
 
 def streaming_results_task(task: Task, num_results: int = 5, **_kwargs: Any) -> str:
-    task_uuid: TaskUUID = UUID(task.request.id)
+    task_uuid: TaskID = UUID(task.request.id)
     assert task.name
 
     async def _stream_results(sleep_interval: float) -> None:
@@ -142,7 +142,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 async def wait_for_task_success(
     task_manager: TaskManager,
-    task_uuid: TaskUUID,
+    task_uuid: TaskID,
 ) -> None:
     """Wait for a task to reach SUCCESS state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
@@ -154,7 +154,7 @@ async def wait_for_task_success(
 
 async def wait_for_task_not_pending(
     task_manager: TaskManager,
-    task_uuid: TaskUUID,
+    task_uuid: TaskID,
 ) -> None:
     """Wait for a task to leave PENDING state (i.e. the worker picked it up)."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
@@ -166,7 +166,7 @@ async def wait_for_task_not_pending(
 
 async def wait_for_task_done(
     task_manager: TaskManager,
-    task_uuid: TaskUUID,
+    task_uuid: TaskID,
 ) -> None:
     """Wait for a task to reach any DONE state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):

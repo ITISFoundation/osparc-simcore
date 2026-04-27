@@ -842,7 +842,7 @@ def mocked_send_message_from_template_rpc(
     mocker: MockerFixture,
 ) -> SendMessageResponse:
     fake_response = SendMessageResponse(
-        task_or_group_uuid=uuid.uuid4(),
+        task_id=uuid.uuid4(),
         task_name="send_message_from_template",
     )
     mocker.patch(

@@ -15,7 +15,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     SoftCopyBody,
 )
-from models_library.celery import TaskExecutionMetadata, TaskUUID
+from models_library.celery import TaskExecutionMetadata, TaskID
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType
@@ -332,13 +332,13 @@ async def is_completed_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     task_status = await task_manager.get_status(
-        task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
+        task_id=TypeAdapter(TaskID).validate_python(future_id),
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
             await task_manager.get_result(
-                task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
+                task_id=TypeAdapter(TaskID).validate_python(future_id),
             )
         )
         new_fmd = task_result

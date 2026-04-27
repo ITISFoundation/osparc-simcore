@@ -98,7 +98,7 @@ async def test_send_message_single_recipient(
         message=single_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 
@@ -120,7 +120,7 @@ async def test_send_message_with_owner_params(
         product_name="osparc",
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
     spy.assert_awaited_once()
@@ -139,7 +139,7 @@ async def test_send_message_multiple_recipients(
         message=multi_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 
@@ -162,7 +162,7 @@ async def test_send_message_from_template_with_empty_template(
         context=context,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 
@@ -185,7 +185,7 @@ async def test_send_message_from_template_with_multiple_recipients(
         context=context,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 

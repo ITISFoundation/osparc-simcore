@@ -4,7 +4,7 @@ from typing import Final
 
 from celery_library.errors import (
     TaskManagerError,
-    TaskOrGroupNotFoundError,
+    TaskNotFoundError,
     TransferableCeleryError,
     decode_celery_transferable_error,
 )
@@ -20,10 +20,10 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobSchedulerError,
 )
 from models_library.celery import (
+    TaskID,
     TaskState,
     TaskStatus,
     TaskStreamItem,
-    TaskUUID,
 )
 from pydantic import NonNegativeFloat
 from servicelib.celery.task_manager import TaskManager
@@ -38,13 +38,13 @@ _STREAM_STALL_THRESHOLD: Final[NonNegativeFloat] = timedelta(minutes=1).total_se
 async def cancel_task(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskUUID,
+    task_uuid: TaskID,
 ):
     try:
         await task_manager.cancel(
-            task_or_group_uuid=task_uuid,
+            task_id=task_uuid,
         )
-    except TaskOrGroupNotFoundError as exc:
+    except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -53,18 +53,18 @@ async def cancel_task(
 async def get_task_result(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskUUID,
+    task_uuid: TaskID,
 ) -> AsyncJobResult:
     try:
         status = await task_manager.get_status(
-            task_or_group_uuid=task_uuid,
+            task_id=task_uuid,
         )
         if not status.is_done:
             raise JobNotDoneError(job_id=task_uuid)
         result = await task_manager.get_result(
-            task_or_group_uuid=task_uuid,
+            task_id=task_uuid,
         )
-    except TaskOrGroupNotFoundError as exc:
+    except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -93,13 +93,13 @@ async def get_task_result(
 async def get_task_status(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskUUID,
+    task_uuid: TaskID,
 ) -> AsyncJobStatus:
     try:
         task_status = await task_manager.get_status(
-            task_or_group_uuid=task_uuid,
+            task_id=task_uuid,
         )
-    except TaskOrGroupNotFoundError as exc:
+    except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -114,7 +114,7 @@ async def get_task_status(
 async def pull_task_stream_items(
     task_manager: TaskManager,
     *,
-    task_uuid: TaskUUID,
+    task_uuid: TaskID,
     limit: int = 50,
 ) -> tuple[list[TaskStreamItem], bool]:
     try:
@@ -122,7 +122,7 @@ async def pull_task_stream_items(
             task_uuid=task_uuid,
             limit=limit,
         )
-    except TaskOrGroupNotFoundError as exc:
+    except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

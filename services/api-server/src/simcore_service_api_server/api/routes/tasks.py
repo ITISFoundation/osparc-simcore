@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from typing import Annotated, Any
 
-from celery_library.errors import TaskOrGroupNotFoundError
+from celery_library.errors import TaskNotFoundError
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
@@ -15,7 +15,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
-from models_library.celery import TaskState, TaskUUID
+from models_library.celery import TaskID, TaskState
 from models_library.celery import TaskStatus as CeleryTaskStatus
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -46,11 +46,11 @@ _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 
 @contextmanager
-def _exception_mapper(task_uuid: TaskUUID):
+def _exception_mapper(task_uuid: TaskID):
     try:
         yield
-    except TaskOrGroupNotFoundError as exc:
-        raise CeleryTaskNotFoundError(task_uuid=task_uuid) from exc
+    except TaskNotFoundError as exc:
+        raise CeleryTaskNotFoundError(task_id=task_uuid) from exc
 
 
 @router.get(
@@ -112,13 +112,13 @@ async def get_task_status(
     task_manager = get_task_manager(app)
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_status(
-            task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
         )
 
     assert isinstance(task_status, CeleryTaskStatus)  # nosec
     return TaskStatus(
         task_progress=TaskProgress(
-            task_id=f"{task_status.task_uuid}",
+            task_id=f"{task_status.task_id}",
             percent=task_status.progress_report.percent_value,
         ),
         done=task_status.is_done,
@@ -147,7 +147,7 @@ async def cancel_task(
     task_manager = get_task_manager(app)
     with _exception_mapper(task_uuid=task_uuid):
         await task_manager.cancel(
-            task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
         )
 
 
@@ -179,7 +179,7 @@ async def get_task_result(
 
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_status(
-            task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
         )
 
         if not task_status.is_done:
@@ -189,7 +189,7 @@ async def get_task_result(
             )
 
         task_result = await task_manager.get_result(
-            task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
+            task_id=TypeAdapter(TaskID).validate_python(f"{task_uuid}"),
         )
 
         assert isinstance(task_status, CeleryTaskStatus)  # nosec

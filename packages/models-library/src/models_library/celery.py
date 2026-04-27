@@ -3,7 +3,7 @@ from enum import auto
 from typing import Annotated, Any, Final, Literal, Protocol, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, StringConstraints, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, TypeAdapter
 from pydantic.config import JsonDict
 
 from .progress_bar import ProgressReport
@@ -15,14 +15,13 @@ type Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1
 
 type TaskName = Name
 type TaskParams = dict[str, Any]
-type TaskUUID = UUID
+type TaskID = UUID
 
 type GroupName = Name
-type GroupUUID = UUID
 
 DEFAULT_QUEUE: Final[str] = "default"
 
-_TASK_UUID_ADAPTER: Final[TypeAdapter[TaskUUID]] = TypeAdapter(TaskUUID)
+_TASK_ID_ADAPTER: Final[TypeAdapter[TaskID]] = TypeAdapter(TaskID)
 
 
 class TaskState(StrAutoEnum):
@@ -80,7 +79,7 @@ class TaskStreamItem(BaseModel):
 
 
 class Task(BaseModel):
-    uuid: TaskUUID
+    uuid: TaskID
     metadata: ExecutionMetadata
 
     @staticmethod
@@ -120,9 +119,9 @@ class Task(BaseModel):
 class TaskStore(Protocol):
     async def create_group(
         self,
-        group_uuid: GroupUUID,
+        group_uuid: TaskID,
         execution_metadata: GroupExecutionMetadata,
-        task_uuids: list[TaskUUID],
+        task_uuids: list[TaskID],
         *,
         owner: str,
         user_id: int | None = None,
@@ -132,7 +131,7 @@ class TaskStore(Protocol):
 
     async def create_task(
         self,
-        task_uuid: TaskUUID,
+        task_uuid: TaskID,
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
@@ -142,11 +141,11 @@ class TaskStore(Protocol):
         index: bool = True,
     ) -> None: ...
 
-    async def task_or_group_exists(self, task_or_group_uuid: TaskUUID | GroupUUID) -> bool: ...
+    async def task_exists(self, task_id: TaskID) -> bool: ...
 
-    async def get_task_metadata(self, task_uuid: TaskUUID) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(self, task_uuid: TaskID) -> ExecutionMetadata | None: ...
 
-    async def get_task_progress(self, task_uuid: TaskUUID) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_uuid: TaskID) -> ProgressReport | None: ...
 
     async def list_tasks(
         self,
@@ -158,14 +157,14 @@ class TaskStore(Protocol):
 
     async def remove_task(
         self,
-        task_uuid: TaskUUID,
+        task_uuid: TaskID,
         *,
         owner: str,
         user_id: int | None = None,
         product_name: str | None = None,
     ) -> None: ...
 
-    async def remove_task_hash(self, task_or_group_uuid: TaskUUID | GroupUUID) -> None:
+    async def remove_task_hash(self, task_id: TaskID) -> None:
         """Remove only the task hash from the store, without cleaning sorted-set indexes.
 
         Stale index entries are cleaned lazily by ``list_tasks``.
@@ -174,25 +173,33 @@ class TaskStore(Protocol):
 
     async def set_task_progress(
         self,
-        task_uuid: TaskUUID,
+        task_uuid: TaskID,
         report: ProgressReport,
     ) -> None: ...
 
-    async def set_task_stream_done(self, task_uuid: TaskUUID) -> None: ...
+    async def set_task_stream_done(self, task_uuid: TaskID) -> None: ...
 
-    async def set_task_stream_last_update(self, task_uuid: TaskUUID) -> None: ...
+    async def set_task_stream_last_update(self, task_uuid: TaskID) -> None: ...
 
-    async def push_task_stream_items(self, task_uuid: TaskUUID, *item: TaskStreamItem) -> None: ...
+    async def push_task_stream_items(self, task_uuid: TaskID, *item: TaskStreamItem) -> None: ...
 
     async def pull_task_stream_items(
-        self, task_uuid: TaskUUID, limit: int
+        self, task_uuid: TaskID, limit: int
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
 
 
 class TaskStatus(BaseModel):
-    task_uuid: TaskUUID
+    task_id: TaskID
     task_state: TaskState
     progress_report: ProgressReport
+    children: list[TaskID] = Field(
+        default_factory=list,
+        description=("Optional sub-task IDs. Populated only when the task is a celery group; empty for plain tasks."),
+    )
+    completed_count: int = Field(
+        default=0,
+        description="Number of completed sub-tasks. Populated only for groups; always 0 for plain tasks.",
+    )
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -200,7 +207,7 @@ class TaskStatus(BaseModel):
             {
                 "examples": [
                     {
-                        "task_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        "task_id": "123e4567-e89b-12d3-a456-426614174000",
                         "task_state": "SUCCESS",
                         "progress_report": {
                             "actual_value": 0.5,
@@ -213,7 +220,22 @@ class TaskStatus(BaseModel):
                                 "total": 123,
                             },
                         },
-                    }
+                        "children": [],
+                    },
+                    {
+                        "task_id": "123e4567-e89b-12d3-a456-426614174000",
+                        "task_state": "STARTED",
+                        "progress_report": {
+                            "actual_value": 0.5,
+                            "total": 1.0,
+                            "attempts": 1,
+                            "unit": "Byte",
+                        },
+                        "children": [
+                            "223e4567-e89b-12d3-a456-426614174000",
+                            "323e4567-e89b-12d3-a456-426614174000",
+                        ],
+                    },
                 ]
             }
         )
@@ -224,45 +246,12 @@ class TaskStatus(BaseModel):
     def is_done(self) -> bool:
         return self.task_state in TASK_DONE_STATES
 
+    @property
+    def total_count(self) -> int:
+        """Total number of sub-tasks (for groups). Equals 0 for plain tasks."""
+        return len(self.children)
 
-class GroupStatus(BaseModel):
-    group_uuid: GroupUUID
-    task_uuids: list[TaskUUID]
-    completed_count: NonNegativeInt
-    total_count: NonNegativeInt
-    is_done: bool
-    is_successful: bool
-    progress_report: ProgressReport
-
-    @staticmethod
-    def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update(
-            {
-                "examples": [
-                    {
-                        "group_uuid": "123e4567-e89b-12d3-a456-426614174000",
-                        "task_uuids": [
-                            "223e4567-e89b-12d3-a456-426614174000",
-                            "323e4567-e89b-12d3-a456-426614174000",
-                        ],
-                        "completed_count": 1,
-                        "total_count": 2,
-                        "is_done": False,
-                        "is_successful": False,
-                        "progress_report": {
-                            "actual_value": 0.5,
-                            "total": 1.0,
-                            "attempts": 1,
-                            "unit": "Byte",
-                            "message": {
-                                "description": "some description",
-                                "current": 12.2,
-                                "total": 123,
-                            },
-                        },
-                    }
-                ]
-            }
-        )
-
-    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
+    @property
+    def is_successful(self) -> bool:
+        """``True`` iff the task (or group) reached the ``SUCCESS`` state."""
+        return self.task_state == TaskState.SUCCESS

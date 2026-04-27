@@ -39,7 +39,7 @@ async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(MessageBody, request)
 
-    task_or_group_uuid, task_name = await notifications_service.send_message(
+    task_id, task_name = await notifications_service.send_message(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -52,11 +52,11 @@ async def send_message(request: web.Request) -> web.Response:
 
     return create_data_response(
         TaskGet(
-            task_id=f"{task_or_group_uuid}",
+            task_id=f"{task_id}",
             task_name=task_name,
-            status_href=_get_async_job_href(request, "get_async_job_status", task_or_group_uuid),
-            abort_href=_get_async_job_href(request, "cancel_async_job", task_or_group_uuid),
-            result_href=_get_async_job_href(request, "get_async_job_result", task_or_group_uuid),
+            status_href=_get_async_job_href(request, "get_async_job_status", task_id),
+            abort_href=_get_async_job_href(request, "cancel_async_job", task_id),
+            result_href=_get_async_job_href(request, "get_async_job_result", task_id),
         ),
         status=status.HTTP_202_ACCEPTED,
     )

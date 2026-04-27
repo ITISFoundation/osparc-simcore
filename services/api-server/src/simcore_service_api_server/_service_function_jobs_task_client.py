@@ -2,11 +2,11 @@
 import logging
 from dataclasses import dataclass
 
-from celery_library.errors import TaskOrGroupNotFoundError
+from celery_library.errors import TaskNotFoundError
 from common_library.exclude import as_dict_exclude_none
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
-from models_library.celery import TaskExecutionMetadata, TaskStatus, TaskUUID
+from models_library.celery import TaskExecutionMetadata, TaskID, TaskStatus
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -19,7 +19,6 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobWithStatus,
-    TaskID,
 )
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
@@ -81,12 +80,12 @@ async def _celery_task_status(
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(f"{job_creation_task_id}")
+    task_uuid: TaskID = TypeAdapter(TaskID).validate_python(f"{job_creation_task_id}")
     try:
-        task_status = await task_manager.get_status(task_or_group_uuid=task_uuid)
+        task_status = await task_manager.get_status(task_id=task_uuid)
         assert isinstance(task_status, TaskStatus)  # nosec
         return FunctionJobCreationTaskStatus[task_status.task_state]
-    except TaskOrGroupNotFoundError as err:
+    except TaskNotFoundError as err:
         user_msg = f"Job creation task not found for task_uuid={task_uuid!r}."
         _logger.exception(
             **create_troubleshooting_log_kwargs(

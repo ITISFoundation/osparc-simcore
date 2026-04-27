@@ -48,7 +48,7 @@ def mocked_notifications_rpc_client(
         f"{_service.__name__}.remote_send_message",
         autospec=True,
         return_value=SendMessageResponse(
-            task_or_group_uuid=uuid.uuid4(),
+            task_id=uuid.uuid4(),
             task_name="send_message",
         ),
     )

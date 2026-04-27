@@ -6,13 +6,13 @@ import asyncio
 import pytest
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library._task_manager import CeleryTaskManager
-from celery_library.errors import TaskOrGroupNotFoundError, TransferableCeleryError
+from celery_library.errors import TaskNotFoundError, TransferableCeleryError
 from faker import Faker
 from models_library.celery import (
     TaskExecutionMetadata,
+    TaskID,
     TaskState,
     TaskStatus,
-    TaskUUID,
 )
 from servicelib.celery.task_manager import TaskManager
 from tenacity import AsyncRetrying
@@ -91,7 +91,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
     await task_manager.cancel(task_uuid)
 
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_status(task_uuid)
 
     assert task_uuid not in await task_manager.list_tasks(owner=fake_owner, user_id=fake_user_id)
@@ -126,8 +126,8 @@ async def test_filtering_listing_tasks(
 ):
     user_id = 42
     owner = "test-owner"
-    expected_task_uuids: set[TaskUUID] = set()
-    all_task_uuids: list[TaskUUID] = []
+    expected_task_uuids: set[TaskID] = set()
+    all_task_uuids: list[TaskID] = []
 
     try:
         for _ in range(5):

@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library._task_manager import CeleryTaskManager
-from celery_library.errors import TaskOrGroupNotFoundError
+from celery_library.errors import TaskNotFoundError
 from models_library.celery import (
     GroupExecutionMetadata,
     GroupTaskExecutionMetadata,
@@ -46,7 +46,7 @@ async def test_cancel_single_task_calls_revoke(
         await task_manager.cancel(task_uuid)
         mock_revoke.assert_called_once()
 
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_status(task_uuid)
 
 
@@ -81,11 +81,11 @@ async def test_cancel_group_calls_revoke_for_each_task(
         await task_manager.cancel(group_uuid)
         assert mock_revoke.call_count == num_tasks
 
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.get_status(group_uuid)
 
     for task_uuid in task_uuids:
-        with pytest.raises(TaskOrGroupNotFoundError):
+        with pytest.raises(TaskNotFoundError):
             await task_manager.get_status(task_uuid)
 
 

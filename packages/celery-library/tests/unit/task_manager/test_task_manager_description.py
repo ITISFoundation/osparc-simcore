@@ -3,7 +3,6 @@
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from models_library.celery import (
     GroupExecutionMetadata,
-    GroupStatus,
     GroupTaskExecutionMetadata,
     TaskExecutionMetadata,
     TaskStatus,
@@ -93,11 +92,11 @@ async def test_group_description_is_returned_in_progress_message(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_status(group_uuid)
-            assert isinstance(status, GroupStatus)
+            assert isinstance(status, TaskStatus)
             assert status.progress_report.message is not None
             assert status.progress_report.message.description == description
     await wait_for_task_success(task_manager, task_uuids[0])
     final_status = await task_manager.get_status(group_uuid)
-    assert isinstance(final_status, GroupStatus)
+    assert isinstance(final_status, TaskStatus)
     assert final_status.progress_report.message is not None
     assert final_status.progress_report.message.description == description

@@ -18,13 +18,12 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
 )
-from models_library.celery import TaskState, TaskStatus, TaskUUID
+from models_library.celery import TaskID, TaskState, TaskStatus
 from models_library.functions import (
     FunctionJob,
     FunctionJobStatus,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJobWithStatus,
-    TaskID,
 )
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
@@ -263,10 +262,10 @@ async def test_get_function_job_status(
 ) -> None:
     _expected_return_status = status.HTTP_200_OK
 
-    async def _get_task_status(task_or_group_uuid: TaskUUID) -> TaskStatus:
-        assert f"{task_or_group_uuid}" == job_creation_task_id
+    async def _get_task_status(task_id: TaskID) -> TaskStatus:
+        assert f"{task_id}" == job_creation_task_id
         return TaskStatus(
-            task_uuid=task_or_group_uuid,
+            task_id=task_id,
             task_state=celery_task_state,
             progress_report=ProgressReport(
                 actual_value=0.5,

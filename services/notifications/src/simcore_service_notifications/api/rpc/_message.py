@@ -26,13 +26,13 @@ async def send_message(
     assert app  # nosec
 
     message_service = get_message_service(app)
-    task_or_group_uuid, task_name = await message_service.send_message(
+    task_id, task_name = await message_service.send_message(
         message=request.message,
         owner=request.owner,
         user_id=request.user_id,
         product_name=request.product_name,
     )
-    return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)
+    return SendMessageResponse(task_id=task_id, task_name=task_name)
 
 
 @router.expose(
@@ -49,7 +49,7 @@ async def send_message_from_template(
     assert app  # nosec
 
     message_service = get_message_service(app)
-    task_or_group_uuid, task_name = await message_service.send_message_from_template(
+    task_id, task_name = await message_service.send_message_from_template(
         addressing=request.addressing,
         ref=TemplateRef(**request.template_ref.model_dump()),
         context=request.context,
@@ -57,4 +57,4 @@ async def send_message_from_template(
         user_id=request.user_id,
         product_name=request.product_name,
     )
-    return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)
+    return SendMessageResponse(task_id=task_id, task_name=task_name)

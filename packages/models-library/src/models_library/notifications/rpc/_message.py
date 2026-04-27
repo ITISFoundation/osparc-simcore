@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
-from ...celery import GroupUUID, TaskUUID
+from ...celery import TaskID
 from ._email import Addressing, Message
 from ._template import TemplateRef
 
@@ -116,7 +116,7 @@ class SendMessageFromTemplateRequest(BaseModel):
 
 
 class SendMessageResponse(BaseModel):
-    task_or_group_uuid: TaskUUID | GroupUUID
+    task_id: TaskID
     task_name: str
 
     model_config = ConfigDict(frozen=True)

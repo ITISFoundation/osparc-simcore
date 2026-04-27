@@ -4,12 +4,12 @@
 import pytest
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library._task_manager import CeleryTaskManager
-from celery_library.errors import TaskOrGroupNotFoundError
+from celery_library.errors import TaskNotFoundError
 from faker import Faker
 from models_library.celery import (
     TaskExecutionMetadata,
+    TaskID,
     TaskStreamItem,
-    TaskUUID,
 )
 from pydantic import TypeAdapter
 from tenacity import AsyncRetrying
@@ -107,9 +107,9 @@ async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
     fake_owner: str,
     fake_user_id: int,
 ):
-    fake_task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
+    fake_task_uuid = TypeAdapter(TaskID).validate_python(_faker.uuid4())
 
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.pull_task_stream_items(fake_task_uuid)
 
 
@@ -119,5 +119,5 @@ async def test_push_task_stream_items_to_nonexistent_task_raises_error(
 ):
     not_existing_task_id = "not_existing"
 
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(TaskNotFoundError):
         await task_manager.push_task_stream_items(not_existing_task_id, TaskStreamItem(data="some-result"))

@@ -9,7 +9,7 @@ from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 from celery import Celery, Task  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
-from models_library.celery import TaskUUID
+from models_library.celery import TaskID
 from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.celery.task_context import TaskContext
 
@@ -49,7 +49,7 @@ def _async_task_wrapper(
             assert task.request.id is not None  # nosec
             assert task.name is not None  # nosec
             task_context = TaskContext(
-                id=TypeAdapter(TaskUUID).validate_python(task.request.id),
+                id=TypeAdapter(TaskID).validate_python(task.request.id),
                 name=task.name,
                 app_server=app_server,
             )
@@ -63,7 +63,7 @@ def _async_task_wrapper(
 
                         async def _abort_monitor():
                             while not async_io_task.done():
-                                if not await app_server.task_manager.task_or_group_exists(task_context.id):
+                                if not await app_server.task_manager.task_exists(task_context.id):
                                     await cancel_wait_task(
                                         async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),

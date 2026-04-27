@@ -31,15 +31,15 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
 
 
 class GroupSubmissionError(OsparcErrorMixin, Exception):
-    msg_template = "Unable to submit group {group_name} with uuid '{group_uuid}'"
+    msg_template = "Unable to submit group {group_name} with id '{task_id}'"
 
 
 class TaskSubmissionError(OsparcErrorMixin, Exception):
-    msg_template = "Unable to submit task {task_name} with uuid '{task_uuid}' and params {task_params}"
+    msg_template = "Unable to submit task {task_name} with id '{task_id}' and params {task_params}"
 
 
-class TaskOrGroupNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Task or group with uuid '{task_uuid}' was not found"
+class TaskNotFoundError(OsparcErrorMixin, Exception):
+    msg_template = "Task with id '{task_id}' was not found"
 
 
 class TaskManagerError(OsparcErrorMixin, Exception):

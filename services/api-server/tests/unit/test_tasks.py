@@ -10,7 +10,7 @@ from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
-from models_library.celery import TaskState, TaskUUID
+from models_library.celery import TaskID, TaskState
 from models_library.celery import TaskStatus as CeleryTaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
@@ -86,7 +86,7 @@ async def test_get_task_result(
     response = await client.get(f"/v0/tasks/{task_id}/result", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     assert mock_task_manager.get_result.called
-    assert f"{mock_task_manager.get_result.call_args[1]['task_or_group_uuid']}" == task_id
+    assert f"{mock_task_manager.get_result.call_args[1]['task_id']}" == task_id
 
 
 @pytest.mark.parametrize(
@@ -134,7 +134,7 @@ async def test_get_task_result(
             f"/v0/tasks/{_faker.uuid4()}/result",
             None,
             CeleryTaskStatus(
-                task_uuid=TypeAdapter(TaskUUID).validate_python("123e4567-e89b-12d3-a456-426614174000"),
+                task_id=TypeAdapter(TaskID).validate_python("123e4567-e89b-12d3-a456-426614174000"),
                 task_state=TaskState.STARTED,
                 progress_report=ProgressReport(
                     actual_value=0.5,

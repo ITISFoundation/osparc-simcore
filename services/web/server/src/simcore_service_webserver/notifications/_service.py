@@ -2,7 +2,7 @@ from dataclasses import asdict
 from typing import Any, Final
 
 from aiohttp import web
-from models_library.celery import GroupUUID, TaskName, TaskUUID
+from models_library.celery import TaskID, TaskName
 from models_library.groups import GroupID
 from models_library.notifications import (
     Channel,
@@ -185,7 +185,7 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
-) -> tuple[TaskUUID | GroupUUID, TaskName]:
+) -> tuple[TaskID, TaskName]:
     match channel:
         case Channel.email:
             message = await _create_email_message(
@@ -206,7 +206,7 @@ async def send_message(
         product_name=product_name,
     )
 
-    return response.task_or_group_uuid, response.task_name
+    return response.task_id, response.task_name
 
 
 async def send_message_from_template(
@@ -220,7 +220,7 @@ async def send_message_from_template(
     reply_to: Contact | None = None,
     template_name: str,
     context: dict[str, Any],
-) -> tuple[TaskUUID | GroupUUID, TaskName]:
+) -> tuple[TaskID, TaskName]:
     match channel:
         case Channel.email:
             addressing = await _create_email_addressing(
@@ -248,4 +248,4 @@ async def send_message_from_template(
         product_name=product_name,
     )
 
-    return response.task_or_group_uuid, response.task_name
+    return response.task_id, response.task_name

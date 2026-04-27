@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from models_library.celery import (
-    GroupUUID,
+    TaskID,
     TaskName,
-    TaskUUID,
 )
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
@@ -58,7 +57,7 @@ class MessageService:
         owner: str | None = None,
         user_id: int | None = None,
         product_name: str | None = None,
-    ) -> tuple[TaskUUID | GroupUUID, TaskName]:
+    ) -> tuple[TaskID, TaskName]:
         resolved_owner = owner or APP_NAME
         messages = _prepare_celery_messages(message)
 
@@ -83,7 +82,7 @@ class MessageService:
                 max_recipients=max_recipients,
             )
 
-        group_uuid, _, task_name = await submit_send_messages_task(
+        group_id, _, task_name = await submit_send_messages_task(
             self.task_manager,
             owner=resolved_owner,
             user_id=user_id,
@@ -91,7 +90,7 @@ class MessageService:
             messages=messages,
             description=description,
         )
-        return group_uuid, task_name
+        return group_id, task_name
 
     async def send_message_from_template(
         self,
@@ -102,7 +101,7 @@ class MessageService:
         owner: str | None = None,
         user_id: int | None = None,
         product_name: str | None = None,
-    ) -> tuple[TaskUUID | GroupUUID, TaskName]:
+    ) -> tuple[TaskID, TaskName]:
         preview = self.template_service.preview_template(ref=ref, context=context)
         message = EmailMessage(
             addressing=addressing,

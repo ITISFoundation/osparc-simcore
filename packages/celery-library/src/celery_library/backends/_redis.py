@@ -8,12 +8,11 @@ from models_library.celery import (
     ExecutionMetadata,
     ExecutorType,
     GroupExecutionMetadata,
-    GroupUUID,
     Task,
     TaskExecutionMetadata,
+    TaskID,
     TaskStore,
     TaskStreamItem,
-    TaskUUID,
 )
 from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter, ValidationError
@@ -27,7 +26,7 @@ _CELERY_TASK_EXEC_METADATA_KEY: Final[str] = "exec-meta"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 _CELERY_TASK_INDEX_PREFIX: Final[str] = "celery-task-index-"
 
-_TASK_UUID_ADAPTER: Final[TypeAdapter[TaskUUID]] = TypeAdapter(TaskUUID)
+_TASK_ID_ADAPTER: Final[TypeAdapter[TaskID]] = TypeAdapter(TaskID)
 
 # Redis list to store streamed results
 _CELERY_TASK_STREAM_PREFIX: Final[str] = "celery-task-stream-"
@@ -42,15 +41,15 @@ _logger = logging.getLogger(__name__)
 # --- key builders ---
 
 
-def _build_redis_task_or_group_key(uuid: TaskUUID | GroupUUID) -> str:
+def _build_redis_task_key(uuid: TaskID) -> str:
     return f"{_CELERY_TASK_PREFIX}{uuid}"
 
 
-def _build_redis_stream_key(task_uuid: TaskUUID) -> str:
+def _build_redis_stream_key(task_uuid: TaskID) -> str:
     return f"{_CELERY_TASK_STREAM_PREFIX}{task_uuid}"
 
 
-def _build_redis_stream_meta_key(task_uuid: TaskUUID) -> str:
+def _build_redis_stream_meta_key(task_uuid: TaskID) -> str:
     return f"{_build_redis_stream_key(task_uuid)}{_CELERY_TASK_DELIMTATOR}{_CELERY_TASK_STREAM_METADATA}"
 
 
@@ -105,16 +104,16 @@ class RedisTaskStore:
 
     async def create_group(
         self,
-        group_uuid: GroupUUID,
+        group_uuid: TaskID,
         execution_metadata: GroupExecutionMetadata,
-        task_uuids: list[TaskUUID],
+        task_uuids: list[TaskID],
         *,
         owner: str,
         user_id: int | None = None,
         product_name: str | None = None,
         expiry: timedelta,
     ) -> None:
-        redis_group_key = _build_redis_task_or_group_key(group_uuid)
+        redis_group_key = _build_redis_task_key(group_uuid)
         pipe = self._redis_client_sdk.redis.pipeline()
         index_score = datetime.now(tz=UTC).timestamp()
 
@@ -132,7 +131,7 @@ class RedisTaskStore:
         # each sub-task in ``TaskManager.submit_group``.
         for task_uuid, (task_execution_metadata, _) in zip(task_uuids, execution_metadata.tasks, strict=True):
             pipe.hset(
-                name=_build_redis_task_or_group_key(task_uuid),
+                name=_build_redis_task_key(task_uuid),
                 key=_CELERY_TASK_EXEC_METADATA_KEY,
                 value=task_execution_metadata.model_dump_json(),
             )
@@ -145,7 +144,7 @@ class RedisTaskStore:
 
     async def create_task(
         self,
-        task_uuid: TaskUUID,
+        task_uuid: TaskID,
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
@@ -154,7 +153,7 @@ class RedisTaskStore:
         expiry: timedelta,
         index: bool = True,
     ) -> None:
-        redis_key = _build_redis_task_or_group_key(task_uuid)
+        redis_key = _build_redis_task_key(task_uuid)
         index_score = datetime.now(tz=UTC).timestamp()
 
         pipe = self._redis_client_sdk.redis.pipeline()
@@ -176,8 +175,8 @@ class RedisTaskStore:
         if index_key is not None:
             await self._refresh_index_key_ttl(index_key, expiry)
 
-    async def get_task_metadata(self, task_uuid: TaskUUID) -> ExecutionMetadata | None:
-        redis_key = _build_redis_task_or_group_key(task_uuid)
+    async def get_task_metadata(self, task_uuid: TaskID) -> ExecutionMetadata | None:
+        redis_key = _build_redis_task_key(task_uuid)
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
                 name=redis_key,
@@ -197,10 +196,10 @@ class RedisTaskStore:
             )
             return None
 
-    async def get_task_progress(self, task_uuid: TaskUUID) -> ProgressReport | None:
+    async def get_task_progress(self, task_uuid: TaskID) -> ProgressReport | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
-                _build_redis_task_or_group_key(task_uuid),
+                _build_redis_task_key(task_uuid),
                 _CELERY_TASK_PROGRESS_KEY,
             )
         )
@@ -233,11 +232,11 @@ class RedisTaskStore:
         members = [m.decode(_CELERY_TASK_ID_KEY_ENCODING) if isinstance(m, bytes) else m for m in raw_members]
 
         pipe = self._redis_client_sdk.redis.pipeline()
-        member_uuids: list[TaskUUID] = []
+        member_uuids: list[TaskID] = []
         for member in members:
-            member_uuid = _TASK_UUID_ADAPTER.validate_python(member)
+            member_uuid = _TASK_ID_ADAPTER.validate_python(member)
             member_uuids.append(member_uuid)
-            pipe.hget(_build_redis_task_or_group_key(member_uuid), _CELERY_TASK_EXEC_METADATA_KEY)
+            pipe.hget(_build_redis_task_key(member_uuid), _CELERY_TASK_EXEC_METADATA_KEY)
 
         results = await pipe.execute()
 
@@ -267,38 +266,38 @@ class RedisTaskStore:
 
     async def remove_task(
         self,
-        task_uuid: TaskUUID,
+        task_uuid: TaskID,
         *,
         owner: str,
         user_id: int | None = None,
         product_name: str | None = None,
     ) -> None:
         pipe = self._redis_client_sdk.redis.pipeline()
-        pipe.delete(_build_redis_task_or_group_key(task_uuid))
+        pipe.delete(_build_redis_task_key(task_uuid))
         index_key = _build_redis_index_key_for_owner(owner, user_id, product_name)
         pipe.zrem(index_key, f"{task_uuid}")
         await pipe.execute()
 
-    async def remove_task_hash(self, task_or_group_uuid: TaskUUID | GroupUUID) -> None:
-        await self._redis_client_sdk.redis.delete(_build_redis_task_or_group_key(task_or_group_uuid))
+    async def remove_task_hash(self, task_id: TaskID) -> None:
+        await self._redis_client_sdk.redis.delete(_build_redis_task_key(task_id))
 
-    async def set_task_progress(self, task_uuid: TaskUUID, report: ProgressReport) -> None:
+    async def set_task_progress(self, task_uuid: TaskID, report: ProgressReport) -> None:
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
-                name=_build_redis_task_or_group_key(task_uuid),
+                name=_build_redis_task_key(task_uuid),
                 key=_CELERY_TASK_PROGRESS_KEY,
                 value=report.model_dump_json(),
             )
         )
 
-    async def task_or_group_exists(self, task_or_group_uuid: TaskUUID | GroupUUID) -> bool:
+    async def task_exists(self, task_id: TaskID) -> bool:
         n = await self._redis_client_sdk.redis.exists(
-            _build_redis_task_or_group_key(task_or_group_uuid),
+            _build_redis_task_key(task_id),
         )
         assert isinstance(n, int)  # nosec
         return n > 0
 
-    async def push_task_stream_items(self, task_uuid: TaskUUID, *result: TaskStreamItem) -> None:
+    async def push_task_stream_items(self, task_uuid: TaskID, *result: TaskStreamItem) -> None:
         stream_key = _build_redis_stream_key(task_uuid)
         stream_meta_key = _build_redis_stream_meta_key(task_uuid)
 
@@ -309,7 +308,7 @@ class RedisTaskStore:
         pipe.expire(stream_meta_key, _CELERY_TASK_STREAM_EXPIRY)
         await pipe.execute()
 
-    async def set_task_stream_done(self, task_uuid: TaskUUID) -> None:
+    async def set_task_stream_done(self, task_uuid: TaskID) -> None:
         stream_meta_key = _build_redis_stream_meta_key(task_uuid)
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
@@ -319,7 +318,7 @@ class RedisTaskStore:
             )
         )
 
-    async def set_task_stream_last_update(self, task_uuid: TaskUUID) -> None:
+    async def set_task_stream_last_update(self, task_uuid: TaskID) -> None:
         stream_meta_key = _build_redis_stream_meta_key(task_uuid)
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
@@ -330,7 +329,7 @@ class RedisTaskStore:
         )
 
     async def pull_task_stream_items(
-        self, task_uuid: TaskUUID, limit: int = 20
+        self, task_uuid: TaskID, limit: int = 20
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]:
         stream_key = _build_redis_stream_key(task_uuid)
         meta_key = _build_redis_stream_meta_key(task_uuid)

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from models_library.celery import TaskUUID
+from models_library.celery import TaskID
 
 from .app_server import BaseAppServer
 
@@ -12,6 +12,6 @@ class TaskContext:
     Decouples user task code from the underlying Celery ``Task`` object.
     """
 
-    id: TaskUUID
+    id: TaskID
     name: str
     app_server: BaseAppServer

@@ -8,7 +8,7 @@ import pytest
 from celery_library.backends import RedisTaskStore
 from celery_library.backends._redis import (
     _build_redis_index_key_for_owner,
-    _build_redis_task_or_group_key,
+    _build_redis_task_key,
 )
 from faker import Faker
 from models_library.celery import (
@@ -183,7 +183,7 @@ async def test_stale_zset_entries_are_pruned_on_list(
     # Simulate hash expiry by deleting the hash directly (bypass remove_task)
     redis = redis_client_sdk.redis
 
-    await redis.delete(_build_redis_task_or_group_key(task_uuid))
+    await redis.delete(_build_redis_task_key(task_uuid))
 
     # First list should return empty and prune the stale entry
     assert await redis_task_store.list_tasks(owner="test-svc", user_id=10004, product_name="osparc") == []
@@ -272,7 +272,7 @@ async def test_create_task_with_index_false_skips_owner_index(
     )
 
     # Sub-task hash exists (so status/result lookups by UUID still work)...
-    assert await redis_client_sdk.redis.exists(_build_redis_task_or_group_key(sub_task_uuid)) == 1
+    assert await redis_client_sdk.redis.exists(_build_redis_task_key(sub_task_uuid)) == 1
     # ...but only the indexed task appears in the owner listing.
     listed = await redis_task_store.list_tasks(owner=owner, user_id=user_id, product_name=product)
     assert {t.uuid for t in listed} == {indexed_uuid}
