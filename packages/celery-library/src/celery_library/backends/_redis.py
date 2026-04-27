@@ -133,16 +133,16 @@ class RedisTaskStore:
 
     async def create_group(
         self,
-        group_uuid: TaskID,
+        task_id: TaskID,
         execution_metadata: GroupExecutionMetadata,
-        task_uuids: list[TaskID],
+        children_task_ids: list[TaskID],
         *,
         owner: str,
         user_id: int | None = None,
         product_name: str | None = None,
         expiry: timedelta,
     ) -> None:
-        redis_group_key = _build_redis_task_key(group_uuid)
+        redis_group_key = _build_redis_task_key(task_id)
         pipe = self._redis_client_sdk.redis.pipeline()
         index_score = datetime.now(tz=UTC).timestamp()
 
@@ -153,15 +153,17 @@ class RedisTaskStore:
         )
         index_keys = list(_iter_redis_index_keys_for_owner(owner, user_id, product_name))
         for index_key in index_keys:
-            pipe.zadd(index_key, {f"{group_uuid}": index_score})
+            pipe.zadd(index_key, {f"{task_id}": index_score})
 
         # Sub-task hashes are stored so they can be looked up by UUID, but they
         # are intentionally NOT added to the owner index: the parent group is
         # the listable unit. ``create_task`` is called with ``index=False`` for
         # each sub-task in ``TaskManager.submit_group``.
-        for task_uuid, (task_execution_metadata, _) in zip(task_uuids, execution_metadata.tasks, strict=True):
+        for child_task_id, (task_execution_metadata, _) in zip(
+            children_task_ids, execution_metadata.tasks, strict=True
+        ):
             pipe.hset(
-                name=_build_redis_task_key(task_uuid),
+                name=_build_redis_task_key(child_task_id),
                 key=_CELERY_TASK_EXEC_METADATA_KEY,
                 value=task_execution_metadata.model_dump_json(),
             )
@@ -175,7 +177,7 @@ class RedisTaskStore:
 
     async def create_task(
         self,
-        task_uuid: TaskID,
+        task_id: TaskID,
         execution_metadata: TaskExecutionMetadata,
         *,
         owner: str,
@@ -184,7 +186,7 @@ class RedisTaskStore:
         expiry: timedelta,
         index: bool = True,
     ) -> None:
-        redis_key = _build_redis_task_key(task_uuid)
+        redis_key = _build_redis_task_key(task_id)
         index_score = datetime.now(tz=UTC).timestamp()
 
         pipe = self._redis_client_sdk.redis.pipeline()
@@ -197,7 +199,7 @@ class RedisTaskStore:
         if index:
             index_keys = list(_iter_redis_index_keys_for_owner(owner, user_id, product_name))
             for index_key in index_keys:
-                pipe.zadd(index_key, {f"{task_uuid}": index_score})
+                pipe.zadd(index_key, {f"{task_id}": index_score})
         await pipe.execute()
 
         await self._redis_client_sdk.redis.expire(
@@ -207,8 +209,8 @@ class RedisTaskStore:
         for index_key in index_keys:
             await self._refresh_index_key_ttl(index_key, expiry)
 
-    async def get_task_metadata(self, task_uuid: TaskID) -> ExecutionMetadata | None:
-        redis_key = _build_redis_task_key(task_uuid)
+    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None:
+        redis_key = _build_redis_task_key(task_id)
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
                 name=redis_key,
@@ -223,15 +225,15 @@ class RedisTaskStore:
         except ValidationError as exc:
             _logger.debug(
                 "Failed to deserialize task metadata for task %s: %s",
-                task_uuid,
+                task_id,
                 f"{exc}",
             )
             return None
 
-    async def get_task_progress(self, task_uuid: TaskID) -> ProgressReport | None:
+    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
-                _build_redis_task_key(task_uuid),
+                _build_redis_task_key(task_id),
                 _CELERY_TASK_PROGRESS_KEY,
             )
         )
@@ -243,7 +245,7 @@ class RedisTaskStore:
         except ValidationError as exc:
             _logger.debug(
                 "Failed to deserialize task progress for task %s: %s",
-                task_uuid,
+                task_id,
                 f"{exc}",
             )
             return None
