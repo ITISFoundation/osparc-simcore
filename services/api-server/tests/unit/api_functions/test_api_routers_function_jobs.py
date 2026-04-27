@@ -237,11 +237,11 @@ async def test_list_function_jobs_with_job_id_filter(
     [
         (
             ProjectID(_faker.uuid4()),
-            TaskID(_faker.uuid4()),
+            _faker.uuid4(),
             random.choice(list(TaskState)),  # noqa: S311
         ),
         (None, None, random.choice(list(TaskState))),  # noqa: S311
-        (None, TaskID(_faker.uuid4()), random.choice(list(TaskState))),  # noqa: S311
+        (None, _faker.uuid4(), random.choice(list(TaskState))),  # noqa: S311
     ],
 )
 async def test_get_function_job_status(
@@ -256,7 +256,7 @@ async def test_get_function_job_status(
     auth: httpx.BasicAuth,
     job_status: str,
     project_job_id: ProjectID,
-    job_creation_task_id: TaskID | None,
+    job_creation_task_id: str | None,
     celery_task_state: TaskState,
     mock_dependency_get_celery_task_manager: MockType,
 ) -> None:
