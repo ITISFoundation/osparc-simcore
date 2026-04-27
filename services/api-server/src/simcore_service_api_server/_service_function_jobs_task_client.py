@@ -179,7 +179,7 @@ class FunctionJobTaskClientService:
             product_name=self.product_name,
         )
 
-        if stored_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
+        if stored_job_status.status in {RunningState.SUCCESS, RunningState.FAILED}:
             return stored_job_status
 
         status: str
