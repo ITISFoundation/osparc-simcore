@@ -97,6 +97,9 @@ def app_environment(
             **mock_environment,
             **mock_env_devel_environment,
             "NOTIFICATIONS_TRACING": "null",
+            "NOTIFICATIONS_EMAIL": (
+                '{"test-domain.com": {"SMTP_HOST": "mailpit", "SMTP_PORT": 1025, "SMTP_PROTOCOL": "UNENCRYPTED"}}'
+            ),
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",

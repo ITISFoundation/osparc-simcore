@@ -6,6 +6,7 @@ from email.headerregistry import Address
 from celery import (  # type: ignore[import-untyped]
     Task,
 )
+from celery_library.worker.app_server import get_app_server
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from notifications_library._email import (
@@ -16,11 +17,23 @@ from notifications_library._email import (
 from servicelib.logging_utils import log_context
 from settings_library.email import SMTPSettings
 
+from ...core.settings import ApplicationSettings
+
 _logger = logging.getLogger(__name__)
 
 
 def _to_address(address: EmailContact) -> Address:
     return Address(display_name=address.name or "", addr_spec=address.email)
+
+
+def _resolve_smtp_settings(smtp_by_domain: dict[str, SMTPSettings], from_email: str) -> SMTPSettings:
+    domain = from_email.rpartition("@")[2].lower()
+    smtp_by_domain_lc = {k.lower(): v for k, v in smtp_by_domain.items()}
+    try:
+        return smtp_by_domain_lc[domain]
+    except KeyError as e:
+        msg = f"No SMTP settings configured for domain '{domain}' (from='{from_email}')"
+        raise ValueError(msg) from e
 
 
 async def send_email_message(
@@ -41,7 +54,9 @@ async def send_email_message(
     )
 
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
-        settings = SMTPSettings.create_from_envs()
+        app_server = get_app_server(task.app)
+        app_settings: ApplicationSettings = app_server.app.state.settings
+        settings = _resolve_smtp_settings(app_settings.NOTIFICATIONS_EMAIL, msg.from_.email)
 
         async with create_email_session(settings=settings) as smtp:
             email_msg = compose_email(

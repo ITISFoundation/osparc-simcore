@@ -6,6 +6,7 @@ from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
+from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
@@ -92,6 +93,18 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         str,
         Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
     ] = "1/s"
+
+    NOTIFICATIONS_EMAIL: Annotated[
+        dict[str, SMTPSettings],
+        Field(
+            description=(
+                "Per-domain SMTP settings. The key is the domain extracted from the "
+                "support/sender email (e.g. 'osparc.io'); the value is the SMTPSettings "
+                "to use when sending emails for that domain. Configured as JSON env, e.g. "
+                '{"osparc.io": {"SMTP_HOST": "smtp.osparc.io", "SMTP_PORT": 25, ...}}'
+            ),
+        ),
+    ]
 
     @field_validator("LOG_LEVEL")
     @classmethod
