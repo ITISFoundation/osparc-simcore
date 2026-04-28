@@ -4,7 +4,14 @@ from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.network import extract_email_domain
 from models_library.basic_types import LogLevel
-from pydantic import AliasChoices, Field, RootModel, StringConstraints, field_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    RootModel,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
 from settings_library.email import SMTPSettings
@@ -134,3 +141,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))
+
+    @model_validator(mode="after")
+    def _worker_requires_email_settings(self) -> "ApplicationSettings":
+        if self.NOTIFICATIONS_WORKER_MODE and self.NOTIFICATIONS_EMAIL is None:
+            msg = (
+                "NOTIFICATIONS_EMAIL must be configured when "
+                "NOTIFICATIONS_WORKER_MODE is enabled "
+                "(per-domain SMTP settings are required by the worker)."
+            )
+            raise ValueError(msg)
+        return self
