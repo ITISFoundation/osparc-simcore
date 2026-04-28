@@ -31,11 +31,6 @@ from jinja2 import StrictUndefined
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.products import ProductName
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from notifications_library._email import (
-    add_attachments,
-    compose_email,
-    create_email_session,
-)
 from notifications_library._email_render import (
     get_support_address,
     get_user_address,
@@ -50,6 +45,11 @@ from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
+from simcore_service_notifications.clients.smtp import (
+    add_attachments,
+    compose_email,
+    create_email_session,
+)
 
 
 def _safe_json_dumps(obj: Any, **kwargs):

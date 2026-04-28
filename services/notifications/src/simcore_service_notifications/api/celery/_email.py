@@ -8,13 +8,14 @@ from celery import (  # type: ignore[import-untyped]
 )
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
-from notifications_library._email import (
+from servicelib.logging_utils import log_context
+from settings_library.email import SMTPSettings
+
+from ...clients.smtp import (
     add_attachments,
     compose_email,
     create_email_session,
 )
-from servicelib.logging_utils import log_context
-from settings_library.email import SMTPSettings
 
 _logger = logging.getLogger(__name__)
 
