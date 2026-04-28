@@ -3628,6 +3628,89 @@
         }
       }
     },
+    "/v0/solvers/-/releases/-/jobs": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List All Solvers Jobs",
+        "description": "List of all jobs created for any released solver (paginated)\n\nNew in *version 0.10-rc1*",
+        "operationId": "list_all_solvers_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "metadata.any",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\nFilters jobs based on **any** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n",
+              "title": "Metadata.Any"
+            },
+            "description": "\nFilters jobs based on **any** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Job_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/page": {
       "get": {
         "tags": [
