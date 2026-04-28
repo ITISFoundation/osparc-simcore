@@ -16,7 +16,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 type Domain = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
-class _MultiDomainSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
+class _PerDomainSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
     """SMTP settings keyed by sender email domain. Keys are normalized to lowercase."""
 
     @field_validator("root", mode="after")
@@ -30,11 +30,11 @@ class _MultiDomainSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
 
     def for_email(self, email: str) -> SMTPSettings:
         domain = extract_email_domain(email).lower()
-        try:
-            return self.root[domain]
-        except KeyError as err:
+        settings = self.root.get(domain)
+        if settings is None:
             msg = f"No SMTP settings configured for domain {domain!r} (from={email!r})"
-            raise ValueError(msg) from err
+            raise ValueError(msg)
+        return settings
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -119,7 +119,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_EMAIL: Annotated[
-        _MultiDomainSMTPSettings | None,
+        _PerDomainSMTPSettings | None,
         Field(
             description=(
                 "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
