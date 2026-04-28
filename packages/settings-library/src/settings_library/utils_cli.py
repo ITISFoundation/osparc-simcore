@@ -12,7 +12,7 @@ import rich
 import typer
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
-from pydantic import ValidationError
+from pydantic import RootModel, ValidationError
 from pydantic_core import to_jsonable_python
 from pydantic_settings import BaseSettings
 
@@ -68,6 +68,11 @@ def print_as_envfile(
             typer.echo(f"# {field.description}")
         if isinstance(value, Enum):
             value = value.value
+        elif isinstance(value, RootModel):
+            # Serialize as JSON so it round-trips through env vars back into the RootModel
+            value = value.model_dump_json()
+            typer.echo(f"{name}='{value}'")
+            continue
         elif isinstance(value, dict | list):
             # Serialize complex objects as JSON to ensure they can be parsed correctly
             # Wrap in single quotes so bash preserves the double quotes when sourcing
