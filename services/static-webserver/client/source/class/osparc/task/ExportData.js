@@ -94,7 +94,6 @@ qx.Class.define("osparc.task.ExportData", {
                     taskId: task.getTaskId(),
                   }
                 };
-                osparc.data.Resources.fetch("tasks", "delete", deleteParams);
               }
             });
         }
