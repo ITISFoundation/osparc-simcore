@@ -70,7 +70,14 @@ def print_as_envfile(
             value = value.value
         elif isinstance(value, RootModel):
             # Serialize as JSON so it round-trips through env vars back into the RootModel
-            value = value.model_dump_json()
+            # and honors the same export options used for other Pydantic settings.
+            value = json_dumps(
+                model_dump_with_secrets(
+                    value,
+                    show_secrets=show_secrets,
+                    **pydantic_export_options,
+                )
+            )
             typer.echo(f"{name}='{value}'")
             continue
         elif isinstance(value, dict | list):
