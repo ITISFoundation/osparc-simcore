@@ -33,10 +33,8 @@ qx.Class.define("osparc.task.ExportData", {
       exportDataTaskUI.setTask(task);
       osparc.task.TasksContainer.getInstance().addTaskUI(exportDataTaskUI);
 
-      let progressWindow = null;
-      let abortButton = null;
       if (popUpProgressWindow) {
-        progressWindow = new osparc.ui.window.Progress(
+        const progressWindow = new osparc.ui.window.Progress(
           qx.locale.Manager.tr("Downloading files"),
           osparc.task.ExportData+"/14",
           qx.locale.Manager.tr("Compressing files..."),
@@ -45,7 +43,7 @@ qx.Class.define("osparc.task.ExportData", {
         if (task.getAbortHref()) {
           const cancelButton = progressWindow.addCancelButton();
           cancelButton.setLabel(qx.locale.Manager.tr("Hide"));
-          abortButton = new qx.ui.form.Button().set({
+          const abortButton = new qx.ui.form.Button().set({
             label: qx.locale.Manager.tr("Cancel"),
             center: true,
             minWidth: 100,
@@ -67,6 +65,7 @@ qx.Class.define("osparc.task.ExportData", {
           }
         });
 
+        task.addListener("resultReceived", () => progressWindow.close());
         task.addListener("taskAborted", () => progressWindow.close());
         task.addListener("pollingError", () => progressWindow.close());
 
@@ -75,9 +74,6 @@ qx.Class.define("osparc.task.ExportData", {
 
       task.addListener("resultReceived", e => {
         const taskData = e.getData();
-        if (progressWindow) {
-          progressWindow.close();
-        }
         if (taskData["result"]) {
           const params = {
             url: {
@@ -89,9 +85,8 @@ qx.Class.define("osparc.task.ExportData", {
             .then(data => {
               if (data && data.link) {
                 // Hand the presigned URL directly to the browser so the
-                // native download manager (with its built-in progress UI)
-                // takes care of fetching the zip, instead of buffering the
-                // whole file in memory via XHR + Blob.
+                // native download manager takes care of fetching the zip,
+                // instead of buffering the whole file in memory via XHR + Blob.
                 const fileName = taskData["result"].split("/").pop();
                 osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, fileName);
                 const deleteParams = {
