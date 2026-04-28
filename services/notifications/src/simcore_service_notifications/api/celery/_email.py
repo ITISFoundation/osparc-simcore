@@ -15,7 +15,6 @@ from notifications_library._email import (
     create_email_session,
 )
 from servicelib.logging_utils import log_context
-from settings_library.email import SMTPSettings
 
 from ...core.settings import ApplicationSettings
 
@@ -24,16 +23,6 @@ _logger = logging.getLogger(__name__)
 
 def _to_address(address: EmailContact) -> Address:
     return Address(display_name=address.name or "", addr_spec=address.email)
-
-
-def _resolve_smtp_settings(smtp_by_domain: dict[str, SMTPSettings], from_email: str) -> SMTPSettings:
-    domain = extract_email_domain(from_email).lower()
-    smtp_by_domain_lc = {k.lower(): v for k, v in smtp_by_domain.items()}
-    settings = smtp_by_domain_lc.get(domain)
-    if settings is None:
-        msg = f"No SMTP settings configured for domain '{domain}' (from='{from_email}')"
-        raise ValueError(msg)
-    return settings
 
 
 async def send_email_message(
@@ -55,7 +44,12 @@ async def send_email_message(
 
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
         app_settings = ApplicationSettings.create_from_envs()
-        settings = _resolve_smtp_settings(app_settings.NOTIFICATIONS_EMAIL, msg.from_.email)
+        domain = extract_email_domain(msg.from_.email).lower()
+        smtp_by_domain = {k.lower(): v for k, v in app_settings.NOTIFICATIONS_EMAIL.items()}
+        settings = smtp_by_domain.get(domain)
+        if settings is None:
+            msg_err = f"No SMTP settings configured for domain '{domain}' (from='{msg.from_.email}')"
+            raise ValueError(msg_err)
 
         async with create_email_session(settings=settings) as smtp:
             email_msg = compose_email(
