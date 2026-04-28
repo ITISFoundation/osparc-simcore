@@ -4,7 +4,7 @@ from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.network import extract_email_domain
 from models_library.basic_types import LogLevel
-from pydantic import AliasChoices, Field, RootModel, field_validator
+from pydantic import AliasChoices, Field, RootModel, StringConstraints, field_validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
 from settings_library.email import SMTPSettings
@@ -13,13 +13,15 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+type Domain = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
-class _PerDomainSMTPSettings(RootModel[dict[str, SMTPSettings]]):
+
+class _MultiDomainSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
     """SMTP settings keyed by sender email domain. Keys are normalized to lowercase."""
 
     @field_validator("root", mode="after")
     @classmethod
-    def _normalize_keys(cls, value: dict[str, SMTPSettings]) -> dict[str, SMTPSettings]:
+    def _normalize_keys(cls, value: dict[Domain, SMTPSettings]) -> dict[Domain, SMTPSettings]:
         normalized = {key.strip().lower(): settings for key, settings in value.items()}
         if len(normalized) != len(value):
             msg = f"Duplicate domains after case-normalization: {sorted(value)}"
@@ -117,7 +119,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_EMAIL: Annotated[
-        _PerDomainSMTPSettings | None,
+        _MultiDomainSMTPSettings | None,
         Field(
             description=(
                 "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
