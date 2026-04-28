@@ -14,7 +14,7 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class PerDomainSMTPSettings(RootModel[dict[str, SMTPSettings]]):
+class _PerDomainSMTPSettings(RootModel[dict[str, SMTPSettings]]):
     """SMTP settings keyed by sender email domain (case-insensitive)."""
 
     @field_validator("root", mode="before")
@@ -113,7 +113,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_EMAIL: Annotated[
-        PerDomainSMTPSettings | None,
+        _PerDomainSMTPSettings | None,
         Field(
             description=(
                 "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
