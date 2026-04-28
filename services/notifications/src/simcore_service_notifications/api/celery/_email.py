@@ -6,7 +6,6 @@ from email.headerregistry import Address
 from celery import (  # type: ignore[import-untyped]
     Task,
 )
-from common_library.network import extract_email_domain
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from notifications_library._email import (
@@ -44,12 +43,7 @@ async def send_email_message(
 
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
         app_settings = ApplicationSettings.create_from_envs()
-        domain = extract_email_domain(msg.from_.email).lower()
-        smtp_by_domain = {k.lower(): v for k, v in app_settings.NOTIFICATIONS_EMAIL.items()}
-        settings = smtp_by_domain.get(domain)
-        if settings is None:
-            msg_err = f"No SMTP settings configured for domain '{domain}' (from='{msg.from_.email}')"
-            raise ValueError(msg_err)
+        settings = app_settings.NOTIFICATIONS_EMAIL.for_email(msg.from_.email)
 
         async with create_email_session(settings=settings) as smtp:
             email_msg = compose_email(

@@ -2,8 +2,9 @@ from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
+from common_library.network import extract_email_domain
 from models_library.basic_types import LogLevel
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import AliasChoices, Field, RootModel, field_validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
 from settings_library.email import SMTPSettings
@@ -11,6 +12,23 @@ from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+
+
+class PerDomainSMTPSettings(RootModel[dict[str, SMTPSettings]]):
+    """SMTP settings keyed by sender email domain (case-insensitive)."""
+
+    @field_validator("root", mode="before")
+    @classmethod
+    def _normalize_keys(cls, value: dict[str, SMTPSettings]) -> dict[str, SMTPSettings]:
+        return {k.strip().lower(): v for k, v in value.items()}
+
+    def for_email(self, email: str) -> SMTPSettings:
+        domain = extract_email_domain(email).lower()
+        try:
+            return self.root[domain]
+        except KeyError as err:
+            msg = f"No SMTP settings configured for domain {domain!r} (from={email!r})"
+            raise ValueError(msg) from err
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -95,13 +113,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_EMAIL: Annotated[
-        dict[str, SMTPSettings] | None,
+        PerDomainSMTPSettings | None,
         Field(
             description=(
-                "Per-domain SMTP settings. The key is the domain extracted from the "
-                "support/sender email (e.g. 'osparc.io'); the value is the SMTPSettings "
-                "to use when sending emails for that domain. Configured as JSON env, e.g. "
-                '{"osparc.io": {"SMTP_HOST": "smtp.osparc.io", "SMTP_PORT": 25, ...}}'
+                "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
+                "Configured as JSON env, e.g. "
+                '{"osparc.io": {"SMTP_HOST": "smtp.osparc.io", "SMTP_PORT": 25, ...}}. '
+                "Required by the notifications worker; unused by the API service."
             ),
         ),
     ] = None
