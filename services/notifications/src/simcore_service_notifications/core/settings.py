@@ -15,12 +15,16 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 class _PerDomainSMTPSettings(RootModel[dict[str, SMTPSettings]]):
-    """SMTP settings keyed by sender email domain (case-insensitive)."""
+    """SMTP settings keyed by sender email domain. Keys are normalized to lowercase."""
 
-    @field_validator("root", mode="before")
+    @field_validator("root", mode="after")
     @classmethod
     def _normalize_keys(cls, value: dict[str, SMTPSettings]) -> dict[str, SMTPSettings]:
-        return {k.strip().lower(): v for k, v in value.items()}
+        normalized = {key.strip().lower(): settings for key, settings in value.items()}
+        if len(normalized) != len(value):
+            msg = f"Duplicate domains after case-normalization: {sorted(value)}"
+            raise ValueError(msg)
+        return normalized
 
     def for_email(self, email: str) -> SMTPSettings:
         domain = extract_email_domain(email).lower()
