@@ -50,8 +50,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
                     f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_PORT', None)}"
                 ),
                 "host": getattr(app_settings.WEBSERVER_DB, "POSTGRES_HOST", None),
-                "maxsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAXSIZE", None),
-                "minsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MINSIZE", None),
                 "maxpoolsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAX_POOLSIZE", None),
                 "maxoverflow": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAX_OVERFLOW", None),
                 "password": getattr(app_settings.WEBSERVER_DB, "POSTGRES_PASSWORD", SecretStr("")).get_secret_value(),
@@ -187,8 +185,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         if section := db.get("postgres"):
             envs["POSTGRES_DB"] = section.get("database")
             envs["POSTGRES_HOST"] = section.get("host")
-            envs["POSTGRES_MAXSIZE"] = section.get("maxsize")
-            envs["POSTGRES_MINSIZE"] = section.get("minsize")
             envs["POSTGRES_PASSWORD"] = section.get("password")
             envs["POSTGRES_PORT"] = section.get("port")
             envs["POSTGRES_USER"] = section.get("user")
