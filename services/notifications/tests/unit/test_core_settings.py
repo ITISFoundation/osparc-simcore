@@ -11,7 +11,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 from settings_library.email import SMTPSettings
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
-    _PerDomainSMTPSettings,
+    _DomainToSMTPSettings,
 )
 
 
@@ -32,13 +32,13 @@ _SMTP_PAYLOAD = {
 
 
 def test_per_domain_smtp_settings_normalizes_keys():
-    per_domain = _PerDomainSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
+    per_domain = _DomainToSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
 
     assert set(per_domain.root) == {"osparc.io"}
 
 
 def test_per_domain_smtp_settings_for_email_is_case_insensitive():
-    per_domain = _PerDomainSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
+    per_domain = _DomainToSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
 
     settings = per_domain.get_settings_for_email("Someone <USER@Osparc.IO>")
 
@@ -48,7 +48,7 @@ def test_per_domain_smtp_settings_for_email_is_case_insensitive():
 
 def test_per_domain_smtp_settings_rejects_duplicate_domains():
     with pytest.raises(ValidationError) as exc_info:
-        _PerDomainSMTPSettings.model_validate(
+        _DomainToSMTPSettings.model_validate(
             {
                 "osparc.io": _SMTP_PAYLOAD,
                 "OSPARC.IO": _SMTP_PAYLOAD,
@@ -59,7 +59,7 @@ def test_per_domain_smtp_settings_rejects_duplicate_domains():
 
 
 def test_per_domain_smtp_settings_for_email_unknown_domain_raises():
-    per_domain = _PerDomainSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
+    per_domain = _DomainToSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
 
     with pytest.raises(ValueError, match="No SMTP settings configured for domain"):
         per_domain.get_settings_for_email("user@unknown.example")
