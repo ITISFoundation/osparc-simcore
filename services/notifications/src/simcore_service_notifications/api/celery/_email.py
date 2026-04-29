@@ -11,11 +11,8 @@ from models_library.notifications.celery import EmailContact, EmailContent, Emai
 from servicelib.logging_utils import log_context
 from settings_library.email import SMTPSettings
 
-from ...clients.smtp import (
-    add_attachments,
-    compose_email,
-    create_email_session,
-)
+from ...clients.smtp import create_session
+from ...services.email import add_attachments, compose_email
 
 _logger = logging.getLogger(__name__)
 
@@ -44,7 +41,7 @@ async def send_email_message(
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
         settings = SMTPSettings.create_from_envs()
 
-        async with create_email_session(settings=settings) as smtp:
+        async with create_session(settings=settings) as smtp:
             email_msg = compose_email(
                 from_=_to_address(msg.from_),
                 to=_to_address(msg.to),

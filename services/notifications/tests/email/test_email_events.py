@@ -45,10 +45,10 @@ from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
-from simcore_service_notifications.clients.smtp import (
+from simcore_service_notifications.clients.smtp import create_session
+from simcore_service_notifications.services.email import (
     add_attachments,
     compose_email,
-    create_email_session,
 )
 
 
@@ -259,7 +259,7 @@ async def test_email_event(
         p = dump_path.with_suffix(".txt")
         p.write_text(parts.text_content)
 
-    async with create_email_session(settings=settings) as smtp:
+    async with create_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
@@ -335,7 +335,7 @@ async def test_email_with_reply_to(
     for header, value in with_smtp_extra_headers.items():
         assert msg[header] == value
 
-    async with create_email_session(settings=settings) as smtp:
+    async with create_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
