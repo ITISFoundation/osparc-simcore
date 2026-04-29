@@ -63,7 +63,7 @@ aiormq==6.8.1
 aiosignal==1.3.2
     # via aiohttp
 aiosmtplib==5.0.0
-    # via -r requirements/../../../packages/notifications-library/requirements/_base.in
+    # via -r requirements/_base.in
 alembic==1.15.1
     # via
     #   -r requirements/../../../packages/notifications-library/requirements/../../../packages/postgres-database/requirements/_base.in
