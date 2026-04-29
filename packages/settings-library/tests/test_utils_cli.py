@@ -254,17 +254,19 @@ def test_compact_format(
     monkeypatch: pytest.MonkeyPatch,
     fake_settings_class: type[BaseCustomSettings],
 ):
+    app_required_plugin = (
+        '{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, '
+        '"POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", '
+        '"POSTGRES_DB": "foodb", "POSTGRES_MAX_POOLSIZE": 10, '
+        '"POSTGRES_MAX_OVERFLOW": 20, "POSTGRES_CLIENT_NAME": "None"}'
+    )
     compact_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
-        """
+        f"""
         APP_HOST=localhost
         APP_PORT=80
-        APP_OPTIONAL_ADDON='{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}'
-        """
-        """APP_REQUIRED_PLUGIN='{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, """
-        """"POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", """
-        """"POSTGRES_DB": "foodb", "POSTGRES_MAX_POOLSIZE": 10, """
-        """"POSTGRES_MAX_OVERFLOW": 20, "POSTGRES_CLIENT_NAME": "None"}'
+        APP_OPTIONAL_ADDON='{{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}}'
+        APP_REQUIRED_PLUGIN='{app_required_plugin}'
         """,
     )
 
