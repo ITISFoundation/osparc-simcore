@@ -11,6 +11,7 @@
 
 import asyncio
 import logging
+from collections import defaultdict
 from collections.abc import AsyncIterator
 from contextlib import suppress
 from pprint import pformat
@@ -163,12 +164,91 @@ async def _ensure_published_templates_accessible(db_engine: AsyncEngine, default
         await services_repo.upsert_service_access_rights(missing_services_access_rights)
 
 
+async def _ensure_access_rights_propagated(db_engine: AsyncEngine) -> None:
+    """Self-healing: propagates access rights forward through patch version chains.
+
+    For each service key, groups versions by major.minor and checks consecutive
+    patch versions. If a newer patch version is missing access rights that its
+    predecessor has, the missing rights are copied via upsert.
+
+    This repairs incomplete inheritance caused by race conditions between
+    multiple catalog replicas, transient director API failures, or any other
+    situation where the initial sync created metadata but failed to inherit
+    the full set of access rights.
+    """
+    services_repo = ServicesRepository(db_engine)
+    all_services = await services_repo.list_services()
+
+    # Group by service key
+    services_by_key: dict[str, list[tuple[Version, str]]] = defaultdict(list)
+    for svc in all_services:
+        try:
+            services_by_key[svc.key].append((Version(svc.version), svc.version))
+        except Exception:  # pylint: disable=broad-except
+            _logger.debug("Skipping service with invalid version %s:%s", svc.key, svc.version)
+            continue
+
+    for service_key, version_tuples in services_by_key.items():
+        sorted_versions = sorted(version_tuples, key=lambda t: t[0])
+
+        # Group by (major, minor)
+        by_major_minor: dict[tuple[int, int], list[str]] = defaultdict(list)
+        for parsed, raw in sorted_versions:
+            by_major_minor[(parsed.major, parsed.minor)].append(raw)
+
+        for patch_versions in by_major_minor.values():
+            if len(patch_versions) < 2:
+                continue
+
+            prev_version = patch_versions[0]
+            prev_rights = await services_repo.get_service_access_rights(service_key, prev_version)
+
+            for curr_version in patch_versions[1:]:
+                curr_rights = await services_repo.get_service_access_rights(service_key, curr_version)
+
+                prev_set = {(r.gid, r.product_name) for r in prev_rights}
+                curr_set = {(r.gid, r.product_name) for r in curr_rights}
+                missing = prev_set - curr_set
+
+                if missing:
+                    prev_rights_map = {(r.gid, r.product_name): r for r in prev_rights}
+                    rights_to_add = [
+                        ServiceAccessRightsDB(
+                            key=ServiceKey(service_key),
+                            version=ServiceVersion(curr_version),
+                            gid=prev_rights_map[key].gid,
+                            product_name=prev_rights_map[key].product_name,
+                            execute_access=prev_rights_map[key].execute_access,
+                            write_access=prev_rights_map[key].write_access,
+                        )
+                        for key in missing
+                    ]
+                    _logger.warning(
+                        "Repairing %d missing access rights for %s:%s (inherited from %s). Missing: %s",
+                        len(rights_to_add),
+                        service_key,
+                        curr_version,
+                        prev_version,
+                        missing,
+                    )
+                    await services_repo.upsert_service_access_rights(rights_to_add)
+
+                    # Refresh current rights after repair for the next iteration
+                    curr_rights = await services_repo.get_service_access_rights(service_key, curr_version)
+
+                prev_version = curr_version
+                prev_rights = curr_rights
+
+
 async def _run_sync_services(app: FastAPI):
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
 
     # check that the list of services is in sync with the registry
     await _ensure_registry_and_database_are_synced(app)
+
+    # self-heal: propagate access rights forward through patch versions
+    await _ensure_access_rights_propagated(engine)
 
     # check that the published services are available to everyone
     # (templates are published to GUESTs, so their services must be also accessible)
