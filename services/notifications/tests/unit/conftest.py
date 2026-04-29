@@ -269,8 +269,8 @@ def smtp_mock_or_none(
 ) -> MagicMock | None:
     if not is_external_user_email:
         mock_smtp = AsyncMock()
-        mock_create_email_session = mocker.patch.object(_email, "create_email_session")
-        mock_create_email_session.return_value.__aenter__.return_value = mock_smtp
+        mock_create_session = mocker.patch.object(_email, "create_session")
+        mock_create_session.return_value.__aenter__.return_value = mock_smtp
         return mock_smtp
     print("🚨 Emails might be sent to", f"{user_email=}")
     return None
