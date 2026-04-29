@@ -23,7 +23,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 type Domain = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
-class _PerDomainSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
+class _DomainToSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
     """SMTP settings keyed by sender email domain. Keys are normalized to lowercase."""
 
     @field_validator("root", mode="after")
@@ -126,7 +126,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_EMAIL: Annotated[
-        _PerDomainSMTPSettings | None,
+        _DomainToSMTPSettings | None,
         Field(
             description=(
                 "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
