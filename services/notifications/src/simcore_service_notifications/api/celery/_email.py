@@ -43,6 +43,8 @@ async def send_email_message(
 
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
         app_settings = ApplicationSettings.create_from_envs()
+        assert app_settings.NOTIFICATIONS_EMAIL is not None  # nosec
+
         settings = app_settings.NOTIFICATIONS_EMAIL.get_settings_for_email(msg.from_.email)
 
         async with create_email_session(settings=settings) as smtp:
