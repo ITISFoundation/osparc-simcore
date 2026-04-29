@@ -40,7 +40,7 @@ def test_per_domain_smtp_settings_normalizes_keys():
 def test_per_domain_smtp_settings_for_email_is_case_insensitive():
     per_domain = _PerDomainSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
 
-    settings = per_domain.for_email("Someone <USER@Osparc.IO>")
+    settings = per_domain.get_settings_for_email("Someone <USER@Osparc.IO>")
 
     assert isinstance(settings, SMTPSettings)
     assert settings.SMTP_HOST == "mailpit"
@@ -62,7 +62,7 @@ def test_per_domain_smtp_settings_for_email_unknown_domain_raises():
     per_domain = _PerDomainSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
 
     with pytest.raises(ValueError, match="No SMTP settings configured for domain"):
-        per_domain.for_email("user@unknown.example")
+        per_domain.get_settings_for_email("user@unknown.example")
 
 
 def test_worker_mode_requires_email_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):

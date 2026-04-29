@@ -35,7 +35,7 @@ class _PerDomainSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
             raise ValueError(msg)
         return normalized
 
-    def for_email(self, email: str) -> SMTPSettings:
+    def get_settings_for_email(self, email: str) -> SMTPSettings:
         domain = extract_email_domain(email).lower()
         settings = self.root.get(domain)
         if settings is None:
@@ -130,10 +130,22 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             description=(
                 "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
-                "Configured as JSON env, e.g. "
-                '{"osparc.io": {"SMTP_HOST": "smtp.osparc.io", "SMTP_PORT": 25, ...}}. '
                 "Required by the notifications worker; unused by the API service."
             ),
+            examples=[
+                {
+                    "osparc.io": {
+                        "SMTP_HOST": "smtp.osparc.io",
+                        "SMTP_PORT": 25,
+                    },
+                    "example.com": {
+                        "SMTP_HOST": "smtp.example.com",
+                        "SMTP_PORT": 587,
+                        "SMTP_USERNAME": "user@example.com",
+                        "SMTP_PASSWORD": "blabla",
+                    },
+                }
+            ],
         ),
     ] = None
 
