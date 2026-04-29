@@ -4,7 +4,7 @@
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import notifications_library
 import pytest
@@ -70,7 +70,11 @@ def smtp_mock_or_none(
     mocker: MockerFixture, is_external_user_email: EmailStr | None, user_email: EmailStr
 ) -> MagicMock | None:
     if not is_external_user_email:
-        return mocker.patch("simcore_service_notifications.clients.smtp.SMTP")
+        mock_smtp = AsyncMock()
+        mock_smtp_class = mocker.patch("simcore_service_notifications.clients.smtp.SMTP")
+        mock_smtp_class.return_value.__aenter__ = AsyncMock(return_value=mock_smtp)
+        mock_smtp_class.return_value.__aexit__ = AsyncMock(return_value=None)
+        return mock_smtp_class
     print("🚨 Emails might be sent to", f"{user_email=}")
     return None
 
