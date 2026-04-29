@@ -189,6 +189,17 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
             envs["POSTGRES_PORT"] = section.get("port")
             envs["POSTGRES_USER"] = section.get("user")
 
+            # Pool sizing: prefer new keys, fallback to legacy maxsize
+            max_poolsize = section.get("maxpoolsize")
+            if max_poolsize is None and (maxsize := section.get("maxsize")) is not None:
+                max_poolsize = maxsize
+            if max_poolsize is not None:
+                envs["POSTGRES_MAX_POOLSIZE"] = max_poolsize
+
+            max_overflow = section.get("maxoverflow")
+            if max_overflow is not None:
+                envs["POSTGRES_MAX_OVERFLOW"] = max_overflow
+
         _set_if_disabled("WEBSERVER_DB", db)
 
     if section := cfg.get("rabbitmq"):
