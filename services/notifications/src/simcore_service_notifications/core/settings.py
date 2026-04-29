@@ -20,20 +20,14 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-type Domain = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+type Domain = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, to_lower=True, min_length=1, pattern=r"^[a-z0-9.-]+$"),
+]
 
 
 class _DomainToSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
-    """SMTP settings keyed by sender email domain. Keys are normalized to lowercase."""
-
-    @field_validator("root", mode="after")
-    @classmethod
-    def _normalize_keys(cls, value: dict[Domain, SMTPSettings]) -> dict[Domain, SMTPSettings]:
-        normalized = {key.strip().lower(): settings for key, settings in value.items()}
-        if len(normalized) != len(value):
-            msg = f"Duplicate domains after case-normalization: {sorted(value)}"
-            raise ValueError(msg)
-        return normalized
+    """SMTP settings keyed by sender email domain (lowercase)."""
 
     def get_settings_for_email(self, email: str) -> SMTPSettings:
         domain = extract_email_domain(email).lower()
