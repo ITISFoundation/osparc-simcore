@@ -41,8 +41,6 @@ _MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
 _DEFAULT_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
-_TPSLIMIT: Final[NonNegativeInt] = 2000
-
 
 _R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
     """
@@ -127,37 +125,36 @@ async def _get_rclone_mount_command(
         "--vfs-cache-poll-interval",
         "1m",
         "--vfs-write-back",
-        "5s",
+        "30s",
         "--cache-dir",
         f"{target_cache_path}",
-        "--dir-cache-time",
-        "10m",
         "--attr-timeout",
         "1m",
-        "--tpslimit",
-        f"{_TPSLIMIT}",
-        "--tpslimit-burst",
-        f"{_TPSLIMIT * 2}",
         "--no-modtime",
-        "--max-buffer-memory",
-        "16M",
         # TRANSFERS
         "--retries",
         "3",
         "--retries-sleep",
         "30s",
+        "--max-connections",
+        "64",
         "--transfers",
-        "15",
+        "16",
         "--buffer-size",
-        "16M",
+        "64M",
         "--checkers",
         "8",
         "--s3-upload-concurrency",
-        "5",
+        "8",
         "--s3-chunk-size",
-        "16M",
-        "--order-by",
-        "size,mixed",
+        "64M",
+        "--s3-upload-cutoff",
+        "0",
+        # PERMISSIONS
+        "--file-perms",
+        "0777",
+        "--dir-perms",
+        "0777",
         # REMOTE CONTROL
         "--rc",
         "--rc-addr=0.0.0.0:8000",

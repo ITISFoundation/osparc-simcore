@@ -54,9 +54,9 @@ class Vendor(TypedDict, total=False):
         bool  # If True, it takes precedence over invitation_url and asks the FE to show the form (if defined)
     )
 
-    release_notes_url_template: (
-        str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
-    )
+    # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    # (used for the platform's release notes)
+    release_notes_url_template: str
 
     ui: VendorUI
 
