@@ -31,10 +31,9 @@ _SMTP_PAYLOAD = {
 }
 
 
-def test_per_domain_smtp_settings_normalizes_keys():
-    per_domain = _DomainToSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
-
-    assert set(per_domain.root) == {"osparc.io"}
+def test_per_domain_smtp_settings_rejects_invalid_domain_keys():
+    with pytest.raises(ValidationError):
+        _DomainToSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
 
 
 def test_per_domain_smtp_settings_for_email_is_case_insensitive():
@@ -44,18 +43,6 @@ def test_per_domain_smtp_settings_for_email_is_case_insensitive():
 
     assert isinstance(settings, SMTPSettings)
     assert settings.SMTP_HOST == "mailpit"
-
-
-def test_per_domain_smtp_settings_rejects_duplicate_domains():
-    with pytest.raises(ValidationError) as exc_info:
-        _DomainToSMTPSettings.model_validate(
-            {
-                "osparc.io": _SMTP_PAYLOAD,
-                "OSPARC.IO": _SMTP_PAYLOAD,
-            }
-        )
-
-    assert "Duplicate domains" in str(exc_info.value)
 
 
 def test_per_domain_smtp_settings_for_email_unknown_domain_raises():
