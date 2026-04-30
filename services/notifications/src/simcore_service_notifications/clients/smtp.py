@@ -1,13 +1,8 @@
-import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from aiosmtplib import SMTP
 from settings_library.email import EmailProtocol, SMTPSettings
-
-_logger = logging.getLogger(__name__)
-
-
 @asynccontextmanager
 async def create_session(
     settings: SMTPSettings,
