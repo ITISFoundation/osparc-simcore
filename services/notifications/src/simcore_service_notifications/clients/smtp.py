@@ -1,13 +1,8 @@
-import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from aiosmtplib import SMTP
 from settings_library.email import EmailProtocol, SMTPSettings
-
-_logger = logging.getLogger(__name__)
-
-
 @asynccontextmanager
 async def create_session(
     settings: SMTPSettings,
@@ -19,7 +14,7 @@ async def create_session(
         # By default, if the server advertises STARTTLS support, aiosmtplib will upgrade the connection automatically.
         # Setting use_tls=True for STARTTLS servers will typically result in a connection error
         # To opt out of STARTTLS on connect, pass start_tls=False.
-        # NOTE: for that reason TLS and STARTLS are mutually exclusive
+        # NOTE: for that reason TLS and STARTTLS are mutually exclusive
         use_tls=settings.SMTP_PROTOCOL == EmailProtocol.TLS,
         start_tls=settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
     ) as smtp:
