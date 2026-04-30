@@ -8,14 +8,12 @@ from celery import (  # type: ignore[import-untyped]
 )
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
-from notifications_library._email import (
-    add_attachments,
-    compose_email,
-    create_email_session,
-)
 from servicelib.logging_utils import log_context
 
 from ...core.settings import ApplicationSettings
+
+from ...clients.smtp import create_session
+from ...services.email import add_attachments, compose_email
 
 _logger = logging.getLogger(__name__)
 
@@ -47,7 +45,7 @@ async def send_email_message(
 
         settings = app_settings.NOTIFICATIONS_EMAIL.get_settings_for_email(msg.from_.email)
 
-        async with create_email_session(settings=settings) as smtp:
+        async with create_session(settings=settings) as smtp:
             email_msg = compose_email(
                 from_=_to_address(msg.from_),
                 to=_to_address(msg.to),
