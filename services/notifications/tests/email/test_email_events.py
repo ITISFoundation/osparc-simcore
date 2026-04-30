@@ -23,7 +23,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
@@ -197,7 +197,7 @@ def template_attachments(
 async def test_email_event(
     app_environment: EnvVarsDict,
     with_smtp_extra_headers: dict[str, str],
-    smtp_mock_or_none: MagicMock | None,
+    smtp_mock_or_none: AsyncMock | None,
     user_data: UserData,
     user_email: EmailStr,
     sharer_data: SharerData | None,
@@ -264,13 +264,12 @@ async def test_email_event(
 
     # check email was sent
     if smtp_mock_or_none:
-        assert smtp_mock_or_none.called
-        assert isinstance(smtp, AsyncMock)
-        assert smtp.login.called
-        assert smtp.send_message.called
+        assert smtp is smtp_mock_or_none
+        assert smtp_mock_or_none.login.called
+        assert smtp_mock_or_none.send_message.called
 
         # Verify the message sent contains the extra headers
-        sent_message = smtp.send_message.call_args[0][0]
+        sent_message = smtp_mock_or_none.send_message.call_args[0][0]
         for header, value in with_smtp_extra_headers.items():
             assert header in sent_message
             assert sent_message[header] == value
@@ -285,7 +284,7 @@ async def test_email_event(
 async def test_email_with_reply_to(
     app_environment: EnvVarsDict,
     with_smtp_extra_headers: dict[str, str],
-    smtp_mock_or_none: MagicMock | None,
+    smtp_mock_or_none: AsyncMock | None,
     user_data: UserData,
     user_email: EmailStr,
     support_email: EmailStr,
@@ -340,12 +339,11 @@ async def test_email_with_reply_to(
 
     # check email was sent
     if smtp_mock_or_none:
-        assert smtp_mock_or_none.called
-        assert isinstance(smtp, AsyncMock)
-        assert smtp.login.called
-        assert smtp.send_message.called
+        assert smtp is smtp_mock_or_none
+        assert smtp_mock_or_none.login.called
+        assert smtp_mock_or_none.send_message.called
         # Verify the message sent contains the extra headers
-        sent_message = smtp.send_message.call_args[0][0]
+        sent_message = smtp_mock_or_none.send_message.call_args[0][0]
         for header, value in with_smtp_extra_headers.items():
             assert header in sent_message
             assert sent_message[header] == value

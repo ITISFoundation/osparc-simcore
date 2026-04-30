@@ -4,7 +4,6 @@
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
 
 import notifications_library
 import pytest
@@ -22,7 +21,6 @@ from notifications_library._models import (
 )
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
@@ -63,20 +61,6 @@ def with_smtp_extra_headers(
     headers = {"x-ses-tenant": "test-tenant"}
     setenvs_from_dict(monkeypatch, {"SMTP_EXTRA_HEADERS": json.dumps(headers)})
     return headers
-
-
-@pytest.fixture
-def smtp_mock_or_none(
-    mocker: MockerFixture, is_external_user_email: EmailStr | None, user_email: EmailStr
-) -> MagicMock | None:
-    if not is_external_user_email:
-        mock_smtp = AsyncMock()
-        mock_smtp_class = mocker.patch("simcore_service_notifications.clients.smtp.SMTP")
-        mock_smtp_class.return_value.__aenter__ = AsyncMock(return_value=mock_smtp)
-        mock_smtp_class.return_value.__aexit__ = AsyncMock(return_value=None)
-        return mock_smtp_class
-    print("🚨 Emails might be sent to", f"{user_email=}")
-    return None
 
 
 #
