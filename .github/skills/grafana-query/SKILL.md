@@ -15,6 +15,8 @@ argument-hint: "Describe what you want to investigate (e.g., 'errors in webserve
 - Checking alert rule state
 - Analyzing service performance or resource consumption
 
+> **IMPORTANT**: If you discover that the actual Grafana data (datasource types, label names, log field structures, dashboard names, service naming patterns) is inconsistent with what this skill documents, **update the skill files** to reflect the correct state. This ensures the skill stays accurate for future invocations.
+
 ## Datasources
 
 Datasource UIDs differ per deployment. **Always discover them dynamically** at the start of a query session:
