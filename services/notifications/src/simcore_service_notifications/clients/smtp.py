@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 
 from aiosmtplib import SMTP
 from settings_library.email import EmailProtocol, SMTPSettings
+
+
 @asynccontextmanager
 async def create_session(
     settings: SMTPSettings,
