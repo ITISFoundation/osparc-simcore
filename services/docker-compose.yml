@@ -1514,7 +1514,7 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
-        - *smtp_settings
+      NOTIFICATIONS_EMAIL: ${NOTIFICATIONS_EMAIL}
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
@@ -1537,7 +1537,6 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *resource_usage_tracker_settings
-        - *smtp_settings
         - *tracing_open_telemetry_environments
 
       PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: ${PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES}
