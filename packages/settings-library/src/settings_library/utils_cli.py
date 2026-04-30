@@ -107,7 +107,7 @@ def _should_skip_field(
 ) -> bool:
     if not exclude_unset or name in settings_obj.model_fields_set:
         return False
-    auto_default_from_env = field.json_schema_extra is not None and field.json_schema_extra.get(
+    auto_default_from_env = isinstance(field.json_schema_extra, dict) and field.json_schema_extra.get(
         "auto_default_from_env", False
     )
     return not auto_default_from_env or value is None
