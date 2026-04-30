@@ -15,11 +15,10 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     SoftCopyBody,
 )
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskUUID
+from models_library.celery import TaskExecutionMetadata, TaskID
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType
-from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.celery.task_manager import TaskManager
@@ -43,15 +42,6 @@ from ...modules.rabbitmq import post_file_notification
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_task_manager
-
-
-def _get_owner_metadata(*, user_id: UserID) -> OwnerMetadata:
-    _data = {
-        "owner": APP_NAME,
-        "user_id": user_id,
-    }
-    return OwnerMetadata.model_validate(_data)
-
 
 _logger = logging.getLogger(__name__)
 
@@ -290,12 +280,11 @@ async def complete_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
 
-    owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
-    task_uuid = await task_manager.submit_task(
+    task_id = await task_manager.submit_task(
         TaskExecutionMetadata(
             name=remote_complete_upload_file.__name__,
         ),
-        owner_metadata=owner_metadata,
+        owner=APP_NAME,
         user_id=query_params.user_id,
         location_id=location_id,
         file_id=file_id,
@@ -310,7 +299,7 @@ async def complete_upload_file(
                     "is_completed_upload_file",
                     location_id=f"{location_id}",
                     file_id=file_id,
-                    future_id=f"{task_uuid}",
+                    future_id=f"{task_id}",
                 ),
                 safe=":/",
             ),
@@ -342,17 +331,14 @@ async def is_completed_upload_file(
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
     task_status = await task_manager.get_status(
-        owner_metadata=owner_metadata,
-        task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
+        task_id=TypeAdapter(TaskID).validate_python(future_id),
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
             await task_manager.get_result(
-                owner_metadata=owner_metadata,
-                task_or_group_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
+                task_id=TypeAdapter(TaskID).validate_python(future_id),
             )
         )
         new_fmd = task_result

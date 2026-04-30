@@ -36,7 +36,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata
+from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
@@ -65,12 +65,6 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-class _TestOwnerMetadata(OwnerMetadata):
-    user_id: UserID
-    product_name: ProductName
-    owner: str = "PYTEST_CLIENT_NAME"
-
-
 async def _request_copy_folders(
     task_manager: TaskManager,
     user_id: UserID,
@@ -85,23 +79,17 @@ async def _request_copy_folders(
         logging.INFO,
         f"Copying folders from {source_project['uuid']} to {dst_project['uuid']}",
     ) as ctx:
-        owner_metadata = _TestOwnerMetadata(
-            user_id=user_id,
-            product_name=product_name,
-            owner="PYTEST_CLIENT_NAME",
-        )
-
         async_job = await submit_job(
             task_manager,
             execution_metadata=TaskExecutionMetadata(name="deep_copy_files_from_project"),
-            owner_metadata=owner_metadata,
+            owner="PYTEST_CLIENT_NAME",
             user_id=user_id,
+            product_name=product_name,
             body=FoldersBody(source=source_project, destination=dst_project, nodes_map=nodes_map),
         )
 
         async for async_job_result in wait_and_get_job_result(
             task_manager,
-            owner_metadata=owner_metadata,
             job_id=async_job.job_id,
             stop_after=stop_after,
         ):
@@ -509,16 +497,10 @@ async def _request_start_export_data(
         logging.INFO,
         f"Data export form {paths_to_export=}",
     ) as ctx:
-        owner_metadata = _TestOwnerMetadata(
-            user_id=user_id,
-            product_name=product_name,
-            owner="PYTEST_CLIENT_NAME",
-        )
-
         async_job = await submit_job(
             task_manager,
             execution_metadata=TaskExecutionMetadata(name=task_name),
-            owner_metadata=owner_metadata,
+            owner="PYTEST_CLIENT_NAME",
             user_id=user_id,
             product_name=product_name,
             paths_to_export=paths_to_export,
@@ -526,7 +508,6 @@ async def _request_start_export_data(
 
         async for async_job_result in wait_and_get_job_result(
             task_manager,
-            owner_metadata=owner_metadata,
             job_id=async_job.job_id,
             stop_after=stop_after,
         ):

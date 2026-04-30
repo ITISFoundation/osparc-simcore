@@ -2,11 +2,11 @@
 import logging
 from dataclasses import dataclass
 
-from celery_library.errors import TaskOrGroupNotFoundError
+from celery_library.errors import TaskNotFoundError
 from common_library.exclude import as_dict_exclude_none
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
-from models_library.celery import TaskExecutionMetadata, TaskStatus, TaskUUID
+from models_library.celery import TaskExecutionMetadata, TaskID, TaskStatus
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -19,7 +19,6 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobWithStatus,
-    TaskID,
 )
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
@@ -47,7 +46,6 @@ from .exceptions.backend_errors import (
     StudyJobOutputRequestButNotSucceededError,
 )
 from .models.api_resources import JobLinks
-from .models.domain.celery_models import ApiServerOwnerMetadata
 from .models.domain.functions import FunctionJobPatch
 from .models.schemas.functions import FunctionJobCreationTaskStatus
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
@@ -74,32 +72,30 @@ def join_inputs(
     return {**default_inputs, **function_inputs}
 
 
+_TASK_ID_ADAPTER: TypeAdapter[TaskID] = TypeAdapter(TaskID)
+
+
 async def _celery_task_status(
-    job_creation_task_id: TaskID | None,
+    job_creation_task_id: str | None,
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    owner_metadata = ApiServerOwnerMetadata(
-        user_id=user_id,
-        product_name=product_name,
-    )
-    task_uuid: TaskUUID = TypeAdapter(TaskUUID).validate_python(f"{job_creation_task_id}")
+    task_id = _TASK_ID_ADAPTER.validate_python(job_creation_task_id)
     try:
-        task_status = await task_manager.get_status(owner_metadata=owner_metadata, task_or_group_uuid=task_uuid)
+        task_status = await task_manager.get_status(task_id=task_id)
         assert isinstance(task_status, TaskStatus)  # nosec
         return FunctionJobCreationTaskStatus[task_status.task_state]
-    except TaskOrGroupNotFoundError as err:
-        user_msg = f"Job creation task not found for task_uuid={task_uuid!r}."
+    except TaskNotFoundError as err:
+        user_msg = f"Job creation task not found for task_id={job_creation_task_id!r}."
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 user_msg,
                 error=err,
                 error_context={
-                    "task_uuid": task_uuid,
-                    "owner_metadata": owner_metadata,
+                    "task_id": job_creation_task_id,
                     "user_id": user_id,
                     "product_name": product_name,
                 },
@@ -153,10 +149,10 @@ class FunctionJobTaskClientService:
         for function_job_wso in function_jobs_list_ws:
             if function_job_wso.outputs is None or (
                 function_job_wso.status.status
-                not in (
+                not in {
                     RunningState.SUCCESS,
                     RunningState.FAILED,
-                )
+                }
             ):
                 function_job_wso.status = await self.inspect_function_job(
                     function=await self._function_service.get_function(
@@ -187,7 +183,7 @@ class FunctionJobTaskClientService:
             product_name=self.product_name,
         )
 
-        if stored_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
+        if stored_job_status.status in {RunningState.SUCCESS, RunningState.FAILED}:
             return stored_job_status
 
         status: str
@@ -324,12 +320,7 @@ class FunctionJobTaskClientService:
                 job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
             )
 
-            owner_metadata = ApiServerOwnerMetadata(
-                user_id=user_identity.user_id,
-                product_name=user_identity.product_name,
-                owner=APP_NAME,
-            )
-            task_uuids = await logged_gather(
+            task_ids = await logged_gather(
                 *(
                     self._celery_task_manager.submit_task(
                         TaskExecutionMetadata(
@@ -337,7 +328,9 @@ class FunctionJobTaskClientService:
                             ephemeral=False,
                             queue=API_SERVER_CELERY_QUEUE_DEFAULT,
                         ),
-                        owner_metadata=owner_metadata,
+                        owner=APP_NAME,
+                        user_id=user_identity.user_id,
+                        product_name=user_identity.product_name,
                         user_identity=user_identity,
                         function=function,
                         pre_registered_function_job_data=pre_registered_function_job_data,
@@ -358,12 +351,12 @@ class FunctionJobTaskClientService:
                     FunctionJobPatch(
                         function_class=function.function_class,
                         function_job_id=pre_registered_function_job_data.function_job_id,
-                        job_creation_task_id=TaskID(task_uuid),
+                        job_creation_task_id=f"{task_id}",
                         project_job_id=None,
                         solver_job_id=None,
                     )
-                    for task_uuid, pre_registered_function_job_data in zip(
-                        task_uuids, pre_registered_function_job_data_list, strict=False
+                    for task_id, pre_registered_function_job_data in zip(
+                        task_ids, pre_registered_function_job_data_list, strict=False
                     )
                 ],
             )

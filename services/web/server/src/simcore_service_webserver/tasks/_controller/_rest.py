@@ -8,7 +8,6 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
-from models_library.celery import OwnerMetadata
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     get_long_running_manager,
@@ -22,11 +21,11 @@ from servicelib.aiohttp.rest_responses import (
 )
 from servicelib.long_running_tasks import lrt_api
 
-from ..._meta import API_VTAG
+from ..._meta import API_VTAG, APP_NAME
 from ...celery import get_task_manager
 from ...login.decorators import login_required
 from ...long_running_tasks.plugin import webserver_request_context_decorator
-from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
+from ...models import AuthenticatedRequestContext
 from .. import _tasks_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import TaskPathParams, TaskStreamQueryParams, TaskStreamResponse
@@ -58,12 +57,9 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 
     tasks = await _tasks_service.list_tasks(
         get_task_manager(request.app),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
-            ).model_dump()
-        ),
+        owner=APP_NAME,
+        user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
     )
 
     return create_data_response(
@@ -102,23 +98,17 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 
     task_status = await _tasks_service.get_task_status(
         get_task_manager(request.app),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
-            ).model_dump()
-        ),
-        task_uuid=_path_params.task_id,
+        task_id=_path_params.task_id,
     )
 
-    _task_id = f"{task_status.job_id}"
-    _progress = task_status.progress
+    task_id = f"{task_status.job_id}"
+    progress = task_status.progress
     return create_data_response(
         TaskStatus(
             task_progress=TaskProgress(
-                task_id=_task_id,
-                percent=_progress.percent_value,
-                message=_progress.message.description if _progress.message else "",
+                task_id=task_id,
+                percent=progress.percent_value,
+                message=progress.message.description if progress.message else "",
             ),
             done=task_status.done,
             started=None,
@@ -135,17 +125,11 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def cancel_async_job(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    _path_params = parse_request_path_parameters_as(TaskPathParams, request)
+    path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
     await _tasks_service.cancel_task(
         get_task_manager(request.app),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
-            ).model_dump()
-        ),
-        task_uuid=_path_params.task_id,
+        task_id=path_params.task_id,
     )
 
     return web.Response(status=status.HTTP_204_NO_CONTENT)
@@ -159,17 +143,11 @@ async def cancel_async_job(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    _path_params = parse_request_path_parameters_as(TaskPathParams, request)
+    path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
     task_result = await _tasks_service.get_task_result(
         get_task_manager(request.app),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
-            ).model_dump()
-        ),
-        task_uuid=_path_params.task_id,
+        task_id=path_params.task_id,
     )
 
     return create_data_response(
@@ -186,19 +164,13 @@ async def get_async_job_result(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def get_async_job_stream(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    _path_params = parse_request_path_parameters_as(TaskPathParams, request)
-    _query_params: TaskStreamQueryParams = parse_request_query_parameters_as(TaskStreamQueryParams, request)
+    path_params = parse_request_path_parameters_as(TaskPathParams, request)
+    query_params: TaskStreamQueryParams = parse_request_query_parameters_as(TaskStreamQueryParams, request)
 
     task_result, end = await _tasks_service.pull_task_stream_items(
         get_task_manager(request.app),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
-            ).model_dump()
-        ),
-        task_uuid=_path_params.task_id,
-        limit=_query_params.limit,
+        task_id=path_params.task_id,
+        limit=query_params.limit,
     )
 
     return create_data_response(

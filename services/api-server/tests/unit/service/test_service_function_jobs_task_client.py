@@ -1,12 +1,11 @@
 # pylint: disable=redefined-outer-name
 
 import datetime
-import json
 from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
-from celery_library.errors import TaskOrGroupNotFoundError
+from celery_library.errors import TaskNotFoundError
 from faker import Faker
 from models_library.api_schemas_webserver.functions import (
     FunctionClass,
@@ -15,7 +14,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
-from models_library.celery import TaskState, TaskStatus, TaskUUID
+from models_library.celery import TaskID, TaskState, TaskStatus
 from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
@@ -64,13 +63,13 @@ async def create_mock_task_manager(
     "status_or_exception",
     [
         TaskStatus(
-            task_uuid=TypeAdapter(TaskUUID).validate_python(_faker.uuid4()),
+            task_id=TypeAdapter(TaskID).validate_python(_faker.uuid4()),
             task_state=state,
             progress_report=ProgressReport(actual_value=3.14),
         )
         for state in list(TaskState)
     ]
-    + [TaskOrGroupNotFoundError(task_uuid=_faker.uuid4(), owner_metadata=json.dumps({"owner": "test-owner"}))],
+    + [TaskNotFoundError(task_id=_faker.uuid4())],
 )
 @pytest.mark.parametrize("job_creation_task_id", [_faker.uuid4(), None])
 async def test_celery_status_conversion(
@@ -91,7 +90,7 @@ async def test_celery_status_conversion(
 
     if job_creation_task_id is None:
         assert status == FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    elif isinstance(status_or_exception, TaskOrGroupNotFoundError):
+    elif isinstance(status_or_exception, TaskNotFoundError):
         assert status == FunctionJobCreationTaskStatus.ERROR
     elif isinstance(status_or_exception, TaskStatus):
         assert status == FunctionJobCreationTaskStatus[status_or_exception.task_state.name]

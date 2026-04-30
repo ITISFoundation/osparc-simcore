@@ -19,7 +19,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState, TaskStatus
+from models_library.celery import TaskExecutionMetadata, TaskState, TaskStatus
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 from tenacity import (
@@ -33,7 +33,7 @@ from tenacity import (
 
 from .errors import (
     TaskManagerError,
-    TaskOrGroupNotFoundError,
+    TaskNotFoundError,
     TransferableCeleryError,
     decode_celery_transferable_error,
 )
@@ -46,15 +46,13 @@ _DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
 async def cancel_job(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
 ) -> None:
     try:
         await task_manager.cancel(
-            owner_metadata=owner_metadata,
-            task_or_group_uuid=job_id,
+            task_id=job_id,
         )
-    except TaskOrGroupNotFoundError as exc:
+    except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -63,25 +61,21 @@ async def cancel_job(
 async def get_job_result(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
 ) -> AsyncJobResult:
     assert task_manager  # nosec
     assert job_id  # nosec
-    assert owner_metadata  # nosec
 
     try:
         task_status = await task_manager.get_status(
-            owner_metadata=owner_metadata,
-            task_or_group_uuid=job_id,
+            task_id=job_id,
         )
         if not task_status.is_done:
             raise JobNotDoneError(job_id=job_id)
         task_result = await task_manager.get_result(
-            owner_metadata=owner_metadata,
-            task_or_group_uuid=job_id,
+            task_id=job_id,
         )
-    except TaskOrGroupNotFoundError as exc:
+    except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -112,15 +106,13 @@ async def get_job_result(
 async def get_job_status(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
 ) -> AsyncJobStatus:
     try:
         task_status = await task_manager.get_status(
-            owner_metadata=owner_metadata,
-            task_or_group_uuid=job_id,
+            task_id=job_id,
         )
-    except TaskOrGroupNotFoundError as exc:
+    except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
@@ -135,29 +127,37 @@ async def get_job_status(
 async def list_jobs(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
+    owner: str,
+    user_id: int | None = None,
+    product_name: str | None = None,
 ) -> list[AsyncJobGet]:
     assert task_manager  # nosec
     try:
         tasks = await task_manager.list_tasks(
-            owner_metadata=owner_metadata,
+            owner=owner,
+            user_id=user_id,
+            product_name=product_name,
         )
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    return [AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks]
+    return [AsyncJobGet(job_id=task.id, job_name=task.metadata.name) for task in tasks]
 
 
 async def submit_job(
     task_manager: TaskManager,
     *,
     execution_metadata: TaskExecutionMetadata,
-    owner_metadata: OwnerMetadata,
+    owner: str,
+    user_id: int | None = None,
+    product_name: str | None = None,
     **kwargs,
 ) -> AsyncJobGet:
     task_id = await task_manager.submit_task(
         execution_metadata=execution_metadata,
-        owner_metadata=owner_metadata,
+        owner=owner,
+        user_id=user_id,
+        product_name=product_name,
         **kwargs,
     )
     return AsyncJobGet(job_id=task_id, job_name=execution_metadata.name)
@@ -166,7 +166,6 @@ async def submit_job(
 async def _wait_for_completion(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
     stop_after: datetime.timedelta,
 ) -> AsyncGenerator[AsyncJobStatus]:
@@ -181,7 +180,6 @@ async def _wait_for_completion(
             with attempt:
                 job_status = await get_job_status(
                     task_manager,
-                    owner_metadata=owner_metadata,
                     job_id=job_id,
                 )
                 yield job_status
@@ -214,7 +212,6 @@ class AsyncJobResultUpdate:
 async def wait_and_get_job_result(
     task_manager: TaskManager,
     *,
-    owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
     stop_after: datetime.timedelta,
 ) -> AsyncGenerator[AsyncJobResultUpdate]:
@@ -225,7 +222,6 @@ async def wait_and_get_job_result(
         async for job_status in _wait_for_completion(
             task_manager,
             job_id=job_id,
-            owner_metadata=owner_metadata,
             stop_after=stop_after,
         ):
             assert job_status is not None  # nosec
@@ -237,7 +233,6 @@ async def wait_and_get_job_result(
                 job_status,
                 get_job_result(
                     task_manager,
-                    owner_metadata=owner_metadata,
                     job_id=job_id,
                 ),
             )
@@ -245,7 +240,6 @@ async def wait_and_get_job_result(
         try:
             await cancel_job(
                 task_manager,
-                owner_metadata=owner_metadata,
                 job_id=job_id,
             )
         except Exception as exc:
@@ -257,7 +251,9 @@ async def submit_job_and_wait(
     task_manager: TaskManager,
     *,
     execution_metadata: TaskExecutionMetadata,
-    owner_metadata: OwnerMetadata,
+    owner: str,
+    user_id: int | None = None,
+    product_name: str | None = None,
     stop_after: datetime.timedelta,
     **kwargs,
 ) -> AsyncGenerator[AsyncJobResultUpdate]:
@@ -266,14 +262,15 @@ async def submit_job_and_wait(
         async_job = await submit_job(
             task_manager,
             execution_metadata=execution_metadata,
-            owner_metadata=owner_metadata,
+            owner=owner,
+            user_id=user_id,
+            product_name=product_name,
             **kwargs,
         )
     except (TimeoutError, CancelledError):
         if async_job is not None:
             await cancel_job(
                 task_manager,
-                owner_metadata=owner_metadata,
                 job_id=async_job.job_id,
             )
         raise
@@ -281,7 +278,6 @@ async def submit_job_and_wait(
     async for wait_and_ in wait_and_get_job_result(
         task_manager,
         job_id=async_job.job_id,
-        owner_metadata=owner_metadata,
         stop_after=stop_after,
     ):
         yield wait_and_

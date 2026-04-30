@@ -18,13 +18,12 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
 )
-from models_library.celery import OwnerMetadata, TaskState, TaskStatus, TaskUUID
+from models_library.celery import TaskID, TaskState, TaskStatus
 from models_library.functions import (
     FunctionJob,
     FunctionJobStatus,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJobWithStatus,
-    TaskID,
 )
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
@@ -238,11 +237,11 @@ async def test_list_function_jobs_with_job_id_filter(
     [
         (
             ProjectID(_faker.uuid4()),
-            TaskID(_faker.uuid4()),
+            _faker.uuid4(),
             random.choice(list(TaskState)),  # noqa: S311
         ),
         (None, None, random.choice(list(TaskState))),  # noqa: S311
-        (None, TaskID(_faker.uuid4()), random.choice(list(TaskState))),  # noqa: S311
+        (None, _faker.uuid4(), random.choice(list(TaskState))),  # noqa: S311
     ],
 )
 async def test_get_function_job_status(
@@ -257,16 +256,16 @@ async def test_get_function_job_status(
     auth: httpx.BasicAuth,
     job_status: str,
     project_job_id: ProjectID,
-    job_creation_task_id: TaskID | None,
+    job_creation_task_id: str | None,
     celery_task_state: TaskState,
     mock_dependency_get_celery_task_manager: MockType,
 ) -> None:
     _expected_return_status = status.HTTP_200_OK
 
-    async def _get_task_status(task_or_group_uuid: TaskUUID, owner_metadata: OwnerMetadata) -> TaskStatus:
-        assert f"{task_or_group_uuid}" == job_creation_task_id
+    async def _get_task_status(task_id: TaskID) -> TaskStatus:
+        assert f"{task_id}" == job_creation_task_id
         return TaskStatus(
-            task_uuid=task_or_group_uuid,
+            task_id=task_id,
             task_state=celery_task_state,
             progress_report=ProgressReport(
                 actual_value=0.5,

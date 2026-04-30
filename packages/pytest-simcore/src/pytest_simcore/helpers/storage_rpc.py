@@ -12,7 +12,6 @@ from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
-from models_library.celery import OwnerMetadata
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
@@ -29,19 +28,17 @@ class StorageSideEffects:
         *,
         paths_to_export: list[PathToExport],
         export_as: Literal["path", "download_link"],
-        owner_metadata: OwnerMetadata,
+        owner: str,
         user_id: UserID,
         product_name: ProductName,
-    ) -> tuple[AsyncJobGet, OwnerMetadata]:
+    ) -> AsyncJobGet:
         assert rabbitmq_rpc_client
-        assert owner_metadata
+        assert owner
         assert paths_to_export
         assert export_as
         assert user_id
         assert product_name
 
-        async_job_get = TypeAdapter(AsyncJobGet).validate_python(
+        return TypeAdapter(AsyncJobGet).validate_python(
             AsyncJobGet.model_json_schema()["examples"][0],
         )
-
-        return async_job_get, owner_metadata

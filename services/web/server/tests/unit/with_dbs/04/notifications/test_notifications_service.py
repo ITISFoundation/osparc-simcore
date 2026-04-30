@@ -42,7 +42,7 @@ def mocked_send_message_from_template_rpc(
     mocker: MockerFixture,
 ) -> SendMessageResponse:
     fake_response = SendMessageResponse(
-        task_or_group_uuid=uuid.uuid4(),
+        task_id=uuid.uuid4(),
         task_name="send_message_from_template",
     )
     mocker.patch(
@@ -82,7 +82,7 @@ async def test_send_message_from_template_with_external_contacts(
         EmailContact(name=faker.name(), email=faker.email()),
     ]
 
-    task_uuid, task_name = await send_message_from_template(
+    task_id, task_name = await send_message_from_template(
         client.app,
         user_id=logged_user["id"],
         product_name="osparc",
@@ -93,7 +93,7 @@ async def test_send_message_from_template_with_external_contacts(
         context=fake_template_context,
     )
 
-    assert task_uuid == mocked_send_message_from_template_rpc.task_or_group_uuid
+    assert task_id == mocked_send_message_from_template_rpc.task_id
     assert task_name == mocked_send_message_from_template_rpc.task_name
 
 
@@ -111,7 +111,7 @@ async def test_send_message_from_template_with_group_ids(
     async with create_test_users(2, None) as users:
         group_ids = [int(user["primary_gid"]) for user in users]
 
-        task_uuid, task_name = await send_message_from_template(
+        task_id, task_name = await send_message_from_template(
             client.app,
             user_id=logged_user["id"],
             product_name="osparc",
@@ -122,7 +122,7 @@ async def test_send_message_from_template_with_group_ids(
             context=fake_template_context,
         )
 
-        assert task_uuid == mocked_send_message_from_template_rpc.task_or_group_uuid
+        assert task_id == mocked_send_message_from_template_rpc.task_id
         assert task_name == mocked_send_message_from_template_rpc.task_name
 
 
@@ -141,7 +141,7 @@ async def test_send_message_from_template_enriches_context_with_product_data(
         f"{_service.__name__}.remote_send_message_from_template",
         autospec=True,
         return_value=SendMessageResponse(
-            task_or_group_uuid=uuid.uuid4(),
+            task_id=uuid.uuid4(),
             task_name="send_message_from_template",
         ),
     )
@@ -186,7 +186,7 @@ async def test_send_message_from_template_passes_correct_template_ref(
         f"{_service.__name__}.remote_send_message_from_template",
         autospec=True,
         return_value=SendMessageResponse(
-            task_or_group_uuid=uuid.uuid4(),
+            task_id=uuid.uuid4(),
             task_name="send_message_from_template",
         ),
     )
@@ -220,10 +220,10 @@ async def test_send_message_from_template_passes_correct_template_ref(
     assert len(addressing.to) == 1
     assert addressing.to[0].email == external_contacts[0].email
 
-    # Verify owner_metadata
-    owner_metadata = call_kwargs["owner_metadata"]
-    assert owner_metadata.user_id == logged_user["id"]
-    assert owner_metadata.product_name == "osparc"
+    # Verify owner params
+    assert call_kwargs["owner"] is not None
+    assert call_kwargs["user_id"] == logged_user["id"]
+    assert call_kwargs["product_name"] == "osparc"
 
 
 async def test_send_message_from_template_unsupported_channel(
@@ -300,7 +300,7 @@ async def test_send_message_from_template_with_both_groups_and_external_contacts
         f"{_service.__name__}.remote_send_message_from_template",
         autospec=True,
         return_value=SendMessageResponse(
-            task_or_group_uuid=uuid.uuid4(),
+            task_id=uuid.uuid4(),
             task_name="send_message_from_template",
         ),
     )

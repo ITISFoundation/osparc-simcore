@@ -4,7 +4,6 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.celery import OwnerMetadata
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
@@ -99,23 +98,15 @@ async def test_send_message_single_recipient(
         message=single_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 
-async def test_send_message_with_owner_metadata(
+async def test_send_message_with_owner_params(
     rpc_client: RabbitMQRPCClient,
     single_recipient_email_message: EmailMessage,
     mocker: MockerFixture,
 ):
-    owner_metadata = OwnerMetadata.model_validate(
-        {
-            "owner": "webserver",
-            "user_id": 42,
-            "product_name": "osparc",
-        }
-    )
-
     spy = mocker.patch(
         f"{_message_module.__name__}.submit_send_message_task",
         wraps=_message_module.submit_send_message_task,
@@ -124,18 +115,19 @@ async def test_send_message_with_owner_metadata(
     response = await send_message(
         rpc_client,
         message=single_recipient_email_message,
-        owner_metadata=owner_metadata,
+        owner="webserver",
+        user_id=42,
+        product_name="osparc",
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
     spy.assert_awaited_once()
     call_kwargs = spy.call_args.kwargs
-    assert call_kwargs["owner_metadata"] == owner_metadata
-    assert call_kwargs["owner_metadata"].owner == "webserver"
-    assert call_kwargs["owner_metadata"].model_dump()["user_id"] == 42
-    assert call_kwargs["owner_metadata"].model_dump()["product_name"] == "osparc"
+    assert call_kwargs["owner"] == "webserver"
+    assert call_kwargs["user_id"] == 42
+    assert call_kwargs["product_name"] == "osparc"
 
 
 async def test_send_message_multiple_recipients(
@@ -147,7 +139,7 @@ async def test_send_message_multiple_recipients(
         message=multi_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 
@@ -170,7 +162,7 @@ async def test_send_message_from_template_with_empty_template(
         context=context,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 
@@ -193,7 +185,7 @@ async def test_send_message_from_template_with_multiple_recipients(
         context=context,
     )
     assert isinstance(response, SendMessageResponse)
-    assert response.task_or_group_uuid
+    assert response.task_id
     assert response.task_name == "send_email_message"
 
 

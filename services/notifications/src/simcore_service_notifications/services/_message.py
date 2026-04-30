@@ -3,10 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from models_library.celery import (
-    GroupUUID,
-    OwnerMetadata,
+    TaskID,
     TaskName,
-    TaskUUID,
 )
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
@@ -26,8 +24,6 @@ from ._template import TemplateService
 from .channel_handlers import for_channel
 
 _logger = logging.getLogger(__name__)
-
-_OWNER_METADATA = OwnerMetadata(owner=APP_NAME)
 
 
 def _prepare_celery_messages(message: Message) -> list[dict[str, Any]]:
@@ -58,22 +54,26 @@ class MessageService:
         self,
         *,
         message: Message,
-        owner_metadata: OwnerMetadata | None = None,
-    ) -> tuple[TaskUUID | GroupUUID, TaskName]:
-        resolved_owner = owner_metadata or _OWNER_METADATA
+        owner: str | None = None,
+        user_id: int | None = None,
+        product_name: str | None = None,
+    ) -> tuple[TaskID, TaskName]:
+        resolved_owner = owner or APP_NAME
         messages = _prepare_celery_messages(message)
 
         num_recipients = len(messages)
         description = _get_task_description(message)
 
         if num_recipients == 1:
-            task_uuid, task_name = await submit_send_message_task(
+            task_id, task_name = await submit_send_message_task(
                 self.task_manager,
-                owner_metadata=resolved_owner,
+                owner=resolved_owner,
+                user_id=user_id,
+                product_name=product_name,
                 message=messages[0],
                 description=description,
             )
-            return task_uuid, task_name
+            return task_id, task_name
 
         max_recipients = self.settings.NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE
         if num_recipients > max_recipients:
@@ -82,13 +82,15 @@ class MessageService:
                 max_recipients=max_recipients,
             )
 
-        group_uuid, _, task_name = await submit_send_messages_task(
+        group_id, _, task_name = await submit_send_messages_task(
             self.task_manager,
-            owner_metadata=resolved_owner,
+            owner=resolved_owner,
+            user_id=user_id,
+            product_name=product_name,
             messages=messages,
             description=description,
         )
-        return group_uuid, task_name
+        return group_id, task_name
 
     async def send_message_from_template(
         self,
@@ -96,8 +98,10 @@ class MessageService:
         addressing: Addressing,
         ref: TemplateRef,
         context: dict[str, Any],
-        owner_metadata: OwnerMetadata | None = None,
-    ) -> tuple[TaskUUID | GroupUUID, TaskName]:
+        owner: str | None = None,
+        user_id: int | None = None,
+        product_name: str | None = None,
+    ) -> tuple[TaskID, TaskName]:
         preview = self.template_service.preview_template(ref=ref, context=context)
         message = EmailMessage(
             addressing=addressing,
@@ -105,5 +109,7 @@ class MessageService:
         )
         return await self.send_message(
             message=message,
-            owner_metadata=owner_metadata,
+            owner=owner,
+            user_id=user_id,
+            product_name=product_name,
         )
