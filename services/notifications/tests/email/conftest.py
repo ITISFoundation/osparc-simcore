@@ -97,7 +97,7 @@ def product_data(
         ],
     )
 
-    return ProductData(  # type: ignore
+    return ProductData(
         product_name=product_name,
         display_name=product["display_name"],
         vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
