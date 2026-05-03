@@ -284,13 +284,13 @@ qx.Class.define("osparc.info.ServiceLarge", {
         },
       };
 
-      if (canIWrite) {
+      if (canIWrite || this.getService()["releaseNotesUrl"]) {
         infoLayout["RELEASE_NOTES_URL"] = {
-          label: this.tr("Release Notes URL"),
+          label: this.tr("Release Notes"),
           view: this.__createReleaseNotesUrl(),
           action: {
             button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit release notes URL")),
-            callback: this.__openReleaseNotesUrlEditor,
+            callback: canIWrite ? this.__openReleaseNotesUrlEditor : null,
             ctx: this,
           },
         };
