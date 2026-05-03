@@ -426,10 +426,13 @@ qx.Class.define("osparc.info.ServiceLarge", {
         const link = new osparc.ui.basic.LinkLabel(url, url).set({
           font: "link-label-14",
           toolTipText: url,
-          width: 220,
           maxWidth: 220,
-          wrap: false,
           allowGrowX: false,
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        link.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap",
         });
         return link;
       }
