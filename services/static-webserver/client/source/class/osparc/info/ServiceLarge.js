@@ -427,6 +427,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           font: "link-label-14",
           toolTipText: url,
           maxWidth: 220,
+          maxHeight: 20,
           allowGrowX: false,
         });
         // leave ``rich`` set to true. Ellipsis will be handled here:
