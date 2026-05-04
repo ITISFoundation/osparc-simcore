@@ -70,7 +70,7 @@ async def delete(
                 (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
             )
         )
-        if result.rowcount == 0:
+        if result.rowcount == 0:  # type: ignore[union-attr]
             raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
 
 
@@ -170,8 +170,7 @@ async def update(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
-            projects_nodes
-            .update()
+            projects_nodes.update()
             .values(**values)
             .where((projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}"))
             .returning(*_SELECTION_PROJECTS_NODES_DB_ARGS)
