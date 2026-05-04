@@ -125,3 +125,6 @@ Use `mcp_grafana_alerting_manage_rules` with `operation: "list"` to view configu
 ## Common Query Patterns
 
 See [Query Patterns Reference](./references/query-patterns.md) for ready-to-use LogQL and PromQL queries.
+
+---
+*Last updated: 2026-05-04*
