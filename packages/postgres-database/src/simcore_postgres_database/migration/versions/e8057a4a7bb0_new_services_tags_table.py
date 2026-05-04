@@ -5,6 +5,7 @@ Revises: 7604e65e2f83
 Create Date: 2024-08-23 12:12:32.883771+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -28,12 +29,8 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.ForeignKeyConstraint(
-            ["tag_id"], ["tags.id"], onupdate="CASCADE", ondelete="CASCADE"
-        ),
-        sa.UniqueConstraint(
-            "service_key", "service_version", "tag_id", name="services_tags_uc"
-        ),
+        sa.ForeignKeyConstraint(["tag_id"], ["tags.id"], onupdate="CASCADE", ondelete="CASCADE"),
+        sa.UniqueConstraint("service_key", "service_version", "tag_id", name="services_tags_uc"),
     )
     # ### end Alembic commands ###
 

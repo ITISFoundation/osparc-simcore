@@ -6,18 +6,21 @@ Read operations are list, get
 """
 
 from collections.abc import Coroutine
-from typing import Any
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
+from models_library.groups import GroupID
 from models_library.projects import ProjectTemplateType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
+from simcore_postgres_database.models.users import UserRole
 
 from ..folders import _folders_repository
+from ..products import products_service
 from ..users import users_service
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
@@ -26,6 +29,20 @@ from ._projects_repository import batch_get_trashed_by_primary_gid
 from ._projects_repository_legacy import ProjectDBAPI
 from ._projects_repository_legacy_utils import convert_to_schema_names
 from .models import ProjectDict, ProjectTypeAPI
+
+
+class _GuestFilters(NamedTuple):
+    owner_id: UserID | None
+    product_group_id: GroupID | None
+
+
+async def _get_guest_filters(app: web.Application, *, user_id: UserID, product_name: str) -> _GuestFilters:
+    """Returns guest owner/product-group filters for GUEST users, (None, None) otherwise."""
+    user_role = await users_service.get_user_role(app, user_id=user_id)
+    if user_role == UserRole.GUEST:
+        product_group_id = products_service.get_product(app, product_name).group_id
+        return _GuestFilters(owner_id=user_id, product_group_id=product_group_id)
+    return _GuestFilters(owner_id=None, product_group_id=None)
 
 
 def _batch_update(
@@ -38,7 +55,7 @@ def _batch_update(
     return objects
 
 
-async def _paralell_update(*update_per_object: Coroutine) -> list[Any]:
+async def _parallel_update(*update_per_object: Coroutine) -> list[Any]:
     return await logged_gather(
         *update_per_object,
         reraise=True,
@@ -65,20 +82,15 @@ async def _aggregate_data_to_projects_from_other_sources(
     # Add here get batch Project access rights
     project_to_access_rights = await batch_get_project_access_rights(
         app=app,
-        projects_uuids_with_workspace_id=[
-            (p["uuid"], p["workspaceId"]) for p in db_projects
-        ],
+        projects_uuids_with_workspace_id=[(p["uuid"], p["workspaceId"]) for p in db_projects],
     )
 
-    # udpating `project.state`
+    # updating `project.state`
     update_state_per_project = [
-        _projects_service.add_project_states_for_user(
-            user_id=user_id, project=prj, app=app
-        )
-        for prj in db_projects
+        _projects_service.add_project_states_for_user(user_id=user_id, project=prj, app=app) for prj in db_projects
     ]
 
-    updated_projects: list[ProjectDict] = await _paralell_update(
+    updated_projects: list[ProjectDict] = await _parallel_update(
         *update_state_per_project,
     )
 
@@ -99,19 +111,18 @@ async def _legacy_convert_db_projects_to_api_projects(
     api_projects: list[dict] = []
     for db_prj in db_projects:
         db_prj_dict = db_prj
-        db_prj_dict.pop("product_name", None)
-        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj['id']}")
+        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=db_prj["id"])
         user_email = await users_service.get_user_email_legacy(app, db_prj["prj_owner"])
         api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
     return api_projects
 
 
-async def list_projects(  # pylint: disable=too-many-arguments
+async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     app: web.Application,
     user_id: UserID,
     product_name: str,
     *,
-    # hierachy filter
+    # hierarchy filter
     workspace_id: WorkspaceID | None,
     folder_id: FolderID | None,
     # attrs filter
@@ -151,13 +162,14 @@ async def list_projects(  # pylint: disable=too-many-arguments
             workspace_id=workspace_id,
         )
 
+    # GUEST users may only access projects they own or published projects
+    guest_filters = await _get_guest_filters(app, user_id=user_id, product_name=product_name)
+
     db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=(
-            WorkspaceQuery(
-                workspace_scope=WorkspaceScope.SHARED, workspace_id=workspace_id
-            )
+            WorkspaceQuery(workspace_scope=WorkspaceScope.SHARED, workspace_id=workspace_id)
             if workspace_id
             else WorkspaceQuery(workspace_scope=WorkspaceScope.PRIVATE)
         ),
@@ -171,6 +183,8 @@ async def list_projects(  # pylint: disable=too-many-arguments
         filter_by_template_type=template_type,
         filter_trashed=trashed,
         filter_hidden=show_hidden,
+        filter_guest_owner_id=guest_filters.owner_id,
+        filter_guest_product_group_id=guest_filters.product_group_id,
         # composed attrs
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
@@ -181,9 +195,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
-    api_projects = await _legacy_convert_db_projects_to_api_projects(
-        app, db, db_projects
-    )
+    api_projects = await _legacy_convert_db_projects_to_api_projects(app, db, db_projects)
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
         app, db_projects=api_projects, user_id=user_id
@@ -192,7 +204,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     return final_projects, total_number_projects
 
 
-async def list_projects_full_depth(  # pylint: disable=too-many-arguments
+async def list_projects_full_depth(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     app: web.Application,
     *,
     user_id: UserID,
@@ -211,16 +223,19 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
+    # GUEST users may only access projects they own or published projects
+    guest_filters = await _get_guest_filters(app, user_id=user_id, product_name=product_name)
+
     db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
-        filter_by_project_type=ProjectTypeAPI.to_project_type_db(
-            filter_by_project_type
-        ),
+        filter_by_project_type=ProjectTypeAPI.to_project_type_db(filter_by_project_type),
         filter_by_template_type=filter_by_template_type,
+        filter_guest_owner_id=guest_filters.owner_id,
+        filter_guest_product_group_id=guest_filters.product_group_id,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,
@@ -228,9 +243,7 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
-    api_projects = await _legacy_convert_db_projects_to_api_projects(
-        app, db, db_projects
-    )
+    api_projects = await _legacy_convert_db_projects_to_api_projects(app, db, db_projects)
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
         app, db_projects=api_projects, user_id=user_id

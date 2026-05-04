@@ -11,10 +11,7 @@ TESTS_DIR = CURRENT_DIR / "tests"
 logger = logging.getLogger(__name__)
 
 
-def main(
-    service_dir: Path, *, debug: bool = False, extra_args: list[str] | None = None
-) -> int:
-
+def main(service_dir: Path, *, debug: bool = False, extra_args: list[str] | None = None) -> int:
     pytest_args = [
         # global cache options
         "--cache-clear",

@@ -1,6 +1,7 @@
 """Function job collections access rights table"""
 
 import sqlalchemy as sa
+
 from simcore_postgres_database.models._common import (
     RefActions,
     column_created_datetime,

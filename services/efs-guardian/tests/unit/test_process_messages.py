@@ -60,7 +60,7 @@ async def test_process_msg(
         user_id=user_id,
         product_name=product_name,
     )
-    json_str = model_instance.json()
+    json_str = model_instance.model_dump_json()
     model_bytes = json_str.encode("utf-8")
 
     _expected_project_node_states = [".data_assets", "home_user_workspace"]
@@ -69,9 +69,7 @@ async def test_process_msg(
     app.state.efs_manager = mock_efs_manager
     mock_efs_manager.check_project_node_data_directory_exits.return_value = True
     mock_efs_manager.get_project_node_data_size.return_value = 4000
-    mock_efs_manager.list_project_node_state_names.return_value = (
-        _expected_project_node_states
-    )
+    mock_efs_manager.list_project_node_state_names.return_value = _expected_project_node_states
 
     result = await process_dynamic_service_running_message(app, data=model_bytes)
 
@@ -104,7 +102,7 @@ async def test_process_msg__dir_not_exists(
         user_id=user_id,
         product_name=product_name,
     )
-    json_str = model_instance.json()
+    json_str = model_instance.model_dump_json()
     model_bytes = json_str.encode("utf-8")
 
     result = await process_dynamic_service_running_message(app, data=model_bytes)

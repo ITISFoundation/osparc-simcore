@@ -29,7 +29,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_GROUPS": "0",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PROJECTS": "null",
-            "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "1",  # <--- activate only sockets
             "WEBSERVER_STORAGE": "null",
@@ -49,9 +48,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     return app_environment | overrides
 
 
-@pytest.mark.skip(
-    reason="Pending https://github.com/ITISFoundation/osparc-simcore/issues/5332"
-)
+@pytest.mark.skip(reason="Pending https://github.com/ITISFoundation/osparc-simcore/issues/5332")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_socketio_session_client_to_server(
     logged_user: UserInfoDict,
@@ -59,7 +56,6 @@ async def test_socketio_session_client_to_server(
     user_role: UserRole,
     mocker: MockerFixture,
 ):
-
     assert client.app
     assert client.server
     assert isinstance(client.server, TestServer)

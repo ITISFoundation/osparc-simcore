@@ -41,6 +41,4 @@ def evaluate(ctx: typer.Context) -> None:
     """Evaluates resources and does blahblahb TBD @mrnicegyu11"""
     assert ctx  # nosec
     settings = MinimalApplicationSettings.create_from_envs()
-    err_console.print(
-        f"[yellow]running with configuration:\n{settings.model_dump_json(warnings='none')}[/yellow]"
-    )
+    err_console.print(f"[yellow]running with configuration:\n{settings.model_dump_json(warnings='none')}[/yellow]")

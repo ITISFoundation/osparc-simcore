@@ -48,9 +48,7 @@ async def create_wallet_group(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.model_dump(
-                include={"read", "write", "delete"}
-            ),
+            user_access_rights_on_wallet=wallet.model_dump(include={"read", "write", "delete"}),
         )
 
     wallet_group_db: WalletGroupGetDB = await wallets_groups_db.create_wallet_group(
@@ -82,18 +80,12 @@ async def list_wallet_groups_by_user_and_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.model_dump(
-                include={"read", "write", "delete"}
-            ),
+            user_access_rights_on_wallet=wallet.model_dump(include={"read", "write", "delete"}),
         )
 
-    wallet_groups_db: list[WalletGroupGetDB] = (
-        await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
-    )
+    wallet_groups_db: list[WalletGroupGetDB] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
 
-    wallet_groups_api: list[WalletGroupGet] = [
-        WalletGroupGet.model_validate(group) for group in wallet_groups_db
-    ]
+    wallet_groups_api: list[WalletGroupGet] = [WalletGroupGet.model_validate(group) for group in wallet_groups_db]
 
     return wallet_groups_api
 
@@ -103,14 +95,10 @@ async def list_wallet_groups_with_read_access_by_wallet(
     *,
     wallet_id: WalletID,
 ) -> list[WalletGroupGet]:
-    wallet_groups_db: list[WalletGroupGetDB] = (
-        await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
-    )
+    wallet_groups_db: list[WalletGroupGetDB] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
 
     wallet_groups_api: list[WalletGroupGet] = [
-        WalletGroupGet.model_validate(group)
-        for group in wallet_groups_db
-        if group.read is True
+        WalletGroupGet.model_validate(group) for group in wallet_groups_db if group.read is True
     ]
 
     return wallet_groups_api
@@ -131,9 +119,7 @@ async def update_wallet_group(
         app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.write is False:
-        raise WalletAccessForbiddenError(
-            details=f"User does not have write access to wallet {wallet_id}"
-        )
+        raise WalletAccessForbiddenError(details=f"User does not have write access to wallet {wallet_id}")
     if wallet.owner == group_id:
         user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != wallet.owner:
@@ -143,9 +129,7 @@ async def update_wallet_group(
                 user_id=user_id,
                 wallet_id=wallet_id,
                 product_name=product_name,
-                user_acces_rights_on_wallet=wallet.model_dump(
-                    include={"read", "write", "delete"}
-                ),
+                user_access_rights_on_wallet=wallet.model_dump(include={"read", "write", "delete"}),
             )
 
     wallet_group_db: WalletGroupGetDB = await wallets_groups_db.update_wallet_group(
@@ -173,9 +157,7 @@ async def delete_wallet_group(
         app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.delete is False:
-        raise WalletAccessForbiddenError(
-            details=f"User does not have delete access to wallet {wallet_id}"
-        )
+        raise WalletAccessForbiddenError(details=f"User does not have delete access to wallet {wallet_id}")
     if wallet.owner == group_id:
         user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != wallet.owner:
@@ -184,6 +166,4 @@ async def delete_wallet_group(
                 details=f"User does not have access to modify owner wallet group in wallet {wallet_id}"
             )
 
-    await wallets_groups_db.delete_wallet_group(
-        app=app, wallet_id=wallet_id, group_id=group_id
-    )
+    await wallets_groups_db.delete_wallet_group(app=app, wallet_id=wallet_id, group_id=group_id)

@@ -1,17 +1,16 @@
 {
   "recommendations": [
-    "42Crunch.vscode-openapi",
     "charliermarsh.ruff",
     "DevSoft.svg-viewer-vscode",
     "eamodio.gitlens",
     "exiasr.hadolint",
+    "Gruntfuggly.todo-tree",
     "ms-azuretools.vscode-containers",
-    "ms-python.black-formatter",
     "ms-python.pylint",
     "ms-python.python",
     "njpwerner.autodocstring",
     "samuelcolvin.jinjahtml",
     "timonwong.shellcheck",
-    "vscode-icons-team.vscode-icons",
+    "vscode-icons-team.vscode-icons"
   ]
 }

@@ -82,7 +82,6 @@ def test_mixing_service_settings_usage(monkeypatch: pytest.MonkeyPatch):
     [WebServerSettings, CatalogSettings, DirectorV2Settings, StorageSettings],
 )
 def test_service_settings_base_urls(service_settings_cls: type):
-
     assert issubclass(service_settings_cls, BaseCustomSettings)
     assert issubclass(service_settings_cls, MixinServiceSettings)
 

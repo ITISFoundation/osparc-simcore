@@ -1,6 +1,4 @@
-"""Service access rights models
-
-"""
+"""Service access rights models"""
 
 from typing import Annotated
 
@@ -11,12 +9,8 @@ from .utils.change_case import snake_to_camel
 
 
 class ServiceGroupAccessRights(BaseModel):
-    execute_access: Annotated[
-        bool, Field(description="defines whether the group can execute the service")
-    ] = False
-    write_access: Annotated[
-        bool, Field(description="defines whether the group can modify the service")
-    ] = False
+    execute_access: Annotated[bool, Field(description="defines whether the group can execute the service")] = False
+    write_access: Annotated[bool, Field(description="defines whether the group can modify the service")] = False
 
 
 class ServiceGroupAccessRightsV2(BaseModel):

@@ -50,13 +50,9 @@ async def list_studies(
     page_params: Annotated[PaginationParams, Depends()],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    projects_page = await webserver_api.get_projects_page(
-        limit=page_params.limit, offset=page_params.offset
-    )
+    projects_page = await webserver_api.get_projects_page(limit=page_params.limit, offset=page_params.offset)
 
-    studies: list[Study] = [
-        _create_study_from_project(prj) for prj in projects_page.data
-    ]
+    studies: list[Study] = [_create_study_from_project(prj) for prj in projects_page.data]
 
     return create_page(
         studies,
@@ -110,9 +106,7 @@ async def clone_study(
             name=title,
             description=description,
         )
-        await webserver_api.patch_project(
-            project_id=project.uuid, patch_params=patch_params
-        )
+        await webserver_api.patch_project(project_id=project.uuid, patch_params=patch_params)
         project = await webserver_api.get_project(project_id=project.uuid)
     return _create_study_from_project(project)
 
@@ -132,7 +126,5 @@ async def list_study_ports(
     study_id: StudyID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(
-        project_id=study_id
-    )
+    project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(project_id=study_id)
     return OnePage[StudyPort](items=project_ports)

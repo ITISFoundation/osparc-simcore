@@ -45,12 +45,7 @@ def copy_tests_data_dir(tests_data_dir: Path, tmp_path: Path) -> Path:
 
 
 def test_cli_legacy_escape(copy_tests_data_dir: Path, run_program_with_args: Callable):
-    result = run_program_with_args(
-        "legacy-escape", "--osparc-config-dirname", copy_tests_data_dir
-    )
+    result = run_program_with_args("legacy-escape", "--osparc-config-dirname", copy_tests_data_dir)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     # NOTE only 1 file will have a sequence that will be escaped
-    assert (
-        f"Escaped sequence in {copy_tests_data_dir}/docker-compose-meta.yml"
-        in result.output.strip()
-    )
+    assert f"Escaped sequence in {copy_tests_data_dir}/docker-compose-meta.yml" in result.output.strip()

@@ -5,10 +5,10 @@
 #
 # Python version can be upgraded if:
 #   - Has been patched several times (avoid using the very first release for production)
-#   - Can be installed with pyenv (SEE pyenv install --list )
+#   - Can be installed with UV
 #
 #
-ARG PYTHON_VERSION="3.11.9"
+ARG PYTHON_VERSION="3.13.9"
 ARG UV_VERSION="0.9"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian

@@ -17,9 +17,7 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.post(
-    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}:add", name="add_project_tag"
-)
+@routes.post(f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}:add", name="add_project_tag")
 @login_required
 @permission_required("project.tag.*")
 @handle_plugin_requests_exceptions

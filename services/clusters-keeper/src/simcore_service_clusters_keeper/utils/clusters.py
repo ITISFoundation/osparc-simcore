@@ -32,9 +32,7 @@ _HOST_PROMETHEUS_PATH: Final[Path] = Path(f"/{_PROMETHEUS_FILE_NAME}")
 _HOST_PROMETHEUS_WEB_PATH: Final[Path] = Path(f"/{_PROMETHEUS_WEB_FILE_NAME}")
 _HOST_CERTIFICATES_BASE_PATH: Final[Path] = Path("/.dask-sidecar-certificates")
 _HOST_TLS_CA_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_ca.pem"
-_HOST_TLS_CERT_FILE_PATH: Final[Path] = (
-    _HOST_CERTIFICATES_BASE_PATH / "tls_dask_cert.pem"
-)
+_HOST_TLS_CERT_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_cert.pem"
 _HOST_TLS_KEY_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_key.pem"
 
 
@@ -57,9 +55,7 @@ def _prometheus_yml_base64_encoded() -> str:
 
 
 @functools.lru_cache
-def _prometheus_basic_auth_yml_base64_encoded(
-    prometheus_username: str, prometheus_password: str
-) -> str:
+def _prometheus_basic_auth_yml_base64_encoded(prometheus_username: str, prometheus_password: str) -> str:
     web_config = {"basic_auth_users": {prometheus_username: prometheus_password}}
     yaml_content = yaml.safe_dump(web_config)
     base64_bytes = base64.b64encode(yaml_content.encode("utf-8"))
@@ -101,14 +97,15 @@ def _prepare_environment_variables(
         f"LOG_LEVEL={app_settings.log_level}",
         f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
         f"WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING)}",
-        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",
+        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",  # noqa: E501
         f"WORKERS_EC2_INSTANCES_KEY_NAME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME}",
         f"WORKERS_EC2_INSTANCES_MAX_INSTANCES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_INSTANCES}",
+        f"WORKERS_EC2_INSTANCES_MAX_START_TIME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_START_TIME}",
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
         f"WORKERS_EC2_INSTANCES_SUBNET_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_IDS)}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
-        f"AUTOSCALING_RABBITMQ={_convert_to_env_dict(model_dump_with_secrets(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT, show_secrets=True)) if app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT else 'null'}",
+        f"AUTOSCALING_RABBITMQ={_convert_to_env_dict(model_dump_with_secrets(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT, show_secrets=True)) if app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT else 'null'}",  # noqa: E501
     ]
 
 
@@ -139,9 +136,18 @@ def create_deploy_cluster_stack_script(
         # get the dask certificates
         download_certificates_commands = [
             f"mkdir --parents {_HOST_CERTIFICATES_BASE_PATH}",
-            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CA_FILE_PATH}',
-            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CERT_FILE_PATH}',
-            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_KEY_FILE_PATH}',
+            "aws ssm get-parameter "
+            f'--name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}" '
+            '--region us-east-1 --with-decryption --query "Parameter.Value" '
+            f"--output text > {_HOST_TLS_CA_FILE_PATH}",
+            "aws ssm get-parameter "
+            f'--name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}" '
+            '--region us-east-1 --with-decryption --query "Parameter.Value" '
+            f"--output text > {_HOST_TLS_CERT_FILE_PATH}",
+            "aws ssm get-parameter "
+            f'--name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}" '
+            '--region us-east-1 --with-decryption --query "Parameter.Value" '
+            f"--output text > {_HOST_TLS_KEY_FILE_PATH}",
         ]
         deploy_script.extend(download_certificates_commands)
 
@@ -157,10 +163,12 @@ def create_deploy_cluster_stack_script(
             "sysctl vm.overcommit_memory=1",
             f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > {_HOST_DOCKER_COMPOSE_PATH}",
             f"echo '{_prometheus_yml_base64_encoded()}' | base64 -d > {_HOST_PROMETHEUS_PATH}",
-            f"echo '{_prometheus_basic_auth_yml_base64_encoded(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME, app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD.get_secret_value())}' | base64 -d > {_HOST_PROMETHEUS_WEB_PATH}",
+            f"echo '{_prometheus_basic_auth_yml_base64_encoded(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME, app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD.get_secret_value())}' | base64 -d > {_HOST_PROMETHEUS_WEB_PATH}",  # noqa: E501
             # NOTE: --default-addr-pool is necessary in order to prevent conflicts with AWS node IPs
-            f"docker swarm init --default-addr-pool {app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}",
-            f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file={_HOST_DOCKER_COMPOSE_PATH} dask_stack",
+            "docker swarm init --default-addr-pool "
+            f"{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}",
+            f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth "
+            f"--compose-file={_HOST_DOCKER_COMPOSE_PATH} dask_stack",
         ]
     )
     return "\n".join(deploy_script)

@@ -91,9 +91,7 @@ for endpoint in ENDPOINTS:
 async def list_function_job_collections(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-    filters: Annotated[
-        FunctionJobCollectionsListFilters, Depends(get_function_job_collections_filters)
-    ],
+    filters: Annotated[FunctionJobCollectionsListFilters, Depends(get_function_job_collections_filters)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> AbstractPage[RegisteredFunctionJobCollection]:
@@ -190,9 +188,7 @@ async def delete_function_job_collection(
 )
 async def function_job_collection_list_function_jobs(
     function_job_collection_id: FunctionJobCollectionID,
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
+    function_job_service: Annotated[FunctionJobService, Depends(get_function_job_service)],
 ) -> list[RegisteredFunctionJob]:
     return await function_job_collection_list_function_jobs_list(
         function_job_collection_id=function_job_collection_id,
@@ -213,9 +209,7 @@ async def function_job_collection_list_function_jobs(
 )
 async def function_job_collection_list_function_jobs_page(
     function_job_collection_id: FunctionJobCollectionID,
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
+    function_job_service: Annotated[FunctionJobService, Depends(get_function_job_service)],
     page_params: Annotated[PaginationParams, Depends()],
 ) -> AbstractPage[RegisteredFunctionJob]:
     function_jobs_list, meta = await function_job_service.list_function_jobs(
@@ -238,9 +232,7 @@ async def function_job_collection_list_function_jobs_page(
 )
 async def function_job_collection_list_function_jobs_list(
     function_job_collection_id: FunctionJobCollectionID,
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
+    function_job_service: Annotated[FunctionJobService, Depends(get_function_job_service)],
 ) -> list[RegisteredFunctionJob]:
     function_jobs_list, _ = await function_job_service.list_function_jobs(
         filter_by_function_job_collection_id=function_job_collection_id,
@@ -292,6 +284,4 @@ async def function_job_collection_status(
             for function_job_id in function_job_collection.job_ids
         ]
     )
-    return FunctionJobCollectionStatus(
-        status=[job_status.status for job_status in job_statuses]
-    )
+    return FunctionJobCollectionStatus(status=[job_status.status for job_status in job_statuses])

@@ -1,14 +1,14 @@
-""" Services table
+"""Services table
 
-    - List of 3rd party services in the framework
-    - Services have a key, version, and access rights defined by group ids
+- List of 3rd party services in the framework
+- Services have a key, version, and access rights defined by group ids
 """
 
+from typing import NotRequired, Required
 
 import sqlalchemy as sa
 import typing_extensions
 from sqlalchemy.dialects.postgresql import JSONB
-from typing_extensions import NotRequired, Required
 
 from ._common import (
     RefActions,

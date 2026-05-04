@@ -21,15 +21,11 @@ from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.constants import MSG_USER_DELETED
-from simcore_service_webserver.products.products_service import get_product
+from simcore_service_webserver.login_accounts import _controller_rest, _service
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role < UserRole.USER]
-)
-async def test_unregister_account_access_rights(
-    client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
-):
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role < UserRole.USER])
+async def test_unregister_account_access_rights(client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture):
     response = await client.post(
         "/v0/auth/unregister",
         json={
@@ -42,17 +38,16 @@ async def test_unregister_account_access_rights(
         response.raise_for_status()
 
     error = err_info.value
-    assert error.status in (
+    assert error.status in {
         status.HTTP_401_UNAUTHORIZED,
         status.HTTP_403_FORBIDDEN,
-    ), f"{error}"
+    }, f"{error}"
 
 
 @pytest.fixture
-def mocked_send_email(mocker: MockerFixture) -> MagicMock:
-    # OVERRIDES services/web/server/tests/unit/with_dbs/conftest.py:mocked_send_email fixture
+def mocked_send_notification(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.email._core._do_send_mail",
+        f"{_service.__name__}.send_message_from_template",
         spec=True,
     )
 
@@ -60,18 +55,14 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
 @pytest.fixture
 def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.login_accounts._controller_rest.session_service.get_session",
+        f"{_controller_rest.__name__}.session_service.get_session",
         spec=True,
         return_value={"captcha": "123456"},
     )
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
-async def test_unregister_account(
-    client: TestClient, logged_user: UserInfoDict, mocked_send_email: MagicMock
-):
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
+async def test_unregister_account(client: TestClient, logged_user: UserInfoDict, mocked_send_notification: MagicMock):
     assert client.app
 
     # is logged in
@@ -88,10 +79,11 @@ async def test_unregister_account(
     )
     await assert_status(response, status.HTTP_200_OK)
 
-    # sent email?
-    mimetext = mocked_send_email.call_args[1]["message"]
-    assert mimetext["Subject"]
-    assert mimetext["To"] == logged_user["email"]
+    # check notification service was called with correct template and recipient
+    mocked_send_notification.assert_called_once()
+    call_kwargs = mocked_send_notification.call_args[1]
+    assert call_kwargs["template_name"] == "unregister"
+    assert any(c.email == logged_user["email"] for c in call_kwargs["external_contacts"])
 
     # should be logged-out
     response = await client.get("/v0/me")
@@ -108,11 +100,9 @@ async def test_unregister_account(
     assert prefix_msg in error["errors"][0]["message"]
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
 async def test_cannot_unregister_other_account(
-    client: TestClient, logged_user: UserInfoDict, mocked_send_email: MagicMock
+    client: TestClient, logged_user: UserInfoDict, mocked_send_notification: MagicMock
 ):
     assert client.app
 
@@ -133,13 +123,11 @@ async def test_cannot_unregister_other_account(
 
 
 @pytest.mark.parametrize("invalidate", ["email", "raw_password"])
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
 async def test_cannot_unregister_invalid_credentials(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_send_email: MagicMock,
+    mocked_send_notification: MagicMock,
     invalidate: str,
 ):
     assert client.app
@@ -165,7 +153,7 @@ async def test_cannot_unregister_invalid_credentials(
 async def test_request_an_account(
     client: TestClient,
     faker: Faker,
-    mocked_send_email: MagicMock,
+    mocked_send_notification: MagicMock,
     mocked_captcha_session: MagicMock,
 ):
     assert client.app
@@ -176,9 +164,7 @@ async def test_request_an_account(
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": faker.email(),
-        "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace(
-            "\n", ", "
-        ),
+        "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace("\n", ", "),
         "country": faker.country(),
     }
 
@@ -189,27 +175,27 @@ async def test_request_an_account(
 
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
-    product = get_product(client.app, product_name="osparc")
-
-    # check email was sent
-    mimetext = mocked_send_email.call_args[1]["message"]
-    assert "account" in mimetext["Subject"].lower()
-    assert mimetext["From"] == product.support_email
-    assert mimetext["To"] == product.product_owners_email or product.support_email
+    # check notification service was called with correct template and addressing
+    mocked_send_notification.assert_called_once()
+    call_kwargs = mocked_send_notification.call_args[1]
+    assert call_kwargs["template_name"] == "account_requested"
+    assert any(c.email for c in call_kwargs["external_contacts"]), "recipient (support/PO email) must be set"
+    assert call_kwargs["reply_to"] is not None
+    assert call_kwargs["reply_to"].email == user_data["email"]
 
     # check it appears in PO center
-    async with NewUser(
-        user_data={
-            "email": "po-user@email.com",
-            "name": "po-user-fixture",
-            "role": UserRole.PRODUCT_OWNER,
-        },
-        app=client.app,
-    ) as product_owner_user, switch_client_session_to(client, product_owner_user):
-
-        response = await client.get(
-            "v0/admin/user-accounts?limit=20&offset=0&review_status=PENDING"
-        )
+    async with (
+        NewUser(
+            user_data={
+                "email": "po-user@email.com",
+                "name": "po-user-fixture",
+                "role": UserRole.PRODUCT_OWNER,
+            },
+            app=client.app,
+        ) as product_owner_user,
+        switch_client_session_to(client, product_owner_user),
+    ):
+        response = await client.get("v0/admin/user-accounts?limit=20&offset=0&review_status=PENDING")
 
         data, _ = await assert_status(response, status.HTTP_200_OK)
 
@@ -220,4 +206,4 @@ async def test_request_an_account(
         assert user.status is None
         assert user.account_request_status == AccountRequestStatus.PENDING
 
-    # TODO add a test for reregistration `AlreadyPreRegisteredError`
+    # NOTE add a test for reregistration `AlreadyPreRegisteredError`

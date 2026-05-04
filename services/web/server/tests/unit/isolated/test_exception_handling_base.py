@@ -20,16 +20,13 @@ from simcore_service_webserver.exception_handling._base import (
 # Some custom errors in my service
 
 
-class BaseError(WebServerBaseError):
-    ...
+class BaseError(WebServerBaseError): ...
 
 
-class OneError(BaseError):
-    ...
+class OneError(BaseError): ...
 
 
-class OtherError(BaseError):
-    ...
+class OtherError(BaseError): ...
 
 
 def test_sort_concrete_first():
@@ -38,16 +35,13 @@ def test_sort_concrete_first():
         Exception,
     ]
 
-    assert _sort_exceptions_by_specificity(
-        [Exception, BaseError], concrete_first=False
-    ) == [
+    assert _sort_exceptions_by_specificity([Exception, BaseError], concrete_first=False) == [
         Exception,
         BaseError,
     ]
 
 
 def test_sort_exceptions_by_specificity():
-
     got_exceptions_cls = _sort_exceptions_by_specificity(
         [
             Exception,
@@ -66,7 +60,6 @@ def test_sort_exceptions_by_specificity():
 
 
 async def test__handled_exception_context_manager():
-
     expected_request = make_mocked_request("GET", "/foo")
     expected_response = web.json_response({"error": {"msg": "Foo"}})
 
@@ -88,9 +81,7 @@ async def test__handled_exception_context_manager():
     }
 
     # handles any BaseError returning a response
-    cm = ExceptionHandlingContextManager(
-        exception_handlers_map, request=expected_request
-    )
+    cm = ExceptionHandlingContextManager(exception_handlers_map, request=expected_request)
     async with cm:
         raise OneError
     assert cm.get_response_or_none() == expected_response

@@ -55,17 +55,13 @@ async def get_project_inputs(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         permission="read",
     )
-    workbench = await _nodes_service.get_project_nodes_map(
-        app=request.app, project_id=path_params.project_id
-    )
+    workbench = await _nodes_service.get_project_nodes_map(app=request.app, project_id=path_params.project_id)
 
     inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
     return envelope_json_response(
         {
-            node_id: ProjectInputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectInputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in inputs.items()
         }
     )
@@ -90,12 +86,8 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         permission="write",  # because we are updating inputs later
     )
-    current_workbench = await _nodes_service.get_project_nodes_map(
-        app=request.app, project_id=path_params.project_id
-    )
-    current_inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(
-        current_workbench
-    )
+    current_workbench = await _nodes_service.get_project_nodes_map(app=request.app, project_id=path_params.project_id)
+    current_inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(current_workbench)
 
     # build workbench patch
     partial_workbench_data = {}
@@ -105,13 +97,9 @@ async def update_project_inputs(request: web.Request) -> web.Response:
             raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
 
         current_workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
-        partial_workbench_data[node_id] = current_workbench[node_id].model_dump(
-            include={"outputs"}, exclude_unset=True
-        )
+        partial_workbench_data[node_id] = current_workbench[node_id].model_dump(include={"outputs"}, exclude_unset=True)
 
-    partial_nodes_map = TypeAdapter(dict[NodeID, PartialNode]).validate_python(
-        partial_workbench_data
-    )
+    partial_nodes_map = TypeAdapter(dict[NodeID, PartialNode]).validate_python(partial_workbench_data)
 
     await _nodes_service.update_project_nodes_map(
         request.app,
@@ -120,9 +108,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     )
 
     # get updated workbench (including not updated nodes)
-    updated_workbench = await _nodes_service.get_project_nodes_map(
-        request.app, project_id=path_params.project_id
-    )
+    updated_workbench = await _nodes_service.get_project_nodes_map(request.app, project_id=path_params.project_id)
 
     await _create_project_document_and_notify(
         request.app,
@@ -135,9 +121,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         {
-            node_id: ProjectInputGet(
-                key=node_id, label=updated_workbench[node_id].label, value=value
-            )
+            node_id: ProjectInputGet(key=node_id, label=updated_workbench[node_id].label, value=value)
             for node_id, value in inputs.items()
         }
     )
@@ -165,9 +149,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         permission="read",
     )
-    workbench = await _nodes_service.get_project_nodes_map(
-        app=request.app, project_id=path_params.project_id
-    )
+    workbench = await _nodes_service.get_project_nodes_map(app=request.app, project_id=path_params.project_id)
 
     outputs: dict[NodeID, Any] = await _ports_service.get_project_outputs(
         request.app, project_id=path_params.project_id, workbench=workbench
@@ -175,9 +157,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         {
-            node_id: ProjectOutputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectOutputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in outputs.items()
         }
     )
@@ -191,7 +171,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 class ProjectMetadataPortGet(BaseModel):
     key: NodeID = Field(
         ...,
-        description="Project port's unique identifer. Same as the UUID of the associated port node",
+        description="Project port's unique identifier. Same as the UUID of the associated port node",
     )
     kind: Literal["input", "output"]
     content_schema: JsonSchemaDict | None = Field(
@@ -220,9 +200,7 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         permission="read",
     )
-    workbench = await _nodes_service.get_project_nodes_map(
-        app=request.app, project_id=path_params.project_id
-    )
+    workbench = await _nodes_service.get_project_nodes_map(app=request.app, project_id=path_params.project_id)
     return envelope_json_response(
         [
             ProjectMetadataPortGet(

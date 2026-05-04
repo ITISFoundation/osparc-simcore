@@ -16,9 +16,7 @@ PROJECT_DOCUMENT_VERSION_KEY: Final[str] = "projects:{}:version"
 PROJECT_DB_UPDATE_REDIS_LOCK_KEY: Final[str] = "project_db_update:{}"
 
 
-async def increment_and_return_project_document_version(
-    redis_client: RedisClientSDK, project_uuid: ProjectID
-) -> int:
+async def increment_and_return_project_document_version(redis_client: RedisClientSDK, project_uuid: ProjectID) -> int:
     """
     Atomically increments and returns the project document version using Redis.
     Returns the incremented version number.

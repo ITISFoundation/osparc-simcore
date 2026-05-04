@@ -34,9 +34,7 @@ def _from_db_to_api_model(
     )
 
 
-def _from_api_to_db_model(
-    wallet_id: WalletID, api_model: ReplaceWalletAutoRecharge
-) -> PaymentsAutorechargeGetDB:
+def _from_api_to_db_model(wallet_id: WalletID, api_model: ReplaceWalletAutoRecharge) -> PaymentsAutorechargeGetDB:
     return PaymentsAutorechargeGetDB(
         wallet_id=wallet_id,
         enabled=api_model.enabled,
@@ -60,13 +58,9 @@ async def get_wallet_payment_autorecharge(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> GetWalletAutoRecharge:
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
+    await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
     settings = get_plugin_settings(app)
-    got: PaymentsAutorechargeGetDB | None = await get_wallet_autorecharge(
-        app, wallet_id=wallet_id
-    )
+    got: PaymentsAutorechargeGetDB | None = await get_wallet_autorecharge(app, wallet_id=wallet_id)
     if not got:
         payment_method_id = None
         wallet_payment_methods = await list_successful_payment_methods(
@@ -99,9 +93,7 @@ async def replace_wallet_payment_autorecharge(
     wallet_id: WalletID,
     new: ReplaceWalletAutoRecharge,
 ) -> GetWalletAutoRecharge:
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
+    await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
 
     settings = get_plugin_settings(app)
     got: PaymentsAutorechargeGetDB = await replace_wallet_autorecharge(

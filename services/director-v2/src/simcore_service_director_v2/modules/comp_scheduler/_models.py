@@ -10,9 +10,7 @@ from ...models.comp_tasks import CompTaskAtDB
 
 
 class SchedulePipelineRabbitMessage(RabbitMessageBase):
-    channel_name: Literal["simcore.services.director-v2.scheduling"] = (
-        "simcore.services.director-v2.scheduling"
-    )
+    channel_name: Literal["simcore.services.director-v2.scheduling"] = "simcore.services.director-v2.scheduling"
     user_id: UserID
     project_id: ProjectID
     iteration: Iteration

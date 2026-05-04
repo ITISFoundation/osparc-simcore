@@ -2880,6 +2880,9 @@
               }
             }
           },
+          "409": {
+            "description": "Job not finished yet"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -8336,9 +8339,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8395,9 +8396,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8447,9 +8446,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8515,6 +8512,10 @@
           "data"
         ],
         "title": "ApiServerEnvelope[list[TaskGet]]"
+      },
+      "AsyncJobId": {
+        "type": "string",
+        "format": "uuid"
       },
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {
@@ -8653,6 +8654,45 @@
           "upload_schema"
         ],
         "title": "ClientFileUploadData"
+      },
+      "ErrorDict": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Loc"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "ctx": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ctx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ErrorDict",
+        "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
       },
       "ErrorGet": {
         "properties": {
@@ -8884,6 +8924,10 @@
           "minPaymentAmountUsd"
         ],
         "title": "GetCreditPriceLegacy"
+      },
+      "GroupID": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "Groups": {
         "properties": {
@@ -9136,12 +9180,11 @@
             "title": "Node Id"
           },
           "log_level": {
-            "type": "integer",
-            "title": "Log Level"
+            "$ref": "#/components/schemas/LogLevelInt"
           },
           "messages": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/LogMessageStr"
             },
             "type": "array",
             "title": "Messages"
@@ -9190,20 +9233,7 @@
           },
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MetaValueType"
             },
             "type": "object",
             "title": "Metadata",
@@ -9247,20 +9277,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MetaValueType"
             },
             "type": "object",
             "title": "Metadata",
@@ -9348,10 +9365,7 @@
             "$ref": "#/components/schemas/RunningState"
           },
           "progress": {
-            "type": "integer",
-            "maximum": 100,
-            "minimum": 0,
-            "title": "Progress",
+            "$ref": "#/components/schemas/PercentageInt",
             "default": 0
           },
           "submitted_at": {
@@ -9385,6 +9399,21 @@
             ],
             "title": "Stopped At",
             "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "Error details when the job state is FAILED"
           }
         },
         "type": "object",
@@ -9406,9 +9435,8 @@
         "properties": {
           "number_of_seats": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Number Of Seats",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Number Of Seats"
           },
           "service_run_id": {
             "type": "string",
@@ -9445,15 +9473,13 @@
           },
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "product_name": {
             "type": "string",
@@ -9528,9 +9554,8 @@
           },
           "pricing_plan_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Plan Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Plan Id"
           },
           "is_hidden_on_market": {
             "type": "boolean",
@@ -9799,6 +9824,9 @@
         ],
         "title": "Links"
       },
+      "LogLevelInt": {
+        "type": "integer"
+      },
       "LogLink": {
         "properties": {
           "node_name": {
@@ -9818,6 +9846,13 @@
           "download_link"
         ],
         "title": "LogLink"
+      },
+      "LogMessageStr": {
+        "type": "string"
+      },
+      "LowerCaseEmailStr": {
+        "type": "string",
+        "format": "email"
       },
       "Meta": {
         "properties": {
@@ -9879,6 +9914,22 @@
           },
           "version": "2.4.45"
         }
+      },
+      "MetaValueType": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          }
+        ]
       },
       "OnePage_SolverPort_": {
         "properties": {
@@ -10487,6 +10538,11 @@
         ],
         "title": "Page[Study]"
       },
+      "PercentageInt": {
+        "type": "integer",
+        "maximum": 100,
+        "minimum": 0
+      },
       "PricingPlanClassification": {
         "type": "string",
         "enum": [
@@ -10499,9 +10555,8 @@
         "properties": {
           "pricingUnitId": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricingunitid",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricingunitid"
           },
           "unitName": {
             "type": "string",
@@ -10558,14 +10613,11 @@
           },
           "id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Id"
           },
           "login": {
-            "type": "string",
-            "format": "email",
-            "title": "Login"
+            "$ref": "#/components/schemas/LowerCaseEmailStr"
           },
           "role": {
             "$ref": "#/components/schemas/UserRoleEnum"
@@ -11872,9 +11924,8 @@
         "properties": {
           "pricingPlanId": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricingplanid",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricingplanid"
           },
           "displayName": {
             "type": "string",
@@ -12251,7 +12302,7 @@
             "type": "string",
             "format": "uuid",
             "title": "Key name",
-            "description": "port identifier name.Correponds to the UUID of the parameter/probe node in the study"
+            "description": "port identifier name.Corresponds to the UUID of the parameter/probe node in the study"
           },
           "kind": {
             "type": "string",
@@ -12480,9 +12531,8 @@
         "properties": {
           "number": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Number",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Number"
           },
           "e_tag": {
             "type": "string",
@@ -12660,9 +12710,8 @@
         "properties": {
           "walletId": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Walletid",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Walletid"
           },
           "name": {
             "type": "string",
@@ -12682,10 +12731,7 @@
             "title": "Description"
           },
           "owner": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Owner",
-            "minimum": 0
+            "$ref": "#/components/schemas/GroupID"
           },
           "thumbnail": {
             "anyOf": [

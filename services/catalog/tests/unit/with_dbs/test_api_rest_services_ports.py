@@ -13,6 +13,7 @@ import pytest
 import simcore_service_catalog.api._dependencies.services
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
@@ -45,16 +46,14 @@ def service_metadata(
 
 
 @pytest.fixture
-async def mocked_check_service_read_access(
-    mocker: MockerFixture, user_groups_ids: dict[str, Any]
-):
+async def mocked_check_service_read_access(mocker: MockerFixture, user_groups_ids: dict[str, Any]):
     # MOCKS functionality inside "simcore_service_catalog.api.dependencies.services.check_service_read_access"
     # to provide read access to a service to user_groups_ids
     #
     assert user_groups_ids
 
     mocker.patch.object(
-        simcore_service_catalog.api._dependencies.services.ServicesRepository,
+        simcore_service_catalog.api._dependencies.services.ServicesRepository,  # noqa: SLF001
         "get_service",
         autospec=True,
         return_value=True,
@@ -96,12 +95,8 @@ async def test_list_service_ports(
     service_metadata: dict[str, Any],  # expected
     benchmark,
 ):
-    url = URL(f"/v0/services/{service_key}/{service_version}/ports").with_query(
-        {"user_id": user_id}
-    )
-    response = benchmark(
-        client.get, f"{url}", headers={"x-simcore-products-name": product_name}
-    )
+    url = URL(f"/v0/services/{service_key}/{service_version}/ports").with_query({"user_id": user_id})
+    response = benchmark(client.get, f"{url}", headers={X_PRODUCT_NAME_HEADER: product_name})
     assert response.status_code == 200
     ports = response.json()
 
@@ -109,12 +104,8 @@ async def test_list_service_ports(
     expected_inputs = service_metadata["inputs"]
     expected_outputs = service_metadata["outputs"]
 
-    assert [p["key"] for p in ports if p["kind"] == "input"] == list(
-        expected_inputs.keys()
-    )
-    assert [p["key"] for p in ports if p["kind"] == "output"] == list(
-        expected_outputs.keys()
-    )
+    assert [p["key"] for p in ports if p["kind"] == "input"] == list(expected_inputs.keys())
+    assert [p["key"] for p in ports if p["kind"] == "output"] == list(expected_outputs.keys())
 
     assert ports == [
         {

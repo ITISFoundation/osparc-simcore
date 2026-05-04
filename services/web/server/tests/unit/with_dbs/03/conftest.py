@@ -74,9 +74,7 @@ async def support_group_before_app_starts(
         # Update product to set support_standard_group_id
         async with asyncpg_engine.begin() as conn:
             await conn.execute(
-                sa.update(products)
-                .where(products.c.name == product_name)
-                .values(support_standard_group_id=group_id)
+                sa.update(products).where(products.c.name == product_name).values(support_standard_group_id=group_id)
             )
 
         yield group_row

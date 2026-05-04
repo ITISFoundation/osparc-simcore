@@ -24,9 +24,7 @@ class ProjectsRepository(BaseRepository):
             query = (
                 sa.select(
                     projects,
-                    sa.func.coalesce(
-                        workbench_subquery.c.workbench, sa.text("'{}'::json")
-                    ).label("workbench"),
+                    sa.func.coalesce(workbench_subquery.c.workbench, sa.text("'{}'::json")).label("workbench"),
                 )
                 .select_from(
                     projects.outerjoin(
@@ -42,9 +40,7 @@ class ProjectsRepository(BaseRepository):
                 raise ProjectNotFoundError(project_id=project_id)
             return ProjectAtDB.model_validate(row)
 
-    async def is_node_present_in_workbench(
-        self, project_id: ProjectID, node_uuid: NodeID
-    ) -> bool:
+    async def is_node_present_in_workbench(self, project_id: ProjectID, node_uuid: NodeID) -> bool:
         async with pass_or_acquire_connection(self.db_engine) as conn:
             stmt = (
                 sa.select(sa.literal(1))
@@ -60,6 +56,4 @@ class ProjectsRepository(BaseRepository):
 
     async def get_project_id_from_node(self, node_id: NodeID) -> ProjectID:
         async with self.db_engine.connect() as conn:
-            return await ProjectNodesRepo.get_project_id_from_node_id(
-                conn, node_id=node_id
-            )
+            return await ProjectNodesRepo.get_project_id_from_node_id(conn, node_id=node_id)

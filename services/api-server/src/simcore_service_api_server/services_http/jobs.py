@@ -21,9 +21,7 @@ from .webserver import AuthSession
 _logger = logging.getLogger(__name__)
 
 
-def raise_if_job_not_associated_with_solver(
-    expected_project_name: str, project: ProjectGet
-) -> None:
+def raise_if_job_not_associated_with_solver(expected_project_name: str, project: ProjectGet) -> None:
     if expected_project_name != project.name:
         raise InvalidInputError()
 
@@ -89,9 +87,7 @@ async def replace_custom_metadata(
     self_url: HttpUrl,
 ):
     assert job_name  # nosec
-    project_metadata = await webserver_api.update_project_metadata(
-        project_id=job_id, metadata=update.metadata
-    )
+    project_metadata = await webserver_api.update_project_metadata(project_id=job_id, metadata=update.metadata)
     return JobMetadata(
         job_id=job_id,
         metadata=project_metadata.custom,

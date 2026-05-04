@@ -1,6 +1,4 @@
-""" Groups notifications on payments events
-
-"""
+"""Groups notifications on payments events"""
 
 import logging
 from dataclasses import dataclass
@@ -16,9 +14,9 @@ from ._templates import get_default_named_templates
 _logger = logging.getLogger(__name__)
 
 
-ON_PAYED_EVENT_EMAIL_TEMPLATES = {
+ON_PAID_EVENT_EMAIL_TEMPLATES = {
     "base.html",
-} | set(get_default_named_templates(event="on_payed", media="email"))
+} | set(get_default_named_templates(template_name="paid", channel="email"))
 
 
 @dataclass

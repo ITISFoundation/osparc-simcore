@@ -14,9 +14,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 class PennsieveSettings(BaseCustomSettings):
     PENNSIEVE_ENABLED: bool = True
 
-    PENNSIEVE_API_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
-        "https://api.pennsieve.io"
-    )
+    PENNSIEVE_API_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python("https://api.pennsieve.io")
     PENNSIEVE_API_GENERAL_TIMEOUT: float = 20.0
     PENNSIEVE_HEALTCHCHECK_TIMEOUT: float = 1.0
 
@@ -34,9 +32,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = LogLevel.INFO
 
-    PENNSIEVE: Annotated[
-        PennsieveSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    PENNSIEVE: Annotated[PennsieveSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
@@ -52,9 +48,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "DATCORE_ADAPTER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("DATCORE_ADAPTER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY

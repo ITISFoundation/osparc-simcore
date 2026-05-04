@@ -18,9 +18,7 @@ from models_library.function_services_catalog.api import (
 from models_library.services import ServiceMetaDataPublished
 
 
-@pytest.mark.parametrize(
-    "image_metadata", iter_service_docker_data(), ids=lambda obj: obj.name
-)
+@pytest.mark.parametrize("image_metadata", iter_service_docker_data(), ids=lambda obj: obj.name)
 def test_create_frontend_services_metadata(image_metadata):
     assert isinstance(image_metadata, ServiceMetaDataPublished)
 

@@ -29,15 +29,11 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message(
-            "You do not have permission to access this workspace.", _version=1
-        ),
+        user_message("You do not have permission to access this workspace.", _version=1),
     ),
     WorkspaceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "The requested workspace could not be found: {details}", _version=1
-        ),
+        user_message("The requested workspace could not be found: {details}", _version=1),
     ),
     # Trashing
     ProjectRunningConflictError: HttpErrorInfo(
@@ -57,6 +53,4 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+handle_plugin_requests_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))

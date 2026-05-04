@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NotRequired
+from typing import Annotated, Literal, NotRequired, TypedDict
 
 from models_library.api_schemas_api_server.pricing_plans import (
     ServicePricingPlanGet as _ServicePricingPlanGet,
@@ -60,7 +60,6 @@ from pydantic import (
     NonNegativeInt,
     PlainSerializer,
 )
-from typing_extensions import TypedDict
 
 
 class GetCreditPriceLegacy(BaseModel):
@@ -73,8 +72,7 @@ class GetCreditPriceLegacy(BaseModel):
         | None
     ) = Field(
         ...,
-        description="Price of a credit in USD. "
-        "If None, then this product's price is UNDEFINED",
+        description="Price of a credit in USD. If None, then this product's price is UNDEFINED",
         alias="usdPerCredit",
     )
     min_payment_amount_usd: NonNegativeInt | None = Field(
@@ -122,9 +120,9 @@ class WalletGetWithAvailableCreditsLegacy(BaseModel):
     status: WalletStatus
     created: datetime
     modified: datetime
-    available_credits: Annotated[
-        Decimal, PlainSerializer(float, return_type=NonNegativeFloat, when_used="json")
-    ] = Field(alias="availableCredits")
+    available_credits: Annotated[Decimal, PlainSerializer(float, return_type=NonNegativeFloat, when_used="json")] = (
+        Field(alias="availableCredits")
+    )
     model_config = ConfigDict(
         populate_by_name=True,
     )
@@ -197,8 +195,7 @@ for key in LicensedResourceSource.model_fields.keys():
     if key == "features":
         continue
     assert (  # nosec
-        LicensedResourceSource.__annotations__[key]
-        == _LicensedResourceSource.__annotations__[key]
+        LicensedResourceSource.__annotations__[key] == _LicensedResourceSource.__annotations__[key]
     ), f"Type of {key} in LicensedResourceSource does not match"
 
 

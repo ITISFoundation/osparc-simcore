@@ -2,9 +2,7 @@ import pytest
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    group = parser.getgroup(
-        "oSparc e2e options", description="oSPARC-e2e specific parameters"
-    )
+    group = parser.getgroup("oSparc e2e options", description="oSPARC-e2e specific parameters")
     group.addoption(
         "--num-sleepers",
         action="store",

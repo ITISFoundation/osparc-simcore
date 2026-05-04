@@ -19,9 +19,7 @@ if TYPE_CHECKING:
     from ._client import SimcoreS3API
 
 
-def _map_botocore_client_exception(
-    botocore_error: botocore_exc.ClientError, **kwargs
-) -> S3AccessError:
+def _map_botocore_client_exception(botocore_error: botocore_exc.ClientError, **kwargs) -> S3AccessError:
     status_code = int(
         botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         or botocore_error.response.get("Error", {}).get("Code", -1)
@@ -39,9 +37,7 @@ def _map_botocore_client_exception(
             500,
             "CompleteMultipartUpload",
         ):
-            return S3UploadNotFoundError(
-                bucket=kwargs["bucket"], key=kwargs["object_key"]
-            )
+            return S3UploadNotFoundError(bucket=kwargs["bucket"], key=kwargs["object_key"])
         case _:
             return S3AccessError()
 
@@ -68,7 +64,7 @@ def s3_exception_handler(
     """
 
     def decorator(
-        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]
+        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]:
         @functools.wraps(func)
         async def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
@@ -77,9 +73,7 @@ def s3_exception_handler(
             except (
                 self._client.exceptions.NoSuchBucket  # pylint: disable=protected-access
             ) as exc:
-                raise S3BucketInvalidError(
-                    bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
-                ) from exc
+                raise S3BucketInvalidError(bucket=exc.response.get("Error", {}).get("BucketName", "undefined")) from exc
             except botocore_exc.ClientError as exc:
                 raise _map_botocore_client_exception(exc, **kwargs) from exc
             except botocore_exc.EndpointConnectionError as exc:
@@ -98,8 +92,8 @@ def s3_exception_handler(
 def s3_exception_handler_async_gen(
     logger: logging.Logger,
 ) -> Callable[
-    [Callable[Concatenate[Self, P], AsyncGenerator[T, None]]],
-    Callable[Concatenate[Self, P], AsyncGenerator[T, None]],
+    [Callable[Concatenate[Self, P], AsyncGenerator[T]]],
+    Callable[Concatenate[Self, P], AsyncGenerator[T]],
 ]:
     """
     Raises:
@@ -111,12 +105,10 @@ def s3_exception_handler_async_gen(
     """
 
     def decorator(
-        func: Callable[Concatenate[Self, P], AsyncGenerator[T, None]]
-    ) -> Callable[Concatenate[Self, P], AsyncGenerator[T, None]]:
+        func: Callable[Concatenate[Self, P], AsyncGenerator[T]],
+    ) -> Callable[Concatenate[Self, P], AsyncGenerator[T]]:
         @functools.wraps(func)
-        async def async_generator_wrapper(
-            self: Self, *args: P.args, **kwargs: P.kwargs
-        ) -> AsyncGenerator[T, None]:
+        async def async_generator_wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[T]:
             try:
                 assert inspect.isasyncgenfunction(func)  # nosec
                 async for item in func(self, *args, **kwargs):
@@ -124,9 +116,7 @@ def s3_exception_handler_async_gen(
             except (
                 self._client.exceptions.NoSuchBucket  # pylint: disable=protected-access
             ) as exc:
-                raise S3BucketInvalidError(
-                    bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
-                ) from exc
+                raise S3BucketInvalidError(bucket=exc.response.get("Error", {}).get("BucketName", "undefined")) from exc
             except botocore_exc.ClientError as exc:
                 raise _map_botocore_client_exception(exc, **kwargs) from exc
             except botocore_exc.EndpointConnectionError as exc:
@@ -135,9 +125,7 @@ def s3_exception_handler_async_gen(
                 logger.exception("Unexpected error in s3 client: ")
                 raise S3AccessError from exc
 
-        async_generator_wrapper.__doc__ = (
-            f"{func.__doc__}\n\n{s3_exception_handler_async_gen.__doc__}"
-        )
+        async_generator_wrapper.__doc__ = f"{func.__doc__}\n\n{s3_exception_handler_async_gen.__doc__}"
         return async_generator_wrapper
 
     return decorator

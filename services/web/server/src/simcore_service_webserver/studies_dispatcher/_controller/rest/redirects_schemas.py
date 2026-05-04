@@ -54,7 +54,5 @@ class ViewerQueryParams(BaseModel):
 RedirectionQueryParams: TypeAlias = (
     # NOTE: Extra.forbid in FileQueryParams, ServiceQueryParams avoids bad casting when
     # errors in ServiceAndFileParams
-    ServiceAndFileParams
-    | FileQueryParams
-    | ServiceQueryParams
+    ServiceAndFileParams | FileQueryParams | ServiceQueryParams
 )

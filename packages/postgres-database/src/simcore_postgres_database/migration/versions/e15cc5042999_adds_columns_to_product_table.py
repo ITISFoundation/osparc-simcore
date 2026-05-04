@@ -5,6 +5,7 @@ Revises: c6185fba2720
 Create Date: 2022-08-19 15:01:49.326429+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -18,9 +19,7 @@ depends_on = None
 def upgrade():
     op.add_column(
         "products",
-        sa.Column(
-            "display_name", sa.String(), server_default="o²S²PARC", nullable=False
-        ),
+        sa.Column("display_name", sa.String(), server_default="o²S²PARC", nullable=False),
     )
     op.add_column(
         "products",
@@ -31,9 +30,7 @@ def upgrade():
             nullable=False,
         ),
     )
-    op.add_column(
-        "products", sa.Column("twilio_messaging_sid", sa.String(), nullable=True)
-    )
+    op.add_column("products", sa.Column("twilio_messaging_sid", sa.String(), nullable=True))
     op.add_column(
         "products",
         sa.Column(

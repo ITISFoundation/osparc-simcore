@@ -117,9 +117,7 @@ async def client(
 
 
 class ClientRequestCallable(Protocol):
-    async def __call__(
-        self, client: TestClient, name: str, return_status: int | None = None
-    ) -> ClientResponse: ...
+    async def __call__(self, client: TestClient, name: str, return_status: int | None = None) -> ClientResponse: ...
 
 
 @pytest.fixture
@@ -137,9 +135,7 @@ def do_request() -> ClientRequestCallable:
     return _request
 
 
-async def test_login_then_submit_code(
-    client: TestClient, do_request: ClientRequestCallable
-):
+async def test_login_then_submit_code(client: TestClient, do_request: ClientRequestCallable):
     response = await do_request(client, "auth_login")
     assert response.ok
 
@@ -151,12 +147,8 @@ async def test_login_then_submit_code(
     assert response.status == status.HTTP_401_UNAUTHORIZED
 
 
-async def test_login_fails_then_no_access(
-    client: TestClient, do_request: ClientRequestCallable
-):
-    response = await do_request(
-        client, "auth_login", return_status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    )
+async def test_login_fails_then_no_access(client: TestClient, do_request: ClientRequestCallable):
+    response = await do_request(client, "auth_login", return_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
     response = await do_request(client, "auth_login_2fa")

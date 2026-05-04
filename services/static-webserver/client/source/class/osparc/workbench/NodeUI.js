@@ -249,7 +249,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
         case "node-type-chip": {
           control = new osparc.ui.basic.Chip();
           let nodeType = this.getNode().getMetadata().type;
-          if (this.getNode().isIterator()) {
+          // frontend services
+          if (this.getNode().isFilePicker()) {
+            nodeType = "file";
+          } else if (this.getNode().isIterator()) {
             nodeType = "iterator";
           } else if (this.getNode().isParameter()) {
             nodeType = "parameter";
@@ -329,6 +332,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __resetNodeUILayout: function() {
       this.__setNodeUIWidth(this.self().NODE_WIDTH);
+
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.show();
+
+      if (this.hasChildControl("progress")) {
+        this.getChildControl("progress").show();
+      }
+
       this.resetThumbnail();
 
       // make sure metadata is ready
@@ -591,8 +602,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoFileUI: function() {
-      const width = this.self().FILE_NODE_WIDTH;
-      this.__setNodeUIWidth(width);
+      this.__setNodeUIWidth(this.self().FILE_NODE_WIDTH);
 
       const middleContainer = this.getChildControl("middle-container");
       middleContainer.exclude();
@@ -629,16 +639,17 @@ qx.Class.define("osparc.workbench.NodeUI", {
         paddingLeft: 4,
         font: "text-14"
       });
-      const outputToValue = outputs => {
-          if ("out_1" in outputs && "value" in outputs["out_1"]) {
-            const val = outputs["out_1"]["value"];
-            if (Array.isArray(val)) {
-              return "[" + val.join(",") + "]";
-            }
-            return String(val);
+      const outputToValue = () => {
+        const output = this.getNode().getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
+        if (output && output.getValue()) {
+          const val = output.getValue();
+          if (Array.isArray(val)) {
+            return "[" + val.join(",") + "]";
           }
-          return "";
-      }
+          return String(val);
+        }
+        return "";
+      };
       this.getNode().bind("outputs", valueLabel, "value", {
         converter: outputs => outputToValue(outputs)
       });
@@ -706,9 +717,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __checkTurnIntoIteratorUI: function() {
-      const outputs = this.getNode().getOutputs();
-      const portKey = "out_1";
-      if (portKey in outputs && "value" in outputs[portKey]) {
+      const output = this.getNode().getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
+      if (output && output.getValue()) {
         this.__turnIntoIteratorIteratedUI();
       } else {
         this.__turnIntoIteratorUI();
@@ -726,10 +736,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __setProbeValue: function(linkLabel) {
       const populateLinkLabel = linkInfo => {
-        const download = true;
         const locationId = linkInfo.store;
         const fileId = linkInfo.path;
-        osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+        osparc.store.Data.getInstance().getPresignedLink(true, locationId, fileId)
           .then(presignedLinkData => {
             if ("resp" in presignedLinkData && presignedLinkData.resp) {
               const filename = linkInfo.filename || osparc.file.FilePicker.getFilenameFromPath(linkInfo);
@@ -749,9 +758,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
         if (inputNode) {
           inputNode.bind("outputs", linkLabel, "value", {
             converter: outputs => {
-              if (portKey in outputs && "value" in outputs[portKey] && outputs[portKey]["value"]) {
-                const val = outputs[portKey]["value"];
-                if (this.getNode().getMetadata()["key"].includes("probe/array")) {
+              const output = outputs.find(out => out.getPortKey() === portKey);
+              if (output && output.getValue()) {
+                const val = output.getValue();
+                if (this.getNode().getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
                   return "[" + val.join(",") + "]";
                 } else if (this.getNode().getMetadata()["key"].includes("probe/file")) {
                   const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
@@ -950,9 +960,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
           draggable: true,
           droppable: true,
           alignY: "top",
-          backgroundColor: "background-main"
+          backgroundColor: "background-main",
+          cursor: "pointer",
+          toolTipText: this.tr("Connect Node"),
         });
-        port.setCursor("pointer");
         port.getContentElement().setStyles({
           "border-radius": width+"px"
         });
@@ -960,8 +971,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
       // make the ports exit the NodeUI
       port.set({
-        marginLeft: isInput ? (-10 + this.self().CONTENT_PADDING) : 0,
-        marginRight: isInput ? 0 : (-10 - this.self().CONTENT_PADDING)
+        marginLeft: isInput ? (-11 + this.self().CONTENT_PADDING) : 0,
+        marginRight: isInput ? 0 : (-7 - this.self().CONTENT_PADDING)
       });
 
       this.add(port, {

@@ -1,7 +1,8 @@
+from collections.abc import Callable
 from datetime import timedelta
 from decimal import Decimal
 from enum import auto
-from typing import Any, Callable, Final
+from typing import Any, Final
 from uuid import UUID
 
 import arrow
@@ -58,7 +59,6 @@ class SchedulerServiceState(StrAutoEnum):
 
 
 class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attributes
-
     dynamic_service_start: DynamicServiceStart | None = Field(
         description=(
             "used to create the service in any given moment if the requested_state is RUNNING"
@@ -66,12 +66,8 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
         )
     )
 
-    user_id: UserID | None = Field(
-        description="required for propagating status changes to the frontend"
-    )
-    project_id: ProjectID | None = Field(
-        description="required for propagating status changes to the frontend"
-    )
+    user_id: UserID | None = Field(description="required for propagating status changes to the frontend")
+    project_id: ProjectID | None = Field(description="required for propagating status changes to the frontend")
 
     requested_state: UserRequestedState = Field(
         description=("status of the service desidered by the user RUNNING or STOPPED")
@@ -131,9 +127,7 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
     #####################
 
     def to_bytes(self) -> bytes:
-        result: bytes = umsgpack.packb(
-            self.model_dump(), ext_handlers=_PACKB_EXTENSION_TYPES
-        )
+        result: bytes = umsgpack.packb(self.model_dump(), ext_handlers=_PACKB_EXTENSION_TYPES)
         return result
 
     @classmethod

@@ -28,7 +28,6 @@ async def _prune_expired_api_keys(app: web.Application):
 def create_background_task_to_prune_api_keys(
     wait_period_s: float,
 ) -> CleanupContextFunc:
-
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
         interval = timedelta(seconds=wait_period_s)
 
@@ -42,9 +41,7 @@ def create_background_task_to_prune_api_keys(
             with log_context(_logger, logging.INFO, "Pruning expired API keys"):
                 await _prune_expired_api_keys(app)
 
-        async for _ in periodic_task_lifespan(
-            app, _prune_expired_api_keys_periodically
-        ):
+        async for _ in periodic_task_lifespan(app, _prune_expired_api_keys_periodically):
             yield
 
     return _cleanup_ctx_fun

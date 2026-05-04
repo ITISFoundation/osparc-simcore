@@ -31,9 +31,7 @@ async def test_list_computation_collection_run_tasks(
     sqlalchemy_async_engine: AsyncEngine,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    create_comp_run_snapshot_tasks: Callable[
-        ..., Awaitable[list[CompRunSnapshotTaskDBGet]]
-    ],
+    create_comp_run_snapshot_tasks: Callable[..., Awaitable[list[CompRunSnapshotTaskDBGet]]],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
@@ -69,9 +67,7 @@ async def test_list_computation_collection_run_tasks(
     assert total_count == len(snapshot_tasks)
     assert tasks
     assert len(tasks) == len(snapshot_tasks)
-    assert {t.snapshot_task_id for t in tasks} == {
-        t.snapshot_task_id for t in snapshot_tasks
-    }
+    assert {t.snapshot_task_id for t in tasks} == {t.snapshot_task_id for t in snapshot_tasks}
 
 
 async def test_list_computation_collection_run_tasks_empty(
@@ -96,9 +92,7 @@ async def test_list_computation_collection_run_tasks_pagination(
     sqlalchemy_async_engine: AsyncEngine,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    create_comp_run_snapshot_tasks: Callable[
-        ..., Awaitable[list[CompRunSnapshotTaskDBGet]]
-    ],
+    create_comp_run_snapshot_tasks: Callable[..., Awaitable[list[CompRunSnapshotTaskDBGet]]],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
@@ -135,18 +129,14 @@ async def test_list_computation_collection_run_tasks_pagination(
         limit=1,
         offset=1,
     )
-    assert len(tasks_offset) == 1 or (
-        len(snapshot_tasks) == 1 and len(tasks_offset) == 0
-    )
+    assert len(tasks_offset) == 1 or (len(snapshot_tasks) == 1 and len(tasks_offset) == 0)
 
 
 async def test_list_computation_collection_run_tasks_wrong_user(
     sqlalchemy_async_engine: AsyncEngine,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    create_comp_run_snapshot_tasks: Callable[
-        ..., Awaitable[list[CompRunSnapshotTaskDBGet]]
-    ],
+    create_comp_run_snapshot_tasks: Callable[..., Awaitable[list[CompRunSnapshotTaskDBGet]]],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
@@ -179,9 +169,7 @@ async def test_list_computation_collection_run_tasks_multiple_comp_runs_same_col
     sqlalchemy_async_engine: AsyncEngine,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    create_comp_run_snapshot_tasks: Callable[
-        ..., Awaitable[list[CompRunSnapshotTaskDBGet]]
-    ],
+    create_comp_run_snapshot_tasks: Callable[..., Awaitable[list[CompRunSnapshotTaskDBGet]]],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
@@ -241,6 +229,4 @@ async def test_list_computation_collection_run_tasks_multiple_comp_runs_same_col
     assert total_count == len(expected_task_ids)
     assert actual_task_ids == expected_task_ids
     # Ensure tasks from run3 are not included
-    assert not any(
-        t.snapshot_task_id in {tt.snapshot_task_id for tt in tasks_run3} for t in tasks
-    )
+    assert not any(t.snapshot_task_id in {tt.snapshot_task_id for tt in tasks_run3} for t in tasks)

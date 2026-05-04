@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
+from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
 from ..core.docker_utils import get_volume_by_label
 from ..core.settings import ApplicationSettings
@@ -74,6 +75,13 @@ class MountedVolumes:
         )
 
     @cached_property
+    def volume_name_vfs_cache(self) -> str:
+        return (
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
+            f"_{_name_from_full_path(DEFAULT_VFS_CACHE_PATH)[::-1]}"
+        )
+
+    @cached_property
     def volume_user_preferences(self) -> str | None:
         if self.user_preferences_path is None:
             return None
@@ -82,7 +90,7 @@ class MountedVolumes:
             f"_{_name_from_full_path(self.user_preferences_path)[::-1]}"
         )
 
-    def volume_name_state_paths(self) -> Generator[str, None, None]:
+    def volume_name_state_paths(self) -> Generator[str]:
         for state_path in self.state_paths:
             yield (
                 f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
@@ -96,6 +104,10 @@ class MountedVolumes:
     @cached_property
     def disk_outputs_path(self) -> Path:
         return _ensure_path(self._dy_volumes / self.outputs_path.relative_to("/"))
+
+    @cached_property
+    def vfs_cache_path(self) -> Path:
+        return _ensure_path(self._dy_volumes / DEFAULT_VFS_CACHE_PATH.relative_to("/"))
 
     def disk_state_paths_iter(self) -> Iterator[Path]:
         for state_path in self.state_paths:
@@ -116,46 +128,32 @@ class MountedVolumes:
             _ensure_path(path)
 
     @staticmethod
-    async def _get_bind_path_from_label(
-        label: str, service_run_id: ServiceRunID
-    ) -> Path:
-        volume_details = await get_volume_by_label(
-            label=label, service_run_id=service_run_id
-        )
+    async def _get_bind_path_from_label(label: str, service_run_id: ServiceRunID) -> Path:
+        volume_details = await get_volume_by_label(label=label, service_run_id=service_run_id)
         return Path(volume_details["Mountpoint"])
 
     async def get_inputs_docker_volume(self, service_run_id: ServiceRunID) -> str:
-        bind_path: Path = await self._get_bind_path_from_label(
-            self.volume_name_inputs, service_run_id
-        )
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_inputs, service_run_id)
         return f"{bind_path}:{self.inputs_path}"
 
     async def get_outputs_docker_volume(self, service_run_id: ServiceRunID) -> str:
-        bind_path: Path = await self._get_bind_path_from_label(
-            self.volume_name_outputs, service_run_id
-        )
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_outputs, service_run_id)
         return f"{bind_path}:{self.outputs_path}"
 
-    async def get_user_preferences_path_volume(
-        self, service_run_id: ServiceRunID
-    ) -> str | None:
+    async def get_vfs_cache_docker_volume(self, service_run_id: ServiceRunID) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_vfs_cache, service_run_id)
+        return f"{bind_path}:{self.vfs_cache_path}"
+
+    async def get_user_preferences_path_volume(self, service_run_id: ServiceRunID) -> str | None:
         if self.volume_user_preferences is None:
             return None
 
-        bind_path: Path = await self._get_bind_path_from_label(
-            self.volume_user_preferences, service_run_id
-        )
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_user_preferences, service_run_id)
         return f"{bind_path}:{self.user_preferences_path}"
 
-    async def iter_state_paths_to_docker_volumes(
-        self, service_run_id: ServiceRunID
-    ) -> AsyncGenerator[str, None]:
-        for volume_state_path, state_path in zip(
-            self.volume_name_state_paths(), self.state_paths, strict=True
-        ):
-            bind_path: Path = await self._get_bind_path_from_label(
-                volume_state_path, service_run_id
-            )
+    async def iter_state_paths_to_docker_volumes(self, service_run_id: ServiceRunID) -> AsyncGenerator[str]:
+        for volume_state_path, state_path in zip(self.volume_name_state_paths(), self.state_paths, strict=True):
+            bind_path: Path = await self._get_bind_path_from_label(volume_state_path, service_run_id)
             yield f"{bind_path}:{state_path}"
 
 

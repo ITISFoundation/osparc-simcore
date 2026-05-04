@@ -8,6 +8,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
+from models_library.celery import OwnerMetadata
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     get_long_running_manager,
@@ -19,7 +20,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import (
     create_data_response,
 )
-from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
 
 from ..._meta import API_VTAG
@@ -112,10 +112,13 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     )
 
     _task_id = f"{task_status.job_id}"
+    _progress = task_status.progress
     return create_data_response(
         TaskStatus(
             task_progress=TaskProgress(
-                task_id=_task_id, percent=task_status.progress.percent_value
+                task_id=_task_id,
+                percent=_progress.percent_value,
+                message=_progress.message.description if _progress.message else "",
             ),
             done=task_status.done,
             started=None,
@@ -155,7 +158,6 @@ async def cancel_async_job(request: web.Request) -> web.Response:
 @login_required
 @handle_rest_requests_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
@@ -183,12 +185,9 @@ async def get_async_job_result(request: web.Request) -> web.Response:
 @login_required
 @handle_rest_requests_exceptions
 async def get_async_job_stream(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
-    _query_params: TaskStreamQueryParams = parse_request_query_parameters_as(
-        TaskStreamQueryParams, request
-    )
+    _query_params: TaskStreamQueryParams = parse_request_query_parameters_as(TaskStreamQueryParams, request)
 
     task_result, end = await _tasks_service.pull_task_stream_items(
         get_task_manager(request.app),

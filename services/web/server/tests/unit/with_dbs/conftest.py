@@ -7,7 +7,7 @@
 import random
 import sys
 import textwrap
-import warnings
+import uuid
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -23,22 +23,21 @@ from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
-import aiopg.sa
 import pytest
 import pytest_asyncio
 import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_webserver.email
-import simcore_service_webserver.email._core
-import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
-from aiopg.sa import create_engine
+from celery_library.async_jobs import (
+    AsyncJobResultUpdate,
+)
 from faker import Faker
+from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
+from models_library.notifications.rpc._message import SendMessageResponse
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
@@ -55,13 +54,8 @@ from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
 from servicelib import tracing
-from servicelib.common_aiopg_utils import DSN
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    AsyncJobComposedResult,
-)
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
-from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
@@ -78,10 +72,10 @@ from simcore_service_webserver.application_settings import (
 )
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import (
-    APP_AIOPG_ENGINE_KEY,
     INDEX_RESOURCE_NAME,
 )
-from simcore_service_webserver.db.plugin import get_database_engine_legacy
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.notifications import _service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
@@ -97,9 +91,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(autouse=True)
-def disable_swagger_doc_generation(
-    monkeypatch: pytest.MonkeyPatch, osparc_simcore_root_dir: Path
-):
+def disable_swagger_doc_generation(monkeypatch: pytest.MonkeyPatch, osparc_simcore_root_dir: Path):
     """
     by not enabling the swagger documentation, 1.8s per test is gained
     """
@@ -140,9 +132,7 @@ def webserver_test_server_port(unused_tcp_port_factory: Callable):
 
 
 @pytest.fixture
-def storage_test_server_port(
-    unused_tcp_port_factory: Callable, webserver_test_server_port: int
-):
+def storage_test_server_port(unused_tcp_port_factory: Callable, webserver_test_server_port: int):
     # used to create a TestServer that emulates storage service
     port = unused_tcp_port_factory()
     assert port != webserver_test_server_port
@@ -158,7 +148,7 @@ def app_environment(
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
     service_name: str,
 ) -> EnvVarsDict:
-    # WARNING: this fixture is commonly overriden. Check before renaming.
+    # WARNING: this fixture is commonly overridden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
     based on legacy application config files.
 
@@ -183,55 +173,37 @@ def app_environment(
                 # affects PostgresSettings.POSTGRES_CLIENT_NAME
                 "HOSTNAME": "wb-test_host.0",
                 "WEBSERVER_RPC_NAMESPACE": service_name,
+                # Explicitly disabled for tests (reenable specifically in tests that need it)
+                "WEBSERVER_CHATBOT": "null",
+                "WEBSERVER_FOGBUGZ": "null",
             },
         )
     )
 
 
 @pytest.fixture
-def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
-    # WARNING: this fixture is commonly overriden. Check before renaming.
-    async def _print_mail_to_stdout(
-        settings: SMTPSettings,
-        *,
-        sender: str,
-        recipient: str,
-        subject: str,
-        body: str,
-        **kwargs,
-    ):
-        print(
-            f"=== EMAIL FROM: {sender}\n",
-            f"=== EMAIL TO: {recipient}\n",
-            f"=== SUBJECT: {subject}\n",
-            f"=== BODY:\n{body}\n",
-            f"=== EXTRA:\n{kwargs}",
-        )
+async def pre_app_init() -> None:
+    """Hook fixture to prepare state before the app starts.
 
-    # pylint: disable=protected-access
-    monkeypatch.setattr(
-        simcore_service_webserver.email._core,  # noqa: SLF001
-        "_send_email",
-        _print_mail_to_stdout,
-    )
+    Test folders can override this fixture and declare dependencies that must
+    run before ``create_application`` and startup callbacks are executed.
+    """
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def web_server(
     app_environment: EnvVarsDict,
+    pre_app_init: None,
     postgres_db: sa.engine.Engine,
     webserver_test_server_port: int,
     # tools
     aiohttp_server: Callable,
-    mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
     assert app_environment
 
     # original APP
-    tracing_config = tracing.TracingConfig.create(
-        service_name="test-webserver", tracing_settings=None
-    )
+    tracing_config = tracing.TracingConfig.create(service_name="test-webserver", tracing_settings=None)
     app = create_application(tracing_config=tracing_config)
 
     disable_static_webserver(app)
@@ -240,10 +212,11 @@ async def web_server(
 
     assert isinstance(postgres_db, sa.engine.Engine)
 
-    pg_settings = dict(e.split("=") for e in app[APP_AIOPG_ENGINE_KEY].dsn.split())
-    assert pg_settings["host"] == postgres_db.url.host
-    assert int(pg_settings["port"]) == postgres_db.url.port
-    assert pg_settings["user"] == postgres_db.url.username
+    asyncpg_engine = get_asyncpg_engine(app)
+    assert asyncpg_engine is not None
+    assert str(asyncpg_engine.url.host) == str(postgres_db.url.host)
+    assert asyncpg_engine.url.port == postgres_db.url.port
+    assert asyncpg_engine.url.username == postgres_db.url.username
 
     return server
 
@@ -259,8 +232,20 @@ async def client(
     Deployed web-server + postgres + redis services
     client connect to web-server
     """
-    # WARNING: this fixture is commonly overriden. Check before renaming.
+    # WARNING: this fixture is commonly overridden. Check before renaming.
     return await aiohttp_client(web_server)
+
+
+@pytest.fixture
+async def other_client(client: TestClient, aiohttp_client: Callable, web_server: TestServer) -> TestClient:
+    """Creates another client connected to the same app as 'client' fixture
+    This is convenient to login with multiple users in the same app instance
+    without interfering with each other's session cookies
+    """
+    assert client.app
+    client2 = await aiohttp_client(web_server)
+    assert client2 != client
+    return client2
 
 
 @pytest.fixture
@@ -299,7 +284,7 @@ def osparc_product_api_base_url() -> str:
 @pytest.fixture
 async def default_product_name(client: TestClient) -> ProductName:
     assert client.app
-    async with get_database_engine_legacy(client.app).acquire() as conn:
+    async with get_asyncpg_engine(client.app).connect() as conn:
         return await get_default_product_name(conn)
 
 
@@ -321,10 +306,7 @@ def catalog_subsystem_mock(
     def _creator(projects: list[ProjectDict]) -> None:
         for proj in projects or []:
             services_in_project.extend(
-                [
-                    {"key": s["key"], "version": s["version"]}
-                    for _, s in proj["workbench"].items()
-                ]
+                [{"key": s["key"], "version": s["version"]} for _, s in proj["workbench"].items()]
             )
 
     async def _mocked_get_services_for_user(*args, **kwargs):
@@ -349,7 +331,7 @@ def catalog_subsystem_mock(
 def disable_static_webserver(monkeypatch: pytest.MonkeyPatch) -> Callable:
     """
     Disables the static-webserver module
-    Avoids fecthing and caching index.html pages
+    Avoids fetching and caching index.html pages
     Mocking a response for all the services which expect it
     """
 
@@ -376,7 +358,7 @@ def disable_static_webserver(monkeypatch: pytest.MonkeyPatch) -> Callable:
         )
         return web.Response(text=html)
 
-    # mount and serve some staic mocked content
+    # mount and serve some static mocked content
     monkeypatch.setenv("WEBSERVER_STATICWEB", "null")
 
     def add_index_route(app: web.Application) -> None:
@@ -386,9 +368,7 @@ def disable_static_webserver(monkeypatch: pytest.MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(
-    mocker: MockerFixture, faker: Faker
-) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(mocker: MockerFixture, faker: Faker) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
@@ -403,13 +383,13 @@ async def storage_subsystem_mock(
         nodes_map: NodesMap,
         user_id: UserID,
         product_name: str,
-    ) -> AsyncGenerator[AsyncJobComposedResult, None]:
+    ) -> AsyncGenerator[AsyncJobResultUpdate]:
         print(
             f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=0),
@@ -420,7 +400,7 @@ async def storage_subsystem_mock(
         async def _mock_result() -> None:
             return None
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=1),
@@ -511,9 +491,7 @@ def create_dynamic_service_mock(
 
         services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.list_dynamic_services"
-        ].return_value = services
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = services
 
         return running_service
 
@@ -532,9 +510,7 @@ def _is_postgres_responsive(url: str):
 
 
 @pytest.fixture(scope="session")
-def postgres_dsn(
-    docker_services: Services, docker_ip: str | Any, default_app_cfg: dict
-) -> dict:
+def postgres_dsn(docker_services: Services, docker_ip: str | Any, default_app_cfg: dict) -> dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg["host"] = docker_ip
     cfg["port"] = docker_services.port_for("postgres", 5432)
@@ -543,6 +519,7 @@ def postgres_dsn(
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
+    DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
     url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
@@ -556,9 +533,7 @@ def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
 
 
 @pytest.fixture(scope="module")
-def postgres_db(
-    postgres_dsn: dict, postgres_service: str
-) -> Iterator[sa.engine.Engine]:
+def postgres_db(postgres_dsn: dict, postgres_service: str) -> Iterator[sa.engine.Engine]:
     # Overrides packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db to reduce scope
     url = postgres_service
 
@@ -583,28 +558,7 @@ def postgres_db(
 
 
 @pytest.fixture
-async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.Engine]:
-    engine = await create_engine(f"{postgres_db.url}")
-    assert engine
-
-    warnings.warn(
-        "The 'aiopg_engine' fixture is deprecated and will be removed in a future release. "
-        "Please use 'asyncpg_engine' fixture instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    yield engine
-
-    if engine:
-        engine.close()
-        await engine.wait_closed()
-
-
-@pytest.fixture
-async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE instead of aiopg_engine
-    postgres_db: sa.engine.Engine, is_pdb_enabled: bool
-) -> AsyncIterable[AsyncEngine]:
+async def asyncpg_engine(postgres_db: sa.engine.Engine, is_pdb_enabled: bool) -> AsyncIterable[AsyncEngine]:
     # NOTE: call to postgres BEFORE app starts
     dsn = f"{postgres_db.url}".replace("postgresql://", "postgresql+asyncpg://")
     minsize = 1
@@ -614,11 +568,7 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE instead of aiopg_engine
         dsn,
         pool_size=minsize,
         max_overflow=maxsize - minsize,
-        connect_args={
-            "server_settings": {
-                "application_name": "webserver_tests_with_dbs:asyncpg_engine"
-            }
-        },
+        connect_args={"server_settings": {"application_name": "webserver_tests_with_dbs:asyncpg_engine"}},
         pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
         future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
         echo=is_pdb_enabled,
@@ -643,9 +593,7 @@ def redis_service(docker_services, docker_ip, default_app_cfg: dict) -> RedisSet
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
     password = default_app_cfg["resource_manager"]["redis"]["password"]
-    redis_settings = RedisSettings(
-        REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password
-    )
+    redis_settings = RedisSettings(REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password)
 
     docker_services.wait_until_responsive(
         check=lambda: _is_redis_responsive(host, port, password),
@@ -747,18 +695,21 @@ async def user_project(
 
 @pytest.fixture
 async def with_permitted_override_services_specifications(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
 ) -> AsyncIterator[None]:
     old_value = False
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.connect() as conn:
         old_value = bool(
-            await conn.scalar(
-                sa.select(
-                    groups_extra_properties.c.override_services_specifications
-                ).where(groups_extra_properties.c.group_id == 1)
-            )
+            (
+                await conn.execute(
+                    sa.select(groups_extra_properties.c.override_services_specifications).where(
+                        groups_extra_properties.c.group_id == 1
+                    )
+                )
+            ).scalar_one_or_none()
         )
 
+    async with asyncpg_engine.begin() as conn:
         await conn.execute(
             groups_extra_properties.update()
             .where(groups_extra_properties.c.group_id == 1)
@@ -767,7 +718,7 @@ async def with_permitted_override_services_specifications(
 
     yield
 
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.begin() as conn:
         await conn.execute(
             groups_extra_properties.update()
             .where(groups_extra_properties.c.group_id == 1)
@@ -792,7 +743,7 @@ async def app_products_names(
     assert osparc_product_row.name == FRONTEND_APP_DEFAULT
     assert osparc_product_row.priority == 0
 
-    # creates remaing products for front-end
+    # creates remaining products for front-end
     priority = 1
     for name in FRONTEND_APPS_AVAILABLE:
         if name != FRONTEND_APP_DEFAULT:
@@ -812,18 +763,14 @@ async def app_products_names(
 
     async with asyncpg_engine.connect() as conn:
         # get all products
-        result = await conn.execute(
-            sa.select(products.c.name).order_by(products.c.priority)
-        )
+        result = await conn.execute(sa.select(products.c.name).order_by(products.c.priority))
         rows = result.fetchall()
 
     yield [r.name for r in rows]
 
     async with asyncpg_engine.begin() as conn:
         await conn.execute(products_prices.delete())
-        await conn.execute(
-            products.delete().where(products.c.name != FRONTEND_APP_DEFAULT)
-        )
+        await conn.execute(products.delete().where(products.c.name != FRONTEND_APP_DEFAULT))
 
 
 @pytest.fixture
@@ -888,3 +835,19 @@ async def latest_osparc_price(
     assert usd is not None
     assert usd != all_product_prices["osparc"]
     return Decimal(usd)
+
+
+@pytest.fixture
+def mocked_send_message_from_template_rpc(
+    mocker: MockerFixture,
+) -> SendMessageResponse:
+    fake_response = SendMessageResponse(
+        task_or_group_uuid=uuid.uuid4(),
+        task_name="send_message_from_template",
+    )
+    mocker.patch(
+        f"{_service.__name__}.remote_send_message_from_template",
+        autospec=True,
+        return_value=fake_response,
+    )
+    return fake_response

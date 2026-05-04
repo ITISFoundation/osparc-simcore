@@ -92,9 +92,7 @@ async def test_exception_handlers(
     )
 
 
-async def test_generic_http_exception_handler(
-    initialized_app: FastAPI, client: AsyncClient
-):
+async def test_generic_http_exception_handler(initialized_app: FastAPI, client: AsyncClient):
     @initialized_app.get("/test")
     async def test_endpoint():
         raise HTTPException(status_code=status.HTTP_410_GONE)
@@ -103,9 +101,7 @@ async def test_generic_http_exception_handler(
     assert_status(response, status.HTTP_410_GONE, None, expected_msg="Gone")
 
 
-async def test_request_validation_error_handler(
-    initialized_app: FastAPI, client: AsyncClient
-):
+async def test_request_validation_error_handler(initialized_app: FastAPI, client: AsyncClient):
     _error_msg = "pytest request validation error"
 
     @initialized_app.get("/test")

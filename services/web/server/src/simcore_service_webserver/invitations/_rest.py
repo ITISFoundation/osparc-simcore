@@ -38,9 +38,7 @@ async def generate_invitation(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
     body = await parse_request_body_as(InvitationGenerate, request)
 
-    _, user_email = await users_service.get_user_name_and_email(
-        request.app, user_id=req_ctx.user_id
-    )
+    _, user_email = await users_service.get_user_name_and_email(request.app, user_id=req_ctx.user_id)
 
     # NOTE: check if invitations are activated in this product or raise
     generated = await api.generate_invitation(

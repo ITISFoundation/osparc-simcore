@@ -1,7 +1,7 @@
 # Errors raised by node_ports module as NodeportsException
 #
 #
-#  NOTE: Error message SHALL explain the reason for the error and it is prefered in one line, i.e. avoid '\n' in message
+#  NOTE: Error message SHALL explain the reason for the error and it is preferred in one line, i.e. avoid '\n' in message
 #
 #
 
@@ -10,7 +10,7 @@ class NodeportsException(Exception):
     """Basic exception for errors raised in nodeports"""
 
     def __init__(self, msg: str | None = None):
-        super().__init__(msg or "An error occured in simcore")
+        super().__init__(msg or "An error occurred in simcore")
 
 
 class ReadOnlyError(NodeportsException):
@@ -41,10 +41,7 @@ class InvalidItemTypeError(NodeportsException):
     """Item type incorrect"""
 
     def __init__(self, item_type: str, item_value: str, msg: str | None = None):
-        super().__init__(
-            msg
-            or f"Invalid item type, value [{item_value}] does not qualify as type [{item_type}]"
-        )
+        super().__init__(msg or f"Invalid item type, value [{item_value}] does not qualify as type [{item_type}]")
         self.item_type = item_type
         self.item_value = item_value
 
@@ -149,8 +146,7 @@ class SymlinkToSymlinkIsNotUploadableException(NodeportsException):
 
     def __init__(self, symlink, symlink_target_path):
         message = (
-            f"'{symlink}' is pointing to '{symlink_target_path}' "
-            "which is itself a symlink. This is not supported!"
+            f"'{symlink}' is pointing to '{symlink_target_path}' which is itself a symlink. This is not supported!"
         )
         super().__init__(message)
         self.symlink = symlink

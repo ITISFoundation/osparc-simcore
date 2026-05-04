@@ -16,20 +16,34 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.editor.OrganizationEditor", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.ui.window.Window,
 
   construct: function(organization) {
-    this.base(arguments);
+    const caption = organization ? this.tr("Edit Organization") : this.tr("New Organization");
+    this.base(arguments, caption);
 
-    this._setLayout(new qx.ui.layout.VBox(8));
+    this.set({
+      layout: new qx.ui.layout.VBox(10),
+      autoDestroy: true,
+      modal: true,
+      showMaximize: false,
+      showMinimize: false,
+      width: 400,
+      clickAwayClose: true,
+    });
 
-    const manager = this.__validator = new qx.ui.form.validation.Manager();
-    const title = this.getChildControl("title");
-    title.setRequired(true);
-    manager.add(title);
+    const form = this.__form = new qx.ui.form.Form();
+    const formRenderer = new qx.ui.form.renderer.Single(form).set({
+      font: "text-14",
+    });
+    this.add(formRenderer, {
+      flex: 1
+    });
+
+    const label = this.getChildControl("label");
     this.getChildControl("description");
     this.getChildControl("thumbnail");
-    organization ? this.getChildControl("save") : this.getChildControl("create");
+    organization ? this.getChildControl("save-button") : this.getChildControl("create-button");
 
     if (organization) {
       organization.bind("groupId", this, "gid");
@@ -43,13 +57,15 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
       const orgs = groupsStore.getOrganizations();
       const existingNames = Object.values(orgs).map(org => org.getLabel());
       const defaultName = osparc.utils.Utils.getUniqueName("New Organization", existingNames)
-      title.setValue(defaultName);
+      label.setValue(defaultName);
     }
 
     this.addListener("appear", () => {
-      title.focus();
-      title.activate();
+      label.focus();
+      label.activate();
     });
+
+    this.center();
   },
 
   properties: {
@@ -85,54 +101,51 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
   events: {
     "createOrg": "qx.event.type.Event",
     "updateOrg": "qx.event.type.Event",
-    "cancel": "qx.event.type.Event"
   },
 
   members: {
+    __form: null,
+    __validator: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "title": {
+        case "label":
           control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            backgroundColor: "background-main",
-            placeholder: this.tr("Title"),
-            height: 30,
+            appearance: "form-input",
+            required: true,
+            allowGrowX: true,
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
-          this._add(control);
+          this.__form.add(control, this.tr("Title"), null, "title");
           break;
-        }
-        case "description": {
+        case "description":
           control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            placeholder: this.tr("Description"),
-            height: 30,
+            appearance: "form-input",
+            required: true,
+            allowGrowX: true,
           });
           this.bind("description", control, "value");
           control.bind("value", this, "description");
-          this._add(control);
+          this.__form.add(control, this.tr("Description"), null, "description");
           break;
-        }
-        case "thumbnail": {
+        case "thumbnail":
           control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            placeholder: this.tr("Thumbnail"),
-            height: 30,
+            appearance: "form-input",
+            allowGrowX: true,
           });
           this.bind("thumbnail", control, "value");
           control.bind("value", this, "thumbnail");
-          this._add(control);
+          this.__form.add(control, this.tr("Thumbnail"), null, "thumbnail");
           break;
-        }
-        case "create": {
+        case "create-button": {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Create")).set({
             appearance: "form-button"
           });
           control.addListener("execute", () => {
-            if (this.__validator.validate()) {
+            if (this.__form.validate()) {
               control.setFetching(true);
               this.fireEvent("createOrg");
             }
@@ -140,13 +153,13 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
           buttons.addAt(control, 1);
           break;
         }
-        case "save": {
+        case "save-button": {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Save")).set({
             appearance: "form-button"
           });
           control.addListener("execute", () => {
-            if (this.__validator.validate()) {
+            if (this.__form.validate()) {
               control.setFetching(true);
               this.fireEvent("updateOrg");
             }
@@ -161,9 +174,9 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
           const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
             appearance: "form-button-text"
           });
-          cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
+          cancelButton.addListener("execute", () => this.close());
           control.addAt(cancelButton, 0);
-          this._add(control);
+          this.add(control);
           break;
         }
       }

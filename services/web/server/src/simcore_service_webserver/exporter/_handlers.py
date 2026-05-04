@@ -51,9 +51,7 @@ async def export_project(request: web.Request):
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,
         owner=Owner(user_id=user_id),
-        notification_cb=create_user_notification_cb(
-            user_id, ProjectID(f"{project_uuid}"), request.app
-        ),
+        notification_cb=create_user_notification_cb(user_id, ProjectID(f"{project_uuid}"), request.app),
     )
     async def _() -> tuple[Callable[[], Coroutine[Any, Any, None]], Path]:
         async with AsyncExitStack() as tmp_dir_stack:

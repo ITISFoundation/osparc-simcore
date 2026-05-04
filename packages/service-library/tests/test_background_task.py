@@ -53,11 +53,7 @@ def stop_task_timeout(request: pytest.FixtureRequest) -> float | None:
 @pytest.fixture
 async def create_background_task(
     faker: Faker, stop_task_timeout: float | None
-) -> AsyncIterator[
-    Callable[
-        [datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]
-    ]
-]:
+) -> AsyncIterator[Callable[[datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]]]:
     created_tasks = []
 
     async def _creator(
@@ -77,20 +73,14 @@ async def create_background_task(
 
     yield _creator
     # cleanup
-    await asyncio.gather(
-        *(cancel_wait_task(t, max_delay=stop_task_timeout) for t in created_tasks)
-    )
+    await asyncio.gather(*(cancel_wait_task(t, max_delay=stop_task_timeout) for t in created_tasks))
 
 
-@pytest.mark.parametrize(
-    "wake_up_event", [None, asyncio.Event], ids=lambda x: f"wake-up-event: {x}"
-)
+@pytest.mark.parametrize("wake_up_event", [None, asyncio.Event], ids=lambda x: f"wake-up-event: {x}")
 async def test_background_task_created_and_deleted(
     mock_background_task: mock.AsyncMock,
     task_interval: datetime.timedelta,
-    create_background_task: Callable[
-        [datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]
-    ],
+    create_background_task: Callable[[datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]],
     wake_up_event: Callable | None,
 ):
     event = wake_up_event() if wake_up_event else None
@@ -107,9 +97,7 @@ async def test_background_task_created_and_deleted(
 async def test_background_task_wakes_up_early(
     mock_background_task: mock.AsyncMock,
     very_long_task_interval: datetime.timedelta,
-    create_background_task: Callable[
-        [datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]
-    ],
+    create_background_task: Callable[[datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]],
 ):
     wake_up_event = asyncio.Event()
     _task = await create_background_task(
@@ -136,9 +124,7 @@ async def test_background_task_wakes_up_early(
 async def test_background_task_raises_restarts(
     mock_background_task: mock.AsyncMock,
     task_interval: datetime.timedelta,
-    create_background_task: Callable[
-        [datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]
-    ],
+    create_background_task: Callable[[datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]],
 ):
     mock_background_task.side_effect = RuntimeError("pytest faked runtime error")
     _task = await create_background_task(
@@ -154,9 +140,7 @@ async def test_background_task_raises_restarts(
 async def test_background_task_correctly_cancels(
     mock_background_task: mock.AsyncMock,
     task_interval: datetime.timedelta,
-    create_background_task: Callable[
-        [datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]
-    ],
+    create_background_task: Callable[[datetime.timedelta, Callable, asyncio.Event | None], Awaitable[asyncio.Task]],
 ):
     mock_background_task.side_effect = asyncio.CancelledError
     _task = await create_background_task(
@@ -175,9 +159,7 @@ async def test_periodic_task_context_manager(
     faker: Faker,
 ):
     task_name = faker.pystr()
-    async with periodic_task(
-        mock_background_task, interval=task_interval, task_name=task_name
-    ) as asyncio_task:
+    async with periodic_task(mock_background_task, interval=task_interval, task_name=task_name) as asyncio_task:
         assert asyncio_task.get_name() == task_name
         assert asyncio_task.cancelled() is False
         await asyncio.sleep(5 * task_interval.total_seconds())
@@ -219,9 +201,7 @@ async def test_periodic_task_logs_error(
     mock_background_task.side_effect = CustomError("Test error")
 
     with caplog.at_level(logging.ERROR):
-        async with periodic_task(
-            mock_background_task, interval=task_interval, task_name="test_task"
-        ):
+        async with periodic_task(mock_background_task, interval=task_interval, task_name="test_task"):
             await asyncio.sleep(2 * task_interval.total_seconds())
 
     assert "Test error" in caplog.text

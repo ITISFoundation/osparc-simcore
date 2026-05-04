@@ -56,7 +56,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
     __titleLayout: null,
     __organizationListItem: null,
     __membersList: null,
-    __templatesList: null,
+    __tutorialsList: null,
     __servicesList: null,
 
     setCurrentOrg: function(organization) {
@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
       // set orgModel to the tab views
       this.__membersList.setCurrentOrg(organization);
-      this.__templatesList.setCurrentOrg(organization);
+      this.__tutorialsList.setCurrentOrg(organization);
       this.__servicesList.setCurrentOrg(organization);
     },
 
@@ -121,16 +121,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
     __openEditOrganization: function() {
       const org = this.__orgModel;
-      const title = this.tr("Organization Details Editor");
       const orgEditor = new osparc.editor.OrganizationEditor(org);
-      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 200);
       orgEditor.addListener("updateOrg", () => {
-        this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
+        this.__updateOrganization(orgEditor, orgEditor.getChildControl("save-button"));
       });
-      orgEditor.addListener("cancel", () => win.close());
+      orgEditor.open();
     },
 
-    __updateOrganization: function(win, button, orgEditor) {
+    __updateOrganization: function(orgEditor, button) {
       const groupId = orgEditor.getGid();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
@@ -138,13 +136,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
           osparc.FlashMessenger.logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
         })
         .catch(err => {
           const msg = this.tr("Something went wrong while editing ") + name;
           osparc.FlashMessenger.logError(err, msg);
+        })
+        .finally(() => {
           button.setFetching(false);
+          orgEditor.close();
         });
     },
 
@@ -160,18 +159,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       });
       tabView.add(membersListPage);
 
-      const templatesText = osparc.product.Utils.getTemplateAlias({
-        plural: true,
-        firstUpperCase: true
-      });
-      const templatesListPage = this.self().createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
-      const templatesList = this.__templatesList = new osparc.desktop.organizations.TutorialsList();
-      templatesListPage.add(templatesList, {
+      const tutorialsTabPage = this.self().createTabPage(this.tr("Tutorials"), "@FontAwesome5Solid/copy/14");
+      const tutorialsList = this.__tutorialsList = new osparc.desktop.organizations.TutorialsList();
+      tutorialsTabPage.add(tutorialsList, {
         flex: 1
       });
-      tabView.add(templatesListPage);
+      tabView.add(tutorialsTabPage);
 
-      const servicesListPage = this.self().createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+      const servicesListPage = this.self().createTabPage(this.tr("Apps"), "@FontAwesome5Solid/cogs/14");
       const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
       servicesListPage.add(servicesList, {
         flex: 1

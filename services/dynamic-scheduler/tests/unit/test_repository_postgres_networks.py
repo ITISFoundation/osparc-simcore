@@ -43,7 +43,6 @@ pytest_simcore_ops_services_selection = [
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
-    disable_generic_scheduler_lifespan: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     disable_rabbitmq_lifespan: None,
@@ -116,9 +115,7 @@ def project_networks_repo(app: FastAPI) -> ProjectNetworksRepo:
 
 @pytest.fixture
 def networks_with_aliases() -> NetworksWithAliases:
-    return TypeAdapter(NetworksWithAliases).validate_python(
-        NetworksWithAliases.model_json_schema()["examples"][0]
-    )
+    return TypeAdapter(NetworksWithAliases).validate_python(NetworksWithAliases.model_json_schema()["examples"][0])
 
 
 async def test_no_project_networks_for_project(
@@ -136,15 +133,12 @@ async def test_upsert_projects_networks(
     project_id: ProjectID,
     networks_with_aliases: NetworksWithAliases,
 ):
-
-    # allows ot test the upsert capabilities
+    # allows to test the upsert capabilities
     for _ in range(2):
         await project_networks_repo.upsert_projects_networks(
             project_id=project_id, networks_with_aliases=networks_with_aliases
         )
 
-    project_networks = await project_networks_repo.get_projects_networks(
-        project_id=project_id
-    )
+    project_networks = await project_networks_repo.get_projects_networks(project_id=project_id)
     assert project_networks.project_uuid == project_id
     assert project_networks.networks_with_aliases == networks_with_aliases

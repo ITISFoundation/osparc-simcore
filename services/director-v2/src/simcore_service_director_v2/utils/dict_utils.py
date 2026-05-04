@@ -4,9 +4,7 @@ from typing import Any
 from toolz.dicttoolz import get_in, update_in  # type: ignore[import-untyped]
 
 
-def nested_update(
-    a: dict[str, Any], b: dict[str, Any], *, include: tuple[list[str], ...]
-) -> dict[str, Any]:
+def nested_update(a: dict[str, Any], b: dict[str, Any], *, include: tuple[list[str], ...]) -> dict[str, Any]:
     """returns dict which results of updating a with b on selected key paths
     by merging dictionaries and extending arrays with what is found in b
     Only the fields defined in
@@ -33,9 +31,7 @@ def nested_update(
             # skip the merge if there is no value in b
             continue
 
-        merged_dict = update_in(
-            merged_dict, keys_path, lambda x, b_value=b_value: _merge_fct(x, b_value)
-        )
+        merged_dict = update_in(merged_dict, keys_path, lambda x, b_value=b_value: _merge_fct(x, b_value))
 
     return merged_dict
 
@@ -43,7 +39,7 @@ def nested_update(
 def get_leaf_key_paths(data: dict[str, Any]) -> tuple[list[str], ...]:
     """
     All nested dict keys are considered as being part of a tree.
-    This functions returns the paths of all the leafs,
+    This functions returns the paths of all the leaves,
     starting from the root and finishing with the leaf key.
 
     example:
@@ -63,9 +59,7 @@ def get_leaf_key_paths(data: dict[str, Any]) -> tuple[list[str], ...]:
     )
     """
 
-    def _get_parent_keys(
-        dict_data: dict[str, Any], parents: list[str] | None
-    ) -> list[list[str]]:
+    def _get_parent_keys(dict_data: dict[str, Any], parents: list[str] | None) -> list[list[str]]:
         root_parents: list[str] = parents or []
 
         parents_collection: list[list[str]] = []

@@ -25,11 +25,7 @@ class ProjectsRepository(BaseRepository):
             query = (
                 sa.select(projects_nodes.c.key, projects_nodes.c.version)
                 .distinct()
-                .select_from(
-                    projects_nodes.join(
-                        projects, projects_nodes.c.project_uuid == projects.c.uuid
-                    )
-                )
+                .select_from(projects_nodes.join(projects, projects_nodes.c.project_uuid == projects.c.uuid))
                 .where(
                     sa.and_(
                         projects.c.type == ProjectType.TEMPLATE,
@@ -42,9 +38,7 @@ class ProjectsRepository(BaseRepository):
             services = []
             async for row in await conn.stream(query):
                 try:
-                    service = ServiceKeyVersion.model_validate(
-                        row, from_attributes=True
-                    )
+                    service = ServiceKeyVersion.model_validate(row, from_attributes=True)
                     services.append(service)
                 except ValidationError:
                     _logger.warning(

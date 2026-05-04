@@ -10,12 +10,16 @@ from datetime import datetime
 from typing import Any, Final
 
 import sqlalchemy as sa
+from common_library.users_enums import AccountRequestStatus
 from sqlalchemy import Column
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine.result import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Select
 
+from .models.groups import user_to_groups
+from .models.products import products
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 from .models.users_secrets import users_secrets
@@ -40,7 +44,7 @@ def _generate_random_chars(length: int = MIN_USERNAME_LEN) -> str:
 
 
 def _generate_username_from_email(email: str) -> str:
-    username = email.split("@")[0]
+    username = email.split("@", maxsplit=1)[0]
 
     # Remove any non-alphanumeric characters and convert to lowercase
     username = re.sub(r"[^a-zA-Z0-9]", "", username).lower()
@@ -122,9 +126,7 @@ class UsersRepo:
             try:
                 async with transaction_context(self._engine, connection) as conn:
                     # Insert user record
-                    user_id = await conn.scalar(
-                        users.insert().values(**user_data).returning(users.c.id)
-                    )
+                    user_id = await conn.scalar(users.insert().values(**user_data).returning(users.c.id))
 
                     # Insert password hash into users_secrets table
                     await conn.execute(
@@ -138,9 +140,7 @@ class UsersRepo:
                 user_id = None  # Reset to retry with new username
 
         async with pass_or_acquire_connection(self._engine, connection) as conn:
-            result = await conn.execute(
-                sa.select(*self._user_columns).where(users.c.id == user_id)
-            )
+            result = await conn.execute(sa.select(*self._user_columns).where(users.c.id == user_id))
             return UserRow.from_row(result.one())
 
     async def link_and_update_user_from_pre_registration(
@@ -161,11 +161,77 @@ class UsersRepo:
         assert new_user_id > 0  # nosec
 
         async with transaction_context(self._engine, connection) as conn:
-            # Link ALL pre-registrations for this email to the user
-            result = await conn.execute(
+            user_has_access_to_pre_reg_product = sa.exists(
+                sa.select(sa.literal(1))
+                .select_from(user_to_groups.join(products, products.c.group_id == user_to_groups.c.gid))
+                .where(
+                    (user_to_groups.c.uid == new_user_id)
+                    & (products.c.name == users_pre_registration_details.c.product_name)
+                )
+            )
+
+            # Link ALL pre-registrations for this email to the user and reconcile rows that are still pending review
+            # SEE https://github.com/ITISFoundation/private-issues/issues/492
+            _is_pending = users_pre_registration_details.c.account_request_status == AccountRequestStatus.PENDING
+            _reconciles = _is_pending & user_has_access_to_pre_reg_product
+
+            await conn.execute(
                 users_pre_registration_details.update()
                 .where(users_pre_registration_details.c.pre_email == new_user_email)
-                .values(user_id=new_user_id)
+                .values(
+                    user_id=new_user_id,
+                    account_request_status=sa.case(
+                        (_reconciles, AccountRequestStatus.APPROVED),
+                        else_=users_pre_registration_details.c.account_request_status,
+                    ),
+                    account_request_reviewed_by=sa.case(
+                        (
+                            _reconciles & users_pre_registration_details.c.account_request_reviewed_by.is_(None),
+                            users_pre_registration_details.c.created_by,
+                        ),
+                        else_=users_pre_registration_details.c.account_request_reviewed_by,
+                    ),
+                    account_request_reviewed_at=sa.case(
+                        (
+                            _reconciles & users_pre_registration_details.c.account_request_reviewed_at.is_(None),
+                            sa.func.now(),
+                        ),
+                        else_=users_pre_registration_details.c.account_request_reviewed_at,
+                    ),
+                    extras=sa.case(
+                        (
+                            _reconciles,
+                            sa.func.coalesce(
+                                users_pre_registration_details.c.extras,
+                                sa.cast(sa.text("'{}'"), postgresql.JSONB),
+                            ).concat(
+                                sa.func.jsonb_build_object(
+                                    "recovery",
+                                    sa.func.jsonb_build_object(
+                                        "source",
+                                        "runtime:link_and_update_user_from_pre_registration",
+                                        "confidence",
+                                        sa.case(
+                                            (
+                                                users_pre_registration_details.c.created_by.is_not(None),
+                                                "high",
+                                            ),
+                                            else_="medium",
+                                        ),
+                                        "executed_at",
+                                        sa.func.to_char(
+                                            sa.func.timezone("UTC", sa.func.now()),
+                                            'YYYY-MM-DD"T"HH24:MI:SS"Z"',
+                                        ),
+                                        "notes",
+                                        "Auto-reconciled on user registration: user has product access",
+                                    ),
+                                )
+                            ),
+                        ),
+                        else_=users_pre_registration_details.c.extras,
+                    ),
+                )
             )
 
             # COPIES some pre-registration details to the users table
@@ -206,9 +272,7 @@ class UsersRepo:
                     )
                 )
 
-    async def get_role(
-        self, connection: AsyncConnection | None = None, *, user_id: int
-    ) -> UserRole:
+    async def get_role(self, connection: AsyncConnection | None = None, *, user_id: int) -> UserRole:
         value = await self._get_scalar_or_raise(
             sa.select(users.c.role).where(users.c.id == user_id),
             connection=connection,
@@ -216,9 +280,7 @@ class UsersRepo:
         assert isinstance(value, UserRole)  # nosec
         return UserRole(value)
 
-    async def get_email(
-        self, connection: AsyncConnection | None = None, *, user_id: int
-    ) -> str:
+    async def get_email(self, connection: AsyncConnection | None = None, *, user_id: int) -> str:
         value = await self._get_scalar_or_raise(
             sa.select(users.c.email).where(users.c.id == user_id),
             connection=connection,
@@ -226,25 +288,17 @@ class UsersRepo:
         assert isinstance(value, str)  # nosec
         return value
 
-    async def get_active_user_email(
-        self, connection: AsyncConnection | None = None, *, user_id: int
-    ) -> str:
+    async def get_active_user_email(self, connection: AsyncConnection | None = None, *, user_id: int) -> str:
         value = await self._get_scalar_or_raise(
-            sa.select(users.c.email).where(
-                (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
-            ),
+            sa.select(users.c.email).where((users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)),
             connection=connection,
         )
         assert isinstance(value, str)  # nosec
         return value
 
-    async def get_password_hash(
-        self, connection: AsyncConnection | None = None, *, user_id: int
-    ) -> str:
+    async def get_password_hash(self, connection: AsyncConnection | None = None, *, user_id: int) -> str:
         value = await self._get_scalar_or_raise(
-            sa.select(users_secrets.c.password_hash).where(
-                users_secrets.c.user_id == user_id
-            ),
+            sa.select(users_secrets.c.password_hash).where(users_secrets.c.user_id == user_id),
             connection=connection,
         )
         assert isinstance(value, str)  # nosec
@@ -254,9 +308,7 @@ class UsersRepo:
         self, connection: AsyncConnection | None = None, *, email: str
     ) -> UserRow | None:
         async with pass_or_acquire_connection(self._engine, connection) as conn:
-            result = await conn.execute(
-                sa.select(*self._user_columns).where(users.c.email == email.lower())
-            )
+            result = await conn.execute(sa.select(*self._user_columns).where(users.c.email == email.lower()))
             row = result.one_or_none()
             return UserRow.from_row(row) if row else None
 
@@ -264,19 +316,13 @@ class UsersRepo:
         self, connection: AsyncConnection | None = None, *, user_id: int
     ) -> UserRow | None:
         async with pass_or_acquire_connection(self._engine, connection) as conn:
-            result = await conn.execute(
-                sa.select(*self._user_columns).where(users.c.id == user_id)
-            )
+            result = await conn.execute(sa.select(*self._user_columns).where(users.c.id == user_id))
             row = result.one_or_none()
             return UserRow.from_row(row) if row else None
 
-    async def update_user_phone(
-        self, connection: AsyncConnection | None = None, *, user_id: int, phone: str
-    ) -> None:
+    async def update_user_phone(self, connection: AsyncConnection | None = None, *, user_id: int, phone: str) -> None:
         async with transaction_context(self._engine, connection) as conn:
-            await conn.execute(
-                users.update().where(users.c.id == user_id).values(phone=phone)
-            )
+            await conn.execute(users.update().where(users.c.id == user_id).values(phone=phone))
 
     async def update_user_password_hash(
         self,
@@ -286,26 +332,16 @@ class UsersRepo:
         password_hash: str,
     ) -> None:
         async with transaction_context(self._engine, connection) as conn:
-            await self.get_password_hash(
-                connection=conn, user_id=user_id
-            )  # ensure user exists
+            await self.get_password_hash(connection=conn, user_id=user_id)  # ensure user exists
             await conn.execute(
-                users_secrets.update()
-                .where(users_secrets.c.user_id == user_id)
-                .values(password_hash=password_hash)
+                users_secrets.update().where(users_secrets.c.user_id == user_id).values(password_hash=password_hash)
             )
 
-    async def is_email_used(
-        self, connection: AsyncConnection | None = None, *, email: str
-    ) -> bool:
-
+    async def is_email_used(self, connection: AsyncConnection | None = None, *, email: str) -> bool:
         async with pass_or_acquire_connection(self._engine, connection) as conn:
-
             email = email.lower()
 
-            registered = await conn.scalar(
-                sa.select(users.c.id).where(users.c.email == email)
-            )
+            registered = await conn.scalar(sa.select(users.c.id).where(users.c.email == email))
             if registered:
                 return True
 

@@ -113,9 +113,7 @@ async def register_function(
     product_name: Annotated[ProductName, Depends(get_product_name)],
     function: Function,
 ) -> RegisteredFunction:
-    return await wb_api_rpc.register_function(
-        user_id=user_id, product_name=product_name, function=function
-    )
+    return await wb_api_rpc.register_function(user_id=user_id, product_name=product_name, function=function)
 
 
 @function_router.get(
@@ -170,9 +168,7 @@ async def list_functions(
 )
 async def list_function_jobs_for_functionid(
     function_id: FunctionID,
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
+    function_job_service: Annotated[FunctionJobService, Depends(get_function_job_service)],
     page_params: Annotated[PaginationParams, Depends()],
 ) -> AbstractPage[RegisteredFunctionJob]:
     function_jobs_list, meta = await function_job_service.list_function_jobs(
@@ -207,9 +203,9 @@ async def update_function_title(
     returned_function = await wb_api_rpc.update_function_title(
         function_id=function_id, title=title, user_id=user_id, product_name=product_name
     )
-    assert (
-        returned_function.title == title
-    ), f"Function title was not updated. Expected {title} but got {returned_function.title}"  # nosec
+    assert returned_function.title == title, (
+        f"Function title was not updated. Expected {title} but got {returned_function.title}"
+    )  # nosec
     return returned_function
 
 
@@ -235,9 +231,9 @@ async def update_function_description(
         user_id=user_id,
         product_name=product_name,
     )
-    assert (
-        returned_function.description == description
-    ), f"Function description was not updated. Expected {description} but got {returned_function.description}"  # nosec
+    assert returned_function.description == description, (
+        f"Function description was not updated. Expected {description} but got {returned_function.description}"
+    )  # nosec
     return returned_function
 
 
@@ -256,9 +252,7 @@ async def get_function_inputschema(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> FunctionInputSchema:
-    function = await wb_api_rpc.get_function(
-        function_id=function_id, user_id=user_id, product_name=product_name
-    )
+    function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id, product_name=product_name)
     return function.input_schema
 
 
@@ -277,9 +271,7 @@ async def get_function_outputschema(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> FunctionOutputSchema:
-    function = await wb_api_rpc.get_function(
-        function_id=function_id, user_id=user_id, product_name=product_name
-    )
+    function = await wb_api_rpc.get_function(function_id=function_id, user_id=user_id, product_name=product_name)
     return function.output_schema
 
 
@@ -299,9 +291,7 @@ async def validate_function_inputs(
     function_id: FunctionID,  # pylint: disable=unused-argument
     inputs: FunctionInputs,
     function: Annotated[RegisteredFunction, Depends(get_function)],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
+    function_job_service: Annotated[FunctionJobService, Depends(get_function_job_service)],
 ) -> tuple[bool, str]:
     return await function_job_service.validate_function_inputs(
         function=function,
@@ -333,15 +323,9 @@ async def run_function(
 ) -> RegisteredFunctionJob:
     # preprocess inputs
     parent_project_uuid = (
-        x_simcore_parent_project_uuid
-        if isinstance(x_simcore_parent_project_uuid, ProjectID)
-        else None
+        x_simcore_parent_project_uuid if isinstance(x_simcore_parent_project_uuid, ProjectID) else None
     )
-    parent_node_id = (
-        x_simcore_parent_node_id
-        if isinstance(x_simcore_parent_node_id, NodeID)
-        else None
-    )
+    parent_node_id = x_simcore_parent_node_id if isinstance(x_simcore_parent_node_id, NodeID) else None
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
 
     await function_service.check_execute_function_permission(
@@ -377,9 +361,7 @@ async def delete_function(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> None:
-    return await wb_api_rpc.delete_function(
-        function_id=function_id, user_id=user_id, product_name=product_name
-    )
+    return await wb_api_rpc.delete_function(function_id=function_id, user_id=user_id, product_name=product_name)
 
 
 _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
@@ -414,15 +396,9 @@ async def map_function(
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
     parent_project_uuid = (
-        x_simcore_parent_project_uuid
-        if isinstance(x_simcore_parent_project_uuid, ProjectID)
-        else None
+        x_simcore_parent_project_uuid if isinstance(x_simcore_parent_project_uuid, ProjectID) else None
     )
-    parent_node_id = (
-        x_simcore_parent_node_id
-        if isinstance(x_simcore_parent_node_id, NodeID)
-        else None
-    )
+    parent_node_id = x_simcore_parent_node_id if isinstance(x_simcore_parent_node_id, NodeID) else None
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
 
     await function_service.check_execute_function_permission(
@@ -441,7 +417,9 @@ async def map_function(
     )
 
     # At this point, all results are FunctionJobID since we've checked for exceptions
-    function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(function_inputs_list)} inputs"
+    function_job_collection_description = (
+        f"Function job collection of map of function {to_run_function.uid} with {len(function_inputs_list)} inputs"
+    )
     return await web_api_rpc_client.register_function_job_collection(
         function_job_collection=FunctionJobCollection(
             title="Function job collection of function map",

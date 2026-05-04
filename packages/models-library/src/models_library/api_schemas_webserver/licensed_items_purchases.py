@@ -2,8 +2,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from models_library.emails import LowerCaseEmailStr
 from pydantic import PositiveInt
+
+from models_library.emails import LowerCaseEmailStr
 
 from ..licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from ..products import ProductName

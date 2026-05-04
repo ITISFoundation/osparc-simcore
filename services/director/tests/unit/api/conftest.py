@@ -30,9 +30,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 async def created_services(
     push_services: PushServicesCallable,
 ) -> list[ServiceInRegistryInfoDict]:
-    return await push_services(
-        number_of_computational_services=3, number_of_interactive_services=2
-    )
+    return await push_services(number_of_computational_services=3, number_of_interactive_services=2)
 
 
 @pytest.fixture

@@ -57,9 +57,7 @@ def mocked_monitoring_down(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def app_environment(
-    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     envs = mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
@@ -67,8 +65,6 @@ def app_environment(
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "False",
             "POSTGRES_DB": "simcoredb",
             "POSTGRES_HOST": "postgres",
-            "POSTGRES_MAXSIZE": "10",
-            "POSTGRES_MINSIZE": "10",
             "POSTGRES_MAX_POOLSIZE": "10",
             "POSTGRES_MAX_OVERFLOW": "20",
             "POSTGRES_PASSWORD": "simcore",
@@ -128,9 +124,7 @@ async def test_has_login_required(client: TestClient):
     await assert_status(resp, status.HTTP_401_UNAUTHORIZED)
 
 
-async def test_monitoring_up(
-    mocked_login_required: None, mocked_monitoring: None, client: TestClient
-):
+async def test_monitoring_up(mocked_login_required: None, mocked_monitoring: None, client: TestClient):
     RUNNING_NODE_ID = "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
 
     resp = await client.get("/v0/activity/status")
@@ -151,8 +145,6 @@ async def test_monitoring_up(
     assert stats.get("memUsage") == 177.664, "Incorrect value: Memory usage"
 
 
-async def test_monitoring_down(
-    mocked_login_required: None, mocked_monitoring_down: None, client: TestClient
-):
+async def test_monitoring_down(mocked_login_required: None, mocked_monitoring_down: None, client: TestClient):
     resp = await client.get("/v0/activity/status")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)

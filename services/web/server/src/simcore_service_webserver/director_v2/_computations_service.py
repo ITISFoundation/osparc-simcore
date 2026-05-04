@@ -55,23 +55,16 @@ async def _get_projects_metadata(
     """Batch fetch project metadata with concurrency control"""
     # NOTE: MD: can be improved with a single batch call
     return await limited_gather(
-        *[
-            get_project_custom_metadata_or_empty_dict(app, project_uuid=uuid)
-            for uuid in project_uuids
-        ],
+        *[get_project_custom_metadata_or_empty_dict(app, project_uuid=uuid) for uuid in project_uuids],
         limit=20,
     )
 
 
-async def _get_root_project_names(
-    app: web.Application, items: list[ComputationRunRpcGet]
-) -> list[str]:
+async def _get_root_project_names(app: web.Application, items: list[ComputationRunRpcGet]) -> list[str]:
     """Resolve root project names from computation items"""
     root_uuids: list[ProjectID] = []
     for item in items:
-        if root_id := item.info.get("project_metadata", {}).get(
-            "root_parent_project_id"
-        ):
+        if root_id := item.info.get("project_metadata", {}).get("root_parent_project_id"):
             root_uuids.append(ProjectID(root_id))
         else:
             root_uuids.append(item.project_uuid)
@@ -145,14 +138,10 @@ async def list_computation_iterations(
     order_by: OrderBy,
 ) -> tuple[int, list[ComputationRunWithAttributes]]:
     """Returns the list of computations for a specific project (all iterations)"""
-    await check_user_project_permission(
-        app, project_id=project_id, user_id=user_id, product_name=product_name
-    )
+    await check_user_project_permission(app, project_id=project_id, user_id=user_id, product_name=product_name)
 
     if include_children:
-        child_projects = await get_project_uuids_by_root_parent_project_id(
-            app, root_parent_project_uuid=project_id
-        )
+        child_projects = await get_project_uuids_by_root_parent_project_id(app, root_parent_project_uuid=project_id)
         child_projects_with_root = [*child_projects, project_id]
     else:
         child_projects_with_root = [project_id]
@@ -189,9 +178,7 @@ async def list_computation_iterations(
             root_project_name=root_project_names[0],
             project_custom_metadata=project_metadata,
         )
-        for item, project_metadata in zip(
-            _runs_get.items, _projects_metadata, strict=True
-        )
+        for item, project_metadata in zip(_runs_get.items, _projects_metadata, strict=True)
     ]
 
     return _runs_get.total, _computational_runs_output
@@ -201,10 +188,8 @@ async def _get_credits_or_zero_by_service_run_id(
     rpc_client: RabbitMQRPCClient, service_run_id: ServiceRunID
 ) -> Decimal:
     try:
-        return (
-            await credit_transactions.get_transaction_current_credits_by_service_run_id(
-                rpc_client, service_run_id=service_run_id
-            )
+        return await credit_transactions.get_transaction_current_credits_by_service_run_id(
+            rpc_client, service_run_id=service_run_id
         )
     except CreditTransactionNotFoundError:
         return Decimal(0)
@@ -225,14 +210,10 @@ async def list_computations_latest_iteration_tasks(
     order_by: OrderBy,
 ) -> tuple[int, list[ComputationTaskWithAttributes]]:
     """Returns the list of tasks for the latest iteration of a computation"""
-    await check_user_project_permission(
-        app, project_id=project_id, user_id=user_id, product_name=product_name
-    )
+    await check_user_project_permission(app, project_id=project_id, user_id=user_id, product_name=product_name)
 
     if include_children:
-        child_projects = await get_project_uuids_by_root_parent_project_id(
-            app, root_parent_project_uuid=project_id
-        )
+        child_projects = await get_project_uuids_by_root_parent_project_id(app, root_parent_project_uuid=project_id)
         child_projects_with_root = [*child_projects, project_id]
     else:
         child_projects_with_root = [project_id]
@@ -267,9 +248,7 @@ async def list_computations_latest_iteration_tasks(
         # NOTE: MD: can be improved with a single batch call
         _service_run_osparc_credits = await limited_gather(
             *[
-                _get_credits_or_zero_by_service_run_id(
-                    rpc_client, service_run_id=_run_id
-                )
+                _get_credits_or_zero_by_service_run_id(rpc_client, service_run_id=_run_id)
                 for _run_id in _service_run_ids
             ],
             limit=20,
@@ -288,25 +267,18 @@ async def list_computations_latest_iteration_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            node_name=project_uuid_to_workbench[item.project_uuid][item.node_id].label
-            or "Unknown",
+            node_name=project_uuid_to_workbench[item.project_uuid][item.node_id].label or "Unknown",
             osparc_credits=credits_or_none,
         )
-        for item, credits_or_none in zip(
-            _tasks_get.items, _service_run_osparc_credits, strict=True
-        )
+        for item, credits_or_none in zip(_tasks_get.items, _service_run_osparc_credits, strict=True)
     ]
     return _tasks_get.total, _tasks_get_output
 
 
-async def _get_root_project_names_v2(
-    app: web.Application, items: list[ComputationCollectionRunRpcGet]
-) -> list[str]:
+async def _get_root_project_names_v2(app: web.Application, items: list[ComputationCollectionRunRpcGet]) -> list[str]:
     root_uuids: list[ProjectID] = []
     for item in items:
-        if root_id := item.info.get("project_metadata", {}).get(
-            "root_parent_project_id"
-        ):
+        if root_id := item.info.get("project_metadata", {}).get("root_parent_project_id"):
             root_uuids.append(ProjectID(root_id))
         else:
             assert len(item.project_ids) > 0  # nosec
@@ -355,9 +327,7 @@ async def list_computation_collection_runs(
     # NOTE: MD: can be improved with a single batch call
     _comp_runs_collections = await limited_gather(
         *[
-            get_comp_run_collection_or_none_by_id(
-                app, collection_run_id=_run.collection_run_id
-            )
+            get_comp_run_collection_or_none_by_id(app, collection_run_id=_run.collection_run_id)
             for _run in _runs_get.items
         ],
         limit=20,
@@ -432,9 +402,7 @@ async def list_computation_collection_run_tasks(
         # NOTE: MD: can be improved with a single batch call
         _service_run_osparc_credits = await limited_gather(
             *[
-                _get_credits_or_zero_by_service_run_id(
-                    rpc_client, service_run_id=_run_id
-                )
+                _get_credits_or_zero_by_service_run_id(rpc_client, service_run_id=_run_id)
                 for _run_id in _service_run_ids
             ],
             limit=20,

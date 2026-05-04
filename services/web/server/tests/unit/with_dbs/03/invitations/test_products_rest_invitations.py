@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.products import (
     InvitationGenerated,
 )
 from models_library.invitations import _MAX_LEN
+from models_library.notifications.rpc import SendMessageResponse
 from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -46,10 +47,7 @@ async def test_role_access_to_generate_invitation(
     faker: Faker,
 ):
     assert client.app
-    assert (
-        client.app.router["generate_invitation"].url_for().path
-        == "/v0/invitation:generate"
-    )
+    assert client.app.router["generate_invitation"].url_for().path == "/v0/invitation:generate"
 
     response = await client.post(
         "/v0/invitation:generate",
@@ -116,9 +114,7 @@ async def test_product_owner_generates_invitation(
 MANY_TIMES: Final = 2
 
 
-@pytest.mark.acceptance_test(
-    "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
-)
+@pytest.mark.acceptance_test("pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138")
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
@@ -128,6 +124,7 @@ MANY_TIMES: Final = 2
 async def test_pre_registration_and_invitation_workflow(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
+    mocked_send_message_from_template_rpc: SendMessageResponse,
     logged_user: UserInfoDict,
     expected_status: HTTPStatus,
     guest_email: str,
@@ -155,9 +152,7 @@ async def test_pre_registration_and_invitation_workflow(
     ).model_dump()
 
     # Search user -> nothing
-    response = await client.get(
-        "/v0/admin/user-accounts:search", params={"email": guest_email}
-    )
+    response = await client.get("/v0/admin/user-accounts:search", params={"email": guest_email})
     data, _ = await assert_status(response, expected_status)
     # i.e. no info of requester is found, i.e. needs pre-registration
     assert data == []
@@ -168,23 +163,17 @@ async def test_pre_registration_and_invitation_workflow(
     # assert response.status == status.HTTP_409_CONFLICT
 
     # Accept user for registration and create invitation for her
-    response = await client.post(
-        "/v0/admin/user-accounts:pre-register", json=requester_info
-    )
+    response = await client.post("/v0/admin/user-accounts:pre-register", json=requester_info)
     data, _ = await assert_status(response, expected_status)
 
     # Can only  pre-register once
     for _ in range(MANY_TIMES):
-        response = await client.post(
-            "/v0/admin/user-accounts:pre-register", json=requester_info
-        )
+        response = await client.post("/v0/admin/user-accounts:pre-register", json=requester_info)
         await assert_status(response, status.HTTP_409_CONFLICT)
 
     # Search user again
     for _ in range(MANY_TIMES):
-        response = await client.get(
-            "/v0/admin/user-accounts:search", params={"email": guest_email}
-        )
+        response = await client.get("/v0/admin/user-accounts:search", params={"email": guest_email})
         data, _ = await assert_status(response, expected_status)
         assert len(data) == 1
         user_found = data[0]
@@ -213,9 +202,7 @@ async def test_pre_registration_and_invitation_workflow(
     await assert_status(response, status.HTTP_200_OK)
 
     # find registered user
-    response = await client.get(
-        "/v0/admin/user-accounts:search", params={"email": guest_email}
-    )
+    response = await client.get("/v0/admin/user-accounts:search", params={"email": guest_email})
     data, _ = await assert_status(response, expected_status)
     assert len(data) == 1
     user_found = data[0]

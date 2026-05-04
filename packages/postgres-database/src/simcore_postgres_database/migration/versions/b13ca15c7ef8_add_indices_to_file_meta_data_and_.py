@@ -5,6 +5,7 @@ Revises: 0ed9f6eabeba
 Create Date: 2024-04-26 08:11:52.163445+00:00
 
 """
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -28,12 +29,8 @@ def upgrade():
         ["project_id"],
         unique=False,
     )
-    op.create_index(
-        op.f("ix_file_meta_data_user_id"), "file_meta_data", ["user_id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_projects_prj_owner"), "projects", ["prj_owner"], unique=False
-    )
+    op.create_index(op.f("ix_file_meta_data_user_id"), "file_meta_data", ["user_id"], unique=False)
+    op.create_index(op.f("ix_projects_prj_owner"), "projects", ["prj_owner"], unique=False)
     # ### end Alembic commands ###
 
 

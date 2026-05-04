@@ -77,16 +77,11 @@ class ComputationalSidecar:
 
         for input_key, input_params in self.task_parameters.input_data.items():
             if isinstance(input_params, FileUrl):
-                file_name = (
-                    input_params.file_mapping
-                    or Path(URL(f"{input_params.url}").path.strip("/")).name
-                )
+                file_name = input_params.file_mapping or Path(URL(f"{input_params.url}").path.strip("/")).name
 
                 destination_path = task_volumes.inputs_folder / file_name
 
-                need_unzipping = check_need_unzipping(
-                    input_params.url, input_params.file_mime_type, destination_path
-                )
+                need_unzipping = check_need_unzipping(input_params.url, input_params.file_mime_type, destination_path)
                 if input_params.file_mapping and need_unzipping:
                     raise ServiceInputsUseFileToKeyMapButReceivesZipDataError(
                         service_key=self.task_parameters.image,
@@ -139,11 +134,7 @@ class ComputationalSidecar:
             output_data = TaskOutputData.from_task_output(
                 self.task_parameters.output_data_keys,
                 task_volumes.outputs_folder,
-                (
-                    "outputs.json"
-                    if integration_version > LEGACY_INTEGRATION_VERSION
-                    else "output.json"
-                ),
+                ("outputs.json" if integration_version > LEGACY_INTEGRATION_VERSION else "output.json"),
             )
 
             upload_tasks = []
@@ -165,9 +156,7 @@ class ComputationalSidecar:
             await asyncio.gather(*upload_tasks)
 
             await self._publish_sidecar_log("All the output data were uploaded.")
-            _logger.info(
-                "retrieved outputs data:\n%s", output_data.model_dump_json(indent=1)
-            )
+            _logger.info("retrieved outputs data:\n%s", output_data.model_dump_json(indent=1))
             return output_data
 
         except (ValueError, ValidationError) as exc:
@@ -177,12 +166,8 @@ class ComputationalSidecar:
                 exc=exc,
             ) from exc
 
-    async def _publish_sidecar_log(
-        self, log: LogMessageStr, log_level: LogLevelInt = logging.INFO
-    ) -> None:
-        await self.task_publishers.publish_logs(
-            message=f"[sidecar] {log}", log_level=log_level
-        )
+    async def _publish_sidecar_log(self, log: LogMessageStr, log_level: LogLevelInt = logging.INFO) -> None:
+        await self.task_publishers.publish_logs(message=f"[sidecar] {log}", log_level=log_level)
 
     async def run(self, command: list[str]) -> TaskOutputData:
         # ensure we pass the initial logs and progress
@@ -196,9 +181,7 @@ class ComputationalSidecar:
         run_id = f"{uuid4()}"
         async with (
             Docker() as docker_client,
-            TaskSharedVolumes(
-                Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
-            ) as task_volumes,
+            TaskSharedVolumes(Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")) as task_volumes,
             ProgressBarData(
                 num_steps=3,
                 step_weights=[5 / 100, 90 / 100, 5 / 100],
@@ -221,9 +204,7 @@ class ComputationalSidecar:
                 self.task_parameters.image,
                 self.task_parameters.tag,
             )
-            computational_shared_data_mount_point = (
-                await get_computational_shared_data_mount_point(docker_client)
-            )
+            computational_shared_data_mount_point = await get_computational_shared_data_mount_point(docker_client)
             config = await create_container_config(
                 docker_registry=self.docker_auth.server_address,
                 image=self.task_parameters.image,
@@ -235,9 +216,7 @@ class ComputationalSidecar:
                 envs=self.task_parameters.envs,
                 labels=self.task_parameters.labels,
             )
-            await self._write_input_data(
-                task_volumes, image_labels.get_integration_version()
-            )
+            await self._write_input_data(task_volumes, image_labels.get_integration_version())
             await progress_bar.update()  # NOTE:  (1 step weighting 5%)
             # PROCESSING (1 step weighted 90%)
             async with (
@@ -246,9 +225,7 @@ class ComputationalSidecar:
                     config,
                     name=f"{self.task_parameters.image.split(sep='/')[-1]}_{run_id}",
                 ) as container,
-                progress_bar.sub_progress(
-                    100, description="processing"
-                ) as processing_progress_bar,
+                progress_bar.sub_progress(100, description="processing") as processing_progress_bar,
                 managed_monitor_container_log_task(
                     container=container,
                     progress_regexp=image_labels.get_progress_regexp(),
@@ -275,9 +252,7 @@ class ComputationalSidecar:
                     with log_catch(_logger, reraise=False):
                         last_logs = await cast(
                             Coroutine,
-                            container.log(
-                                stdout=True, stderr=True, tail=20, follow=False
-                            ),
+                            container.log(stdout=True, stderr=True, tail=20, follow=False),
                         )
                         assert isinstance(last_logs, list)  # nosec
                         return last_logs
@@ -308,9 +283,7 @@ class ComputationalSidecar:
                 )
 
             # POST-PROCESSING (1 step weighted 5%)
-            results = await self._retrieve_output_data(
-                task_volumes, image_labels.get_integration_version()
-            )
+            results = await self._retrieve_output_data(task_volumes, image_labels.get_integration_version())
             await self._publish_sidecar_log(
                 f"Uploaded output data of {self.task_parameters.image}:{self.task_parameters.tag} successfully."
             )
@@ -338,9 +311,7 @@ class ComputationalSidecar:
                 )
 
             else:
-                await self._publish_sidecar_log(
-                    f"Service error: {exc}", log_level=logging.ERROR
-                )
+                await self._publish_sidecar_log(f"Service error: {exc}", log_level=logging.ERROR)
                 await self._publish_sidecar_log(
                     "TIP: There might be more information in the service log to help debug the service issue.",
                 )

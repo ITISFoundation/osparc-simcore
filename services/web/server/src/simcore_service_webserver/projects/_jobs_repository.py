@@ -9,7 +9,6 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -32,15 +31,11 @@ _PROJECT_DB_COLS = get_columns_from_db_model(
 )
 
 
-def _apply_job_parent_resource_name_filter(
-    query: sa.sql.Select, prefix: str
-) -> sa.sql.Select:
+def _apply_job_parent_resource_name_filter(query: sa.sql.Select, prefix: str) -> sa.sql.Select:
     return query.where(projects_to_jobs.c.job_parent_resource_name.like(f"{prefix}%"))
 
 
-def _apply_custom_metadata_filter(
-    query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]
-) -> sa.sql.Select:
+def _apply_custom_metadata_filter(query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]) -> sa.sql.Select:
     """Apply metadata filters to query.
 
     For PostgreSQL JSONB fields, we need to extract the text value using ->> operator
@@ -53,15 +48,12 @@ def _apply_custom_metadata_filter(
         # Use ->> operator to extract the text value from JSONB
         # Then apply ILIKE for case-insensitive pattern matching
         sql_pattern = pattern.replace("*", "%")  # Convert glob-like pattern to SQL LIKE
-        metadata_fields_ilike.append(
-            projects_metadata.c.custom[key].astext.ilike(sql_pattern)
-        )
+        metadata_fields_ilike.append(projects_metadata.c.custom[key].astext.ilike(sql_pattern))
 
     return query.where(sa.or_(*metadata_fields_ilike))
 
 
 class ProjectJobsRepository(BaseRepository):
-
     async def set_project_as_job(
         self,
         connection: AsyncConnection | None = None,
@@ -118,22 +110,13 @@ class ProjectJobsRepository(BaseRepository):
         """
 
         # Step 1: Get group IDs associated with the user
-        user_groups_query = (
-            sa.select(user_to_groups.c.gid)
-            .where(user_to_groups.c.uid == user_id)
-            .subquery()
-        )
+        user_groups_query = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).subquery()
 
         # Step 2: Create access_query to filter projects based on product_name and read access
         access_query = (
             sa.select(projects_to_jobs)
             .select_from(
                 projects_to_jobs.join(
-                    projects_to_products,
-                    projects_to_jobs.c.project_uuid
-                    == projects_to_products.c.project_uuid,
-                )
-                .join(
                     project_to_groups,
                     projects_to_jobs.c.project_uuid == project_to_groups.c.project_uuid,
                 )
@@ -148,7 +131,7 @@ class ProjectJobsRepository(BaseRepository):
                 )
             )
             .where(
-                projects_to_products.c.product_name == product_name,
+                projects.c.product_name == product_name,
                 project_to_groups.c.gid.in_(sa.select(user_groups_query.c.gid)),
                 project_to_groups.c.read.is_(True),
                 projects.c.workspace_id.is_(
@@ -165,9 +148,7 @@ class ProjectJobsRepository(BaseRepository):
             )
 
         if filter_any_custom_metadata:
-            access_query = _apply_custom_metadata_filter(
-                access_query, filter_any_custom_metadata
-            )
+            access_query = _apply_custom_metadata_filter(access_query, filter_any_custom_metadata)
 
         # Step 4. Convert access_query to a subquery
         base_query = access_query.subquery()
@@ -189,7 +170,7 @@ class ProjectJobsRepository(BaseRepository):
                 )
             )
             .order_by(
-                projects.c.creation_date.desc(),  # latests first
+                projects.c.creation_date.desc(),  # latest first
                 projects.c.id.desc(),
             )
             .limit(pagination_limit)

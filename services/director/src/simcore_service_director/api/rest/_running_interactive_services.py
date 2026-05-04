@@ -79,17 +79,11 @@ async def start_service(
         )
         return Envelope[dict[str, Any]](data=service)
     except ServiceNotAvailableError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
     except ServiceUUIDInUseError as err:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{err}") from err
     except RegistryConnectionError as err:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
 
 
 @router.get("/running_interactive_services/{service_uuid}")
@@ -105,9 +99,7 @@ async def get_running_service(
         service = await producer.get_service_details(the_app, f"{service_uuid}")
         return Envelope[dict[str, Any]](data=service)
     except ServiceUUIDNotFoundError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
 
 
 @router.delete(
@@ -124,11 +116,7 @@ async def stop_service(
         service_uuid,
     )
     try:
-        await producer.stop_service(
-            the_app, node_uuid=f"{service_uuid}", save_state=save_state
-        )
+        await producer.stop_service(the_app, node_uuid=f"{service_uuid}", save_state=save_state)
 
     except ServiceUUIDNotFoundError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err

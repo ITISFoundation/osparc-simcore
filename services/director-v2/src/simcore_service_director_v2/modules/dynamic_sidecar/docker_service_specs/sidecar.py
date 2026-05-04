@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
@@ -60,7 +60,7 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
     host: str = app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST
     port: str = f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}"
     username: str = "null"
-    password: str = "null"
+    password: str = "null"  # noqa: S105
     secure: str = "0"
 
     storage_auth_settings = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
@@ -94,20 +94,7 @@ def _get_environment_variables(
 ) -> dict[str, str]:
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     redis_settings = app_settings.REDIS
-    r_clone_settings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
-    )
-    dy_sidecar_aws_s3_cli_settings = None
-    if (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS
-        and app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.AWS_S3_CLI_S3
-    ):
-        dy_sidecar_aws_s3_cli_settings = json_dumps(
-            model_dump_with_secrets(
-                app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS,
-                show_secrets=True,
-            )
-        )
+    r_clone_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
 
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -143,13 +130,11 @@ def _get_environment_variables(
             else scheduler_data.paths_mapping.legacy_state.model_dump_json()
         ),
         "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.model_dump_json(),
-        "DY_SIDECAR_STATE_PATHS": json_dumps(
-            f"{x}" for x in scheduler_data.paths_mapping.state_paths
-        ),
+        "DY_SIDECAR_STATE_PATHS": json_dumps(f"{x}" for x in scheduler_data.paths_mapping.state_paths),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
-        "DY_SIDECAR_AWS_S3_CLI_SETTINGS": dy_sidecar_aws_s3_cli_settings or "null",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
+        "DY_SIDECAR_REQUIRES_DATA_MOUNTING": f"{scheduler_data.requires_data_mounting}",
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
         "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
         "POSTGRES_HOST": f"{app_settings.POSTGRES.POSTGRES_HOST}",
@@ -157,17 +142,14 @@ def _get_environment_variables(
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
-        "R_CLONE_OPTION_TRANSFERS": f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
-        "R_CLONE_OPTION_RETRIES": f"{r_clone_settings.R_CLONE_OPTION_RETRIES}",
-        "R_CLONE_OPTION_BUFFER_SIZE": r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
+        "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.model_dump_json(),
+        "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": r_clone_settings.R_CLONE_SIMCORE_SDK_SYNC_SETTINGS.model_dump_json(),
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "REDIS_SETTINGS": json_dumps(
-            model_dump_with_secrets(redis_settings, show_secrets=True)
-        ),
+        "REDIS_SETTINGS": json_dumps(model_dump_with_secrets(redis_settings, show_secrets=True)),
         "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
             json_dumps(
                 model_dump_with_secrets(
@@ -188,16 +170,14 @@ def _get_environment_variables(
             if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
             else "null"
         ),
-        "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY.get_secret_value(),
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
         "S3_REGION": r_clone_settings.R_CLONE_S3.S3_REGION,
-        "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY.get_secret_value(),
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
         "DYNAMIC_SIDECAR_TRACING": (
-            app_settings.DIRECTOR_V2_TRACING.json()
-            if app_settings.DIRECTOR_V2_TRACING
-            else "null"
+            app_settings.DIRECTOR_V2_TRACING.json() if app_settings.DIRECTOR_V2_TRACING else "null"
         ),
         # For background info on this special env-var above, see
         # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
@@ -211,7 +191,7 @@ def _get_environment_variables(
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
         "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
-        "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
+        "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",  # noqa: E501
     }
     if r_clone_settings.R_CLONE_S3.S3_ENDPOINT is not None:
         envs["S3_ENDPOINT"] = f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}"
@@ -231,9 +211,7 @@ def get_prometheus_monitoring_networks(
     prometheus_networks: list[str], callbacks_mapping: CallbacksMapping
 ) -> list[dict[str, str]]:
     return (
-        []
-        if callbacks_mapping.metrics is None
-        else [{"Target": network_name} for network_name in prometheus_networks]
+        [] if callbacks_mapping.metrics is None else [{"Target": network_name} for network_name in prometheus_networks]
     )
 
 
@@ -242,10 +220,9 @@ async def _get_mounts(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-    app_settings: AppSettings,
     has_quota_support: bool,
     rpc_client: RabbitMQRPCClient,
-    is_efs_enabled: bool,
+    user_extra_properties: UserExtraProperties,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
@@ -264,11 +241,7 @@ async def _get_mounts(
         ),
     ]
 
-    volume_size_limits = (
-        scheduler_data.paths_mapping.volume_size_limits or {}
-        if has_quota_support
-        else {}
-    )
+    volume_size_limits = scheduler_data.paths_mapping.volume_size_limits or {} if has_quota_support else {}
 
     # Docker does not allow mounting of subfolders from volumes as the following:
     #   `volume_name/inputs:/target_folder/inputs`
@@ -298,12 +271,10 @@ async def _get_mounts(
 
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
-        if is_efs_enabled:
+        if user_extra_properties.is_efs_enabled:
             assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
 
-            _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(
-                path_to_mount
-            ).strip("_")
+            _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(path_to_mount).strip("_")
             await efs_manager.create_project_specific_data_dir(
                 rpc_client,
                 project_id=scheduler_data.project_id,
@@ -322,19 +293,6 @@ async def _get_mounts(
                     storage_directory_name=_storage_directory_name,
                 )
             )
-        # for now only enable this with dev features enabled
-        elif app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-            mounts.append(
-                DynamicSidecarVolumesPathsResolver.mount_r_clone(
-                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    path=path_to_mount,
-                    node_uuid=scheduler_data.node_uuid,
-                    service_run_id=scheduler_data.run_id,
-                    project_id=scheduler_data.project_id,
-                    user_id=scheduler_data.user_id,
-                    r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
-                )
-            )
         else:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_entry(
@@ -348,12 +306,20 @@ async def _get_mounts(
                 )
             )
 
+    if scheduler_data.paths_mapping.state_paths and scheduler_data.requires_data_mounting:
+        mounts.append(
+            DynamicSidecarVolumesPathsResolver.mount_vfs_cache(
+                swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                node_uuid=scheduler_data.node_uuid,
+                service_run_id=scheduler_data.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
+            )
+        )
+
     if dynamic_sidecar_path := dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV:
         # Settings validators guarantees that this never happens in production mode
-        assert (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE
-            != BootModeEnum.PRODUCTION
-        )
+        assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE != BootModeEnum.PRODUCTION
 
         mounts.append(
             {
@@ -362,12 +328,7 @@ async def _get_mounts(
                 "Type": "bind",
             }
         )
-        packages_path = (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-            / ".."
-            / ".."
-            / "packages"
-        )
+        packages_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV / ".." / ".." / "packages"
         mounts.append(
             {
                 "Source": str(packages_path),
@@ -391,9 +352,7 @@ async def _get_mounts(
     return mounts
 
 
-def _get_ports(
-    *, dynamic_sidecar_settings: DynamicSidecarSettings, app_settings: AppSettings
-) -> list[dict[str, Any]]:
+def _get_ports(*, dynamic_sidecar_settings: DynamicSidecarSettings, app_settings: AppSettings) -> list[dict[str, Any]]:
     ports: list[dict[str, Any]] = []  # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
         ports.append(
@@ -417,6 +376,9 @@ def _get_ports(
                 }
             )
     return ports
+
+
+_NO_DEFINED_WALLET_ID_LABEL_VALUE: Final[str] = TypeAdapter(str).validate_python(f"{None}")
 
 
 async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
@@ -447,19 +409,16 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         scheduler_data=scheduler_data,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
-        app_settings=app_settings,
         has_quota_support=has_quota_support,
         rpc_client=rpc_client,
-        is_efs_enabled=user_extra_properties.is_efs_enabled,
+        user_extra_properties=user_extra_properties,
     )
 
-    ports = _get_ports(
-        dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
-    )
+    ports = _get_ports(dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings)
 
-    assert (
-        scheduler_data.product_name is not None
-    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+    assert scheduler_data.product_name is not None, (
+        "ONLY for legacy. This function should not be called with product_name==None"
+    )  # nosec
 
     standard_simcore_docker_labels: dict[DockerLabelKey, str] = SimcoreContainerLabels(
         user_id=scheduler_data.user_id,
@@ -476,23 +435,18 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         {
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             to_simcore_runtime_docker_label_key("service_key"): scheduler_data.key,
-            to_simcore_runtime_docker_label_key(
-                "service_version"
-            ): scheduler_data.version,
+            to_simcore_runtime_docker_label_key("service_version"): scheduler_data.version,
         }
         | get_prometheus_service_labels(
             dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
             scheduler_data.callbacks_mapping,
         )
         | standard_simcore_docker_labels
+        | app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_CUSTOM_LABELS
     )
 
-    placement_settings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
-    )
-    placement_constraints = deepcopy(
-        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
-    )
+    placement_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
+    placement_constraints = deepcopy(placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS)
     # if service has a pricing plan apply constraints for autoscaling
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
@@ -502,20 +456,40 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             )
         )
 
-    placement_substitutions: dict[str, DockerPlacementConstraint] = (
-        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
-    )
+    placement_substitutions = placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     for image_resources in scheduler_data.service_resources.values():
         for resource_name in image_resources.resources:
             if resource_name in placement_substitutions:
                 placement_constraints.append(placement_substitutions[resource_name])
+
+    # Add dynamic sidecar custom placement labels as constraints
+    osparc_custom_placement_constraints = (
+        placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS
+    )
+    label_values = {
+        "user_id": scheduler_data.user_id,
+        "project_id": scheduler_data.project_id,
+        "node_id": scheduler_data.node_uuid,
+        "product_name": scheduler_data.product_name,
+        "wallet_id": (
+            scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else _NO_DEFINED_WALLET_ID_LABEL_VALUE
+        ),
+    }
+    for label_key, label_template in osparc_custom_placement_constraints.items():
+        resolved_value = label_template.format(**label_values)
+        if resolved_value:  # skip if template resolved to empty string
+            placement_constraints.append(
+                TypeAdapter(DockerPlacementConstraint).validate_python(
+                    f"node.labels.{label_key}=={resolved_value}",
+                )
+            )
 
     #  -----------
     create_service_params = {
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": service_labels,
         "name": scheduler_data.service_name,
-        "networks": [
+        "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
             {"Target": swarm_network_id},
             *get_prometheus_monitoring_networks(
                 dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
@@ -535,7 +509,8 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,
-                "Labels": standard_simcore_docker_labels,
+                "Labels": standard_simcore_docker_labels
+                | app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_CUSTOM_LABELS,
                 "Mounts": mounts,
                 "Secrets": (
                     [
@@ -559,6 +534,13 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                     else None
                 ),
             },
+            "Networks": [
+                {"Target": swarm_network_id},
+                *get_prometheus_monitoring_networks(
+                    dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
+                    scheduler_data.callbacks_mapping,
+                ),
+            ],
             "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten

@@ -137,9 +137,7 @@ ProjectsListOrderParams = create_ordering_query_model_class(
 class ProjectsListExtraQueryParams(RequestParameters):
     project_type: Annotated[ProjectTypeAPI, Field(alias="type")] = ProjectTypeAPI.all
     template_type: ProjectTemplateType | None = None
-    show_hidden: Annotated[
-        bool, Field(description="includes projects marked as hidden in the listing")
-    ] = False
+    show_hidden: Annotated[bool, Field(description="includes projects marked as hidden in the listing")] = False
     search: Annotated[
         str | None,
         Field(
@@ -168,16 +166,13 @@ class ProjectsListExtraQueryParams(RequestParameters):
             return None
         return v
 
-    _template_type_null_or_none_str_to_none_validator = field_validator(
-        "template_type", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _template_type_null_or_none_str_to_none_validator = field_validator("template_type", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
     @model_validator(mode="after")
     def _check_template_type_compatibility(self):
-        if (
-            self.project_type in [ProjectTypeAPI.all, ProjectTypeAPI.user]
-            and self.template_type is not None
-        ):
+        if self.project_type in [ProjectTypeAPI.all, ProjectTypeAPI.user] and self.template_type is not None:
             msg = f"When {self.project_type=} is `all` or `user` the {self.template_type=} should be None"
             raise ValueError(msg)
         return self
@@ -186,9 +181,9 @@ class ProjectsListExtraQueryParams(RequestParameters):
         null_or_none_str_to_none_validator
     )
 
-    _null_or_none_str_to_none_validator2 = field_validator(
-        "workspace_id", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator2 = field_validator("workspace_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
 
 class ProjectsListQueryParams(
@@ -225,27 +220,23 @@ class ProjectSearchExtraQueryParams(
         ),
     ] = None
 
-    _empty_is_none = field_validator("text", mode="before")(
-        empty_str_to_none_pre_validator
-    )
+    _empty_is_none = field_validator("text", mode="before")(empty_str_to_none_pre_validator)
 
-    _template_type_null_or_none_str_to_none_validator = field_validator(
-        "template_type", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _template_type_null_or_none_str_to_none_validator = field_validator("template_type", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
     @model_validator(mode="after")
     def _check_template_type_compatibility(self):
-        if (
-            self.project_type in [ProjectTypeAPI.all, ProjectTypeAPI.user]
-            and self.template_type is not None
-        ):
+        if self.project_type in [ProjectTypeAPI.all, ProjectTypeAPI.user] and self.template_type is not None:
             msg = f"When {self.project_type=} is `all` or `user` the {self.template_type=} should be None"
             raise ValueError(msg)
         return self
 
 
 class ProjectsSearchQueryParams(
-    ProjectSearchExtraQueryParams, ProjectsListOrderParams  # type: ignore[misc, valid-type]
+    ProjectSearchExtraQueryParams,
+    ProjectsListOrderParams,  # type: ignore[misc, valid-type]
 ):
     def tag_ids_list(self) -> list[int]:
         try:

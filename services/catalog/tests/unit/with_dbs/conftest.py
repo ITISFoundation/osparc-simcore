@@ -76,10 +76,7 @@ async def app_settings(  # starts postgres service before app starts
     assert app_settings.CATALOG_POSTGRES
     assert postgres_host_config["user"] == app_settings.CATALOG_POSTGRES.POSTGRES_USER
     assert postgres_host_config["database"] == app_settings.CATALOG_POSTGRES.POSTGRES_DB
-    assert (
-        app_settings.CATALOG_POSTGRES.POSTGRES_PASSWORD.get_secret_value()
-        == postgres_host_config["password"]
-    )
+    assert app_settings.CATALOG_POSTGRES.POSTGRES_PASSWORD.get_secret_value() == postgres_host_config["password"]
     return app_settings
 
 
@@ -91,7 +88,7 @@ async def app_settings(  # starts postgres service before app starts
 #   -> groups(gid)@owner
 # * services_access_rights
 #   -> groups(gid)@owner,
-#   -> products(name)@produt_name
+#   -> products(name)@product_name
 #   -> services_meta_data@key, version
 # * services_consume_filetypes
 #
@@ -136,9 +133,7 @@ def other_product(product: dict[str, Any]) -> ProductName:
 
 
 @pytest.fixture
-def products_names(
-    target_product: ProductName, other_product: ProductName
-) -> list[str]:
+def products_names(target_product: ProductName, other_product: ProductName) -> list[str]:
     return [other_product, target_product]
 
 
@@ -176,9 +171,7 @@ async def other_user(
 
 
 @pytest.fixture()
-async def user_groups_ids(
-    sqlalchemy_async_engine: AsyncEngine, user: dict[str, Any]
-) -> AsyncIterator[list[int]]:
+async def user_groups_ids(sqlalchemy_async_engine: AsyncEngine, user: dict[str, Any]) -> AsyncIterator[list[int]]:
     """Inits groups table and returns group identifiers"""
 
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
@@ -196,9 +189,7 @@ async def user_groups_ids(
     async with sqlalchemy_async_engine.begin() as conn:
         for row in data:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-            await conn.execute(
-                groups.insert().values(**dict(zip(cols, row, strict=False)))
-            )
+            await conn.execute(groups.insert().values(**dict(zip(cols, row, strict=False))))
 
     gids = [1, user["primary_gid"]] + [items[0] for items in data]
 
@@ -249,7 +240,6 @@ async def services_db_tables_injector(
         async with sqlalchemy_async_engine.begin() as conn:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
             for service in iter_services:
-
                 insert_stmt = pg_insert(services_meta_data).values(**service)
 
                 update_stmt = insert_stmt.on_conflict_do_update(
@@ -272,9 +262,7 @@ async def services_db_tables_injector(
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             services_meta_data.delete().where(
-                sql.tuple_(services_meta_data.c.key, services_meta_data.c.version).in_(
-                    inserted_services
-                )
+                sql.tuple_(services_meta_data.c.key, services_meta_data.c.version).in_(inserted_services)
             )
         )
 
@@ -367,9 +355,7 @@ async def service_metadata_faker(faker: Faker) -> Callable:
         data = deepcopy(template)
         data.update(**overrides)
 
-        assert ServiceMetaDataPublished.model_validate(
-            data
-        ), "Invalid fake data. Out of sync!"
+        assert ServiceMetaDataPublished.model_validate(data), "Invalid fake data. Out of sync!"
         return data
 
     return _fake_factory
@@ -469,9 +455,7 @@ async def create_fake_service_data(
 
 
 @pytest.fixture
-def create_director_list_services_from() -> (
-    Callable[[list[dict[str, Any]], list], list[dict[str, Any]]]
-):
+def create_director_list_services_from() -> Callable[[list[dict[str, Any]], list], list[dict[str, Any]]]:
     """Convenience function to merge outputs of
     - `create_fake_service_data` callable with those of
     - `expected_director_rest_api_list_services` fixture
@@ -490,9 +474,7 @@ def create_director_list_services_from() -> (
             jsonable_encoder(
                 _Loader.model_validate(
                     {
-                        **next(
-                            itertools.cycle(expected_director_rest_api_list_services)
-                        ),
+                        **next(itertools.cycle(expected_director_rest_api_list_services)),
                         **data[0],  # service, **access_rights = data
                     }
                 ),

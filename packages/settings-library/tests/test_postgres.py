@@ -19,9 +19,7 @@ def env_file():
 
 @pytest.fixture
 def mock_environment(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    return mock_environment | setenvs_from_dict(
-        monkeypatch, {"POSTGRES_CLIENT_NAME": "Some &43 funky name"}
-    )
+    return mock_environment | setenvs_from_dict(monkeypatch, {"POSTGRES_CLIENT_NAME": "Some &43 funky name"})
 
 
 def test_cached_property_dsn(mock_environment: EnvVarsDict):
@@ -36,9 +34,7 @@ def test_cached_property_dsn(mock_environment: EnvVarsDict):
     assert "dsn" not in settings.model_dump()
 
 
-def test_dsn_with_query(
-    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
-):
+def test_dsn_with_query(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker):
     settings = PostgresSettings()
 
     assert settings.POSTGRES_CLIENT_NAME
@@ -54,14 +50,10 @@ def test_dsn_with_query(
         settings = PostgresSettings()
 
         assert not settings.POSTGRES_CLIENT_NAME
-        assert f"{settings.dsn}?application_name=blah" == settings.dsn_with_query(
-            "blah", suffix=None
-        )
+        assert f"{settings.dsn}?application_name=blah" == settings.dsn_with_query("blah", suffix=None)
 
 
-def test_dsn_with_async_sqlalchemy_has_query(
-    mock_environment: EnvVarsDict, monkeypatch
-):
+def test_dsn_with_async_sqlalchemy_has_query(mock_environment: EnvVarsDict, monkeypatch):
     settings = PostgresSettings()
 
     parsed_url = urlparse(settings.dsn_with_async_sqlalchemy)

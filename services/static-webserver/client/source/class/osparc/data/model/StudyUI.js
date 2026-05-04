@@ -456,7 +456,9 @@ qx.Class.define("osparc.data.model.StudyUI", {
           jsonObject["annotations"][annotationId] = annotations[annotationId].serialize();
         });
       }
-      return jsonObject;
+
+      // return a deep clone of the object to avoid modifications to the original object
+      return osparc.utils.Utils.deepCloneObject(jsonObject);
     }
   }
 });

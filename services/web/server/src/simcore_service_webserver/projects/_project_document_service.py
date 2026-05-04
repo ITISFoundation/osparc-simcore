@@ -57,16 +57,12 @@ async def create_project_document_and_increment_version(
         blocking=True,
         blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
     )
-    async def _create_project_document_and_increment_version() -> (
-        tuple[ProjectDocument, int]
-    ):
+    async def _create_project_document_and_increment_version() -> tuple[ProjectDocument, int]:
         """This function is protected because
         - the project document and its version must be kept in sync
         """
         # Get the full project with workbench for document creation
-        project = await _projects_repository.get_project_with_workbench(
-            app=app, project_uuid=project_uuid
-        )
+        project = await _projects_repository.get_project_with_workbench(app=app, project_uuid=project_uuid)
 
         # Create project document
         project_document = ProjectDocument(
@@ -124,9 +120,7 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
         projects_removed = 0
 
         # Scan through all project document keys
-        async for key in redis_client.redis.scan_iter(
-            match=project_document_pattern, count=1000
-        ):
+        async for key in redis_client.redis.scan_iter(match=project_document_pattern, count=1000):
             # Extract project UUID from the key pattern "projects:{project_uuid}:version"
             key_str = key.decode("utf-8") if isinstance(key, bytes) else key
             match = re.match(r"projects:(?P<project_uuid>[0-9a-f-]+):version", key_str)
@@ -149,9 +143,7 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
             # 2. CHECK - Check if there are any users connected to this project room
             try:
                 # Get all session IDs (socket IDs) in the project room
-                room_sessions = list(
-                    sio.manager.get_participants(namespace="/", room=project_room)
-                )
+                room_sessions = list(sio.manager.get_participants(namespace="/", room=project_room))
 
                 # If no users are connected to this project room, remove the document
                 if not room_sessions:
@@ -175,9 +167,7 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                                 "project_room": project_room,
                                 "key_str": key_str,
                                 "connected_users_count": len(room_sessions),
-                                "room_sessions": room_sessions[
-                                    :5
-                                ],  # Limit to first 5 sessions for debugging
+                                "room_sessions": room_sessions[:5],  # Limit to first 5 sessions for debugging
                             },
                             tip="This indicates a potential race condition or inconsistency between the Redis Resources table and socketio room state. Check if the project was recently closed but users are still connected, or if there's a synchronization issue between services.",
                         )

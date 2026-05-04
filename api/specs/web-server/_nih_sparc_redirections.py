@@ -6,7 +6,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
@@ -41,7 +40,7 @@ async def get_redirection_to_viewer(
 @router.get(
     "/study/{id}",
     response_class=RedirectResponse,
-    response_description="Opens osparc and opens a copy of publised study",
+    response_description="Opens osparc and opens a copy of published study",
     status_code=status.HTTP_302_FOUND,
 )
 async def get_redirection_to_study_page(id: ProjectID):

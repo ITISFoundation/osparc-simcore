@@ -1,10 +1,11 @@
 """
-    Defines specific services/group ID specifications
+Defines specific services/group ID specifications
 
-    A group X may have special specifications defined when running a jupyter-lab-math
-    for example that should run on a specific machine.
+A group X may have special specifications defined when running a jupyter-lab-math
+for example that should run on a specific machine.
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -38,6 +39,18 @@ services_specifications = sa.Table(
         doc="Group Identifier",
     ),
     sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            name="fk_services_specifications_product_name_products",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="Product Identifier",
+    ),
+    sa.Column(
         "sidecar",
         JSONB,
         nullable=True,
@@ -49,6 +62,12 @@ services_specifications = sa.Table(
         nullable=True,
         doc="schedule-time specifications for the service (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate",
     ),
+    sa.Column(
+        "comments",
+        sa.String,
+        nullable=True,
+        doc="Optional comments about this service specification.",
+    ),
     # If service-key/version gets deleted from service_metadata, it should be deleted from here
     sa.ForeignKeyConstraint(
         ["service_key", "service_version"],
@@ -56,12 +75,11 @@ services_specifications = sa.Table(
         onupdate=RefActions.CASCADE,
         ondelete=RefActions.CASCADE,
     ),
-    # This table stores services (key:version) that consume filetype by AT LEAST one input_port
-    # if more ports can consume, then it should only be added once in this table
     sa.PrimaryKeyConstraint(
         "service_key",
         "service_version",
         "gid",
+        "product_name",
         name="services_specifications_pk",
     ),
 )

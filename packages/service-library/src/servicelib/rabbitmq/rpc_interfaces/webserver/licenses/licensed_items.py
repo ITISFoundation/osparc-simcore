@@ -61,9 +61,7 @@ async def get_available_licensed_items_for_wallet(
 ) -> LicensedItemRpcGetPage:
     result: LicensedItemRpcGetPage = await rabbitmq_rpc_client.request(
         DEFAULT_WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python(
-            "get_available_licensed_items_for_wallet"
-        ),
+        TypeAdapter(RPCMethodName).validate_python("get_available_licensed_items_for_wallet"),
         product_name=product_name,
         user_id=user_id,
         wallet_id=wallet_id,

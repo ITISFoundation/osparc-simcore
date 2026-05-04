@@ -1,18 +1,14 @@
 # pylint:disable=unused-import
 
-from typing import TYPE_CHECKING, Final
+from typing import Final
 
-from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp.application_keys import (
-    APP_AIOPG_ENGINE_KEY,
     APP_CLIENT_SESSION_KEY,
     APP_CONFIG_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,
 )
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-
-from ._meta import APP_NAME
 
 assert APP_CLIENT_SESSION_KEY  # nosec
 assert APP_CONFIG_KEY  # nosec
@@ -56,7 +52,6 @@ MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
 
 
 __all__: tuple[str, ...] = (
-    "APP_AIOPG_ENGINE_KEY",
     "APP_CLIENT_SESSION_KEY",
     "APP_CONFIG_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
@@ -65,4 +60,4 @@ __all__: tuple[str, ...] = (
     "RQT_USERID_KEY",
 )
 
-# nopycln: file
+# nopycln: file  # noqa: ERA001

@@ -59,11 +59,5 @@ def test_projects_networks_validation_fails(network_name: str) -> None:
 def test_class_constructors_fail() -> None:
     with pytest.raises(ValidationError):
         NetworksWithAliases.model_validate(
-            {
-                "ok-netowrk_naeme": {
-                    UUID(
-                        "5057e2c1-d392-4d31-b5c8-19f3db780390"
-                    ): "not_allowed with_ uuid"
-                }
-            }
+            {"ok-network_naeme": {UUID("5057e2c1-d392-4d31-b5c8-19f3db780390"): "not_allowed with_ uuid"}}
         )

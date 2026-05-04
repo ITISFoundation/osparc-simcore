@@ -63,7 +63,6 @@ def resource_tracker_setup_db(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
-
         con.execute(
             services_meta_data.insert().values(
                 key=_SERVICE_KEY,
@@ -201,9 +200,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="SMALL",
-            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(10),
@@ -222,9 +219,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
             data=PricingUnitWithCostCreate(
                 pricing_plan_id=_pricing_plan_id,
                 unit_name="SMALL",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=True,
                 specific_info=SpecificInfo(aws_ec2_instances=[]),
                 cost_per_unit=Decimal(10),
@@ -252,9 +247,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name=_unit_name,
-            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=None,
@@ -273,9 +266,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name="MEDIUM",
-            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=PricingUnitCostUpdate(
@@ -306,9 +297,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="LARGE",
-            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
             default=False,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(20),
@@ -351,12 +340,10 @@ async def test_rpc_pricing_plans_to_service_workflow(
     assert isinstance(result, RutPricingPlanGet)
     _pricing_plan_id = result.pricing_plan_id
 
-    result = (
-        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
-            rpc_client,
-            product_name="osparc",
-            pricing_plan_id=_pricing_plan_id,
-        )
+    result = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+        rpc_client,
+        product_name="osparc",
+        pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, list)
     assert result == []
@@ -373,12 +360,10 @@ async def test_rpc_pricing_plans_to_service_workflow(
     assert result.pricing_plan_id == _pricing_plan_id
     assert result.service_version == _first_service_version
 
-    result = (
-        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
-            rpc_client,
-            product_name="osparc",
-            pricing_plan_id=_pricing_plan_id,
-        )
+    result = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+        rpc_client,
+        product_name="osparc",
+        pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, list)
     assert len(result) == 1
@@ -396,12 +381,10 @@ async def test_rpc_pricing_plans_to_service_workflow(
     assert result.pricing_plan_id == _pricing_plan_id
     assert result.service_version == _second_service_version
 
-    result = (
-        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
-            rpc_client,
-            product_name="osparc",
-            pricing_plan_id=_pricing_plan_id,
-        )
+    result = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+        rpc_client,
+        product_name="osparc",
+        pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, list)
     assert len(result) == 2
@@ -419,12 +402,10 @@ async def test_rpc_pricing_plans_to_service_workflow(
     assert result.pricing_plan_id == _pricing_plan_id
     assert result.service_key == _different_service_key
 
-    result = (
-        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
-            rpc_client,
-            product_name="osparc",
-            pricing_plan_id=_pricing_plan_id,
-        )
+    result = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+        rpc_client,
+        product_name="osparc",
+        pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, list)
     assert len(result) == 3
@@ -458,9 +439,7 @@ async def test_rpc_pricing_plans_with_units_workflow__for_licenses(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="VIP MODEL",
-            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"]["examples"][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(10),
@@ -492,9 +471,7 @@ async def test_rpc_pricing_plans_with_units_workflow__for_licenses(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name=_unit_name,
-            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"]["examples"][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=None,
@@ -513,9 +490,7 @@ async def test_rpc_pricing_plans_with_units_workflow__for_licenses(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name=_unit_name,
-            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"]["examples"][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=PricingUnitCostUpdate(
@@ -546,9 +521,7 @@ async def test_rpc_pricing_plans_with_units_workflow__for_licenses(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="5 seats",
-            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
-                "examples"
-            ][0],
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"]["examples"][0],
             default=False,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(20),

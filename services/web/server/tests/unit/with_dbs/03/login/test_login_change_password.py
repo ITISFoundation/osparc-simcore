@@ -37,9 +37,7 @@ async def test_unauthorized_to_change_password(client: TestClient, new_password:
     await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
 
-async def test_wrong_current_password(
-    client: TestClient, login_options: LoginOptions, new_password: str
-):
+async def test_wrong_current_password(client: TestClient, login_options: LoginOptions, new_password: str):
     assert client.app
     url = client.app.router["auth_change_password"].url_for()
 
@@ -55,9 +53,7 @@ async def test_wrong_current_password(
         assert response.url.path == url.path
         assert response.status == status.HTTP_422_UNPROCESSABLE_ENTITY
         assert MSG_WRONG_PASSWORD in await response.text()
-        await assert_status(
-            response, status.HTTP_422_UNPROCESSABLE_ENTITY, MSG_WRONG_PASSWORD
-        )
+        await assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY, MSG_WRONG_PASSWORD)
 
 
 async def test_wrong_confirm_pass(client: TestClient, new_password: str):

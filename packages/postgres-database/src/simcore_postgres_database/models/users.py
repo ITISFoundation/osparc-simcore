@@ -129,8 +129,7 @@ users = sa.Table(
         "expires_at",
         sa.DateTime(),
         nullable=True,
-        doc="Sets the expiration date for trial accounts."
-        "If set to NULL then the account does not expire.",
+        doc="Sets the expiration date for trial accounts.If set to NULL then the account does not expire.",
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("id", name="user_pkey"),

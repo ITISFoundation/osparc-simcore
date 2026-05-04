@@ -60,11 +60,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
     )
 
     # List project in workspace
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"workspace_id": f"{added_workspace.workspace_id}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"workspace_id": f"{added_workspace.workspace_id}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -93,9 +89,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
 
     # List folders in workspace
     base_url = client.app.router["list_folders"].url_for()
-    url = base_url.with_query(
-        {"workspace_id": f"{added_workspace.workspace_id}", "folder_id": "null"}
-    )
+    url = base_url.with_query({"workspace_id": f"{added_workspace.workspace_id}", "folder_id": "null"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -127,9 +121,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
     async with LoggedUser(client) as new_logged_user:
         # Try to list folder that user doesn't have access to
         url = (
-            client.app.router["list_projects"]
-            .url_for()
-            .with_query({"workspace_id": f"{added_workspace.workspace_id}"})
+            client.app.router["list_projects"].url_for().with_query({"workspace_id": f"{added_workspace.workspace_id}"})
         )
         resp = await client.get(f"{url}")
         _, errors = await assert_status(
@@ -142,9 +134,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
         await update_or_insert_workspace_group(
             client.app,
             workspace_id=added_workspace.workspace_id,
-            group_id=TypeAdapter(GroupID).validate_python(
-                new_logged_user["primary_gid"]
-            ),
+            group_id=TypeAdapter(GroupID).validate_python(new_logged_user["primary_gid"]),
             read=True,
             write=True,
             delete=False,
@@ -154,9 +144,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
         url = (
             client.app.router["list_folders"]
             .url_for()
-            .with_query(
-                {"workspace_id": f"{added_workspace.workspace_id}", "folder_id": "null"}
-            )
+            .with_query({"workspace_id": f"{added_workspace.workspace_id}", "folder_id": "null"})
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -208,9 +196,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
         await update_or_insert_workspace_group(
             client.app,
             workspace_id=added_workspace.workspace_id,
-            group_id=TypeAdapter(GroupID).validate_python(
-                new_logged_user["primary_gid"]
-            ),
+            group_id=TypeAdapter(GroupID).validate_python(new_logged_user["primary_gid"]),
             read=True,
             write=False,
             delete=False,
@@ -229,9 +215,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
 
         # But user has still read permissions
         base_url = client.app.router["list_folders"].url_for()
-        url = base_url.with_query(
-            {"workspace_id": f"{added_workspace.workspace_id}", "folder_id": "null"}
-        )
+        url = base_url.with_query({"workspace_id": f"{added_workspace.workspace_id}", "folder_id": "null"})
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
@@ -296,11 +280,7 @@ async def test_workspaces_delete_folders(
     )
 
     # List project in workspace
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"workspace_id": f"{added_workspace.workspace_id}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"workspace_id": f"{added_workspace.workspace_id}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 2
@@ -345,18 +325,12 @@ async def test_workspaces_delete_folders(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Delete folder
-    url = client.app.router["delete_folder"].url_for(
-        folder_id=f"{first_folder['folderId']}"
-    )
+    url = client.app.router["delete_folder"].url_for(folder_id=f"{first_folder['folderId']}")
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # List project in workspace (The projects should have been deleted)
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"workspace_id": f"{added_workspace.workspace_id}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"workspace_id": f"{added_workspace.workspace_id}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
@@ -444,9 +418,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
 
     # List PROJECTS in workspace 1
     url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"workspace_id": f"{added_workspace_1['workspaceId']}"})
+        client.app.router["list_projects"].url_for().with_query({"workspace_id": f"{added_workspace_1['workspaceId']}"})
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -456,9 +428,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     url = (
         client.app.router["list_folders"]
         .url_for()
-        .with_query(
-            {"workspace_id": f"{added_workspace_1['workspaceId']}", "folder_id": "null"}
-        )
+        .with_query({"workspace_id": f"{added_workspace_1['workspaceId']}", "folder_id": "null"})
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)

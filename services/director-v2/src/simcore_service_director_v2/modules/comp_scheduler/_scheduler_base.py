@@ -1,5 +1,6 @@
 """The scheduler shall be run as a background task.
-Based on oSparc pipelines, it monitors when to start the next worker task(s), either one at a time or as a group of tasks.
+Based on oSparc pipelines, it monitors when to start the next worker task(s),
+either one at a time or as a group of tasks.
 
 In principle the Scheduler maintains the comp_runs table in the database.
 It contains how the pipeline was run and by whom.
@@ -63,6 +64,7 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ..osparc_variables._errors import OsparcVariableResolveTimeoutError
 from ._models import TaskStateTracker
 from ._publisher import request_pipeline_scheduling
 from ._utils import (
@@ -77,9 +79,7 @@ from ._utils import (
 _logger = logging.getLogger(__name__)
 
 
-_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=30
-)
+_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
 _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 
@@ -128,36 +128,26 @@ async def _triage_changed_tasks(
         tracker.current
         for tracker in changed_tasks
         if tracker.current.state in RUNNING_STATES
-        or (
-            tracker.previous.state in WAITING_FOR_START_STATES
-            and tracker.current.state in COMPLETED_STATES
-        )
+        or (tracker.previous.state in WAITING_FOR_START_STATES and tracker.current.state in COMPLETED_STATES)
     ]
 
-    completed_tasks = [
-        tracker
-        for tracker in changed_tasks
-        if tracker.current.state in COMPLETED_STATES
-    ]
+    completed_tasks = [tracker for tracker in changed_tasks if tracker.current.state in COMPLETED_STATES]
 
     waiting_for_resources_tasks = [
-        tracker
-        for tracker in changed_tasks
-        if tracker.current.state in WAITING_FOR_START_STATES
+        tracker for tracker in changed_tasks if tracker.current.state in WAITING_FOR_START_STATES
     ]
 
     lost_tasks = [
         tracker
         for tracker in changed_tasks
         if (tracker.current.state is RunningState.UNKNOWN)
-        and (
-            (arrow.utcnow().datetime - tracker.previous.modified)
-            > _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS
-        )
+        and ((arrow.utcnow().datetime - tracker.previous.modified) > _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS)
     ]
     if lost_tasks:
         _logger.warning(
-            "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
+            "%s are currently in unknown state. "
+            "TIP: If they are running in an external cluster and it is not yet ready,"
+            " that might explain it. But inform @sanderegg nevertheless!",
             [t.current.node_id for t in lost_tasks],
         )
 
@@ -180,9 +170,7 @@ class BaseCompScheduler(ABC):
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo = CompPipelinesRepository.instance(self.db_engine)
-        pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
-            project_id
-        )
+        pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(project_id)
         dag = pipeline_at_db.get_graph()
         _logger.debug("%s: current %s", f"{project_id=}", f"{dag=}")
         return dag
@@ -222,9 +210,7 @@ class BaseCompScheduler(ABC):
             f"{user_id=}_{project_id=}_{iteration=}",
             f"{pipeline_state_from_tasks}",
         )
-        await self._set_run_result(
-            user_id, project_id, iteration, pipeline_state_from_tasks
-        )
+        await self._set_run_result(user_id, project_id, iteration, pipeline_state_from_tasks)
         return pipeline_state_from_tasks
 
     async def _set_run_result(
@@ -250,14 +236,13 @@ class BaseCompScheduler(ABC):
                 user_id=user_id,
                 project_id=project_id,
                 log=user_message(
-                    f"Project pipeline execution for iteration {iteration} has completed with status: {run_result.value}",
+                    f"Project pipeline execution for iteration {iteration} "
+                    f"has completed with status: {run_result.value}",
                     _version=1,
                 ),
                 log_level=logging.INFO,
             )
-        await publish_pipeline_scheduling_state(
-            self.rabbitmq_client, user_id, project_id, run_result
-        )
+        await publish_pipeline_scheduling_state(self.rabbitmq_client, user_id, project_id, run_result)
 
     async def _set_processing_done(
         self,
@@ -285,9 +270,7 @@ class BaseCompScheduler(ABC):
     ) -> dict[NodeIDStr, CompTaskAtDB]:
         # Perform a reverse topological sort to ensure tasks are ordered from last to first
         sorted_node_ids = list(reversed(list(nx.topological_sort(dag))))
-        tasks = {
-            node_id: tasks[node_id] for node_id in sorted_node_ids if node_id in tasks
-        }
+        tasks = {node_id: tasks[node_id] for node_id in sorted_node_ids if node_id in tasks}
         # we need the tasks ordered from the last task to the first
         node_ids_to_set_as_aborted: set[NodeIDStr] = set()
         for task in tasks.values():
@@ -326,17 +309,11 @@ class BaseCompScheduler(ABC):
             if task.last_heartbeat is None:
                 assert task.start  # nosec
                 return bool(
-                    (utc_now - task.start.replace(tzinfo=datetime.UTC))
-                    > self.service_runtime_heartbeat_interval
+                    (utc_now - task.start.replace(tzinfo=datetime.UTC)) > self.service_runtime_heartbeat_interval
                 )
-            return bool(
-                (utc_now - task.last_heartbeat)
-                > self.service_runtime_heartbeat_interval
-            )
+            return bool((utc_now - task.last_heartbeat) > self.service_runtime_heartbeat_interval)
 
-        tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
-            project_id, dag
-        )
+        tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
         if running_tasks := [t for t in tasks.values() if _need_heartbeat(t)]:
             await limited_gather(
                 *(
@@ -353,9 +330,7 @@ class BaseCompScheduler(ABC):
             )
             comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
             for task in running_tasks:
-                await comp_tasks_repo.update_project_task_last_heartbeat(
-                    project_id, task.node_id, run_id, utc_now
-                )
+                await comp_tasks_repo.update_project_task_last_heartbeat(project_id, task.node_id, run_id, utc_now)
 
     async def _get_changed_tasks_from_backend(
         self,
@@ -363,9 +338,7 @@ class BaseCompScheduler(ABC):
         processing_tasks: list[CompTaskAtDB],
         comp_run: CompRunsAtDB,
     ) -> tuple[list[TaskStateTracker], list[CompTaskAtDB]]:
-        tasks_backend_status = await self._get_tasks_status(
-            user_id, processing_tasks, comp_run
-        )
+        tasks_backend_status = await self._get_tasks_status(user_id, processing_tasks, comp_run)
 
         return (
             [
@@ -373,16 +346,12 @@ class BaseCompScheduler(ABC):
                     task,
                     task.model_copy(update={"state": backend_state}),
                 )
-                for task, backend_state in zip(
-                    processing_tasks, tasks_backend_status, strict=True
-                )
+                for task, backend_state in zip(processing_tasks, tasks_backend_status, strict=True)
                 if task.state is not backend_state
             ],
             [
                 task
-                for task, backend_state in zip(
-                    processing_tasks, tasks_backend_status, strict=True
-                )
+                for task, backend_state in zip(processing_tasks, tasks_backend_status, strict=True)
                 if task.state is backend_state is RunningState.STARTED
             ],
         )
@@ -409,52 +378,24 @@ class BaseCompScheduler(ABC):
                     ),
                     wallet_id=run_metadata.get("wallet_id"),
                     wallet_name=run_metadata.get("wallet_name"),
-                    pricing_plan_id=(
-                        t.pricing_info.get("pricing_plan_id")
-                        if t.pricing_info
-                        else None
-                    ),
-                    pricing_unit_id=(
-                        t.pricing_info.get("pricing_unit_id")
-                        if t.pricing_info
-                        else None
-                    ),
-                    pricing_unit_cost_id=(
-                        t.pricing_info.get("pricing_unit_cost_id")
-                        if t.pricing_info
-                        else None
-                    ),
-                    product_name=run_metadata.get(
-                        "product_name", UNDEFINED_STR_METADATA
-                    ),
+                    pricing_plan_id=(t.pricing_info.get("pricing_plan_id") if t.pricing_info else None),
+                    pricing_unit_id=(t.pricing_info.get("pricing_unit_id") if t.pricing_info else None),
+                    pricing_unit_cost_id=(t.pricing_info.get("pricing_unit_cost_id") if t.pricing_info else None),
+                    product_name=run_metadata.get("product_name", UNDEFINED_STR_METADATA),
                     simcore_user_agent=run_metadata.get(
                         "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
                     ),
                     user_id=user_id,
                     user_email=run_metadata.get("user_email", UNDEFINED_STR_METADATA),
                     project_id=t.project_id,
-                    project_name=run_metadata.get(
-                        "project_name", UNDEFINED_STR_METADATA
-                    ),
+                    project_name=run_metadata.get("project_name", UNDEFINED_STR_METADATA),
                     node_id=t.node_id,
-                    node_name=run_metadata.get("node_id_names_map", {}).get(
-                        t.node_id, UNDEFINED_STR_METADATA
-                    ),
-                    parent_project_id=run_metadata.get("project_metadata", {}).get(
-                        "parent_project_id"
-                    ),
-                    parent_node_id=run_metadata.get("project_metadata", {}).get(
-                        "parent_node_id"
-                    ),
-                    root_parent_project_id=run_metadata.get("project_metadata", {}).get(
-                        "root_parent_project_id"
-                    ),
-                    root_parent_project_name=run_metadata.get(
-                        "project_metadata", {}
-                    ).get("root_parent_project_name"),
-                    root_parent_node_id=run_metadata.get("project_metadata", {}).get(
-                        "root_parent_node_id"
-                    ),
+                    node_name=run_metadata.get("node_id_names_map", {}).get(t.node_id, UNDEFINED_STR_METADATA),
+                    parent_project_id=run_metadata.get("project_metadata", {}).get("parent_project_id"),
+                    parent_node_id=run_metadata.get("project_metadata", {}).get("parent_node_id"),
+                    root_parent_project_id=run_metadata.get("project_metadata", {}).get("root_parent_project_id"),
+                    root_parent_project_name=run_metadata.get("project_metadata", {}).get("root_parent_project_name"),
+                    root_parent_node_id=run_metadata.get("project_metadata", {}).get("root_parent_node_id"),
                     service_key=t.image.name,
                     service_version=t.image.tag,
                     service_type=ServiceType.COMPUTATIONAL,
@@ -501,9 +442,7 @@ class BaseCompScheduler(ABC):
             started_time=utc_now,
         )
 
-    async def _process_waiting_tasks(
-        self, tasks: list[TaskStateTracker], run_id: PositiveInt
-    ) -> None:
+    async def _process_waiting_tasks(self, tasks: list[TaskStateTracker], run_id: PositiveInt) -> None:
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         for task in tasks:
             await comp_tasks_repo.update_project_tasks_state(
@@ -522,7 +461,7 @@ class BaseCompScheduler(ABC):
         comp_run: CompRunsAtDB,
     ) -> None:
         tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
-        tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES]
+        tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES and t.job_id is not None]
         if not tasks_inprocess:
             return
 
@@ -530,12 +469,12 @@ class BaseCompScheduler(ABC):
         (
             tasks_with_changed_states,
             executing_tasks,
-        ) = await self._get_changed_tasks_from_backend(
-            user_id, tasks_inprocess, comp_run
-        )
+        ) = await self._get_changed_tasks_from_backend(user_id, tasks_inprocess, comp_run)
         # NOTE: typical states a task goes through
-        # NOT_STARTED (initial state) -> PUBLISHED (user press run/API call) -> PENDING -> WAITING_FOR_CLUSTER (cluster creation) ->
-        # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing) -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
+        # NOT_STARTED (initial state) -> PUBLISHED (user press run/API call)
+        # -> PENDING -> WAITING_FOR_CLUSTER (cluster creation) ->
+        # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing)
+        # -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
         # or ABORTED (user cancelled) or UNKNOWN (lost task - it might be transient, be careful with this one)
         sorted_tasks = await _triage_changed_tasks(tasks_with_changed_states)
         _logger.debug("found the following %s tasks with changed states", sorted_tasks)
@@ -545,7 +484,8 @@ class BaseCompScheduler(ABC):
             # tasks that are only queued and accepted by a dask-worker. We use dask plugins to report on tasks states
             # states are published to log_event, and we directly publish into RabbitMQ the sidecar and services logs.
             # tasks_started should therefore be mostly empty but for cases where
-            # - dask log_event/subscribe_topic mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
+            # - dask log_event/subscribe_topic mechanism failed,
+            #       the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
             # - the task finished so fast that the STARTED state was skipped between 2 runs of the dv-2 comp scheduler
             await self._process_started_tasks(
                 sorted_tasks.started,
@@ -589,9 +529,7 @@ class BaseCompScheduler(ABC):
         """returns tasks status from the 3rd party backend"""
 
     @abstractmethod
-    async def _stop_tasks(
-        self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> None:
+    async def _stop_tasks(self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB) -> None:
         """stop tasks in the 3rd party backend"""
 
     @abstractmethod
@@ -633,15 +571,11 @@ class BaseCompScheduler(ABC):
             dag: nx.DiGraph = nx.DiGraph()
 
             try:
-                comp_run = await CompRunsRepository.instance(self.db_engine).get(
-                    user_id, project_id, iteration
-                )
+                comp_run = await CompRunsRepository.instance(self.db_engine).get(user_id, project_id, iteration)
                 dag = await self._get_pipeline_dag(project_id)
 
                 # 1. Update our list of tasks with data from backend (state, results)
-                await self._update_states_from_comp_backend(
-                    user_id, project_id, iteration, dag, comp_run
-                )
+                await self._update_states_from_comp_backend(user_id, project_id, iteration, dag, comp_run)
                 # 1.1. get the updated tasks NOTE: we need to get them again as some states might have changed
                 comp_tasks = await self._get_pipeline_tasks(project_id, dag)
                 # 2. timeout if waiting for cluster has been there for more than X minutes
@@ -654,9 +588,7 @@ class BaseCompScheduler(ABC):
                 )
                 # 4. do we want to stop the pipeline now?
                 if comp_run.cancelled:
-                    comp_tasks = await self._schedule_tasks_to_stop(
-                        user_id, project_id, comp_tasks, comp_run
-                    )
+                    comp_tasks = await self._schedule_tasks_to_stop(user_id, project_id, comp_tasks, comp_run)
                 else:
                     # let's get the tasks to schedule then
                     comp_tasks = await self._schedule_tasks_to_start(
@@ -676,9 +608,7 @@ class BaseCompScheduler(ABC):
                     )
 
                 # 5. send a heartbeat
-                await self._send_running_tasks_heartbeat(
-                    user_id, project_id, comp_run.run_id, iteration, dag
-                )
+                await self._send_running_tasks_heartbeat(user_id, project_id, comp_run.run_id, iteration, dag)
 
                 # 6. Update the run result
                 pipeline_result = await self._update_run_result_from_tasks(
@@ -697,7 +627,8 @@ class BaseCompScheduler(ABC):
             except PipelineNotFoundError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
-                        f"pipeline {project_id} is missing from `comp_pipelines` DB table, something is corrupted. Aborting scheduling",
+                        f"pipeline {project_id} is missing from `comp_pipelines` DB table, "
+                        "something is corrupted. Aborting scheduling",
                         error=exc,
                         error_context={
                             "user_id": f"{user_id}",
@@ -709,9 +640,7 @@ class BaseCompScheduler(ABC):
                 )
 
                 # NOTE: no need to update task states here as pipeline is already broken
-                await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.FAILED
-                )
+                await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except InvalidPipelineError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
@@ -726,9 +655,36 @@ class BaseCompScheduler(ABC):
                     ),
                 )
                 # NOTE: no need to update task states here as pipeline is already broken
-                await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.FAILED
+                await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
+            except ComputationalSchedulerChangedError as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        "The dask scheduler changed - all submitted tasks are lost and marked as failed.",
+                        error=exc,
+                        error_context={
+                            "user_id": f"{user_id}",
+                            "project_id": f"{project_id}",
+                            "iteration": f"{iteration}",
+                        },
+                        tip="The dask scheduler was replaced (e.g. restarted). Tasks running on the old scheduler "
+                        "are irrecoverable. The pipeline must be re-triggered by the user.",
+                    )
                 )
+                processing_tasks = {
+                    k: v
+                    for k, v in (await self._get_pipeline_tasks(project_id, dag)).items()
+                    if v.state in PROCESSING_STATES and v.job_id is not None
+                }
+                comp_tasks_repo = CompTasksRepository(self.db_engine)
+                await comp_tasks_repo.update_project_tasks_state(
+                    project_id,
+                    comp_run.run_id,
+                    [t.node_id for t in processing_tasks.values()],
+                    RunningState.FAILED,
+                    optional_progress=1.0,
+                    optional_stopped=arrow.utcnow().datetime,
+                )
+                # on the next scheduling loop, tasks following failed tasks will be aborted
             except (
                 DaskClientAcquisisitonError,
                 ComputationalBackendNotConnectedError,
@@ -736,21 +692,21 @@ class BaseCompScheduler(ABC):
             ) as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
-                        "Unexpectedly lost connection to the computational backend. Tasks are set back to WAITING_FOR_CLUSTER state until we eventually reconnect",
+                        "Unexpectedly lost connection to the computational backend. "
+                        "Tasks are set back to WAITING_FOR_CLUSTER state until we eventually reconnect",
                         error=exc,
                         error_context={
                             "user_id": f"{user_id}",
                             "project_id": f"{project_id}",
                             "iteration": f"{iteration}",
                         },
-                        tip="Check network connection and the status of the computational backend (clusters-keeper, dask-scheduler, dask-workers)",
+                        tip="Check network connection and the status of the computational backend "
+                        "(clusters-keeper, dask-scheduler, dask-workers)",
                     )
                 )
                 processing_tasks = {
                     k: v
-                    for k, v in (
-                        await self._get_pipeline_tasks(project_id, dag)
-                    ).items()
+                    for k, v in (await self._get_pipeline_tasks(project_id, dag)).items()
                     if v.state in PROCESSING_STATES
                 }
                 comp_tasks_repo = CompTasksRepository(self.db_engine)
@@ -760,9 +716,7 @@ class BaseCompScheduler(ABC):
                     [t.node_id for t in processing_tasks.values()],
                     RunningState.WAITING_FOR_CLUSTER,
                 )
-                await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.WAITING_FOR_CLUSTER
-                )
+                await self._set_run_result(user_id, project_id, iteration, RunningState.WAITING_FOR_CLUSTER)
             finally:
                 await self._set_processing_done(user_id, project_id, iteration)
 
@@ -777,20 +731,25 @@ class BaseCompScheduler(ABC):
         # the tasks that are already processing need some time to stop
         # and we need to stop them in the backend
         tasks_instantly_stopeable = [
-            t for t in comp_tasks.values() if t.state in TASK_TO_START_STATES
+            t for t in comp_tasks.values() if t.state in TASK_TO_START_STATES and t.job_id is None
         ]
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-        await (
-            comp_tasks_repo.mark_project_published_waiting_for_cluster_tasks_as_aborted(
-                project_id, comp_run.run_id
-            )
+        stopped_time = arrow.utcnow().datetime
+        await comp_tasks_repo.update_project_tasks_state(
+            project_id,
+            comp_run.run_id,
+            [t.node_id for t in tasks_instantly_stopeable],
+            RunningState.ABORTED,
+            optional_progress=1.0,
+            optional_stopped=stopped_time,
         )
+
         for task in tasks_instantly_stopeable:
             comp_tasks[f"{task.node_id}"].state = RunningState.ABORTED
+            comp_tasks[f"{task.node_id}"].progress = 1.0
+            comp_tasks[f"{task.node_id}"].end = stopped_time
         # stop any remaining running task, these are already submitted
-        if tasks_to_stop := [
-            t for t in comp_tasks.values() if t.state in PROCESSING_STATES
-        ]:
+        if tasks_to_stop := [t for t in comp_tasks.values() if t.state in PROCESSING_STATES and t.job_id is not None]:
             await self._stop_tasks(user_id, tasks_to_stop, comp_run)
 
         return comp_tasks
@@ -805,24 +764,18 @@ class BaseCompScheduler(ABC):
         wake_up_callback: Callable[[], None],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
         # filter out the successfully completed tasks
-        dag.remove_nodes_from(
-            {
-                node_id
-                for node_id, t in comp_tasks.items()
-                if t.state == RunningState.SUCCESS
-            }
-        )
+        dag.remove_nodes_from({node_id for node_id, t in comp_tasks.items() if t.state == RunningState.SUCCESS})
         dag_in_degree = dag.in_degree()
         assert isinstance(dag_in_degree, InDegreeView)  # nosec
-        next_task_node_ids = [
-            node_id for node_id, degree in dag_in_degree if degree == 0
-        ]
+        next_task_node_ids = [node_id for node_id, degree in dag_in_degree if degree == 0]
 
         # get the tasks to start
         tasks_ready_to_start: dict[NodeID, CompTaskAtDB] = {
             node_id: comp_tasks[f"{node_id}"]
             for node_id in next_task_node_ids
             if comp_tasks[f"{node_id}"].state in TASK_TO_START_STATES
+            and comp_tasks[f"{node_id}"].job_id
+            is None  # NOTE: if a dask scheduler is not reachable for some time, we must not start new jobs
         }
 
         if not tasks_ready_to_start:
@@ -847,9 +800,12 @@ class BaseCompScheduler(ABC):
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
                 **create_troubleshooting_log_kwargs(
-                    "The on demand computational backend is not ready yet. Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
+                    "The on demand computational backend is not ready yet. "
+                    "Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
                     error=exc,
                     error_context=log_error_context,
+                    tip="This can happen when the cluster is still being created. "
+                    "Please wait a bit and the tasks should be scheduled automatically once the cluster is ready.",
                 )
             )
             await publish_project_log(
@@ -859,9 +815,7 @@ class BaseCompScheduler(ABC):
                 log=f"{exc}",
                 log_level=logging.INFO,
             )
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
+            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
@@ -887,14 +841,43 @@ class BaseCompScheduler(ABC):
                 user_id,
                 project_id,
                 log=user_message(
-                    "An unexpected error occurred during task scheduling. Please contact oSparc support if this issue persists.",
+                    "An unexpected error occurred during task scheduling. "
+                    "Please contact oSparc support if this issue persists.",
                     _version=1,
                 ),
                 log_level=logging.ERROR,
             )
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
+            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+                project_id,
+                comp_run.run_id,
+                list(tasks_ready_to_start.keys()),
+                RunningState.WAITING_FOR_CLUSTER,
+            )
+            for task in tasks_ready_to_start:
+                comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
+
+        except OsparcVariableResolveTimeoutError as exc:
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "Variable resolution timed out during task scheduling. "
+                    "Tasks are set back to WAITING_FOR_CLUSTER state and will be retried!",
+                    error=exc,
+                    error_context=log_error_context,
+                    tip="This is likely a transient issue. The variable resolution will be retried "
+                    "on the next scheduling cycle.",
+                )
+            )
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log=user_message(
+                    "Variable resolution timed out during task scheduling, will retry.",
+                    _version=1,
+                ),
+                log_level=logging.WARNING,
+            )
+            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
@@ -906,14 +889,13 @@ class BaseCompScheduler(ABC):
         except Exception as exc:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED and the rest of the pipeline will be ABORTED",
+                    "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED "
+                    "and the rest of the pipeline will be ABORTED",
                     error=exc,
                     error_context=log_error_context,
                 )
             )
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
+            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
@@ -937,25 +919,17 @@ class BaseCompScheduler(ABC):
         if comp_run.result is not RunningState.WAITING_FOR_CLUSTER:
             return comp_tasks
 
-        tasks_waiting_for_cluster = [
-            t
-            for t in comp_tasks.values()
-            if t.state is RunningState.WAITING_FOR_CLUSTER
-        ]
+        tasks_waiting_for_cluster = [t for t in comp_tasks.values() if t.state is RunningState.WAITING_FOR_CLUSTER]
         if not tasks_waiting_for_cluster:
             return comp_tasks
 
-        # get latest modified task
-        latest_modified_of_all_tasks = max(
-            tasks_waiting_for_cluster, key=lambda task: task.modified
-        ).modified
+        if comp_run.last_result_changed is None:
+            return comp_tasks
 
         if (
-            arrow.utcnow().datetime - latest_modified_of_all_tasks
+            arrow.utcnow().datetime - comp_run.last_result_changed
         ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
+            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 [task.node_id for task in tasks_waiting_for_cluster],
@@ -966,7 +940,8 @@ class BaseCompScheduler(ABC):
             for task in tasks_waiting_for_cluster:
                 task.state = RunningState.FAILED
             msg = user_message(
-                "The system has timed out while waiting for computational resources. Please try running your project again or contact oSparc support if this issue persists.",
+                "The system has timed out while waiting for computational resources. "
+                "Please try running your project again or contact oSparc support if this issue persists.",
                 _version=1,
             )
             _logger.error(msg)

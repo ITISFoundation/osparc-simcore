@@ -1,7 +1,7 @@
 from typing import Final
 
 from aiohttp import web
-from models_library.authentification import TwoFactorAuthentificationMethod
+from models_library.authentication import TwoFactorAuthenticationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
@@ -92,16 +92,14 @@ class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
     value: int | None = 1
 
 
-class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
-    FrontendUserPreference
-):
+class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "lowDiskSpaceThreshold"
     value: int = 5  # in gigabytes
 
 
 class TwoFAFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "twoFAPreference"
-    value: TwoFactorAuthentificationMethod = TwoFactorAuthentificationMethod.SMS
+    value: TwoFactorAuthenticationMethod = TwoFactorAuthenticationMethod.SMS
 
 
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
@@ -132,8 +130,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
 ]
 
 _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {
-    p.get_preference_name(): p.model_fields["preference_identifier"].default
-    for p in ALL_FRONTEND_PREFERENCES
+    p.get_preference_name(): p.model_fields["preference_identifier"].default for p in ALL_FRONTEND_PREFERENCES
 }
 _PREFERENCE_IDENTIFIER_TO_NAME_MAPPING: dict[PreferenceIdentifier, PreferenceName] = {
     i: n for n, i in _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING.items()
@@ -151,9 +148,7 @@ def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIden
 def overwrite_user_preferences_defaults(app: web.Application) -> None:
     settings: UsersSettings = get_plugin_settings(app)
 
-    search_map: dict[str, type[FrontendUserPreference]] = {
-        x.__name__: x for x in ALL_FRONTEND_PREFERENCES
-    }
+    search_map: dict[str, type[FrontendUserPreference]] = {x.__name__: x for x in ALL_FRONTEND_PREFERENCES}
 
     for (
         preference_class,

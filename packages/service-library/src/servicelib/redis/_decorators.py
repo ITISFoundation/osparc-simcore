@@ -24,27 +24,29 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 _EXCLUSIVE_TASK_NAME: Final[str] = "exclusive/{module_name}.{func_name}"
-_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = (
-    "exclusive/autoextend_lock_{redis_lock_key}"
-)
+_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = "exclusive/autoextend_lock_{redis_lock_key}"
 
 
 @periodic(interval=DEFAULT_LOCK_TTL / 2, raise_on_error=True)
-async def _periodic_auto_extender(lock: Lock, started_event: asyncio.Event) -> None:
+async def _periodic_reacquisition(
+    lock: Lock,
+    started_event: asyncio.Event,
+    cancellation_event: asyncio.Event,
+) -> None:
+    if cancellation_event.is_set():
+        raise asyncio.CancelledError
     await auto_extend_lock(lock)
     started_event.set()
 
 
-def exclusive(
+def exclusive(  # noqa: PLR0915
     redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
     *,
     lock_key: str | Callable[..., str],
     lock_value: bytes | str | None = None,
     blocking: bool = False,
     blocking_timeout: timedelta | None = None,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
+) -> Callable[[Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]]:
     """
     Define a method to run exclusively across
     processes by leveraging a Redis Lock.
@@ -70,16 +72,10 @@ def exclusive(
     ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(coro)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            redis_lock_key = (
-                lock_key(*args, **kwargs) if callable(lock_key) else lock_key
-            )
+            redis_lock_key = lock_key(*args, **kwargs) if callable(lock_key) else lock_key
             assert isinstance(redis_lock_key, str)  # nosec
 
-            client = (
-                redis_client(*args, **kwargs)
-                if callable(redis_client)
-                else redis_client
-            )
+            client = redis_client(*args, **kwargs) if callable(redis_client) else redis_client
             assert isinstance(client, RedisClientSDK)  # nosec
             nonlocal lock_value
             if lock_value is None:
@@ -89,40 +85,38 @@ def exclusive(
             if not await lock.acquire(
                 token=lock_value,
                 blocking=blocking,
-                blocking_timeout=(
-                    blocking_timeout.total_seconds() if blocking_timeout else None
-                ),
+                blocking_timeout=(blocking_timeout.total_seconds() if blocking_timeout else None),
             ):
                 raise CouldNotAcquireLockError(lock=lock)
 
             lock_acquisition_time = arrow.utcnow()
             try:
                 async with asyncio.TaskGroup() as tg:
-                    started_event = asyncio.Event()
+                    auto_reacquisition_started = asyncio.Event()
+                    cancellation_event = asyncio.Event()
                     # first create a task that will auto-extend the lock
-                    auto_extend_lock_task = tg.create_task(
-                        _periodic_auto_extender(lock, started_event),
-                        name=_EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(
-                            redis_lock_key=redis_lock_key
-                        ),
+                    auto_reacquisition_task = tg.create_task(
+                        _periodic_reacquisition(lock, auto_reacquisition_started, cancellation_event),
+                        name=_EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(redis_lock_key=redis_lock_key),
                     )
                     # NOTE: In case the work thread is raising right away,
                     # this ensures the extend task ran once and ensure cancellation works
-                    await started_event.wait()
+                    await auto_reacquisition_started.wait()
 
                     # then the task that runs the user code
                     assert asyncio.iscoroutinefunction(coro)  # nosec
                     work_task = tg.create_task(
                         coro(*args, **kwargs),
-                        name=_EXCLUSIVE_TASK_NAME.format(
-                            module_name=coro.__module__, func_name=coro.__name__
-                        ),
+                        name=_EXCLUSIVE_TASK_NAME.format(module_name=coro.__module__, func_name=coro.__name__),
                     )
-                    res = await work_task
-                    # cancel the auto-extend task (work is done)
-                    # NOTE: if we do not explicitely await the task inside the context manager
-                    # it sometimes hangs forever (Python issue?)
-                    await cancel_wait_task(auto_extend_lock_task, max_delay=None)
+                    try:
+                        # NOTE: this try/finally ensures that cancellation_event is set when we exit the context
+                        # even in case of exceptions
+                        res = await work_task
+                    finally:
+                        # cancel the auto-extend task (work is done)
+                        cancellation_event.set()  # NOTE: this ensure cancellation is effective
+                        await cancel_wait_task(auto_reacquisition_task, max_delay=None)
                 return res
 
             except BaseExceptionGroup as eg:

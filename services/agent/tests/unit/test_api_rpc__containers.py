@@ -33,9 +33,7 @@ async def rpc_client(
 
 @pytest.fixture
 def mocked_force_container_cleanup(mocker: pytest_mock.MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_agent.services.containers_manager.ContainersManager.force_container_cleanup"
-    )
+    return mocker.patch("simcore_service_agent.services.containers_manager.ContainersManager.force_container_cleanup")
 
 
 async def test_force_container_cleanup(

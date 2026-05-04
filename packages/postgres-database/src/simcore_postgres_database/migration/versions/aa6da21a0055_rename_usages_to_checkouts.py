@@ -5,6 +5,7 @@ Revises: 52a0e8148dd5
 Create Date: 2024-12-17 13:47:09.304574+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -103,9 +104,7 @@ def downgrade():
             autoincrement=False,
             nullable=False,
         ),
-        sa.Column(
-            "licensed_item_id", postgresql.UUID(), autoincrement=False, nullable=False
-        ),
+        sa.Column("licensed_item_id", postgresql.UUID(), autoincrement=False, nullable=False),
         sa.ForeignKeyConstraint(
             ["product_name", "service_run_id"],
             [
@@ -116,9 +115,7 @@ def downgrade():
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
-        sa.PrimaryKeyConstraint(
-            "licensed_item_usage_id", name="resource_tracker_licensed_items_usage_pkey"
-        ),
+        sa.PrimaryKeyConstraint("licensed_item_usage_id", name="resource_tracker_licensed_items_usage_pkey"),
     )
     op.create_index(
         "ix_resource_tracker_licensed_items_usage_wallet_id",

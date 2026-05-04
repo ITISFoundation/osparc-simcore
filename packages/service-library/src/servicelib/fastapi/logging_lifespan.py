@@ -4,6 +4,7 @@ from contextlib import AsyncExitStack
 
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
+
 from servicelib.tracing import TracingConfig
 
 from ..logging_utils import (
@@ -53,7 +54,7 @@ def create_logging_shutdown_event(
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Callable[[], Awaitable[None]]:
-    """retruns a fastapi-compatible shutdown event handler to be used with old style lifespan
+    """returns a fastapi-compatible shutdown event handler to be used with old style lifespan
     handlers. This is useful for applications that do not use the new async lifespan
     handlers introduced in fastapi 0.100.0.
 

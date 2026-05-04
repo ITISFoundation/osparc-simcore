@@ -3,8 +3,8 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 import statistics
+import time
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -42,7 +42,7 @@ from simcore_service_webserver.session.settings import SessionSettings
 
 # Prototype concept -------------------------------------------------------
 #
-# - remember/forget are verbs that refers to statefull sessions
+# - remember/forget are verbs that refers to stateful sessions
 # - get borrowed from dict/maps
 #
 _SESSION_PRODUCT_NAME_KEY = "product_name"
@@ -71,9 +71,7 @@ async def _forget_product_name(request: web.Request) -> ProductName | None:
 
 
 @pytest.fixture
-def set_products_in_app_state() -> (
-    Callable[[web.Application, OrderedDict[str, Product]], None]
-):
+def set_products_in_app_state() -> Callable[[web.Application, OrderedDict[str, Product]], None]:
     """
     Add products in app's state to avoid setting up a full database in tests
 
@@ -98,9 +96,7 @@ def expected_product_name():
 
 @pytest.fixture
 def app_products(expected_product_name: ProductName) -> OrderedDict[str, Product]:
-    column_defaults: dict[str, Any] = {
-        c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default
-    }
+    column_defaults: dict[str, Any] = {c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default}
     column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
 
     pp: OrderedDict[str, Product] = OrderedDict()
@@ -212,9 +208,7 @@ async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     mocker: MockerFixture,
     app_products: OrderedDict[str, Product],
-    set_products_in_app_state: Callable[
-        [web.Application, OrderedDict[str, Product]], None
-    ],
+    set_products_in_app_state: Callable[[web.Application, OrderedDict[str, Product]], None],
     app_routes: RouteTableDef,
     mock_env_devel_environment: EnvVarsDict,
     mocked_db_setup_in_setup_security: MockType,
@@ -271,9 +265,7 @@ async def test_product_in_session(
 
 
 @pytest.fixture
-def get_active_user_or_none_dbmock(
-    basic_db_funs_mocked: None, mocker: MockerFixture
-) -> MagicMock:
+def get_active_user_or_none_dbmock(basic_db_funs_mocked: None, mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.security._authz_policy._authz_repository.get_active_user_or_none",
         autospec=True,
@@ -282,9 +274,7 @@ def get_active_user_or_none_dbmock(
 
 
 @pytest.fixture
-def is_user_in_product_name_dbmock(
-    basic_db_funs_mocked: None, mocker: MockerFixture
-) -> MagicMock:
+def is_user_in_product_name_dbmock(basic_db_funs_mocked: None, mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.security._authz_policy._authz_repository.is_user_in_product_name",
         autospec=True,
@@ -424,13 +414,13 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
     get_active_user_or_none_dbmock: MagicMock,
     is_user_in_product_name_dbmock: MagicMock,
 ):
-    async def _req(url_):
-        start = asyncio.get_event_loop().time()
+    async def _req(url_: str) -> int:
+        start_ns = time.perf_counter_ns()
         resp = await client.post(url_)
-        stop = asyncio.get_event_loop().time()
+        elapsed_ns = time.perf_counter_ns() - start_ns
 
         assert resp.ok, f"error: {await resp.text()}"
-        return stop - start
+        return elapsed_ns
 
     num_of_rounds = 100
     public_elapsed_times = [await _req("/v0/public") for _ in range(num_of_rounds)]
@@ -439,11 +429,12 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
     # SEE https://docs.python.org/3/library/statistics.html#function-details
     # Note The mean is strongly affected by outliers and is not necessarily a typical example of the data points.
     # For a more robust, although less efficient, measure of central tendency, see median().
-    ref_elapsed = statistics.median(public_elapsed_times)
-    elapsed = statistics.median(admin_elapsed_times)
+    ref_elapsed_ns = statistics.median(public_elapsed_times)
+    elapsed_ns = statistics.median(admin_elapsed_times)
+    elapsed_ratio = elapsed_ns / max(ref_elapsed_ns, 1)
 
     # NOTE: 150% more wrt reference (basically ~ 2.5x more !!!!!!!!!!!)
     # and this is mocking the access to the database!
-    msg = f"got {elapsed/ref_elapsed=} from medians {elapsed=} and {ref_elapsed=} after {num_of_rounds=}"
+    msg = f"got {elapsed_ratio=} from medians {elapsed_ns=}ns and {ref_elapsed_ns=}ns after {num_of_rounds=}"
     print(msg.capitalize())
-    assert elapsed < ref_elapsed * (1 + 1.6), msg
+    assert elapsed_ns < ref_elapsed_ns * (1 + 1.6), msg

@@ -14,12 +14,6 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 
 
 def test_postgres_and_models_library_enums_are_in_sync():
-    assert list(resource_tracker.CreditTransactionStatus) == list(
-        CreditTransactionStatus
-    )
-    assert list(resource_tracker.CreditClassification) == list(
-        CreditTransactionClassification
-    )
-    assert list(resource_tracker.ServiceRunStatus) == list(
-        ResourceTrackerServiceRunStatus
-    )
+    assert list(resource_tracker.CreditTransactionStatus) == list(CreditTransactionStatus)
+    assert list(resource_tracker.CreditClassification) == list(CreditTransactionClassification)
+    assert list(resource_tracker.ServiceRunStatus) == list(ResourceTrackerServiceRunStatus)

@@ -90,16 +90,13 @@ def _build_project_function_extras_dict(
 def _build_solver_function_extras_dict(
     service_metadata: ServiceMetadata,
 ) -> dict[str, Any]:
-
     extras: dict[str, Any] = {}
     if thumbnail := service_metadata.thumbnail:
         extras["thumbnail"] = thumbnail
     return extras
 
 
-async def _build_function_extras(
-    app: web.Application, *, function: RegisteredFunction
-) -> dict[str, Any]:
+async def _build_function_extras(app: web.Application, *, function: RegisteredFunction) -> dict[str, Any]:
     extras: dict[str, Any] = {}
     match function.function_class:
         case FunctionClass.PROJECT:
@@ -133,18 +130,14 @@ async def register_function(request: web.Request) -> web.Response:
         error_msg_template="Invalid parameter/s '{failed}' in request path",
         resource_name=request.rel_url.path,
     ):
-        function_to_register: FunctionToRegister = TypeAdapter(
-            FunctionToRegister
-        ).validate_python(await request.json())
+        function_to_register: FunctionToRegister = TypeAdapter(FunctionToRegister).validate_python(await request.json())
 
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    registered_function: RegisteredFunction = (
-        await _functions_service.register_function(
-            app=request.app,
-            function=TypeAdapter(Function).validate_python(function_to_register),
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-        )
+    registered_function: RegisteredFunction = await _functions_service.register_function(
+        app=request.app,
+        function=TypeAdapter(Function).validate_python(function_to_register),
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     access_rights = await _build_function_group_access_rights(
@@ -156,8 +149,7 @@ async def register_function(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
-            registered_function.model_dump(mode="json")
-            | {"access_rights": access_rights}
+            registered_function.model_dump(mode="json") | {"access_rights": access_rights}
         ),
         web.HTTPCreated,
     )
@@ -171,9 +163,7 @@ async def register_function(request: web.Request) -> web.Response:
 @permission_required("function.read")
 @handle_rest_requests_exceptions
 async def list_functions(request: web.Request) -> web.Response:  # noqa: C901
-    query_params: FunctionsListQueryParams = parse_request_query_parameters_as(
-        FunctionsListQueryParams, request
-    )
+    query_params: FunctionsListQueryParams = parse_request_query_parameters_as(FunctionsListQueryParams, request)
 
     if not query_params.filters:
         query_params.filters = FunctionFilters()
@@ -197,13 +187,9 @@ async def list_functions(request: web.Request) -> web.Response:  # noqa: C901
     extras_map: dict[FunctionID, dict[str, Any]] = {}
 
     if query_params.include_extras:
-        if any(
-            function.function_class == FunctionClass.PROJECT for function in functions
-        ):
+        if any(function.function_class == FunctionClass.PROJECT for function in functions):
             project_uuids = [
-                function.project_id
-                for function in functions
-                if function.function_class == FunctionClass.PROJECT
+                function.project_id for function in functions if function.function_class == FunctionClass.PROJECT
             ]
             projects_cache = await _projects_service.batch_get_projects(
                 request.app,
@@ -214,33 +200,23 @@ async def list_functions(request: web.Request) -> web.Response:  # noqa: C901
                     project = projects_cache.get(function.project_id)
                     if not project:
                         continue
-                    extras_map[function.uid] = _build_project_function_extras_dict(
-                        project=project
-                    )
+                    extras_map[function.uid] = _build_project_function_extras_dict(project=project)
 
-        if any(
-            function.function_class == FunctionClass.SOLVER for function in functions
-        ):
+        if any(function.function_class == FunctionClass.SOLVER for function in functions):
             service_keys_and_versions = {
                 (function.solver_key, function.solver_version)
                 for function in functions
                 if function.function_class == FunctionClass.SOLVER
             }
-            service_metadata_cache = (
-                await _services_metadata_proxy.batch_get_service_metadata(
-                    app=request.app, keys_and_versions=service_keys_and_versions
-                )
+            service_metadata_cache = await _services_metadata_proxy.batch_get_service_metadata(
+                app=request.app, keys_and_versions=service_keys_and_versions
             )
             for function in functions:
                 if function.function_class == FunctionClass.SOLVER:
-                    service_metadata = service_metadata_cache.get(
-                        (function.solver_key, function.solver_version)
-                    )
+                    service_metadata = service_metadata_cache.get((function.solver_key, function.solver_version))
                     if not service_metadata:
                         continue
-                    extras_map[function.uid] = _build_solver_function_extras_dict(
-                        service_metadata=service_metadata
-                    )
+                    extras_map[function.uid] = _build_solver_function_extras_dict(service_metadata=service_metadata)
 
     for function in functions:
         access_rights = await _build_function_group_access_rights(
@@ -281,9 +257,7 @@ async def get_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
-    query_params: FunctionGetQueryParams = parse_request_query_parameters_as(
-        FunctionGetQueryParams, request
-    )
+    query_params: FunctionGetQueryParams = parse_request_query_parameters_as(FunctionGetQueryParams, request)
 
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     function = await _functions_service.get_function(
@@ -300,11 +274,7 @@ async def get_function(request: web.Request) -> web.Response:
         function_id=function_id,
     )
 
-    extras = (
-        await _build_function_extras(request.app, function=function)
-        if query_params.include_extras
-        else {}
-    )
+    extras = await _build_function_extras(request.app, function=function) if query_params.include_extras else {}
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
@@ -324,13 +294,9 @@ async def update_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
-    query_params: FunctionGetQueryParams = parse_request_query_parameters_as(
-        FunctionGetQueryParams, request
-    )
+    query_params: FunctionGetQueryParams = parse_request_query_parameters_as(FunctionGetQueryParams, request)
 
-    function_update = TypeAdapter(RegisteredFunctionUpdate).validate_python(
-        await request.json()
-    )
+    function_update = TypeAdapter(RegisteredFunctionUpdate).validate_python(await request.json())
     req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     function = await _functions_service.update_function(
@@ -348,11 +314,7 @@ async def update_function(request: web.Request) -> web.Response:
         function_id=function_id,
     )
 
-    extras = (
-        await _build_function_extras(request.app, function=function)
-        if query_params.include_extras
-        else {}
-    )
+    extras = await _build_function_extras(request.app, function=function) if query_params.include_extras else {}
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
@@ -372,9 +334,7 @@ async def delete_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
-    query_params: FunctionDeleteQueryParams = parse_request_query_parameters_as(
-        FunctionDeleteQueryParams, request
-    )
+    query_params: FunctionDeleteQueryParams = parse_request_query_parameters_as(FunctionDeleteQueryParams, request)
 
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     await _functions_service.delete_function(
@@ -438,23 +398,19 @@ async def create_or_update_function_group(request: web.Request) -> web.Response:
 
     req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    function_group_update = FunctionGroupAccessRightsUpdate.model_validate(
-        await request.json()
-    )
+    function_group_update = FunctionGroupAccessRightsUpdate.model_validate(await request.json())
 
-    updated_function_access_rights = (
-        await _functions_service.set_function_group_permissions(
-            request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            function_id=function_id,
-            permissions=FunctionGroupAccessRights(
-                group_id=group_id,
-                read=function_group_update.read,
-                write=function_group_update.write,
-                execute=function_group_update.execute,
-            ),
-        )
+    updated_function_access_rights = await _functions_service.set_function_group_permissions(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+        permissions=FunctionGroupAccessRights(
+            group_id=group_id,
+            read=function_group_update.read,
+            write=function_group_update.write,
+            execute=function_group_update.execute,
+        ),
     )
 
     return envelope_json_response(
@@ -502,12 +458,10 @@ async def delete_function_group(request: web.Request) -> web.Response:
 async def list_user_functions_permissions(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    function_permissions = (
-        await _functions_service.get_functions_user_api_access_rights(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-        )
+    function_permissions = await _functions_service.get_functions_user_api_access_rights(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     assert function_permissions.user_id == req_ctx.user_id  # nosec

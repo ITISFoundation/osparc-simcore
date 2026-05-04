@@ -42,9 +42,7 @@ def data_archive_utils(package_tests_dir: Path) -> Path:
         ("decompress_stdout.json", 434902745),
     ],
 )
-async def test_compress_progress_parser(
-    data_archive_utils: Path, progress_stdout: str, expected_size: NonNegativeInt
-):
+async def test_compress_progress_parser(data_archive_utils: Path, progress_stdout: str, expected_size: NonNegativeInt):
     stdout_path = data_archive_utils / progress_stdout
     assert stdout_path.exists()
     stdout_entries: list[str] = json.loads(stdout_path.read_text())
@@ -69,9 +67,7 @@ def _assert_same_folder_content(f1: Path, f2: Path) -> None:
 
 
 @pytest.mark.parametrize("compress", [True, False])
-async def test_archive_unarchive(
-    mixed_file_types: Path, archive_path: Path, unpacked_archive: Path, compress: bool
-):
+async def test_archive_unarchive(mixed_file_types: Path, archive_path: Path, unpacked_archive: Path, compress: bool):
     await archive_dir(mixed_file_types, archive_path, compress=compress)
     await unarchive_dir(archive_path, unpacked_archive)
     _assert_same_folder_content(mixed_file_types, unpacked_archive)

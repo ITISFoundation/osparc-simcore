@@ -64,8 +64,17 @@ qx.Class.define("osparc.file.FilePicker", {
   },
 
   statics: {
+    POS: {
+      RELOAD: 0,
+      FILES_TREE: 1,
+      TOOLBAR: 2,
+      DOWNLOAD_LINK: 3
+    },
+
     getOutput: function(outputs) {
-      return osparc.data.model.Node.getOutput(outputs, "outFile");
+      const output = outputs.find(out => out.getPortKey() === osparc.data.model.NodePort.FP_PORT_KEY);
+      // output can be undefined
+      return output ? output.getValue() : null;
     },
 
     getFilenameFromPath: function(output) {
@@ -111,28 +120,28 @@ qx.Class.define("osparc.file.FilePicker", {
       return osparc.file.FilePicker.isOutputFromStore(outputs) || osparc.file.FilePicker.isOutputDownloadLink(outputs);
     },
 
-    __setOutputValue: function(node, outputValue) {
+    __setOutputValue: function(node, outFileValue) {
+      if (outFileValue && !("eTag" in outFileValue)) {
+        // add eTag from the beginning to avoid issues with the upload progress bar in case of download links that don't have it
+        outFileValue["eTag"] = null;
+      }
       node.setOutputData({
-        "outFile": outputValue
+        [osparc.data.model.NodePort.FP_PORT_KEY]: outFileValue
       });
       const outputs = node.getOutputs();
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
       if (outLabel && node.getLabel().includes("File Picker")) {
-        node.setLabel(outputValue.label);
+        node.setLabel(outFileValue.label);
       } else {
         node.setLabel("File Picker");
       }
-      node.getStatus().setProgress(outputValue ? 100 : 0);
+      node.getStatus().setProgress(outFileValue ? osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED : osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED);
+      osparc.file.FilePicker.releaseRTCToken(node);
     },
 
-    setOutputValueFromStore: function(node, store, dataset, path, label) {
-      if (store !== undefined && path) {
-        this.__setOutputValue(node, {
-          store,
-          dataset,
-          path,
-          label
-        });
+    setOutputValueFromStore: function(node, outFileValue) {
+      if (outFileValue && outFileValue.store !== undefined && outFileValue.path) {
+        this.__setOutputValue(node, outFileValue);
       }
     },
 
@@ -230,27 +239,37 @@ qx.Class.define("osparc.file.FilePicker", {
           });
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-        if (osparc.utils.Utils.isObject(outFileValue) && "downloadLink" in outFileValue) {
-          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", outFileValue["label"], progressCb, loadedCb);
-        }
+        osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", outFileValue["label"], progressCb, loadedCb);
       }
     },
 
     serializeOutput: function(outputs) {
-      let output = {};
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       if (outFileValue) {
-        output["outFile"] = outFileValue;
+        return {
+          [osparc.data.model.NodePort.FP_PORT_KEY]: outFileValue,
+        };
       }
-      return output;
+      return {};
     },
 
-    POS: {
-      RELOAD: 0,
-      FILES_TREE: 1,
-      TOOLBAR: 2,
-      DOWNLOAD_LINK: 3
-    }
+    /** RTC Token management
+     * The token is used to avoid file picker's file uploading (progress) race conditions in collaborative studies.
+     * The token is added when the file upload starts and it's removed when the file is uploaded. In this way, the node is locked for all users except the one uploading the file.
+     * In case of the File Pickers, to avoid progress race conditions, the token is removed when the file is uploaded.
+     */
+    lockRTCToken: function(node) {
+      node["fpRTCToken"] = true;
+    },
+
+    releaseRTCToken: function(node) {
+      delete node["fpRTCToken"];
+    },
+
+    isRTCTokenMine: function(node) {
+      return "fpRTCToken" in node && node["fpRTCToken"] === true;
+    },
+    /** /RTC Token management */
   },
 
   members: {
@@ -260,8 +279,8 @@ qx.Class.define("osparc.file.FilePicker", {
     __selectedFileFound: null,
     __fileDownloadLink: null,
 
-    setOutputValueFromStore: function(store, dataset, path, label) {
-      this.self().setOutputValueFromStore(this.getNode(), store, dataset, path, label);
+    setOutputValueFromStore: function(outFileValue) {
+      this.self().setOutputValueFromStore(this.getNode(), outFileValue);
     },
 
     __setOutputValueFromLink: function(downloadLink, label) {
@@ -400,7 +419,13 @@ qx.Class.define("osparc.file.FilePicker", {
       fileDrop.addListener("fileLinkDropped", e => {
         const data = e.getData()["data"];
         const node = this.getNode();
-        osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+        const outFileValue = {
+          store: data.getLocation(),
+          dataset: data.getDatasetId(),
+          path: data.getFileId(),
+          label: data.getLabel()
+        };
+        osparc.file.FilePicker.setOutputValueFromStore(node, outFileValue);
         this.fireEvent("itemSelected");
         fileDrop.resetDropAction();
       });
@@ -412,21 +437,7 @@ qx.Class.define("osparc.file.FilePicker", {
         if (files.length === 1) {
           const fileUploader = new osparc.file.FileUploader(this.getNode());
           fileUploader.addListener("uploadAborted", () => this.__resetOutput());
-          fileUploader.addListener("fileUploaded", e => {
-            const fileMetadata = e.getData();
-            if (
-              "location" in fileMetadata &&
-              "dataset" in fileMetadata &&
-              "path" in fileMetadata &&
-              "name" in fileMetadata
-            ) {
-              osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
-            } else {
-              console.error("metadata info missing", fileMetadata);
-            }
-            this.fireEvent("fileUploaded");
-            this.getNode().fireEvent("fileUploaded");
-          }, this);
+          fileUploader.addListener("fileUploaded", () => this.fireEvent("fileUploaded"), this);
           fileUploader.retrieveUrlAndUpload(files[0]);
           return true;
         }
@@ -602,14 +613,16 @@ qx.Class.define("osparc.file.FilePicker", {
 
     init: function() {
       if (this.self().isOutputFromStore(this.getNode().getOutputs())) {
-        const outFile = this.__getOutputFile();
-        this.__filesTree.loadFilePath(outFile.value);
+        const outputFile = this.__getOutput();
+        if (outputFile) {
+          this.__filesTree.loadFilePath(outputFile);
+        }
       }
 
       if (this.self().isOutputDownloadLink(this.getNode().getOutputs())) {
-        const outFile = this.__getOutputFile();
-        if (this.__fileDownloadLink) {
-          this.__fileDownloadLink.setValue(outFile.value["downloadLink"]);
+        const outputFile = this.__getOutput();
+        if (outputFile && this.__fileDownloadLink) {
+          this.__fileDownloadLink.setValue(outputFile["downloadLink"]);
         }
       }
     },
@@ -625,7 +638,13 @@ qx.Class.define("osparc.file.FilePicker", {
     __itemSelected: function() {
       const selectedItem = this.__selectedFile;
       if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
-        this.setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
+        const outFileValue = {
+          store: selectedItem.getLocation(),
+          dataset: selectedItem.getDatasetId(),
+          path: selectedItem.getFileId(),
+          label: selectedItem.getLabel()
+        };
+        this.setOutputValueFromStore(outFileValue);
         this.fireEvent("itemSelected");
       }
     },
@@ -636,18 +655,23 @@ qx.Class.define("osparc.file.FilePicker", {
       this.fireEvent("itemReset");
     },
 
-    __getOutputFile: function() {
-      const outputs = this.getNode().getOutputs();
-      return outputs["outFile"];
+    __getOutput: function() {
+      const output = this.getNode().getOutput(osparc.data.model.NodePort.FP_PORT_KEY);
+      if (output) {
+        return output.getValue();
+      }
+      return null;
     },
 
     __checkSelectedFileIsListed: function() {
       if (this.__selectedFileFound === false && this.self().isOutputFromStore(this.getNode().getOutputs())) {
-        const outFile = this.__getOutputFile();
-        const selected = this.__filesTree.setSelectedFile(outFile.value.path);
-        if (selected) {
-          this.__selectedFileFound = true;
-          this.__filesTree.fireEvent("selectionChanged");
+        const outputFile = this.__getOutput();
+        if (outputFile) {
+          const selected = this.__filesTree.setSelectedFile(outputFile.path);
+          if (selected) {
+            this.__selectedFileFound = true;
+            this.__filesTree.fireEvent("selectionChanged");
+          }
         }
       }
     }

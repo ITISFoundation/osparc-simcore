@@ -1,20 +1,20 @@
-""" Usage
+"""Usage
 
-    - on aiohttp services
-        from servicelib.aiohttp import status
-        from servicelib.status_codes_utils import is_success
+- on aiohttp services
+    from servicelib.aiohttp import status
+    from servicelib.status_codes_utils import is_success
 
-        assert is_success(status.HTTP_200_OK)
+    assert is_success(status.HTTP_200_OK)
 
 
-    - on fastapi services
+- on fastapi services
 
-        from fastapi import status
-        from servicelib.status_codes_utils import is_success
+    from fastapi import status
+    from servicelib.status_codes_utils import is_success
 
-        assert is_success(status.HTTP_200_OK)
+    assert is_success(status.HTTP_200_OK)
 
-    NOTE: https://github.com/encode/httpx/blob/master/httpx/_status_codes.py
+NOTE: https://github.com/encode/httpx/blob/master/httpx/_status_codes.py
 """
 
 import types
@@ -42,9 +42,9 @@ def get_code_display_name(status_code: int) -> str:
         return _INVALID_STATUS_CODE_MSG
 
 
-_CODE_DESCRIPTION_TEMPLATE: Final[
-    str
-] = "{description}. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status{url_suffix}"
+_CODE_DESCRIPTION_TEMPLATE: Final[str] = (
+    "{description}. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status{url_suffix}"
+)
 
 
 def get_code_description(status_code: int) -> str:
@@ -61,9 +61,7 @@ def get_code_description(status_code: int) -> str:
         case _:
             url_suffix = f"/{status_code}"
 
-    return _CODE_DESCRIPTION_TEMPLATE.format(
-        description=description, url_suffix=url_suffix
-    )
+    return _CODE_DESCRIPTION_TEMPLATE.format(description=description, url_suffix=url_suffix)
 
 
 def is_1xx_informational(status_code: int) -> bool:
@@ -108,13 +106,9 @@ def is_error(status_code: int) -> bool:
     return 400 <= status_code <= 599  # noqa: PLR2004
 
 
-def get_http_status_codes(
-    status: types.ModuleType, predicate: Callable[[int], bool] | None = None
-) -> list[int]:
+def get_http_status_codes(status: types.ModuleType, predicate: Callable[[int], bool] | None = None) -> list[int]:
     # In the spirit of https://docs.python.org/3/library/inspect.html#inspect.getmembers
-    iter_all = (
-        getattr(status, code) for code in status.__all__ if code.startswith("HTTP_")
-    )
+    iter_all = (getattr(status, code) for code in status.__all__ if code.startswith("HTTP_"))
     if predicate is None:
         return list(iter_all)
     return [code for code in iter_all if predicate(code)]

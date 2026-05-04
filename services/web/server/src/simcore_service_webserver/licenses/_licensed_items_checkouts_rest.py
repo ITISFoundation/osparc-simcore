@@ -45,17 +45,13 @@ routes = web.RouteTableDef()
 @handle_plugin_requests_exceptions
 async def get_licensed_item_checkout(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        LicensedItemCheckoutPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(LicensedItemCheckoutPathParams, request)
 
-    checkout_item: LicensedItemCheckoutGet = (
-        await _licensed_items_checkouts_service.get_licensed_item_checkout(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            licensed_item_checkout_id=path_params.licensed_item_checkout_id,
-        )
+    checkout_item: LicensedItemCheckoutGet = await _licensed_items_checkouts_service.get_licensed_item_checkout(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        licensed_item_checkout_id=path_params.licensed_item_checkout_id,
     )
 
     output = LicensedItemCheckoutRestGet.model_construct(
@@ -85,20 +81,20 @@ async def get_licensed_item_checkout(request: web.Request):
 async def list_licensed_item_checkouts_for_wallet(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
-    query_params: LicensedItemsCheckoutsListQueryParams = (
-        parse_request_query_parameters_as(
-            LicensedItemsCheckoutsListQueryParams, request
-        )
+    query_params: LicensedItemsCheckoutsListQueryParams = parse_request_query_parameters_as(
+        LicensedItemsCheckoutsListQueryParams, request
     )
 
-    result: LicensedItemCheckoutGetPage = await _licensed_items_checkouts_service.list_licensed_items_checkouts_for_wallet(
-        app=request.app,
-        product_name=req_ctx.product_name,
-        user_id=req_ctx.user_id,
-        wallet_id=path_params.wallet_id,
-        offset=query_params.offset,
-        limit=query_params.limit,
-        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+    result: LicensedItemCheckoutGetPage = (
+        await _licensed_items_checkouts_service.list_licensed_items_checkouts_for_wallet(
+            app=request.app,
+            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id,
+            wallet_id=path_params.wallet_id,
+            offset=query_params.offset,
+            limit=query_params.limit,
+            order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        )
     )
 
     get_page = LicensedItemCheckoutRestGetPage(

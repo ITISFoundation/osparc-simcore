@@ -30,9 +30,7 @@ def test_create_annotations_from_metadata(tests_data_dir: Path):
     meta_cfg = MetadataConfig.from_yaml(tests_data_dir / "metadata.yml")
 
     # map io_spec to OCI image-spec
-    OciImageSpecAnnotations(
-        authors=", ".join([f"{a.name} ({a.email})" for a in meta_cfg.authors])
-    )
+    OciImageSpecAnnotations(authors=", ".join([f"{a.name} ({a.email})" for a in meta_cfg.authors]))
 
     # TODO: convert oic to ls
     # ls_spec = LabelSchemaAnnotations()

@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.tracing import (
@@ -67,7 +66,6 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
-        await cancel_sequential_workers()
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)

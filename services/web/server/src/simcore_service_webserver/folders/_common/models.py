@@ -52,17 +52,15 @@ _FolderOrderQueryParams: type[RequestParameters] = create_ordering_query_model_c
 
 
 class FoldersListQueryParams(
-    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]  # type: ignore[misc, valid-type]
+    PageQueryParameters,
+    _FolderOrderQueryParams,  # type: ignore[misc, valid-type]
+    FiltersQueryParameters[FolderFilters],
 ):
-    folder_id: Annotated[
-        FolderID | None, BeforeValidator(null_or_none_str_to_none_validator)
-    ] = Field(
+    folder_id: Annotated[FolderID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(
         default=None,
         description="List the subfolders of this folder. By default, list the subfolders of the root directory (Folder ID is None).",
     )
-    workspace_id: Annotated[
-        WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)
-    ] = Field(
+    workspace_id: Annotated[WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(
         default=None,
         description="List folders in specific workspace. By default, list in the user private workspace",
     )
@@ -71,11 +69,11 @@ class FoldersListQueryParams(
 
 
 class FolderSearchQueryParams(
-    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]  # type: ignore[misc, valid-type]
+    PageQueryParameters,
+    _FolderOrderQueryParams,  # type: ignore[misc, valid-type]
+    FiltersQueryParameters[FolderFilters],
 ):
-    text: Annotated[
-        str | None, BeforeValidator(empty_str_to_none_pre_validator)
-    ] = Field(
+    text: Annotated[str | None, BeforeValidator(empty_str_to_none_pre_validator)] = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",
         max_length=100,
@@ -85,14 +83,13 @@ class FolderSearchQueryParams(
     model_config = ConfigDict(extra="forbid")
 
 
-class FolderTrashQueryParams(RemoveQueryParams):
-    ...
+class FolderTrashQueryParams(RemoveQueryParams): ...
 
 
 class FolderWorkspacesPathParams(BaseModel):
     folder_id: FolderID
-    workspace_id: Annotated[
-        WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)
-    ] = Field(default=None)
+    workspace_id: Annotated[WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(
+        default=None
+    )
 
     model_config = ConfigDict(extra="forbid")

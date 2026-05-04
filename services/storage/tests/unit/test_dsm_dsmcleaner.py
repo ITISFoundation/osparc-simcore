@@ -47,9 +47,7 @@ def disabled_dsm_cleaner_task(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture
 def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
-    return TypeAdapter(SimcoreS3FileID).validate_python(
-        SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id)
-    )
+    return TypeAdapter(SimcoreS3FileID).validate_python(SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id))
 
 
 @pytest.mark.parametrize(
@@ -169,16 +167,12 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         is_directory=is_directory,
     )
     # ensure the database is correctly set up
-    fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
-        file_id=file_or_directory_id
-    )
+    fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_or_directory_id)
     assert fmd
     assert fmd.upload_expires_at
     # ensure we have now an upload id IF the link was presigned ONLY
     # NOTE: S3 uploads might create multipart uploads out of storage!!
-    ongoing_uploads = await storage_s3_client.list_ongoing_multipart_uploads(
-        bucket=storage_s3_bucket
-    )
+    ongoing_uploads = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
     if fmd.upload_id and link_type == LinkType.PRESIGNED:
         assert len(ongoing_uploads) == 1
     else:
@@ -187,14 +181,11 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     await simcore_s3_dsm.clean_expired_uploads()
     # check the entries are still the same
     async with sqlalchemy_async_engine.connect() as conn:
-        fmd_after_clean = await FileMetaDataRepository.instance(
-            sqlalchemy_async_engine
-        ).get(file_id=file_or_directory_id)
+        fmd_after_clean = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
+            file_id=file_or_directory_id
+        )
     assert fmd_after_clean == fmd
-    assert (
-        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
-        == ongoing_uploads
-    )
+    assert await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket) == ongoing_uploads
 
     # now change the upload_expires_at entry to simulate and expired entry
     async with sqlalchemy_async_engine.begin() as conn:
@@ -209,13 +200,9 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     # check the entries were removed
     async with sqlalchemy_async_engine.connect() as conn:
         with pytest.raises(FileMetaDataNotFoundError):
-            await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
-                file_id=simcore_file_id
-            )
+            await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=simcore_file_id)
     # since there is no entry in the db, this upload shall be cleaned up
-    assert not await storage_s3_client.list_ongoing_multipart_uploads(
-        bucket=storage_s3_bucket
-    )
+    assert not await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
 
 
 @pytest.mark.parametrize(
@@ -260,9 +247,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         sha256_checksum=checksum,
     )
     async with sqlalchemy_async_engine.connect() as conn:
-        original_fmd = await FileMetaDataRepository.instance(
-            sqlalchemy_async_engine
-        ).get(file_id=file_id)
+        original_fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
 
     # now create a new link to the VERY SAME FILE UUID
     await simcore_s3_dsm.create_file_upload_links(
@@ -275,16 +260,12 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     )
     # ensure the database is correctly set up
     async with sqlalchemy_async_engine.connect() as conn:
-        fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
-            file_id=file_id
-        )
+        fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
     assert fmd
     assert fmd.upload_expires_at
     # ensure we have now an upload id IF the link was presigned ONLY
     # NOTE: S3 uploads might create multipart uploads out of storage!!
-    ongoing_uploads = await storage_s3_client.list_ongoing_multipart_uploads(
-        bucket=storage_s3_bucket
-    )
+    ongoing_uploads = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
     if fmd.upload_id and link_type == LinkType.PRESIGNED:
         assert len(ongoing_uploads) == 1
     else:
@@ -292,14 +273,9 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     # now run the cleaner, nothing should happen since the expiration was set to the default of 3600
     await simcore_s3_dsm.clean_expired_uploads()
     # check the entries are still the same
-    fmd_after_clean = await FileMetaDataRepository.instance(
-        sqlalchemy_async_engine
-    ).get(file_id=file_id)
+    fmd_after_clean = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
     assert fmd_after_clean == fmd
-    assert (
-        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
-        == ongoing_uploads
-    )
+    assert await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket) == ongoing_uploads
 
     # now change the upload_expires_at entry to simulate an expired entry
     async with sqlalchemy_async_engine.begin() as conn:
@@ -312,21 +288,13 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     await simcore_s3_dsm.clean_expired_uploads()
 
     # check the entries were reverted
-    reverted_fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
-        file_id=file_id
-    )
-    assert original_fmd.model_dump(exclude={"created_at"}) == reverted_fmd.model_dump(
-        exclude={"created_at"}
-    )
+    reverted_fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
+    assert original_fmd.model_dump(exclude={"created_at"}) == reverted_fmd.model_dump(exclude={"created_at"})
     # check the S3 content is the old file
-    s3_meta_data = await storage_s3_client.get_object_metadata(
-        bucket=storage_s3_bucket, object_key=file_id
-    )
+    s3_meta_data = await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
     assert s3_meta_data.size == file_size
     # since there is no entry in the db, this upload shall be cleaned up
-    assert not await storage_s3_client.list_ongoing_multipart_uploads(
-        bucket=storage_s3_bucket
-    )
+    assert not await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
 
 
 @pytest.mark.parametrize(
@@ -368,9 +336,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     await FileMetaDataRepository.instance(sqlalchemy_async_engine).upsert(fmd=fmd)
 
     # ensure the database is correctly set up
-    fmd_in_db = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
-        file_id=file_or_directory_id
-    )
+    fmd_in_db = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_or_directory_id)
     assert fmd_in_db
     assert fmd_in_db.upload_expires_at
     # we create the multipart upload link
@@ -381,12 +347,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     FILES_IN_DIR: Final[int] = 5
 
     file_ids_to_upload: set[SimcoreS3FileID] = (
-        {
-            TypeAdapter(SimcoreS3FileID).validate_python(
-                f"{file_or_directory_id}/file{x}"
-            )
-            for x in range(FILES_IN_DIR)
-        }
+        {TypeAdapter(SimcoreS3FileID).validate_python(f"{file_or_directory_id}/file{x}") for x in range(FILES_IN_DIR)}
         if is_directory
         else {simcore_file_id}
     )
@@ -401,15 +362,13 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
         )
         for file_id in file_ids_to_upload
     ]
-    started_multipart_uploads_upload_id: set[str] = {
-        x.upload_id for x in upload_links_list
-    }
+    started_multipart_uploads_upload_id: set[str] = {x.upload_id for x in upload_links_list}
     assert len(started_multipart_uploads_upload_id) == len(file_ids_to_upload)
 
     # ensure we have now an upload id
-    all_ongoing_uploads: list[tuple[UploadID, SimcoreS3FileID]] = (
-        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
-    )
+    all_ongoing_uploads: list[
+        tuple[UploadID, SimcoreS3FileID]
+    ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
     assert len(all_ongoing_uploads) == len(file_ids_to_upload)
 
     for ongoing_upload_id, ongoing_file_id in all_ongoing_uploads:
@@ -420,8 +379,6 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     await simcore_s3_dsm.clean_expired_uploads()
 
     # ensure we STILL have the same upload id
-    all_ongoing_uploads_after_clean = (
-        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
-    )
+    all_ongoing_uploads_after_clean = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
     assert len(all_ongoing_uploads_after_clean) == len(file_ids_to_upload)
     assert all_ongoing_uploads == all_ongoing_uploads_after_clean

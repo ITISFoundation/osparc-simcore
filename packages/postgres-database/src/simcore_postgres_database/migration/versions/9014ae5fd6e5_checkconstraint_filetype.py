@@ -5,6 +5,7 @@ Revises: 4f9c8738178b
 Create Date: 2023-03-29 13:52:47.611065+00:00
 
 """
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -24,6 +25,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_constraint(
-        "ck_filetype_is_upper", "services_consume_filetypes", type_="check"
-    )
+    op.drop_constraint("ck_filetype_is_upper", "services_consume_filetypes", type_="check")

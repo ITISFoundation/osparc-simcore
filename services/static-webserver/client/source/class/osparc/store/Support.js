@@ -95,6 +95,7 @@ qx.Class.define("osparc.store.Support", {
     getGuidedToursButton: function() {
       const guidedToursInfo = this.__getGuidedToursInfo();
       const guidedToursButton = new qx.ui.form.Button(guidedToursInfo.label, guidedToursInfo.icon);
+      osparc.utils.Utils.setIdToWidget(guidedToursButton, "guidedToursBtn");
       guidedToursButton.exclude();
       this.populateGuidedToursButton(guidedToursButton);
       return guidedToursButton;
@@ -254,11 +255,15 @@ qx.Class.define("osparc.store.Support", {
 
     __getReleaseInfo: function() {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
-      const releaseLink = osparc.utils.Utils.getReleaseLink();
+      const releaseLink = osparc.utils.Utils.getReleaseNotesLink();
       return {
-        label: qx.locale.Manager.tr("What's New in") + " " + releaseTag,
+        label: qx.locale.Manager.tr("What's New in oSparc ") + releaseTag,
         icon: "@FontAwesome5Solid/bullhorn/14",
-        callback: () => { window.open(releaseLink); },
+        callback: () => {
+          if (!osparc.NewRelease.openReleaseNotesDialog(releaseLink)) {
+            window.open(releaseLink);
+          }
+        },
       };
     },
 

@@ -8,9 +8,7 @@ PREFIX_SERVICES_COMPUTATIONAL = "simcore/services/comp"
 PREFIX_SERVICES_DYNAMIC = "simcore/services/dynamic"
 
 
-async def _httpx_request(
-    registry: str, user: str, password: str, path: str
-) -> Response:
+async def _httpx_request(registry: str, user: str, password: str, path: str) -> Response:
     params = {}
     if user and password:
         params["auth"] = (user, password)
@@ -22,18 +20,14 @@ async def _httpx_request(
         return response
 
 
-async def _compile_registry_report(
-    registry: str, user: str, password: str
-) -> dict[str, list[str]]:
+async def _compile_registry_report(registry: str, user: str, password: str) -> dict[str, list[str]]:
     response = await _httpx_request(registry, user, password, "_catalog")
     repositories = response.json()["repositories"]
 
     progressbar = typer.progressbar(length=len(repositories), label="fetching tags")
 
     async def _get_tag(repository: str) -> dict:
-        response = await _httpx_request(
-            registry, user, password, f"{repository}/tags/list"
-        )
+        response = await _httpx_request(registry, user, password, f"{repository}/tags/list")
         progressbar.update(1)
         return response.json()
 
@@ -45,9 +39,7 @@ async def _compile_registry_report(
     return repository_tags
 
 
-def _format(
-    repo_tags: dict[str, list[str]], header_name: str, header_color: str
-) -> str:
+def _format(repo_tags: dict[str, list[str]], header_name: str, header_color: str) -> str:
     service_header = typer.style(header_name, fg=typer.colors.WHITE, bg=header_color)
     service_list = "\n".join(f"- {k} {v}" for k, v in repo_tags.items())
     return f"{service_header}\n{service_list}\n"
@@ -87,9 +79,7 @@ def _format_repositories(repository_tags: dict[str, list[str]]) -> None:
 
 
 async def triage_registry(registry: str, user: str, password: str) -> None:
-    repository_tags = await _compile_registry_report(
-        registry=registry, user=user, password=password
-    )
+    repository_tags = await _compile_registry_report(registry=registry, user=user, password=password)
     _format_repositories(repository_tags)
 
 

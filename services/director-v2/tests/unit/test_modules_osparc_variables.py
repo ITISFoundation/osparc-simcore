@@ -10,6 +10,7 @@ import json
 from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
 from copy import deepcopy
+from typing import Final
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -30,6 +31,10 @@ from simcore_postgres_database.models.services_environments import VENDOR_SECRET
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules.osparc_variables import substitutions
+from simcore_service_director_v2.modules.osparc_variables._errors import (
+    OsparcVariableResolveError,
+    OsparcVariableResolveTimeoutError,
+)
 from simcore_service_director_v2.modules.osparc_variables.substitutions import (
     _NEW_ENVIRONMENTS,
     OsparcSessionVariablesTable,
@@ -37,6 +42,7 @@ from simcore_service_director_v2.modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
+from simcore_service_director_v2.utils import osparc_variables
 from simcore_service_director_v2.utils.osparc_variables import (
     ContextDict,
     OsparcVariablesTable,
@@ -48,21 +54,19 @@ from simcore_service_director_v2.utils.osparc_variables import (
 
 @pytest.fixture
 def session_context(faker: Faker) -> ContextDict:
-    return ContextDict(
-        app=FastAPI(),
-        service_key=TypeAdapter(ServiceKey).validate_python(
-            "simcore/services/dynamic/foo"
-        ),
-        service_version=TypeAdapter(ServiceVersion).validate_python("1.2.3"),
-        compose_spec=generate_fake_docker_compose(faker),
-        product_name=faker.word(),
-        project_id=faker.uuid4(),
-        user_id=faker.pyint(),
-        node_id=faker.uuid4(),
-    )
+    return {
+        "app": FastAPI(),
+        "service_key": TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/foo"),
+        "service_version": TypeAdapter(ServiceVersion).validate_python("1.2.3"),
+        "compose_spec": generate_fake_docker_compose(faker),
+        "product_name": faker.word(),
+        "project_id": faker.uuid4(),
+        "user_id": faker.pyint(),
+        "node_id": faker.uuid4(),
+    }
 
 
-@pytest.mark.acceptance_test()
+@pytest.mark.acceptance_test
 async def test_resolve_session_environs(faker: Faker, session_context: ContextDict):
     async def _request_user_role(app: FastAPI, user_id: UserID) -> SubstitutionValue:
         print(app, user_id)
@@ -92,22 +96,13 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
         return faker.email()
 
     # Some context given ----------------------------------------------------------
-    # TODO: test pre errors handling
-    # TODO: test errors handling
-    # TODO: test validation errors handling
-    # TODO: test timeout error handling
 
-    environs = await resolve_variables_from_context(
-        osparc_variables_table.copy(), session_context
-    )
+    environs = await resolve_variables_from_context(osparc_variables_table.copy(), session_context)
 
     assert set(environs.keys()) == set(osparc_variables_table.variables_names())
 
     # All values extracted from the context MUST be SubstitutionValue
-    assert {
-        key: TypeAdapter(SubstitutionValue).validate_python(value)
-        for key, value in environs.items()
-    }
+    assert {key: TypeAdapter(SubstitutionValue).validate_python(value) for key, value in environs.items()}
 
     for osparc_variable_name, context_name in [
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
@@ -210,9 +205,7 @@ def mock_get_vendor_secrets(mocker: MockerFixture, mock_repo_db_engine: None) ->
     )
 
 
-async def test_substitute_vendor_secrets_in_specs(
-    mock_get_vendor_secrets: None, fake_app: FastAPI, faker: Faker
-):
+async def test_substitute_vendor_secrets_in_specs(mock_get_vendor_secrets: None, fake_app: FastAPI, faker: Faker):
     specs = {
         "vendor_secret_one": "${OSPARC_VARIABLE_VENDOR_SECRET_ONE}",
         "vendor_secret_two": "${OSPARC_VARIABLE_VENDOR_SECRET_TWO}",
@@ -223,9 +216,7 @@ async def test_substitute_vendor_secrets_in_specs(
         fake_app,
         specs=specs,
         product_name="a_product",
-        service_key=TypeAdapter(ServiceKey).validate_python(
-            "simcore/services/dynamic/fake"
-        ),
+        service_key=TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/fake"),
         service_version=TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     )
     print("REPLACED SPECS\n", replaced_specs)
@@ -307,3 +298,79 @@ def test_auto_inject_environments_are_registered():
     auto_injected_osparc_variables = {_.lstrip("$") for _ in _NEW_ENVIRONMENTS.values()}
 
     assert auto_injected_osparc_variables.issubset(registered_osparc_variables)
+
+
+_FAST_HANDLERS_TIMEOUT: Final[float] = 0.1
+
+
+@pytest.fixture
+def with_fast_handlers_timeout(monkeypatch: pytest.MonkeyPatch) -> float:
+    monkeypatch.setattr(osparc_variables, "_HANDLERS_TIMEOUT", _FAST_HANDLERS_TIMEOUT)
+    return _FAST_HANDLERS_TIMEOUT
+
+
+async def test_resolve_variables_wraps_timeout_in_typed_error(with_fast_handlers_timeout: float):
+    _SLOW_TIMEOUT: Final[int] = 60
+    assert with_fast_handlers_timeout < _SLOW_TIMEOUT, (
+        "test timeout must be greater than handlers timeout to trigger the error"
+    )
+
+    async def _slow_handler(app: FastAPI) -> str:
+        await asyncio.sleep(_SLOW_TIMEOUT)
+        return "done"
+
+    table = OsparcVariablesTable()
+    table.register({"OSPARC_VARIABLE_SLOW": factory_handler(_slow_handler)})
+
+    context: ContextDict = {"app": FastAPI()}
+
+    with pytest.raises(OsparcVariableResolveTimeoutError) as exc_info:
+        await resolve_variables_from_context(table.copy(), context)
+
+    exc = exc_info.value
+    assert isinstance(exc.__cause__, TimeoutError)
+    ctx = exc.error_context()
+    assert ctx["variable_key"] == "OSPARC_VARIABLE_SLOW"
+    assert ctx["handler_name"].endswith("_slow_handler")
+    assert ctx["timeout_seconds"] == with_fast_handlers_timeout
+
+
+async def test_resolve_variables_wraps_generic_exception_in_typed_error():
+    async def _broken_handler(app: FastAPI) -> str:
+        msg = "something went wrong"
+        raise RuntimeError(msg)
+
+    table = OsparcVariablesTable()
+    table.register({"OSPARC_VARIABLE_BROKEN": factory_handler(_broken_handler)})
+
+    context: ContextDict = {"app": FastAPI()}
+
+    with pytest.raises(OsparcVariableResolveError) as exc_info:
+        await resolve_variables_from_context(table.copy(), context)
+
+    exc = exc_info.value
+    # must be the base class, NOT the timeout subclass
+    assert isinstance(exc.__cause__, RuntimeError)
+    ctx = exc.error_context()
+    assert ctx["variable_key"] == "OSPARC_VARIABLE_BROKEN"
+    assert ctx["handler_name"].endswith("_broken_handler")
+
+
+async def test_resolve_variables_sync_values_unaffected_when_handler_fails():
+    async def _broken_handler(app: FastAPI) -> str:
+        msg = "failure"
+        raise RuntimeError(msg)
+
+    table = OsparcVariablesTable()
+    table.register(
+        {
+            "OSPARC_VARIABLE_SYNC": factory_context_getter("my_value"),
+            "OSPARC_VARIABLE_BROKEN": factory_handler(_broken_handler),
+        }
+    )
+
+    context: ContextDict = {"app": FastAPI(), "my_value": "hello"}
+
+    # The sync value resolution itself is fine; the async handler fails and raises
+    with pytest.raises(OsparcVariableResolveError):
+        await resolve_variables_from_context(table.copy(), context)

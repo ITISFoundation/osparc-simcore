@@ -22,9 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @pytest.fixture
 def studies_dispatcher_settings() -> StudiesDispatcherSettings:
-    return StudiesDispatcherSettings(
-        STUDIES_DEFAULT_SERVICE_THUMBNAIL="https://example.com/default-thumbnail.png"
-    )
+    return StudiesDispatcherSettings(STUDIES_DEFAULT_SERVICE_THUMBNAIL="https://example.com/default-thumbnail.png")
 
 
 async def test_iter_latest_product_services(

@@ -22,9 +22,7 @@ from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 _logger = logging.getLogger(__name__)
 
 
-async def notify_user_logout_all_sessions(
-    app: web.Application, user_id: UserID
-) -> None:
+async def notify_user_logout_all_sessions(app: web.Application, user_id: UserID) -> None:
     #  NOTE kept here for convenience
     with log_context(
         _logger,

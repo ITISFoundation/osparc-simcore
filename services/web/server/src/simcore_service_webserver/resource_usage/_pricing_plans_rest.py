@@ -61,9 +61,7 @@ class PricingPlanUnitGetPathParams(StrictRequestParameters):
 @_handle_resource_usage_exceptions
 async def get_pricing_plan_unit(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        PricingPlanUnitGetPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(PricingPlanUnitGetPathParams, request)
 
     pricing_unit_get = await pricing_plans_service.get_pricing_plan_unit(
         app=request.app,
@@ -92,18 +90,14 @@ async def get_pricing_plan_unit(request: web.Request):
 @_handle_resource_usage_exceptions
 async def list_pricing_plans(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    query_params: PageQueryParameters = parse_request_query_parameters_as(
-        PageQueryParameters, request
-    )
+    query_params: PageQueryParameters = parse_request_query_parameters_as(PageQueryParameters, request)
 
-    pricing_plan_page = (
-        await pricing_plans_admin_service.list_pricing_plans_without_pricing_units(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            exclude_inactive=True,
-            offset=query_params.offset,
-            limit=query_params.limit,
-        )
+    pricing_plan_page = await pricing_plans_admin_service.list_pricing_plans_without_pricing_units(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        exclude_inactive=True,
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
     webserver_pricing_plans = [
         PricingPlanGet(

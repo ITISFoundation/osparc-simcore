@@ -5,6 +5,7 @@ Revises: 3fe27ff48f73
 Create Date: 2025-02-06 19:28:49.918139+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -26,7 +27,6 @@ def upgrade():
 
 
 def downgrade():
-
     op.create_table(
         "projects_vc_snapshots",
         sa.Column("checksum", sa.VARCHAR(), autoincrement=False, nullable=False),
@@ -89,9 +89,7 @@ def downgrade():
         ),
         sa.Column("repo_id", sa.BIGINT(), autoincrement=False, nullable=False),
         sa.Column("parent_commit_id", sa.BIGINT(), autoincrement=False, nullable=True),
-        sa.Column(
-            "snapshot_checksum", sa.VARCHAR(), autoincrement=False, nullable=False
-        ),
+        sa.Column("snapshot_checksum", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column("message", sa.VARCHAR(), autoincrement=False, nullable=True),
         sa.Column(
             "created",
@@ -228,7 +226,5 @@ def downgrade():
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("repo_id", name="projects_vc_heads_pkey"),
-        sa.UniqueConstraint(
-            "head_branch_id", name="projects_vc_heads_head_branch_id_key"
-        ),
+        sa.UniqueConstraint("head_branch_id", name="projects_vc_heads_head_branch_id_key"),
     )

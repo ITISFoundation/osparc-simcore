@@ -6,7 +6,7 @@
 Tests raw communication with scicrunch service API
 
 - Use for systematic exploration of the API
-- Analyzes responses of the API to known situtations
+- Analyzes responses of the API to known situations
 - Ensures parts of the scicrunch service API that we use do not change interface or behaviour
 
 NOTE: this is intended for manual testing during development
@@ -51,16 +51,11 @@ async def test_scicrunch_openapi_specs(settings: SciCrunchSettings):
         expected_api_version = 1
         assert openapi_specs["info"]["version"] == expected_api_version
 
-        assert (
-            str(settings.SCICRUNCH_API_BASE_URL)
-            == f"{SCICRUNCH_DEFAULT_URL}/api/{expected_api_version}"
-        )
+        assert str(settings.SCICRUNCH_API_BASE_URL) == f"{SCICRUNCH_DEFAULT_URL}/api/{expected_api_version}"
 
 
 @pytest.mark.parametrize("name,rrid", TOOL_CITATIONS)
-async def test_scicrunch_get_all_versions(
-    name: str | None, rrid: str, settings: SciCrunchSettings
-):
+async def test_scicrunch_get_all_versions(name: str | None, rrid: str, settings: SciCrunchSettings):
     async with ClientSession() as client:
         versions = await get_all_versions(rrid, client, settings)
 
@@ -77,9 +72,7 @@ async def test_scicrunch_get_all_versions(
     ]
     + [c[-1] for c in NOT_TOOL_CITATIONS],
 )
-async def test_scicrunch_get_all_versions_with_invalid_rrids(
-    rrid: str, settings: SciCrunchSettings
-):
+async def test_scicrunch_get_all_versions_with_invalid_rrids(rrid: str, settings: SciCrunchSettings):
     async with ClientSession() as client:
         versions = await get_all_versions(rrid, client, settings)
 
@@ -99,9 +92,7 @@ async def test_scicrunch_get_all_versions_with_empty(settings: SciCrunchSettings
 
 
 @pytest.mark.parametrize("name,rrid", TOOL_CITATIONS)
-async def test_scicrunch_get_resource_fields(
-    name: str | None, rrid: str, settings: SciCrunchSettings
-):
+async def test_scicrunch_get_resource_fields(name: str | None, rrid: str, settings: SciCrunchSettings):
     async with ClientSession() as client:
         resource_view: ResourceView = await get_resource_fields(rrid, client, settings)
 
@@ -122,9 +113,7 @@ async def test_scicrunch_get_resource_fields(
     ]
     + [c[-1] for c in NOT_TOOL_CITATIONS],
 )
-async def test_scicrunch_get_fields_from_invalid_rrid(
-    rrid: str, settings: SciCrunchSettings
-):
+async def test_scicrunch_get_fields_from_invalid_rrid(rrid: str, settings: SciCrunchSettings):
     # - ONLY RRIDs from SCR sources are actually supported
     # - 'RRID:' prefix should NOT be used here!
     expected_status_code = status.HTTP_400_BAD_REQUEST
@@ -140,7 +129,6 @@ async def test_scicrunch_get_fields_from_invalid_rrid(
 
 
 async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSettings):
-
     expected: list[dict[str, Any]] = ListOfResourceHits.model_validate(
         [
             {
@@ -158,9 +146,7 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
     ).model_dump()["root"]
 
     async with ClientSession() as client:
-
         for guess_name in ("octave", "Octave", "octave  "):
-
             resource_hits = await autocomplete_by_name("octave", client, settings)
 
             hits = resource_hits.model_dump()["root"]

@@ -13,7 +13,7 @@ from simcore_postgres_database.utils_user_preferences import (
     FrontendUserPreferencesRepo,
     UserServicesUserPreferencesRepo,
 )
-from sqlalchemy.engine.row import Row
+from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -29,10 +29,10 @@ def preference_two() -> str:
 
 @pytest.fixture
 async def product_name(
-    create_fake_product: Callable[[str], Awaitable[Row]],
+    create_fake_product: Callable[[str], Awaitable[RowMapping]],
 ) -> str:
     product = await create_fake_product("fake-product")
-    return product[0]
+    return product["name"]
 
 
 @pytest.fixture(params=[FrontendUserPreferencesRepo, UserServicesUserPreferencesRepo])
@@ -86,9 +86,7 @@ async def _assert_preference_not_saved(
     assert not_found is None
 
 
-def _get_random_payload(
-    faker: Faker, preference_repo: type[BasePreferencesRepo]
-) -> Any:
+def _get_random_payload(faker: Faker, preference_repo: type[BasePreferencesRepo]) -> Any:
     if preference_repo == FrontendUserPreferencesRepo:
         return {faker.pystr(): faker.pystr()}
     if preference_repo == UserServicesUserPreferencesRepo:
@@ -100,9 +98,7 @@ def _get_random_payload(
 async def _create_user_id(asyncpg_engine: AsyncEngine, faker: Faker) -> int:
     data = random_user(role=faker.random_element(elements=UserRole))
     async with asyncpg_engine.begin() as connection:
-        user_id = await connection.scalar(
-            users.insert().values(**data).returning(users.c.id)
-        )
+        user_id = await connection.scalar(users.insert().values(**data).returning(users.c.id))
     assert user_id
     return user_id
 
@@ -200,13 +196,13 @@ async def test__same_preference_name_product_name__different_users(
 
 async def test__same_user_preference_name__different_product_name(
     asyncpg_engine: AsyncEngine,
-    create_fake_product: Callable[[str], Awaitable[Row]],
+    create_fake_product: Callable[[str], Awaitable[RowMapping]],
     preference_repo: type[BasePreferencesRepo],
     preference_one: str,
     faker: Faker,
 ):
-    product_1 = (await create_fake_product("fake-product-1"))[0]
-    product_2 = (await create_fake_product("fake-product-2"))[0]
+    product_1 = (await create_fake_product("fake-product-1"))["name"]
+    product_2 = (await create_fake_product("fake-product-2"))["name"]
 
     user_id = await _create_user_id(asyncpg_engine, faker)
 

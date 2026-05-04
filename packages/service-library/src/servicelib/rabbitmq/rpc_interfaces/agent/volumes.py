@@ -31,9 +31,7 @@ async def remove_volumes_without_backup_for_service(
                 "swarm_stack_name": swarm_stack_name,
             }
         ),
-        TypeAdapter(RPCMethodName).validate_python(
-            "remove_volumes_without_backup_for_service"
-        ),
+        TypeAdapter(RPCMethodName).validate_python("remove_volumes_without_backup_for_service"),
         node_id=node_id,
         timeout_s=_REQUEST_TIMEOUT,
     )
@@ -55,9 +53,7 @@ async def backup_and_remove_volumes_for_all_services(
                 "swarm_stack_name": swarm_stack_name,
             }
         ),
-        TypeAdapter(RPCMethodName).validate_python(
-            "backup_and_remove_volumes_for_all_services"
-        ),
+        TypeAdapter(RPCMethodName).validate_python("backup_and_remove_volumes_for_all_services"),
         timeout_s=_REQUEST_TIMEOUT,
     )
     assert result is None  # nosec

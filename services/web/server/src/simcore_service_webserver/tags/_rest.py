@@ -72,9 +72,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_tags_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+_handle_tags_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
 
 
 routes = web.RouteTableDef()
@@ -93,9 +91,7 @@ async def create_tag(request: web.Request):
     req_ctx = TagRequestContext.model_validate(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
-    created = await _service.create_tag(
-        request.app, user_id=req_ctx.user_id, new_tag=new_tag
-    )
+    created = await _service.create_tag(request.app, user_id=req_ctx.user_id, new_tag=new_tag)
     return envelope_json_response(created, status_cls=web.HTTPCreated)
 
 
@@ -104,7 +100,6 @@ async def create_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
-
     req_ctx = TagRequestContext.model_validate(request)
     got = await _service.list_tags(request.app, user_id=req_ctx.user_id)
     return envelope_json_response(got)
@@ -136,9 +131,7 @@ async def delete_tag(request: web.Request):
     req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
-    await _service.delete_tag(
-        request.app, user_id=req_ctx.user_id, tag_id=path_params.tag_id
-    )
+    await _service.delete_tag(request.app, user_id=req_ctx.user_id, tag_id=path_params.tag_id)
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -181,9 +174,7 @@ async def create_tag_group(request: web.Request):
         access_rights=body_params.to_domain_model(),
     )
 
-    return envelope_json_response(
-        TagGroupGet.from_domain_model(got), status_cls=web.HTTPCreated
-    )
+    return envelope_json_response(TagGroupGet.from_domain_model(got), status_cls=web.HTTPCreated)
 
 
 @routes.put(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="replace_tag_group")

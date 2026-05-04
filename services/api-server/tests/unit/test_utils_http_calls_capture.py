@@ -78,10 +78,10 @@ async def test_capture_http_dynamic_call(faker: Faker, httpbin_base_url: str):
         assert captured.query == "n=42"
 
         # pattern with named-group
-        pattern = rf"(?P<resouce_uid>{UUID_RE_BASE})"
+        pattern = rf"(?P<resource_uid>{UUID_RE_BASE})"
         found = re.search(pattern, captured.path)
         assert found
-        assert found.groupdict() == {"resouce_uid": sample_uid}
+        assert found.groupdict() == {"resource_uid": sample_uid}
 
         # subs_json = re.sub(f"{resource_uid}", pattern, captured.json())
         # new_capture = HttpApiCallCaptureModel.model_validate_json(subs_json)
@@ -94,9 +94,7 @@ async def test_capture_http_dynamic_call(faker: Faker, httpbin_base_url: str):
         ) as respx_mock:
             respx_mock.request(
                 method=captured.method,
-                path__regex=re.sub(
-                    f"{sample_uid}", pattern, captured.path
-                ),  # using REGEX
+                path__regex=re.sub(f"{sample_uid}", pattern, captured.path),  # using REGEX
                 name=captured.name,
             ).respond(
                 status_code=captured.status_code,
@@ -127,10 +125,8 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
     assert found
     context = found.groupdict()
 
-    # get paramters from capture
-    environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
-    )
+    # get parameters from capture
+    environment = jinja2.Environment(loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True)
     template = environment.get_template("delete_project_not_found.json")
 
     # loads parametrized capture

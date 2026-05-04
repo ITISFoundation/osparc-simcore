@@ -9,7 +9,12 @@ from collections.abc import AsyncIterable
 import pytest
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_payment_method, utcnow
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
@@ -30,13 +35,8 @@ async def _get_auto_recharge(connection: AsyncConnection, wallet_id) -> Row | No
     return result.first()
 
 
-async def _is_valid_payment_method(
-    connection: AsyncConnection, user_id, wallet_id, payment_method_id
-) -> bool:
-
-    stmt = AutoRechargeStatements.is_valid_payment_method(
-        user_id, wallet_id, payment_method_id
-    )
+async def _is_valid_payment_method(connection: AsyncConnection, user_id, wallet_id, payment_method_id) -> bool:
+    stmt = AutoRechargeStatements.is_valid_payment_method(user_id, wallet_id, payment_method_id)
     primary_payment_method_id = await connection.scalar(stmt)
     return primary_payment_method_id == payment_method_id
 
@@ -62,9 +62,7 @@ async def _upsert_autorecharge(
     return result.one()
 
 
-async def _update_autorecharge(
-    connection: AsyncConnection, wallet_id, **settings
-) -> int | None:
+async def _update_autorecharge(connection: AsyncConnection, wallet_id, **settings) -> int | None:
     stmt = AutoRechargeStatements.update_wallet_autorecharge(wallet_id, **settings)
     return await connection.scalar(stmt)
 
@@ -76,40 +74,47 @@ class PaymentMethodRow(dict):
 
 
 @pytest.fixture
-async def payment_method(
-    asyncpg_engine: AsyncEngine, faker: Faker
-) -> AsyncIterable[PaymentMethodRow]:
+async def payment_method(asyncpg_engine: AsyncEngine, faker: Faker) -> AsyncIterable[PaymentMethodRow]:
     payment_method_id = faker.uuid4().upper()
 
-    raw_payment_method = random_payment_method(
-        payment_method_id=payment_method_id,
-        initiated_at=utcnow(),
-        completed_at=utcnow() + datetime.timedelta(seconds=1),
-        state=InitPromptAckFlowState.SUCCESS,
-    )
+    async with insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row:
+        user_id = user_row["id"]
 
-    # pylint: disable=contextmanager-generator-missing-cleanup
-    async with insert_and_get_row_lifespan(
-        asyncpg_engine,
-        table=payments_methods,
-        values=raw_payment_method,
-        pk_col=payments_methods.c.payment_method_id,
-        pk_value=payment_method_id,
-    ) as row_data:
-        wallet_id = row_data["wallet_id"]
-        user_id = row_data["user_id"]
+        async with insert_and_get_product_lifespan(asyncpg_engine) as product_row:
+            product_name = product_row["name"]
 
-        async with asyncpg_engine.connect() as connection:
-            assert await _is_valid_payment_method(
-                connection, user_id, wallet_id, payment_method_id
-            )
+            async with insert_and_get_wallet_lifespan(
+                asyncpg_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+            ) as wallet_row:
+                raw_payment_method_values = random_payment_method(
+                    payment_method_id=payment_method_id,
+                    initiated_at=utcnow(),
+                    completed_at=utcnow() + datetime.timedelta(seconds=1),
+                    state=InitPromptAckFlowState.SUCCESS,
+                    user_id=user_id,
+                    wallet_id=wallet_row["wallet_id"],
+                )
 
-        yield PaymentMethodRow(row_data)
+                # pylint: disable=contextmanager-generator-missing-cleanup
+                async with insert_and_get_row_lifespan(
+                    asyncpg_engine,
+                    table=payments_methods,
+                    values=raw_payment_method_values,
+                    pk_col=payments_methods.c.payment_method_id,
+                    pk_value=payment_method_id,
+                ) as row_data:
+                    wallet_id = row_data["wallet_id"]
+                    user_id = row_data["user_id"]
+
+                    async with asyncpg_engine.connect() as connection:
+                        assert await _is_valid_payment_method(connection, user_id, wallet_id, payment_method_id)
+
+                    yield PaymentMethodRow(row_data)
 
 
-async def test_payments_automation_workflow(
-    asyncpg_engine: AsyncEngine, payment_method: PaymentMethodRow
-):
+async def test_payments_automation_workflow(asyncpg_engine: AsyncEngine, payment_method: PaymentMethodRow):
     payment_method_id = payment_method.payment_method_id
     wallet_id = payment_method.wallet_id
 

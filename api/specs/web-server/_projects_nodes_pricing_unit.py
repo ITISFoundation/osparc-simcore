@@ -8,7 +8,6 @@ This OAS are the source of truth
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
@@ -54,6 +53,4 @@ async def connect_pricing_unit_to_project_node(
 ): ...
 
 
-assert_handler_signature_against_model(
-    connect_pricing_unit_to_project_node, _ProjectNodePricingUnitPathParams
-)
+assert_handler_signature_against_model(connect_pricing_unit_to_project_node, _ProjectNodePricingUnitPathParams)

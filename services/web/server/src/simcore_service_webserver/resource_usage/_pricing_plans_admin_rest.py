@@ -87,18 +87,14 @@ routes = web.RouteTableDef()
 @_handle_pricing_plan_admin_exceptions
 async def list_pricing_plans_for_admin_user(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    query_params: PageQueryParameters = parse_request_query_parameters_as(
-        PageQueryParameters, request
-    )
+    query_params: PageQueryParameters = parse_request_query_parameters_as(PageQueryParameters, request)
 
-    pricing_plan_page = (
-        await pricing_plans_admin_service.list_pricing_plans_without_pricing_units(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            exclude_inactive=False,
-            offset=query_params.offset,
-            limit=query_params.limit,
-        )
+    pricing_plan_page = await pricing_plans_admin_service.list_pricing_plans_without_pricing_units(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        exclude_inactive=False,
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
     webserver_pricing_plans = [
         PricingPlanAdminGet(
@@ -368,12 +364,10 @@ async def list_connected_services_to_pricing_plan(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
-    connected_services_list = (
-        await pricing_plans_admin_service.list_connected_services_to_pricing_plan(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            pricing_plan_id=path_params.pricing_plan_id,
-        )
+    connected_services_list = await pricing_plans_admin_service.list_connected_services_to_pricing_plan(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        pricing_plan_id=path_params.pricing_plan_id,
     )
     connected_services_get = [
         PricingPlanToServiceAdminGet(
@@ -398,19 +392,15 @@ async def list_connected_services_to_pricing_plan(request: web.Request):
 async def connect_service_to_pricing_plan(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
-    body_params = await parse_request_body_as(
-        ConnectServiceToPricingPlanBodyParams, request
-    )
+    body_params = await parse_request_body_as(ConnectServiceToPricingPlanBodyParams, request)
 
-    connected_service = (
-        await pricing_plans_admin_service.connect_service_to_pricing_plan(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            pricing_plan_id=path_params.pricing_plan_id,
-            service_key=body_params.service_key,
-            service_version=body_params.service_version,
-        )
+    connected_service = await pricing_plans_admin_service.connect_service_to_pricing_plan(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        pricing_plan_id=path_params.pricing_plan_id,
+        service_key=body_params.service_key,
+        service_version=body_params.service_version,
     )
     connected_service_get = PricingPlanToServiceAdminGet(
         pricing_plan_id=connected_service.pricing_plan_id,

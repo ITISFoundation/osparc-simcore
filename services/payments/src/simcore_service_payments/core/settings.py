@@ -18,7 +18,6 @@ from pydantic import (
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
-from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
@@ -48,10 +47,9 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
-            validation_alias=AliasChoices(
-                "LOG_FORMAT_LOCAL_DEV_ENABLED", "PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED"
-            ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            validation_alias=AliasChoices("LOG_FORMAT_LOCAL_DEV_ENABLED", "PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED"),
+            description="Enables local development log format. "
+            "WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ] = False
 
@@ -59,10 +57,9 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "LOG_FILTER_MAPPING", "PAYMENTS_LOG_FILTER_MAPPING"
-            ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            validation_alias=AliasChoices("LOG_FILTER_MAPPING", "PAYMENTS_LOG_FILTER_MAPPING"),
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+            "to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
@@ -82,13 +79,9 @@ class ApplicationSettings(_BaseApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    PAYMENTS_GATEWAY_URL: Annotated[
-        HttpUrl, Field(description="Base url to the payment gateway")
-    ]
+    PAYMENTS_GATEWAY_URL: Annotated[HttpUrl, Field(description="Base url to the payment gateway")]
 
-    PAYMENTS_GATEWAY_API_SECRET: Annotated[
-        SecretStr, Field(description="Credentials for payments-gateway api")
-    ]
+    PAYMENTS_GATEWAY_API_SECRET: Annotated[SecretStr, Field(description="Credentials for payments-gateway api")]
 
     PAYMENTS_USERNAME: Annotated[
         str,
@@ -108,7 +101,8 @@ class ApplicationSettings(_BaseApplicationSettings):
     PAYMENTS_ACCESS_TOKEN_SECRET_KEY: Annotated[
         SecretStr,
         Field(
-            description="To generate a random password with openssl in hex format with 32 bytes, run `openssl rand -hex 32`",
+            description="To generate a random password with openssl in hex format with 32 bytes, "
+            "run `openssl rand -hex 32`",
             min_length=30,
         ),
     ]
@@ -131,7 +125,7 @@ class ApplicationSettings(_BaseApplicationSettings):
     PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: Annotated[
         NonNegativeDecimal | None,
         Field(
-            description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
+            description="Default value in USD for the monthly limit for auto-recharge (`monthly_limit_in_usd`)",
         ),
     ] = Decimal(10_000)
 
@@ -173,16 +167,12 @@ class ApplicationSettings(_BaseApplicationSettings):
         ),
     ]
 
-    PAYMENTS_STRIPE_URL: Annotated[
-        HttpUrl, Field(description="Base url to the payment Stripe")
-    ]
-    PAYMENTS_STRIPE_API_SECRET: Annotated[
-        SecretStr, Field(description="Credentials for Stripe api")
-    ]
+    PAYMENTS_STRIPE_URL: Annotated[HttpUrl, Field(description="Base url to the payment Stripe")]
+    PAYMENTS_STRIPE_API_SECRET: Annotated[SecretStr, Field(description="Credentials for Stripe api")]
 
-    PAYMENTS_SWAGGER_API_DOC_ENABLED: Annotated[
-        bool, Field(description="If true, it displays swagger doc at /doc")
-    ] = True
+    PAYMENTS_SWAGGER_API_DOC_ENABLED: Annotated[bool, Field(description="If true, it displays swagger doc at /doc")] = (
+        True
+    )
 
     PAYMENTS_RESOURCE_USAGE_TRACKER: Annotated[
         ResourceUsageTrackerSettings,
@@ -193,11 +183,3 @@ class ApplicationSettings(_BaseApplicationSettings):
     ]
 
     PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-
-    PAYMENTS_EMAIL: Annotated[
-        SMTPSettings | None,
-        Field(
-            json_schema_extra={"auto_default_from_env": True},
-            description="optional email (see notifier_email service)",
-        ),
-    ]

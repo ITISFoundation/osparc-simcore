@@ -52,9 +52,7 @@ def max_response_time() -> int:
 
 
 @pytest.fixture
-async def test_client(
-    app: FastAPI, max_response_time: int
-) -> AsyncIterable[TestClient]:
+async def test_client(app: FastAPI, max_response_time: int) -> AsyncIterable[TestClient]:
     async with TestClient(app, timeout=max_response_time) as client:
         yield client
 
@@ -107,9 +105,7 @@ async def ensure_external_volumes(
             # Occasionally might raise because volumes are mounted to closing containers
             await volume.delete()
 
-        deleted = await asyncio.gather(
-            *(_delete(volume) for volume in volumes), return_exceptions=True
-        )
+        deleted = await asyncio.gather(*(_delete(volume) for volume in volumes), return_exceptions=True)
         assert not [r for r in deleted if isinstance(r, Exception)]
 
 

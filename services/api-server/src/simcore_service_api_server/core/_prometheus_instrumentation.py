@@ -69,15 +69,11 @@ def setup_prometheus_instrumentation(app: FastAPI):
     registry = setup_rest_instrumentation(app)
 
     async def on_startup() -> None:
-        app.state.instrumentation = ApiServerPrometheusInstrumentation(
-            registry=registry
-        )
+        app.state.instrumentation = ApiServerPrometheusInstrumentation(registry=registry)
         await wait_till_log_distributor_ready(app)
         app.state.instrumentation_task = create_periodic_task(
             task=_collect_prometheus_metrics_task,
-            interval=timedelta(
-                seconds=app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS
-            ),
+            interval=timedelta(seconds=app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS),
             task_name="prometheus_metrics_collection_task",
             app=app,
         )
@@ -92,7 +88,5 @@ def setup_prometheus_instrumentation(app: FastAPI):
 
 
 def get_instrumentation(app: FastAPI) -> ApiServerPrometheusInstrumentation:
-    assert (
-        app.state.instrumentation
-    ), "Instrumentation not setup. Please check the configuration"  # nosec
+    assert app.state.instrumentation, "Instrumentation not setup. Please check the configuration"  # nosec
     return cast(ApiServerPrometheusInstrumentation, app.state.instrumentation)

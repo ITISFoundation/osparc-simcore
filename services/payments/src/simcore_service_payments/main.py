@@ -7,6 +7,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.tracing import TracingConfig
+
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
 
@@ -14,8 +15,6 @@ _logger = logging.getLogger(__name__)
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "aiobotocore",
-    "aio_pika",
-    "aiormq",
     "botocore",
     "werkzeug",
 )

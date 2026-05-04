@@ -76,9 +76,7 @@ async def _get_current_product_ui(request: web.Request):
     req_ctx = ProductsRequestContext.model_validate(request)
     product_name = req_ctx.product_name
 
-    ui = await _service.get_product_ui(
-        ProductRepository.create_from_request(request), product_name=product_name
-    )
+    ui = await _service.get_product_ui(ProductRepository.create_from_request(request), product_name=product_name)
 
     data = ProductUIGet(product_name=product_name, ui=ui)
     return envelope_json_response(data)

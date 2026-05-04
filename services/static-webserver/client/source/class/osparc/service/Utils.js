@@ -247,9 +247,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getParameterType: function(metadata) {
-      let type = metadata["outputs"]["out_1"]["type"];
+      let type = metadata["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY]["type"];
       if (type === "ref_contentSchema") {
-        type = metadata["outputs"]["out_1"]["contentSchema"]["type"];
+        type = metadata["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY]["contentSchema"]["type"];
       }
       return type;
     },
@@ -258,9 +258,9 @@ qx.Class.define("osparc.service.Utils", {
       if (
         parameterData &&
         parameterData["outputs"] &&
-        parameterData["outputs"]["out_1"]
+        parameterData["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY]
       ) {
-        return parameterData["outputs"]["out_1"];
+        return parameterData["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY];
       }
       return null;
     },

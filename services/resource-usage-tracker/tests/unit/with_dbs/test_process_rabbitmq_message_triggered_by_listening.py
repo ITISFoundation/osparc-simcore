@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # NOTE: This test fails when running locally and you are connected through VPN: Temporary failure in name resolution [Errno -3]
 import sqlalchemy as sa
@@ -42,19 +42,15 @@ async def test_process_events_via_rabbit(
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
 
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
+        service_run_id=msg.service_run_id, created_at=datetime.now(tz=UTC)
     )
-    await publisher.publish(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), heartbeat_msg
-    )
+    await publisher.publish(RabbitResourceTrackingBaseMessage.get_channel_name(), heartbeat_msg)
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await publisher.publish(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), stopped_msg
-    )
+    await publisher.publish(RabbitResourceTrackingBaseMessage.get_channel_name(), stopped_msg)
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "SUCCESS")

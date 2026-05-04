@@ -28,9 +28,7 @@ def with_limited_concurrency(
     blocking: bool = True,
     blocking_timeout: datetime.timedelta | None = None,
     expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
+) -> Callable[[Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]]:
     """
     Decorator to limit concurrent execution of a function using a distributed semaphore.
 
@@ -70,14 +68,8 @@ def with_limited_concurrency(
         @functools.wraps(coro)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             semaphore_key = key(*args, **kwargs) if callable(key) else key
-            semaphore_capacity = (
-                capacity(*args, **kwargs) if callable(capacity) else capacity
-            )
-            client = (
-                redis_client(*args, **kwargs)
-                if callable(redis_client)
-                else redis_client
-            )
+            semaphore_capacity = capacity(*args, **kwargs) if callable(capacity) else capacity
+            client = redis_client(*args, **kwargs) if callable(redis_client) else redis_client
 
             assert isinstance(semaphore_key, str)  # nosec
             assert isinstance(semaphore_capacity, int)  # nosec
@@ -152,14 +144,8 @@ def with_limited_concurrency_cm(
         @asynccontextmanager
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> AsyncIterator[R]:
             semaphore_key = key(*args, **kwargs) if callable(key) else key
-            semaphore_capacity = (
-                capacity(*args, **kwargs) if callable(capacity) else capacity
-            )
-            client = (
-                redis_client(*args, **kwargs)
-                if callable(redis_client)
-                else redis_client
-            )
+            semaphore_capacity = capacity(*args, **kwargs) if callable(capacity) else capacity
+            client = redis_client(*args, **kwargs) if callable(redis_client) else redis_client
 
             assert isinstance(semaphore_key, str)  # nosec
             assert isinstance(semaphore_capacity, int)  # nosec

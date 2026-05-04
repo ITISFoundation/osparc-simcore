@@ -1,6 +1,7 @@
 """
-   Facade to keep API LEGACY
+Facade to keep API LEGACY
 """
+
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     ConfirmationAction,
@@ -23,23 +24,23 @@ from simcore_postgres_database.webserver_models import (
 )
 
 __all__: tuple[str, ...] = (
-    "api_keys",
     "ConfirmationAction",
+    "GroupType",
+    "UserRole",
+    "UserStatus",
+    "api_keys",
     "confirmations",
     "group_classifiers",
     "groups",
-    "GroupType",
     "metadata",
     "products",
     "projects",
-    "scicrunch_resources",
     "projects_tags",
+    "projects_to_wallet",
+    "scicrunch_resources",
     "tags",
     "tokens",
     "user_to_groups",
-    "UserRole",
     "users",
-    "UserStatus",
-    "projects_to_wallet",
 )
 # nopycln: file

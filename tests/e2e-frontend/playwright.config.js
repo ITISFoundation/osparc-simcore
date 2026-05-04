@@ -43,7 +43,7 @@ module.exports = defineConfig({
     // browserName: 'chromium',
     // Run browser in headless mode.
     // headless: false,
-    // Change the default data-testid attribute.
+    // Change the default data-test-id attribute.
     testIdAttribute: 'osparc-test-id',
 
     /* More browser and context options */

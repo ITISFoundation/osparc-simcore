@@ -62,9 +62,7 @@ async def test_registry_sync_task(
         mocker.patch.object(
             simcore_service_catalog.service.access_rights,
             "_is_old_service",
-            side_effect=HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="fake director error"
-            ),
+            side_effect=HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="fake director error"),
         )
 
     service_key = expected_director_rest_api_list_services[0]["key"]

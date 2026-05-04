@@ -53,7 +53,7 @@ async def _wait_for_completion(
     task_id: TaskId,
     status_url: URL,
     client_timeout: PositiveFloat,
-) -> AsyncGenerator[TaskProgress, None]:
+) -> AsyncGenerator[TaskProgress]:
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(client_timeout),
@@ -68,11 +68,7 @@ async def _wait_for_completion(
                 task_status = TaskStatus.model_validate(data)
                 yield task_status.task_progress
                 if not task_status.done:
-                    await asyncio.sleep(
-                        float(
-                            response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)
-                        )
-                    )
+                    await asyncio.sleep(float(response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)))
                     msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
                     raise TryAgain(msg)  # noqa: TRY301
 
@@ -102,7 +98,7 @@ async def long_running_task_request(
     url: URL,
     json: RequestBody | None = None,
     client_timeout: PositiveFloat = _DEFAULT_CLIENT_TIMEOUT_S,
-) -> AsyncGenerator[LRTask, None]:
+) -> AsyncGenerator[LRTask]:
     """Will use the passed `ClientSession` to call an oSparc long
     running task `url` passing `json` as request body.
     NOTE: this follows the usual aiohttp client syntax, and will raise the same errors

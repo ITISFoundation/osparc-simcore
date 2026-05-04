@@ -5,6 +5,7 @@ Revises: add5f60f0f67
 Create Date: 2020-01-20 15:11:56.273986+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -24,21 +25,15 @@ def upgrade():
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("color", sa.String(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
         "study_tags",
         sa.Column("study_id", sa.BigInteger(), nullable=False),
         sa.Column("tag_id", sa.BigInteger(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["study_id"], ["projects.id"], onupdate="CASCADE", ondelete="CASCADE"
-        ),
-        sa.ForeignKeyConstraint(
-            ["tag_id"], ["tags.id"], onupdate="CASCADE", ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["study_id"], ["projects.id"], onupdate="CASCADE", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tag_id"], ["tags.id"], onupdate="CASCADE", ondelete="CASCADE"),
         sa.UniqueConstraint("study_id", "tag_id"),
     )
     # ### end Alembic commands ###

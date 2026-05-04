@@ -20,9 +20,7 @@ from simcore_service_api_server.models.schemas.model_adapter import (
 )
 
 
-@pytest.mark.parametrize(
-    "capture", ["get_wallet_success.json", "get_wallet_failure.json"]
-)
+@pytest.mark.parametrize("capture", ["get_wallet_success.json", "get_wallet_failure.json"])
 async def test_get_wallet(
     client: AsyncClient,
     mocked_webserver_rest_api_base,
@@ -54,8 +52,8 @@ async def test_get_wallet(
     response = await client.get(f"{API_VTAG}/wallets/{wallet_id}", auth=auth)
     if "success" in capture:
         assert response.status_code == 200
-        wallet: WalletGetWithAvailableCreditsLegacy = (
-            WalletGetWithAvailableCreditsLegacy.model_validate(response.json())
+        wallet: WalletGetWithAvailableCreditsLegacy = WalletGetWithAvailableCreditsLegacy.model_validate(
+            response.json()
         )
         assert wallet.wallet_id == wallet_id
     elif "failure" in capture:
@@ -70,7 +68,6 @@ async def test_get_default_wallet(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-
     create_respx_mock_from_capture(
         respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / "get_default_wallet.json",

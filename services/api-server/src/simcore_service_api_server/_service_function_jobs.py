@@ -20,25 +20,20 @@ from models_library.functions import (
     RegisteredSolverFunctionJobPatch,
     SolverFunctionJob,
 )
-from models_library.functions_errors import (
-    FunctionInputsValidationError,
-    UnsupportedFunctionClassError,
-)
+from models_library.functions_errors import FunctionInputsValidationError, UnsupportedFunctionClassError
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
+
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 
 from ._service_jobs import JobService
 from .models.api_resources import JobLinks
-from .models.domain.functions import (
-    FunctionJobPatch,
-    PreRegisteredFunctionJobData,
-)
+from .models.domain.functions import FunctionJobPatch, PreRegisteredFunctionJobData
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
@@ -79,9 +74,7 @@ class FunctionJobService:
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         """Lists all function jobs for a user with pagination"""
 
-        pagination_kwargs = as_dict_exclude_none(
-            pagination_offset=pagination_offset, pagination_limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(pagination_offset=pagination_offset, pagination_limit=pagination_limit)
 
         return await self._web_rpc_client.list_function_jobs(
             user_id=self.user_id,
@@ -95,11 +88,7 @@ class FunctionJobService:
     async def validate_function_inputs(  # pylint: disable=no-self-use
         self, *, function: RegisteredFunction, job_inputs: list[JobInputs]
     ) -> tuple[bool, str]:
-
-        if (
-            function.input_schema is None
-            or function.input_schema.schema_content is None
-        ):
+        if function.input_schema is None or function.input_schema.schema_content is None:
             return True, "No input schema defined for this function"
 
         if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
@@ -138,6 +127,8 @@ class FunctionJobService:
         function: RegisteredFunction,
         job_input_list: list[JobInputs],
     ) -> list[PreRegisteredFunctionJobData]:
+        if not job_input_list:
+            return []
 
         if function.input_schema is not None:
             is_valid, validation_str = await self.validate_function_inputs(
@@ -161,14 +152,10 @@ class FunctionJobService:
                 )
                 for input_ in job_input_list
             ]
-            batch_registered_jobs = (
-                await self._web_rpc_client.batch_register_function_jobs(
-                    function_jobs=TypeAdapter(FunctionJobList).validate_python(
-                        function_jobs
-                    ),
-                    user_id=self.user_id,
-                    product_name=self.product_name,
-                )
+            batch_registered_jobs = await self._web_rpc_client.batch_register_function_jobs(
+                function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
+                user_id=self.user_id,
+                product_name=self.product_name,
             )
             jobs = batch_registered_jobs.created_items
 
@@ -185,14 +172,10 @@ class FunctionJobService:
                 )
                 for input_ in job_input_list
             ]
-            batch_registered_jobs = (
-                await self._web_rpc_client.batch_register_function_jobs(
-                    function_jobs=TypeAdapter(FunctionJobList).validate_python(
-                        function_jobs
-                    ),
-                    user_id=self.user_id,
-                    product_name=self.product_name,
-                )
+            batch_registered_jobs = await self._web_rpc_client.batch_register_function_jobs(
+                function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
+                user_id=self.user_id,
+                product_name=self.product_name,
             )
             jobs = batch_registered_jobs.created_items
         else:
@@ -205,7 +188,7 @@ class FunctionJobService:
                 function_job_id=job.uid,
                 job_inputs=input_,
             )
-            for job, input_ in zip(jobs, job_input_list)
+            for job, input_ in zip(jobs, job_input_list, strict=True)
         ]
 
     async def batch_patch_registered_function_job(
@@ -281,7 +264,7 @@ class FunctionJobService:
                 job_id=study_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_job = await self._web_rpc_client.patch_registered_function_job(
+            return await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
                 function_job_patch_request=FunctionJobPatchRequest(
@@ -296,7 +279,6 @@ class FunctionJobService:
                     ),
                 ),
             )
-            return registered_job
 
         if function.function_class == FunctionClass.SOLVER:
             solver_job = await self._job_service.create_solver_job(
@@ -314,7 +296,7 @@ class FunctionJobService:
                 job_id=solver_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_job = await self._web_rpc_client.patch_registered_function_job(
+            return await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
                 function_job_patch_request=FunctionJobPatchRequest(
@@ -329,7 +311,6 @@ class FunctionJobService:
                     ),
                 ),
             )
-            return registered_job
 
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,

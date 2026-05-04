@@ -1,8 +1,7 @@
 from ..errors import WebServerBaseError
 
 
-class LicensesValueError(WebServerBaseError, ValueError):
-    ...
+class LicensesValueError(WebServerBaseError, ValueError): ...
 
 
 class LicensedItemNotFoundError(LicensesValueError):

@@ -9,6 +9,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
+from models_library.errors import (
+    RABBITMQ_CLIENT_UNHEALTHY_MSG,
+    REDIS_CLIENT_UNHEALTHY_MSG,
+)
 from pydantic import BaseModel
 
 from ..modules.docker import get_docker_client
@@ -21,10 +25,21 @@ from .dependencies.application import get_app
 router = APIRouter()
 
 
+class HealthCheckError(RuntimeError):
+    """Failed a health check"""
+
+
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
-async def health_check():
+async def health_check(app: Annotated[FastAPI, Depends(get_app)]) -> str:
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
-    return f"{__name__}.health_check@{datetime.datetime.now(datetime.timezone.utc).isoformat()}"
+
+    if not get_rabbitmq_client(app).healthy:
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
+
+    if not get_redis_client(app).is_healthy:
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
+
+    return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
 
 
 class _ComponentStatus(BaseModel):
@@ -45,23 +60,15 @@ async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
     return _StatusGet(
         rabbitmq=_ComponentStatus(
             is_enabled=bool(app.state.rabbitmq_client),
-            is_responsive=(
-                await get_rabbitmq_client(app).ping()
-                if app.state.rabbitmq_client
-                else False
-            ),
+            is_responsive=(await get_rabbitmq_client(app).ping() if app.state.rabbitmq_client else False),
         ),
         ec2=_ComponentStatus(
             is_enabled=bool(app.state.ec2_client),
-            is_responsive=(
-                await get_ec2_client(app).ping() if app.state.ec2_client else False
-            ),
+            is_responsive=(await get_ec2_client(app).ping() if app.state.ec2_client else False),
         ),
         ssm=_ComponentStatus(
             is_enabled=bool(app.state.ssm_client),
-            is_responsive=(
-                await get_ssm_client(app).ping() if app.state.ssm_client else False
-            ),
+            is_responsive=(await get_ssm_client(app).ping() if app.state.ssm_client else False),
         ),
         docker=_ComponentStatus(
             is_enabled=bool(app.state.docker_client),

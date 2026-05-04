@@ -5,6 +5,7 @@
 
 import logging
 import re
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -32,9 +33,7 @@ def pytest_addoption(parser: pytest.Parser):
 
 
 @pytest.fixture(scope="session")
-def external_envfile_dict(
-    request: pytest.FixtureRequest, osparc_simcore_root_dir: Path
-) -> EnvVarsDict:
+def external_envfile_dict(request: pytest.FixtureRequest, osparc_simcore_root_dir: Path) -> EnvVarsDict:
     """
     If a file under test folder prefixed with `.env-secret` is present,
     then this fixture captures it.
@@ -44,9 +43,7 @@ def external_envfile_dict(
     """
     envs = {}
     if envfile := request.config.getoption("--external-envfile"):
-        _logger.warning(
-            "🚨 EXTERNAL `envfile` option detected. Loading '%s' ...", envfile
-        )
+        _logger.warning("🚨 EXTERNAL `envfile` option detected. Loading '%s' ...", envfile)
 
         assert isinstance(envfile, Path)
         assert envfile.exists()
@@ -86,16 +83,22 @@ def skip_if_no_external_envfile(external_envfile_dict: EnvVarsDict) -> None:
 
 
 @pytest.fixture(scope="session")
-def env_devel_dict(env_devel_file: Path) -> EnvVarsDict:
+def _env_devel_dict_session(env_devel_file: Path) -> EnvVarsDict:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"
+    # Loads and interpolates .env-devel file
     return load_dotenv(env_devel_file, verbose=True, interpolate=True)
 
 
 @pytest.fixture
-def mock_env_devel_environment(
-    env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def env_devel_dict(_env_devel_dict_session: EnvVarsDict) -> EnvVarsDict:
+    # NOTE: Returns a copy of the session scoped env_devel_dict on every
+    # test run to avoid cross-test pollution.
+    return deepcopy(_env_devel_dict_session)
+
+
+@pytest.fixture
+def mock_env_devel_environment(env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return setenvs_from_dict(monkeypatch, {**env_devel_dict})
 
 
@@ -127,18 +130,14 @@ def docker_compose_service_hostname(
     faker: Faker, service_name: str, docker_compose_services_dict: dict[str, Any]
 ) -> str:
     """Evaluates `hostname` from docker-compose service"""
-    hostname_template = docker_compose_services_dict["services"][service_name][
-        "hostname"
-    ]
+    hostname_template = docker_compose_services_dict["services"][service_name]["hostname"]
 
     # Generate fake values to replace Docker Swarm template variables
     node_hostname = faker.hostname(levels=1)
     task_slot = faker.random_int(min=0, max=10)
 
     # Replace the Docker Swarm template variables with faker values
-    return hostname_template.replace("{{.Node.Hostname}}", node_hostname).replace(
-        "{{.Task.Slot}}", str(task_slot)
-    )
+    return hostname_template.replace("{{.Node.Hostname}}", node_hostname).replace("{{.Task.Slot}}", str(task_slot))
 
 
 @pytest.fixture

@@ -1,17 +1,17 @@
 """
-   Functions and models to query scicrunch service REST API (https://scicrunch.org/api/)
+Functions and models to query scicrunch service REST API (https://scicrunch.org/api/)
 
-    - http client for API requests
-    - Error handling:
-        - translates network errors
-        - translates request error codes
+ - http client for API requests
+ - Error handling:
+     - translates network errors
+     - translates request error codes
 
-    Free functions with raw request scicrunch.org API
-    - client request context
-    - raise_for_status=True -> Raise an aiohttp.ClientResponseError if the response status is 400 or higher
-    - validates response and prunes using pydantic models
+ Free functions with raw request scicrunch.org API
+ - client request context
+ - raise_for_status=True -> Raise an aiohttp.ClientResponseError if the response status is 400 or higher
+ - validates response and prunes using pydantic models
 
-    SEE test_scicrunch_service_api.py
+ SEE test_scicrunch_service_api.py
 """
 
 import logging
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # MODELS --
 #
-# NOTE: These models are a trucated version of the data payload for a scicrunch response.#
+# NOTE: These models are a truncated version of the data payload for a scicrunch response.#
 # NOTE: Examples of complete responses can be found in test_scicrunch.py::mock_scicrunch_service_api
 #
 
@@ -73,8 +73,7 @@ class ResourceView(BaseModel):
         return URL(str(self._get_field("Resource URL")))
 
 
-class ListOfResourceHits(RootModel[list[ResourceHit]]):
-    ...
+class ListOfResourceHits(RootModel[list[ResourceHit]]): ...
 
 
 # REQUESTS
@@ -93,9 +92,7 @@ async def get_all_versions(
         return output
 
 
-async def get_resource_fields(
-    rrid: str, client: ClientSession, settings: SciCrunchSettings
-) -> ResourceView:
+async def get_resource_fields(rrid: str, client: ClientSession, settings: SciCrunchSettings) -> ResourceView:
     async with client.get(
         f"{settings.SCICRUNCH_API_BASE_URL}/resource/fields/view/{rrid}",
         params={"key": settings.SCICRUNCH_API_KEY.get_secret_value()},

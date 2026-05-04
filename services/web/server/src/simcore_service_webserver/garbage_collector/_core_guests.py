@@ -41,9 +41,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     """
     # recover user's primary_gid
     try:
-        project_owner_primary_gid = await users_service.get_user_primary_group_id(
-            app=app, user_id=user_id
-        )
+        project_owner_primary_gid = await users_service.get_user_primary_group_id(app=app, user_id=user_id)
     except exceptions.UserNotFoundError:
         _logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
@@ -52,12 +50,11 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         return
 
     # fetch all projects for the user
-    user_project_uuids = await ProjectDBAPI.get_from_app_context(
-        app
-    ).list_projects_uuids(user_id=user_id)
+    project_repo = ProjectDBAPI.get_from_app_context(app)
+    user_project_uuids = await project_repo.list_projects_uuids(user_id=user_id)
 
     _logger.info(
-        "Removing or transfering projects of user with %s, %s: %s",
+        "Removing or transferring projects of user with %s, %s: %s",
         f"{user_id=}",
         f"{project_owner_primary_gid=}",
         f"{user_project_uuids=}",
@@ -99,11 +96,14 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
+                project_id = ProjectID(project_uuid)
+                project_at_db = await project_repo.get_project_db(project_id)
                 task = await submit_delete_project_task(
                     app,
-                    ProjectID(project_uuid),
+                    project_id,
                     user_id,
                     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    product_name=project_at_db.product_name,
                 )
                 assert task  # nosec
                 delete_tasks.append(task)
@@ -118,8 +118,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
             # Try to change the project owner and remove access rights from the current owner
             _logger.debug(
                 "Transferring ownership of project %s from user %s to %s.",
-                "This project cannot be removed since it is shared with other users"
-                f"{project_uuid=}",
+                f"This project cannot be removed since it is shared with other users{project_uuid=}",
                 f"{user_id}",
                 f"{new_project_owner_gid}",
             )
@@ -136,16 +135,14 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     await asyncio.gather(*delete_tasks)
 
 
-async def remove_guest_user_with_all_its_resources(
-    app: web.Application, user_id: int
-) -> None:
+async def remove_guest_user_with_all_its_resources(app: web.Application, user_id: int) -> None:
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
 
     try:
         user_role: UserRole = await users_service.get_user_role(app, user_id=user_id)
         if user_role > UserRole.GUEST:
             # NOTE: This acts as a protection barrier to avoid removing resources to more
-            # priviledge users
+            # privilege users
             return
 
         _logger.debug(
@@ -173,9 +170,7 @@ async def remove_guest_user_with_all_its_resources(
         )
 
 
-async def remove_users_manually_marked_as_guests(
-    registry: RedisResourceRegistry, app: web.Application
-) -> None:
+async def remove_users_manually_marked_as_guests(registry: RedisResourceRegistry, app: web.Application) -> None:
     """
     Removes all the projects MANUALLY marked as GUEST users in the system (i.e. does not include
     those accessing via the front-end).
@@ -183,23 +178,18 @@ async def remove_users_manually_marked_as_guests(
     """
     redis_locks_client: Redis = get_redis_lock_manager_client(app)
 
-    # collects all users with registed sessions
+    # collects all users with registered sessions
     (
         all_user_session_alive,
         all_user_sessions_dead,
     ) = await registry.get_all_resource_keys()
 
     skip_users = {
-        user_session.user_id
-        for user_session in itertools.chain(
-            all_user_session_alive, all_user_sessions_dead
-        )
+        user_session.user_id for user_session in itertools.chain(all_user_session_alive, all_user_sessions_dead)
     }
 
     # Prevent creating this list if a guest user
-    guest_users: list[tuple[UserID, UserNameID]] = (
-        await users_service.get_guest_user_ids_and_names(app)
-    )
+    guest_users: list[tuple[UserID, UserNameID]] = await users_service.get_guest_user_ids_and_names(app)
 
     for guest_user_id, guest_user_name in guest_users:
         # Prevents removing GUEST users that were automatically (NOT manually) created
@@ -211,7 +201,7 @@ async def remove_users_manually_marked_as_guests(
             )
             continue
 
-        # Prevents removing GUEST users that are initializating
+        # Prevents removing GUEST users that are initializing
         lock_during_construction: bool = await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
         ).locked()

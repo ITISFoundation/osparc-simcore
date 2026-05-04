@@ -9,8 +9,7 @@ class ConfigNotFoundError(ServiceIntegrationError):
     msg_template = "could not find any osparc config under {basedir}"
 
 
-class UndefinedOciImageSpecError(ServiceIntegrationError):
-    ...
+class UndefinedOciImageSpecError(ServiceIntegrationError): ...
 
 
 class InvalidLabelsError(OsparcErrorMixin, ValueError):

@@ -1,10 +1,11 @@
 from enum import auto
 
+from pydantic import BaseModel
+
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.utils.enums import StrAutoEnum
-from pydantic import BaseModel
 
 
 class OutputStatus(StrAutoEnum):
@@ -31,5 +32,5 @@ class OutputPortStatus(_PortStatusCommon):
     status: OutputStatus
 
 
-class InputPortSatus(_PortStatusCommon):
+class InputPortStatus(_PortStatusCommon):
     status: InputStatus

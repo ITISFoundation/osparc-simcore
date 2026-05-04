@@ -39,9 +39,7 @@ def create_data_response(data: Any, *, status: int = HTTP_200_OK) -> web.Respons
 MAX_STATUS_MESSAGE_LENGTH: Final[int] = 100
 
 
-def safe_status_message(
-    message: str | None, max_length: int = MAX_STATUS_MESSAGE_LENGTH
-) -> str | None:
+def safe_status_message(message: str | None, max_length: int = MAX_STATUS_MESSAGE_LENGTH) -> str | None:
     """
     Truncates a status-message (i.e. `reason` in HTTP errors) to a maximum length, replacing newlines with spaces.
 
@@ -75,9 +73,7 @@ T_HTTPError = TypeVar("T_HTTPError", bound=HTTPError)
 def create_http_error(
     errors: list[Exception] | Exception,
     error_message: str | None = None,
-    http_error_cls: type[
-        T_HTTPError
-    ] = web.HTTPInternalServerError,  # type: ignore[assignment]
+    http_error_cls: type[T_HTTPError] = web.HTTPInternalServerError,  # type: ignore[assignment]
     *,
     status_reason: str | None = None,
     error_code: ErrorCodeStr | None = None,
@@ -93,7 +89,7 @@ def create_http_error(
 
     assert len(status_reason) < MAX_STATUS_MESSAGE_LENGTH  # nosec
 
-    # WARNING: do not refactor too much this function withouth considering how
+    # WARNING: do not refactor too much this function without considering how
     # front-end handle errors. i.e. please sync with front-end developers before
     # changing the workflows in this function
 
@@ -122,9 +118,7 @@ def create_http_error(
 
     assert not http_error_cls.empty_body  # nosec
 
-    payload = wrap_as_envelope(
-        error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
-    )
+    payload = wrap_as_envelope(error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY))
 
     return http_error_cls(
         reason=safe_status_message(status_reason),

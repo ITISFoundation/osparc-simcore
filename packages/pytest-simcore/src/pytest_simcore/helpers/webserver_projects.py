@@ -15,7 +15,10 @@ from common_library.dict_tools import remap_keys
 from deepdiff import DeepDiff
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from simcore_postgres_database import webserver_models
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
+from simcore_postgres_database.utils_repos import transaction_context
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
@@ -94,9 +97,9 @@ async def create_project(
         "bootOptions": "boot_options",
     }
 
-    fake_required_resources: dict[str, Any] = ServiceResourcesDictHelpers.model_config[
-        "json_schema_extra"
-    ]["examples"][0]
+    fake_required_resources: dict[str, Any] = ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][
+        0
+    ]
 
     project_nodes = {
         NodeID(node_id): ProjectNodeCreate(
@@ -121,12 +124,8 @@ async def create_project(
         project_nodes=project_nodes,
     )
 
-    if params_override and (
-        params_override.get("access_rights") or params_override.get("accessRights")
-    ):
-        _access_rights = params_override.get("access_rights", {}) | params_override.get(
-            "accessRights", {}
-        )
+    if params_override and (params_override.get("access_rights") or params_override.get("accessRights")):
+        _access_rights = params_override.get("access_rights", {}) | params_override.get("accessRights", {})
         for group_id, permissions in _access_rights.items():
             await update_or_insert_project_group(
                 app,
@@ -157,11 +156,11 @@ async def create_project(
 
 
 async def delete_all_projects(app: web.Application):
-    from simcore_postgres_database.webserver_models import projects
+    engine = get_asyncpg_engine(app)
+    assert engine  # nosec
 
-    db = app[PROJECT_DBAPI_APPKEY]
-    async with db.engine.acquire() as conn:
-        query = projects.delete()
+    async with transaction_context(engine) as conn:
+        query = webserver_models.projects.delete()
         await conn.execute(query)
 
 
@@ -214,8 +213,6 @@ async def assert_get_same_project(
     # without our control
 
     if not error:
-        diff = DeepDiff(
-            data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']"
-        )
+        diff = DeepDiff(data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']")
         assert not diff, diff.pretty()
     return data

@@ -17,6 +17,7 @@ from models_library.products import ProductName
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -56,23 +57,21 @@ async def test_get_service_access_rights(
     # injects fake data in db
     await services_db_tables_injector(fake_services)
 
-    service_to_check = fake_services[random.choice(range(NUM_SERVICES))][
+    service_to_check = fake_services[random.choice(range(NUM_SERVICES))][  # noqa: S311
         0
     ]  # --> service_meta_data table format
-    url = URL(
-        f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights"
-    ).with_query({"user_id": user_id})
+    url = URL(f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights").with_query(
+        {"user_id": user_id}
+    )
     response = client.get(
         f"{url}",
-        headers={"x-simcore-products-name": target_product},
+        headers={X_PRODUCT_NAME_HEADER: target_product},
     )
     assert response.status_code == 200
     data = TypeAdapter(ServiceAccessRightsGet).validate_python(response.json())
     assert data.service_key == service_to_check["key"]
     assert data.service_version == service_to_check["version"]
-    assert data.gids_with_access_rights == {
-        user_primary_gid: {"execute_access": True, "write_access": True}
-    }
+    assert data.gids_with_access_rights == {user_primary_gid: {"execute_access": True, "write_access": True}}
 
 
 async def test_get_service_access_rights_with_more_gids(
@@ -88,7 +87,7 @@ async def test_get_service_access_rights_with_more_gids(
 ):
     user_id = user["id"]
     user_primary_gid = user["primary_gid"]
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    _everyone_gid, _user_gid, team_gid = user_groups_ids
 
     fake_service = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
@@ -101,12 +100,12 @@ async def test_get_service_access_rights_with_more_gids(
     await services_db_tables_injector([fake_service])
 
     service_to_check = fake_service[0]  # --> service_meta_data table format
-    url = URL(
-        f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights"
-    ).with_query({"user_id": user_id})
+    url = URL(f"/v0/services/{service_to_check['key']}/{service_to_check['version']}/accessRights").with_query(
+        {"user_id": user_id}
+    )
     response = client.get(
         f"{url}",
-        headers={"x-simcore-products-name": other_product},
+        headers={X_PRODUCT_NAME_HEADER: other_product},
     )
     assert response.status_code == 200
     data = TypeAdapter(ServiceAccessRightsGet).validate_python(response.json())

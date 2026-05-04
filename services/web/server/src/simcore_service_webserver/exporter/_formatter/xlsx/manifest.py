@@ -17,9 +17,7 @@ class Sheet1Manifest(BaseXLSXSheet):
         ("A2", TB("template.json")),
         (
             "C2",
-            TB(
-                "Configuration file to view and run the simulation on the oSPARC platform"
-            ),
+            TB("Configuration file to view and run the simulation on the oSPARC platform"),
         ),
     ]
     column_dimensions: ClassVar[dict[str, int]] = {

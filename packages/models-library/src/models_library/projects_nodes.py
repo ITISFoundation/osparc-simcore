@@ -3,7 +3,7 @@ Models Node as a central element in a project's pipeline
 """
 
 from enum import auto
-from typing import Annotated, Any, Self, TypeAlias, Union
+from typing import Annotated, Any, Self, Union
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
@@ -20,6 +20,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic.config import JsonDict
+
+from models_library.errors import ErrorDict
 
 from .basic_types import EnvVarKey, KeyIDStr
 from .groups import GroupID
@@ -61,18 +63,14 @@ OutputTypes = Union[  # noqa: UP007
 ]
 
 
-InputID: TypeAlias = KeyIDStr
-OutputID: TypeAlias = KeyIDStr
+type InputID = KeyIDStr
+type OutputID = KeyIDStr
 
 # union_mode="smart" by default for Pydantic>=2: https://docs.pydantic.dev/latest/concepts/unions/#union-modes
-InputsDict: TypeAlias = dict[
-    InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]
-]
-OutputsDict: TypeAlias = dict[
-    OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]
-]
+type InputsDict = dict[InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]]
+type OutputsDict = dict[OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]]
 
-UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
+type UnitStr = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class NodeShareStatus(StrAutoEnum):
@@ -91,9 +89,7 @@ class NodeShareState(BaseModel):
 
     current_user_groupids: Annotated[
         list[GroupID] | None,
-        Field(
-            description="Group(s) that currently have access to the node (or locked it)"
-        ),
+        Field(description="Group(s) that currently have access to the node (or locked it)"),
     ] = None
 
     status: Annotated[
@@ -133,9 +129,7 @@ class NodeShareState(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        extra="forbid", json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)
 
 
 class NodeState(BaseModel):
@@ -171,8 +165,13 @@ class NodeState(BaseModel):
         ),
     ] = 0
 
-    lock_state: Annotated[
-        NodeShareState | None, Field(description="the node's lock state")
+    lock_state: Annotated[NodeShareState | None, Field(description="the node's lock state")] = None
+
+    errors: Annotated[
+        list[ErrorDict] | None,
+        Field(
+            description="error details when the node is in a FAILED state",
+        ),
     ] = None
 
     model_config = ConfigDict(
@@ -202,6 +201,18 @@ class NodeState(BaseModel):
                     "modified": False,
                     "dependencies": [],
                     "currentStatus": "SUCCESS",
+                },
+                {
+                    "modified": False,
+                    "dependencies": [],
+                    "currentStatus": "FAILED",
+                    "errors": [
+                        {
+                            "loc": ("service_1",),  # type: ignore[dict-item]
+                            "msg": "service ran out of memory",
+                            "type": "runtime.oom",
+                        }
+                    ],
                 },
             ]
         },
@@ -262,7 +273,8 @@ class Node(BaseModel):
     run_hash: Annotated[
         str | None,
         Field(
-            description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+            description="the hex digest of the resolved inputs +outputs hash at "
+            "the time when the last outputs were generated",
             alias="runHash",
         ),
     ] = None
@@ -446,9 +458,7 @@ class Node(BaseModel):
                                 "dataset": "N:dataset:123",
                                 "path": "path/to/file.txt",
                             },
-                            "download_link": {
-                                "downloadLink": "https://example.com/downloadable/file.txt"
-                            },
+                            "download_link": {"downloadLink": "https://example.com/downloadable/file.txt"},
                             "array_input": [1, 2, 3, 4, 5],
                             "object_input": {"name": "test", "value": 42},
                         },
@@ -467,9 +477,7 @@ class Node(BaseModel):
                                 "dataset": "N:dataset:456",
                                 "path": "results/output.txt",
                             },
-                            "download_link_output": {
-                                "downloadLink": "https://example.com/results/download.txt"
-                            },
+                            "download_link_output": {"downloadLink": "https://example.com/results/download.txt"},
                             "array_output": ["a", "b", "c", "d"],
                             "object_output": {"status": "complete", "count": 42},
                         },

@@ -42,10 +42,7 @@ def app_settings(
 
 def test_settings_constructs(app_settings: ApplicationSettings):
     assert "vcs_url" in app_settings.public_dict()
-    assert (
-        app_settings.public_dict()["vcs_url"]
-        == "git@github.com:ITISFoundation/osparc-simcore.git"
-    )
+    assert app_settings.public_dict()["vcs_url"] == "git@github.com:ITISFoundation/osparc-simcore.git"
 
     assert "app_name" in app_settings.public_dict()
     assert "api_version" in app_settings.public_dict()
@@ -61,10 +58,9 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
     print("statics:", json_dumps(statics, indent=1))
 
     # all key in camelcase
-    assert all(
-        key[0] == key[0].lower() and "_" not in key and key.lower() != key
-        for key in statics
-    ), f"Got {list(statics.keys())}"
+    assert all(key[0] == key[0].lower() and "_" not in key and key.lower() != key for key in statics), (
+        f"Got {list(statics.keys())}"
+    )
 
     # special alias
     assert statics["stackName"] == "master-simcore"
@@ -101,9 +97,7 @@ def test_settings_to_client_statics_plugins(
     disable_plugins.add("WEBSERVER_FOLDERS")
 
     # set WEBSERVER_REALTIME_COLLABORATION (NOTE: for now WEBSERVER_DEV_FEATURES_ENABLED=True) )
-    monkeypatch.setenv(
-        "WEBSERVER_REALTIME_COLLABORATION", '{"RTC_MAX_NUMBER_OF_USERS":3}'
-    )
+    monkeypatch.setenv("WEBSERVER_REALTIME_COLLABORATION", '{"RTC_MAX_NUMBER_OF_USERS":3}')
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_DEV_FEATURES_ENABLED
@@ -122,13 +116,9 @@ def test_settings_to_client_statics_plugins(
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
         == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
     )
+    assert statics["webserverLogin"]["LOGIN_2FA_REQUIRED"] == settings.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
     assert (
-        statics["webserverLogin"]["LOGIN_2FA_REQUIRED"]
-        == settings.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
-    )
-    assert (
-        statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE")
-        == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
+        statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE") == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
     )
 
     assert statics["vcsReleaseTag"]
@@ -162,12 +152,8 @@ def test_disabled_plugins_settings_to_client_statics(
     )
 
     class DevSettings(ApplicationSettings):
-        TEST_FOO: Annotated[
-            bool, Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})
-        ]
-        TEST_BAR: Annotated[
-            int | None, Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})
-        ]
+        TEST_FOO: Annotated[bool, Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})]
+        TEST_BAR: Annotated[int | None, Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})]
 
     settings = DevSettings.create_from_envs()
 
@@ -250,9 +236,7 @@ def mock_service_environment(
     return setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
 
 
-@pytest.mark.parametrize(
-    "service_name", ["webserver", "wb-db-event-listener", "wb-garbage-collector"]
-)
+@pytest.mark.parametrize("service_name", ["webserver", "wb-db-event-listener", "wb-garbage-collector"])
 def test_webserver_rpc_namespace_must_be_default(mock_service_environment: EnvVarsDict):
     # NOTE: This requirement will change when https://github.com/ITISFoundation/osparc-simcore/issues/8448  is implemented
     settings = ApplicationSettings.create_from_envs()

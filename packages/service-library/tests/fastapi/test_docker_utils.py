@@ -4,8 +4,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Final
 from unittest import mock
 
 import pytest
@@ -15,7 +16,14 @@ from models_library.progress_bar import ProgressReport
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
-from servicelib.docker_utils import pull_image
+from servicelib.docker_utils import (
+    _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC,
+    _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO,
+    _DockerPullImage,
+    _parse_pull_information,
+    _PulledStatus,
+    pull_image,
+)
 from servicelib.fastapi.docker_utils import (
     pull_images,
     retrieve_image_layer_information,
@@ -33,6 +41,7 @@ from settings_library.docker_registry import RegistrySettings
             "sha256:a6d9886311721d8d341068361ecf9998a3c7ecb0efb23ebac553602c2eca1f8f",
         ),
     ],
+    ids=str,
 )
 async def test_retrieve_image_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -49,9 +58,7 @@ async def test_retrieve_image_layer_information(
     docker_image = TypeAdapter(DockerGenericTag).validate_python(
         f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
     )
-    layer_information = await retrieve_image_layer_information(
-        docker_image, registry_settings
-    )
+    layer_information = await retrieve_image_layer_information(docker_image, registry_settings)
 
     assert layer_information
 
@@ -66,6 +73,7 @@ async def test_retrieve_image_layer_information(
         "ubuntu@sha256:81bba8d1dde7fc1883b6e95cd46d6c9f4874374f2b360c8db82620b33f6b5ca1",
         "busybox:latest",
     ],
+    ids=str,
 )
 async def test_retrieve_image_layer_information_from_external_registry(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -95,27 +103,25 @@ async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock(side_effect=_progress_cb)
 
 
-def _assert_progress_report_values(
-    mocked_progress_cb: mock.AsyncMock, *, total: float
-) -> None:
+def _assert_progress_report_values(mocked_progress_cb: mock.AsyncMock, *, total: float) -> None:
     # NOTE: we exclude the message part here as this is already tested in servicelib
     # check first progress
-    assert mocked_progress_cb.call_args_list[0].args[0].dict(
-        exclude={"message", "attempt"}
-    ) == ProgressReport(actual_value=0, total=total, unit="Byte").model_dump(
-        exclude={"message", "attempt"}
-    )
+    assert mocked_progress_cb.call_args_list[0].args[0].model_dump(exclude={"message", "attempt"}) == ProgressReport(
+        actual_value=0, total=total, unit="Byte"
+    ).model_dump(exclude={"message", "attempt"})
     # check last progress
-    assert mocked_progress_cb.call_args_list[-1].args[0].dict(
-        exclude={"message", "attempt"}
-    ) == ProgressReport(actual_value=total, total=total, unit="Byte").model_dump(
-        exclude={"message", "attempt"}
-    )
+    assert mocked_progress_cb.call_args_list[-1].args[0].model_dump(exclude={"message", "attempt"}) == ProgressReport(
+        actual_value=total, total=total, unit="Byte"
+    ).model_dump(exclude={"message", "attempt"})
+
+
+_DOCKER29_EXPECTED_WARNING_PREFIX: Final[str] = "Unexpected layer during download"
 
 
 @pytest.mark.parametrize(
     "image",
     ["itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"],
+    ids=str,
 )
 async def test_pull_image(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -136,7 +142,6 @@ async def test_pull_image(
         progress_unit="Byte",
         description=faker.pystr(),
     ) as main_progress_bar:
-
         await pull_image(
             image,
             registry_settings,
@@ -146,16 +151,18 @@ async def test_pull_image(
         )
         mocked_log_cb.assert_called()
 
-    _assert_progress_report_values(
-        mocked_progress_cb, total=layer_information.layers_total_size
-    )
+    _assert_progress_report_values(mocked_progress_cb, total=layer_information.layers_total_size)
 
     mocked_progress_cb.reset_mock()
     mocked_log_cb.reset_mock()
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
-    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
+    ]
 
     # pull a second time should, the image is already there
     async with progress_bar.ProgressBarData(
@@ -176,16 +183,19 @@ async def test_pull_image(
         main_progress_bar._current_steps  # noqa: SLF001
         == layer_information.layers_total_size
     )
-    _assert_progress_report_values(
-        mocked_progress_cb, total=layer_information.layers_total_size
-    )
+    _assert_progress_report_values(mocked_progress_cb, total=layer_information.layers_total_size)
     # check there were no warnings
-    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
+    ]
 
 
 @pytest.mark.parametrize(
     "image",
     ["nginx:latest", "busybox:latest"],
+    ids=str,
 )
 async def test_pull_image_without_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -209,9 +219,7 @@ async def test_pull_image_without_layer_information(
         progress_unit="Byte",
         description=faker.pystr(),
     ) as main_progress_bar:
-        await pull_image(
-            image, registry_settings, main_progress_bar, mocked_log_cb, None
-        )
+        await pull_image(image, registry_settings, main_progress_bar, mocked_log_cb, None)
         mocked_log_cb.assert_called()
         # depending on the system speed, and if the progress report callback is slow, then
 
@@ -223,9 +231,7 @@ async def test_pull_image_without_layer_information(
     # NOTE: this would pop up in case docker changes its pulling statuses
     expected_warning = "pulling image without layer information"
     assert not [
-        r.message
-        for r in caplog.records
-        if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
+        r.message for r in caplog.records if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
     ]
 
     # pull a second time should, the image is already there, but the progress is then 0
@@ -235,17 +241,13 @@ async def test_pull_image_without_layer_information(
         progress_unit="Byte",
         description=faker.pystr(),
     ) as main_progress_bar:
-        await pull_image(
-            image, registry_settings, main_progress_bar, mocked_log_cb, None
-        )
+        await pull_image(image, registry_settings, main_progress_bar, mocked_log_cb, None)
         mocked_log_cb.assert_called()
         assert main_progress_bar._current_steps == 0  # noqa: SLF001
     _assert_progress_report_values(mocked_progress_cb, total=1)
     # check there were no warnings
     assert not [
-        r.message
-        for r in caplog.records
-        if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
+        r.message for r in caplog.records if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
     ]
 
 
@@ -254,6 +256,7 @@ async def test_pull_image_without_layer_information(
     [
         {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
     ],
+    ids=str,
 )
 async def test_pull_images_set(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -264,14 +267,11 @@ async def test_pull_images_set(
     caplog: pytest.LogCaptureFixture,
 ):
     await remove_images_from_host(list(images_set))
-    layer_informations = await asyncio.gather(
-        *[
-            retrieve_image_layer_information(image, registry_settings)
-            for image in images_set
-        ]
+    layer_information = await asyncio.gather(
+        *[retrieve_image_layer_information(image, registry_settings) for image in images_set]
     )
-    assert layer_informations
-    images_total_size = sum(_.layers_total_size for _ in layer_informations if _)
+    assert layer_information
+    images_total_size = sum(_.layers_total_size for _ in layer_information if _)
 
     await pull_images(images_set, registry_settings, mocked_progress_cb, mocked_log_cb)
     mocked_log_cb.assert_called()
@@ -279,4 +279,84 @@ async def test_pull_images_set(
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
-    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
+    ]
+
+
+async def test_parse_pull_information_with_non_byte_extraction_units(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Docker v29+ reports extraction progress as elapsed seconds instead of bytes.
+    Verify that estimated extraction progress increases and caps at 99%."""
+    layer_id = "abc123def456"
+    layer_size = 500_000_000  # 500 MB
+
+    layer_id_to_size: dict[str, _PulledStatus] = {
+        layer_id: _PulledStatus(size=layer_size, downloaded=layer_size),
+    }
+    logged_non_byte_extraction_layers: set[str] = set()
+    logged_cap_reached_layers: set[str] = set()
+
+    with caplog.at_level(logging.INFO, logger="servicelib.docker_utils"):
+        # simulate 1 second of extraction with non-byte units
+        progress_1s = _DockerPullImage(
+            status="extracting",
+            id=layer_id,
+            progress_detail={"current": 1, "total": 0, "units": "seconds"},
+        )
+        await _parse_pull_information(
+            progress_1s,
+            layer_id_to_size=layer_id_to_size,
+            image_information=None,
+            logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+            logged_cap_reached_layers=logged_cap_reached_layers,
+        )
+        expected_1s = int(1 * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
+        assert layer_id_to_size[layer_id].extracted == expected_1s
+        assert expected_1s < layer_size
+
+        # simulate 2 seconds of extraction
+        progress_2s = _DockerPullImage(
+            status="extracting",
+            id=layer_id,
+            progress_detail={"current": 2, "total": 0, "units": "seconds"},
+        )
+        await _parse_pull_information(
+            progress_2s,
+            layer_id_to_size=layer_id_to_size,
+            image_information=None,
+            logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+            logged_cap_reached_layers=logged_cap_reached_layers,
+        )
+        expected_2s = int(2 * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
+        assert layer_id_to_size[layer_id].extracted == expected_2s
+        assert expected_2s > expected_1s
+
+        # verify non-byte units info was logged only once for this layer
+        non_byte_warnings = [r.message for r in caplog.records if "non-byte units" in r.message]
+        assert len(non_byte_warnings) == 1
+
+        # simulate enough elapsed time to exceed cap
+        caplog.clear()
+        max_estimated = int(layer_size * _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO)
+        progress_large = _DockerPullImage(
+            status="extracting",
+            id=layer_id,
+            progress_detail={"current": 9999, "total": 0, "units": "seconds"},
+        )
+        await _parse_pull_information(
+            progress_large,
+            layer_id_to_size=layer_id_to_size,
+            image_information=None,
+            logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+            logged_cap_reached_layers=logged_cap_reached_layers,
+        )
+        assert layer_id_to_size[layer_id].extracted == max_estimated
+        assert layer_id_to_size[layer_id].extracted < layer_size
+
+        # verify warning about cap being hit
+        cap_warnings = [r.message for r in caplog.records if "reached cap" in r.message]
+        assert cap_warnings

@@ -40,9 +40,7 @@ def _create_config_from_compose_spec(
 ):
     rich.print(f"Creating osparc config files from {compose_spec_path}")
 
-    compose_spec = ComposeSpecification.model_validate(
-        yaml.safe_load(compose_spec_path.read_text())
-    )
+    compose_spec = ComposeSpecification.model_validate(yaml.safe_load(compose_spec_path.read_text()))
 
     if compose_spec.services:
         has_multiple_services: Final[int] = len(compose_spec.services)
@@ -56,9 +54,7 @@ def _create_config_from_compose_spec(
             rich.print(f"Creating {output_path} ...", end="")
 
             with output_path.open("wt") as fh:
-                data = json_loads(
-                    model.model_dump_json(by_alias=True, exclude_none=True)
-                )
+                data = json_loads(model.model_dump_json(by_alias=True, exclude_none=True))
                 yaml.safe_dump(data, fh, sort_keys=False)
 
             rich.print("DONE")
@@ -77,10 +73,8 @@ def _create_config_from_compose_spec(
                     meta_cfg = MetadataConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)
 
-                    docker_compose_overwrite_cfg = (
-                        DockerComposeOverwriteConfig.create_default(
-                            service_name=meta_cfg.service_name()
-                        )
+                    docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.create_default(
+                        service_name=meta_cfg.service_name()
                     )
                     _save(
                         service_name,
@@ -92,9 +86,7 @@ def _create_config_from_compose_spec(
                     _save(service_name, service_specs_path, runtime_cfg)
 
             except (AttributeError, TypeError, ValueError) as err:
-                rich.print(
-                    f"WARNING: failure producing specs for {service_name}: {err}"
-                )
+                rich.print(f"WARNING: failure producing specs for {service_name}: {err}")
 
         rich.print("osparc config files created")
 
@@ -123,9 +115,7 @@ def create_config(
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     rich.print(f"Creating {config_dir} from {from_spec_file} ...")
 
-    _create_config_from_compose_spec(
-        from_spec_file, project_cfg_path, meta_cfg_path, runtime_cfg_path
-    )
+    _create_config_from_compose_spec(from_spec_file, project_cfg_path, meta_cfg_path, runtime_cfg_path)
 
 
 _COOKIECUTTER_GITHUB_URL = "gh:itisfoundation/cookiecutter-osparc-service"
@@ -133,12 +123,8 @@ _COOKIECUTTER_GITHUB_URL = "gh:itisfoundation/cookiecutter-osparc-service"
 
 @config_app.command(name="init")
 def init_config(
-    template: Annotated[
-        str, typer.Option(help="Github repo or path to the template")
-    ] = _COOKIECUTTER_GITHUB_URL,
-    checkout: (
-        Annotated[str, typer.Option(help="Branch if different from main")] | None
-    ) = None,
+    template: Annotated[str, typer.Option(help="Github repo or path to the template")] = _COOKIECUTTER_GITHUB_URL,
+    checkout: (Annotated[str, typer.Option(help="Branch if different from main")] | None) = None,
 ):
     """runs cookie-cutter"""
     from cookiecutter.main import cookiecutter  # type: ignore[import-untyped]

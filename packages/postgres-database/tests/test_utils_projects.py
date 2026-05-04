@@ -9,8 +9,6 @@ from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from faker import Faker
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.projects import projects
@@ -19,41 +17,49 @@ from simcore_postgres_database.utils_projects import (
     ProjectsRepo,
 )
 from simcore_postgres_database.utils_repos import transaction_context
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.engine.row import RowMapping
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
-async def _delete_project(connection: SAConnection, project_uuid: uuid.UUID) -> None:
-    result = await connection.execute(
-        sa.delete(projects).where(projects.c.uuid == f"{project_uuid}")
-    )
-    assert result.rowcount == 1
+async def _delete_project(connection: AsyncConnection, project_uuid: uuid.UUID) -> None:
+    await connection.execute(sa.delete(projects).where(projects.c.uuid == f"{project_uuid}"))
 
 
 @pytest.fixture
 async def registered_user(
-    connection: SAConnection,
-    create_fake_user: Callable[..., Awaitable[RowProxy]],
-) -> RowProxy:
-    user = await create_fake_user(connection)
+    asyncpg_connection: AsyncConnection,
+    create_fake_user: Callable[..., Awaitable[RowMapping]],
+) -> RowMapping:
+    user = await create_fake_user(asyncpg_connection)
     assert user
     return user
 
 
 @pytest.fixture
+async def registered_product(
+    create_fake_product: Callable[..., Awaitable[RowMapping]],
+) -> RowMapping:
+    product = await create_fake_product("test-product")
+    assert product
+    return product
+
+
+@pytest.fixture
 async def registered_project(
-    connection: SAConnection,
-    registered_user: RowProxy,
-    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    asyncpg_connection: AsyncConnection,
+    registered_user: RowMapping,
+    registered_product: RowMapping,
+    create_fake_project: Callable[..., Awaitable[RowMapping]],
 ) -> AsyncIterator[dict[str, Any]]:
-    project = await create_fake_project(connection, registered_user)
+    project = await create_fake_project(asyncpg_connection, registered_user, registered_product)
     assert project
 
     yield dict(project)
 
-    await _delete_project(connection, project["uuid"])
+    await _delete_project(asyncpg_connection, project["uuid"])
 
 
-@pytest.mark.parametrize("expected", (datetime.now(tz=UTC), None))
+@pytest.mark.parametrize("expected", [datetime.now(tz=UTC), None])
 async def test_get_project_trashed_column_can_be_converted_to_datetime(
     asyncpg_engine: AsyncEngine, registered_project: dict, expected: datetime | None
 ):
@@ -67,21 +73,17 @@ async def test_get_project_trashed_column_can_be_converted_to_datetime(
             .returning(sa.literal_column("*"))
         )
 
-        row = result.fetchone()
+        row = result.mappings().one()
 
     assert row
-    trashed = TypeAdapter(datetime | None).validate_python(row.trashed)
+    trashed = TypeAdapter(datetime | None).validate_python(row["trashed"])
     assert trashed == expected
 
 
-async def test_get_project_last_change_date(
-    asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker
-):
+async def test_get_project_last_change_date(asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker):
     projects_repo = ProjectsRepo(asyncpg_engine)
 
-    project_last_change_date = await projects_repo.get_project_last_change_date(
-        project_uuid=registered_project["uuid"]
-    )
+    project_last_change_date = await projects_repo.get_project_last_change_date(project_uuid=registered_project["uuid"])
     assert isinstance(project_last_change_date, datetime)
 
     with pytest.raises(DBProjectNotFoundError):

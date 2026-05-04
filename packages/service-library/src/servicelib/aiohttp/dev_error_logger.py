@@ -23,9 +23,7 @@ def _middleware_factory() -> Middleware:
                 "Headers": err.headers,
                 "Traceback": "\n".join(traceback.format_tb(err.__traceback__)),
             }
-            formatted_error = "".join(
-                [f"\n{_SEP}{k!r}{_SEP}\n{v!r}" for k, v in fields.items()]
-            )
+            formatted_error = "".join([f"\n{_SEP}{k!r}{_SEP}\n{v!r}" for k, v in fields.items()])
             _logger.debug("Error serialized to client:%s", formatted_error)
             raise
 

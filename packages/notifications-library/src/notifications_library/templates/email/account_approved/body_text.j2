@@ -1,0 +1,21 @@
+Dear {{ user.first_name or user.user_name }},
+
+Thank you for your interest in {{ product.display_name }} . We are pleased to provide you with a one-time invitation link to register on the platform.
+
+{% if trial_account_days is defined and trial_account_days %}
+Your account includes {{ trial_account_days }} day{{ "s" if trial_account_days > 1 }} trial period.
+{% endif %}
+
+{% if extra_credits is defined and extra_credits %}
+You also receive {{ extra_credits }} free credits.
+{% endif %}
+
+Click {{ link }} to access the registration page.
+
+Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ product.support_email }}.
+
+Enjoy {{ product.display_name }} !
+
+Best regards,
+
+The {{ product.display_name }} Team

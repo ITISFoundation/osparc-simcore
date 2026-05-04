@@ -16,6 +16,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     SimcoreS3FileID,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
@@ -53,6 +54,7 @@ async def test_list_files_metadata(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     other_user_id: UserID,
     location_id: LocationID,
     project_id: ProjectID,
@@ -60,34 +62,26 @@ async def test_list_files_metadata(
 ):
     url = (
         URL(f"{client.base_url}")
-        .with_path(
-            initialized_app.url_path_for("list_files_metadata", location_id=location_id)
-        )
-        .with_query(user_id=f"{user_id}")
+        .with_path(initialized_app.url_path_for("list_files_metadata", location_id=location_id))
+        .with_query(user_id=user_id, product_name=product_name)
     )
 
     # this should return an empty list
     response = await client.get(f"{url}")
 
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert list_fmds == []
     assert not error
 
     # now add some stuff there
     NUM_FILES = 10
     file_size = TypeAdapter(ByteSize).validate_python("15Mib")
-    files_owned_by_us = [
-        await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)
-    ]
+    files_owned_by_us = [await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)]
     assert files_owned_by_us
 
     # we should find these files now
     response = await client.get(f"{url}")
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert list_fmds
     assert not error
     assert len(list_fmds) == NUM_FILES
@@ -101,13 +95,9 @@ async def test_list_files_metadata(
         delete=True,
     )
     previous_data = deepcopy(list_fmds)
-    response = await client.get(
-        f"{url.update_query(project_id=str(project_id), user_id=other_user_id)}"
-    )
+    response = await client.get(f"{url.update_query(project_id=str(project_id), user_id=other_user_id)}")
 
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert list_fmds
     assert not error
     assert len(list_fmds) == (NUM_FILES)
@@ -117,25 +107,20 @@ async def test_list_files_metadata(
     NUM_FILES = 10
     file_size = TypeAdapter(ByteSize).validate_python("15Mib")
     files_with_common_name = [
-        await upload_file(file_size, f"common_name-{faker.file_name()}")
-        for _ in range(NUM_FILES)
+        await upload_file(file_size, f"common_name-{faker.file_name()}") for _ in range(NUM_FILES)
     ]
     assert files_with_common_name
 
     # we should find these files now
     response = await client.get(f"{url}")
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert list_fmds
     assert not error
     assert len(list_fmds) == (2 * NUM_FILES)
 
     # we can filter them now
     response = await client.get(f"{url.update_query(uuid_filter='common_name')}")
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert list_fmds
     assert not error
     assert len(list_fmds) == (NUM_FILES)
@@ -204,9 +189,7 @@ async def test_get_file_metadata(
     # now add some stuff there
     NUM_FILES = 10
     file_size = TypeAdapter(ByteSize).validate_python("15Mib")
-    files_owned_by_us = [
-        await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)
-    ]
+    files_owned_by_us = [await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)]
     selected_file, selected_file_uuid = choice(files_owned_by_us)  # noqa: S311
     url = url_from_operation_id(
         client,

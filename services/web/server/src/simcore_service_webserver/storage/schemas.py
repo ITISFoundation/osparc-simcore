@@ -23,8 +23,7 @@ class FileLocation(BaseModel):
     )
 
 
-class FileLocationArray(RootModel[list[FileLocation]]):
-    ...
+class FileLocationArray(RootModel[list[FileLocation]]): ...
 
 
 class Links(BaseModel):
@@ -69,8 +68,7 @@ class DatasetMetaData(BaseModel):
     )
 
 
-class DatasetMetaDataArray(RootModel[list[DatasetMetaData]]):
-    ...
+class DatasetMetaDataArray(RootModel[list[DatasetMetaData]]): ...
 
 
 class FileLocationEnveloped(BaseModel):
@@ -135,8 +133,7 @@ class FileMetaData(BaseModel):
     )
 
 
-class FileMetaDataArray(RootModel[list[FileMetaData]]):
-    ...
+class FileMetaDataArray(RootModel[list[FileMetaData]]): ...
 
 
 class FileMetaEnvelope(BaseModel):

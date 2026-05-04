@@ -43,9 +43,7 @@ from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATE
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> dict[str, str]:
+def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     # NOTE: overrides app_environment
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
@@ -129,9 +127,7 @@ async def shared_project(
 ) -> AsyncIterator[ProjectDict]:
     fake_project.update(
         {
-            "accessRights": {
-                f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
-            },
+            "accessRights": {f"{all_group['gid']}": {"read": True, "write": False, "delete": False}},
         },
     )
     async with NewProject(
@@ -159,9 +155,7 @@ async def template_project(
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-    project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
-    }
+    project_data["accessRights"] = {str(all_group["gid"]): {"read": True, "write": False, "delete": False}}
 
     async with NewProject(
         project_data,
@@ -192,9 +186,7 @@ async def create_template_project(
         project_data = deepcopy(fake_project)
         project_data["name"] = "Fake template"
         project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-        project_data["accessRights"] = {
-            str(all_group["gid"]): {"read": True, "write": False, "delete": False}
-        }
+        project_data["accessRights"] = {str(all_group["gid"]): {"read": True, "write": False, "delete": False}}
         project_data |= prj_kwargs
 
         new_template_project = await created_projects_exit_stack.enter_async_context(
@@ -285,6 +277,8 @@ async def user_project_with_num_dynamic_services(
     async with AsyncExitStack() as stack:
 
         async def _creator(num_dyn_services: int) -> ProjectDict:
+            assert num_dyn_services <= 50, "to avoid too long test execution time"
+
             project_data = {
                 "workbench": {
                     faker.uuid4(): {
@@ -295,6 +289,7 @@ async def user_project_with_num_dynamic_services(
                     for _ in range(num_dyn_services)
                 }
             }
+
             project = await stack.enter_async_context(
                 NewProject(
                     project_data,
@@ -302,7 +297,7 @@ async def user_project_with_num_dynamic_services(
                     user_id=logged_user["id"],
                     product_name=osparc_product_name,
                     tests_data_dir=tests_data_dir,
-                )
+                ),
             )
             print("-----> added project", project["name"])
             assert "workbench" in project
@@ -422,7 +417,8 @@ def workbench_db_column() -> dict[str, Any]:
             "outputs": {
                 "output_1": {
                     "store": 0,
-                    "path": "e08316a8-5afc-11ed-bab7-02420a00002b/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
+                    "path": "e08316a8-5afc-11ed-bab7-02420a00002b/"
+                    "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
                     "eTag": "1679091c5a880faf6fb5e6087eb1b2dc",
                 },
                 "output_2": 6,
@@ -516,11 +512,7 @@ def with_enabled_rtc_collaboration(
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
-                {"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions}
-            )
-        },
+        {"WEBSERVER_REALTIME_COLLABORATION": json_dumps({"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions})},
     )
 
 
@@ -531,11 +523,7 @@ def with_enabled_rtc_collaboration_limited_to_1_user(
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
-                {"RTC_MAX_NUMBER_OF_USERS": 1}
-            )
-        },
+        {"WEBSERVER_REALTIME_COLLABORATION": json_dumps({"RTC_MAX_NUMBER_OF_USERS": 1})},
     )
 
 
@@ -580,25 +568,17 @@ async def client_on_running_server_factory(
 
 @pytest.fixture
 async def create_socketio_connection_with_handlers(
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     mocker: MockerFixture,
 ) -> Callable[
     [str | None, TestClient],
     Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
 ]:
-    async def _(
-        client_session_id: str | None, client: TestClient
-    ) -> tuple[socketio.AsyncClient, str, SocketHandlers]:
-        sio, received_client_id = await create_socketio_connection(
-            client_session_id, client
-        )
+    async def _(client_session_id: str | None, client: TestClient) -> tuple[socketio.AsyncClient, str, SocketHandlers]:
+        sio, received_client_id = await create_socketio_connection(client_session_id, client)
         assert sio.sid
 
-        event_handlers = SocketHandlers(
-            **{SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()}
-        )
+        event_handlers = SocketHandlers(**{SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()})
 
         for event, handler in event_handlers.items():
             sio.on(event, handler=handler)

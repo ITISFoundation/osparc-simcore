@@ -10,7 +10,5 @@ def get_dynamic_sidecar_scheduler(request: Request) -> DynamicSidecarsScheduler:
 
 
 def get_dynamic_sidecar_settings(request: Request) -> DynamicSidecarSettings:
-    settings: DynamicSidecarSettings = (
-        request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
+    settings: DynamicSidecarSettings = request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     return settings

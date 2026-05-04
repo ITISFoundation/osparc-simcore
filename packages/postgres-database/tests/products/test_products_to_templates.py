@@ -24,24 +24,18 @@ def templates_names(faker: Faker) -> list[str]:
 
 
 @pytest.fixture
-def templates_dir(
-    tmp_path: Path, products_names: list[str], templates_names: list[str]
-) -> Path:
+def templates_dir(tmp_path: Path, products_names: list[str], templates_names: list[str]) -> Path:
     templates_path = tmp_path / "templates"
 
     # common keeps default templates
     (templates_path / "common").mkdir(parents=True)
     for template_name in templates_names:
-        (templates_path / "common" / template_name).write_text(
-            "Fake template for 'common'"
-        )
+        (templates_path / "common" / template_name).write_text("Fake template for 'common'")
 
     # only odd products have the first template
     for product_name in products_names[1::2]:
         (templates_path / product_name).mkdir(parents=True)
-        (templates_path / product_name / templates_names[0]).write_text(
-            f"Fake template for {product_name=}"
-        )
+        (templates_path / product_name / templates_names[0]).write_text(f"Fake template for {product_name=}")
 
     return templates_path
 
@@ -56,20 +50,16 @@ async def product_templates_in_db(
     async with asyncpg_engine.begin() as conn:
         await make_products_table(conn)
 
-        # one version of all tempaltes
+        # one version of all templates
         for template_name in templates_names:
             await conn.execute(
-                jinja2_templates.insert().values(
-                    name=template_name, content="fake template in database"
-                )
+                jinja2_templates.insert().values(name=template_name, content="fake template in database")
             )
 
             # only even products have templates
             for product_name in products_names[0::2]:
                 await conn.execute(
-                    products_to_templates.insert().values(
-                        template_name=template_name, product_name=product_name
-                    )
+                    products_to_templates.insert().values(template_name=template_name, product_name=product_name)
                 )
 
 
@@ -77,13 +67,10 @@ async def test_export_and_import_table(
     asyncpg_engine: AsyncEngine,
     product_templates_in_db: None,
 ):
-
     async with asyncpg_engine.connect() as connection:
         exported_values = []
         excluded_names = {"created", "modified", "group_id"}
-        result = await connection.stream(
-            sa.select(*(c for c in products.c if c.name not in excluded_names))
-        )
+        result = await connection.stream(sa.select(*(c for c in products.c if c.name not in excluded_names)))
         async for row in result:
             assert row
             exported_values.append(row._asdict())
@@ -141,6 +128,6 @@ async def test_create_templates_products_folder(
                 template_path = product_folder / row.name
                 template_path.write_text(row.content)
 
-            assert sorted(
-                product_folder / template_name for template_name in templates_names
-            ) == sorted(product_folder.rglob("*.*"))
+            assert sorted(product_folder / template_name for template_name in templates_names) == sorted(
+                product_folder.rglob("*.*")
+            )

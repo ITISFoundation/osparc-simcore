@@ -25,7 +25,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 )
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.generated_models.docker_rest_api import ContainerState
-from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
+from models_library.generated_models.docker_rest_api import Status1 as ContainerStatus
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
@@ -91,7 +91,7 @@ def compose_spec(raw_compose_spec: dict[str, Any]) -> DockerComposeYamlStr:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://background.testserver.io")
 
 
 @pytest.fixture
@@ -107,10 +107,8 @@ async def mock_environment(
         monkeypatch,
         {
             **mock_environment,
-            "RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"{_BASE_HEART_BEAT_INTERVAL}",
-            "RABBIT_SETTINGS": json.dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
+            "RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"PT{_BASE_HEART_BEAT_INTERVAL}S",
+            "RABBIT_SETTINGS": json.dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
         },
     )
 
@@ -146,12 +144,8 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-async def http_client(
-    app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> HttpClient:
-    return HttpClient(
-        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
-    )
+async def http_client(app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl) -> HttpClient:
+    return HttpClient(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
 
 
 @pytest.fixture
@@ -192,9 +186,7 @@ async def _get_task_id_create_service_containers(
         json=containers_compose_spec.model_dump(),
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers", json=containers_create.model_dump()
-    )
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers", json=containers_create.model_dump())
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -207,13 +199,20 @@ async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient) -> T
     return task_id
 
 
+_RESOURCE_TRACKING_MESSAGE_TYPES = (
+    RabbitResourceTrackingStartedMessage,
+    RabbitResourceTrackingStoppedMessage,
+    RabbitResourceTrackingHeartbeatMessage,
+)
+
+
 def _get_resource_tracking_messages(
     mock_post_rabbit_message: AsyncMock,
 ) -> list[RabbitResourceTrackingMessages]:
     return [
         x[0][1]
         for x in mock_post_rabbit_message.call_args_list
-        if isinstance(x[0][1], RabbitResourceTrackingMessages)
+        if isinstance(x[0][1], _RESOURCE_TRACKING_MESSAGE_TYPES)
     ]
 
 
@@ -221,14 +220,10 @@ async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
     shared_store: SharedStore = app.state.shared_store
     async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(4)):
         with attempt:
-            containers_statuses = await get_container_states(
-                shared_store.container_names
-            )
+            containers_statuses = await get_container_states(shared_store.container_names)
 
             running_container_statuses = [
-                x
-                for x in containers_statuses.values()
-                if x is not None and x.status == ContainerStatus.running
+                x for x in containers_statuses.values() if x is not None and x.status == ContainerStatus.running
             ]
 
             if len(running_container_statuses) != len(shared_store.container_names):
@@ -246,9 +241,7 @@ async def test_service_starts_and_closes_as_expected(
 ):
     async with periodic_task_result(
         client=http_client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        task_id=await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
     ) as result:
@@ -270,9 +263,7 @@ async def test_service_starts_and_closes_as_expected(
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 10)
 
     # Ensure messages arrive in the expected order
-    resource_tracking_messages = _get_resource_tracking_messages(
-        mock_post_rabbit_message
-    )
+    resource_tracking_messages = _get_resource_tracking_messages(mock_post_rabbit_message)
     assert len(resource_tracking_messages) >= 3
 
     start_message = resource_tracking_messages[0]
@@ -301,9 +292,7 @@ async def test_user_services_fail_to_start(
     with pytest.raises(TaskExceptionError):
         async with periodic_task_result(
             client=http_client,
-            task_id=await _get_task_id_create_service_containers(
-                httpx_async_client, compose_spec, mock_metrics_params
-            ),
+            task_id=await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
         ):
@@ -321,9 +310,7 @@ async def test_user_services_fail_to_start(
             assert result is None
 
     # no messages were sent
-    resource_tracking_messages = _get_resource_tracking_messages(
-        mock_post_rabbit_message
-    )
+    resource_tracking_messages = _get_resource_tracking_messages(mock_post_rabbit_message)
     assert len(resource_tracking_messages) == 0
 
 
@@ -339,9 +326,7 @@ async def test_user_services_fail_to_stop_or_save_data(
 ):
     async with periodic_task_result(
         client=http_client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        task_id=await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
     ) as result:
@@ -365,14 +350,10 @@ async def test_user_services_fail_to_stop_or_save_data(
                 status_poll_interval=_FAST_STATUS_POLL,
             ):
                 ...
-        await assert_task_is_no_longer_present(
-            get_fastapi_long_running_manager(app), task_id, {}
-        )
+        await assert_task_is_no_longer_present(get_fastapi_long_running_manager(app), task_id, {})
 
     # Ensure messages arrive in the expected order
-    resource_tracking_messages = _get_resource_tracking_messages(
-        mock_post_rabbit_message
-    )
+    resource_tracking_messages = _get_resource_tracking_messages(mock_post_rabbit_message)
     assert len(resource_tracking_messages) >= 3
 
     start_message = resource_tracking_messages[0]
@@ -394,9 +375,7 @@ async def test_user_services_fail_to_stop_or_save_data(
 async def _simulate_container_crash(container_names: list[str]) -> None:
     async with aiodocker.Docker() as docker:
         filters = clean_filters({"name": container_names})
-        containers: list[DockerContainer] = await docker.containers.list(
-            all=True, filters=filters
-        )
+        containers: list[DockerContainer] = await docker.containers.list(all=True, filters=filters)
         for container in containers:
             await container.kill()
 
@@ -412,7 +391,7 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
                 if result:
                     result.oom_killed = True
                     result.status = ContainerStatus.exited
-                break
+                    break
             return results
 
         mocker.patch(
@@ -441,9 +420,7 @@ async def test_user_services_crash_when_running(
 ):
     async with periodic_task_result(
         client=http_client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        task_id=await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
     ) as result:
@@ -464,9 +441,7 @@ async def test_user_services_crash_when_running(
         await _simulate_container_crash(container_names)
 
     # check only start and heartbeats are present
-    resource_tracking_messages = _get_resource_tracking_messages(
-        mock_post_rabbit_message
-    )
+    resource_tracking_messages = _get_resource_tracking_messages(mock_post_rabbit_message)
     assert len(resource_tracking_messages) >= 2
 
     start_message = resource_tracking_messages[0]
@@ -482,9 +457,7 @@ async def test_user_services_crash_when_running(
 
     # wait a bit more and check no further heartbeats are sent
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
-    new_resource_tracking_messages = _get_resource_tracking_messages(
-        mock_post_rabbit_message
-    )
+    new_resource_tracking_messages = _get_resource_tracking_messages(mock_post_rabbit_message)
     assert len(new_resource_tracking_messages) == 0
 
     # sending stop events, and since there was an issue multiple stops
@@ -499,13 +472,9 @@ async def test_user_services_crash_when_running(
             status_poll_interval=_FAST_STATUS_POLL,
         ) as result:
             assert result is None
-        await assert_task_is_no_longer_present(
-            get_fastapi_long_running_manager(app), task_id, {}
-        )
+        await assert_task_is_no_longer_present(get_fastapi_long_running_manager(app), task_id, {})
 
-    resource_tracking_messages = _get_resource_tracking_messages(
-        mock_post_rabbit_message
-    )
+    resource_tracking_messages = _get_resource_tracking_messages(mock_post_rabbit_message)
     # NOTE: only 1 stop event arrives here since the stopping of the containers
     # was successful
     assert len(resource_tracking_messages) == 1

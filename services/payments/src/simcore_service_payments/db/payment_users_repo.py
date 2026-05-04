@@ -2,6 +2,7 @@ import sqlalchemy as sa
 from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.groups import GroupID
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
@@ -26,16 +27,17 @@ class PaymentsUsersRepo(BaseRepository):
                 users.c.primary_gid,
             ).where(users.c.id == user_id)
         ):
-            return GroupID(row.primary_gid)
+            return TypeAdapter(GroupID).validate_python(row.primary_gid)
 
         msg = f"{user_id=} not found"
         raise ValueError(msg)
 
     async def get_notification_data(self, user_id: UserID, payment_id: PaymentID):
-        """Retrives data that will be injected in a notification for the user on this payment"""
+        """Retrieves data that will be injected in a notification for the user on this payment"""
         if row := await self._get(
             sa.select(
                 payments_transactions.c.payment_id,
+                users.c.name.label("user_name"),
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
@@ -55,10 +57,7 @@ class PaymentsUsersRepo(BaseRepository):
                     payments_transactions.c.product_name == products.c.name,
                 )
             )
-            .where(
-                (payments_transactions.c.payment_id == payment_id)
-                & (payments_transactions.c.user_id == user_id)
-            )
+            .where((payments_transactions.c.payment_id == payment_id) & (payments_transactions.c.user_id == user_id))
         ):
             return row
 

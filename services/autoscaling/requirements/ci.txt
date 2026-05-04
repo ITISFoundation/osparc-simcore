@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'services/autoscaling'
+# Shortcut to install all packages for the contiguous integration (CI) of 'services/autoscaling'
 #
 # - As ci.txt but w/ tests
 #

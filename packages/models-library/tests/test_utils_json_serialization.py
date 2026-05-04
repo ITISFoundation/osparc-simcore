@@ -29,7 +29,7 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 
 
 def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
-    # NOTE: UUIDS serialization/deserialization is asymetric.
+    # NOTE: UUIDS serialization/deserialization is asymmetric.
     # We should eventually fix this but adding a corresponding decoder?
 
     uuid_obj = uuid4()
@@ -41,7 +41,6 @@ def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
 
 
 def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
-
     obj = {"data": fake_data_dict, "ids": [uuid4() for _ in range(3)]}
 
     dump = json_dumps(obj)

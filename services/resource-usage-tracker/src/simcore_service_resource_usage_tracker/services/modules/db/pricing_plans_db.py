@@ -66,7 +66,7 @@ async def list_active_service_pricing_plans_by_product_and_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> list[PricingPlansWithServiceDefaultPlanDB]:
-    # NOTE: consilidate with utils_services_environmnets.py
+    # NOTE: consolidate with utils_services_environments.py
     def _version(column_or_value):
         # converts version value string to array[integer] that can be compared
         return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
@@ -88,22 +88,12 @@ async def list_active_service_pricing_plans_by_product_and_service(
                 )
             )
             .where(
-                (
-                    _version(resource_tracker_pricing_plan_to_service.c.service_version)
-                    <= _version(service_version)
-                )
-                & (
-                    resource_tracker_pricing_plan_to_service.c.service_key
-                    == service_key
-                )
+                (_version(resource_tracker_pricing_plan_to_service.c.service_version) <= _version(service_version))
+                & (resource_tracker_pricing_plan_to_service.c.service_key == service_key)
                 & (resource_tracker_pricing_plans.c.product_name == product_name)
                 & (resource_tracker_pricing_plans.c.is_active.is_(True))
             )
-            .order_by(
-                _version(
-                    resource_tracker_pricing_plan_to_service.c.service_version
-                ).desc()
-            )
+            .order_by(_version(resource_tracker_pricing_plan_to_service.c.service_version).desc())
             .limit(1)
         )
         result = await conn.execute(query)
@@ -137,10 +127,7 @@ async def list_active_service_pricing_plans_by_product_and_service(
                     _version(resource_tracker_pricing_plan_to_service.c.service_version)
                     == _version(latest_service_version)
                 )
-                & (
-                    resource_tracker_pricing_plan_to_service.c.service_key
-                    == latest_service_key
-                )
+                & (resource_tracker_pricing_plan_to_service.c.service_key == latest_service_key)
                 & (resource_tracker_pricing_plans.c.product_name == product_name)
                 & (resource_tracker_pricing_plans.c.is_active.is_(True))
             )
@@ -148,10 +135,7 @@ async def list_active_service_pricing_plans_by_product_and_service(
         )
         result = await conn.execute(query)
 
-    return [
-        PricingPlansWithServiceDefaultPlanDB.model_validate(row)
-        for row in result.fetchall()
-    ]
+    return [PricingPlansWithServiceDefaultPlanDB.model_validate(row) for row in result.fetchall()]
 
 
 async def get_pricing_plan(
@@ -203,9 +187,7 @@ async def list_pricing_plans_by_product(
         ).where(resource_tracker_pricing_plans.c.product_name == product_name)
 
         if exclude_inactive is True:
-            base_query = base_query.where(
-                resource_tracker_pricing_plans.c.is_active.is_(True)
-            )
+            base_query = base_query.where(resource_tracker_pricing_plans.c.is_active.is_(True))
 
         # Select total count from base_query
         subquery = base_query.subquery()
@@ -282,10 +264,7 @@ async def update_pricing_plan(
                 modified=sa.func.now(),
             )
             .where(
-                (
-                    resource_tracker_pricing_plans.c.pricing_plan_id
-                    == data.pricing_plan_id
-                )
+                (resource_tracker_pricing_plans.c.pricing_plan_id == data.pricing_plan_id)
                 & (resource_tracker_pricing_plans.c.product_name == product_name)
             )
             .returning(
@@ -376,14 +355,8 @@ async def upsert_service_to_pricing_plan(
             .where(
                 (resource_tracker_pricing_plans.c.product_name == product_name)
                 & (resource_tracker_pricing_plans.c.pricing_plan_id == pricing_plan_id)
-                & (
-                    resource_tracker_pricing_plan_to_service.c.service_key
-                    == service_key
-                )
-                & (
-                    resource_tracker_pricing_plan_to_service.c.service_version
-                    == service_version
-                )
+                & (resource_tracker_pricing_plan_to_service.c.service_key == service_key)
+                & (resource_tracker_pricing_plan_to_service.c.service_version == service_version)
             )
         )
         result = await conn.execute(query)
@@ -392,14 +365,8 @@ async def upsert_service_to_pricing_plan(
         if row is not None:
             delete_stmt = resource_tracker_pricing_plan_to_service.delete().where(
                 (resource_tracker_pricing_plans.c.pricing_plan_id == pricing_plan_id)
-                & (
-                    resource_tracker_pricing_plan_to_service.c.service_key
-                    == service_key
-                )
-                & (
-                    resource_tracker_pricing_plan_to_service.c.service_version
-                    == service_version
-                )
+                & (resource_tracker_pricing_plan_to_service.c.service_key == service_key)
+                & (resource_tracker_pricing_plan_to_service.c.service_version == service_version)
             )
             await conn.execute(delete_stmt)
 
@@ -446,12 +413,8 @@ def _pricing_units_select_stmt():
         resource_tracker_pricing_units.c.specific_info,
         resource_tracker_pricing_units.c.created,
         resource_tracker_pricing_units.c.modified,
-        resource_tracker_pricing_unit_costs.c.cost_per_unit.label(
-            "current_cost_per_unit"
-        ),
-        resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id.label(
-            "current_cost_per_unit_id"
-        ),
+        resource_tracker_pricing_unit_costs.c.cost_per_unit.label("current_cost_per_unit"),
+        resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id.label("current_cost_per_unit_id"),
     )
 
 
@@ -616,9 +579,7 @@ async def update_pricing_unit_with_cost(
                 specific_info=data.specific_info.model_dump(),
                 modified=sa.func.now(),
             )
-            .where(
-                resource_tracker_pricing_units.c.pricing_unit_id == data.pricing_unit_id
-            )
+            .where(resource_tracker_pricing_units.c.pricing_unit_id == data.pricing_unit_id)
             .returning(resource_tracker_pricing_units.c.pricing_unit_id)
         )
         await conn.execute(update_stmt)
@@ -632,10 +593,7 @@ async def update_pricing_unit_with_cost(
                     valid_to=sa.func.now(),  # <-- Closing previous price
                     modified=sa.func.now(),
                 )
-                .where(
-                    resource_tracker_pricing_unit_costs.c.pricing_unit_id
-                    == data.pricing_unit_id
-                )
+                .where(resource_tracker_pricing_unit_costs.c.pricing_unit_id == data.pricing_unit_id)
                 .returning(resource_tracker_pricing_unit_costs.c.pricing_unit_id)
             )
             result = await conn.execute(update_stmt)
@@ -687,15 +645,10 @@ async def get_pricing_unit_cost_by_id(
             resource_tracker_pricing_unit_costs.c.created,
             resource_tracker_pricing_unit_costs.c.comment,
             resource_tracker_pricing_unit_costs.c.modified,
-        ).where(
-            resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id
-            == pricing_unit_cost_id
-        )
+        ).where(resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id == pricing_unit_cost_id)
         result = await conn.execute(query)
 
     row = result.first()
     if row is None:
-        raise PricingUnitCostDoesNotExistsDBError(
-            pricing_unit_cost_id=pricing_unit_cost_id
-        )
+        raise PricingUnitCostDoesNotExistsDBError(pricing_unit_cost_id=pricing_unit_cost_id)
     return PricingUnitCostsDB.model_validate(row)

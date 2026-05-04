@@ -50,9 +50,7 @@ def _on_app_shutdown(
         ):
             assert _app  # nosec
             if _app.state.efs_guardian_removal_policy_background_task:
-                await cancel_wait_task(
-                    _app.state.efs_guardian_removal_policy_background_task
-                )
+                await cancel_wait_task(_app.state.efs_guardian_removal_policy_background_task)
 
     return _stop
 

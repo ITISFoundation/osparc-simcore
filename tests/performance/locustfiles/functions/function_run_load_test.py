@@ -47,18 +47,13 @@ def _(parser: LocustArgumentParser) -> None:
 class WebApiUser(OsparcWebUserBase):
     @task
     def run_function(self) -> None:
-
         function_uuid = self.environment.parsed_options.function_uuid
         if function_uuid is None:
             raise ValueError("function-uuid argument is required")
         if self.environment.parsed_options.function_input_json_schema is None:
             raise ValueError("function-input-json-schema argument is required")
-        job_input_schema = json.loads(
-            self.environment.parsed_options.function_input_json_schema
-        )
-        max_poll_time = timedelta(
-            seconds=self.environment.parsed_options.max_poll_time_seconds
-        )
+        job_input_schema = json.loads(self.environment.parsed_options.function_input_json_schema)
+        max_poll_time = timedelta(seconds=self.environment.parsed_options.max_poll_time_seconds)
 
         # run function
         job_input_faker = jsf.JSF(job_input_schema)
@@ -89,6 +84,4 @@ class WebApiUser(OsparcWebUserBase):
                 job_status_response.raise_for_status()
                 status = job_status_response.json().get("status")
                 if status != "SUCCESS":
-                    raise ValueError(
-                        f"Function job ({job_uuid=}) for function ({function_uuid=}) returned {status=}"
-                    )
+                    raise ValueError(f"Function job ({job_uuid=}) for function ({function_uuid=}) returned {status=}")

@@ -37,13 +37,9 @@ class ModelExample(NamedTuple):
     example_data: Any
 
 
-def iter_examples(
-    *, model_cls: type[BaseModel], examples: list[Any]
-) -> Iterator[ModelExample]:
+def iter_examples(*, model_cls: type[BaseModel], examples: list[Any]) -> Iterator[ModelExample]:
     for k, data in enumerate(examples):
-        yield ModelExample(
-            model_cls=model_cls, example_name=f"example_{k}", example_data=data
-        )
+        yield ModelExample(model_cls=model_cls, example_name=f"example_{k}", example_data=data)
 
 
 def walk_model_examples_in_package(package: ModuleType) -> Iterator[ModelExample]:
@@ -86,12 +82,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
             is_parametrized = False
             if hasattr(obj, "__parameters__"):
                 is_parametrized = len(obj.__parameters__) == 0
-            return (
-                obj is not BaseModel
-                and inspect.isclass(obj)
-                and issubclass(obj, BaseModel)
-                and not is_parametrized
-            )
+            return obj is not BaseModel and inspect.isclass(obj) and issubclass(obj, BaseModel) and not is_parametrized
         return False
 
     assert inspect.ismodule(module)
@@ -100,9 +91,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
         yield from iter_model_examples_in_class(model_cls, model_name)
 
 
-def iter_model_examples_in_class(
-    model_cls: type[BaseModel], model_name: str | None = None
-) -> Iterator[ModelExample]:
+def iter_model_examples_in_class(model_cls: type[BaseModel], model_name: str | None = None) -> Iterator[ModelExample]:
     """Iterates on all examples within a base model class
 
     Usage:
@@ -145,9 +134,7 @@ def iter_model_examples_in_class(
 TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
 
-def assert_validation_model(
-    model_cls: type[TBaseModel], example_name: str, example_data: Any
-) -> TBaseModel:
+def assert_validation_model(model_cls: type[TBaseModel], example_name: str, example_data: Any) -> TBaseModel:
     try:
         model_instance = model_cls.model_validate(example_data)
     except ValidationError as err:
@@ -195,10 +182,7 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
     )
 
     # collect all examples and creates fixture -> {example-name: example, ...}
-    examples = {
-        f"{model_cls.__name__}.example[{index}]": example_
-        for index, example_ in enumerate(examples_list)
-    }
+    examples = {f"{model_cls.__name__}.example[{index}]": example_ for index, example_ in enumerate(examples_list)}
     if example := copy.deepcopy(json_schema.get("example")):
         examples[f"{model_cls.__name__}.example"] = example
 

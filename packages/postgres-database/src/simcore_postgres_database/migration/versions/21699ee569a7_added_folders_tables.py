@@ -5,6 +5,7 @@ Revises: 056ed0eb1ba6
 Create Date: 2024-07-30 13:38:57.694754+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -122,9 +123,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint(
-            "folder_id", "project_uuid", name="projects_to_folder_pk"
-        ),
+        sa.PrimaryKeyConstraint("folder_id", "project_uuid", name="projects_to_folder_pk"),
     )
     # ### end Alembic commands ###
 

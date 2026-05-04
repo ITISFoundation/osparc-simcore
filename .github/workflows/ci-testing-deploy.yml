@@ -50,6 +50,7 @@ jobs:
       celery-library: ${{ steps.filter.outputs.celery-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
       models-library: ${{ steps.filter.outputs.models-library }}
+      pytest-simcore: ${{ steps.filter.outputs.pytest-simcore }}
       common-library: ${{ steps.filter.outputs.common-library }}
       notifications-library: ${{ steps.filter.outputs.notifications-library }}
       postgres-database: ${{ steps.filter.outputs.postgres-database }}
@@ -83,9 +84,9 @@ jobs:
       anything-py: ${{ steps.filter.outputs.anything-py }}
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       # For pull requests it's not necessary to checkout the code
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -110,6 +111,11 @@ jobs:
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
+              - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
+            pytest-simcore:
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
@@ -158,6 +164,7 @@ jobs:
               - 'packages/**'
               - 'services/agent/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             notifications:
@@ -221,6 +228,7 @@ jobs:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/install_rclone.bash'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             efs-guardian:
@@ -280,6 +288,7 @@ jobs:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'scripts/install_rclone.bash'
               - 'mypy.ini'
             anything-py:
               - '**/*.py'
@@ -298,7 +307,7 @@ jobs:
       build-backend: ${{ matrix.type == 'backend' }}
       build-frontend: ${{ matrix.type == 'frontend' }}
       os: ubuntu-24.04
-      python-version: "3.11"
+      python-version: "3.13"
 
   unit-test-webserver-01:
     needs: changes
@@ -308,12 +317,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -327,11 +336,10 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-02:
     needs: changes
@@ -341,12 +349,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -356,11 +364,10 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-03:
     needs: changes
@@ -370,12 +377,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -385,11 +392,10 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-04:
     needs: changes
@@ -399,12 +405,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -414,11 +420,10 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-storage:
     needs: changes
@@ -428,12 +433,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -445,11 +450,10 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-agent:
     needs: changes
@@ -459,12 +463,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -478,11 +482,10 @@ jobs:
         run: ./ci/github/unit-testing/agent.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-notifications:
     needs: changes
@@ -492,12 +495,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -509,11 +512,10 @@ jobs:
         run: ./ci/github/unit-testing/notifications.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/notifications.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-api:
     needs: changes
@@ -523,12 +525,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -538,26 +540,25 @@ jobs:
         run: ./ci/github/unit-testing/api.bash install
       - name: test
         run: ./ci/github/unit-testing/api.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-api-server:
     needs: changes
     if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -571,11 +572,10 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash test
       - name: OAS backwards compatibility check
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-autoscaling:
     needs: changes
@@ -585,12 +585,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -602,11 +602,10 @@ jobs:
         run: ./ci/github/unit-testing/autoscaling.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-catalog:
     needs: changes
@@ -616,12 +615,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -635,15 +634,14 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-clusters-keeper:
     needs: changes
@@ -653,12 +651,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -681,11 +679,10 @@ jobs:
           source .venv/bin/activate && \
           pushd services/clusters-keeper && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-datcore-adapter:
     needs: changes
@@ -695,12 +692,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -714,15 +711,14 @@ jobs:
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-director:
     needs: changes
@@ -732,12 +728,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -751,15 +747,14 @@ jobs:
         run: ./ci/github/unit-testing/director.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director/test_failures
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-director-v2:
     needs: changes
@@ -769,12 +764,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -788,15 +783,14 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-aws-library:
     needs: changes
@@ -806,12 +800,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -823,11 +817,10 @@ jobs:
         run: ./ci/github/unit-testing/aws-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/aws-library.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-celery-library:
     needs: changes
@@ -837,12 +830,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -854,11 +847,10 @@ jobs:
         run: ./ci/github/unit-testing/celery-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/celery-library.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dask-task-models-library:
     needs: changes
@@ -868,12 +860,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -885,11 +877,10 @@ jobs:
         run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dask-sidecar:
     needs: changes
@@ -899,12 +890,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -916,11 +907,10 @@ jobs:
         run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-payments:
     needs: changes
@@ -930,12 +920,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -947,11 +937,10 @@ jobs:
         run: ./ci/github/unit-testing/payments.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/payments.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dynamic-scheduler:
     needs: changes
@@ -961,12 +950,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -978,11 +967,10 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-scheduler.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-resource-usage-tracker:
     needs: changes
@@ -992,12 +980,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1019,11 +1007,10 @@ jobs:
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dynamic-sidecar:
     needs: changes
@@ -1033,12 +1020,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1050,11 +1037,10 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-efs-guardian:
     needs: changes
@@ -1064,12 +1050,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1092,11 +1078,10 @@ jobs:
           source .venv/bin/activate && \
           pushd services/efs-guardian && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-python-linting:
     needs: changes
@@ -1106,12 +1091,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11", "3.12"]
+        python: ["3.13", "3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1130,12 +1115,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1147,11 +1132,10 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-invitations:
     needs: changes
@@ -1161,12 +1145,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1178,11 +1162,10 @@ jobs:
         run: ./ci/github/unit-testing/invitations.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-service-integration:
     needs: changes
@@ -1192,12 +1175,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1209,11 +1192,10 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-service-library:
     needs: changes
@@ -1223,12 +1205,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1240,11 +1222,10 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-settings-library:
     needs: changes
@@ -1254,12 +1235,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1271,11 +1252,10 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-models-library:
     needs: changes
@@ -1285,12 +1265,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1302,11 +1282,38 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-pytest-simcore:
+    needs: changes
+    if: ${{ needs.changes.outputs.pytest-simcore == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] pytest-simcore"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.13"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/pytest-simcore/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/pytest-simcore.bash install
+      - name: test
+        run: ./ci/github/unit-testing/pytest-simcore.bash test
+      - uses: codecov/codecov-action@v6
+        with:
+          flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-common-library:
     needs: changes
@@ -1316,12 +1323,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1333,11 +1340,10 @@ jobs:
         run: ./ci/github/unit-testing/common-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/common-library.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-notifications-library:
     needs: changes
@@ -1347,12 +1353,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1364,11 +1370,10 @@ jobs:
         run: ./ci/github/unit-testing/notifications-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/notifications-library.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-simcore-sdk:
     needs: changes
@@ -1378,12 +1383,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1397,11 +1402,10 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v6
         with:
           flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-tests:
     # NOTE: this is a github required status check!
@@ -1424,6 +1428,7 @@ jobs:
         unit-test-dynamic-sidecar,
         unit-test-efs-guardian,
         unit-test-models-library,
+        unit-test-pytest-simcore,
         unit-test-common-library,
         unit-test-notifications-library,
         unit-test-payments,
@@ -1461,11 +1466,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1481,11 +1486,11 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1499,11 +1504,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1519,11 +1524,11 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1537,7 +1542,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     env:
@@ -1545,14 +1550,12 @@ jobs:
       DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: setup rclone docker volume plugin
-        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -1565,11 +1568,11 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1583,11 +1586,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1605,11 +1608,11 @@ jobs:
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1623,11 +1626,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1643,11 +1646,11 @@ jobs:
         run: ./ci/github/integration-testing/docker-api-proxy.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/docker-api-proxy/test_failures
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1661,11 +1664,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1683,11 +1686,11 @@ jobs:
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1724,11 +1727,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1746,108 +1749,22 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
-
-  system-test-swarm-deploy:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] deploy simcore"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v5
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: "*"
-      - name: install
-        run: ./ci/github/system-testing/swarm-deploy.bash install
-      - name: test
-        run: ./ci/github/system-testing/swarm-deploy.bash test
-      - name: dump services setting schemas
-        run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
-      - name: upload services settings schemas
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ github.job }}_services_settings_schemas
-          path: ./services/**/settings-schema.json
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./test_failures
-
-  system-test-e2e:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] e2e"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        node: [14]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v5
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v6.0.0
-        with:
-          node-version: ${{ matrix.node }}
-          cache: "npm"
-          cache-dependency-path: "tests/e2e/package-lock.json"
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: "*"
-      - name: setup
-        run: ./ci/github/system-testing/e2e.bash install
-      - name: test
-        run: ./ci/github/system-testing/e2e.bash test
-      - name: wait before dumping logs
-        if: ${{ failure() }}
-        run: sleep 5
-      - name: dump docker logs
-        if: ${{ failure() }}
-        id: docker_logs_dump
-        run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
-          path: ./tests/e2e/test_failures
-      - name: upload screenshots
+          path: ./tests/public-api/test_failures
+      - name: upload tracing if failed
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ github.job }}_screenshots
-          path: tests/e2e/screenshots
-      - name: upload e2e logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ github.job }}_logs
-          path: tests/e2e/logs
+          name: ${{ github.job }}_tracing
+          path: tests/public-api/test-results
 
   system-test-e2e-playwright:
     needs: [changes, build-test-images]
@@ -1860,11 +1777,11 @@ jobs:
     #   image: mcr.microsoft.com/playwright/python:v1.39.0-jammy
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1874,8 +1791,6 @@ jobs:
         uses: ./.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "*"
-      - name: prepare devenv
-        run: make devenv
       - name: setup
         run: |
           ./ci/github/system-testing/e2e-playwright.bash install
@@ -1891,13 +1806,13 @@ jobs:
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
@@ -1908,11 +1823,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1928,11 +1843,9 @@ jobs:
     if: ${{ always() }}
     needs:
       [
-        system-test-e2e,
         system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,
-        system-test-swarm-deploy,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -1952,7 +1865,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11"]
+        python: ["3.13"]
         os: [ubuntu-24.04]
       fail-fast: false
     env:
@@ -1961,7 +1874,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:

@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
-    "emptyStudyClicked": "qx.event.type.Data"
+    "emptyProjectIconClicked": "qx.event.type.Data",
   },
 
   statics: {
@@ -171,14 +171,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
           return !matches;
         }
         return false;
-      }
-      return false;
-    },
-
-    filterClassifiers: function(checks, classifiers) {
-      if (classifiers && classifiers.length) {
-        const includesAll = classifiers.every(classifier => checks.includes(classifier));
-        return !includesAll;
       }
       return false;
     },
@@ -820,6 +812,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (pipelineState) {
         this.__applyPipelineState(pipelineState);
       }
+
+      this.evaluateMenuButtons();
     },
 
     __applyDebt: function(debt) {
@@ -896,6 +890,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __showCurrentUserGroupIds: function(currentUserGroupIds) {
       const avatarGroup = this.getChildControl("avatar-group");
       avatarGroup.setUserGroupIds(currentUserGroupIds);
+
+      if (this.openButton) {
+        const resourceData = this.getResourceData();
+        const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(resourceData);
+        this.openButton.setLabel(openText);
+      }
     },
 
     __showBlockedCardFromStatus: function(reason, state) {
@@ -1046,15 +1046,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
         const billingSettingsButton = menuButtons.find(menuBtn => "billingSettingsButton" in menuBtn);
         if (billingSettingsButton) {
-          billingSettingsButton.setEnabled(osparc.study.Utils.canShowBillingOptions(resourceData));
+          billingSettingsButton.setEnabled(osparc.study.Utils.canEnableBillingOptions(resourceData));
         }
         const moveToButton = menuButtons.find(menuBtn => "moveToButton" in menuBtn);
         if (moveToButton) {
           moveToButton.setEnabled(osparc.study.Utils.canMoveTo(resourceData));
         }
-        const trashButton = menuButtons.find(menuBtn => "trashButton" in menuBtn);
-        if (trashButton) {
-          trashButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
+        const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
+        if (deleteButton) {
+          deleteButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
         }
       }
     },
@@ -1167,7 +1167,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
       control.addListener("tap", e => {
         e.stopPropagation();
-        this.fireDataEvent("emptyStudyClicked", this.getUuid());
+        this.fireDataEvent("emptyProjectIconClicked", this.getUuid());
       }, this);
       return control;
     },
@@ -1223,11 +1223,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterAppType(resourceType, resourceData, appType);
     },
 
-    _filterClassifiers: function(classifiers) {
-      const checks = this.getClassifiers();
-      return this.self().filterClassifiers(checks, classifiers);
-    },
-
     __curateFilterId: function(filterId) {
       if (this.isPropertyInitialized("resourceType")) {
         switch (this.getResourceType()) {
@@ -1260,9 +1255,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (this.__filterAppType(data.appType)) {
         return true;
       }
-      if (this._filterClassifiers(data.classifiers)) {
-        return true;
-      }
       return false;
     },
 
@@ -1279,9 +1271,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if ("appType" in data) {
-        return true;
-      }
-      if (data.classifiers && data.classifiers.length) {
         return true;
       }
       return false;

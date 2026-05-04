@@ -23,9 +23,7 @@ _logger = logging.getLogger(__name__)
 class ScicrunchResourcesRepository(BaseRepository):
     """Repository for managing scicrunch_resources operations."""
 
-    async def list_all_resources(
-        self, connection: AsyncConnection | None = None
-    ) -> list[Row]:
+    async def list_all_resources(self, connection: AsyncConnection | None = None) -> list[Row]:
         """List all research resources with basic fields."""
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             stmt = sa.select(
@@ -36,20 +34,14 @@ class ScicrunchResourcesRepository(BaseRepository):
             result = await conn.execute(stmt)
             return result.fetchall()
 
-    async def get_resource_by_rrid(
-        self, rrid: str, connection: AsyncConnection | None = None
-    ) -> Row | None:
+    async def get_resource_by_rrid(self, rrid: str, connection: AsyncConnection | None = None) -> Row | None:
         """Get a research resource by RRID."""
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            stmt = sa.select(scicrunch_resources).where(
-                scicrunch_resources.c.rrid == rrid
-            )
+            stmt = sa.select(scicrunch_resources).where(scicrunch_resources.c.rrid == rrid)
             result = await conn.execute(stmt)
             return result.one_or_none()
 
-    async def upsert_resource(
-        self, resource_data: dict[str, Any], connection: AsyncConnection | None = None
-    ) -> Row:
+    async def upsert_resource(self, resource_data: dict[str, Any], connection: AsyncConnection | None = None) -> Row:
         """Insert or update a research resource."""
         async with transaction_context(self.engine, connection) as conn:
             stmt = (

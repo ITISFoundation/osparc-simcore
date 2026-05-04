@@ -25,7 +25,7 @@ echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
 echo TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=null >> $(SIMCORE_DOT_ENV)
 echo TRACING_OPENTELEMETRY_COLLECTOR_PORT=null >> $(SIMCORE_DOT_ENV)
 
-$(MAKE_C) $(REPO_BASE_DIR) up-prod ops_ci=1
+$(MAKE_C) $(REPO_BASE_DIR) up-prod-phased ops_ci=1
 endef
 
 SERVICE_IMAGE_NAME = "sleeper"
@@ -62,7 +62,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
 	# installing playwright dependencies
-	@playwright install
+	@playwright install --with-deps
 
 
 RETRY_DURATION_SECONDS := 30
@@ -73,7 +73,7 @@ install-ci-up-simcore: install-ci  ## run registry and simcore stack locally (pu
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(REPO_BASE_DIR)/tests/utils/wait_for_services.py
 
 	# giving access rights to images (this might take some time until the catalog is ready)
 	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
@@ -133,16 +133,46 @@ test-platform-dev: _check_venv_active  ## runs platform test on local deploy (wi
 		--tracing=on \
 		$(CURDIR)/tests/platform_CI_tests/test_platform.py
 
+.PHONY: test-guided-tours
+test-guided-tours: _check_venv_active ## runs guided tours test on local deploy
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--product-url=http://$(get_my_ip):9081 \
+		--autoregister \
+		--tracing=retain-on-failure \
+		$(CURDIR)/tests/guided_tours/test_guided_tours.py
+
+.PHONY: test-guided-tours-dev
+test-guided-tours-dev: _check_venv_active ## runs guided tours test on local deploy (headed mode)
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--pdb \
+		--product-url=http://$(get_my_ip):9081 \
+		--headed \
+		--autoregister \
+		$(CURDIR)/tests/guided_tours/test_guided_tours.py
+
 
 # Define the files where user input will be saved
 SLEEPERS_INPUT_FILE := .e2e-playwright-sleepers-env.txt
 S4L_INPUT_FILE := .e2e-playwright-sim4life-env.txt
 JUPYTER_LAB_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
 CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
+PERSONALIZED_TIP_INPUT_FILE := .e2e-playwright-personalizedtip-env.txt
 RSM_INPUT_FILE := .e2e-playwright-rsm-env.txt
 
+ALL_INPUT_FILES := \
+	$(SLEEPERS_INPUT_FILE) \
+	$(JUPYTER_LAB_INPUT_FILE) \
+	$(CLASSIC_TIP_INPUT_FILE) \
+	$(S4L_INPUT_FILE) \
+	$(PERSONALIZED_TIP_INPUT_FILE) \
+	$(RSM_INPUT_FILE)
+
 # Prompt the user for input and store it into variables
-$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(RSM_INPUT_FILE):
+$(ALL_INPUT_FILES):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
 	read -p "Is the product lite [y/n]: " IS_LITE; \
@@ -220,6 +250,9 @@ test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE) ## run ju
 test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_INPUT_FILE) ## run classic tip test and cache settings
 	@$(call run_test, $(CLASSIC_TIP_INPUT_FILE), tests/tip/test_ti_plan.py)
 
+test-personalized-tip-anywhere: _check_venv_active $(PERSONALIZED_TIP_INPUT_FILE) ## run personalized tip test and cache settings
+	@$(call run_test, $(PERSONALIZED_TIP_INPUT_FILE), tests/tip/test_ti_personalized_plan.py)
+
 test-response-surface-modeling-anywhere: _check_venv_active $(RSM_INPUT_FILE) ## run response surface modeling test and cache settings
 	@$(call run_test, $(RSM_INPUT_FILE), tests/metamodeling/test_response_surface_modeling.py)
 
@@ -245,4 +278,4 @@ define run_test_on_chrome
 endef
 
 clean:
-	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE)
+	-@rm -rf $(ALL_INPUT_FILES)

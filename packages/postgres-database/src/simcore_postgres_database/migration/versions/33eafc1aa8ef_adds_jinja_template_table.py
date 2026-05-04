@@ -5,6 +5,7 @@ Revises: a8f0bacbbaef
 Create Date: 2022-08-25 11:30:09.190686+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -21,12 +22,8 @@ def upgrade():
         "jinja2_templates",
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("name", name="jinja2_templates_name_pk"),
     )
     # ### end Alembic commands ###

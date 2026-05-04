@@ -1,8 +1,8 @@
-import asyncio
 from collections.abc import Callable, Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
@@ -19,9 +19,6 @@ from models_library.resource_tracker import (
 )
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_postgres_database.models.resource_tracker_credit_transactions import (
-    resource_tracker_credit_transactions,
-)
 from simcore_postgres_database.models.resource_tracker_pricing_plan_to_service import (
     resource_tracker_pricing_plan_to_service,
 )
@@ -35,6 +32,7 @@ from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,
 )
 from simcore_postgres_database.models.services import services_meta_data
+from simcore_service_resource_usage_tracker.services import notifications
 from simcore_service_resource_usage_tracker.services.process_message_running_service import (
     _process_heartbeat_event,
     _process_start_event,
@@ -73,13 +71,11 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=False,
                 specific_info={},
-                created=datetime.now(tz=timezone.utc),
-                modified=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -89,24 +85,22 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_unit_id=1,
                 pricing_unit_name="S",
                 cost_per_unit=Decimal(500),
-                valid_from=datetime.now(tz=timezone.utc),
+                valid_from=datetime.now(tz=UTC),
                 valid_to=None,
-                created=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
                 comment="",
-                modified=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=True,
                 specific_info={},
-                created=datetime.now(tz=timezone.utc),
-                modified=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -116,24 +110,22 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_unit_id=2,
                 pricing_unit_name="M",
                 cost_per_unit=Decimal(1000),
-                valid_from=datetime.now(tz=timezone.utc),
+                valid_from=datetime.now(tz=UTC),
                 valid_to=None,
-                created=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
                 comment="",
-                modified=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=False,
                 specific_info={},
-                created=datetime.now(tz=timezone.utc),
-                modified=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -143,11 +135,11 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_unit_id=3,
                 pricing_unit_name="L",
                 cost_per_unit=Decimal(1500),
-                valid_from=datetime.now(tz=timezone.utc),
+                valid_from=datetime.now(tz=UTC),
                 valid_to=None,
-                created=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
                 comment="",
-                modified=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -169,12 +161,17 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
 
         yield
 
-        con.execute(resource_tracker_pricing_plan_to_service.delete())
-        con.execute(resource_tracker_pricing_units.delete())
-        con.execute(resource_tracker_pricing_plans.delete())
-        con.execute(resource_tracker_pricing_unit_costs.delete())
-        con.execute(resource_tracker_credit_transactions.delete())
-        con.execute(services_meta_data.delete())
+        con.execute(
+            sa.text(
+                "TRUNCATE resource_tracker_pricing_plan_to_service,"
+                " resource_tracker_pricing_units,"
+                " resource_tracker_pricing_unit_costs,"
+                " resource_tracker_pricing_plans,"
+                " resource_tracker_credit_transactions,"
+                " services_meta_data"
+                " RESTART IDENTITY CASCADE"
+            )
+        )
 
 
 @pytest.fixture
@@ -194,6 +191,7 @@ async def test_process_event_functions(
 ):
     engine = initialized_app.state.engine
     publisher = create_rabbitmq_client("publisher")
+    rpc_client = AsyncMock()
     consumer = create_rabbitmq_client("consumer")
     await consumer.subscribe(
         WalletCreditsLimitReachedMessage.get_channel_name(),
@@ -209,43 +207,32 @@ async def test_process_event_functions(
         pricing_unit_cost_id=1,
     )
 
-    await _process_start_event(engine, msg, publisher)
+    await _process_start_event(engine, msg, publisher, rpc_client)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == CreditTransactionStatus.PENDING.value
-    assert (
-        output.transaction_classification
-        == CreditClassification.DEDUCT_SERVICE_RUN.value
-    )
-    first_occurence_of_last_heartbeat_at = output.last_heartbeat_at
+    assert output.transaction_classification == CreditClassification.DEDUCT_SERVICE_RUN.value
+    first_occurrence_of_last_heartbeat_at = output.last_heartbeat_at
     modified_at = output.modified
 
-    await asyncio.sleep(0)
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
+        service_run_id=msg.service_run_id, created_at=msg.created_at + timedelta(seconds=1)
     )
-    await _process_heartbeat_event(engine, heartbeat_msg, publisher)
-    output = await assert_credit_transactions_db_row(
-        postgres_db, msg.service_run_id, modified_at
-    )
+    await _process_heartbeat_event(engine, heartbeat_msg, publisher, rpc_client)
+    output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id, modified_at)
     first_credits_used = output.osparc_credits
     assert first_credits_used < 0.0
     assert output.transaction_status == CreditTransactionStatus.PENDING.value
-    assert first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
+    assert first_occurrence_of_last_heartbeat_at < output.last_heartbeat_at
     modified_at = output.modified
 
-    await asyncio.sleep(
-        2
-    )  # NOTE: Computation of credits depends on time ((stop-start)*cost_per_unit)
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=msg.created_at + timedelta(seconds=2),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await _process_stop_event(engine, stopped_msg, publisher)
-    output = await assert_credit_transactions_db_row(
-        postgres_db, msg.service_run_id, modified_at
-    )
+    await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
+    output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id, modified_at)
     assert output.osparc_credits < first_credits_used
     assert output.transaction_status == CreditTransactionStatus.IN_DEBT.value
 
@@ -257,3 +244,97 @@ async def test_process_event_functions(
     ):
         with attempt:
             mocked_message_parser.assert_called_once()
+
+
+async def test_stop_event_with_platform_bad_sends_reimbursement_notification(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_rabbit_message_start,
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    resource_tracker_service_run_db,
+    resource_tracker_pricing_tables_db,
+    initialized_app,
+    mocker: MockerFixture,
+):
+    mock_notify = mocker.patch.object(
+        notifications,
+        "send_message_from_template",
+        autospec=True,
+    )
+
+    engine = initialized_app.state.engine
+    publisher = create_rabbitmq_client("publisher")
+    rpc_client = AsyncMock()
+
+    msg = random_rabbit_message_start(
+        wallet_id=1,
+        wallet_name="test",
+        pricing_plan_id=1,
+        pricing_unit_id=1,
+        pricing_unit_cost_id=1,
+    )
+
+    await _process_start_event(engine, msg, publisher, rpc_client)
+
+    stopped_msg = RabbitResourceTrackingStoppedMessage(
+        service_run_id=msg.service_run_id,
+        created_at=msg.created_at + timedelta(seconds=1),
+        simcore_platform_status=SimcorePlatformStatus.BAD,
+    )
+    await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
+
+    # Transaction should be NOT_BILLED due to platform issue
+    output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
+    assert output.transaction_status == CreditTransactionStatus.NOT_BILLED.value
+
+    # Notification email should have been sent
+    mock_notify.assert_called_once()
+    call_kwargs = mock_notify.call_args.kwargs
+    assert call_kwargs["addressing"].to[0].email == msg.user_email
+    assert call_kwargs["context"]["service_run_id"] == msg.service_run_id
+    assert call_kwargs["template_ref"].template_name == "credit_reimbursement"
+
+
+async def test_stop_event_with_platform_ok_does_not_send_reimbursement_notification(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_rabbit_message_start,
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    resource_tracker_service_run_db,
+    resource_tracker_pricing_tables_db,
+    initialized_app,
+    mocker: MockerFixture,
+):
+    mock_notify = mocker.patch.object(
+        notifications,
+        "send_message_from_template",
+        autospec=True,
+    )
+
+    engine = initialized_app.state.engine
+    publisher = create_rabbitmq_client("publisher")
+    rpc_client = AsyncMock()
+
+    msg = random_rabbit_message_start(
+        wallet_id=1,
+        wallet_name="test",
+        pricing_plan_id=1,
+        pricing_unit_id=1,
+        pricing_unit_cost_id=1,
+    )
+
+    await _process_start_event(engine, msg, publisher, rpc_client)
+
+    stopped_msg = RabbitResourceTrackingStoppedMessage(
+        service_run_id=msg.service_run_id,
+        created_at=msg.created_at + timedelta(seconds=1),
+        simcore_platform_status=SimcorePlatformStatus.OK,
+    )
+    await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
+
+    # Transaction should be billed normally (IN_DEBT because wallet starts with 0 credits)
+    output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
+    assert output.transaction_status == CreditTransactionStatus.IN_DEBT.value
+
+    # No reimbursement notification should be sent
+    mock_notify.assert_not_called()

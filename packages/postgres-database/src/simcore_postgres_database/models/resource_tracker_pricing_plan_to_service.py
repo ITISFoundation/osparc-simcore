@@ -1,5 +1,5 @@
-""" Pricing plan to credits table
-  - Usecase: when client wants to ask for pricing plan for a concrete service
+"""Pricing plan to credits table
+- Usecase: when client wants to ask for pricing plan for a concrete service
 """
 
 import sqlalchemy as sa

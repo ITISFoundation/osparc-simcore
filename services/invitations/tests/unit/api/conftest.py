@@ -10,6 +10,8 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.tracing import TracingConfig
+from simcore_service_invitations._meta import APP_NAME
 from simcore_service_invitations.core.application import create_app
 
 
@@ -17,7 +19,11 @@ from simcore_service_invitations.core.application import create_app
 def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
     print(f"app_environment={json.dumps(app_environment)}")
 
-    app = create_app()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
+    )
+    app = create_app(tracing_config=tracing_config)
     print("settings:\n", app.state.settings.model_dump_json(indent=1))
     with TestClient(app, base_url="http://testserver.test") as client:
         yield client
@@ -35,7 +41,7 @@ def invalid_basic_auth(
     kwargs = {"username": fake_user_name, "password": fake_password}
 
     if invalid_case == "both":
-        kwargs = {key: "wrong" for key in kwargs}
+        kwargs = dict.fromkeys(kwargs, "wrong")
     else:
         kwargs[invalid_case] = "wronggg"
 

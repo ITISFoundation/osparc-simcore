@@ -41,9 +41,5 @@ def setup_payments(app: web.Application):
         app.on_startup.append(_rpc_invoice.register_rpc_routes_on_startup)
 
     if settings.PAYMENTS_FAKE_COMPLETION:
-        _logger.warning(
-            "Added faker payment completion. ONLY FOR front-end TESTING PURPOSES"
-        )
-        app.cleanup_ctx.append(
-            create_background_task_to_fake_payment_completion(wait_period_s=3)
-        )
+        _logger.warning("Added faker payment completion. ONLY FOR front-end TESTING PURPOSES")
+        app.cleanup_ctx.append(create_background_task_to_fake_payment_completion(wait_period_s=3))

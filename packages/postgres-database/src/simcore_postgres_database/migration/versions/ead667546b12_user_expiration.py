@@ -5,6 +5,7 @@ Revises: 9d477e20d06e
 Create Date: 2022-09-12 14:09:04.385524+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -28,11 +29,6 @@ def downgrade():
 
     # https://medium.com/makimo-tech-blog/upgrading-postgresqls-enum-type-with-sqlalchemy-using-alembic-migration-881af1e30abe
     op.execute("ALTER TYPE userstatus RENAME TO userstatus_old")
-    op.execute(
-        "CREATE TYPE userstatus AS ENUM('CONFIRMATION_PENDING', 'ACTIVE', 'BANNED')"
-    )
-    op.execute(
-        "ALTER TABLE users ALTER COLUMN status TYPE userstatus USING "
-        "status::text::userstatus"
-    )
+    op.execute("CREATE TYPE userstatus AS ENUM('CONFIRMATION_PENDING', 'ACTIVE', 'BANNED')")
+    op.execute("ALTER TABLE users ALTER COLUMN status TYPE userstatus USING status::text::userstatus")
     op.execute("DROP TYPE userstatus_old")

@@ -58,9 +58,7 @@ async def client(
         session = await get_session(request)
         return web.json_response(dict(session))
 
-    tracing_config = TracingConfig.create(
-        service_name="test-webserver", tracing_settings=None
-    )
+    tracing_config = TracingConfig.create(service_name="test-webserver", tracing_settings=None)
     app = create_application(tracing_config=tracing_config)
     disable_static_webserver(app)
 
@@ -119,21 +117,14 @@ async def test_security_identity_is_email_and_product(
         None,
     ],
 )
-def test_session_settings(
-    session_key: str | bytes | None, mock_env_devel_environment: EnvVarsDict
-):
+def test_session_settings(session_key: str | bytes | None, mock_env_devel_environment: EnvVarsDict):
     if session_key is not None:
         settings = SessionSettings(WEBSERVER_SESSION_SECRET_KEY=session_key)
     else:
         settings = SessionSettings()
 
-        WEBSERVER_SESSION_SECRET_KEY = mock_env_devel_environment[
-            "WEBSERVER_SESSION_SECRET_KEY"
-        ]
-        assert (
-            settings.SESSION_SECRET_KEY.get_secret_value()
-            == WEBSERVER_SESSION_SECRET_KEY
-        )
+        WEBSERVER_SESSION_SECRET_KEY = mock_env_devel_environment["WEBSERVER_SESSION_SECRET_KEY"]
+        assert settings.SESSION_SECRET_KEY.get_secret_value() == WEBSERVER_SESSION_SECRET_KEY
 
     _should_not_raise = SharedCookieEncryptedCookieStorage(
         # NOTE: we pass here a string!

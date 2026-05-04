@@ -21,9 +21,7 @@ from simcore_service_webserver.users import _users_service
 from simcore_service_webserver.wallets import _api as _wallets_service
 from simcore_service_webserver.wallets import _db as _wallets_repository
 
-CreateTokenCallable: TypeAlias = Callable[
-    [int, ActionLiteralStr, str | None], Coroutine[Any, Any, Confirmation]
-]
+CreateTokenCallable: TypeAlias = Callable[[int, ActionLiteralStr, str | None], Coroutine[Any, Any, Confirmation]]
 
 
 @pytest.fixture
@@ -32,12 +30,8 @@ async def create_valid_confirmation_token(
 ) -> CreateTokenCallable:
     """Fixture to create a valid confirmation token for a given action."""
 
-    async def _create_token(
-        user_id: int, action: ActionLiteralStr, data: str | None = None
-    ) -> Confirmation:
-        return await confirmation_repository.create_confirmation(
-            user_id=user_id, action=action, data=data
-        )
+    async def _create_token(user_id: int, action: ActionLiteralStr, data: str | None = None) -> Confirmation:
+        return await confirmation_repository.create_confirmation(user_id=user_id, action=action, data=data)
 
     return _create_token
 
@@ -50,9 +44,7 @@ async def test_confirm_registration(
 ):
     assert unconfirmed_user["status"] == UserStatus.CONFIRMATION_PENDING
     target_user_id = unconfirmed_user["id"]
-    confirmation = await create_valid_confirmation_token(
-        target_user_id, "REGISTRATION", None
-    )
+    confirmation = await create_valid_confirmation_token(target_user_id, "REGISTRATION", None)
     code = confirmation.code
 
     # clicks link to confirm registration
@@ -91,9 +83,7 @@ async def test_confirm_change_email(
     assert registered_user["status"] == UserStatus.ACTIVE
 
     user_id = registered_user["id"]
-    confirmation = await create_valid_confirmation_token(
-        user_id, "CHANGE_EMAIL", "new_" + registered_user["email"]
-    )
+    confirmation = await create_valid_confirmation_token(user_id, "CHANGE_EMAIL", "new_" + registered_user["email"])
     code = confirmation.code
 
     # clicks link to confirm registration
@@ -112,9 +102,7 @@ async def test_confirm_reset_password(
     registered_user: UserInfoDict,
 ):
     user_id = registered_user["id"]
-    confirmation = await create_valid_confirmation_token(
-        user_id, "RESET_PASSWORD", None
-    )
+    confirmation = await create_valid_confirmation_token(user_id, "RESET_PASSWORD", None)
     code = confirmation.code
 
     response = await client.get(f"/v0/auth/confirmation/{code}")
@@ -123,11 +111,7 @@ async def test_confirm_reset_password(
     # checks redirection
     assert len(response.history) == 1
     assert response.history[0].status == status.HTTP_302_FOUND
-    assert (
-        response.history[0]
-        .headers["Location"]
-        .endswith(f"/#reset-password?code={code}")
-    )
+    assert response.history[0].headers["Location"].endswith(f"/#reset-password?code={code}")
 
 
 async def test_handler_exception_logging(
@@ -139,13 +123,14 @@ async def test_handler_exception_logging(
     confirmation = await create_valid_confirmation_token(user_id, "REGISTRATION", None)
     code = confirmation.code
 
-    with patch(
-        "simcore_service_webserver.login._controller.rest.confirmation._handle_confirm_registration",
-        new_callable=AsyncMock,
-        side_effect=Exception("Test exception"),
-    ) as mock_handler, patch(
-        "simcore_service_webserver.login._controller.rest.confirmation._logger.exception"
-    ) as mock_logger:
+    with (
+        patch(
+            "simcore_service_webserver.login._controller.rest.confirmation._handle_confirm_registration",
+            new_callable=AsyncMock,
+            side_effect=Exception("Test exception"),
+        ) as mock_handler,
+        patch("simcore_service_webserver.login._controller.rest.confirmation._logger.exception") as mock_logger,
+    ):
         response = await client.get(f"/v0/auth/confirmation/{code}")
         assert response.status == status.HTTP_200_OK
 

@@ -10,9 +10,7 @@ _logger = logging.getLogger(__name__)
 
 main = typer.Typer(name=PROJECT_NAME)
 
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
 main.callback()(create_version_callback(__version__))
 
 

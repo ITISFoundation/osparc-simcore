@@ -69,12 +69,10 @@ async def test_function_job_collection(
         for _ in range(3)
     ]
     # Register the function jobs
-    registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.batch_register_function_jobs(
-            function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    registered_jobs_batch_create = await webserver_rpc_client.functions.batch_register_function_jobs(
+        function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     registered_jobs = registered_jobs_batch_create.created_items
     assert len(registered_jobs) == 3
@@ -88,25 +86,19 @@ async def test_function_job_collection(
     )
 
     # Register the function job collection
-    registered_collection = (
-        await webserver_rpc_client.functions.register_function_job_collection(
-            function_job_collection=function_job_collection,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    registered_collection = await webserver_rpc_client.functions.register_function_job_collection(
+        function_job_collection=function_job_collection,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert registered_collection.uid is not None
-    assert registered_collection.created_at - datetime.datetime.now(
-        datetime.UTC
-    ) < datetime.timedelta(seconds=60)
+    assert registered_collection.created_at - datetime.datetime.now(datetime.UTC) < datetime.timedelta(seconds=60)
 
     # Get the function job collection
-    retrieved_collection = (
-        await webserver_rpc_client.functions.get_function_job_collection(
-            function_job_collection_id=registered_collection.uid,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    retrieved_collection = await webserver_rpc_client.functions.get_function_job_collection(
+        function_job_collection_id=registered_collection.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert retrieved_collection.uid == registered_collection.uid
     assert registered_collection.job_ids == function_job_ids
@@ -200,12 +192,10 @@ async def test_create_function_job_collection_same_function_job_uuid(
         job_creation_task_id=None,
     )
     # Register the function job
-    registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.batch_register_function_jobs(
-            function_jobs=[registered_function_job],
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    registered_jobs_batch_create = await webserver_rpc_client.functions.batch_register_function_jobs(
+        function_jobs=[registered_function_job],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     registered_jobs = registered_jobs_batch_create.created_items
     assert len(registered_jobs) == 1
@@ -240,13 +230,11 @@ async def test_list_function_job_collections(
     osparc_product_name: ProductName,
 ):
     # List function job collections when none are registered
-    collections, page_meta = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=10,
-            pagination_offset=0,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    collections, page_meta = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list is empty
@@ -277,12 +265,10 @@ async def test_list_function_job_collections(
         for _ in range(3)
     ]
     # Register the function jobs
-    registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.batch_register_function_jobs(
-            function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    registered_jobs_batch_create = await webserver_rpc_client.functions.batch_register_function_jobs(
+        function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     registered_jobs = registered_jobs_batch_create.created_items
     assert len(registered_jobs) == 3
@@ -303,19 +289,14 @@ async def test_list_function_job_collections(
         )
         for _ in range(3)
     ]
-    assert all(
-        registered_collection.uid is not None
-        for registered_collection in registered_collections
-    )
+    assert all(registered_collection.uid is not None for registered_collection in registered_collections)
 
     # List function job collections
-    collections, page_params = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=2,
-            pagination_offset=1,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    collections, page_params = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=2,
+        pagination_offset=1,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered collection
@@ -323,12 +304,8 @@ async def test_list_function_job_collections(
     assert page_params.total == 3
     assert page_params.offset == 1
     assert len(collections) == 2
-    assert collections[0].uid in [
-        collection.uid for collection in registered_collections
-    ]
-    assert collections[1].uid in [
-        collection.uid for collection in registered_collections
-    ]
+    assert collections[0].uid in [collection.uid for collection in registered_collections]
+    assert collections[1].uid in [collection.uid for collection in registered_collections]
 
 
 @pytest.mark.parametrize(
@@ -377,14 +354,10 @@ async def test_list_function_job_collections_filtered_function_id(
             for _ in range(3)
         ]
         # Register the function job
-        registered_jobs_batch_create = (
-            await webserver_rpc_client.functions.batch_register_function_jobs(
-                function_jobs=TypeAdapter(FunctionJobList).validate_python(
-                    function_jobs
-                ),
-                user_id=logged_user["id"],
-                product_name=osparc_product_name,
-            )
+        registered_jobs_batch_create = await webserver_rpc_client.functions.batch_register_function_jobs(
+            function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
         registered_jobs = registered_jobs_batch_create.created_items
         assert len(registered_jobs) == 3
@@ -398,26 +371,20 @@ async def test_list_function_job_collections_filtered_function_id(
         )
 
         # Register the function job collection
-        registered_collection = (
-            await webserver_rpc_client.functions.register_function_job_collection(
-                function_job_collection=function_job_collection,
-                user_id=logged_user["id"],
-                product_name=osparc_product_name,
-            )
+        registered_collection = await webserver_rpc_client.functions.register_function_job_collection(
+            function_job_collection=function_job_collection,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
         )
         registered_collections.append(registered_collection)
 
     # List function job collections with a specific function ID
-    collections, page_meta = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=10,
-            pagination_offset=1,
-            filters=FunctionJobCollectionsListFilters(
-                has_function_id=FunctionIDString(registered_function.uid)
-            ),
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    collections, page_meta = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=10,
+        pagination_offset=1,
+        filters=FunctionJobCollectionsListFilters(has_function_id=FunctionIDString(registered_function.uid)),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered collection
@@ -426,9 +393,5 @@ async def test_list_function_job_collections_filtered_function_id(
     assert page_meta.offset == 1
 
     assert len(collections) == 2
-    assert collections[0].uid in [
-        collection.uid for collection in registered_collections
-    ]
-    assert collections[1].uid in [
-        collection.uid for collection in registered_collections
-    ]
+    assert collections[0].uid in [collection.uid for collection in registered_collections]
+    assert collections[1].uid in [collection.uid for collection in registered_collections]

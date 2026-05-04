@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -56,7 +56,7 @@ def resource_tracker_setup_db(
                     user_id=_USER_ID,
                     service_run_id=_SERVICE_RUN_ID_1,
                     product_name="osparc",
-                    started_at=datetime.now(tz=timezone.utc),
+                    started_at=datetime.now(tz=UTC),
                 )
             )
             .returning(resource_tracker_service_runs)
@@ -70,7 +70,7 @@ def resource_tracker_setup_db(
                     user_id=_USER_ID,
                     service_run_id=_SERVICE_RUN_ID_2,
                     product_name="osparc",
-                    started_at=datetime.now(tz=timezone.utc) - timedelta(days=1),
+                    started_at=datetime.now(tz=UTC) - timedelta(days=1),
                 )
             )
             .returning(resource_tracker_service_runs)
@@ -99,7 +99,7 @@ def resource_tracker_setup_db(
         con.execute(resource_tracker_service_runs.delete())
 
 
-@pytest.mark.rpc_test()
+@pytest.mark.rpc_test
 async def test_rpc_list_service_runs_which_was_billed(
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
@@ -121,17 +121,15 @@ async def test_rpc_list_service_runs_which_was_billed(
     assert result.items[0].transaction_status in list(CreditTransactionStatus)
     _get_service_run_id = result.items[0].service_run_id
 
-    result = (
-        await credit_transactions.get_transaction_current_credits_by_service_run_id(
-            rpc_client,
-            service_run_id=_get_service_run_id,
-        )
+    result = await credit_transactions.get_transaction_current_credits_by_service_run_id(
+        rpc_client,
+        service_run_id=_get_service_run_id,
     )
     assert isinstance(result, Decimal)
     assert result == _get_credit_cost
 
 
-@pytest.mark.rpc_test()
+@pytest.mark.rpc_test
 async def test_rpc_list_service_runs_with_filtered_by__started_at(
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
@@ -144,8 +142,8 @@ async def test_rpc_list_service_runs_with_filtered_by__started_at(
         product_name="osparc",
         filters=ServiceResourceUsagesFilters(
             started_at=StartedAt(
-                from_=datetime.now(timezone.utc) + timedelta(days=1),
-                until=datetime.now(timezone.utc) + timedelta(days=1),
+                from_=datetime.now(UTC) + timedelta(days=1),
+                until=datetime.now(UTC) + timedelta(days=1),
             )
         ),
     )
@@ -159,8 +157,8 @@ async def test_rpc_list_service_runs_with_filtered_by__started_at(
         product_name="osparc",
         filters=ServiceResourceUsagesFilters(
             started_at=StartedAt(
-                from_=datetime.now(timezone.utc),
-                until=datetime.now(timezone.utc),
+                from_=datetime.now(UTC),
+                until=datetime.now(UTC),
             )
         ),
     )
@@ -173,7 +171,7 @@ async def test_rpc_list_service_runs_with_filtered_by__started_at(
     "direction,service_run_id",
     [(OrderDirection.DESC, _SERVICE_RUN_ID_1), (OrderDirection.ASC, _SERVICE_RUN_ID_2)],
 )
-@pytest.mark.rpc_test()
+@pytest.mark.rpc_test
 async def test_rpc_list_service_runs_with_order_by__started_at(
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
@@ -195,7 +193,7 @@ async def test_rpc_list_service_runs_with_order_by__started_at(
     assert result.items[0].service_run_id == service_run_id
 
 
-@pytest.mark.rpc_test()
+@pytest.mark.rpc_test
 async def test_rpc_list_service_runs_raising_custom_error(
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,

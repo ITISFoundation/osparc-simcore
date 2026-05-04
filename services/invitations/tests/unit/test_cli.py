@@ -56,9 +56,7 @@ def test_invite_user_and_check_invitation(
         other_options = f"--trial-account-days={invitation_data.trial_account_days}"
 
     if invitation_data.extra_credits_in_usd:
-        other_options += (
-            f" --extra-credits-in-usd={invitation_data.extra_credits_in_usd}"
-        )
+        other_options += f" --extra-credits-in-usd={invitation_data.extra_credits_in_usd}"
 
     result = cli_runner.invoke(
         main,
@@ -70,17 +68,14 @@ def test_invite_user_and_check_invitation(
     # NOTE: for some reason, when running from CLI the outputs get folded!
     invitation_url = result.stdout.replace("\n", "")
 
-    # invitations-maker extrac https://foo#invitation=123
+    # invitations-maker extract https://foo#invitation=123
     result = cli_runner.invoke(
         main,
         f'extract "{invitation_url}"',
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
-    assert (
-        expected_invitation
-        == TypeAdapter(InvitationInputs).validate_json(result.stdout).model_dump()
-    )
+    assert expected_invitation == TypeAdapter(InvitationInputs).validate_json(result.stdout).model_dump()
 
 
 def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
@@ -106,9 +101,7 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     assert settings == ApplicationSettings.create_from_envs()
 
 
-def test_extract_invalid_invitation_code(
-    cli_runner: CliRunner, faker: Faker, app_environment: EnvVarsDict
-):
+def test_extract_invalid_invitation_code(cli_runner: CliRunner, faker: Faker, app_environment: EnvVarsDict):
     """Test that extract command handles invalid invitation codes properly"""
     # Create an invalid invitation URL
     invalid_invitation_url = f"{faker.url()}#invitation=invalid_code_123"

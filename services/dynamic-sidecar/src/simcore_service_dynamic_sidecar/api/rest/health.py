@@ -9,7 +9,7 @@ from ...models.schemas.application_health import ApplicationHealth
 from ._dependencies import (
     get_application_health,
     get_rabbitmq_client,
-    get_rabbitmq_rpc_server,
+    get_rabbitmq_rpc_client,
 )
 
 router = APIRouter()
@@ -18,23 +18,17 @@ router = APIRouter()
 @router.get(
     "/health",
     response_model=ApplicationHealth,
-    responses={
-        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service is unhealthy"}
-    },
+    responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service is unhealthy"}},
 )
 async def health_endpoint(
     application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
-    rabbitmq_rpc_server: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_server)],
+    rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
 ) -> ApplicationHealth:
     if not application_health.is_healthy:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.model_dump()
-        )
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.model_dump())
 
-    if not rabbitmq_client.healthy or not rabbitmq_rpc_server.healthy:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail=RABBITMQ_CLIENT_UNHEALTHY_MSG
-        )
+    if not rabbitmq_client.healthy or not rabbitmq_rpc_client.healthy:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     return application_health

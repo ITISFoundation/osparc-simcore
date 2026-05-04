@@ -369,15 +369,9 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
         },
         "ui": {
             "workbench": {
-                "fc9208d9-1a0a-430c-9951-9feaf1de3368": {
-                    "position": {"x": 48, "y": 42}
-                },
-                "87663253-cecb-40e8-8429-dd2cd875166e": {
-                    "position": {"x": 306, "y": 66}
-                },
-                "305e9552-06fd-48a5-b9bc-36a8563fed67": {
-                    "position": {"x": 570, "y": 119}
-                },
+                "fc9208d9-1a0a-430c-9951-9feaf1de3368": {"position": {"x": 48, "y": 42}},
+                "87663253-cecb-40e8-8429-dd2cd875166e": {"position": {"x": 306, "y": 66}},
+                "305e9552-06fd-48a5-b9bc-36a8563fed67": {"position": {"x": 570, "y": 119}},
             },
             "slideshow": {},
             "currentNodeId": "18f1938c-567d-11ec-b2f3-02420a000010",
@@ -500,15 +494,9 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
                 "mode": "workbench",
                 "slideshow": {},
                 "workbench": {
-                    "305e9552-06fd-48a5-b9bc-36a8563fed67": {
-                        "position": {"x": 570, "y": 119}
-                    },
-                    "87663253-cecb-40e8-8429-dd2cd875166e": {
-                        "position": {"x": 306, "y": 66}
-                    },
-                    "fc9208d9-1a0a-430c-9951-9feaf1de3368": {
-                        "position": {"x": 48, "y": 42}
-                    },
+                    "305e9552-06fd-48a5-b9bc-36a8563fed67": {"position": {"x": 570, "y": 119}},
+                    "87663253-cecb-40e8-8429-dd2cd875166e": {"position": {"x": 306, "y": 66}},
+                    "fc9208d9-1a0a-430c-9951-9feaf1de3368": {"position": {"x": 48, "y": 42}},
                 },
                 "currentNodeId": "18f1938c-567d-11ec-b2f3-02420a000010",
             },
@@ -675,15 +663,9 @@ LIST_PROJECTS = HttpApiCallCapture(
                     "mode": "workbench",
                     "slideshow": {},
                     "workbench": {
-                        "305e9552-06fd-48a5-b9bc-36a8563fed67": {
-                            "position": {"x": 570, "y": 119}
-                        },
-                        "87663253-cecb-40e8-8429-dd2cd875166e": {
-                            "position": {"x": 306, "y": 66}
-                        },
-                        "fc9208d9-1a0a-430c-9951-9feaf1de3368": {
-                            "position": {"x": 48, "y": 42}
-                        },
+                        "305e9552-06fd-48a5-b9bc-36a8563fed67": {"position": {"x": 570, "y": 119}},
+                        "87663253-cecb-40e8-8429-dd2cd875166e": {"position": {"x": 306, "y": 66}},
+                        "fc9208d9-1a0a-430c-9951-9feaf1de3368": {"position": {"x": 48, "y": 42}},
                     },
                     "currentNodeId": "18f1938c-567d-11ec-b2f3-02420a000010",
                 },
@@ -1030,13 +1012,7 @@ CREATE_FROM_SERVICE = HttpApiCallCapture(
                 "label": "sleeper",
             }
         },
-        "ui": {
-            "workbench": {
-                "5ecf6ef9-7600-4ac2-abe5-c3a2cc714e32": {
-                    "position": {"x": 250, "y": 100}
-                }
-            }
-        },
+        "ui": {"workbench": {"5ecf6ef9-7600-4ac2-abe5-c3a2cc714e32": {"position": {"x": 250, "y": 100}}}},
     },
     response_body={
         "data": {

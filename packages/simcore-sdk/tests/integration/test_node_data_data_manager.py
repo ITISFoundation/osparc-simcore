@@ -19,7 +19,6 @@ from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.progress_bar import ProgressBarData
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common import filemanager
@@ -72,10 +71,7 @@ def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     if path_to_hash.is_file():
         return {(_relative_path(path_to_hash, path_to_hash), _hash_path(path_to_hash))}
 
-    return {
-        (_relative_path(path_to_hash, path), _hash_path(path))
-        for path in path_to_hash.rglob("*")
-    }
+    return {(_relative_path(path_to_hash, path), _hash_path(path)) for path in path_to_hash.rglob("*")}
 
 
 def _make_file_with_content(file_path: Path) -> Path:
@@ -155,7 +151,6 @@ async def test_valid_upload_download(
     project_id: ProjectID,
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
-    aws_s3_cli_settings: AwsS3CliSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
@@ -163,12 +158,11 @@ async def test_valid_upload_download(
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             source_path=content_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
-            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(1.0)  # noqa: SLF001
 
@@ -179,12 +173,11 @@ async def test_valid_upload_download(
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             destination_path=content_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(2.0)  # noqa: SLF001
 
@@ -201,7 +194,6 @@ async def test_valid_upload_download_saved_to(
     node_uuid: NodeID,
     random_tmp_dir_generator: Callable,
     r_clone_settings: RCloneSettings,
-    aws_s3_cli_settings: AwsS3CliSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
@@ -209,12 +201,11 @@ async def test_valid_upload_download_saved_to(
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             source_path=content_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
-            aws_s3_cli_settings=None,
         )
         # pylint: disable=protected-access
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
@@ -228,13 +219,12 @@ async def test_valid_upload_download_saved_to(
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             destination_path=content_path,
             save_to=new_destination,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 
@@ -281,7 +271,7 @@ async def test_delete_legacy_archive(
             await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
                 project_id=project_id,
-                node_uuid=node_uuid,
+                node_id=node_uuid,
                 path=content_path,
                 is_archive=True,
             )
@@ -290,7 +280,7 @@ async def test_delete_legacy_archive(
 
         await data_manager._delete_legacy_archive(  # noqa: SLF001
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_uuid,
             path=content_path,
             application_name=faker.pystr(),
         )
@@ -299,7 +289,7 @@ async def test_delete_legacy_archive(
             await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
                 project_id=project_id,
-                node_uuid=node_uuid,
+                node_id=node_uuid,
                 path=content_path,
                 is_archive=True,
             )

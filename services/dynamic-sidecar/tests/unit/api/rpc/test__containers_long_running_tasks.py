@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock
 import aiodocker
 import faker
 import pytest
+import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from common_library.serialization import model_dump_with_secrets
@@ -64,6 +65,7 @@ from tenacity import (
 from utils import get_lrt_result
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
 ]
 
@@ -161,18 +163,19 @@ def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
 @pytest.fixture
 def mock_environment(
     monkeypatch: pytest.MonkeyPatch,
+    postgres_db: sa.engine.Engine,
+    postgres_env_vars_dict: EnvVarsDict,
     rabbit_service: RabbitSettings,
     mock_environment: EnvVarsDict,
+    simcore_services_ready: None,
 ) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            **mock_environment,
-            "RABBIT_SETTINGS": json.dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
-        },
-    )
+    envs = {
+        **mock_environment,
+        "RABBIT_SETTINGS": json.dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
+        **postgres_env_vars_dict,
+    }
+    setenvs_from_dict(monkeypatch, envs)
+    return envs
 
 
 @pytest.fixture
@@ -232,9 +235,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         ["first_port", "second_port"],
     ]
 )
-async def mock_port_keys(
-    request: pytest.FixtureRequest, app: FastAPI
-) -> list[str] | None:
+async def mock_port_keys(request: pytest.FixtureRequest, app: FastAPI) -> list[str] | None:
     outputs_context: OutputsContext = app.state.outputs_context
     if request.param is not None:
         await outputs_context.set_file_type_port_keys(request.param)
@@ -286,9 +287,7 @@ async def _get_task_id_create_service_containers_task(
     containers_compose_spec = ContainersComposeSpec(
         docker_compose_yaml=compose_spec,
     )
-    await containers.create_compose_spec(
-        rpc_client, node_id=node_id, containers_compose_spec=containers_compose_spec
-    )
+    await containers.create_compose_spec(rpc_client, node_id=node_id, containers_compose_spec=containers_compose_spec)
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
     return await containers_long_running_tasks.create_user_services(
         rpc_client,
@@ -386,21 +385,15 @@ async def _get_task_id_task_containers_restart_task(
     )
 
 
-async def _debug_progress(
-    message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
-) -> None:
+async def _debug_progress(message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId) -> None:
     print(f"{task_id} {percent} {message}")
 
 
 class _LastProgressMessageTracker:
     def __init__(self) -> None:
-        self.last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = (
-            None
-        )
+        self.last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = None
 
-    async def __call__(
-        self, message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-    ) -> None:
+    async def __call__(self, message: ProgressMessage, percent: ProgressPercent | None, _: TaskId) -> None:
         assert percent is not None
         self.last_progress_message = (message, percent)
         print(message, percent)
@@ -505,17 +498,20 @@ async def test_create_containers_task_invalid_yaml_spec(
 
 
 @pytest.mark.parametrize(
-    "get_task_id_callable",
+    "get_task_id_callable, endswith",
     [
-        _get_task_id_pull_user_services_docker_images_task,
-        _get_task_id_create_service_containers_task,
-        _get_task_id_runs_docker_compose_down_task,
-        _get_task_id_state_restore_task,
-        _get_task_id_state_save_task,
-        _get_task_id_ports_inputs_pull_task,
-        _get_task_id_ports_outputs_pull_task,
-        _get_task_id_ports_outputs_push_task,
-        _get_task_id_task_containers_restart_task,
+        (_get_task_id_pull_user_services_docker_images_task, "unique"),
+        (_get_task_id_create_service_containers_task, "unique"),
+        (_get_task_id_runs_docker_compose_down_task, "unique"),
+        (_get_task_id_state_restore_task, "unique"),
+        (_get_task_id_state_save_task, "unique"),
+        (
+            _get_task_id_ports_inputs_pull_task,
+            "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
+        ),
+        (_get_task_id_ports_outputs_pull_task, "unique"),
+        (_get_task_id_ports_outputs_push_task, "unique"),
+        (_get_task_id_task_containers_restart_task, "unique"),
     ],
 )
 async def test_same_task_id_is_returned_if_task_exists(
@@ -526,6 +522,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     lrt_namespace: LRTNamespace,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable[TaskId]],
+    endswith: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     compose_spec: str,
@@ -542,12 +539,10 @@ async def test_same_task_id_is_returned_if_task_exists(
 
     async def _assert_task_removed(task_id: TaskId) -> None:
         await lrt_api.remove_task(rpc_client, lrt_namespace, {}, task_id)
-        await assert_task_is_no_longer_present(
-            get_fastapi_long_running_manager(app), task_id, {}
-        )
+        await assert_task_is_no_longer_present(get_fastapi_long_running_manager(app), task_id, {})
 
     task_id = await _get_awaitable()
-    assert task_id.endswith("unique")
+    assert task_id.endswith(endswith)
     assert await _get_awaitable() == task_id
 
     await _assert_task_removed(task_id)
@@ -555,7 +550,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     # since the previous task was already removed it is again possible
     # to create a task and it will share the same task_id
     new_task_id = await _get_awaitable()
-    assert new_task_id.endswith("unique")
+    assert new_task_id.endswith(endswith)
     assert new_task_id == task_id
 
     await _assert_task_removed(task_id)
@@ -590,9 +585,7 @@ async def test_containers_down_after_starting(
     result = await get_lrt_result(
         rpc_client,
         lrt_namespace,
-        task_id=await _get_task_id_runs_docker_compose_down_task(
-            rpc_client, node_id, lrt_namespace
-        ),
+        task_id=await _get_task_id_runs_docker_compose_down_task(rpc_client, node_id, lrt_namespace),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
@@ -609,9 +602,7 @@ async def test_containers_down_missing_spec(
     result = await get_lrt_result(
         rpc_client,
         lrt_namespace,
-        task_id=await _get_task_id_runs_docker_compose_down_task(
-            rpc_client, node_id, lrt_namespace
-        ),
+        task_id=await _get_task_id_runs_docker_compose_down_task(rpc_client, node_id, lrt_namespace),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
@@ -629,9 +620,7 @@ async def test_container_restore_state(
     result = await get_lrt_result(
         rpc_client,
         lrt_namespace,
-        task_id=await _get_task_id_state_restore_task(
-            rpc_client, node_id, lrt_namespace
-        ),
+        task_id=await _get_task_id_state_restore_task(rpc_client, node_id, lrt_namespace),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
@@ -672,9 +661,7 @@ async def test_container_pull_input_ports(
     result = await get_lrt_result(
         rpc_client,
         lrt_namespace,
-        task_id=await _get_task_id_ports_inputs_pull_task(
-            rpc_client, node_id, lrt_namespace, mock_port_keys
-        ),
+        task_id=await _get_task_id_ports_inputs_pull_task(rpc_client, node_id, lrt_namespace, mock_port_keys),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
@@ -692,9 +679,7 @@ async def test_container_pull_output_ports(
     result = await get_lrt_result(
         rpc_client,
         lrt_namespace,
-        task_id=await _get_task_id_ports_outputs_pull_task(
-            rpc_client, node_id, lrt_namespace, mock_port_keys
-        ),
+        task_id=await _get_task_id_ports_outputs_pull_task(rpc_client, node_id, lrt_namespace, mock_port_keys),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
@@ -712,9 +697,7 @@ async def test_container_push_output_ports(
     result = await get_lrt_result(
         rpc_client,
         lrt_namespace,
-        task_id=await _get_task_id_ports_outputs_push_task(
-            rpc_client, node_id, lrt_namespace, mock_port_keys
-        ),
+        task_id=await _get_task_id_ports_outputs_push_task(rpc_client, node_id, lrt_namespace, mock_port_keys),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
@@ -738,9 +721,7 @@ async def test_container_push_output_ports_missing_node(
         await get_lrt_result(
             rpc_client,
             lrt_namespace,
-            task_id=await _get_task_id_ports_outputs_push_task(
-                rpc_client, node_id, lrt_namespace, mock_port_keys
-            ),
+            task_id=await _get_task_id_ports_outputs_push_task(rpc_client, node_id, lrt_namespace, mock_port_keys),
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
             progress_callback=_debug_progress,
@@ -782,9 +763,7 @@ async def test_containers_restart(
     result = await get_lrt_result(
         rpc_client,
         lrt_namespace,
-        task_id=await _get_task_id_task_containers_restart_task(
-            rpc_client, node_id, lrt_namespace
-        ),
+        task_id=await _get_task_id_task_containers_restart_task(rpc_client, node_id, lrt_namespace),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,

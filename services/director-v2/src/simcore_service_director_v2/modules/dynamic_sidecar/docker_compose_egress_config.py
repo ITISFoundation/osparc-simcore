@@ -134,9 +134,7 @@ def _get_envoy_config(proxy_rules: OrderedSet[_ProxyRule]) -> dict[str, Any]:
         listener_name = f"listener_{k}"
         cluster_name = f"cluster_{k}"
 
-        listener = _get_tcp_listener(
-            name=listener_name, port=port, cluster_name=cluster_name
-        )
+        listener = _get_tcp_listener(name=listener_name, port=port, cluster_name=cluster_name)
         cluster = _get_tcp_cluster(
             cluster_name=cluster_name,
             dns_address=host_data.dns_resolver_address,
@@ -161,9 +159,7 @@ def _get_egress_proxy_network_name(egress_proxy_name: str) -> str:
     return egress_proxy_name
 
 
-def _add_egress_proxy_network(
-    service_spec: ComposeSpecLabelDict, egress_proxy_name: str
-) -> None:
+def _add_egress_proxy_network(service_spec: ComposeSpecLabelDict, egress_proxy_name: str) -> None:
     networks = service_spec.get("networks", {})
     networks[_get_egress_proxy_network_name(egress_proxy_name)] = {"internal": True}
     service_spec["networks"] = networks
@@ -199,9 +195,7 @@ def _get_egress_proxy_service_config(
             # allows the proxy to access the internet
             network_with_internet: None,
             # allows containers to contact proxy via these aliases
-            _get_egress_proxy_network_name(egress_proxy_name): {
-                "aliases": list(network_aliases)
-            },
+            _get_egress_proxy_network_name(egress_proxy_name): {"aliases": list(network_aliases)},
         },
     }
     return egress_proxy_config
@@ -221,12 +215,8 @@ def _get_egress_proxy_dns_port_rules(
             port_to_hostname[port].add(
                 _HostData(
                     hostname=raise_if_unresolved(host_permit_list_policy.hostname),
-                    dns_resolver_address=raise_if_unresolved(
-                        host_permit_list_policy.dns_resolver.address
-                    ),
-                    dns_resolver_port=raise_if_unresolved(
-                        host_permit_list_policy.dns_resolver.port
-                    ),
+                    dns_resolver_address=raise_if_unresolved(host_permit_list_policy.dns_resolver.address),
+                    dns_resolver_port=raise_if_unresolved(host_permit_list_policy.dns_resolver.port),
                 )
             )
 
@@ -247,9 +237,7 @@ def _get_egress_proxy_dns_port_rules(
     return sorted(grouped_proxy_rules)
 
 
-def _allow_outgoing_internet(
-    service_spec: ComposeSpecLabelDict, container_name: str
-) -> None:
+def _allow_outgoing_internet(service_spec: ComposeSpecLabelDict, container_name: str) -> None:
     # containers are allowed complete access to the internet by
     # connecting them to an isolated network (from the rest
     # of the deployment)
@@ -280,16 +268,12 @@ def add_egress_configuration(
     ):
         # placing containers with internet access in an isolated network
         service_networks = service_spec.setdefault("networks", {})
-        service_networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {
-            "internal": False
-        }
+        service_networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {"internal": False}
 
     # allow complete internet access to single container
     if simcore_service_labels.containers_allowed_outgoing_internet:
         # attach to network
-        for (
-            container_name
-        ) in simcore_service_labels.containers_allowed_outgoing_internet:
+        for container_name in simcore_service_labels.containers_allowed_outgoing_internet:
             _allow_outgoing_internet(service_spec, container_name)
 
     # allow internet access to containers based on DNS:PORT rules
@@ -316,9 +300,7 @@ def add_egress_configuration(
                     ] = container_name
 
         # assemble proxy configuration based on all HostPermitListPolicy entries
-        grouped_proxy_rules = _get_egress_proxy_dns_port_rules(
-            all_host_permit_list_policies
-        )
+        grouped_proxy_rules = _get_egress_proxy_dns_port_rules(all_host_permit_list_policies)
         for i, proxy_rules in enumerate(grouped_proxy_rules):
             egress_proxy_name = f"{SUFFIX_EGRESS_PROXY_NAME}-{i}"
 
@@ -341,9 +323,7 @@ def add_egress_configuration(
 
             # extract dependency between container_name and egress_proxy_name
             for proxy_rule in proxy_rules:
-                container_name = hostname_port_to_container_name[
-                    (proxy_rule[0].hostname, proxy_rule[1])
-                ]
+                container_name = hostname_port_to_container_name[(proxy_rule[0].hostname, proxy_rule[1])]
                 if container_name not in container_name_to_proxies_names:
                     container_name_to_proxies_names[container_name] = set()
                 container_name_to_proxies_names[container_name].add(egress_proxy_name)
@@ -352,9 +332,7 @@ def add_egress_configuration(
             # attach `depends_on` rules to all container
             service_spec["services"][container_name]["depends_on"] = list(proxy_names)
             # attach proxy network to allow
-            service_networks = service_spec["services"][container_name].get(
-                "networks", {}
-            )
+            service_networks = service_spec["services"][container_name].get("networks", {})
             for proxy_name in proxy_names:
                 service_networks[_get_egress_proxy_network_name(proxy_name)] = None
                 service_spec["services"][container_name]["networks"] = service_networks

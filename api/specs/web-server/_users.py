@@ -60,9 +60,7 @@ async def update_my_profile(_body: MyProfileRestPatch): ...
         status.HTTP_202_ACCEPTED: {"description": "Phone registration initiated"},
         status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
         status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Invalid phone number format"
-        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Invalid phone number format"},
     },
 )
 async def my_phone_register(_body: MyPhoneRegister): ...
@@ -74,9 +72,7 @@ async def my_phone_register(_body: MyPhoneRegister): ...
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_202_ACCEPTED: {"description": "Phone code resent"},
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "No pending phone registration found"
-        },
+        status.HTTP_400_BAD_REQUEST: {"description": "No pending phone registration found"},
         status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
         status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
     },
@@ -90,14 +86,10 @@ async def my_phone_resend(): ...
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_204_NO_CONTENT: {"description": "Phone registration confirmed"},
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "No pending registration or invalid code"
-        },
+        status.HTTP_400_BAD_REQUEST: {"description": "No pending registration or invalid code"},
         status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
         status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Invalid confirmation code format"
-        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Invalid confirmation code format"},
     },
 )
 async def my_phone_confirm(_body: MyPhoneConfirm): ...

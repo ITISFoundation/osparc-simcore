@@ -5,6 +5,7 @@ Revises: 90fa6f02cbc0
 Create Date: 2022-10-03 20:20:12.070407+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -21,12 +22,8 @@ def upgrade():
         "projects_to_products",
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column("product_name", sa.String(), nullable=False),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["product_name"],
             ["products.name"],

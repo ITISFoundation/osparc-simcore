@@ -48,9 +48,7 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_checkouts.c.modified,
 )
 
-assert set(LicensedItemCheckoutDB.model_fields) == {
-    c.name for c in _SELECTION_ARGS
-}  # nosec
+assert set(LicensedItemCheckoutDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
 
 
 async def create(
@@ -97,10 +95,7 @@ async def list_(
         .select_from(resource_tracker_licensed_items_checkouts)
         .where(
             (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
-            & (
-                resource_tracker_licensed_items_checkouts.c.wallet_id
-                == filter_wallet_id
-            )
+            & (resource_tracker_licensed_items_checkouts.c.wallet_id == filter_wallet_id)
         )
     )
 
@@ -111,9 +106,7 @@ async def list_(
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
         list_query = base_query.order_by(
-            sa.asc(
-                getattr(resource_tracker_licensed_items_checkouts.c, order_by.field)
-            ),
+            sa.asc(getattr(resource_tracker_licensed_items_checkouts.c, order_by.field)),
             resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id,
         )
     else:
@@ -134,9 +127,7 @@ async def list_(
             total_count = 0
 
         result = await conn.stream(list_query)
-        items: list[LicensedItemCheckoutDB] = [
-            LicensedItemCheckoutDB.model_validate(row) async for row in result
-        ]
+        items: list[LicensedItemCheckoutDB] = [LicensedItemCheckoutDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -152,10 +143,7 @@ async def get(
         sa.select(*_SELECTION_ARGS)
         .select_from(resource_tracker_licensed_items_checkouts)
         .where(
-            (
-                resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id
-                == licensed_item_checkout_id
-            )
+            (resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id == licensed_item_checkout_id)
             & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
         )
     )
@@ -164,9 +152,7 @@ async def get(
         result = await conn.stream(base_query)
         row = await result.first()
         if row is None:
-            raise LicensedItemCheckoutNotFoundError(
-                licensed_item_checkout_id=licensed_item_checkout_id
-            )
+            raise LicensedItemCheckoutNotFoundError(licensed_item_checkout_id=licensed_item_checkout_id)
         return LicensedItemCheckoutDB.model_validate(row)
 
 
@@ -185,10 +171,7 @@ async def update(
             stopped_at=stopped_at,
         )
         .where(
-            (
-                resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id
-                == licensed_item_checkout_id
-            )
+            (resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id == licensed_item_checkout_id)
             & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
             & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
         )
@@ -199,9 +182,7 @@ async def update(
         result = await conn.execute(update_stmt)
         row = result.first()
         if row is None:
-            raise LicensedItemCheckoutNotFoundError(
-                licensed_item_checkout_id=licensed_item_checkout_id
-            )
+            raise LicensedItemCheckoutNotFoundError(licensed_item_checkout_id=licensed_item_checkout_id)
         return LicensedItemCheckoutDB.model_validate(row)
 
 
@@ -214,17 +195,11 @@ async def get_currently_used_seats_for_key_version_wallet(
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> int:
-
-    sum_stmt = sa.select(
-        sa.func.sum(resource_tracker_licensed_items_checkouts.c.num_of_seats)
-    ).where(
+    sum_stmt = sa.select(sa.func.sum(resource_tracker_licensed_items_checkouts.c.num_of_seats)).where(
         (resource_tracker_licensed_items_checkouts.c.wallet_id == wallet_id)
         & (resource_tracker_licensed_items_checkouts.c.key == key)
         # If purchased version >= requested version, it covers that version
-        & (
-            db_utils.version(resource_tracker_licensed_items_checkouts.c.version)
-            >= db_utils.version(version)
-        )
+        & (db_utils.version(resource_tracker_licensed_items_checkouts.c.version) >= db_utils.version(version))
         & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
         & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
     )
@@ -256,10 +231,7 @@ async def force_release_license_seats_by_run_id(
             stopped_at=sa.func.now(),
         )
         .where(
-            (
-                resource_tracker_licensed_items_checkouts.c.service_run_id
-                == service_run_id
-            )
+            (resource_tracker_licensed_items_checkouts.c.service_run_id == service_run_id)
             & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
         )
         .returning(sa.literal_column("*"))
@@ -269,6 +241,4 @@ async def force_release_license_seats_by_run_id(
         result = await conn.execute(update_stmt)
         released_seats = result.fetchall()
         if released_seats:
-            _logger.error(
-                "Force release of %s seats: %s", len(released_seats), released_seats
-            )
+            _logger.error("Force release of %s seats: %s", len(released_seats), released_seats)

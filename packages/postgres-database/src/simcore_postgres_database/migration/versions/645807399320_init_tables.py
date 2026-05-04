@@ -5,6 +5,7 @@ Revises:
 Create Date: 2019-06-21 13:14:40.700747+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -27,9 +28,7 @@ def upgrade():
     op.create_table(
         "projects",
         sa.Column("id", sa.BigInteger(), nullable=False),
-        sa.Column(
-            "type", sa.Enum("TEMPLATE", "STANDARD", name="projecttype"), nullable=False
-        ),
+        sa.Column("type", sa.Enum("TEMPLATE", "STANDARD", name="projecttype"), nullable=False),
         sa.Column("uuid", sa.String(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=False),
@@ -100,9 +99,7 @@ def upgrade():
         ),
         sa.Column("data", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], name="user_confirmation_fkey", ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="user_confirmation_fkey", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("code", name="confirmation_code"),
     )
     op.create_table(

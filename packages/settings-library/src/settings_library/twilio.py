@@ -1,4 +1,4 @@
-""" Account settings for twilio.com service
+"""Account settings for twilio.com service
 
 For twilio SMS services:
     SEE https://www.twilio.com/docs/sms/quickstart/python
@@ -46,9 +46,7 @@ class TwilioSettings(BaseCustomSettings):
         # Some countries do not support alphanumeric serder ID
         #
         # SEE https://support.twilio.com/hc/en-us/articles/223181348-Alphanumeric-Sender-ID-for-Twilio-Programmable-SMS
-        phone_number_wo_international_code = (
-            phone_number.strip().removeprefix("00").lstrip("+")
-        )
+        phone_number_wo_international_code = phone_number.strip().removeprefix("00").lstrip("+")
         return any(
             phone_number_wo_international_code.startswith(code)
             for code in self.TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT  # pylint:disable=not-an-iterable

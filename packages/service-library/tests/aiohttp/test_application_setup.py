@@ -48,10 +48,7 @@ def app(app_config: dict) -> web.Application:
     return _app
 
 
-def test_setup_config_enabled(
-    app_config: dict, app: web.Application, app_settings_key: web.AppKey
-):
-
+def test_setup_config_enabled(app_config: dict, app: web.Application, app_settings_key: web.AppKey):
     @app_module_setup(
         "package.zee",
         ModuleCategory.ADDON,
@@ -72,10 +69,7 @@ def test_setup_config_enabled(
 
 
 def test_setup_dependencies(app: web.Application, app_settings_key: web.AppKey):
-
-    @app_module_setup(
-        "package.foo", ModuleCategory.ADDON, app_settings_key=app_settings_key
-    )
+    @app_module_setup("package.foo", ModuleCategory.ADDON, app_settings_key=app_settings_key)
     def setup_foo(app: web.Application) -> bool:
         return True
 
@@ -105,12 +99,8 @@ def test_setup_dependencies(app: web.Application, app_settings_key: web.AppKey):
     ]
 
 
-def test_marked_setup(
-    app_config: dict, app: web.Application, app_settings_key: web.AppKey
-):
-    @app_module_setup(
-        "package.foo", ModuleCategory.ADDON, app_settings_key=app_settings_key
-    )
+def test_marked_setup(app_config: dict, app: web.Application, app_settings_key: web.AppKey):
+    @app_module_setup("package.foo", ModuleCategory.ADDON, app_settings_key=app_settings_key)
     def setup_foo(app: web.Application) -> bool:
         return True
 
@@ -122,9 +112,7 @@ def test_marked_setup(
     assert not setup_foo(app)
 
 
-def test_skip_setup(
-    app: web.Application, mock_logger: MockType, app_settings_key: web.AppKey
-):
+def test_skip_setup(app: web.Application, mock_logger: MockType, app_settings_key: web.AppKey):
     @app_module_setup(
         "package.foo",
         ModuleCategory.ADDON,
@@ -164,9 +152,7 @@ def test_ensure_single_setup_runs_once(app: web.Application, mock_logger: MockTy
     assert not decorated(app)
 
 
-def test_ensure_single_setup_error_handling(
-    app: web.Application, mock_logger: MockType
-):
+def test_ensure_single_setup_error_handling(app: web.Application, mock_logger: MockType):
     decorated = ensure_single_setup("test.error", logger=mock_logger)(setup_that_raises)
 
     with pytest.raises(ValueError, match="Setup failed"):
@@ -174,9 +160,7 @@ def test_ensure_single_setup_error_handling(
     assert not is_setup_completed("test.error", app)
 
 
-def test_ensure_single_setup_multiple_modules(
-    app: web.Application, mock_logger: MockType
-):
+def test_ensure_single_setup_multiple_modules(app: web.Application, mock_logger: MockType):
     decorated1 = ensure_single_setup("module1", logger=mock_logger)(setup_basic)
     decorated2 = ensure_single_setup("module2", logger=mock_logger)(setup_basic)
 

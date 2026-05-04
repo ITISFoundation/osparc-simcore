@@ -4,9 +4,7 @@ from common_library.exclude import Unset, as_dict_exclude_none, as_dict_exclude_
 
 
 def test_as_dict_exclude_unset():
-    def f(
-        par1: str | Unset = Unset.VALUE, par2: int | Unset = Unset.VALUE
-    ) -> dict[str, Any]:
+    def f(par1: str | Unset = Unset.VALUE, par2: int | Unset = Unset.VALUE) -> dict[str, Any]:
         return as_dict_exclude_unset(par1=par1, par2=par2)
 
     assert f() == {}

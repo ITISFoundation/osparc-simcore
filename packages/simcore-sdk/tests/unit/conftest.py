@@ -38,9 +38,7 @@ async def mock_db_manager(
         async def mock_get_ports_configuration_from_node_uuid(*args, **kwargs) -> str:
             return json.dumps(port_cfg)
 
-        async def mock_write_ports_configuration(
-            self, json_configuration: str, p_id: str, n_id: str
-        ):
+        async def mock_write_ports_configuration(self, json_configuration: str, p_id: str, n_id: str):
             assert json.loads(json_configuration) == port_cfg
             assert p_id == project_id
             assert n_id == node_uuid

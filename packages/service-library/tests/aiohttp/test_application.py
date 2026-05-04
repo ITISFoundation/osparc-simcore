@@ -14,15 +14,9 @@ from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY, get_client
 
 async def test_create_safe_application(mocker: MockerFixture):  # noqa: PLR0915
     # setup spies before init
-    first_call_on_startup_spy = mocker.spy(
-        servicelib.aiohttp.application, "_first_call_on_startup"
-    )
-    first_call_on_cleanup_spy = mocker.spy(
-        servicelib.aiohttp.application, "_first_call_on_cleanup"
-    )
-    persistent_client_session_spy = mocker.spy(
-        servicelib.aiohttp.application, "persistent_client_session"
-    )
+    first_call_on_startup_spy = mocker.spy(servicelib.aiohttp.application, "_first_call_on_startup")
+    first_call_on_cleanup_spy = mocker.spy(servicelib.aiohttp.application, "_first_call_on_cleanup")
+    persistent_client_session_spy = mocker.spy(servicelib.aiohttp.application, "persistent_client_session")
 
     # some more events callbacks
     async def _other_on_startup(_app: web.Application):
@@ -31,18 +25,14 @@ async def test_create_safe_application(mocker: MockerFixture):  # noqa: PLR0915
         assert persistent_client_session_spy.call_count == 1
 
         # What if I add one more background task here?? OK
-        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(
-            asyncio.create_task(asyncio.sleep(100), name="startup")
-        )
+        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(asyncio.create_task(asyncio.sleep(100), name="startup"))
 
     async def _other_on_shutdown(_app: web.Application):
         assert first_call_on_startup_spy.called
         assert not first_call_on_cleanup_spy.called
 
         # What if I add one more background task here?? OK
-        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(
-            asyncio.create_task(asyncio.sleep(100), name="shutdown")
-        )
+        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(asyncio.create_task(asyncio.sleep(100), name="shutdown"))
 
     async def _other_on_cleanup(_app: web.Application):
         assert first_call_on_startup_spy.called
@@ -59,9 +49,7 @@ async def test_create_safe_application(mocker: MockerFixture):  # noqa: PLR0915
         assert persistent_client_session_spy.call_count == 1
 
         # What if I add one more background task here?? OK
-        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(
-            asyncio.create_task(asyncio.sleep(100), name="setup")
-        )
+        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(asyncio.create_task(asyncio.sleep(100), name="setup"))
 
         yield
 
@@ -70,9 +58,7 @@ async def test_create_safe_application(mocker: MockerFixture):  # noqa: PLR0915
         assert persistent_client_session_spy.call_count == 1
 
         # What if I add one more background task here?? OK
-        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(
-            asyncio.create_task(asyncio.sleep(100), name="teardown")
-        )
+        _app[APP_FIRE_AND_FORGET_TASKS_KEY].add(asyncio.create_task(asyncio.sleep(100), name="teardown"))
 
     # setup
     the_app = servicelib.aiohttp.application.create_safe_application()

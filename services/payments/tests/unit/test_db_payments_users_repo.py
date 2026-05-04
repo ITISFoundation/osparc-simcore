@@ -17,6 +17,7 @@ from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.postgres_users import (
     insert_and_get_user_and_secrets_lifespan,
 )
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
@@ -75,9 +76,7 @@ def user_primary_group_id(user: dict[str, Any]) -> GroupID:
 
 
 @pytest.fixture
-async def product(
-    app: FastAPI, product: dict[str, Any]
-) -> AsyncIterator[dict[str, Any]]:
+async def product(app: FastAPI, product: dict[str, Any]) -> AsyncIterator[dict[str, Any]]:
     """
     injects product in db
     """
@@ -95,24 +94,33 @@ async def product(
 
 @pytest.fixture
 async def successful_transaction(
-    app: FastAPI, successful_transaction: dict[str, Any]
+    app: FastAPI,
+    successful_transaction: dict[str, Any],
+    user: dict[str, Any],
+    product: dict[str, Any],
 ) -> AsyncIterator[dict[str, Any]]:
     """
     injects transaction in db
     """
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        get_engine(app),
-        table=payments_transactions,
-        values=successful_transaction,
-        pk_col=payments_transactions.c.payment_id,
-        pk_value=successful_transaction["payment_id"],
-    ) as row:
+    async with (  # pylint:disable=contextmanager-generator-missing-cleanup
+        insert_and_get_wallet_lifespan(
+            get_engine(app),
+            product_name=product["name"],
+            user_group_id=user["primary_gid"],
+            wallet_id=successful_transaction["wallet_id"],
+        ),
+        insert_and_get_row_lifespan(
+            get_engine(app),
+            table=payments_transactions,
+            values=successful_transaction,
+            pk_col=payments_transactions.c.payment_id,
+            pk_value=successful_transaction["payment_id"],
+        ) as row,
+    ):
         yield row
 
 
-async def test_payments_user_repo(
-    app: FastAPI, user_id: UserID, user_primary_group_id: GroupID
-):
+async def test_payments_user_repo(app: FastAPI, user_id: UserID, user_primary_group_id: GroupID):
     repo = PaymentsUsersRepo(get_engine(app))
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
 
@@ -126,9 +134,7 @@ async def test_get_notification_data(
     repo = PaymentsUsersRepo(get_engine(app))
 
     # check once
-    data = await repo.get_notification_data(
-        user_id=user["id"], payment_id=successful_transaction["payment_id"]
-    )
+    data = await repo.get_notification_data(user_id=user["id"], payment_id=successful_transaction["payment_id"])
 
     assert data.payment_id == successful_transaction["payment_id"]
     assert data.first_name == user["first_name"]

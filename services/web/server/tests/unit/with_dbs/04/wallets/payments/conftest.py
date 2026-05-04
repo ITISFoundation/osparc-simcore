@@ -170,9 +170,7 @@ def mock_rpc_payments_service_api(
         settings: PaymentsSettings = get_plugin_settings(app)
         assert settings.PAYMENTS_FAKE_COMPLETION is False
 
-        return await _fake_init_creation_of_wallet_payment_method(
-            app, settings, user_id, wallet_id
-        )
+        return await _fake_init_creation_of_wallet_payment_method(app, settings, user_id, wallet_id)
 
     async def _cancel_pm(
         app: web.Application,
@@ -181,9 +179,7 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         wallet_id: WalletID,
     ) -> None:
-        await _fake_cancel_creation_of_wallet_payment_method(
-            app, payment_method_id, user_id, wallet_id
-        )
+        await _fake_cancel_creation_of_wallet_payment_method(app, payment_method_id, user_id, wallet_id)
 
     async def _list_pm(
         app: web.Application,
@@ -200,9 +196,7 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         wallet_id: WalletID,
     ) -> PaymentMethodGet:
-        return await _fake_get_wallet_payment_method(
-            app, user_id, wallet_id, payment_method_id
-        )
+        return await _fake_get_wallet_payment_method(app, user_id, wallet_id, payment_method_id)
 
     async def _del(
         app: web.Application,
@@ -211,9 +205,7 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         wallet_id: WalletID,
     ) -> None:
-        await _fake_delete_wallet_payment_method(
-            app, user_id, wallet_id, payment_method_id
-        )
+        await _fake_delete_wallet_payment_method(app, user_id, wallet_id, payment_method_id)
 
     async def _pay(
         app: web.Application,
@@ -232,7 +224,6 @@ def mock_rpc_payments_service_api(
         stripe_tax_rate_id: StripeTaxRateID,
         comment: str | None = None,
     ) -> PaymentTransaction:
-
         assert await _get(
             app,
             payment_method_id=payment_method_id,
@@ -261,9 +252,7 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         wallet_id: WalletID,
     ) -> HttpUrl:
-        return await _fake_get_payment_invoice_url(
-            app, user_id, wallet_id, payment_method_id
-        )
+        return await _fake_get_payment_invoice_url(app, user_id, wallet_id, payment_method_id)
 
     return {
         "init_payment": mocker.patch(

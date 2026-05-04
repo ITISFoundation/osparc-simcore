@@ -9,14 +9,12 @@ from time import sleep
 
 import numpy as np
 import osparc
-import s4l_v1.analysis.extractors as extractors
-import s4l_v1.document as document
-import s4l_v1.model as model
 import s4l_v1.simulation.emfdtd as fdtd
-import s4l_v1.units as units
 import XCore
 from matplotlib import pyplot as plt
+from s4l_v1 import document, model, units
 from s4l_v1._api.application import run_application
+from s4l_v1.analysis import extractors
 from s4l_v1.model import Rotation, Translation, Vec3
 from skopt import Optimizer
 from skopt.plots import plot_gaussian_process
@@ -78,9 +76,7 @@ class ObjectiveFunction:
         arm1.Transform = Translation(t)
 
         arm2.Transform = Translation(t)
-        arm2.Transform = Rotation(
-            axis=Vec3(0, 1, 0), origin=Vec3(0, 0, -arm_len / 2), angle_in_rad=np.pi
-        )
+        arm2.Transform = Rotation(axis=Vec3(0, 1, 0), origin=Vec3(0, 0, -arm_len / 2), angle_in_rad=np.pi)
         t = arm2.Transform.Translation
         t[2] += arm_len / 2 - 0.5
         arm2.Transform = Translation(t)
@@ -96,7 +92,7 @@ class ObjectiveFunction:
         arm2 = entities["Arm 2"]
         source = entities["SourceLine"]
 
-        # Setup Setttings
+        # Setup Settings
         sim = fdtd.Simulation()
 
         sim.Name = "Dipole (Broadband)"
@@ -129,9 +125,7 @@ class ObjectiveFunction:
 
         # Grid
         global_grid_settings = sim.GlobalGridSettings
-        global_grid_settings.DiscretizationMode = (
-            global_grid_settings.DiscretizationMode.enum.Manual
-        )
+        global_grid_settings.DiscretizationMode = global_grid_settings.DiscretizationMode.enum.Manual
         global_grid_settings.MaxStep = np.array([20.0, 20.0, 20.0]), units.MilliMeters
         manual_grid_settings = sim.AddManualGridSettings([arm1, arm2, source])
         manual_grid_settings.MaxStep = (5.0,) * 3  # model units
@@ -182,9 +176,7 @@ class ObjectiveFunction:
         extr.Update()
         impedance = extr["SourceLine"]["EM Input Impedance(f)"]
         impedance.Update()
-        sol = np.absolute(
-            np.c_[impedance.Data.Axis, impedance.Data.GetComponent(0)].copy()
-        )
+        sol = np.absolute(np.c_[impedance.Data.Axis, impedance.Data.GetComponent(0)].copy())
         result: float = float(np.linalg.norm(self._reference - sol) ** 2)
         os.chdir(cur_dir)
         return result, sol
@@ -223,13 +215,11 @@ if __name__ == "__main__":
     run_application()
 
     # setup
-    cfg: osparc.Configuration = osparc.Configuration(
-        username=args.username, password=args.password
-    )
+    cfg: osparc.Configuration = osparc.Configuration(username=args.username, password=args.password)
     reference_file: Path = Path(__file__).parent / "reference"
-    assert (
-        reference_file.is_file()
-    ), f"Could not find {reference_file}. It must be located in the same directory as this script."
+    assert reference_file.is_file(), (
+        f"Could not find {reference_file}. It must be located in the same directory as this script."
+    )
     reference = np.absolute(np.loadtxt(reference_file, dtype=np.complex128))
 
     # run optimization
@@ -249,7 +239,7 @@ if __name__ == "__main__":
 
     res = None
     best_guess: np.ndarray | None = None
-    tmp_quess: np.ndarray | None = None
+    tmp_guess: np.ndarray | None = None
 
     n_iter: int = 1
     for _ in range(n_batches):
@@ -266,11 +256,7 @@ if __name__ == "__main__":
                 res = opt.tell([x], y)
                 if all(elm == x for elm in res.x) and tmp_guess is not None:
                     best_guess = tmp_guess.copy()
-                print(
-                    20 * "-"
-                    + f" completed {(n_iter * 100) / (n_batches * batch_size)}% "
-                    + 20 * "-"
-                )
+                print(20 * "-" + f" completed {(n_iter * 100) / (n_batches * batch_size)}% " + 20 * "-")
                 n_iter += 1
             else:
                 sleep(1)

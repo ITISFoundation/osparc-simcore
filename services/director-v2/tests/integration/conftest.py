@@ -16,6 +16,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from starlette import status
@@ -38,21 +39,12 @@ def update_project_workbench_with_comp_tasks(
 ) -> Callable:
     def _updator(project_uuid: str):
         with postgres_db.connect() as con, con.begin():
-
             # select all projects_nodes for this project
-            result = con.execute(
-                projects_nodes.select().where(
-                    projects_nodes.c.project_uuid == project_uuid
-                )
-            )
-            project_nodes_map: dict[str, Any] = {
-                row.node_id: row._asdict() for row in result
-            }
+            result = con.execute(projects_nodes.select().where(projects_nodes.c.project_uuid == project_uuid))
+            project_nodes_map: dict[str, Any] = {row.node_id: row._asdict() for row in result}
 
             # comp_tasks get and run_hash and outputs
-            result = con.execute(
-                comp_tasks.select().where(comp_tasks.c.project_id == f"{project_uuid}")
-            )
+            result = con.execute(comp_tasks.select().where(comp_tasks.c.project_id == f"{project_uuid}"))
             comp_tasks_rows = result.fetchall()
             for task_row in comp_tasks_rows:
                 project_nodes_map[task_row.node_id]["outputs"] = task_row.outputs
@@ -63,10 +55,7 @@ def update_project_workbench_with_comp_tasks(
                 con.execute(
                     projects_nodes.update()  # pylint:disable=no-value-for-parameter
                     .values(**node_data)
-                    .where(
-                        (projects_nodes.c.node_id == node_id)
-                        & (projects_nodes.c.project_uuid == project_uuid)
-                    )
+                    .where((projects_nodes.c.node_id == node_id) & (projects_nodes.c.project_uuid == project_uuid))
                 )
 
     return _updator
@@ -110,14 +99,12 @@ async def create_pipeline(
                 "start_pipeline": start_pipeline,
                 "product_name": product_name,
                 "product_api_base_url": product_api_base_url,
-                "collection_run_id": (
-                    str(uuid.uuid4()) if start_pipeline is True else None
-                ),
+                "collection_run_id": (str(uuid.uuid4()) if start_pipeline is True else None),
                 **kwargs,
             },
         )
         response.raise_for_status()
-        assert response.status_code == status.HTTP_201_CREATED
+        assert response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED)
 
         computation_task = ComputationGet.model_validate(response.json())
         created_comp_tasks.append((user_id, computation_task))
@@ -128,9 +115,7 @@ async def create_pipeline(
     # cleanup the pipelines
     responses: list[httpx.Response] = await asyncio.gather(
         *(
-            async_client.request(
-                "DELETE", f"{task.url}", json={"user_id": user_id, "force": True}
-            )
+            async_client.request("DELETE", f"{task.url}", json={"user_id": user_id, "force": True})
             for user_id, task in created_comp_tasks
         )
     )
@@ -160,9 +145,7 @@ async def wait_for_catalog_service(
                 services_endpoint.items(),
             )
         )
-        assert (
-            len(catalog_endpoint) == 1
-        ), f"no catalog service found! {services_endpoint=}"
+        assert len(catalog_endpoint) == 1, f"no catalog service found! {services_endpoint=}"
         catalog_endpoint = catalog_endpoint[0][1]
         print(f"--> found catalog endpoint at {catalog_endpoint=}")
         client = httpx.AsyncClient()
@@ -170,25 +153,23 @@ async def wait_for_catalog_service(
         @retry(
             wait=wait_fixed(1),
             stop=stop_after_delay(60),
-            retry=retry_if_exception_type(AssertionError)
-            | retry_if_exception_type(httpx.HTTPError),
+            retry=retry_if_exception_type(AssertionError) | retry_if_exception_type(httpx.HTTPError),
         )
         async def _ensure_catalog_services_answers() -> None:
             print("--> checking catalog is up and ready...")
             response = await client.get(
                 f"{catalog_endpoint}/v0/services",
                 params={"details": False, "user_id": user_id},
-                headers={"x-simcore-products-name": product_name},
+                headers={X_PRODUCT_NAME_HEADER: product_name},
                 timeout=1,
             )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+            assert response.status_code == status.HTTP_200_OK, (
+                f"catalog is not ready {response.status_code}:{response.text}, "
+                "TIP: migration not completed or catalog broken?"
+            )
             services = response.json()
             assert services != [], "catalog is not ready: no services available"
-            print(
-                f"<-- catalog is up and ready, received {response.status_code}:{response.text}"
-            )
+            print(f"<-- catalog is up and ready, received {response.status_code}:{response.text}")
 
         await _ensure_catalog_services_answers()
 

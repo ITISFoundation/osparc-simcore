@@ -1,8 +1,9 @@
-""" General handling of httpx-based exceptions
+"""General handling of httpx-based exceptions
 
-    - httpx-based clients are used to communicate with other backend services
-    - any exception raised by a httpx client will be handled here.
+- httpx-based clients are used to communicate with other backend services
+- any exception raised by a httpx client will be handled here.
 """
+
 import logging
 from typing import Any
 
@@ -36,6 +37,4 @@ async def handle_httpx_client_exceptions(request: Request, exc: Exception):
     if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         _logger.exception("%s. host=%s. %s", detail, exc.request.url.host, f"{exc}")
 
-    return create_error_json_response(
-        f"{detail}", status_code=status_code, headers=headers
-    )
+    return create_error_json_response(f"{detail}", status_code=status_code, headers=headers)

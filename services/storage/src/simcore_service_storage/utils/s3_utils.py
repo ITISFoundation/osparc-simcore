@@ -18,9 +18,7 @@ class S3TransferDataCB:
     total_bytes_to_transfer: ByteSize
     task_progress_message_prefix: str = ""
     _total_bytes_copied: int = 0
-    _file_total_bytes_copied: dict[str, int] = field(
-        default_factory=lambda: defaultdict(int)
-    )
+    _file_total_bytes_copied: dict[str, int] = field(default_factory=lambda: defaultdict(int))
     _update_task_event: asyncio.Event = field(default_factory=asyncio.Event)
     _async_update_periodic_task: asyncio.Task | None = None
 
@@ -45,21 +43,17 @@ class S3TransferDataCB:
         await self._update_task_event.wait()
         self._update_task_event.clear()
         self.task_progress.description = (
-            f"{self.task_progress_message_prefix} - "
-            f"{self.total_bytes_to_transfer.human_readable()}"
+            f"{self.task_progress_message_prefix} - {self.total_bytes_to_transfer.human_readable()}"
         )
         await self.task_progress.set_(
-            min(self._total_bytes_copied, self.total_bytes_to_transfer)
-            / (self.total_bytes_to_transfer or 1)
+            min(self._total_bytes_copied, self.total_bytes_to_transfer) / (self.total_bytes_to_transfer or 1)
         )
 
     def _update(self) -> None:
         self._update_task_event.set()
 
     def finalize_transfer(self) -> None:
-        self._total_bytes_copied = (
-            self.total_bytes_to_transfer - self._total_bytes_copied
-        )
+        self._total_bytes_copied = self.total_bytes_to_transfer - self._total_bytes_copied
         self._update()
 
     def copy_transfer_cb(self, total_bytes_copied: int, *, file_name: str) -> None:

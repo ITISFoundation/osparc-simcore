@@ -45,25 +45,17 @@ async def list_services(
     try:
         services: list[dict[str, Any]] = []
         if not service_type:
-            services = await registry_proxy.list_services(
-                the_app, registry_proxy.ServiceType.ALL
-            )
+            services = await registry_proxy.list_services(the_app, registry_proxy.ServiceType.ALL)
         elif service_type is ServiceType.COMPUTATIONAL:
-            services = await registry_proxy.list_services(
-                the_app, registry_proxy.ServiceType.COMPUTATIONAL
-            )
+            services = await registry_proxy.list_services(the_app, registry_proxy.ServiceType.COMPUTATIONAL)
         elif service_type is ServiceType.DYNAMIC:
-            services = await registry_proxy.list_services(
-                the_app, registry_proxy.ServiceType.DYNAMIC
-            )
+            services = await registry_proxy.list_services(the_app, registry_proxy.ServiceType.DYNAMIC)
         # NOTE: the validation is done in the catalog. This entrypoint IS and MUST BE only used by the catalog!!
         # NOTE2: the catalog will directly talk to the registry see case #2165 [https://github.com/ITISFoundation/osparc-simcore/issues/2165]
         # services = node_validator.validate_nodes(services)
         return Envelope[list[dict[str, Any]]](data=services)
     except RegistryConnectionError as err:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
 
 
 # NOTE: be careful that /labels must be defined before the more generic get_service
@@ -80,20 +72,14 @@ async def list_service_labels(
         service_version,
     )
     try:
-        service_labels, _ = await registry_proxy.get_image_labels(
-            the_app, service_key, service_version
-        )
+        service_labels, _ = await registry_proxy.get_image_labels(the_app, service_key, service_version)
         return Envelope[dict[str, Any]](data=service_labels)
 
     except ServiceNotAvailableError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
 
     except RegistryConnectionError as err:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
 
 
 @router.get("/services/{service_key:path}/{service_version}")
@@ -108,17 +94,9 @@ async def get_service(
         service_version,
     )
     try:
-        services = [
-            await registry_proxy.get_image_details(
-                the_app, service_key, service_version
-            )
-        ]
+        services = [await registry_proxy.get_image_details(the_app, service_key, service_version)]
         return Envelope[list[dict[str, Any]]](data=services)
     except ServiceNotAvailableError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
     except RegistryConnectionError as err:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
-        ) from err
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err

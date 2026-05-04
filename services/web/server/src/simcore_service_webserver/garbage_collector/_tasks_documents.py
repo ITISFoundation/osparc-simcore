@@ -19,7 +19,6 @@ _logger = logging.getLogger(__name__)
 
 
 def create_background_task_to_prune_documents(wait_s: float) -> CleanupContextFunc:
-
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
         interval = timedelta(seconds=wait_s)
 

@@ -35,16 +35,11 @@ def get_routes_view(routes: RouteTableDef) -> str:
     return fh.getvalue()
 
 
-def create_url_for_function(
-    app: web.Application, request_url: URL, request_headers: dict[str, str]
-) -> Callable:
-
+def create_url_for_function(app: web.Application, request_url: URL, request_headers: dict[str, str]) -> Callable:
     def _url_for(route_name: str, **params: dict[str, Any]) -> str:
         """Reverse URL constructing using named resources"""
         try:
-            rel_url: URL = app.router[route_name].url_for(
-                **{k: f"{v}" for k, v in params.items()}
-            )
+            rel_url: URL = app.router[route_name].url_for(**{k: f"{v}" for k, v in params.items()})
             _url: URL = (
                 request_url.origin()
                 .with_scheme(
@@ -63,9 +58,7 @@ def create_url_for_function(
     return _url_for
 
 
-def envelope_json_response(
-    obj: Any, status_cls: type[HTTPException] = web.HTTPOk
-) -> web.Response:
+def envelope_json_response(obj: Any, status_cls: type[HTTPException] = web.HTTPOk) -> web.Response:
     # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3646
     if issubclass(status_cls, HTTPError):
         enveloped = Envelope[Any](error=obj)
@@ -93,9 +86,7 @@ def create_json_response_from_page(page: Page[ItemT]) -> web.Response:
 PageStr: TypeAlias = Literal["view", "error"]
 
 
-def create_redirect_to_page_response(
-    app: web.Application, page: PageStr, **parameters
-) -> web.HTTPFound:
+def create_redirect_to_page_response(app: web.Application, page: PageStr, **parameters) -> web.HTTPFound:
     """
     Returns a redirect response to the front-end with information on page
     and parameters embedded in the fragment.
@@ -116,9 +107,7 @@ def create_redirect_to_page_response(
     # NOTE: uniform encoding in front-end using url fragments
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1975
     fragment_path = f"{URL.build(path=f'/{page}').with_query(parameters)}"
-    redirect_url = (
-        app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
-    )
+    redirect_url = app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
     return web.HTTPFound(location=redirect_url)
 
 
@@ -134,9 +123,7 @@ class NextPage(BaseModel, Generic[PageParameters]):
     using a path+query in the fragment of the URL
     """
 
-    name: str = Field(
-        ..., description="Code name to the front-end page. Ideally a PageStr"
-    )
+    name: str = Field(..., description="Code name to the front-end page. Ideally a PageStr")
     parameters: PageParameters | None = None
 
 
@@ -148,16 +135,8 @@ def iter_origins(request: web.Request) -> Iterator[tuple[str, str]]:
 
     # X-Forwarded-Proto and X-Forwarded-Host can contain a comma-separated list of protocols and hosts
     # (when the request passes through multiple proxies)
-    fwd_protos = [
-        p.strip()
-        for p in request.headers.get("X-Forwarded-Proto", "").split(",")
-        if p.strip()
-    ]
-    fwd_hosts = [
-        h.strip()
-        for h in request.headers.get("X-Forwarded-Host", "").split(",")
-        if h.strip()
-    ]
+    fwd_protos = [p.strip() for p in request.headers.get("X-Forwarded-Proto", "").split(",") if p.strip()]
+    fwd_hosts = [h.strip() for h in request.headers.get("X-Forwarded-Host", "").split(",") if h.strip()]
 
     if fwd_protos and fwd_hosts:
         for proto, host in zip(fwd_protos, fwd_hosts, strict=False):

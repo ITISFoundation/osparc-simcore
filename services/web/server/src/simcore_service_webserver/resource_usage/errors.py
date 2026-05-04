@@ -1,8 +1,7 @@
 from ..errors import WebServerBaseError
 
 
-class ResourceUsageValueError(WebServerBaseError, ValueError):
-    ...
+class ResourceUsageValueError(WebServerBaseError, ValueError): ...
 
 
 class DefaultPricingPlanNotFoundError(ResourceUsageValueError):

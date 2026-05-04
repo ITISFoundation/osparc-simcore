@@ -36,9 +36,7 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "user_email": "test@test.com",
                 "project_name": "_!New Study",
                 "node_name": "the service of a lifetime _ *!",
-                "service_key": TypeAdapter(ServiceKey).validate_python(
-                    "simcore/services/dynamic/test"
-                ),
+                "service_key": TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/test"),
                 "service_version": TypeAdapter(ServiceVersion).validate_python("0.0.1"),
                 "service_resources": {},
                 "service_additional_metadata": {},

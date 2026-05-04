@@ -34,9 +34,7 @@ def mock_export_usage_services(mocker: MockerFixture) -> MagicMock:
 
 
 @pytest.fixture()
-def setup_wallets_db(
-    postgres_db: sa.engine.Engine, logged_user: UserInfoDict
-) -> Iterator[int]:
+def setup_wallets_db(postgres_db: sa.engine.Engine, logged_user: UserInfoDict) -> Iterator[int]:
     with postgres_db.connect() as con:
         result = con.execute(
             wallets.insert()
@@ -115,7 +113,5 @@ async def test_list_service_usage(
     assert mock_export_usage_services.called
     args = mock_export_usage_services.call_args[1]
 
-    assert (
-        args["order_by"].model_dump() == OrderBy.model_validate(_order_by).model_dump()
-    )
+    assert args["order_by"].model_dump() == OrderBy.model_validate(_order_by).model_dump()
     assert args["filters"] == ServiceResourceUsagesFilters.model_validate(_filter)

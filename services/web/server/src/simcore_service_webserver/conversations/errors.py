@@ -13,4 +13,6 @@ class ConversationMessageErrorNotFoundError(ConversationError):
 
 
 class ConversationUnsupportedTypeError(ConversationError):
-    msg_template = "Conversation type '{conversation_type}' is not supported. Only 'support' type is currently supported"
+    msg_template = (
+        "Conversation type '{conversation_type}' is not supported. Only 'support' type is currently supported"
+    )

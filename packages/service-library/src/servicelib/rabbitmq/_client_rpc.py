@@ -29,9 +29,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     _rpc: aio_pika.patterns.RPC | None = None
 
     @classmethod
-    async def create(
-        cls, *, client_name: str, settings: RabbitSettings, **kwargs
-    ) -> "RabbitMQRPCClient":
+    async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
         client = cls(client_name=client_name, settings=settings, **kwargs)
         await client._rpc_initialize()
         return client
@@ -46,7 +44,9 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             url,
             client_properties={"connection_name": connection_name},
         )
+        self._connection.close_callbacks.add(self._connection_close_callback)
         self._channel = await self._connection.channel()
+        self._channel.close_callbacks.add(self._channel_close_callback)
 
         self._rpc = aio_pika.patterns.RPC(self._channel)
         # rely on default queue configuration that should be reasonable
@@ -90,9 +90,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         if not self._rpc:
             raise RPCNotInitializedError
 
-        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
-            namespace, method_name
-        )
+        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
         try:
             queue_expiration_timeout = timeout_s
             awaitable = self._rpc.call(
@@ -111,7 +109,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             # SEE https://github.com/ITISFoundation/osparc-simcore/blob/b1aee64ae207a6ed3e965ff7869c74a312109de7/services/catalog/src/simcore_service_catalog/api/rpc/_services.py#L41-L46
             err.msg += (
                 "\nTIP: All i/o rpc parameters MUST be shared by client and server sides. "
-                "Careful with Generics instanciated on the server side. "
+                "Careful with Generics instantiated on the server side. "
                 "Use instead a TypeAlias in a common library."
             )
             raise
@@ -169,9 +167,7 @@ async def rabbitmq_rpc_client_context(
     """
     Adapter to create and close a RabbitMQRPCClient using an async context manager.
     """
-    rpc_client = await RabbitMQRPCClient.create(
-        client_name=rpc_client_name, settings=settings, **kwargs
-    )
+    rpc_client = await RabbitMQRPCClient.create(client_name=rpc_client_name, settings=settings, **kwargs)
     try:
         yield rpc_client
     finally:

@@ -65,9 +65,7 @@ async def test_patch_project_node_entrypoint_access(
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
-    base_url = client.app.router["patch_project_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
-    )
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.patch(
         f"{base_url}",
         data=json.dumps({"label": "testing-string"}),
@@ -75,9 +73,7 @@ async def test_patch_project_node_entrypoint_access(
     await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -89,14 +85,10 @@ async def test_patch_project_node(
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
-    base_url = client.app.router["patch_project_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
-    )
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.patch(
         f"{base_url}",
-        data=json.dumps(
-            {"label": "testing-string", "progress": None, "something": "non-existing"}
-        ),
+        data=json.dumps({"label": "testing-string", "progress": None, "something": "non-existing"}),
     )
     await assert_status(resp, expected)
     # service key
@@ -197,9 +189,7 @@ async def test_patch_project_node(
     assert _tested_node["outputs"] == _patch_outputs["outputs"]
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_notifies(
     mocker: MockerFixture,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -212,9 +202,7 @@ async def test_patch_project_node_notifies(
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
-    base_url = client.app.router["patch_project_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
-    )
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
 
     # inputs
     _patch_inputs = {
@@ -231,9 +219,7 @@ async def test_patch_project_node_notifies(
     assert f"{args[0][0][2]}" == node_id
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_inputs_notifies(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -244,9 +230,7 @@ async def test_patch_project_node_inputs_notifies(
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
-    base_url = client.app.router["patch_project_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
-    )
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
 
     # inputs
     _patch_inputs = {
@@ -265,18 +249,13 @@ async def test_patch_project_node_inputs_notifies(
     assert mocked_notify_project_node_update.call_count > 1
     # 1 message per node updated
     assert not DeepDiff(
-        [
-            call_args[0][2]
-            for call_args in mocked_notify_project_node_update.await_args_list
-        ],
+        [call_args[0][2] for call_args in mocked_notify_project_node_update.await_args_list],
         list(user_project["workbench"].keys()),
         ignore_order=True,
     )
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_inputs_with_data_type_change(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -286,9 +265,7 @@ async def test_patch_project_node_inputs_with_data_type_change(
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
-    base_url = client.app.router["patch_project_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
-    )
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     # inputs
     _patch_inputs = {
         "inputs": {
@@ -326,9 +303,7 @@ async def test_patch_project_node_inputs_with_data_type_change(
     assert _patch_inputs["inputs"] == _patch_inputs["inputs"]
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_service_key_with_error(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -338,9 +313,7 @@ async def test_patch_project_node_service_key_with_error(
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
-    url = client.app.router["patch_project_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
-    )
+    url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     _patch_version = {"version": "2.0.9"}
 
     with mocker.patch(

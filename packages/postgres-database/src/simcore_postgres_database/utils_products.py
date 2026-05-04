@@ -1,5 +1,7 @@
 """Common functions to access products table"""
 
+from typing import NamedTuple
+
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -10,6 +12,11 @@ from .models.products import products
 _GroupID = int
 
 
+class ProductEmailInfo(NamedTuple):
+    display_name: str
+    support_email: str
+
+
 class EmptyProductsError(ValueError): ...
 
 
@@ -18,9 +25,7 @@ async def get_default_product_name(conn: AsyncConnection) -> str:
 
     :: raises ValueError if undefined
     """
-    product_name = await conn.scalar(
-        sa.select(products.c.name).order_by(products.c.priority)
-    )
+    product_name = await conn.scalar(sa.select(products.c.name).order_by(products.c.priority))
     if not product_name:
         msg = "No product was defined in database. Upon construction, at least one product is added but there are none."
         raise EmptyProductsError(msg)
@@ -29,26 +34,14 @@ async def get_default_product_name(conn: AsyncConnection) -> str:
     return product_name
 
 
-async def get_product_group_id_or_none(
-    connection: AsyncConnection, product_name: str
-) -> _GroupID | None:
-    group_id = await connection.scalar(
-        sa.select(products.c.group_id).where(products.c.name == product_name)
-    )
+async def get_product_group_id_or_none(connection: AsyncConnection, product_name: str) -> _GroupID | None:
+    group_id = await connection.scalar(sa.select(products.c.group_id).where(products.c.name == product_name))
     return None if group_id is None else _GroupID(group_id)
 
 
-async def get_or_create_product_group(
-    conn: AsyncConnection, product_name: str
-) -> _GroupID:
-    #
-    # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
-    #       coexist
-    #
+async def get_or_create_product_group(conn: AsyncConnection, product_name: str) -> _GroupID:
     group_id: int | None = await conn.scalar(
-        sa.select(products.c.group_id)
-        .where(products.c.name == product_name)
-        .with_for_update(read=True)
+        sa.select(products.c.group_id).where(products.c.name == product_name).with_for_update(read=True)
         # a `FOR SHARE` lock: locks changes in the product until transaction is done.
         # Read might return in None, but it is OK
     )
@@ -64,10 +57,23 @@ async def get_or_create_product_group(
         )
         assert group_id  # nosec
 
-        await conn.execute(
-            products.update()
-            .where(products.c.name == product_name)
-            .values(group_id=group_id)
-        )
+        await conn.execute(products.update().where(products.c.name == product_name).values(group_id=group_id))
 
     return group_id
+
+
+async def get_product_email_info(conn: AsyncConnection, product_name: str) -> ProductEmailInfo:
+    """Returns display_name and support_email for a given product
+
+    Raises:
+        ValueError: if product_name is not found
+    """
+    row = (
+        await conn.execute(
+            sa.select(products.c.display_name, products.c.support_email).where(products.c.name == product_name)
+        )
+    ).one_or_none()
+    if row is None:
+        msg = f"Product '{product_name}' not found"
+        raise ValueError(msg)
+    return ProductEmailInfo(display_name=row.display_name, support_email=row.support_email)

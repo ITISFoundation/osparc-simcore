@@ -35,9 +35,7 @@ router = APIRouter()
 async def create_invitation(
     invitation_inputs: ApiInvitationInputs,
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
-    _credentials: Annotated[
-        HTTPBasicCredentials | None, Depends(get_validated_credentials)
-    ],
+    _credentials: Annotated[HTTPBasicCredentials | None, Depends(get_validated_credentials)],
 ):
     """Generates a new invitation code and returns its content and an invitation link"""
 
@@ -65,9 +63,7 @@ async def create_invitation(
 async def extracts_invitation_from_code(
     encrypted: ApiEncryptedInvitation,
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
-    _credentials: Annotated[
-        HTTPBasicCredentials | None, Depends(get_validated_credentials)
-    ],
+    _credentials: Annotated[HTTPBasicCredentials | None, Depends(get_validated_credentials)],
 ):
     """Decrypts the invitation code and returns its content"""
 

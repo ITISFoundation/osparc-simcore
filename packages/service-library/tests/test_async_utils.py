@@ -37,7 +37,7 @@ def sleep_duration() -> float:
 
 
 class LockedStore:
-    __slots__ = ("_queue", "_lock")
+    __slots__ = ("_lock", "_queue")
 
     def __init__(self):
         self._queue = deque()
@@ -58,6 +58,7 @@ def _compensate_for_slow_systems(number: float) -> float:
     return number * 10
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_dispatch(
     sleep_duration: float, ensure_run_in_sequence_context_is_empty: None, faker: Faker
 ) -> None:
@@ -108,6 +109,7 @@ async def test_context_aware_dispatch(
         assert list(expected_outcomes[key]) == await locked_stores[key].get_all()
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_function_sometimes_fails(
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
@@ -131,6 +133,7 @@ async def test_context_aware_function_sometimes_fails(
             assert await sometimes_failing(raise_error) is True
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_wrong_target_args_name(
     expected_param_name: str,
     ensure_run_in_sequence_context_is_empty: None,  # pylint: disable=unused-argument
@@ -143,13 +146,11 @@ async def test_context_aware_wrong_target_args_name(
     with pytest.raises(ValueError) as excinfo:
         await target_function("something")
 
-    message = (
-        f"Expected '{expected_param_name}' in "
-        f"'{target_function.__name__}' arguments."
-    )
+    message = f"Expected '{expected_param_name}' in '{target_function.__name__}' arguments."
     assert str(excinfo.value).startswith(message) is True
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_measure_parallelism(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
@@ -170,6 +171,7 @@ async def test_context_aware_measure_parallelism(
     assert elapsed < _compensate_for_slow_systems(sleep_duration)
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_measure_serialization(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
@@ -192,6 +194,7 @@ async def test_context_aware_measure_serialization(
     assert control_sequence == result
 
 
+@pytest.mark.no_leaks
 async def test_nested_object_attribute(
     payload: str,
     ensure_run_in_sequence_context_is_empty: None,
@@ -201,15 +204,14 @@ async def test_nested_object_attribute(
         attr1: str = payload
 
     @run_sequentially_in_context(target_args=["object_with_props.attr1"])
-    async def test_attribute(
-        object_with_props: ObjectWithPropos, other_attr: int | None = None
-    ) -> str:
+    async def test_attribute(object_with_props: ObjectWithPropos, other_attr: int | None = None) -> str:
         return object_with_props.attr1
 
     for _ in range(RETRIES):
         assert payload == await test_attribute(ObjectWithPropos())
 
 
+@pytest.mark.no_leaks
 async def test_different_contexts(
     payload: str,
     ensure_run_in_sequence_context_is_empty: None,
@@ -222,4 +224,4 @@ async def test_different_contexts(
         for i in range(DIFFERENT_CONTEXTS_COUNT):
             assert i == await test_multiple_context_calls(i)
 
-    assert len(_sequential_jobs_contexts) == RETRIES
+    assert len(_sequential_jobs_contexts) == 0, "Not all contexts were cleaned up"

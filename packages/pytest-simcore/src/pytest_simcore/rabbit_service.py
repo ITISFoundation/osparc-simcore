@@ -42,9 +42,7 @@ def rabbit_env_vars_dict(
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
 
-    port = get_service_published_port(
-        "rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"])
-    )
+    port = get_service_published_port("rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"]))
 
     return {
         "RABBIT_USER": env_vars_for_docker_compose["RABBIT_USER"],
@@ -65,9 +63,7 @@ async def rabbit_settings(rabbit_env_vars_dict: EnvVarsDict) -> RabbitSettings:
 
 
 @pytest.fixture
-async def rabbit_service(
-    rabbit_settings: RabbitSettings, monkeypatch: pytest.MonkeyPatch
-) -> RabbitSettings:
+async def rabbit_service(rabbit_settings: RabbitSettings, monkeypatch: pytest.MonkeyPatch) -> RabbitSettings:
     """Sets env vars for a rabbit service is up and responsive and returns its settings as well
 
     NOTE: Use this fixture to setup client app
@@ -76,9 +72,7 @@ async def rabbit_service(
     monkeypatch.setenv("RABBIT_PORT", f"{rabbit_settings.RABBIT_PORT}")
     monkeypatch.setenv("RABBIT_USER", rabbit_settings.RABBIT_USER)
     monkeypatch.setenv("RABBIT_SECURE", f"{rabbit_settings.RABBIT_SECURE}")
-    monkeypatch.setenv(
-        "RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value()
-    )
+    monkeypatch.setenv("RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value())
 
     return rabbit_settings
 
@@ -91,9 +85,7 @@ async def create_rabbitmq_client(
 
     def _creator(client_name: str, *, heartbeat: int = 60) -> RabbitMQClient:
         # pylint: disable=protected-access
-        client = RabbitMQClient(
-            f"pytest_{client_name}", rabbit_service, heartbeat=heartbeat
-        )
+        client = RabbitMQClient(f"pytest_{client_name}", rabbit_service, heartbeat=heartbeat)
         assert client
         assert client._connection_pool  # noqa: SLF001
         assert not client._connection_pool.is_closed  # noqa: SLF001

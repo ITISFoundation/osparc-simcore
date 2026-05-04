@@ -1,3 +1,4 @@
+# pylint:disable=protected-access
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -16,12 +17,10 @@ from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
-from pytest_simcore.helpers.logging_tools import log_context
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.services import services_access_rights
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_projects_nodes import (
@@ -30,6 +29,9 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from pytest_simcore.helpers.logging_tools import log_context
+
+from .helpers.faker_factories import random_product
 from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import sync_insert_and_get_user_and_secrets_lifespan
 
@@ -68,8 +70,27 @@ def create_registered_user(
 
 
 @pytest.fixture
+async def create_product(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
+    async with contextlib.AsyncExitStack() as stack:
+
+        async def _(**overrides) -> dict[str, Any]:
+            ctx = insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=products,
+                values=random_product(**overrides),
+                pk_col=products.c.name,
+            )
+            return await stack.enter_async_context(ctx)
+
+        yield _
+
+
+@pytest.fixture
 async def with_product(
-    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
+    sqlalchemy_async_engine: AsyncEngine,
+    product: dict[str, Any],
 ) -> AsyncIterator[dict[str, Any]]:
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
@@ -94,7 +115,6 @@ async def create_project(
             project_nodes_overrides: dict[str, Any] | None = None,
             **project_overrides,
         ) -> ProjectAtDB:
-
             project_uuid = uuid4()
             with log_context(
                 logging.INFO,
@@ -102,16 +122,13 @@ async def create_project(
                 project_uuid,
                 logger=_logger,
             ) as log_ctx:
-
                 project_values = {
                     "uuid": f"{project_uuid}",
                     "name": faker.name(),
                     "type": ProjectType.STANDARD.name,
                     "description": faker.text(),
                     "prj_owner": user["id"],
-                    "access_rights": {
-                        "1": {"read": True, "write": True, "delete": True}
-                    },
+                    "access_rights": {"1": {"read": True, "write": True, "delete": True}},
                     "thumbnail": "",
                     **project_overrides,
                 }
@@ -125,9 +142,7 @@ async def create_project(
                         pk_col=projects.c.uuid,
                     )
                 )
-                inserted_project = ProjectAtDB.model_validate(
-                    {**project_db_rows, "workbench": project_workbench}
-                )
+                inserted_project = ProjectAtDB.model_validate({**project_db_rows, "workbench": project_workbench})
 
                 async with sqlalchemy_async_engine.connect() as con, con.begin():
                     # collect nodes
@@ -136,9 +151,7 @@ async def create_project(
                         # NOTE: workbench node have a lot of camecase fields. We validate with Node and
                         # export to ProjectNodeCreate with alias=False
 
-                        node_model = Node.model_validate(node_data).model_dump(
-                            mode="json", by_alias=True
-                        )
+                        node_model = Node.model_validate(node_data).model_dump(mode="json", by_alias=True)
 
                         field_mapping = {
                             "inputAccess": "input_access",
@@ -161,9 +174,7 @@ async def create_project(
                         if project_nodes_overrides:
                             project_workbench_node.update(project_nodes_overrides)
 
-                        nodes.append(
-                            ProjectNodeCreate(node_id=node_id, **project_workbench_node)
-                        )
+                        nodes.append(ProjectNodeCreate(node_id=node_id, **project_workbench_node))
 
                     # add nodes
                     project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
@@ -203,9 +214,7 @@ async def create_pipeline(
         pipeline_config.update(**pipeline_kwargs)
         async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
-                comp_pipeline.insert()
-                .values(**pipeline_config)
-                .returning(sa.literal_column("*"))
+                comp_pipeline.insert().values(**pipeline_config).returning(sa.literal_column("*"))
             )
             row = result.one()
             new_pipeline = row._asdict()
@@ -216,11 +225,7 @@ async def create_pipeline(
 
     # cleanup
     async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            comp_pipeline.delete().where(
-                comp_pipeline.c.project_id.in_(created_pipeline_ids)
-            )
-        )
+        await conn.execute(comp_pipeline.delete().where(comp_pipeline.c.project_id.in_(created_pipeline_ids)))
 
 
 @pytest.fixture
@@ -232,11 +237,7 @@ async def create_comp_task(
     async def _(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
         task_config = {"project_id": f"{project_id}"} | task_kwargs
         async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                comp_tasks.insert()
-                .values(**task_config)
-                .returning(sa.literal_column("*"))
-            )
+            result = await conn.execute(comp_tasks.insert().values(**task_config).returning(sa.literal_column("*")))
             row = result.one()
             new_task = row._asdict()
             created_task_ids.append(new_task["task_id"])
@@ -246,9 +247,7 @@ async def create_comp_task(
 
     # cleanup
     async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
-        )
+        await conn.execute(comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids)))
 
 
 @pytest.fixture
@@ -298,9 +297,7 @@ def grant_service_access_rights(
             row = result.one()
 
             # Track the entry for cleanup
-            created_entries.append(
-                (service_key, service_version, group_id, product_name)
-            )
+            created_entries.append((service_key, service_version, group_id, product_name))
 
             # Convert row to dict
             return dict(row._asdict())

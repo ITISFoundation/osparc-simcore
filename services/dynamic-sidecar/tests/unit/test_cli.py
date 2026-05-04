@@ -16,8 +16,8 @@ from simcore_service_dynamic_sidecar.cli import main
 from typer.testing import CliRunner
 
 pytest_simcore_core_services_selection = [
-    "redis",
     "rabbit",
+    "redis",
 ]
 
 
@@ -27,15 +27,14 @@ def cli_runner(
     redis_service: RedisSettings,
     mock_environment: EnvVarsDict,
 ) -> CliRunner:
-    mock_environment["REDIS_SETTINGS"] = json.dumps(
-        model_dump_with_secrets(redis_service, show_secrets=True)
-    )
-    mock_environment["RABBIT_SETTINGS"] = json.dumps(
-        model_dump_with_secrets(rabbit_service, show_secrets=True)
-    )
+    env = {
+        **mock_environment,
+        "REDIS_SETTINGS": json.dumps(model_dump_with_secrets(redis_service, show_secrets=True)),
+        "RABBIT_SETTINGS": json.dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
+    }
 
-    pprint(mock_environment)
-    return CliRunner(env=mock_environment)
+    pprint(env)  # noqa: T203
+    return CliRunner(env=env)
 
 
 @pytest.fixture
@@ -46,37 +45,35 @@ def mock_data_manager(mocker: MockerFixture) -> None:
     )
 
 
-@pytest.fixture
-def mock_nodeports(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.nodeports",
-        spec=True,
-    )
-
-
 def _format_cli_error(result: Result) -> str:
     assert result.exception
     tb_message = "".join(traceback.format_tb(result.exception.__traceback__))
     return f"Below exception was raised by the cli:\n{tb_message}"
 
 
-def test_list_state_dirs(cli_runner: CliRunner, mock_data_manager: None):
+def test_list_state_dirs(cli_runner: CliRunner):
     result = cli_runner.invoke(main, ["state-list-dirs"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
-    assert result.stdout.strip() == "\n".join(
-        [f"Entries in /data/state_dir{i}: []" for i in range(4)]
-    )
+    assert result.stdout.strip() == "\n".join([f"Entries in /data/state_dir{i}: []" for i in range(4)])
 
 
-def test_outputs_push_interface(cli_runner: CliRunner, mock_data_manager: None):
-    result = cli_runner.invoke(main, ["state-save"])
+@pytest.mark.parametrize("enable_rabbitmq", [True, False])
+def test_state_save_interface(cli_runner: CliRunner, mock_data_manager: None, enable_rabbitmq: bool):
+    cmd_args = ["state-save"]
+    if not enable_rabbitmq:
+        cmd_args.append("--no-enable-rabbitmq")
+    result = cli_runner.invoke(main, cmd_args)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert "state save finished successfully\n" in result.stdout
     print(result)
 
 
-def test_state_save_interface(cli_runner: CliRunner, mock_nodeports: None):
-    result = cli_runner.invoke(main, ["outputs-push"])
+@pytest.mark.parametrize("enable_rabbitmq", [True, False])
+def test_outputs_pushing_interface(cli_runner: CliRunner, enable_rabbitmq: bool):
+    cmd_args = ["outputs-push"]
+    if not enable_rabbitmq:
+        cmd_args.append("--no-enable-rabbitmq")
+    result = cli_runner.invoke(main, cmd_args)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert "output ports push finished successfully\n" in result.stdout
     print(result)

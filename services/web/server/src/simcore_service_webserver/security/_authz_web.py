@@ -1,7 +1,7 @@
 # mypy: disable-error-code=truthy-function
 
 
-import aiohttp_security.api  # type: ignore[import-untyped]
+import aiohttp_security.api
 from aiohttp import web
 from models_library.users import UserID
 
@@ -26,15 +26,19 @@ async def check_user_authorized(request: web.Request) -> UserID:
 
     """
     # NOTE: Same as aiohttp_security.api.check_authorized
-    user_id: UserID | None = await aiohttp_security.api.authorized_userid(request)
-    if user_id is None:
+    user_id_str: str | None = await aiohttp_security.api.authorized_userid(request)
+    if user_id_str is None:
+        raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED)
+    try:
+        user_id = int(user_id_str)
+    except (TypeError, ValueError) as err:
+        raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED) from err
+    if user_id <= 0:
         raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED)
     return user_id
 
 
-async def check_user_permission(
-    request: web.Request, permission: str, *, context: OptionalContext = None
-) -> None:
+async def check_user_permission(request: web.Request, permission: str, *, context: OptionalContext = None) -> None:
     """Checker that passes only to authoraised users with given permission.
 
     Raises:
@@ -56,24 +60,20 @@ async def check_user_permission(
         raise web.HTTPForbidden(text=msg)
 
 
-async def check_user_permission_with_groups(
-    request: web.Request, permission: str
-) -> None:
+async def check_user_permission_with_groups(request: web.Request, permission: str) -> None:
     """Checker that passes to authorized users with given permission via roles OR groups.
 
     Raises:
         web.HTTPUnauthorized: If user is not authorized
         web.HTTPForbidden: If user is authorized but lacks both role and group permissions
     """
-    from ..products import products_web
+    from ..products import products_web  # noqa: PLC0415
 
     context = {
         "authorized_uid": await check_user_authorized(request),
         "enable_group_permissions": True,
         "request": request,
-        "product_support_group_id": products_web.get_current_product(
-            request
-        ).support_standard_group_id,
+        "product_support_group_id": products_web.get_current_product(request).support_standard_group_id,
     }
 
     allowed = await aiohttp_security.api.permits(request, permission, context)

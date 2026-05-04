@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock
 import aiodocker
 import faker
 import pytest
+import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
@@ -62,6 +63,7 @@ from tenacity import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
 ]
 
@@ -114,17 +116,13 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
 
 
 @asynccontextmanager
-async def auto_remove_task(
-    http_client: HttpClient, task_id: TaskId
-) -> AsyncIterator[None]:
-    """clenup pending tasks"""
+async def auto_remove_task(http_client: HttpClient, task_id: TaskId) -> AsyncIterator[None]:
+    """cleanup pending tasks"""
     try:
         yield
     finally:
         await http_client.remove_task(task_id, timeout=10)
-        await assert_task_is_no_longer_present(
-            get_fastapi_long_running_manager(http_client.app), task_id, {}
-        )
+        await assert_task_is_no_longer_present(get_fastapi_long_running_manager(http_client.app), task_id, {})
 
 
 async def _get_container_timestamps(
@@ -185,24 +183,24 @@ def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://background.testserver.io")
 
 
 @pytest.fixture
 def mock_environment(
     monkeypatch: pytest.MonkeyPatch,
+    postgres_db: sa.engine.Engine,
+    postgres_env_vars_dict: EnvVarsDict,
     rabbit_service: RabbitSettings,
     mock_environment: EnvVarsDict,
 ) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            **mock_environment,
-            "RABBIT_SETTINGS": json.dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
-        },
-    )
+    envs = {
+        **mock_environment,
+        "RABBIT_SETTINGS": json.dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
+        **postgres_env_vars_dict,
+    }
+    setenvs_from_dict(monkeypatch, envs)
+    return envs
 
 
 @pytest.fixture
@@ -237,12 +235,8 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-def http_client(
-    app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> HttpClient:
-    return HttpClient(
-        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
-    )
+def http_client(app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl) -> HttpClient:
+    return HttpClient(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
 
 
 @pytest.fixture
@@ -286,9 +280,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         ["first_port", "second_port"],
     ]
 )
-async def mock_port_keys(
-    request: pytest.FixtureRequest, http_client: HttpClient
-) -> list[str] | None:
+async def mock_port_keys(request: pytest.FixtureRequest, http_client: HttpClient) -> list[str] | None:
     outputs_context: OutputsContext = http_client.app.state.outputs_context
     if request.param is not None:
         await outputs_context.set_file_type_port_keys(request.param)
@@ -316,9 +308,7 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
     )
 
 
-async def _get_task_id_pull_user_servcices_docker_images(
-    httpx_async_client: AsyncClient, *args, **kwargs
-) -> TaskId:
+async def _get_task_id_pull_user_servcices_docker_images(httpx_async_client: AsyncClient, *args, **kwargs) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers/images:pull")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -340,35 +330,27 @@ async def _get_task_id_create_service_containers(
         json=containers_compose_spec.model_dump(),
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers", json=containers_create.model_dump()
-    )
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers", json=containers_create.model_dump())
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
 
 
-async def _get_task_id_docker_compose_down(
-    httpx_async_client: AsyncClient, *args, **kwargs
-) -> TaskId:
+async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient, *args, **kwargs) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers:down")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
 
 
-async def _get_task_id_state_restore(
-    httpx_async_client: AsyncClient, *args, **kwargs
-) -> TaskId:
+async def _get_task_id_state_restore(httpx_async_client: AsyncClient, *args, **kwargs) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers/state:restore")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
 
 
-async def _get_task_id_state_save(
-    httpx_async_client: AsyncClient, *args, **kwargs
-) -> TaskId:
+async def _get_task_id_state_save(httpx_async_client: AsyncClient, *args, **kwargs) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers/state:save")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -378,9 +360,7 @@ async def _get_task_id_state_save(
 async def _get_task_id_task_ports_inputs_pull(
     httpx_async_client: AsyncClient, port_keys: list[str] | None, *args, **kwargs
 ) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/inputs:pull", json=port_keys
-    )
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/ports/inputs:pull", json=port_keys)
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -389,20 +369,14 @@ async def _get_task_id_task_ports_inputs_pull(
 async def _get_task_id_task_ports_outputs_pull(
     httpx_async_client: AsyncClient, port_keys: list[str] | None, *args, **kwargs
 ) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:pull", json=port_keys
-    )
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/ports/outputs:pull", json=port_keys)
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
 
 
-async def _get_task_id_task_ports_outputs_push(
-    httpx_async_client: AsyncClient, *args, **kwargs
-) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:push"
-    )
+async def _get_task_id_task_ports_outputs_push(httpx_async_client: AsyncClient, *args, **kwargs) -> TaskId:
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/ports/outputs:push")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -420,9 +394,7 @@ async def _get_task_id_task_containers_restart(
     return task_id
 
 
-async def _debug_progress(
-    message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
-) -> None:
+async def _debug_progress(message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId) -> None:
     print(f"{task_id} {percent} {message}")
 
 
@@ -457,9 +429,7 @@ async def _perioduc_result_and_task_removed(
         ) as result:
             return result
     finally:
-        await assert_task_is_no_longer_present(
-            get_fastapi_long_running_manager(app), task_id, {}
-        )
+        await assert_task_is_no_longer_present(get_fastapi_long_running_manager(app), task_id, {})
 
 
 async def test_create_containers_task(
@@ -473,9 +443,7 @@ async def test_create_containers_task(
 ) -> None:
     last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = None
 
-    async def create_progress(
-        message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-    ) -> None:
+    async def create_progress(message: ProgressMessage, percent: ProgressPercent | None, _: TaskId) -> None:
         nonlocal last_progress_message
         assert percent is not None
         last_progress_message = (message, percent)
@@ -484,9 +452,7 @@ async def test_create_containers_task(
     result = await _perioduc_result_and_task_removed(
         app,
         http_client,
-        await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         progress_callback=create_progress,
     )
     assert shared_store.container_names == result
@@ -505,9 +471,7 @@ async def test_pull_user_servcices_docker_images(
 ) -> None:
     last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = None
 
-    async def create_progress(
-        message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-    ) -> None:
+    async def create_progress(message: ProgressMessage, percent: ProgressPercent | None, _: TaskId) -> None:
         nonlocal last_progress_message
         assert percent is not None
         last_progress_message = (message, percent)
@@ -516,9 +480,7 @@ async def test_pull_user_servcices_docker_images(
     result = await _perioduc_result_and_task_removed(
         app,
         http_client,
-        await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         progress_callback=create_progress,
     )
     assert shared_store.container_names == result
@@ -527,9 +489,7 @@ async def test_pull_user_servcices_docker_images(
     result = await _perioduc_result_and_task_removed(
         app,
         http_client,
-        await _get_task_id_pull_user_servcices_docker_images(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        await _get_task_id_pull_user_servcices_docker_images(httpx_async_client, compose_spec, mock_metrics_params),
         progress_callback=create_progress,
     )
     assert result is None
@@ -547,25 +507,26 @@ async def test_create_containers_task_invalid_yaml_spec(
         await _perioduc_result_and_task_removed(
             app,
             http_client,
-            await _get_task_id_create_service_containers(
-                httpx_async_client, "", mock_metrics_params
-            ),
+            await _get_task_id_create_service_containers(httpx_async_client, "", mock_metrics_params),
         )
     assert "Provided yaml is not valid" in f"{exec_info.value}"
 
 
 @pytest.mark.parametrize(
-    "get_task_id_callable",
+    "get_task_id_callable, endswith",
     [
-        _get_task_id_pull_user_servcices_docker_images,
-        _get_task_id_create_service_containers,
-        _get_task_id_docker_compose_down,
-        _get_task_id_state_restore,
-        _get_task_id_state_save,
-        _get_task_id_task_ports_inputs_pull,
-        _get_task_id_task_ports_outputs_pull,
-        _get_task_id_task_ports_outputs_push,
-        _get_task_id_task_containers_restart,
+        (_get_task_id_pull_user_servcices_docker_images, "unique"),
+        (_get_task_id_create_service_containers, "unique"),
+        (_get_task_id_docker_compose_down, "unique"),
+        (_get_task_id_state_restore, "unique"),
+        (_get_task_id_state_save, "unique"),
+        (
+            _get_task_id_task_ports_inputs_pull,
+            "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
+        ),
+        (_get_task_id_task_ports_outputs_pull, "unique"),
+        (_get_task_id_task_ports_outputs_push, "unique"),
+        (_get_task_id_task_containers_restart, "unique"),
     ],
 )
 async def test_same_task_id_is_returned_if_task_exists(
@@ -573,6 +534,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     http_client: HttpClient,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable],
+    endswith: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     compose_spec: str,
@@ -588,14 +550,14 @@ async def test_same_task_id_is_returned_if_task_exists(
 
     with mock_tasks(mocker):
         task_id = await _get_awaitable()
-        assert task_id.endswith("unique")
+        assert task_id.endswith(endswith)
         async with auto_remove_task(http_client, task_id):
             assert await _get_awaitable() == task_id
 
         # since the previous task was already removed it is again possible
         # to create a task and it will share the same task_id
         new_task_id = await _get_awaitable()
-        assert new_task_id.endswith("unique")
+        assert new_task_id.endswith(endswith)
         assert new_task_id == task_id
         async with auto_remove_task(http_client, task_id):
             pass
@@ -617,9 +579,7 @@ async def test_containers_down_after_starting(
     result = await _perioduc_result_and_task_removed(
         app,
         http_client,
-        await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         progress_callback=_debug_progress,
     )
     assert shared_store.container_names == result
@@ -749,9 +709,7 @@ async def test_container_push_output_ports_missing_node(
         await _perioduc_result_and_task_removed(
             app,
             http_client,
-            await _get_task_id_task_ports_outputs_push(
-                httpx_async_client, mock_port_keys
-            ),
+            await _get_task_id_task_ports_outputs_push(httpx_async_client, mock_port_keys),
             progress_callback=_debug_progress,
         )
 
@@ -775,9 +733,7 @@ async def test_containers_restart(
     container_names = await _perioduc_result_and_task_removed(
         app,
         http_client,
-        await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
-        ),
+        await _get_task_id_create_service_containers(httpx_async_client, compose_spec, mock_metrics_params),
         progress_callback=_debug_progress,
     )
     assert shared_store.container_names == container_names
@@ -788,9 +744,7 @@ async def test_containers_restart(
     result = await _perioduc_result_and_task_removed(
         app,
         http_client,
-        await _get_task_id_task_containers_restart(
-            httpx_async_client, DEFAULT_COMMAND_TIMEOUT
-        ),
+        await _get_task_id_task_containers_restart(httpx_async_client, DEFAULT_COMMAND_TIMEOUT),
         progress_callback=_debug_progress,
     )
     assert result is None

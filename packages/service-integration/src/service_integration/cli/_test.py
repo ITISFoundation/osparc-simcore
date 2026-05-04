@@ -11,9 +11,7 @@ test_app = typer.Typer()
 
 @test_app.command("run")
 def run_tests(
-    service_dir: Annotated[
-        Path, typer.Argument(help="Root directory of the service under test")
-    ],
+    service_dir: Annotated[Path, typer.Argument(help="Root directory of the service under test")],
 ):
     """Runs tests against service directory"""
 

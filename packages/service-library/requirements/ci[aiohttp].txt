@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'service-library'
+# Shortcut to install all packages for the contiguous integration (CI) of 'service-library'
 #
 # - As ci.txt but w/ tests
 #

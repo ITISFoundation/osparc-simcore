@@ -27,8 +27,6 @@ class Access(BaseModel):
 )
 def test_model_dump_with_secrets(expected: dict, show_secrets: bool):
     assert expected == model_dump_with_secrets(
-        Access(
-            credentials=Credentials(username="DeepThought", password=SecretStr("42"))
-        ),
+        Access(credentials=Credentials(username="DeepThought", password=SecretStr("42"))),
         show_secrets=show_secrets,
     )

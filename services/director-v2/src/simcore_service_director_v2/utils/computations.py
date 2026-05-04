@@ -130,24 +130,16 @@ async def find_deprecated_tasks(
         )
     )
     service_key_version_to_details = {
-        ServiceKeyVersion.model_construct(
-            key=details["key"], version=details["version"]
-        ): details
+        ServiceKeyVersion.model_construct(key=details["key"], version=details["version"]): details
         for details in services_details
     }
     today = dt.datetime.now(tz=dt.UTC)
 
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
         if deprecation_date := service.get("deprecated"):
-            deprecation_date = arrow.get(deprecation_date).datetime.replace(
-                tzinfo=dt.UTC
-            )
+            deprecation_date = arrow.get(deprecation_date).datetime.replace(tzinfo=dt.UTC)
             is_deprecated: bool = today > deprecation_date
             return is_deprecated
         return False
 
-    return [
-        task
-        for task in task_key_versions
-        if _is_service_deprecated(service_key_version_to_details[task])
-    ]
+    return [task for task in task_key_versions if _is_service_deprecated(service_key_version_to_details[task])]

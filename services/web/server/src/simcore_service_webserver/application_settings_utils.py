@@ -7,7 +7,7 @@
 
 import functools
 import logging
-from typing import Any, TypeAlias
+from typing import Any
 
 from aiohttp import web
 from common_library.pydantic_fields_extension import get_type, is_nullable
@@ -19,7 +19,7 @@ from .constants import MSG_UNDER_DEVELOPMENT
 
 _logger = logging.getLogger(__name__)
 
-AppConfigDict: TypeAlias = dict[str, Any]
+type AppConfigDict = dict[str, Any]
 
 
 def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
@@ -31,11 +31,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
             "host": app_settings.WEBSERVER_SERVER_HOST,
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOGLEVEL}",
-            "testing": False,  # TODO: deprecate!
+            "testing": False,  # deprecate!
             "studies_access_enabled": (
-                int(
-                    app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
-                )
+                int(app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED)
                 if app_settings.WEBSERVER_STUDIES_DISPATCHER
                 else 0
             ),
@@ -47,19 +45,14 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
         "db": {
             "postgres": {
                 "database": getattr(app_settings.WEBSERVER_DB, "POSTGRES_DB", None),
-                "endpoint": f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_HOST', None)}:{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_PORT', None)}",
+                "endpoint": (
+                    f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_HOST', None)}:"
+                    f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_PORT', None)}"
+                ),
                 "host": getattr(app_settings.WEBSERVER_DB, "POSTGRES_HOST", None),
-                "maxsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAXSIZE", None),
-                "minsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MINSIZE", None),
-                "maxpoolsize": getattr(
-                    app_settings.WEBSERVER_DB, "POSTGRES_MAX_POOLSIZE", None
-                ),
-                "maxoverflow": getattr(
-                    app_settings.WEBSERVER_DB, "POSTGRES_MAX_OVERFLOW", None
-                ),
-                "password": getattr(
-                    app_settings.WEBSERVER_DB, "POSTGRES_PASSWORD", SecretStr("")
-                ).get_secret_value(),
+                "maxpoolsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAX_POOLSIZE", None),
+                "maxoverflow": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAX_OVERFLOW", None),
+                "password": getattr(app_settings.WEBSERVER_DB, "POSTGRES_PASSWORD", SecretStr("")).get_secret_value(),
                 "port": getattr(app_settings.WEBSERVER_DB, "POSTGRES_PORT", None),
                 "user": getattr(app_settings.WEBSERVER_DB, "POSTGRES_USER", None),
             },
@@ -67,8 +60,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
         },
         "resource_manager": {
             "enabled": (
-                app_settings.WEBSERVER_REDIS is not None
-                and app_settings.WEBSERVER_RESOURCE_MANAGER is not None
+                app_settings.WEBSERVER_REDIS is not None and app_settings.WEBSERVER_RESOURCE_MANAGER is not None
             ),
             "resource_deletion_timeout_seconds": getattr(
                 app_settings.WEBSERVER_RESOURCE_MANAGER,
@@ -84,15 +76,11 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
                 "enabled": app_settings.WEBSERVER_REDIS is not None,
                 "host": getattr(app_settings.WEBSERVER_REDIS, "REDIS_HOST", None),
                 "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
-                "password": getattr(
-                    app_settings.WEBSERVER_REDIS, "REDIS_PASSWORD", None
-                ),
+                "password": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PASSWORD", None),
             },
         },
         # added to support legacy ----
-        "garbage_collector": {
-            "enabled": app_settings.WEBSERVER_GARBAGE_COLLECTOR is not None
-        },
+        "garbage_collector": {"enabled": app_settings.WEBSERVER_GARBAGE_COLLECTOR is not None},
         "redis": {"enabled": app_settings.WEBSERVER_REDIS is not None},
         # -----------------------------
         "login": {
@@ -116,24 +104,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
                 else 0
             ),
             "password_min_length": (
-                12
-                if getattr(
-                    app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None
-                )
-                else 0
-            ),
-        },
-        "smtp": {
-            "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
-            "port": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PORT", None),
-            "username": str(
-                getattr(app_settings.WEBSERVER_EMAIL, "SMTP_USERNAME", None)
-            ),
-            "password": str(
-                getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PASSWORD", None)
-                and getattr(
-                    app_settings.WEBSERVER_EMAIL, "SMTP_PASSWORD", SecretStr("")
-                ).get_secret_value()
+                12 if getattr(app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None) else 0
             ),
         },
         "storage": {
@@ -153,17 +124,11 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
             "enabled": app_settings.WEBSERVER_REST is not None,
         },
         "projects": {"enabled": app_settings.WEBSERVER_PROJECTS},
-        "session": {
-            "secret_key": app_settings.WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value()
-        },
+        "session": {"secret_key": app_settings.WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value()},
         "activity": {
             "enabled": app_settings.WEBSERVER_ACTIVITY is not None,
-            "prometheus_url": getattr(
-                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_URL", None
-            ),
-            "prometheus_api_version": getattr(
-                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None
-            ),
+            "prometheus_url": getattr(app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_URL", None),
+            "prometheus_api_version": getattr(app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None),
         },
         "computation": {"enabled": app_settings.is_enabled("WEBSERVER_NOTIFICATIONS")},
         "diagnostics": {"enabled": app_settings.is_enabled("WEBSERVER_DIAGNOSTICS")},
@@ -171,18 +136,14 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
         "groups": {"enabled": app_settings.WEBSERVER_GROUPS},
         "products": {"enabled": app_settings.WEBSERVER_PRODUCTS},
-        "publications": {"enabled": app_settings.WEBSERVER_PUBLICATIONS},
         "remote_debug": {"enabled": app_settings.WEBSERVER_REMOTE_DEBUG},
         "security": {"enabled": True},
         "scicrunch": {"enabled": app_settings.WEBSERVER_SCICRUNCH is not None},
         "statics": {
-            "enabled": app_settings.WEBSERVER_FRONTEND is not None
-            and app_settings.WEBSERVER_STATICWEB is not None
+            "enabled": app_settings.WEBSERVER_FRONTEND is not None and app_settings.WEBSERVER_STATICWEB is not None
         },
         # NOTE  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_dispatcher": {
-            "enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER is not None
-        },
+        "studies_dispatcher": {"enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER is not None},
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},
         "users": {"enabled": app_settings.WEBSERVER_USERS is not None},
         "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
@@ -209,7 +170,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         field = dict(ApplicationSettings.model_fields)[field_name]
         if not enabled:
             envs[field_name] = "null" if is_nullable(field) else "0"
-        elif get_type(field) == bool:
+        elif get_type(field) is bool:
             envs[field_name] = "1"
 
     if main := cfg.get("main"):
@@ -224,11 +185,20 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         if section := db.get("postgres"):
             envs["POSTGRES_DB"] = section.get("database")
             envs["POSTGRES_HOST"] = section.get("host")
-            envs["POSTGRES_MAXSIZE"] = section.get("maxsize")
-            envs["POSTGRES_MINSIZE"] = section.get("minsize")
             envs["POSTGRES_PASSWORD"] = section.get("password")
             envs["POSTGRES_PORT"] = section.get("port")
             envs["POSTGRES_USER"] = section.get("user")
+
+            # Pool sizing: prefer new keys, fallback to legacy maxsize
+            max_poolsize = section.get("maxpoolsize")
+            if max_poolsize is None and (maxsize := section.get("maxsize")) is not None:
+                max_poolsize = maxsize
+            if max_poolsize is not None:
+                envs["POSTGRES_MAX_POOLSIZE"] = max_poolsize
+
+            max_overflow = section.get("maxoverflow")
+            if max_overflow is not None:
+                envs["POSTGRES_MAX_OVERFLOW"] = max_overflow
 
         _set_if_disabled("WEBSERVER_DB", db)
 
@@ -242,12 +212,8 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
 
-        envs["RESOURCE_MANAGER_RESOURCE_TTL_S"] = section.get(
-            "resource_deletion_timeout_seconds"
-        )
-        envs["GARBAGE_COLLECTOR_INTERVAL_S"] = section.get(
-            "garbage_collection_interval_seconds"
-        )
+        envs["RESOURCE_MANAGER_RESOURCE_TTL_S"] = section.get("resource_deletion_timeout_seconds")
+        envs["GARBAGE_COLLECTOR_INTERVAL_S"] = section.get("garbage_collection_interval_seconds")
 
         if section2 := section.get("redis"):
             _set_if_disabled("WEBSERVER_REDIS", section2)
@@ -261,12 +227,8 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
     if section := cfg.get("login"):
         _set_if_disabled("WEBSERVER_LOGIN", section)
 
-        envs["LOGIN_REGISTRATION_INVITATION_REQUIRED"] = section.get(
-            "registration_invitation_required"
-        )
-        envs["LOGIN_REGISTRATION_CONFIRMATION_REQUIRED"] = section.get(
-            "registration_confirmation_required"
-        )
+        envs["LOGIN_REGISTRATION_INVITATION_REQUIRED"] = section.get("registration_invitation_required")
+        envs["LOGIN_REGISTRATION_CONFIRMATION_REQUIRED"] = section.get("registration_confirmation_required")
 
     if section := cfg.get("smtp"):
         envs["SMTP_HOST"] = section.get("host")
@@ -319,7 +281,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         "WEBSERVER_GROUPS",
         "WEBSERVER_PRODUCTS",
         "WEBSERVER_PROJECTS",
-        "WEBSERVER_PUBLICATIONS",
         "WEBSERVER_REMOTE_DEBUG",
         "WEBSERVER_REST",
         "WEBSERVER_SOCKETIO",

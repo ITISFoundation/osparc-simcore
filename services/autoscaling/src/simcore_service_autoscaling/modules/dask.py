@@ -3,11 +3,12 @@ import contextlib
 import logging
 import re
 from collections import defaultdict
-from collections.abc import AsyncIterator, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
 from typing import Any, Final, TypeAlias, TypedDict
 
 import dask.typing
 import distributed
+from aiocache import cached  # type: ignore[import-untyped]
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceType
 from dask_task_models_library.resource_constraints import (
@@ -16,6 +17,7 @@ from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
 from distributed.core import Status
+from distributed.objects import SchedulerInfo
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl
 
@@ -47,12 +49,31 @@ async def _wrap_client_async_routine(
 
 
 _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
+_SCHEDULER_IDENTITY_CACHE_TTL_S: Final[int] = 2
+
+
+def _scheduler_identity_key_builder(func: Callable[..., Any], client: distributed.Client) -> str:
+    assert client.scheduler  # nosec
+    return f"{func.__module__}.{func.__qualname__}|{client.scheduler.address}"
+
+
+@cached(ttl=_SCHEDULER_IDENTITY_CACHE_TTL_S, key_builder=_scheduler_identity_key_builder)
+async def _get_scheduler_identity(client: distributed.Client) -> SchedulerInfo:
+    """Returns all workers from the scheduler with a 2-second TTL cache.
+
+    client.scheduler_info() is a local cache capped at 5 workers for async clients
+    since https://github.com/dask/distributed/pull/9045.
+    client.scheduler.identity(n_workers=-1) is a live RPC but we cache it briefly
+    to avoid redundant round-trips within a single autoscaling tick.
+    """
+    assert client.scheduler  # nosec
+    info = await client.scheduler.identity(n_workers=-1)
+    assert isinstance(info, dict)  # nosec
+    return SchedulerInfo(info)
 
 
 @contextlib.asynccontextmanager
-async def _scheduler_client(
-    url: AnyUrl, authentication: ClusterAuthentication
-) -> AsyncIterator[distributed.Client]:
+async def _scheduler_client(url: AnyUrl, authentication: ClusterAuthentication) -> AsyncIterator[distributed.Client]:
     """
     Raises:
         DaskSchedulerNotFoundError: if the scheduler was not found/cannot be reached
@@ -84,21 +105,25 @@ DASK_NAME_PATTERN: Final[re.Pattern] = re.compile(
 )
 
 
-def _dask_worker_from_ec2_instance(
+async def _dask_worker_from_ec2_instance(
     client: distributed.Client, ec2_instance: EC2InstanceData
 ) -> tuple[DaskWorkerUrl, DaskWorkerDetails]:
     """
+    Uses client.scheduler.identity() RPC to get all workers live from the scheduler,
+    bypassing client.scheduler_info() which is a local cache capped at 5 workers
+    for async clients regardless of the n_workers argument.
+
     Raises:
         Ec2InvalidDnsNameError
         DaskNoWorkersError
         DaskWorkerNotFoundError
     """
     node_hostname = node_host_name_from_ec2_private_dns(ec2_instance)
-    scheduler_info = client.scheduler_info()
     assert client.scheduler  # nosec
-    if "workers" not in scheduler_info or not scheduler_info["workers"]:
+    scheduler_identity = await _get_scheduler_identity(client)
+    if "workers" not in scheduler_identity or not scheduler_identity["workers"]:
         raise DaskNoWorkersError(url=client.scheduler.address)
-    workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_info["workers"]
+    workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_identity["workers"]
 
     _logger.debug("looking for %s in %s", f"{ec2_instance=}", f"{workers=}")
 
@@ -117,12 +142,8 @@ def _dask_worker_from_ec2_instance(
 
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
     if not filtered_workers:
-        raise DaskWorkerNotFoundError(
-            worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address
-        )
-    assert (
-        len(filtered_workers) == 1
-    ), f"returned workers {filtered_workers}, {node_hostname=}"  # nosec
+        raise DaskWorkerNotFoundError(worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address)
+    assert len(filtered_workers) == 1, f"returned workers {filtered_workers}, {node_hostname=}"  # nosec
     return next(iter(filtered_workers.items()))
 
 
@@ -145,14 +166,13 @@ async def _list_cluster_known_tasks(
                 worker_to_processing_tasks[task_state.processing_on.address].append(
                     (
                         task_key,
-                        (task_state.resource_restrictions or {})
-                        | {DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+                        (task_state.resource_restrictions or {}) | {DASK_WORKER_THREAD_RESOURCE_NAME: 1},
                     )
                 )
             elif task_state in dask_scheduler.unrunnable:
-                unrunnable_tasks[task_key] = (
-                    task_state.resource_restrictions or {}
-                ) | {DASK_WORKER_THREAD_RESOURCE_NAME: 1}
+                unrunnable_tasks[task_key] = (task_state.resource_restrictions or {}) | {
+                    DASK_WORKER_THREAD_RESOURCE_NAME: 1
+                }
 
         return {
             "processing": worker_to_processing_tasks,
@@ -172,9 +192,7 @@ async def is_worker_connected(
 ) -> bool:
     with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
         async with _scheduler_client(scheduler_url, authentication) as client:
-            _, worker_details = _dask_worker_from_ec2_instance(
-                client, worker_ec2_instance
-            )
+            _, worker_details = await _dask_worker_from_ec2_instance(client, worker_ec2_instance)
             return Status(worker_details["status"]) == Status.running
     return False
 
@@ -186,9 +204,7 @@ async def is_worker_retired(
 ) -> bool:
     with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
         async with _scheduler_client(scheduler_url, authentication) as client:
-            _, worker_details = _dask_worker_from_ec2_instance(
-                client, worker_ec2_instance
-            )
+            _, worker_details = await _dask_worker_from_ec2_instance(client, worker_ec2_instance)
             return Status(worker_details["status"]) in {
                 Status.closed,
                 Status.closing,
@@ -264,7 +280,7 @@ async def get_worker_still_has_results_in_memory(
         DaskNoWorkersError
     """
     async with _scheduler_client(scheduler_url, authentication) as client:
-        _, worker_details = _dask_worker_from_ec2_instance(client, ec2_instance)
+        _, worker_details = await _dask_worker_from_ec2_instance(client, ec2_instance)
 
         worker_metrics: dict[str, Any] = worker_details["metrics"]
         return 1 if worker_metrics.get("task_counts") else 0
@@ -284,7 +300,7 @@ async def get_worker_used_resources(
     """
 
     async with _scheduler_client(scheduler_url, authentication) as client:
-        worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
+        worker_url, _ = await _dask_worker_from_ec2_instance(client, ec2_instance)
         known_tasks = await _list_cluster_known_tasks(client)
         worker_processing_tasks = known_tasks["processing"].get(worker_url, [])
         if not worker_processing_tasks:
@@ -295,9 +311,7 @@ async def get_worker_used_resources(
             total_resources_used.update(task_resources)
 
         _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
-        return Resources.from_flat_dict(
-            dict(total_resources_used), mapping=DASK_TO_RESOURCE_NAME_MAPPING
-        )
+        return Resources.from_flat_dict(dict(total_resources_used), mapping=DASK_TO_RESOURCE_NAME_MAPPING)
 
 
 async def compute_cluster_total_resources(
@@ -308,13 +322,12 @@ async def compute_cluster_total_resources(
     if not instances:
         return Resources.create_as_empty()
     async with _scheduler_client(scheduler_url, authentication) as client:
-        ec2_instance_resources_map = {
-            node_ip_from_ec2_private_dns(i): i.resources for i in instances
-        }
-        scheduler_info = client.scheduler_info()
-        if "workers" not in scheduler_info or not scheduler_info["workers"]:
+        ec2_instance_resources_map = {node_ip_from_ec2_private_dns(i): i.resources for i in instances}
+        assert client.scheduler is not None  # nosec
+        scheduler_identity = await _get_scheduler_identity(client)
+        if "workers" not in scheduler_identity or not scheduler_identity["workers"]:
             raise DaskNoWorkersError(url=scheduler_url)
-        workers: dict[str, Any] = scheduler_info["workers"]
+        workers: dict[str, Any] = scheduler_identity["workers"]
         cluster_resources = Resources.create_as_empty()
         for worker_details in workers.values():
             if worker_details["host"] not in ec2_instance_resources_map:
@@ -333,39 +346,27 @@ async def compute_cluster_total_resources(
         return cluster_resources
 
 
-async def try_retire_nodes(
-    scheduler_url: AnyUrl, authentication: ClusterAuthentication
-) -> None:
+async def try_retire_nodes(scheduler_url: AnyUrl, authentication: ClusterAuthentication) -> None:
     async with _scheduler_client(scheduler_url, authentication) as client:
-        await _wrap_client_async_routine(
-            client.retire_workers(close_workers=False, remove=False)
-        )
+        await _wrap_client_async_routine(client.retire_workers(close_workers=False, remove=False))
 
 
 _LARGE_RESOURCE: Final[int] = 99999
 
 
-def add_instance_generic_resources(
-    settings: DaskMonitoringSettings, instance: EC2InstanceData
-) -> None:
+def add_instance_generic_resources(settings: DaskMonitoringSettings, instance: EC2InstanceData) -> None:
     instance_threads = max(1, round(instance.resources.cpus))
     if settings.DASK_NTHREADS > 0:
         # this overrides everything
         instance_threads = settings.DASK_NTHREADS
     if settings.DASK_NTHREADS_MULTIPLIER > 1:
         instance_threads = instance_threads * settings.DASK_NTHREADS_MULTIPLIER
-    instance.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] = (
-        instance_threads
-    )
+    instance.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] = instance_threads
 
-    instance.resources.generic_resources[
-        create_ec2_resource_constraint_key(instance.type)
-    ] = _LARGE_RESOURCE
+    instance.resources.generic_resources[create_ec2_resource_constraint_key(instance.type)] = _LARGE_RESOURCE
 
 
-def add_instance_type_generic_resource(
-    settings: DaskMonitoringSettings, instance_type: EC2InstanceType
-) -> None:
+def add_instance_type_generic_resource(settings: DaskMonitoringSettings, instance_type: EC2InstanceType) -> None:
     instance_threads = max(1, round(instance_type.resources.cpus))
     if settings.DASK_NTHREADS > 0:
         # this overrides everything
@@ -373,10 +374,6 @@ def add_instance_type_generic_resource(
     if settings.DASK_NTHREADS_MULTIPLIER > 1:
         instance_threads = instance_threads * settings.DASK_NTHREADS_MULTIPLIER
 
-    instance_type.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] = (
-        instance_threads
-    )
+    instance_type.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] = instance_threads
 
-    instance_type.resources.generic_resources[
-        create_ec2_resource_constraint_key(instance_type.name)
-    ] = _LARGE_RESOURCE
+    instance_type.resources.generic_resources[create_ec2_resource_constraint_key(instance_type.name)] = _LARGE_RESOURCE

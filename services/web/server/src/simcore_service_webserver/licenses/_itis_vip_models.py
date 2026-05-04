@@ -104,9 +104,7 @@ class ItisVipData(BaseModel):
 class ItisVipResourceData(BaseModel):
     category_id: IDStr
     category_display: str
-    source: Annotated[
-        ItisVipData, Field(description="Original published data in the api")
-    ]
+    source: Annotated[ItisVipData, Field(description="Original published data in the api")]
     terms_of_use_url: HttpUrl | None = None
 
 

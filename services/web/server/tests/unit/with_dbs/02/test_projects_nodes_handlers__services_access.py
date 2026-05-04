@@ -53,9 +53,7 @@ def workbench_db_column() -> dict[str, Any]:
 
 
 @pytest.fixture
-def fake_project(
-    fake_project: ProjectDict, workbench_db_column: dict[str, Any]
-) -> ProjectDict:
+def fake_project(fake_project: ProjectDict, workbench_db_column: dict[str, Any]) -> ProjectDict:
     # OVERRIDES user_project
     project = deepcopy(fake_project)
     project["workbench"] = workbench_db_column
@@ -114,14 +112,10 @@ async def test_user_role_access(
     project_id = user_project["uuid"]
     for_gid = logged_user["primary_gid"]
 
-    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
 
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
-    )
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}")
     project_access, error = await assert_status(resp, expected_status_code=expected)
 
     if not error:
@@ -168,14 +162,10 @@ async def test_accessible_thanks_to_everyone_group_id(
     project_id = user_project["uuid"]
     for_gid = logged_user["primary_gid"]
 
-    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
 
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
-    )
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {"gid": for_gid, "accessible": True}
@@ -205,9 +195,7 @@ async def test_accessible_thanks_to_concrete_group_id(
             ServiceAccessRightsGet(
                 service_key="simcore/services/frontend/parameter/integer",
                 service_version="1.0.0",
-                gids_with_access_rights={
-                    1: {"execute_access": True}
-                },  # <-- GROUP ID FOR EVERYONE
+                gids_with_access_rights={1: {"execute_access": True}},  # <-- GROUP ID FOR EVERYONE
             ),
             ServiceAccessRightsGet(
                 service_key="simcore/services/comp/itis/sleeper",
@@ -221,14 +209,10 @@ async def test_accessible_thanks_to_concrete_group_id(
 
     project_id = user_project["uuid"]
 
-    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
 
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
-    )
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {"gid": for_gid, "accessible": True}
@@ -277,14 +261,10 @@ async def test_accessible_through_product_group(
 
     project_id = user_project["uuid"]
 
-    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
 
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
-    )
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {
@@ -334,14 +314,10 @@ async def test_accessible_for_one_service(
 
     project_id = user_project["uuid"]
 
-    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
 
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
-    )
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {
@@ -396,14 +372,10 @@ async def test_not_accessible_for_more_services(
     project_id = user_project["uuid"]
     for_gid = logged_user["primary_gid"]
 
-    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
 
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
-    )
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {
@@ -433,9 +405,7 @@ async def test_not_accessible_for_service_because_of_execute_access_false(
             ServiceAccessRightsGet(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.4",
-                gids_with_access_rights={
-                    for_gid: {"execute_access": False}
-                },  # <-- FALSE
+                gids_with_access_rights={for_gid: {"execute_access": False}},  # <-- FALSE
             ),
             ServiceAccessRightsGet(
                 service_key="simcore/services/frontend/parameter/integer",
@@ -454,22 +424,16 @@ async def test_not_accessible_for_service_because_of_execute_access_false(
 
     project_id = user_project["uuid"]
 
-    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
 
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
-    )
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {
         "gid": for_gid,
         "accessible": False,
-        "inaccessible_services": [
-            {"key": "simcore/services/comp/itis/sleeper", "version": "2.1.4"}
-        ],
+        "inaccessible_services": [{"key": "simcore/services/comp/itis/sleeper", "version": "2.1.4"}],
     }
 
 
@@ -480,9 +444,7 @@ async def test_get_project_services(
     mocker: MockerFixture,
     logged_user: UserInfoDict,
 ):
-    fake_services_in_project = [
-        (sv["key"], sv["version"]) for sv in user_project["workbench"].values()
-    ]
+    fake_services_in_project = [(sv["key"], sv["version"]) for sv in user_project["workbench"].values()]
 
     mocker.patch(
         "simcore_service_webserver.catalog._service.catalog_rpc.batch_get_my_services",
@@ -510,9 +472,7 @@ async def test_get_project_services(
 
     project_id = user_project["uuid"]
 
-    expected_url = client.app.router["get_project_services"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services")
@@ -583,9 +543,7 @@ async def test_get_project_services_service_unavailable(
 
     project_id = user_project["uuid"]
 
-    expected_url = client.app.router["get_project_services"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services")
@@ -631,9 +589,7 @@ async def test_get_project_services_empty_project(
         catalog_rpc,
         "batch_get_my_services",
         spec=True,
-        side_effect=ValueError(
-            "Bad request: cannot batch-get an empty list of name-ids"
-        ),
+        side_effect=ValueError("Bad request: cannot batch-get an empty list of name-ids"),
     )
 
     assert client.app
@@ -641,9 +597,7 @@ async def test_get_project_services_empty_project(
     # ACT
     project_id = empty_project["uuid"]
 
-    expected_url = client.app.router["get_project_services"].url_for(
-        project_id=project_id
-    )
+    expected_url = client.app.router["get_project_services"].url_for(project_id=project_id)
     assert URL(f"/v0/projects/{project_id}/nodes/-/services") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services")

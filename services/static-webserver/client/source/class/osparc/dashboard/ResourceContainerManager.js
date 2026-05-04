@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
-    "emptyStudyClicked": "qx.event.type.Data",
+    "emptyProjectIconClicked": "qx.event.type.Data",
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data",
     "folderSelected": "qx.event.type.Data",
@@ -351,7 +351,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "updateHypertool",
         "publishTemplate",
         "tagClicked",
-        "emptyStudyClicked"
+        "emptyProjectIconClicked"
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
       return card;
     },

@@ -9,9 +9,7 @@ from .repository import get_repository
 
 
 async def list_user_groups(
-    groups_repository: Annotated[
-        GroupsRepository, Depends(get_repository(GroupsRepository))
-    ],
+    groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
     user_id: Annotated[
         UserID | None,
         Query(

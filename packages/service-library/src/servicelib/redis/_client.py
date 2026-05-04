@@ -10,6 +10,7 @@ import redis.asyncio as aioredis
 import redis.exceptions
 import tenacity
 from common_library.async_tools import cancel_wait_task
+from common_library.network import redact_url
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
@@ -21,6 +22,7 @@ from ._constants import (
     DEFAULT_HEALTH_CHECK_INTERVAL,
     DEFAULT_LOCK_TTL,
 )
+from ._utils import handle_redis_returns_union_types
 
 _logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ _HEALTHCHECK_TIMEOUT_S: Final[float] = 3.0
     reraise=True,
 )
 async def wait_till_redis_is_responsive(client: aioredis.Redis) -> None:
-    if not await client.ping():
+    if not await handle_redis_returns_union_types(client.ping()):
         raise tenacity.TryAgain
 
 
@@ -93,14 +95,12 @@ class RedisClientSDK:
 
         _logger.info(
             "Connection to %s succeeded with %s",
-            f"redis at {self.redis_dsn=}",
+            f"Redis at dsn={redact_url(self.redis_dsn)}",
             f"{self._client=}",
         )
 
     async def shutdown(self) -> None:
-        with log_context(
-            _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
-        ):
+        with log_context(_logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"):
             if self._task_health_check:
                 assert self._started_event_task_health_check  # nosec
                 await self._started_event_task_health_check.wait()
@@ -113,7 +113,9 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            await asyncio.wait_for(self._client.ping(), timeout=_HEALTHCHECK_TIMEOUT_S)
+            await asyncio.wait_for(
+                handle_redis_returns_union_types(self._client.ping()), timeout=_HEALTHCHECK_TIMEOUT_S
+            )
             return True
 
         return False
@@ -130,9 +132,7 @@ class RedisClientSDK:
         """
         return self._is_healthy
 
-    def create_lock(
-        self, lock_name: str, *, ttl: datetime.timedelta | None = DEFAULT_LOCK_TTL
-    ) -> Lock:
+    def create_lock(self, lock_name: str, *, ttl: datetime.timedelta | None = DEFAULT_LOCK_TTL) -> Lock:
         return self._client.lock(
             name=lock_name,
             timeout=ttl.total_seconds() if ttl is not None else None,

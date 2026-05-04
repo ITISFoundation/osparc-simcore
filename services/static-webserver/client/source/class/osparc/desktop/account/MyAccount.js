@@ -123,13 +123,23 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const usageOverview = new osparc.desktop.credits.Usage();
       const page = this.addTab(title, iconSrc, usageOverview);
+      this.getChildControl("tabs-view").addListener("changeSelection", e => {
+        const selectedPage = e.getData()[0];
+        if (selectedPage === page) {
+          usageOverview.reloadData();
+        }
+      });
       return page;
     },
+
     __addGeneralSettings: function() {
       const title = this.tr("Settings");
       const iconSrc = "@FontAwesome5Solid/cogs/22";
       const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
-      this.addTab(title, iconSrc, generalPage);
+      if (generalPage.getChildrenCount() > 0) {
+        // avoid adding the tab if there are no settings to show
+        this.addTab(title, iconSrc, generalPage);
+      }
     },
 
     __addConfirmationSettings: function() {

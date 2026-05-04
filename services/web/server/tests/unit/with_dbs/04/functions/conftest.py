@@ -69,10 +69,7 @@ def app_environment(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_RABBITMQ
-    assert (
-        TypeAdapter(RPCNamespace).validate_python(service_name)
-        == settings.WEBSERVER_RPC_NAMESPACE
-    )
+    assert TypeAdapter(RPCNamespace).validate_python(service_name) == settings.WEBSERVER_RPC_NAMESPACE
 
     return new_envs
 
@@ -133,9 +130,7 @@ def create_fake_function_obj() -> Callable[[FunctionClass], Function]:
 
 
 @pytest.fixture
-async def other_logged_user(
-    client: TestClient, rpc_client: RabbitMQRPCClient
-) -> AsyncIterator[UserInfoDict]:
+async def other_logged_user(client: TestClient, rpc_client: RabbitMQRPCClient) -> AsyncIterator[UserInfoDict]:
     async with LoggedUser(client) as other_user:
         yield other_user
 
@@ -184,13 +179,11 @@ async def clean_function_job_collections(
 ) -> None:
     assert client.app
 
-    job_collections, _ = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=100,
-            pagination_offset=0,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    job_collections, _ = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=100,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     for function_job_collection in job_collections:
         assert function_job_collection.uid is not None

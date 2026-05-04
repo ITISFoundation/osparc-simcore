@@ -26,7 +26,8 @@ from servicelib.fastapi.http_client import (
     HealthMixinMixin,
 )
 from servicelib.fastapi.httpx_utils import to_curl_command
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.tracing import setup_httpx_client_tracing
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -68,9 +69,7 @@ class PaymentsGatewayError(PaymentsGatewayBaseError):
     msg_template = "{operation_id} error {status_code}: {reason}"
 
     @classmethod
-    def from_http_status_error(
-        cls, err: HTTPStatusError, operation_id: str
-    ) -> "PaymentsGatewayError":
+    def from_http_status_error(cls, err: HTTPStatusError, operation_id: str) -> "PaymentsGatewayError":
         return cls(
             operation_id=f"PaymentsGatewayApi.{operation_id}",
             reason=f"{err}",
@@ -98,13 +97,10 @@ def _raise_as_payments_gateway_error(operation_id: str):
     Maps httpx exceptions into PaymentsGatewayError exceptions
     """
     try:
-
         yield
 
     except HTTPStatusError as err:
-        gateway_error = PaymentsGatewayError.from_http_status_error(
-            err, operation_id=operation_id
-        )
+        gateway_error = PaymentsGatewayError.from_http_status_error(err, operation_id=operation_id)
         _logger.warning(gateway_error.get_detailed_message())
         raise gateway_error from err
 
@@ -127,9 +123,7 @@ class _GatewayApiAuth(httpx.Auth):
         yield request
 
 
-class PaymentsGatewayApi(
-    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
-):
+class PaymentsGatewayApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
     app_state_name: str = "payment_gateway_api"
 
     #
@@ -149,9 +143,7 @@ class PaymentsGatewayApi(
         return self.client.base_url.copy_with(path="/pay", params={"id": f"{id_}"})
 
     @_handle_status_errors
-    async def cancel_payment(
-        self, payment_initiated: PaymentInitiated
-    ) -> PaymentCancelled:
+    async def cancel_payment(self, payment_initiated: PaymentInitiated) -> PaymentCancelled:
         response = await self.client.post(
             "/cancel",
             json=jsonable_encoder(payment_initiated),
@@ -176,16 +168,12 @@ class PaymentsGatewayApi(
         return PaymentMethodInitiated.model_validate(response.json())
 
     def get_form_payment_method_url(self, id_: PaymentMethodID) -> URL:
-        return self.client.base_url.copy_with(
-            path="/payment-methods/form", params={"id": f"{id_}"}
-        )
+        return self.client.base_url.copy_with(path="/payment-methods/form", params={"id": f"{id_}"})
 
     # CRUD
 
     @_handle_status_errors
-    async def get_many_payment_methods(
-        self, ids_: list[PaymentMethodID]
-    ) -> list[GetPaymentMethod]:
+    async def get_many_payment_methods(self, ids_: list[PaymentMethodID]) -> list[GetPaymentMethod]:
         if not ids_:
             return []
         response = await self.client.post(
@@ -216,9 +204,7 @@ class PaymentsGatewayApi(
         try:
             response = await self.client.post(
                 f"/payment-methods/{id_}:pay",
-                json=jsonable_encoder(
-                    payment.model_dump(exclude_none=True, by_alias=True)
-                ),
+                json=jsonable_encoder(payment.model_dump(exclude_none=True, by_alias=True)),
                 # NOTE: more flexible in the communication with the payment gateway upon payment
                 # SEE https://git.speag.com/oSparc/osparc-infra/-/issues/86
                 timeout=httpx.Timeout(60.0),
@@ -243,9 +229,7 @@ def setup_payments_gateway(app: FastAPI):
     api = PaymentsGatewayApi.from_client_kwargs(
         base_url=f"{settings.PAYMENTS_GATEWAY_URL}",
         headers={"accept": "application/json"},
-        auth=_GatewayApiAuth(
-            secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
-        ),
+        auth=_GatewayApiAuth(secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()),
     )
     if settings.PAYMENTS_TRACING:
         setup_httpx_client_tracing(

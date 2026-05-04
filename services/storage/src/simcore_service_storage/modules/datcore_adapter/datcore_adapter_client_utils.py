@@ -52,9 +52,7 @@ async def request(
         return response_data
 
     except httpx.HTTPStatusError as exc:
-        raise DatcoreAdapterResponseError(
-            status=exc.response.status_code, reason=f"{exc}"
-        ) from exc
+        raise DatcoreAdapterResponseError(status=exc.response.status_code, reason=f"{exc}") from exc
 
     except TimeoutError as exc:
         msg = f"datcore-adapter server timed-out: {exc}"
@@ -81,9 +79,7 @@ async def retrieve_all_pages(
     while (
         response := cast(
             dict[str, Any],
-            await request(
-                app, api_key, api_secret, method, path, params={"page": page}
-            ),
+            await request(app, api_key, api_secret, method, path, params={"page": page}),
         )
     ) and response.get("items"):
         _logger.debug(

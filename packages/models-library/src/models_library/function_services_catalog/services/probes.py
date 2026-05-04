@@ -93,9 +93,7 @@ META_FILE: Final = ServiceMetaDataPublished.model_validate(
 
 
 def is_probe_service(service_key: str) -> bool:
-    return service_key.startswith(
-        f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/"
-    )
+    return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/")
 
 
 services = FunctionServices()

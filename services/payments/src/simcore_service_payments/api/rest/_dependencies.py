@@ -65,7 +65,7 @@ def create_repository(repo_cls: type[BaseRepository]) -> Callable:
 
     async def _(
         engine: Annotated[AsyncEngine, Depends(get_db_engine)],
-    ) -> AsyncGenerator[BaseRepository, None]:
+    ) -> AsyncGenerator[BaseRepository]:
         yield repo_cls(db_engine=engine)
 
     return _

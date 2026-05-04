@@ -17,7 +17,7 @@ from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSet
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
-    STORAGE_HOST: str = "0.0.0.0"  # nosec
+    STORAGE_HOST: str = "0.0.0.0"  # nosec  # noqa: S104
     STORAGE_PORT: PortInt = 8080
 
     LOG_LEVEL: Annotated[
@@ -35,25 +35,17 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
-    STORAGE_REDIS: Annotated[
-        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    STORAGE_RABBITMQ: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    STORAGE_S3: Annotated[
-        S3Settings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    STORAGE_REDIS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    STORAGE_CELERY: Annotated[
-        CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    STORAGE_S3: Annotated[S3Settings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    STORAGE_TRACING: Annotated[
-        TracingSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    STORAGE_CELERY: Annotated[CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    DATCORE_ADAPTER: Annotated[
-        DatcoreAdapterSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    STORAGE_TRACING: Annotated[TracingSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
+
+    DATCORE_ADAPTER: Annotated[DatcoreAdapterSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     STORAGE_SYNC_METADATA_TIMEOUT: Annotated[
         PositiveInt, Field(180, description="Timeout (seconds) for metadata sync task")
@@ -61,21 +53,17 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS: Annotated[
         int,
-        Field(
-            3600, description="Default expiration time in seconds for presigned links"
-        ),
+        Field(3600, description="Default expiration time in seconds for presigned links"),
     ]
 
     STORAGE_CLEANER_INTERVAL_S: Annotated[
         int | None,
         Field(
             30,
-            description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
+            description=(
+                "Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner."
+            ),
         ),
-    ]
-
-    STORAGE_RABBITMQ: Annotated[
-        RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
@@ -94,7 +82,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development _logger format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development _logger format. WARNING: make sure it is disabled "
+                "if you want to have structured logs!"
+            ),
         ),
     ]
 
@@ -102,16 +93,15 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            validation_alias=AliasChoices("STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of _logger message patterns that should be filtered out."
             ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of _logger message patterns that should be filtered out.",
         ),
     ]
 
-    STORAGE_WORKER_MODE: Annotated[
-        bool, Field(description="If True, run as a worker")
-    ] = False
+    STORAGE_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
@@ -122,10 +112,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @model_validator(mode="after")
     def _ensure_settings_consistency(self) -> Self:
         if self.STORAGE_CLEANER_INTERVAL_S is not None and not self.STORAGE_REDIS:
-            msg = (
-                "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! "
-                "Please correct settings."
-            )
+            msg = "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! Please correct settings."
             raise ValueError(msg)
         return self
 

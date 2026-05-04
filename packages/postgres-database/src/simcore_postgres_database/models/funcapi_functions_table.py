@@ -6,11 +6,12 @@
 import uuid
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+
 from simcore_postgres_database.models._common import (
     column_created_datetime,
     column_modified_datetime,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from .base import metadata
 

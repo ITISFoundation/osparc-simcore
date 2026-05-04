@@ -28,9 +28,7 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("client_or_system_generated_id", sa.String(), nullable=False),
-        sa.Column(
-            "client_or_system_generated_display_name", sa.String(), nullable=False
-        ),
+        sa.Column("client_or_system_generated_display_name", sa.String(), nullable=False),
         sa.Column("is_generated_by_system", sa.Boolean(), nullable=False),
         sa.Column(
             "created",
@@ -52,9 +50,7 @@ def upgrade():
         ["client_or_system_generated_id"],
         unique=False,
     )
-    op.add_column(
-        "comp_runs", sa.Column("collection_run_id", sa.String(), nullable=True)
-    )
+    op.add_column("comp_runs", sa.Column("collection_run_id", sa.String(), nullable=True))
     op.create_unique_constraint(
         "comp_runs_project_collection_run_id_unique_constraint",
         "comp_runs",

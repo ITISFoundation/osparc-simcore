@@ -8,12 +8,12 @@ Rabbit Soltis-Saucerman model with full b-AR signalling (Rabbit SS 1D cardiac)
 
 SEE https://sparc.science/datasets/4?type=dataset
 """
+
 import os
 import sys
 import time
 from pathlib import Path
 from time import sleep
-from typing import Optional
 
 import osparc
 from dotenv import load_dotenv
@@ -37,17 +37,13 @@ with osparc.ApiClient(cfg) as api_client:
     # Upload init states file.
 
     files_api = osparc.FilesApi(api_client)
-    initial_wtstates_file = files_api.upload_file(
-        str(data_dir / "initial_WTstates.txt")
-    )
+    initial_wtstates_file = files_api.upload_file(str(data_dir / "initial_WTstates.txt"))
 
     # Create our simulation.
 
     solvers_api = osparc.SolversApi(api_client)
 
-    solver = solvers_api.get_solver_release(
-        "simcore/services/comp/rabbit-ss-1d-cardiac-model", "1.0.0"
-    )
+    solver = solvers_api.get_solver_release("simcore/services/comp/rabbit-ss-1d-cardiac-model", "1.0.0")
 
     # SEE data_rabbit_cardiac/ss1d_meta.json::inputs
     job = solvers_api.create_job(
@@ -106,7 +102,7 @@ with osparc.ApiClient(cfg) as api_client:
     # Retrieve our simulation results.
 
     print("---------------------------------------")
-    result: Optional[File]
+    result: File | None
 
     for output_name, result in outputs.results.items():
         if result is None:
@@ -118,7 +114,6 @@ with osparc.ApiClient(cfg) as api_client:
                 last_status.progress == 100 or not last_status.stopped_at,
             )
         else:
-
             # Print out the id of our simulation results file (?).
 
             print("---------------------------------------")

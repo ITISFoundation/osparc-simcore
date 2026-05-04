@@ -1,5 +1,4 @@
-""" Common utils for OAS script generators
-"""
+"""Common utils for OAS script generators"""
 
 import inspect
 import sys
@@ -8,10 +7,8 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Generic,
     NamedTuple,
     Optional,
-    TypeVar,
     Union,
     get_args,
     get_origin,
@@ -42,10 +39,7 @@ def _replace_basemodel_in_annotation(annotation, new_type):
 
     # Handle Optionals, Unions, or other generic types
     if origin in (Optional, Union, list, dict, tuple):  # Extendable for other generics
-        new_args = tuple(
-            _replace_basemodel_in_annotation(arg, new_type)
-            for arg in get_args(annotation)
-        )
+        new_args = tuple(_replace_basemodel_in_annotation(arg, new_type) for arg in get_args(annotation))
         return origin[new_args]
 
     # Replace BaseModel subclass directly
@@ -59,9 +53,8 @@ def _replace_basemodel_in_annotation(annotation, new_type):
 def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     fields = {}
     for field_name, field_info in model_class.model_fields.items():
-
         field_default = field_info.default
-        assert not field_info.default_factory  # nosec
+        assert not field_info.default_factory, f"got {field_info=}"  # nosec
         query_kwargs = {
             "alias": field_info.alias,
             "title": field_info.title,
@@ -77,6 +70,12 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
             new_type=Json,
         )
 
+        # list[Json] is not a valid query parameter type in FastAPI/OpenAPI.
+        # This happens when the original type is e.g. list[SomeModel] and needs
+        # to be serialized as a plain string (parsed by a BeforeValidator).
+        if get_origin(annotation) is list and get_args(annotation) == (Json,):
+            annotation = str
+
         if annotation != field_info.annotation:
             # Complex fields are transformed to Json
             field_default = json_dumps(field_default) if field_default else None
@@ -87,10 +86,7 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     return create_model(new_model_name, **fields)
 
 
-ErrorT = TypeVar("ErrorT")
-
-
-class EnvelopeE(BaseModel, Generic[ErrorT]):
+class EnvelopeE[ErrorT](BaseModel):
     """Complementary to models_library.generics.Envelope just for the generators"""
 
     error: ErrorT | None = None
@@ -103,22 +99,14 @@ class ParamSpec(NamedTuple):
     field_info: FieldInfo
 
 
-def assert_handler_signature_against_model(
-    handler: Callable, model_cls: type[BaseModel]
-):
+def assert_handler_signature_against_model(handler: Callable, model_cls: type[BaseModel]):
     sig = inspect.signature(handler)
 
     # query, path and body parameters
-    specs_params = [
-        ParamSpec(param.name, param.annotation, param.default)
-        for param in sig.parameters.values()
-    ]
+    specs_params = [ParamSpec(param.name, param.annotation, param.default) for param in sig.parameters.values()]
 
     # query and path parameters
-    implemented_params = [
-        ParamSpec(name, get_type(info), info)
-        for name, info in model_cls.model_fields.items()
-    ]
+    implemented_params = [ParamSpec(name, get_type(info), info) for name, info in model_cls.model_fields.items()]
 
     implemented_names = {p.name for p in implemented_params}
     specified_names = {p.name for p in specs_params}

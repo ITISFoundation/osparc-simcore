@@ -67,9 +67,7 @@ def ensure_lifespan_called(state: State, lifespan_name: str) -> None:
 
 
 @contextlib.contextmanager
-def lifespan_context(
-    logger, level, lifespan_name: str, state: State
-) -> Iterator[State]:
+def lifespan_context(logger, level, lifespan_name: str, state: State) -> Iterator[State]:
     """Helper context manager to log lifespan event and mark lifespan as called."""
 
     with log_context(logger, level, lifespan_name):

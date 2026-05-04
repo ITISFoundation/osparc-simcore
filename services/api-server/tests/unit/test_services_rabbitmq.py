@@ -8,7 +8,7 @@
 import asyncio
 import logging
 import random
-from collections.abc import AsyncIterable, Callable, Iterable
+from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Final, Literal, cast
@@ -137,7 +137,6 @@ async def _rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
 ) -> AsyncIterable[AsyncMock]:
-
     queue = asyncio.Queue()
     queue.put = AsyncMock()
     log_distributor: LogDistributor = get_log_distributor(app)
@@ -211,9 +210,7 @@ async def test_multiple_producers_and_single_consumer(
 #
 
 
-async def test_one_job_multiple_registrations(
-    log_distributor: LogDistributor, project_id: ProjectID
-):
+async def test_one_job_multiple_registrations(log_distributor: LogDistributor, project_id: ProjectID):
     async def _(job_log: JobLog):
         pass
 
@@ -259,9 +256,7 @@ async def test_log_distributor_register_deregister(
 
     assert len(log_distributor._log_streamers.keys()) == 0
     assert len(collected_logs) > 0
-    assert set(collected_logs).issubset(
-        set(published_logs)
-    )  # some logs might get lost while being deregistered
+    assert set(collected_logs).issubset(set(published_logs))  # some logs might get lost while being deregistered
 
 
 async def test_log_distributor_multiple_streams(
@@ -311,50 +306,29 @@ async def test_log_distributor_multiple_streams(
 
 
 @pytest.fixture
-def computation_done() -> Iterable[Callable[[], bool]]:
-    stop_time: Final[datetime] = datetime.now() + timedelta(seconds=2)
-
-    def _job_done() -> bool:
-        return datetime.now() >= stop_time
-
-    return _job_done
-
-
-@pytest.fixture
-async def log_streamer_with_distributor(
+async def create_log_streamer_with_distributor(
     client: httpx.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
     mocked_directorv2_rest_api_base: respx.MockRouter,
-    computation_done: Callable[[], bool],
     log_distributor: LogDistributor,
-) -> AsyncIterable[LogStreamer]:
-    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
-        task = ComputationTaskGet.model_validate(
-            ComputationTaskGet.model_json_schema()["examples"][0]
+) -> Callable[[Callable[..., httpx.Response]], LogStreamer]:
+    def _create_log_streamer_with_distributor(
+        get_computation: Callable[..., httpx.Response],
+    ) -> LogStreamer:
+        mocked_directorv2_rest_api_base.get(f"/v2/computations/{project_id}").mock(side_effect=get_computation)
+
+        assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
+        return LogStreamer(
+            user_id=user_id,
+            director2_api=d2_client,
+            job_id=project_id,
+            log_distributor=log_distributor,
+            log_check_timeout=2,
         )
-        if computation_done():
-            task.state = RunningState.SUCCESS
-            task.stopped = datetime.now()
-        return httpx.Response(
-            status_code=status.HTTP_200_OK, json=jsonable_encoder(task)
-        )
 
-    mocked_directorv2_rest_api_base.get(f"/v2/computations/{project_id}").mock(
-        side_effect=_get_computation
-    )
-
-    assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
-    yield LogStreamer(
-        user_id=user_id,
-        director2_api=d2_client,
-        job_id=project_id,
-        log_distributor=log_distributor,
-        log_check_timeout=1,
-    )
-
-    assert len(log_distributor._log_streamers.keys()) == 0
+    return _create_log_streamer_with_distributor
 
 
 async def test_log_streamer_with_distributor(
@@ -362,23 +336,36 @@ async def test_log_streamer_with_distributor(
     node_id: NodeID,
     produce_logs: Callable,
     log_distributor: LogDistributor,
-    log_streamer_with_distributor: LogStreamer,
+    create_log_streamer_with_distributor: Callable[[Callable[..., httpx.Response]], LogStreamer],
     faker: Faker,
-    computation_done: Callable[[], bool],
 ):
     published_logs: list[str] = []
 
     async def _log_publisher():
-        while not computation_done():
+        start = datetime.now()
+        while (datetime.now() - start) < timedelta(seconds=1):
             msg: str = faker.text()
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
             published_logs.append(msg)
+            await asyncio.sleep(0.1)
 
     publish_task = asyncio.create_task(_log_publisher())
 
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        task = ComputationTaskGet.model_validate(ComputationTaskGet.model_json_schema()["examples"][0])
+        if publish_task.done():
+            task.state = RunningState.SUCCESS
+            task.stopped = datetime.now()
+        else:
+            task.state = RunningState.STARTED
+            task.stopped = None
+        return httpx.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
+
+    log_streamer = create_log_streamer_with_distributor(_get_computation)
+
     @asynccontextmanager
     async def registered_log_streamer():
-        await log_distributor.register(project_id, log_streamer_with_distributor.queue)
+        await log_distributor.register(project_id, log_streamer.queue)
         try:
             yield
         finally:
@@ -386,19 +373,13 @@ async def test_log_streamer_with_distributor(
 
     collected_messages: list[str] = []
     async with registered_log_streamer():
-        async for log in log_streamer_with_distributor.log_generator():
+        async for log in log_streamer.log_generator():
             job_log: JobLog = JobLog.model_validate_json(log)
             assert len(job_log.messages) == 1
             assert job_log.job_id == project_id
             collected_messages.append(job_log.messages[0])
 
-    if not publish_task.done():
-        publish_task.cancel()
-        try:
-            await publish_task
-        except asyncio.CancelledError:
-            pass
-
+    assert publish_task.done()
     assert len(published_logs) > 0
     assert published_logs == collected_messages
 
@@ -408,9 +389,7 @@ async def test_log_streamer_not_raise_with_distributor(
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
-    log_streamer_with_distributor: LogStreamer,
-    faker: Faker,
-    computation_done: Callable[[], bool],
+    create_log_streamer_with_distributor: Callable[[Callable[..., httpx.Response]], LogStreamer],
 ):
     class InvalidLoggerRabbitMessage(LoggerRabbitMessage):
         channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
@@ -433,8 +412,15 @@ async def test_log_streamer_not_raise_with_distributor(
 
     await produce_logs("expected", log_message=log_rabbit_message)
 
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        task = ComputationTaskGet.model_validate(ComputationTaskGet.model_json_schema()["examples"][0])
+        task.state = RunningState.SUCCESS
+        task.stopped = datetime.now()
+        return httpx.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
+
+    log_streamer = create_log_streamer_with_distributor(_get_computation)
     ii: int = 0
-    async for log in log_streamer_with_distributor.log_generator():
+    async for log in log_streamer.log_generator():
         _ = JobLog.model_validate_json(log)
         ii += 1
     assert ii == 0
@@ -453,7 +439,9 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         "simcore_service_api_server.services_http.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=_MockLogDistributor(), log_check_timeout=1)  # type: ignore
+    log_streamer = LogStreamer(
+        user_id=3, director2_api=None, job_id=None, log_distributor=_MockLogDistributor(), log_check_timeout=1
+    )  # type: ignore
 
     published_logs: list[str] = []
     for _ in range(10):

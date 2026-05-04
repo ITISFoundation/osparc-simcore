@@ -10,14 +10,14 @@ from ._errors import (
 )
 
 __all__: tuple[str, ...] = (
-    "SimcoreSSMAPI",
     "SSMAccessError",
+    "SSMCommandExecutionResultError",
+    "SSMCommandExecutionTimeoutError",
+    "SSMInvalidCommandError",
     "SSMNotConnectedError",
     "SSMRuntimeError",
     "SSMSendCommandInstancesNotReadyError",
-    "SSMInvalidCommandError",
-    "SSMCommandExecutionResultError",
-    "SSMCommandExecutionTimeoutError",
+    "SimcoreSSMAPI",
 )
 
 # nopycln: file

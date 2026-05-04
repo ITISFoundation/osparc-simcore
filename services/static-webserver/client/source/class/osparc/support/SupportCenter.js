@@ -21,6 +21,8 @@ qx.Class.define("osparc.support.SupportCenter", {
   construct: function() {
     this.base(arguments, "support-center");
 
+    osparc.utils.Utils.setIdToWidget(this, "supportCenterWindow");
+
     this.getChildControl("title").set({
       textAlign: "center",
     });
@@ -56,7 +58,7 @@ qx.Class.define("osparc.support.SupportCenter", {
     REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
     getMaxHeight: function() {
-      // height: max 80% of screen, or WINDOW_HEIGHTpx
+      // height: max 80% of screen, or WINDOW_HEIGHT px
       const clientHeight = document.documentElement.clientHeight;
       return Math.min(osparc.support.SupportCenter.WINDOW_HEIGHT, parseInt(clientHeight * 0.8));
     },
@@ -129,14 +131,22 @@ qx.Class.define("osparc.support.SupportCenter", {
           control.addListener("execute", () => this.showConversations(), this);
           this.getChildControl("buttons-layout").add(control, { flex: 1 });
           break;
+        case "home-page-layout":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("main-stack").add(control);
+          break;
         case "home-page":
           control = new osparc.support.HomePage();
           control.addListener("createConversation", e => this.createConversation(e.getData()), this);
+          this.getChildControl("home-page-layout").add(control);
+          break;
+        case "conversations-layout":
+          control = new qx.ui.container.Scroll();
           this.getChildControl("main-stack").add(control);
           break;
         case "conversations-stack":
           control = new qx.ui.container.Stack();
-          this.getChildControl("main-stack").add(control);
+          this.getChildControl("conversations-layout").add(control);
           break;
         case "conversations-page":
           control = new osparc.support.ConversationsPage();
@@ -155,7 +165,7 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     __selectHomeStackPage: function() {
       this.setCaption(this.tr("Help & Support"));
-      this.getChildControl("main-stack").setSelection([this.getChildControl("home-page")]);
+      this.getChildControl("main-stack").setSelection([this.getChildControl("home-page-layout")]);
       this.getChildControl("home-button").getChildControl("icon").set({
         textColor: "strong-main",
       });
@@ -166,7 +176,7 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     __selectConversationsStackPage: function() {
       this.setCaption(this.tr("Conversations"));
-      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
+      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-layout")]);
       this.getChildControl("home-button").getChildControl("icon").set({
         textColor: "text",
       });

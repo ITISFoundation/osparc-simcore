@@ -26,8 +26,7 @@ def _base_configuration(
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
     initialized_app: FastAPI,
-) -> None:
-    ...
+) -> None: ...
 
 
 async def test_get_instance_type_details_all_options(
@@ -36,9 +35,7 @@ async def test_get_instance_type_details_all_options(
 ):
     # an empty set returns all options
 
-    rpc_response = await get_instance_type_details(
-        clusters_keeper_rabbitmq_rpc_client, instance_type_names="ALL"
-    )
+    rpc_response = await get_instance_type_details(clusters_keeper_rabbitmq_rpc_client, instance_type_names="ALL")
     assert rpc_response
     assert isinstance(rpc_response, list)
     assert isinstance(rpc_response[0], EC2InstanceTypeGet)

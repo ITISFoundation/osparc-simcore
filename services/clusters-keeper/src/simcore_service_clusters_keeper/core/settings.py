@@ -17,6 +17,7 @@ from models_library.docker import DockerGenericTag
 from pydantic import (
     AliasChoices,
     Field,
+    Json,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
@@ -68,9 +69,7 @@ class ClustersKeeperSSMSettings(SSMSettings):
                 }
                 for example in SSMSettings.model_config[  # type:ignore[union-attr,index]
                     "json_schema_extra"
-                ][
-                    "examples"
-                ]
+                ]["examples"]
             ],
         },
     )
@@ -78,16 +77,19 @@ class ClustersKeeperSSMSettings(SSMSettings):
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
     WORKERS_EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        dict[str, EC2InstanceBootSpecific],
+        Json[dict[str, EC2InstanceBootSpecific]],
         Field(
-            description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
+            description=(
+                "Defines which EC2 instances are considered as candidates for new EC2 "
+                "instance and their respective boot specific parameters"
+            ),
         ),
     ]
     WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
-        list[DockerGenericTag],
+        Json[list[DockerGenericTag]],
         Field(
             description="List of docker images to pre-pull on cold started new EC2 instances",
-            default_factory=list,
+            default_factory=lambda: "[]",
         ),
     ] = DEFAULT_FACTORY
 
@@ -105,9 +107,12 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
-            "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
-            "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
+            "(default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for "
+            "string formatting)."
+            "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances "
+            "that take longer than this time will be terminated as sometimes it "
+            "happens that EC2 machine fail on start.",
         ),
     ] = datetime.timedelta(minutes=1)
     WORKERS_EC2_INSTANCES_MAX_INSTANCES: Annotated[
@@ -118,16 +123,20 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     ] = 10
     # NAME PREFIX is not exposed since we override it anyway
     WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
-            description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
-            " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
-            " this is required to start a new EC2 instance",
+            description=(
+                "A security group acts as a virtual firewall for your EC2 instances "
+                "to control incoming and outgoing traffic"
+                " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-"
+                "groups.html), "
+                " this is required to start a new EC2 instance"
+            ),
         ),
     ]
     WORKERS_EC2_INSTANCES_SUBNET_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -140,7 +149,9 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may be terminated (min 0 max 1 minute) "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for "
+            "string formatting)",
         ),
     ] = datetime.timedelta(minutes=1)
 
@@ -148,12 +159,14 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may be terminated (min 0, max 59 minutes) "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for "
+            "string formatting)",
         ),
     ] = datetime.timedelta(minutes=3)
 
     WORKERS_EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        EC2Tags,
+        Json[EC2Tags],
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
@@ -173,9 +186,14 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):
     PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        dict[str, EC2InstanceBootSpecific],
+        Json[dict[str, EC2InstanceBootSpecific]],
         Field(
-            description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
+            min_length=1,
+            max_length=1,
+            description=(
+                "Defines which EC2 instances are considered as candidates for new EC2 "
+                "instance and their respective boot specific parameters"
+            ),
         ),
     ]
     PRIMARY_EC2_INSTANCES_MAX_INSTANCES: Annotated[
@@ -185,16 +203,20 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ] = 10
     PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
-            description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
-            " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
-            " this is required to start a new EC2 instance",
+            description=(
+                "A security group acts as a virtual firewall for your EC2 instances "
+                "to control incoming and outgoing traffic"
+                " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-"
+                "groups.html), "
+                " this is required to start a new EC2 instance"
+            ),
         ),
     ]
     PRIMARY_EC2_INSTANCES_SUBNET_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -213,7 +235,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     PRIMARY_EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        EC2Tags,
+        Json[EC2Tags],
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
@@ -222,7 +244,11 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
     PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE: Annotated[
         str,
         Field(
-            description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
+            description=(
+                "ARN the EC2 instance should be attached to "
+                "(example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty "
+                "string"
+            ),
         ),
     ]
     PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA: Annotated[
@@ -245,10 +271,17 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
     PRIMARY_EC2_INSTANCES_MAX_START_TIME: Annotated[
         datetime.timedelta,
         Field(
-            description="Usual time taken an EC2 instance with the given AMI takes to startup and be ready to receive jobs "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
-            "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
-            "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
+            description=(
+                "Usual time taken an EC2 instance with the given AMI takes to startup "
+                "and be ready to receive jobs "
+                "(default to seconds, or see "
+                "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for "
+                "string formatting)."
+                "NOTE: be careful that this time should always be a factor larger than "
+                "the real time, as EC2 instances"
+                "that take longer than this time will be terminated as sometimes it "
+                "happens that EC2 machine fail on start."
+            ),
         ),
     ] = datetime.timedelta(minutes=2)
 
@@ -280,9 +313,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
 
     @field_validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def _check_only_one_value(
-        cls, value: dict[str, EC2InstanceBootSpecific]
-    ) -> dict[str, EC2InstanceBootSpecific]:
+    def _check_only_one_value(cls, value: dict[str, EC2InstanceBootSpecific]) -> dict[str, EC2InstanceBootSpecific]:
         if len(value) != 1:
             msg = "Only one exact value is accepted (empty or multiple is invalid)"
             raise ValueError(msg)
@@ -329,9 +360,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
     CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
@@ -341,17 +370,22 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development log format. WARNING: make sure it is "
+                "disabled if you want to have structured logs!"
+            ),
         ),
     ] = False
     CLUSTERS_KEEPER_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "CLUSTERS_KEEPER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            validation_alias=AliasChoices("CLUSTERS_KEEPER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
+            description=(
+                "is a dictionary that maps specific loggers (such as "
+                "'uvicorn.access' or 'gunicorn.access') to a list of log message "
+                "patterns that should be filtered out."
             ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
@@ -382,15 +416,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
-    CLUSTERS_KEEPER_RABBITMQ: Annotated[
-        RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    CLUSTERS_KEEPER_RABBITMQ: Annotated[RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
     CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    CLUSTERS_KEEPER_REDIS: Annotated[
-        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    CLUSTERS_KEEPER_REDIS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     CLUSTERS_KEEPER_REGISTRY: Annotated[
         RegistrySettings | None,
@@ -401,7 +431,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="interval between each clusters clean check "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for "
+            "string formatting)",
         ),
     ] = datetime.timedelta(seconds=30)
 
@@ -409,7 +441,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ) "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for "
+            "string formatting)",
         ),
     ] = datetime.timedelta(seconds=60)
 
@@ -423,7 +457,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: Annotated[
         str,
         Field(
-            description="defines the image tag to use for the computational backend sidecar image (NOTE: it currently defaults to use itisfoundation organisation in Dockerhub)",
+            description=(
+                "defines the image tag to use for the computational backend sidecar "
+                "image (NOTE: it currently defaults to use itisfoundation "
+                "organisation in Dockerhub)"
+            ),
         ),
     ]
 
@@ -437,21 +475,32 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_DASK_NPROCS: Annotated[
         int,
         Field(
-            description="overrides the default number of worker processes in the dask-sidecars, setting it to negative values will use dask defaults (see description in 'dask worker --help')",
+            description=(
+                "overrides the default number of worker processes in the dask-"
+                "sidecars, setting it to negative values will use dask defaults "
+                "(see description in 'dask worker --help')"
+            ),
         ),
     ]
 
     CLUSTERS_KEEPER_DASK_NTHREADS: Annotated[
         NonNegativeInt,
         Field(
-            description="overrides the default number of threads per process in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
+            description=(
+                "overrides the default number of threads per process in the dask-"
+                "sidecars, setting it to 0 will use the default (see description "
+                "in dask-sidecar)"
+            ),
         ),
     ]
 
     CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER: Annotated[
         PositiveInt,
         Field(
-            description="multiplier for the default number of threads per process in the dask-sidecars, (see description in dask-sidecar)",
+            description=(
+                "multiplier for the default number of threads per process in the "
+                "dask-sidecars, (see description in dask-sidecar)"
+            ),
             le=10,
         ),
     ] = 1
@@ -472,9 +521,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
-    SWARM_STACK_NAME: Annotated[
-        str, Field(description="Stack name defined upon deploy (see main Makefile)")
-    ]
+    SWARM_STACK_NAME: Annotated[str, Field(description="Stack name defined upon deploy (see main Makefile)")]
 
     @cached_property
     def log_level(self) -> LogLevelInt:

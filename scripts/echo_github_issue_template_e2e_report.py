@@ -31,14 +31,12 @@ def main(config: Config):
 
     """
     TARGET_DIR = REPO_DIR / "tests" / "e2e" / config.test_dir_name
-    CI_BASEURL_FORMAT = f"https://git.speag.com/oSparc/{config.repo_name}/-/pipelines?page=1&scope=all&ref={{branch_name}}"
+    CI_BASEURL_FORMAT = (
+        f"https://git.speag.com/oSparc/{config.repo_name}/-/pipelines?page=1&scope=all&ref={{branch_name}}"
+    )
 
     # list test scripts
-    scripts = [
-        script_path
-        for script_path in TARGET_DIR.glob("*.js")
-        if not script_path.name.endswith("Base.js")
-    ]
+    scripts = [script_path for script_path in TARGET_DIR.glob("*.js") if not script_path.name.endswith("Base.js")]
 
     # create ref links
     refs = {
@@ -74,7 +72,6 @@ def main(config: Config):
     print(end="\n" * 2)
 
     print("<!--Keep references at the bottom -->")
-    #
     for r, v in refs.items():
         print(f"{r}:{v}")
 

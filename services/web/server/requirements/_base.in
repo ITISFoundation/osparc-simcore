@@ -29,7 +29,6 @@ aiohttp
 aiohttp_jinja2
 aiohttp_security
 aiohttp_session[secure]
-aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
 captcha
@@ -42,7 +41,6 @@ jinja_app_loader # email
 jsondiff
 msgpack
 openpyxl # excel
-opentelemetry-instrumentation-aiopg
 orjson  # json
 packaging
 passlib

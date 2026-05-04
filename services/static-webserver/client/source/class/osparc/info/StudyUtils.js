@@ -213,7 +213,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         value: "disableServiceAutoStart" in devObj ? !devObj["disableServiceAutoStart"] : true,
         label: qx.locale.Manager.tr("Autostart services"),
         font: "text-14",
-        toolTipText: qx.locale.Manager.tr("Disabling this will help opening and closing studies/projects faster"),
+        toolTipText: qx.locale.Manager.tr("Disabling this will help opening and closing projects faster"),
         iconPosition: "right"
       });
       cb.addListener("changeValue", e => {

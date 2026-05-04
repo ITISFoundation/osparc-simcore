@@ -2,11 +2,13 @@ import logging
 from urllib.parse import quote
 
 from aiohttp import web
+from servicelib.common_headers import X_FORWARDED_PROTO
+from yarl import URL
+
 from simcore_service_webserver.login._application_keys import (
     CONFIRMATION_SERVICE_APPKEY,
 )
 from simcore_service_webserver.login.settings import get_plugin_options
-from yarl import URL
 
 from ..application_setup import ensure_single_setup
 from ..db.plugin import get_asyncpg_engine
@@ -25,7 +27,10 @@ def _url_for_confirmation(app: web.Application, code: str) -> URL:
 def make_confirmation_link(request: web.Request, code: str) -> str:
     assert code  # nosec
     link = _url_for_confirmation(request.app, code=code)
-    return f"{request.scheme}://{request.host}{link}"
+    # Custom header by traefik. See labels in docker-compose as:
+    # - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http  # noqa: E501
+    scheme = request.headers.get(X_FORWARDED_PROTO, request.scheme)
+    return f"{scheme}://{request.host}{link}"
 
 
 @ensure_single_setup(__name__, logger=_logger)

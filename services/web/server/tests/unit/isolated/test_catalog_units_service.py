@@ -28,9 +28,7 @@ def unit_registry():
     return UnitRegistry()
 
 
-@pytest.mark.acceptance_test(
-    "Reproduces https://github.com/ITISFoundation/osparc-simcore/issues/4793"
-)
+@pytest.mark.acceptance_test("Reproduces https://github.com/ITISFoundation/osparc-simcore/issues/4793")
 def test_can_connect_enums(unit_registry: UnitRegistry):
     enum_port = {
         "displayOrder": 4,
@@ -51,9 +49,7 @@ def test_can_connect_enums(unit_registry: UnitRegistry):
     )
 
 
-@pytest.mark.acceptance_test(
-    "Reproduces https://github.com/ITISFoundation/osparc-issues/issues/442"
-)
+@pytest.mark.acceptance_test("Reproduces https://github.com/ITISFoundation/osparc-issues/issues/442")
 def test_can_connect_generic_data_types(unit_registry: UnitRegistry):
     file_picker_outfile = {
         "displayOrder": 2,
@@ -122,9 +118,7 @@ PORTS_WITHOUT_UNITS = [
     itertools.product(PORTS_WITHOUT_UNITS, PORTS_WITH_UNITS),
     ids=lambda l: l["label"],
 )
-def test_can_connect_no_units_with_units(
-    port_without_unit, port_with_unit, unit_registry: UnitRegistry
-):
+def test_can_connect_no_units_with_units(port_without_unit, port_with_unit, unit_registry: UnitRegistry):
     # w/o -> w
     assert can_connect(
         from_output=ServiceOutput.model_validate(port_without_unit),
@@ -152,9 +146,7 @@ def test_can_connect_no_units_with_units(
         (None, "cm", True),
     ],
 )
-def test_units_compatible(
-    from_unit, to_unit, are_compatible, unit_registry: UnitRegistry
-):
+def test_units_compatible(from_unit, to_unit, are_compatible, unit_registry: UnitRegistry):
     #
     # TODO: does it make sense to have a string or bool with x_unit??
     #
@@ -188,23 +180,17 @@ def test_units_compatible(
 
 @pytest.mark.parametrize(
     "from_port,to_port",
-    itertools.product(
-        demo_units.META.outputs.values(), demo_units.META.inputs.values()
-    ),
+    itertools.product(demo_units.META.outputs.values(), demo_units.META.inputs.values()),
     ids=lambda p: p.label,
 )
-def test_can_connect_with_units(
-    from_port: ServiceOutput, to_port: ServiceInput, unit_registry: UnitRegistry
-):
+def test_can_connect_with_units(from_port: ServiceOutput, to_port: ServiceInput, unit_registry: UnitRegistry):
     # WARNING: assumes the following convention for the fixture data:
     #   - two ports are compatible if they have the same title
     #
     # NOTE: this assumption will probably break when the demo_units service
     # is modified. At that point, please create a fixture in this test-suite
     # and copy&paste inputs/outputs above
-    are_compatible = (
-        from_port.content_schema["title"] == to_port.content_schema["title"]
-    )
+    are_compatible = from_port.content_schema["title"] == to_port.content_schema["title"]
 
     assert (
         can_connect(

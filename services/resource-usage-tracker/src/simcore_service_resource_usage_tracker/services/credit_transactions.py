@@ -33,9 +33,7 @@ from .utils import sum_credit_transactions_and_publish_to_rabbitmq
 
 async def create_credit_transaction(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-    rabbitmq_client: Annotated[
-        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
-    ],
+    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
     credit_transaction_create_body: CreditTransactionCreateBody,
 ) -> CreditTransactionId:
     transaction_create = CreditTransactionCreate(
@@ -112,16 +110,10 @@ async def pay_project_debt(
         transaction_status=CreditTransactionStatus.IN_DEBT,
     )
 
-    if (
-        total_project_debt_amount.available_osparc_credits
-        != new_wallet_transaction.osparc_credits
-    ):
+    if total_project_debt_amount.available_osparc_credits != new_wallet_transaction.osparc_credits:
         msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
         raise WalletTransactionError(msg=msg)
-    if (
-        -total_project_debt_amount.available_osparc_credits
-        != current_wallet_transaction.osparc_credits
-    ):
+    if -total_project_debt_amount.available_osparc_credits != current_wallet_transaction.osparc_credits:
         msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
         raise WalletTransactionError(msg=msg)
     if current_wallet_transaction.product_name != new_wallet_transaction.product_name:
@@ -134,11 +126,7 @@ async def pay_project_debt(
         product_name=new_wallet_transaction.product_name,
         wallet_id=new_wallet_transaction.wallet_id,
     )
-    if (
-        new_wallet_total_credit_amount.available_osparc_credits
-        + total_project_debt_amount.available_osparc_credits
-        < 0
-    ):
+    if new_wallet_total_credit_amount.available_osparc_credits + total_project_debt_amount.available_osparc_credits < 0:
         msg = f"New wallet {new_wallet_transaction.wallet_id} doesn't have enough credits {new_wallet_total_credit_amount.available_osparc_credits} to pay the debt {total_project_debt_amount.available_osparc_credits} of current wallet {current_wallet_transaction.wallet_id}"
         raise WalletTransactionError(msg=msg)
 
@@ -223,9 +211,7 @@ async def get_transaction_current_credits_by_service_run_id(
     *,
     service_run_id: ServiceRunID,
 ) -> Decimal:
-    return (
-        await credit_transactions_db.get_transaction_current_credits_by_service_run_id(
-            db_engine,
-            service_run_id=service_run_id,
-        )
+    return await credit_transactions_db.get_transaction_current_credits_by_service_run_id(
+        db_engine,
+        service_run_id=service_run_id,
     )

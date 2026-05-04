@@ -18,7 +18,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.si
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "DY_DEPLOYMENT_REGISTRY_SETTINGS",
     "DY_DOCKER_HUB_REGISTRY_SETTINGS",
-    "DY_SIDECAR_AWS_S3_CLI_SETTINGS",
     "DY_SIDECAR_CALLBACKS_MAPPING",
     "DY_SIDECAR_LEGACY_STATE",
     "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -27,6 +26,7 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "DY_SIDECAR_PATH_OUTPUTS",
     "DY_SIDECAR_PRODUCT_NAME",
     "DY_SIDECAR_PROJECT_ID",
+    "DY_SIDECAR_REQUIRES_DATA_MOUNTING",
     "DY_SIDECAR_RUN_ID",
     "DY_SIDECAR_SERVICE_KEY",
     "DY_SIDECAR_SERVICE_VERSION",
@@ -45,10 +45,9 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "POSTGRES_PASSWORD",
     "POSTGRES_PORT",
     "POSTGRES_USER",
-    "R_CLONE_OPTION_BUFFER_SIZE",
-    "R_CLONE_OPTION_RETRIES",
-    "R_CLONE_OPTION_TRANSFERS",
     "R_CLONE_PROVIDER",
+    "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS",
+    "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS",
     "RABBIT_HOST",
     "RABBIT_PASSWORD",
     "RABBIT_PORT",
@@ -141,9 +140,7 @@ def test_dynamic_sidecar_env_vars(
                     "}"
                 ),
             },
-            _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "1"
-            ),
+            _StorageConfig("overwrite-host", "44", "overwrite-user", "overwrite-passwd", "1"),
             id="host-port-and-node-ports-config",
         ),
         pytest.param(
@@ -157,9 +154,7 @@ def test_dynamic_sidecar_env_vars(
                     "}"
                 ),
             },
-            _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "0"
-            ),
+            _StorageConfig("overwrite-host", "44", "overwrite-user", "overwrite-passwd", "0"),
             id="only-node-ports-config",
         ),
     ],

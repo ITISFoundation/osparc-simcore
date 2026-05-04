@@ -36,12 +36,12 @@ def _validate_signature(handler: _HandlerWithRequestArg):
 _POLL_INTERVAL_S: float = 0.01
 
 
-async def _disconnect_poller(request: Request, result: Any):
+async def _disconnect_poller(request: Request, result: Any, cancel_event: asyncio.Event):
     """
     Poll for a disconnect.
     If the request disconnects, stop polling and return.
     """
-    while not await request.is_disconnected():
+    while not await request.is_disconnected() and not cancel_event.is_set():
         await asyncio.sleep(_POLL_INTERVAL_S)
     return result
 
@@ -59,8 +59,9 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
 
         # Create two tasks:
         # one to poll the request and check if the client disconnected
+        cancel_event = asyncio.Event()
         poller_task = asyncio.create_task(
-            _disconnect_poller(request, sentinel),
+            _disconnect_poller(request, sentinel, cancel_event),
             name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
         )
         # , and another which is the request handler
@@ -69,19 +70,17 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
             name=f"cancel_on_disconnect/handler/{handler.__name__}/{id(sentinel)}",
         )
 
-        done, pending = await asyncio.wait(
-            [poller_task, handler_task], return_when=asyncio.FIRST_COMPLETED
-        )
+        done, pending = await asyncio.wait([poller_task, handler_task], return_when=asyncio.FIRST_COMPLETED)
 
         # One has completed, cancel the other
         for t in pending:
             try:
-                await cancel_wait_task(t, max_delay=3)
-            except Exception:  # pylint: disable=broad-except
+                cancel_event.set()  # NOTE: stops the poller if running
+                await cancel_wait_task(t, max_delay=10)
+            except BaseException:  # pylint: disable=broad-except
                 if t is handler_task:
+                    assert t.done()  # nosec
                     raise
-            finally:
-                assert t.done()  # nosec
 
         # Return the result if the handler finished first
         if handler_task in done:

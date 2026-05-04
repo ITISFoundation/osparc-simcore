@@ -1,6 +1,4 @@
-""" osparc's service core library
-
-"""
+"""osparc's service core library"""
 
 from importlib.metadata import version
 

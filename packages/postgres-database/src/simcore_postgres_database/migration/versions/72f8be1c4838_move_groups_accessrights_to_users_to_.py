@@ -5,6 +5,7 @@ Revises: bb305829cf83
 Create Date: 2020-06-02 13:01:35.073902+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -24,9 +25,7 @@ def upgrade():
         sa.Column(
             "access_rights",
             postgresql.JSONB(astext_type=sa.Text()),
-            server_default=sa.text(
-                '\'{"read": true, "write": false, "delete": false}\'::jsonb'
-            ),
+            server_default=sa.text('\'{"read": true, "write": false, "delete": false}\'::jsonb'),
             nullable=False,
         ),
     )

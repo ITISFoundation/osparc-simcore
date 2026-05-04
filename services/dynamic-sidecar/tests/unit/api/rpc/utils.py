@@ -34,9 +34,7 @@ async def get_lrt_result(
             )
 
             if progress_callback:
-                await progress_callback(
-                    status.task_progress.message, status.task_progress.percent, task_id
-                )
+                await progress_callback(status.task_progress.message, status.task_progress.percent, task_id)
             assert status.done is True
 
     return await lrt_api.get_task_result(

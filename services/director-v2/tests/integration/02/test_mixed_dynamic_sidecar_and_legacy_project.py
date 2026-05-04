@@ -189,8 +189,11 @@ async def ensure_services_stopped(
             for service_name in service_names:
                 # if node_uuid is present in the service name it needs to be removed
                 if node_uuid in service_name:
-                    delete_result = await docker_client.services.delete(service_name)
-                    assert delete_result is True
+                    try:
+                        delete_result = await docker_client.services.delete(service_name)
+                        assert delete_result is True
+                    except aiodocker.exceptions.DockerError as e:
+                        assert e.status == 404, f"Unexpected error when deleting service: {e}"  # noqa: PT017
 
         project_id = f"{dy_static_file_server_project.uuid}"
 
@@ -205,9 +208,7 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
-    class_path = (
-        "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
-    )
+    class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
     for function_name, return_value in [
         ("pull_service_output_ports", 0),
         ("restore_service_state", 0),
@@ -216,8 +217,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
-            # pylint: disable=cell-var-from-loop
-            side_effect=lambda *args, **kwargs: return_value,
+            side_effect=lambda *args, rv=return_value, **kwargs: rv,  # noqa: ARG005
         )
 
     # also patch the long_running_tasks client context mangers handling the above

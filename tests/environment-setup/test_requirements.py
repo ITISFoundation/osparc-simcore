@@ -30,7 +30,5 @@ assert SERVICES_DIR.exists()
     ids=lambda p: f"{p.relative_to(SERVICES_DIR)}",
 )
 def test_libraries_are_not_allowed_in_base_requirements(base_path: Path, exclude: str):
-    requirements_text = re.sub(
-        r"(^|\s)(#.*|\n)", "", base_path.read_text().lower(), flags=re.MULTILINE
-    )
+    requirements_text = re.sub(r"(^|\s)(#.*|\n)", "", base_path.read_text().lower(), flags=re.MULTILINE)
     assert exclude not in requirements_text

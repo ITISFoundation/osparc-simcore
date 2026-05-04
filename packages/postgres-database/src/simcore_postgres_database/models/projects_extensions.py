@@ -24,9 +24,6 @@ projects_extensions = sa.Table(
         sa.Boolean(),
         nullable=False,
         server_default=sa.sql.expression.false(),
-        doc=(
-            "When True, guest will save the state of a service "
-            "and also push the data to the output ports"
-        ),
+        doc=("When True, guest will save the state of a service and also push the data to the output ports"),
     ),
 )

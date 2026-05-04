@@ -61,9 +61,7 @@ def create_app(
             json_dumps(settings, indent=2, sort_keys=True),
         )
     if tracing_config is None:
-        tracing_config = TracingConfig.create(
-            service_name=APP_NAME, tracing_settings=settings.API_SERVER_TRACING
-        )
+        tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.API_SERVER_TRACING)
 
     assert settings  # nosec
     assert tracing_config  # nosec
@@ -141,9 +139,7 @@ def create_app(
     if settings.API_SERVER_PROFILING:
         initialize_profiler(app)
 
-    exceptions.setup_exception_handlers(
-        app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG
-    )
+    exceptions.setup_exception_handlers(app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG)
 
     # routing
 

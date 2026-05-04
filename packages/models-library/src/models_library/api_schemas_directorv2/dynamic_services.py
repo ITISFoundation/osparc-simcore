@@ -12,29 +12,21 @@ from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetai
 
 
 class RetrieveDataIn(BaseModel):
-    port_keys: list[ServicePortKey] = Field(
-        ..., description="The port keys to retrieve data from"
-    )
+    port_keys: list[ServicePortKey] = Field(..., description="The port keys to retrieve data from")
 
 
 class RetrieveDataOut(BaseModel):
-    size_bytes: ByteSize = Field(
-        ..., description="The amount of data transferred by the retrieve call"
-    )
+    size_bytes: ByteSize = Field(..., description="The amount of data transferred by the retrieve call")
 
 
 class RetrieveDataOutEnveloped(BaseModel):
     data: RetrieveDataOut
 
     @classmethod
-    def from_transferred_bytes(
-        cls, transferred_bytes: int
-    ) -> "RetrieveDataOutEnveloped":
+    def from_transferred_bytes(cls, transferred_bytes: int) -> "RetrieveDataOutEnveloped":
         return cls(data=RetrieveDataOut(size_bytes=ByteSize(transferred_bytes)))
 
-    model_config = ConfigDict(
-        json_schema_extra={"examples": [{"data": {"size_bytes": 42}}]}
-    )
+    model_config = ConfigDict(json_schema_extra={"examples": [{"data": {"size_bytes": 42}}]})
 
 
 class DynamicServiceCreate(ServiceDetails):
@@ -46,9 +38,7 @@ class DynamicServiceCreate(ServiceDetails):
         BeforeValidator(lambda v: f"{AnyHttpUrl(v)}"),
         Field(..., description="Current product API base URL"),
     ]
-    can_save: Annotated[
-        bool, Field(..., description="the service data must be saved when closing")
-    ]
+    can_save: Annotated[bool, Field(..., description="the service data must be saved when closing")]
     wallet_info: Annotated[
         WalletInfo | None,
         Field(

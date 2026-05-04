@@ -18,9 +18,7 @@ _logger = logging.getLogger(__name__)
 
 
 class WebSocketProvider(NotificationProvider):
-    def __init__(
-        self, sio_manager: socketio.AsyncAioPikaManager, users_repo: PaymentsUsersRepo
-    ):
+    def __init__(self, sio_manager: socketio.AsyncAioPikaManager, users_repo: PaymentsUsersRepo):
         self._sio_manager = sio_manager
         self._users_repo = users_repo
 

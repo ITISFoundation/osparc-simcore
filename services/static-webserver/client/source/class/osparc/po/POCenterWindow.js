@@ -21,12 +21,14 @@ qx.Class.define("osparc.po.POCenterWindow", {
   construct: function(openPage) {
     this.base(arguments, "po-center", this.tr("PO Center"));
 
-    const width = 1000;
+    const width = 1050;
     const height = 700;
     this.set({
       width,
-      height
+      height,
     });
+
+    this.setEscapeClose(false);
 
     const poCenter = new osparc.po.POCenter(openPage);
     this._setTabbedView(poCenter);

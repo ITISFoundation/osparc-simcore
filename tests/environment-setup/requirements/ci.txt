@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI)
+# Shortcut to install all packages for the contiguous integration (CI)
 #
 # - As ci.txt but w/ tests
 #

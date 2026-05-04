@@ -32,18 +32,10 @@ class StorageAuthSettings(StorageSettings):
 
 
 class NodePortsSettings(BaseCustomSettings):
-    NODE_PORTS_STORAGE_AUTH: Annotated[
-        StorageAuthSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    NODE_PORTS_STORAGE_AUTH: Annotated[StorageAuthSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    POSTGRES_SETTINGS: Annotated[
-        PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    POSTGRES_SETTINGS: Annotated[PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S: NonNegativeInt = int(
-        timedelta(minutes=5).total_seconds()
-    )
+    NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S: NonNegativeInt = int(timedelta(minutes=5).total_seconds())
     NODE_PORTS_IO_NUM_RETRY_ATTEMPTS: PositiveInt = 5
-    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS: NonNegativeInt = (
-        NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE
-    )
+    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS: NonNegativeInt = NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE

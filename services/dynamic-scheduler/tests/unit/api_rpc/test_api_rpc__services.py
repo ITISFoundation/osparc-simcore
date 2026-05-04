@@ -58,16 +58,12 @@ def node_not_found(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def service_status_new_style() -> DynamicServiceGet:
-    return TypeAdapter(DynamicServiceGet).validate_python(
-        DynamicServiceGet.model_json_schema()["examples"][1]
-    )
+    return TypeAdapter(DynamicServiceGet).validate_python(DynamicServiceGet.model_json_schema()["examples"][1])
 
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
-    return TypeAdapter(NodeGet).validate_python(
-        NodeGet.model_json_schema()["examples"][1]
-    )
+    return TypeAdapter(NodeGet).validate_python(NodeGet.model_json_schema()["examples"][1])
 
 
 @pytest.fixture
@@ -89,9 +85,7 @@ def mock_director_v0_service_state(
     ) as mock:
         mock.get(f"/fake-status/{node_id_legacy}").respond(
             status.HTTP_200_OK,
-            text=json.dumps(
-                jsonable_encoder({"data": service_status_legacy.model_dump()})
-            ),
+            text=json.dumps(jsonable_encoder({"data": service_status_legacy.model_dump()})),
         )
 
         # service was not found response
@@ -115,9 +109,7 @@ def mock_director_v2_service_state(
     ) as mock:
         mock.get("/dynamic_services").respond(
             status.HTTP_200_OK,
-            text=json.dumps(
-                jsonable_encoder(DynamicServiceGet.model_json_schema()["examples"])
-            ),
+            text=json.dumps(jsonable_encoder(DynamicServiceGet.model_json_schema()["examples"])),
         )
 
         mock.get(f"/dynamic_services/{node_id_new_style}").respond(
@@ -129,17 +121,13 @@ def mock_director_v2_service_state(
         # this will provide a reply
         mock.get(f"/dynamic_services/{node_id_legacy}").respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
-            headers={
-                "Location": f"{fake_director_v0_base_url}/fake-status/{node_id_legacy}"
-            },
+            headers={"Location": f"{fake_director_v0_base_url}/fake-status/{node_id_legacy}"},
         )
 
         # will result in not being found
         mock.get(f"/dynamic_services/{node_not_found}").respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
-            headers={
-                "Location": f"{fake_director_v0_base_url}/fake-status/{node_not_found}"
-            },
+            headers={"Location": f"{fake_director_v0_base_url}/fake-status/{node_not_found}"},
         )
 
         yield None
@@ -150,9 +138,7 @@ def mock_director_v2_service_state(
         False,
         pytest.param(
             True,
-            marks=pytest.mark.xfail(
-                reason="INTERNAL scheduler implementation is missing"
-            ),
+            marks=pytest.mark.xfail(reason="INTERNAL scheduler implementation is missing"),
         ),
     ]
 )
@@ -190,13 +176,10 @@ async def rpc_client(
 
 
 async def test_list_tracked_dynamic_services(rpc_client: RabbitMQRPCClient):
-    results = await services.list_tracked_dynamic_services(
-        rpc_client, user_id=None, project_id=None
-    )
+    results = await services.list_tracked_dynamic_services(rpc_client, user_id=None, project_id=None)
     assert len(results) == 2
     assert results == [
-        TypeAdapter(DynamicServiceGet).validate_python(x)
-        for x in DynamicServiceGet.model_json_schema()["examples"]
+        TypeAdapter(DynamicServiceGet).validate_python(x) for x in DynamicServiceGet.model_json_schema()["examples"]
     ]
 
 
@@ -225,15 +208,11 @@ async def test_get_state(
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
     # one for legacy and one for new style?
-    return TypeAdapter(DynamicServiceStart).validate_python(
-        DynamicServiceStart.model_json_schema()["example"]
-    )
+    return TypeAdapter(DynamicServiceStart).validate_python(DynamicServiceStart.model_json_schema()["example"])
 
 
 @pytest.fixture
-def mock_director_v0_service_run(
-    fake_director_v0_base_url: str, service_status_legacy: NodeGet
-) -> Iterator[None]:
+def mock_director_v0_service_run(fake_director_v0_base_url: str, service_status_legacy: NodeGet) -> Iterator[None]:
     with respx.mock(
         base_url=fake_director_v0_base_url,
         assert_all_called=False,
@@ -241,9 +220,7 @@ def mock_director_v0_service_run(
     ) as mock:
         mock.post("/fake-service-run").respond(
             status.HTTP_201_CREATED,
-            text=json.dumps(
-                jsonable_encoder({"data": service_status_legacy.model_dump()})
-            ),
+            text=json.dumps(jsonable_encoder({"data": service_status_legacy.model_dump()})),
         )
 
         yield None
@@ -283,9 +260,7 @@ async def test_run_dynamic_service(
     dynamic_service_start: DynamicServiceStart,
     is_legacy: bool,
 ):
-    result = await services.run_dynamic_service(
-        rpc_client, dynamic_service_start=dynamic_service_start
-    )
+    result = await services.run_dynamic_service(rpc_client, dynamic_service_start=dynamic_service_start)
 
     if is_legacy:
         assert isinstance(result, NodeGet)
@@ -337,17 +312,15 @@ def mock_director_v0_service_stop(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        mock.delete(f"/fake-service-stop-ok/{node_id}?can_save={can_save_str}").respond(
-            status.HTTP_204_NO_CONTENT
+        mock.delete(f"/fake-service-stop-ok/{node_id}?can_save={can_save_str}").respond(status.HTTP_204_NO_CONTENT)
+
+        mock.delete(f"/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}").respond(
+            status.HTTP_404_NOT_FOUND
         )
 
-        mock.delete(
-            f"/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}"
-        ).respond(status.HTTP_404_NOT_FOUND)
-
-        mock.delete(
-            f"/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}"
-        ).respond(status.HTTP_409_CONFLICT)
+        mock.delete(f"/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}").respond(
+            status.HTTP_409_CONFLICT
+        )
 
         yield None
 
@@ -378,14 +351,13 @@ def mock_director_v2_service_stop(
         else:
             request_ok.respond(status.HTTP_204_NO_CONTENT)
 
-        request_not_found = mock.delete(
-            f"/dynamic_services/{node_id_not_found}?can_save={can_save_str}"
-        )
+        request_not_found = mock.delete(f"/dynamic_services/{node_id_not_found}?can_save={can_save_str}")
         if is_legacy:
             request_not_found.respond(
                 status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={
-                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}"
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-not-found"
+                    f"/{node_id_not_found}?can_save={can_save_str}"
                 },
             )
         else:
@@ -398,7 +370,8 @@ def mock_director_v2_service_stop(
             request_manual_intervention.respond(
                 status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={
-                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}"
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-manual"
+                    f"/{node_id_manual_intervention}?can_save={can_save_str}"
                 },
             )
         else:
@@ -428,6 +401,7 @@ async def test_stop_dynamic_service(
             node_id=with_node_id,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            product_name="osparc",
         )
 
     # service was stopped
@@ -456,9 +430,7 @@ async def test_stop_dynamic_service(
 def mock_raise_generic_error(
     mocker: MockerFixture,
 ) -> None:
-    module_base = (
-        "simcore_service_dynamic_scheduler.services.director_v2._public_client"
-    )
+    module_base = "simcore_service_dynamic_scheduler.services.director_v2._public_client"
     mocker.patch(
         f"{module_base}.DirectorV2Client.stop_dynamic_service",
         autospec=True,
@@ -476,9 +448,7 @@ async def test_stop_dynamic_service_serializes_generic_errors(
     simcore_user_agent: str,
     save_state: bool,
 ):
-    with pytest.raises(
-        RPCServerError, match="While running method 'stop_dynamic_service'"
-    ):
+    with pytest.raises(RPCServerError, match="While running method 'stop_dynamic_service'"):
         await services.stop_dynamic_service(
             rpc_client,
             dynamic_service_stop=DynamicServiceStop(
@@ -487,6 +457,7 @@ async def test_stop_dynamic_service_serializes_generic_errors(
                 node_id=node_id,
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
+                product_name="osparc",
             ),
         )
 
@@ -519,9 +490,7 @@ async def test_get_project_inactivity(
     project_id: ProjectID,
     inactivity_response: GetProjectInactivityResponse,
 ):
-    result = await services.get_project_inactivity(
-        rpc_client, project_id=project_id, max_inactivity_seconds=5
-    )
+    result = await services.get_project_inactivity(rpc_client, project_id=project_id, max_inactivity_seconds=5)
     assert result == inactivity_response
 
 
@@ -532,9 +501,7 @@ def mock_director_v2_restart_user_services(node_id: NodeID) -> Iterator[None]:
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        mock.post(f"/dynamic_services/{node_id}:restart").respond(
-            status.HTTP_204_NO_CONTENT
-        )
+        mock.post(f"/dynamic_services/{node_id}:restart").respond(status.HTTP_204_NO_CONTENT)
         yield None
 
 
@@ -556,9 +523,7 @@ def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[None]:
         mock.post(f"/dynamic_services/{node_id}:retrieve").respond(
             status.HTTP_200_OK,
             text=TypeAdapter(RetrieveDataOutEnveloped)
-            .validate_python(
-                RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
-            )
+            .validate_python(RetrieveDataOutEnveloped.model_json_schema()["examples"][0])
             .model_dump_json(),
         )
 
@@ -570,13 +535,8 @@ async def test_retrieve_inputs(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
 ):
-    results = await services.retrieve_inputs(
-        rpc_client, node_id=node_id, port_keys=[], timeout_s=10
-    )
-    assert (
-        results.model_dump(mode="python")
-        == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
-    )
+    results = await services.retrieve_inputs(rpc_client, node_id=node_id, port_keys=[], timeout_s=10)
+    assert results.model_dump(mode="python") == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
 
 
 @pytest.fixture
@@ -586,9 +546,7 @@ def mock_director_v2_update_projects_networks(project_id: ProjectID) -> Iterator
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        mock.patch(f"/dynamic_services/projects/{project_id}/-/networks").respond(
-            status.HTTP_204_NO_CONTENT
-        )
+        mock.patch(f"/dynamic_services/projects/{project_id}/-/networks").respond(status.HTTP_204_NO_CONTENT)
         yield None
 
 

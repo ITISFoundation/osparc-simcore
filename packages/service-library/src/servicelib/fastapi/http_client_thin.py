@@ -8,7 +8,6 @@ from typing import Any
 from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
 from httpx._types import TimeoutTypes, URLTypes
-from servicelib.tracing import TracingConfig
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -16,8 +15,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
+from ..tracing import TracingConfig, setup_httpx_client_tracing
 from .http_client import BaseHTTPApi
-from .tracing import setup_httpx_client_tracing
 
 _logger = logging.getLogger(__name__)
 
@@ -90,9 +89,7 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
     return log_it
 
 
-def _assert_public_interface(
-    obj: object, extra_allowed_method_names: set[str] | None = None
-) -> None:
+def _assert_public_interface(obj: object, extra_allowed_method_names: set[str] | None = None) -> None:
     # makes sure all user public defined methods return `httpx.Response`
 
     _allowed_names: set[str] = {
@@ -112,8 +109,7 @@ def _assert_public_interface(
     for method in public_methods:
         signature = inspect.signature(method)
         assert signature.return_annotation == Response, (
-            f"{method=} should return an instance "
-            f"of {Response}, not '{signature.return_annotation}'!"
+            f"{method=} should return an instance of {Response}, not '{signature.return_annotation}'!"
         )
 
 
@@ -137,9 +133,7 @@ def retry_on_errors(
             try:
                 async for attempt in AsyncRetrying(
                     stop=stop_after_delay(
-                        total_retry_timeout_overwrite
-                        if total_retry_timeout_overwrite
-                        else zelf.total_retry_interval
+                        total_retry_timeout_overwrite if total_retry_timeout_overwrite else zelf.total_retry_interval
                     ),
                     wait=wait_exponential(min=1),
                     retry=retry_if_exception_type(TransportError),

@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 import string
-from collections import namedtuple
+from typing import NamedTuple
 
 import pytest
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -56,7 +56,10 @@ ALL_CONTAINER_STATUSES: set[str] = {
 
 RANDOM_STRING_DATASET = string.ascii_letters + string.digits
 
-ExpectedStatus = namedtuple("ExpectedStatus", "containers_statuses, expected_state")
+
+class ExpectedStatus(NamedTuple):
+    containers_statuses: list[DockerContainerInspect]
+    expected_state: ServiceState
 
 
 @pytest.fixture
@@ -87,9 +90,7 @@ def _make_status_dict(status: str) -> DockerContainerInspect:
     if status in CONTAINER_STATUSES_UNEXPECTED:
         status_dict["Error"] = "failed state here"
 
-    return DockerContainerInspect.from_container(
-        {"State": status_dict, "Name": "", "Id": ""}
-    )
+    return DockerContainerInspect.from_container({"State": status_dict, "Name": "", "Id": ""})
 
 
 def get_containers_inspect(*args: str) -> list[DockerContainerInspect]:
@@ -102,9 +103,7 @@ def _all_states() -> set[ServiceState]:
 
 SAMPLE_EXPECTED_STATUSES: list[ExpectedStatus] = [
     ExpectedStatus(
-        containers_statuses=get_containers_inspect(
-            CNT_STS_RESTARTING, CNT_STS_EXITED, CNT_STS_RUNNING
-        ),
+        containers_statuses=get_containers_inspect(CNT_STS_RESTARTING, CNT_STS_EXITED, CNT_STS_RUNNING),
         expected_state=ServiceState.FAILED,
     ),
     ExpectedStatus(
@@ -138,9 +137,7 @@ def test_running_service_details_make_status(
     print(running_service_details)
     assert running_service_details
 
-    running_service_details_dict = running_service_details.model_dump(
-        exclude_unset=True, by_alias=True
-    )
+    running_service_details_dict = running_service_details.model_dump(exclude_unset=True, by_alias=True)
 
     expected_running_service_details = {
         "boot_type": ServiceBootType.V2,
@@ -162,9 +159,9 @@ def test_running_service_details_make_status(
 def test_all_states_are_mapped():
     service_state_defined: set[ServiceState] = _all_states()
     comparison_mapped: set[ServiceState] = set(ServiceState.comparison_order().keys())
-    assert (
-        service_state_defined == comparison_mapped
-    ), "entries from _COMPARISON_ORDER do not match all states in ServiceState"
+    assert service_state_defined == comparison_mapped, (
+        "entries from _COMPARISON_ORDER do not match all states in ServiceState"
+    )
 
 
 def test_equality():
@@ -181,7 +178,7 @@ def test_expected_order():
             assert service_state > prior_service_state
 
 
-def test_min_service_state_is_lowerst_in_expected_order():
+def test_min_service_state_is_lowest_in_expected_order():
     for i in range(len(_EXPECTED_ORDER)):
         items_after_index = _EXPECTED_ORDER[i:]
         assert min(items_after_index) == items_after_index[0]
@@ -192,7 +189,7 @@ def test_min_service_state_is_lowerst_in_expected_order():
     [(x.containers_statuses, x.expected_state) for x in SAMPLE_EXPECTED_STATUSES],
     ids=[x.expected_state.name for x in SAMPLE_EXPECTED_STATUSES],
 )
-def test_extract_containers_minimim_statuses(
+def test_extract_containers_minimum_statuses(
     containers_statuses: list[DockerContainerInspect], expected_state: ServiceState
 ):
     service_state, _ = extract_containers_minimum_statuses(containers_statuses)
@@ -202,7 +199,7 @@ def test_extract_containers_minimim_statuses(
 def test_not_implemented_comparison() -> None:
     with pytest.raises(TypeError):
         # pylint: disable=pointless-statement
-        ServiceState.FAILED > {}  # type: ignore
+        ServiceState.FAILED > {}  # type: ignore  # noqa: B015
 
 
 def test_regression_legacy_service_compatibility() -> None:

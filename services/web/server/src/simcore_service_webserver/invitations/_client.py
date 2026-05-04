@@ -37,11 +37,9 @@ def _handle_exceptions_as_invitations_errors(member_func: Callable):
             InvitationsServiceUnavailableError:
         """
         try:
-
             return await member_func(*args, **kwargs)
 
         except ClientResponseError as err:
-
             if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
                 raise InvalidInvitationError(
                     api_funcname=member_func.__name__,
@@ -128,9 +126,7 @@ class InvitationsServiceApi:
     #
 
     @_handle_exceptions_as_invitations_errors
-    async def extract_invitation(
-        self, invitation_url: AnyHttpUrl
-    ) -> ApiInvitationContent:
+    async def extract_invitation(self, invitation_url: AnyHttpUrl) -> ApiInvitationContent:
         response = await self.client.post(
             url=self._url_vtag("/invitations:extract"),
             json={"invitation_url": f"{invitation_url}"},
@@ -138,9 +134,7 @@ class InvitationsServiceApi:
         return ApiInvitationContent.model_validate(await response.json())
 
     @_handle_exceptions_as_invitations_errors
-    async def generate_invitation(
-        self, params: ApiInvitationInputs
-    ) -> ApiInvitationContentAndLink:
+    async def generate_invitation(self, params: ApiInvitationInputs) -> ApiInvitationContentAndLink:
         response = await self.client.post(
             url=self._url_vtag("/invitations"),
             json=jsonable_encoder(params),

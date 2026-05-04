@@ -14,13 +14,9 @@ async def custom_error_handler(request: Request, exc: Exception):
 
     error_msg = f"{exc}"
     if isinstance(exc, InsufficientCreditsError):
-        return create_error_json_response(
-            error_msg, status_code=status.HTTP_402_PAYMENT_REQUIRED
-        )
+        return create_error_json_response(error_msg, status_code=status.HTTP_402_PAYMENT_REQUIRED)
     if isinstance(exc, MissingWalletError):
-        return create_error_json_response(
-            error_msg, status_code=status.HTTP_424_FAILED_DEPENDENCY
-        )
+        return create_error_json_response(error_msg, status_code=status.HTTP_424_FAILED_DEPENDENCY)
 
     msg = f"Exception handler is not implement for {exc=} [{type(exc)}]"
     raise NotImplementedError(msg)

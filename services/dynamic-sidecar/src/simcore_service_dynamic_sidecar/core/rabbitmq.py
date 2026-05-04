@@ -30,21 +30,15 @@ async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None
         await get_rabbitmq_client(app).publish(message.channel_name, message)
 
 
-async def post_resource_tracking_message(
-    app: FastAPI, message: RabbitResourceTrackingMessages
-):
+async def post_resource_tracking_message(app: FastAPI, message: RabbitResourceTrackingMessages):
     await _post_rabbit_message(app, message)
 
 
-async def post_dynamic_service_running_message(
-    app: FastAPI, message: DynamicServiceRunningMessage
-):
+async def post_dynamic_service_running_message(app: FastAPI, message: DynamicServiceRunningMessage):
     await _post_rabbit_message(app, message)
 
 
-async def post_log_message(
-    app: FastAPI, log: LogMessageStr, *, log_level: LogLevelInt
-) -> None:
+async def post_log_message(app: FastAPI, log: LogMessageStr, *, log_level: LogLevelInt) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = LoggerRabbitMessage.model_construct(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
@@ -57,9 +51,7 @@ async def post_log_message(
     await _post_rabbit_message(app, message)
 
 
-async def post_progress_message(
-    app: FastAPI, progress_type: ProgressType, report: ProgressReport
-) -> None:
+async def post_progress_message(app: FastAPI, progress_type: ProgressType, report: ProgressReport) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = ProgressRabbitMessageNode.model_construct(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
@@ -71,9 +63,7 @@ async def post_progress_message(
     await _post_rabbit_message(app, message)
 
 
-async def post_sidecar_log_message(
-    app: FastAPI, log: LogMessageStr, *, log_level: LogLevelInt
-) -> None:
+async def post_sidecar_log_message(app: FastAPI, log: LogMessageStr, *, log_level: LogLevelInt) -> None:
     await post_log_message(app, f"[sidecar] {log}", log_level=log_level)
 
 
@@ -116,14 +106,9 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    _raise_if_not_initialized(app, "rabbitmq_rpc_server")
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
-
-
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     _raise_if_not_initialized(app, "rabbitmq_rpc_client")
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
 
 
 def setup_rabbitmq(app: FastAPI) -> None:
@@ -138,11 +123,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
                 settings=settings,
             )
         with log_context(_logger, logging.INFO, msg="Create RabbitMQRPCClient"):
-            app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-                client_name=f"dynamic-sidecar_rpc_server_{app_settings.DY_SIDECAR_NODE_ID}",
-                settings=settings,
-            )
-        with log_context(_logger, logging.INFO, msg="Create RabbitMQRPCClient"):
             app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
                 client_name=f"dynamic-sidecar_rpc_client_{app_settings.DY_SIDECAR_NODE_ID}",
                 settings=settings,
@@ -151,8 +131,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
-        if app.state.rabbitmq_rpc_server:
-            await app.state.rabbitmq_rpc_server.close()
         if app.state.rabbitmq_rpc_client:
             await app.state.rabbitmq_rpc_client.close()
 

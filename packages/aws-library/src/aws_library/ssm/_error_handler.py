@@ -20,9 +20,7 @@ if TYPE_CHECKING:
     from ._client import SimcoreSSMAPI
 
 
-def _map_botocore_client_exception(
-    botocore_error: botocore_exc.ClientError, **kwargs
-) -> SSMAccessError:
+def _map_botocore_client_exception(botocore_error: botocore_exc.ClientError, **kwargs) -> SSMAccessError:
     status_code = int(
         botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         or botocore_error.response.get("Error", {}).get("Code", -1)
@@ -62,7 +60,7 @@ def ssm_exception_handler(
     """
 
     def decorator(
-        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]
+        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]:
         @functools.wraps(func)
         async def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:

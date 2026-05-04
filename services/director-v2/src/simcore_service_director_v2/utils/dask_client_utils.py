@@ -36,9 +36,7 @@ class DaskSubSystem:
             await wrap_client_async_routine(self.client.close())
 
 
-async def connect_to_dask_scheduler(
-    endpoint: AnyUrl, authentication: ClusterAuthentication
-) -> DaskSubSystem:
+async def connect_to_dask_scheduler(endpoint: AnyUrl, authentication: ClusterAuthentication) -> DaskSubSystem:
     try:
         security = distributed.Security()
         if isinstance(authentication, TLSAuthentication):

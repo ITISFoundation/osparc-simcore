@@ -7,15 +7,9 @@ class UsersBaseError(WebServerBaseError): ...
 
 
 class UserNotFoundError(UsersBaseError):
-    def __init__(
-        self, *, user_id: int | None = None, email: str | None = None, **ctx: Any
-    ):
+    def __init__(self, *, user_id: int | None = None, email: str | None = None, **ctx: Any):
         super().__init__(
-            msg_template=(
-                "User id {user_id} not found"
-                if user_id
-                else f"User with email {email} not found"
-            ),
+            msg_template=("User id {user_id} not found" if user_id else f"User with email {email} not found"),
             **ctx,
         )
         self.user_id = user_id
@@ -51,9 +45,7 @@ class FrontendUserPreferenceIsNotDefinedError(UsersBaseError):
 
 
 class AlreadyPreRegisteredError(UsersBaseError):
-    msg_template = (
-        "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
-    )
+    msg_template = "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
 
 
 class BillingDetailsNotFoundError(UsersBaseError):
@@ -67,9 +59,42 @@ class MissingGroupExtraPropertiesForProductError(UsersBaseError):
 
 
 class PendingPreRegistrationNotFoundError(UsersBaseError):
-    msg_template = (
-        "No pending pre-registration found for email {email} in product {product_name}"
-    )
+    msg_template = "No pending pre-registration found for email {email} in product {product_name}"
+
+    def __init__(self, *, email: str, product_name: str, **ctx: Any):
+        super().__init__(**ctx)
+        self.email = email
+        self.product_name = product_name
+
+
+class PreRegistrationNotFoundError(UsersBaseError):
+    msg_template = "Pre-registration with id {pre_registration_id} not found"
+
+    def __init__(self, *, pre_registration_id: int, **ctx: Any):
+        super().__init__(**ctx)
+        self.pre_registration_id = pre_registration_id
+
+
+class PreRegistrationAlreadyReviewedError(UsersBaseError):
+    msg_template = "Pre-registration with id {pre_registration_id} is already reviewed with status {status}"
+
+    def __init__(self, *, pre_registration_id: int, status: str, **ctx: Any):
+        super().__init__(**ctx)
+        self.pre_registration_id = pre_registration_id
+        self.status = status
+
+
+class PreRegistrationAlreadyLinkedToAccountError(UsersBaseError):
+    msg_template = "Pre-registration with id {pre_registration_id} is already linked to user {user_id}"
+
+    def __init__(self, *, pre_registration_id: int, user_id: int, **ctx: Any):
+        super().__init__(**ctx)
+        self.pre_registration_id = pre_registration_id
+        self.user_id = user_id
+
+
+class PreRegistrationDuplicateInProductError(UsersBaseError):
+    msg_template = "A pre-registration with email {email} already exists in product {product_name}"
 
     def __init__(self, *, email: str, product_name: str, **ctx: Any):
         super().__init__(**ctx)

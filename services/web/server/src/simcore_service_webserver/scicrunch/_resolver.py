@@ -1,6 +1,6 @@
 """
-    Layer to interact withscicrunch service resolver API
-    SEE https://scicrunch.org/resolver
+Layer to interact withscicrunch service resolver API
+SEE https://scicrunch.org/resolver
 
 """
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 # MODELS ---------------------------
+
 
 # This is a partial model from the resolver response
 # that extracts the information we are interested

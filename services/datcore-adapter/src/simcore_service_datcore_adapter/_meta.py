@@ -1,6 +1,4 @@
-""" Application's metadata
-
-"""
+"""Application's metadata"""
 
 from importlib.metadata import distribution, version
 from typing import Final

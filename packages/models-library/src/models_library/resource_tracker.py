@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import IntEnum, auto
 from typing import NamedTuple, TypeAlias
@@ -95,11 +95,7 @@ class PricingInfo(BaseModel):
     pricing_unit_cost_id: PricingUnitCostId
 
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {"pricing_plan_id": 1, "pricing_unit_id": 1, "pricing_unit_cost_id": 1}
-            ]
-        }
+        json_schema_extra={"examples": [{"pricing_plan_id": 1, "pricing_unit_id": 1, "pricing_unit_cost_id": 1}]}
     )
 
 
@@ -153,7 +149,7 @@ class StartedAt(BaseModel):
             if isinstance(v, datetime):
                 return v
             try:
-                from_ = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                from_ = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=UTC)
             except Exception as exc:
                 msg = "'from' value must be provided in proper format <yyyy-mm-dd>."
                 raise ValueError(msg) from exc
@@ -168,7 +164,7 @@ class StartedAt(BaseModel):
             if isinstance(v, datetime):
                 return v
             try:
-                until = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                until = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=UTC)
             except Exception as exc:
                 msg = "'until' value must be provided in proper format <yyyy-mm-dd>."
                 raise ValueError(msg) from exc

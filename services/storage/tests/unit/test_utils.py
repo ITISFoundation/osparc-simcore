@@ -34,9 +34,7 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
     expected_size = MAX_CHUNK_SIZE * 3 + 1000
 
     async with httpx.AsyncClient() as session:
-        total_size = await download_to_file_or_raise(
-            session, f"{httpbin_base_url}/bytes/{expected_size}", destination
-        )
+        total_size = await download_to_file_or_raise(session, f"{httpbin_base_url}/bytes/{expected_size}", destination)
         assert destination.exists()
         assert expected_size == total_size
         assert destination.stat().st_size == total_size
@@ -53,7 +51,7 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
         (
             DEFAULT_FAKER.random_int(1, 1000000),
             "some_valid_entity_tag",
-            "som_upload_id",
+            "some_upload_id",
             None,
             False,
         ),
@@ -91,9 +89,7 @@ def test_file_entry_valid(
         location_name=SimcoreS3DataManager.get_location_name(),
         sha256_checksum=None,
     )
-    fmd.file_size = TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(
-        file_size
-    )
+    fmd.file_size = TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(file_size)
     fmd.entity_tag = entity_tag
     fmd.upload_id = upload_id
     fmd.upload_expires_at = upload_expires_at
@@ -108,9 +104,5 @@ def test_file_entry_valid(
         ("any_other_id", True),
     ],
 )
-def test_is_valid_internally_managed_multipart_upload(
-    upload_id: UploadID, is_valid_and_internally_managed: bool
-):
-    assert (
-        is_valid_managed_multipart_upload(upload_id) == is_valid_and_internally_managed
-    )
+def test_is_valid_internally_managed_multipart_upload(upload_id: UploadID, is_valid_and_internally_managed: bool):
+    assert is_valid_managed_multipart_upload(upload_id) == is_valid_and_internally_managed

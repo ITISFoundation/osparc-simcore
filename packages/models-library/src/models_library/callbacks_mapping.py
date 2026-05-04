@@ -8,13 +8,9 @@ TIMEOUT_MIN: Final[NonNegativeFloat] = 1
 
 
 class UserServiceCommand(BaseModel):
-    service: str = Field(
-        ..., description="name of the docker-compose service in the docker-compose spec"
-    )
+    service: str = Field(..., description="name of the docker-compose service in the docker-compose spec")
     command: str | Sequence[str] = Field(..., description="command to run in container")
-    timeout: NonNegativeFloat = Field(
-        ..., description="after this interval the command will be timed-out"
-    )
+    timeout: NonNegativeFloat = Field(..., description="after this interval the command will be timed-out")
     model_config = ConfigDict(
         extra="forbid",
         json_schema_extra={
@@ -44,10 +40,7 @@ class CallbacksMapping(BaseModel):
     ]
     inactivity: UserServiceCommand | None = Field(
         None,
-        description=(
-            "command used to figure out for how much time the "
-            "user service(s) were inactive for"
-        ),
+        description=("command used to figure out for how much time the user service(s) were inactive for"),
     )
 
     model_config = ConfigDict(
@@ -83,12 +76,8 @@ class CallbacksMapping(BaseModel):
 
     @field_validator("inactivity")
     @classmethod
-    def ensure_inactivity_timeout_is_capped(
-        cls, v: UserServiceCommand
-    ) -> UserServiceCommand:
-        if v is not None and (
-            v.timeout < TIMEOUT_MIN or v.timeout > INACTIVITY_TIMEOUT_CAP
-        ):
+    def ensure_inactivity_timeout_is_capped(cls, v: UserServiceCommand) -> UserServiceCommand:
+        if v is not None and (v.timeout < TIMEOUT_MIN or v.timeout > INACTIVITY_TIMEOUT_CAP):
             msg = (
                 f"Constraint not respected for inactivity timeout={v.timeout}: "
                 f"interval=({TIMEOUT_MIN}, {INACTIVITY_TIMEOUT_CAP})"

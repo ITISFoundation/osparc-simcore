@@ -30,9 +30,7 @@ def bump_version(
             help="The metadata yaml file",
         ),
     ] = Path("metadata/metadata.yml"),
-    target_version: Annotated[
-        TargetVersionChoices, typer.Argument()
-    ] = TargetVersionChoices.SEMANTIC_VERSION,
+    target_version: Annotated[TargetVersionChoices, typer.Argument()] = TargetVersionChoices.SEMANTIC_VERSION,
 ):
     """Bumps target version in metadata  (legacy)"""
     # load
@@ -44,9 +42,7 @@ def bump_version(
     # get + bump + set
     attrname = target_version.replace("-", "_")
     current_version: str = getattr(metadata, attrname)
-    raw_data[target_version] = new_version = bump_version_string(
-        current_version, upgrade
-    )
+    raw_data[target_version] = new_version = bump_version_string(current_version, upgrade)
 
     # dump to file (preserving order!)
     text = ordered_safe_dump(raw_data)
@@ -55,9 +51,7 @@ def bump_version(
 
 
 def get_version(
-    target_version: Annotated[
-        TargetVersionChoices, typer.Argument()
-    ] = TargetVersionChoices.SEMANTIC_VERSION,
+    target_version: Annotated[TargetVersionChoices, typer.Argument()] = TargetVersionChoices.SEMANTIC_VERSION,
     metadata_file: Annotated[
         Path,
         typer.Option(

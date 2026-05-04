@@ -1,8 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, Response, status
 from fastapi import Path as PathParam
-from fastapi import Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 
@@ -69,9 +68,7 @@ async def create_output_dirs(
     since it already has all the machinery to call into director-v0
     to retrieve them.
     """
-    await container_extensions.create_output_dirs(
-        app, outputs_labels=request_mode.outputs_labels
-    )
+    await container_extensions.create_output_dirs(app, outputs_labels=request_mode.outputs_labels)
 
 
 @router.post(

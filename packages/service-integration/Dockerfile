@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Define arguments in the global scope
-ARG PYTHON_VERSION="3.11.9"
+ARG PYTHON_VERSION="3.13.9"
 ARG UV_VERSION="0.9"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
@@ -100,5 +100,5 @@ USER scu
 
 COPY --from=build --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-# NOTE: do not activate ENV PYTHONOPTIMIZE=TRUE since excutable contains pytest code
+# NOTE: do not activate ENV PYTHONOPTIMIZE=TRUE since executable contains pytest code
 ENTRYPOINT [ "ooil" ]

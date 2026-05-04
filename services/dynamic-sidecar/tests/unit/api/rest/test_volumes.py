@@ -30,9 +30,7 @@ async def test_volumes_state_saved_ok(
     shared_store: SharedStore = test_client.application.state.shared_store
 
     # check that initial status is as expected
-    assert shared_store.volume_states[volume_category] == VolumeState(
-        status=initial_expected_status
-    )
+    assert shared_store.volume_states[volume_category] == VolumeState(status=initial_expected_status)
 
     response = await test_client.put(
         f"/{API_VTAG}/volumes/{volume_category}",
@@ -41,9 +39,7 @@ async def test_volumes_state_saved_ok(
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
     # check that
-    assert shared_store.volume_states[volume_category] == VolumeState(
-        status=VolumeStatus.CONTENT_WAS_SAVED
-    )
+    assert shared_store.volume_states[volume_category] == VolumeState(status=VolumeStatus.CONTENT_WAS_SAVED)
 
 
 @pytest.mark.parametrize("invalid_volume_category", ["outputs", "outputS"])

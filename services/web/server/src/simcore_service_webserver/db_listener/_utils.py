@@ -1,6 +1,4 @@
-""" API of computation subsystem within this application
-
-"""
+"""API of computation subsystem within this application"""
 
 from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType

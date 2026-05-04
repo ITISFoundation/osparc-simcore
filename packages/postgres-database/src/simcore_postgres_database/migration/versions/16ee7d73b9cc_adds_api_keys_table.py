@@ -5,6 +5,7 @@ Revises: f3555bb4bc34
 Create Date: 2020-04-28 08:11:42.785688+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -26,9 +27,7 @@ def upgrade():
         sa.Column("api_secret", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "display_name", "user_id", name="display_name_userid_uniqueness"
-        ),
+        sa.UniqueConstraint("display_name", "user_id", name="display_name_userid_uniqueness"),
     )
     # ### end Alembic commands ###
 

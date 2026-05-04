@@ -12,6 +12,10 @@ class TaskNotRegisteredError(BaseLongRunningError):
     )
 
 
+class TaskIsBeingRemovedError(BaseLongRunningError):
+    msg_template: str = "'{task_name}' is being removed, wait before starting a new one with the same task_name"
+
+
 class TaskAlreadyRunningError(BaseLongRunningError):
     msg_template: str = "{task_name} must be unique, found: '{managed_task}'"
 
@@ -29,9 +33,7 @@ class TaskCancelledError(BaseLongRunningError):
 
 
 class TaskExceptionError(BaseLongRunningError):
-    msg_template: str = (
-        "Task {task_id} finished with exception: '{exception}'\n{traceback}"
-    )
+    msg_template: str = "Task {task_id} finished with exception: '{exception}'\n{traceback}"
 
 
 class TaskRaisedUnserializableError(BaseLongRunningError):
@@ -43,18 +45,14 @@ class TaskRaisedUnserializableError(BaseLongRunningError):
 
 
 class TaskClientTimeoutError(BaseLongRunningError):
-    msg_template: str = (
-        "Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
-    )
+    msg_template: str = "Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
 
 
 class GenericClientError(BaseLongRunningError):
-    msg_template: str = (
-        "Unexpected error while '{action}' for '{task_id}': status={status} body={body}"
-    )
+    msg_template: str = "Unexpected error while '{action}' for '{task_id}': status={status} body={body}"
 
 
-class RPCTransferrableTaskError(Exception):
+class RPCTransferableTaskError(Exception):
     """
     The message contains the task's exception serialized as string.
     Decode it and raise to obtain the task's original exception.

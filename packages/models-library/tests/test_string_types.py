@@ -16,30 +16,27 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 def test_short_truncated_string():
     curtail_length = _SHORT_TRUNCATED_STR_MAX_LENGTH
-    assert (
-        TypeAdapter(ShortTruncatedStr).validate_python("X" * curtail_length)
-        == "X" * curtail_length
-    ), "Max length string should remain intact"
+    assert TypeAdapter(ShortTruncatedStr).validate_python("X" * curtail_length) == "X" * curtail_length, (
+        "Max length string should remain intact"
+    )
 
-    assert (
-        TypeAdapter(ShortTruncatedStr).validate_python("X" * (curtail_length + 1))
-        == "X" * curtail_length
-    ), "Overlong string should be truncated exactly to max length"
+    assert TypeAdapter(ShortTruncatedStr).validate_python("X" * (curtail_length + 1)) == "X" * curtail_length, (
+        "Overlong string should be truncated exactly to max length"
+    )
 
-    assert (
-        TypeAdapter(ShortTruncatedStr).validate_python("X" * (curtail_length + 100))
-        == "X" * curtail_length
-    ), "Much longer string should still truncate to exact max length"
+    assert TypeAdapter(ShortTruncatedStr).validate_python("X" * (curtail_length + 100)) == "X" * curtail_length, (
+        "Much longer string should still truncate to exact max length"
+    )
 
     # below limit
-    assert TypeAdapter(ShortTruncatedStr).validate_python(
-        "X" * (curtail_length - 1)
-    ) == "X" * (curtail_length - 1), "Under-length string should not be modified"
+    assert TypeAdapter(ShortTruncatedStr).validate_python("X" * (curtail_length - 1)) == "X" * (curtail_length - 1), (
+        "Under-length string should not be modified"
+    )
 
     # spaces are trimmed
-    assert (
-        TypeAdapter(ShortTruncatedStr).validate_python(" " * (curtail_length + 1)) == ""
-    ), "Only-whitespace string should become empty string"
+    assert TypeAdapter(ShortTruncatedStr).validate_python(" " * (curtail_length + 1)) == "", (
+        "Only-whitespace string should become empty string"
+    )
 
 
 class InputRequestModel(BaseModel):
@@ -52,20 +49,14 @@ class InputRequestModel(BaseModel):
     [
         # ✅ valid inputs
         pytest.param("Alice", "Simple markdown **text**.", True, id="valid-alice"),
-        pytest.param(
-            "ACME_Inc", "Multi-line\nMarkdown _description_.", True, id="valid-acme"
-        ),
-        pytest.param(
-            "John-Doe", "Has some <b>inline HTML</b>.", True, id="valid-html-inline"
-        ),
+        pytest.param("ACME_Inc", "Multi-line\nMarkdown _description_.", True, id="valid-acme"),
+        pytest.param("John-Doe", "Has some <b>inline HTML</b>.", True, id="valid-html-inline"),
         # ❌ unsafe / invalid names
         pytest.param("<script>", "valid description", False, id="invalid-name-script"),
         pytest.param("", "short", False, id="invalid-name-empty"),
         pytest.param("A" * 200, "too long name", False, id="invalid-name-too-long"),
         # ❌ unsafe / invalid descriptions
-        pytest.param(
-            "SafeName", "<script>alert(1)</script>", False, id="invalid-desc-script"
-        ),
+        pytest.param("SafeName", "<script>alert(1)</script>", False, id="invalid-desc-script"),
         pytest.param("SafeName", "  ", False, id="invalid-desc-whitespace"),
         pytest.param("SafeName", "a" * 6000, False, id="invalid-desc-too-long"),
         # ❌ additional JS injection patterns that should be caught
@@ -87,12 +78,8 @@ class InputRequestModel(BaseModel):
             False,
             id="invalid-desc-svg-onload",
         ),
-        pytest.param(
-            "SafeName", "vbscript:msgbox(1)", False, id="invalid-desc-vbscript"
-        ),
-        pytest.param(
-            "SafeName", "&#106;avascript:alert(1)", False, id="invalid-desc-encoded-js"
-        ),
+        pytest.param("SafeName", "vbscript:msgbox(1)", False, id="invalid-desc-vbscript"),
+        pytest.param("SafeName", "&#106;avascript:alert(1)", False, id="invalid-desc-encoded-js"),
         # ❌ ReDoS (Regular expression Denial of Service) test patterns
         pytest.param(
             "SafeName",

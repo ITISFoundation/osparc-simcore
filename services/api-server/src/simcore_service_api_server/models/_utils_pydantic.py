@@ -23,9 +23,7 @@ class UriSchema:
     """
 
     @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
+    def __get_pydantic_json_schema__(cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
         # SEE https://docs.pydantic.dev/2.10/concepts/json_schema/#implementing-__get_pydantic_json_schema__
         json_schema = deepcopy(handler(core_schema))
 

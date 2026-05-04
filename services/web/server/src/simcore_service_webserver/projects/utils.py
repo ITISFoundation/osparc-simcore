@@ -37,7 +37,6 @@ def clone_project_document(
     forced_copy_project_id: UUID | None = None,
     clean_output_data: bool = False,
 ) -> tuple[ProjectDict, NodesMap]:
-
     project_copy = deepcopy(project)
 
     # Update project id
@@ -86,12 +85,8 @@ def clone_project_document(
 
     project_copy["workbench"] = _replace_uuids(project_copy.get("workbench", {}))
     if "ui" in project_copy:
-        project_copy["ui"]["workbench"] = _replace_uuids(
-            project_copy["ui"].get("workbench", {})
-        )
-        project_copy["ui"]["slideshow"] = _replace_uuids(
-            project_copy["ui"].get("slideshow", {})
-        )
+        project_copy["ui"]["workbench"] = _replace_uuids(project_copy["ui"].get("workbench", {}))
+        project_copy["ui"]["slideshow"] = _replace_uuids(project_copy["ui"].get("slideshow", {}))
 
         # exclude annotations UI info for conversations done in the source project
         annotations = deepcopy(project_copy.get("ui", {}).get("annotations", {})) or {}
@@ -107,9 +102,7 @@ def clone_project_document(
 
 
 @safe_return(if_fails_return=False, logger=_logger)
-def substitute_parameterized_inputs(
-    parameterized_project: dict, parameters: dict
-) -> dict:
+def substitute_parameterized_inputs(parameterized_project: dict, parameters: dict) -> dict:
     """Substitutes parameterized r/w inputs
 
     NOTE: project is is changed
@@ -130,10 +123,7 @@ def substitute_parameterized_inputs(
             return s
 
     def _get_param_input_match(name, value, access) -> Match[str] | None:
-        if (
-            isinstance(value, str)
-            and access.get(name, "ReadAndWrite") == "ReadAndWrite"
-        ):
+        if isinstance(value, str) and access.get(name, "ReadAndWrite") == "ReadAndWrite":
             return _VARIABLE_PATTERN.match(value)
         return None
 
@@ -160,9 +150,7 @@ def substitute_parameterized_inputs(
     return project
 
 
-def is_graph_equal(
-    lhs_workbench: dict[str, Any], rhs_workbench: dict[str, Any]
-) -> bool:
+def is_graph_equal(lhs_workbench: dict[str, Any], rhs_workbench: dict[str, Any]) -> bool:
     """Checks whether both workbench contain the same graph
 
     Two graphs are the same when the same topology (i.e. nodes and edges)
@@ -174,15 +162,11 @@ def is_graph_equal(
 
         for node_id, node in rhs_workbench.items():
             # same nodes
-            if not all(
-                node.get(k) == lhs_workbench[node_id].get(k) for k in ["key", "version"]
-            ):
+            if not all(node.get(k) == lhs_workbench[node_id].get(k) for k in ["key", "version"]):
                 raise ValueError
 
             # same connectivity (edges)
-            if not set(node.get("inputNodes")) == set(
-                lhs_workbench[node_id].get("inputNodes")
-            ):
+            if not set(node.get("inputNodes")) == set(lhs_workbench[node_id].get("inputNodes")):
                 raise ValueError
 
             # same input values
@@ -200,9 +184,7 @@ def extract_dns_without_default_port(url: URL) -> str:
     return f"{url.host}{port}"
 
 
-def any_node_inputs_changed(
-    updated_project: ProjectDict, current_project: ProjectDict
-) -> bool:
+def any_node_inputs_changed(updated_project: ProjectDict, current_project: ProjectDict) -> bool:
     """Returns true if any change is detected in the node inputs of the updated project
 
     Based on the limitation we are detecting with this check, new nodes only account for
@@ -227,9 +209,7 @@ def any_node_inputs_changed(
     # detect input changes in existing nodes
     for node_id, updated_node in updated_project["workbench"].items():
         if current_node := current_project["workbench"].get(node_id, None):
-            if (updated_inputs := updated_node.get("inputs")) != current_node.get(
-                "inputs"
-            ):
+            if (updated_inputs := updated_node.get("inputs")) != current_node.get("inputs"):
                 _logger.debug(
                     "Change detected in projects[%s].workbench[%s].%s",
                     f"{project_uuid=}",
@@ -262,9 +242,7 @@ _SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
 }
 
 
-def get_frontend_node_outputs_changes(
-    new_node: NodeDict, old_node: NodeDict
-) -> set[str]:
+def get_frontend_node_outputs_changes(new_node: NodeDict, old_node: NodeDict) -> set[str]:
     changed_keys: set[str] = set()
 
     # ANE: if node changes it's outputs and is not a supported
@@ -321,9 +299,7 @@ def find_changed_node_keys(
     # start with the missing keys
     changed_keys = {k: new_dict[k] for k in new_dict.keys() - current_dict.keys()}
     if look_for_removed_keys:
-        changed_keys.update(
-            {k: current_dict[k] for k in current_dict.keys() - new_dict.keys()}
-        )
+        changed_keys.update({k: current_dict[k] for k in current_dict.keys() - new_dict.keys()})
     # then go for the modified ones
     for k in current_dict.keys() & new_dict.keys():
         if current_dict[k] == new_dict[k]:
@@ -331,11 +307,7 @@ def find_changed_node_keys(
         # if the entry was modified put the new one
         modified_entry = {k: new_dict[k]}
         if isinstance(current_dict[k], dict) and isinstance(new_dict[k], dict):
-            modified_entry = {
-                k: find_changed_node_keys(
-                    current_dict[k], new_dict[k], look_for_removed_keys=True
-                )
-            }
+            modified_entry = {k: find_changed_node_keys(current_dict[k], new_dict[k], look_for_removed_keys=True)}
         changed_keys.update(modified_entry)
     return changed_keys
 
@@ -349,9 +321,7 @@ def default_copy_project_name(name: str) -> str:
         new_copy_index = 1
         if current_copy_index := match.group(2):
             # we receive something of type "(23)"
-            new_copy_index = (
-                TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
-            )
+            new_copy_index = TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
         return f"{match.group(1)}({new_copy_index})"
     return f"{name} (Copy)"
 

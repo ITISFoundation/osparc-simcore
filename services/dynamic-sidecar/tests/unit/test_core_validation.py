@@ -98,8 +98,7 @@ def incoming_compose_file(
     fixture_name = request.param
     sig = signature(incoming_compose_file)
     assert fixture_name in sig.parameters, (
-        f"Provided fixture name {fixture_name} was not found "
-        f"as a parameter in the signature {sig}"
+        f"Provided fixture name {fixture_name} was not found as a parameter in the signature {sig}"
     )
 
     # returns the parameter by name from the ones declared in the signature
@@ -116,26 +115,16 @@ def incoming_compose_file(
     ],
 )
 @pytest.mark.parametrize("allow_internet_access", [True, False])
-def test_inject_backend_networking(
-    networks: None | dict, incoming_compose_file: str, allow_internet_access: bool
-):
+def test_inject_backend_networking(networks: None | dict, incoming_compose_file: str, allow_internet_access: bool):
     """
     NOTE: this goes with issue [https://github.com/ITISFoundation/osparc-simcore/issues/3261]
     """
     parsed_compose_spec = parse_compose_spec(incoming_compose_file)
     parsed_compose_spec["networks"] = networks
-    _connect_user_services(
-        parsed_compose_spec, allow_internet_access=allow_internet_access
-    )
+    _connect_user_services(parsed_compose_spec, allow_internet_access=allow_internet_access)
     assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["networks"]
-    assert (
-        DEFAULT_USER_SERVICES_NETWORK_NAME
-        in parsed_compose_spec["services"]["iseg-app"]["networks"]
-    )
-    assert (
-        DEFAULT_USER_SERVICES_NETWORK_NAME
-        in parsed_compose_spec["services"]["iseg-web"]["networks"]
-    )
+    assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["services"]["iseg-app"]["networks"]
+    assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["services"]["iseg-web"]["networks"]
 
 
 @pytest.fixture
@@ -174,6 +163,4 @@ async def test_regression_validate_compose_spec(
     no_internet_spec: str,
     fake_mounted_volumes: MountedVolumes,
 ):
-    await get_and_validate_compose_spec(
-        app.state.settings, no_internet_spec, fake_mounted_volumes
-    )
+    await get_and_validate_compose_spec(app.state.settings, no_internet_spec, fake_mounted_volumes)

@@ -51,7 +51,7 @@
           "ops"
         ],
         "summary": "Running Services",
-        "description": "returns all running dynamic services. Used by ops internall to determine\nwhen it is safe to shutdown the platform",
+        "description": "returns all running dynamic services. Used by ops internally to determine\nwhen it is safe to shutdown the platform",
         "operationId": "running_services_v1_ops_running_services_get",
         "responses": {
           "200": {
@@ -133,9 +133,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -172,21 +171,17 @@
           },
           "service_port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Service Port",
-            "description": "the service swarm internal port",
-            "maximum": 65535,
-            "minimum": 0
+            "description": "the service swarm internal port"
           },
           "published_port": {
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -206,7 +201,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {

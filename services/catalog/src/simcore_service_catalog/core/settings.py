@@ -46,26 +46,20 @@ _DEFAULT_RESOURCES: Final[ResourcesDict] = ResourcesDict(
 )
 
 
-_DEFAULT_SERVICE_SPECIFICATIONS: Final[ServiceSpecifications] = (
-    ServiceSpecifications.model_validate({})
-)
+_DEFAULT_SERVICE_SPECIFICATIONS: Final[ServiceSpecifications] = ServiceSpecifications.model_validate({})
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "CATALOG_LOG_LEVEL", "CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("CATALOG_LOG_LEVEL", "CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
     CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
-            validation_alias=AliasChoices(
-                "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
-            ),
+            validation_alias=AliasChoices("CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
             description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ] = False
@@ -73,9 +67,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
@@ -92,9 +84,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
-    CATALOG_RABBITMQ: Annotated[
-        RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    CATALOG_RABBITMQ: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     CATALOG_CLIENT_REQUEST: Annotated[
         ClientRequestSettings | None,
@@ -115,9 +105,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
 
     CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
-    CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
-        _DEFAULT_SERVICE_SPECIFICATIONS
-    )
+    CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = _DEFAULT_SERVICE_SPECIFICATIONS
     CATALOG_TRACING: Annotated[
         TracingSettings | None,
         Field(

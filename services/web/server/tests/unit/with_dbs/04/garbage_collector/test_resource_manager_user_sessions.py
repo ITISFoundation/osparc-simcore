@@ -106,9 +106,7 @@ def create_user_ids(faker: Faker) -> Callable[[int], list[UserID]]:
         ),
     ],
 )
-async def test_redis_registry_hashes(
-    redis_enabled_app: web.Application, user_session: UserSession, key: RedisHashKey
-):
+async def test_redis_registry_hashes(redis_enabled_app: web.Application, user_session: UserSession, key: RedisHashKey):
     assert user_session.to_redis_hash_key() == key
     assert UserSession.from_redis_hash_key(key) == user_session
     assert UserSession.from_redis_hash_key(f"{key}:{RESOURCE_SUFFIX}") == user_session
@@ -142,42 +140,28 @@ async def test_redis_registry(
     # create resources
     for res in resources:
         await redis_registry.set_resource(user_session, res)
-        assert (
-            len(await redis_registry.get_resources(user_session))
-            == resources.index(res) + 1
-        )
+        assert len(await redis_registry.get_resources(user_session)) == resources.index(res) + 1
 
     # get them
-    assert await redis_registry.get_resources(user_session) == {
-        x[0]: x[1] for x in resources
-    }
+    assert await redis_registry.get_resources(user_session) == {x[0]: x[1] for x in resources}
     assert not await redis_registry.get_resources(invalid_user_session)
     # find them
     for res in resources:
         assert await redis_registry.find_resources(user_session, res[0]) == [res[1]]
         assert not await redis_registry.find_resources(invalid_user_session, res[0])
-        assert not await redis_registry.find_resources(
-            user_session, invalid_resource[0]
-        )
+        assert not await redis_registry.find_resources(user_session, invalid_resource[0])
         assert await redis_registry.find_keys(res) == [user_session]
         assert not await redis_registry.find_keys(invalid_resource)
     # add second key
     for res in resources:
         await redis_registry.set_resource(user_session2, res)
-        assert (
-            len(await redis_registry.get_resources(user_session2))
-            == resources.index(res) + 1
-        )
+        assert len(await redis_registry.get_resources(user_session2)) == resources.index(res) + 1
     # find them
     for res in resources:
         assert await redis_registry.find_resources(user_session, res[0]) == [res[1]]
         assert not await redis_registry.find_resources(invalid_user_session, res[0])
-        assert not await redis_registry.find_resources(
-            user_session, invalid_resource[0]
-        )
-        assert not await redis_registry.find_resources(
-            user_session2, invalid_resource[0]
-        )
+        assert not await redis_registry.find_resources(user_session, invalid_resource[0])
+        assert not await redis_registry.find_resources(user_session2, invalid_resource[0])
         found_keys = await redis_registry.find_keys(res)
         assert all(x in found_keys for x in [user_session, user_session2])
         assert all(x in [user_session, user_session2] for x in found_keys)
@@ -187,9 +171,7 @@ async def test_redis_registry(
     STILL_ALIVE_KEY_TIMEOUT = DEAD_KEY_TIMEOUT + 1
 
     # create a key which will be alive when testing
-    await redis_registry.set_key_alive(
-        user_session, expiration_time=STILL_ALIVE_KEY_TIMEOUT
-    )
+    await redis_registry.set_key_alive(user_session, expiration_time=STILL_ALIVE_KEY_TIMEOUT)
     assert await redis_registry.is_key_alive(user_session) is True
     # create soon to be dead key
     await redis_registry.set_key_alive(user_session2, expiration_time=DEAD_KEY_TIMEOUT)
@@ -211,9 +193,7 @@ async def test_redis_registry(
     for res in resources:
         assert await redis_registry.find_keys(res) == [user_session2]
         await redis_registry.remove_resource(user_session2, res[0])
-        assert len(await redis_registry.get_resources(user_session2)) == len(
-            resources
-        ) - (resources.index(res) + 1)
+        assert len(await redis_registry.get_resources(user_session2)) == len(resources) - (resources.index(res) + 1)
 
 
 async def test_redis_registry_key_will_always_expire(
@@ -240,9 +220,7 @@ async def test_redis_registry_key_will_always_expire(
         reraise=True,
     ):
         with attempt:
-            print(
-                f"checking redis registry for keys alive, [attempt {attempt.retry_state.attempt_number}]..."
-            )
+            print(f"checking redis registry for keys alive, [attempt {attempt.retry_state.attempt_number}]...")
             assert await redis_registry.is_key_alive(second_key) is False
             assert await redis_registry.is_key_alive(first_key) is False
 
@@ -275,17 +253,13 @@ async def test_users_sessions_resources_registry(
             tabs[socket_id] = client_session_id
 
             with managed_resource(user_id, client_session_id, redis_enabled_app) as rt:
-                user_session_key = UserSession(
-                    user_id=user_id, client_session_id=client_session_id
-                )
+                user_session_key = UserSession(user_id=user_id, client_session_id=client_session_id)
                 assert rt.resource_key == user_session_key
 
                 # set the socket id and check it is rightfully there
                 await rt.set_socket_id(socket_id)
                 assert await rt.get_socket_id() == socket_id
-                assert await redis_registry.get_resources(user_session_key) == {
-                    "socket_id": socket_id
-                }
+                assert await redis_registry.get_resources(user_session_key) == {"socket_id": socket_id}
                 list_of_sockets_of_user = await rt.find_socket_ids()
                 assert socket_id in list_of_sockets_of_user
 
@@ -301,9 +275,7 @@ async def test_users_sessions_resources_registry(
 
                 # resource key shall be filled
                 assert await rt.find(res_key) == [res_value]
-                list_of_same_resource_users = await rt.find_users_of_resource(
-                    redis_enabled_app, res_key, res_value
-                )
+                list_of_same_resource_users = await rt.find_users_of_resource(redis_enabled_app, res_key, res_value)
                 assert set(list_user_ids[: (list_user_ids.index(user_id) + 1)]) == {
                     user_session.user_id for user_session in list_of_same_resource_users
                 }

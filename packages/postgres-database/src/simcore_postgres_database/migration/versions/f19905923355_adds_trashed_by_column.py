@@ -5,6 +5,7 @@ Revises: 307017ee1a49
 Create Date: 2025-01-10 16:43:21.559138+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -16,7 +17,6 @@ depends_on = None
 
 
 def upgrade():
-
     with op.batch_alter_table("folders_v2") as batch_op:
         batch_op.alter_column(
             "trashed_at",

@@ -5,6 +5,7 @@ Revises: 10b293fdcd56
 Create Date: 2023-01-23 06:55:15.668824+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -26,12 +27,8 @@ def upgrade():
             server_default=sa.text("true"),
             nullable=False,
         ),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["group_id"],
             ["groups.gid"],

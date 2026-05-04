@@ -5,6 +5,7 @@ Revises: c3c564121364
 Create Date: 2022-11-17 23:21:49.290958+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -21,18 +22,10 @@ def upgrade():
         sa.Column("tag_id", sa.BigInteger(), nullable=False),
         sa.Column("group_id", sa.BigInteger(), nullable=False),
         sa.Column("read", sa.Boolean(), server_default=sa.text("true"), nullable=False),
-        sa.Column(
-            "write", sa.Boolean(), server_default=sa.text("false"), nullable=False
-        ),
-        sa.Column(
-            "delete", sa.Boolean(), server_default=sa.text("false"), nullable=False
-        ),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("write", sa.Boolean(), server_default=sa.text("false"), nullable=False),
+        sa.Column("delete", sa.Boolean(), server_default=sa.text("false"), nullable=False),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["group_id"],
             ["groups.gid"],

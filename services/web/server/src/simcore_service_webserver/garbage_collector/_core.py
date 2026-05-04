@@ -23,7 +23,7 @@ async def collect_garbage(app: web.Application):
     - Deletion of users. If a user needs to be deleted it can be set as GUEST in the database
 
     The resources are Redis entries where all information regarding all the
-    websocket identifiers for all opened tabs accross all browser for each user
+    websocket identifiers for all opened tabs across all browser for each user
     are stored.
 
     The alive/dead keys are normal Redis keys. To each key an ALIVE key is associated,
@@ -38,9 +38,7 @@ async def collect_garbage(app: web.Application):
 
     with (
         log_catch(_logger, reraise=False),
-        log_context(
-            _logger, logging.INFO, "Step 1: Removes disconnected user sessions"
-        ),
+        log_context(_logger, logging.INFO, "Step 1: Removes disconnected user sessions"),
     ):
         # Triggers signal to close possible pending opened projects
         # Removes disconnected GUEST users after they finished their sessions
@@ -48,9 +46,7 @@ async def collect_garbage(app: web.Application):
 
     with (
         log_catch(_logger, reraise=False),
-        log_context(
-            _logger, logging.INFO, "Step 2: Removes users manually marked for removal"
-        ),
+        log_context(_logger, logging.INFO, "Step 2: Removes users manually marked for removal"),
     ):
         # if a user was manually marked as GUEST it needs to be
         # removed together with all the associated projects
@@ -61,7 +57,7 @@ async def collect_garbage(app: web.Application):
         log_context(_logger, logging.INFO, "Step 3: Removes orphaned services"),
     ):
         # For various reasons, some services remain pending after
-        # the projects are closed or the user was disconencted.
+        # the projects are closed or the user was disconnected.
         # This will close and remove all these services from
         # the cluster, thus freeing important resources.
         await remove_orphaned_services(registry, app)

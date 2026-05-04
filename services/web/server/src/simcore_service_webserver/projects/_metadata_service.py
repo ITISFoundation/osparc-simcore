@@ -8,7 +8,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from . import _metadata_repository
 from ._access_rights_service import validate_project_ownership
 from .exceptions import ProjectNotFoundError
@@ -23,16 +23,14 @@ async def get_project_custom_metadata_for_user(
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_repository.get_project_custom_metadata(
-        engine=get_database_engine_legacy(app), project_uuid=project_uuid
+        engine=get_asyncpg_engine(app), project_uuid=project_uuid
     )
 
 
-async def get_project_custom_metadata_or_empty_dict(
-    app: web.Application, project_uuid: ProjectID
-) -> MetadataDict:
+async def get_project_custom_metadata_or_empty_dict(app: web.Application, project_uuid: ProjectID) -> MetadataDict:
     try:
         output = await _metadata_repository.get_project_custom_metadata(
-            engine=get_database_engine_legacy(app), project_uuid=project_uuid
+            engine=get_asyncpg_engine(app), project_uuid=project_uuid
         )
     except ProjectNotFoundError:
         # This is a valid case when the project is not found
@@ -50,7 +48,7 @@ async def set_project_custom_metadata(
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_repository.set_project_custom_metadata(
-        engine=get_database_engine_legacy(app),
+        engine=get_asyncpg_engine(app),
         project_uuid=project_uuid,
         custom_metadata=value,
     )
@@ -59,14 +57,10 @@ async def set_project_custom_metadata(
 _NIL_NODE_UUID: Final[NodeID] = NodeID(int=0)
 
 
-async def _project_has_ancestors(
-    app: web.Application, *, user_id: UserID, project_uuid: ProjectID
-) -> bool:
+async def _project_has_ancestors(app: web.Application, *, user_id: UserID, project_uuid: ProjectID) -> bool:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
-    return await _metadata_repository.project_has_ancestors(
-        engine=get_database_engine_legacy(app), project_uuid=project_uuid
-    )
+    return await _metadata_repository.project_has_ancestors(engine=get_asyncpg_engine(app), project_uuid=project_uuid)
 
 
 async def set_project_ancestors_from_custom_metadata(
@@ -90,11 +84,11 @@ async def set_project_ancestors_from_custom_metadata(
 
         # let's try to get the parent project UUID
         parent_project_uuid = await _metadata_repository.get_project_id_from_node_id(
-            get_database_engine_legacy(app), node_id=parent_node_id
+            get_asyncpg_engine(app), node_id=parent_node_id
         )
 
         await _metadata_repository.set_project_ancestors(
-            get_database_engine_legacy(app),
+            get_asyncpg_engine(app),
             project_uuid=project_uuid,
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
@@ -111,7 +105,7 @@ async def set_project_ancestors(
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     await _metadata_repository.set_project_ancestors(
-        get_database_engine_legacy(app),
+        get_asyncpg_engine(app),
         project_uuid=project_uuid,
         parent_project_uuid=parent_project_uuid,
         parent_node_id=parent_node_id,

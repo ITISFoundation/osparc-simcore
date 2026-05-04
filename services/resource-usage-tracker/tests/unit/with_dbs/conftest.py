@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import AsyncIterable, Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from random import choice
 from typing import Any
 
@@ -115,11 +115,11 @@ def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str,
             "service_type": "DYNAMIC_SERVICE",
             "service_resources": {},
             "service_additional_metadata": {},
-            "started_at": datetime.now(tz=timezone.utc),
+            "started_at": datetime.now(tz=UTC),
             "stopped_at": None,
             "service_run_status": "RUNNING",
-            "modified": datetime.now(tz=timezone.utc),
-            "last_heartbeat_at": datetime.now(tz=timezone.utc),
+            "modified": datetime.now(tz=UTC),
+            "last_heartbeat_at": datetime.now(tz=UTC),
             "pricing_unit_cost": abs(faker.pyfloat()),
         }
         data.update(overrides)
@@ -143,15 +143,13 @@ def random_resource_tracker_credit_transactions(
             "user_id": faker.pyint(),
             "user_email": faker.email(),
             "osparc_credits": -abs(faker.pyfloat()),
-            "transaction_status": choice(
-                [member.value for member in CreditTransactionStatus]
-            ),
+            "transaction_status": choice([member.value for member in CreditTransactionStatus]),
             "transaction_classification": CreditTransactionClassification.DEDUCT_SERVICE_RUN.value,
             "service_run_id": faker.uuid4(),
             "payment_transaction_id": faker.uuid4(),
-            "created": datetime.now(tz=timezone.utc),
-            "last_heartbeat_at": datetime.now(tz=timezone.utc),
-            "modified": datetime.now(tz=timezone.utc),
+            "created": datetime.now(tz=UTC),
+            "last_heartbeat_at": datetime.now(tz=UTC),
+            "modified": datetime.now(tz=UTC),
         }
         data.update(overrides)
         return data
@@ -168,9 +166,7 @@ def resource_tracker_service_run_db(postgres_db: sa.engine.Engine):
         con.execute(resource_tracker_service_runs.delete())
 
 
-async def assert_service_runs_db_row(
-    postgres_db, service_run_id: str, status: str | None = None
-) -> ServiceRunDB:
+async def assert_service_runs_db_row(postgres_db, service_run_id: str, status: str | None = None) -> ServiceRunDB:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
         stop=stop_after_delay(10),
@@ -204,8 +200,7 @@ async def assert_credit_transactions_db_row(
         with attempt, postgres_db.connect() as con:
             result = con.execute(
                 sa.select(resource_tracker_credit_transactions).where(
-                    resource_tracker_credit_transactions.c.service_run_id
-                    == service_run_id
+                    resource_tracker_credit_transactions.c.service_run_id == service_run_id
                 )
             )
             row = result.first()
@@ -224,9 +219,7 @@ def random_rabbit_message_heartbeat(
     def _creator(**kwargs: dict[str, Any]) -> RabbitResourceTrackingHeartbeatMessage:
         msg_config = {"service_run_id": faker.uuid4(), **kwargs}
 
-        return TypeAdapter(RabbitResourceTrackingHeartbeatMessage).validate_python(
-            msg_config
-        )
+        return TypeAdapter(RabbitResourceTrackingHeartbeatMessage).validate_python(msg_config)
 
     return _creator
 
@@ -239,7 +232,7 @@ def random_rabbit_message_start(
         msg_config = {
             "channel_name": "io.simcore.service.tracking",
             "service_run_id": faker.uuid4(),
-            "created_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
             "message_type": RabbitResourceTrackingMessageType.TRACKING_STARTED,
             "wallet_id": faker.pyint(),
             "wallet_name": faker.pystr(),
@@ -276,9 +269,7 @@ def random_rabbit_message_start(
             **kwargs,
         }
 
-        return TypeAdapter(RabbitResourceTrackingStartedMessage).validate_python(
-            msg_config
-        )
+        return TypeAdapter(RabbitResourceTrackingStartedMessage).validate_python(msg_config)
 
     return _creator
 

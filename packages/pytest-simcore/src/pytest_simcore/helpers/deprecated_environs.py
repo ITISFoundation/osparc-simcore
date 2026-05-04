@@ -1,6 +1,5 @@
-""" Utils to deal with environment variables (environs in short)
+"""Utils to deal with environment variables (environs in short)"""
 
-"""
 import re
 import warnings
 from pathlib import Path
@@ -111,9 +110,7 @@ def eval_service_environ(
         content = yaml.safe_load(f)
 
     service = content["services"][service_name]
-    replace_environs_in_docker_compose_service(
-        service, docker_compose_dir, host_environ, use_env_devel=use_env_devel
-    )
+    replace_environs_in_docker_compose_service(service, docker_compose_dir, host_environ, use_env_devel=use_env_devel)
 
     host_environ = host_environ or {}
     image_environ = image_environ or {}

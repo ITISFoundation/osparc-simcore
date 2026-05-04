@@ -25,8 +25,6 @@ CustomizedPathsCursorPage = CustomizedPage[
             description="Page size",
         )
     ),
-    UseIncludeTotal(
-        include_total=False
-    ),  # make total field optional as S3 does not provide that
+    UseIncludeTotal(include_total=False),  # make total field optional as S3 does not provide that
 ]
 CustomizedPathsCursorPageParams: TypeAlias = CustomizedPathsCursorPage.__params_type__  # type: ignore

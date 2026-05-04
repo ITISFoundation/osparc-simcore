@@ -2,8 +2,10 @@ import logging
 from typing import Any, cast
 
 import sqlalchemy as sa
+import sqlalchemy.exc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
+from models_library.list_operations import OrderClause
 from models_library.products import ProductName
 from models_library.users import (
     UserID,
@@ -14,12 +16,25 @@ from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
+from simcore_postgres_database.utils_ordering import (
+    OrderByDict,
+    OrderDirection,
+    create_ordering_clauses,
+)
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+
+from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
+from .exceptions import (
+    PreRegistrationAlreadyLinkedToAccountError,
+    PreRegistrationAlreadyReviewedError,
+    PreRegistrationDuplicateInProductError,
+    PreRegistrationNotFoundError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -56,13 +71,24 @@ async def create_user_pre_registration(
     async with transaction_context(engine, connection) as conn:
         # If link_to_existing_user is True, try to find a matching user
         user_id = None
+        user_has_product_access = False
         if link_to_existing_user:
-            result = await conn.execute(
-                sa.select(users.c.id).where(users.c.email == email)
-            )
+            result = await conn.execute(sa.select(users.c.id).where(users.c.email == email))
             user = result.one_or_none()
             if user:
                 user_id = user.id
+                user_has_product_access = bool(
+                    await conn.scalar(
+                        sa.select(users.c.id)
+                        .select_from(
+                            users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
+                                products,
+                                products.c.group_id == user_to_groups.c.gid,
+                            )
+                        )
+                        .where((users.c.id == user_id) & (products.c.name == product_name))
+                    )
+                )
 
         # Insert the pre-registration record
         values = {
@@ -78,11 +104,14 @@ async def create_user_pre_registration(
         # Add user_id if found
         if user_id is not None:
             values["user_id"] = user_id
+            if user_has_product_access:
+                values["account_request_status"] = AccountRequestStatus.APPROVED
+                values["account_request_reviewed_at"] = sa.func.now()
+                if created_by is not None:
+                    values["account_request_reviewed_by"] = created_by
 
         result = await conn.execute(
-            sa.insert(users_pre_registration_details)
-            .values(**values)
-            .returning(users_pre_registration_details.c.id)
+            sa.insert(users_pre_registration_details).values(**values).returning(users_pre_registration_details.c.id)
         )
         pre_registration_id: int = result.scalar_one()
         return pre_registration_id
@@ -117,19 +146,14 @@ async def list_user_pre_registrations(
 
     # Apply filters if provided
     if filter_by_pre_email is not None:
-        where_conditions.append(
-            users_pre_registration_details.c.pre_email.ilike(f"%{filter_by_pre_email}%")
-        )
+        where_conditions.append(users_pre_registration_details.c.pre_email.ilike(f"%{filter_by_pre_email}%"))
 
     if not is_unset(filter_by_product_name):
-        where_conditions.append(
-            users_pre_registration_details.c.product_name == filter_by_product_name
-        )
+        where_conditions.append(users_pre_registration_details.c.product_name == filter_by_product_name)
 
     if filter_by_account_request_status is not None:
         where_conditions.append(
-            users_pre_registration_details.c.account_request_status
-            == filter_by_account_request_status
+            users_pre_registration_details.c.account_request_status == filter_by_account_request_status
         )
 
     # Combine conditions
@@ -141,9 +165,7 @@ async def list_user_pre_registrations(
 
     # Count query for pagination
     count_query = (
-        sa.select(sa.func.count().label("total"))
-        .select_from(users_pre_registration_details)
-        .where(where_clause)
+        sa.select(sa.func.count().label("total")).select_from(users_pre_registration_details).where(where_clause)
     )
 
     # Main query to get pre-registration data
@@ -178,8 +200,7 @@ async def list_user_pre_registrations(
                 users_pre_registration_details.c.created_by == creator_users_alias.c.id,
             ).outerjoin(
                 reviewer_users_alias,
-                users_pre_registration_details.c.account_request_reviewed_by
-                == reviewer_users_alias.c.id,
+                users_pre_registration_details.c.account_request_reviewed_by == reviewer_users_alias.c.id,
             )
         )
         .where(where_clause)
@@ -245,11 +266,7 @@ async def review_user_pre_registration(
                 )
             )
             current_extras_row = current_extras_result.one_or_none()
-            current_extras = (
-                current_extras_row.extras
-                if current_extras_row and current_extras_row.extras
-                else {}
-            )
+            current_extras = current_extras_row.extras if current_extras_row and current_extras_row.extras else {}
 
             # Merge with invitation extras
             merged_extras = {**current_extras, **invitation_extras}
@@ -260,6 +277,129 @@ async def review_user_pre_registration(
             .values(**update_values)
             .where(users_pre_registration_details.c.id == pre_registration_id)
         )
+
+
+async def get_pre_registration_by_id(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    pre_registration_id: int,
+    with_for_update: bool = False,
+) -> dict[str, Any] | None:
+    query = sa.select(
+        users_pre_registration_details.c.id,
+        users_pre_registration_details.c.pre_email,
+        users_pre_registration_details.c.product_name,
+        users_pre_registration_details.c.user_id,
+        users_pre_registration_details.c.account_request_status,
+        users_pre_registration_details.c.extras,
+    ).where(users_pre_registration_details.c.id == pre_registration_id)
+
+    if with_for_update:
+        query = query.with_for_update()
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        row = result.mappings().one_or_none()
+        return dict(row) if row else None
+
+
+async def check_pre_registration_email_exists_in_product(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    email: str,
+    product_name: ProductName,
+    exclude_pre_registration_id: int | None = None,
+) -> bool:
+    conditions = [
+        users_pre_registration_details.c.pre_email == email,
+        users_pre_registration_details.c.product_name == product_name,
+    ]
+    if exclude_pre_registration_id is not None:
+        conditions.append(users_pre_registration_details.c.id != exclude_pre_registration_id)
+
+    query = sa.select(sa.exists().where(sa.and_(*conditions)))
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        return bool(result.scalar_one())
+
+
+async def update_pre_registration_product(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    pre_registration_id: int,
+    new_product_name: ProductName,
+    moved_by: UserID,
+) -> None:
+    async with transaction_context(engine, connection) as conn:
+        pre_registration = await get_pre_registration_by_id(
+            engine,
+            conn,
+            pre_registration_id=pre_registration_id,
+            with_for_update=True,
+        )
+        if pre_registration is None:
+            raise PreRegistrationNotFoundError(pre_registration_id=pre_registration_id)
+
+        current_status = pre_registration["account_request_status"]
+        if current_status != AccountRequestStatus.PENDING:
+            raise PreRegistrationAlreadyReviewedError(
+                pre_registration_id=pre_registration_id,
+                status=f"{current_status}",
+            )
+
+        existing_user_id = pre_registration["user_id"]
+        if existing_user_id is not None:
+            raise PreRegistrationAlreadyLinkedToAccountError(
+                pre_registration_id=pre_registration_id,
+                user_id=existing_user_id,
+            )
+
+        current_product_name = pre_registration["product_name"]
+        if current_product_name == new_product_name:
+            return
+
+        pre_email = pre_registration["pre_email"]
+        assert pre_email is not None  # nosec
+
+        current_extras = pre_registration["extras"]
+        audit_entry = ExtrasAuditEntry.create_now(
+            source="po_center:move_product",
+            confidence="high",
+            notes=f"Moved from '{current_product_name}' to '{new_product_name}' by user {moved_by}",
+        )
+        merged_extras = merge_audit_entry_into_extras(
+            current_extras=current_extras,
+            key="product_move",
+            entry=audit_entry,
+        )
+
+        # Duplicate detection is enforced at DB level on update. We intentionally
+        # rely on the constraint + IntegrityError mapping here to avoid TOCTOU races
+        # that can happen with a separate pre-check query under concurrency.
+        try:
+            await conn.execute(
+                users_pre_registration_details.update()
+                .values(
+                    product_name=new_product_name,
+                    extras=merged_extras,
+                )
+                .where(users_pre_registration_details.c.id == pre_registration_id)
+            )
+        except sqlalchemy.exc.IntegrityError as exc:
+            _logger.debug(
+                "IntegrityError while moving pre-registration %s to product %s: %s",
+                pre_registration_id,
+                new_product_name,
+                exc,
+            )
+            raise PreRegistrationDuplicateInProductError(
+                email=pre_email,
+                product_name=new_product_name,
+            ) from exc
 
 
 #
@@ -274,10 +414,7 @@ def _create_account_request_reviewed_by_username_subquery() -> Any:
         sa.select(
             reviewer_alias.c.name,
         )
-        .where(
-            users_pre_registration_details.c.account_request_reviewed_by
-            == reviewer_alias.c.id
-        )
+        .where(users_pre_registration_details.c.account_request_reviewed_by == reviewer_alias.c.id)
         .label("account_request_reviewed_by_username")
     )
 
@@ -289,23 +426,13 @@ def _build_left_outer_join_query(
 ) -> sa.sql.Select | None:
     left_where_conditions = []
     if email_like is not None:
-        left_where_conditions.append(
-            users_pre_registration_details.c.pre_email.like(email_like)
-        )
+        left_where_conditions.append(users_pre_registration_details.c.pre_email.like(email_like))
     join_condition = users.c.id == users_pre_registration_details.c.user_id
     if product_name:
-        join_condition = join_condition & (
-            users_pre_registration_details.c.product_name == product_name
-        )
-    left_outer_join = sa.select(*columns).select_from(
-        users_pre_registration_details.outerjoin(users, join_condition)
-    )
+        join_condition = join_condition & (users_pre_registration_details.c.product_name == product_name)
+    left_outer_join = sa.select(*columns).select_from(users_pre_registration_details.outerjoin(users, join_condition))
 
-    return (
-        left_outer_join.where(sa.and_(*left_where_conditions))
-        if left_where_conditions
-        else None
-    )
+    return left_outer_join.where(sa.and_(*left_where_conditions)) if left_where_conditions else None
 
 
 def _build_right_outer_join_query(
@@ -324,9 +451,7 @@ def _build_right_outer_join_query(
         right_where_conditions.append(users.c.primary_gid == primary_group_id)
     join_condition = users.c.id == users_pre_registration_details.c.user_id
     if product_name:
-        join_condition = join_condition & (
-            users_pre_registration_details.c.product_name == product_name
-        )
+        join_condition = join_condition & (users_pre_registration_details.c.product_name == product_name)
     right_outer_join = sa.select(*columns).select_from(
         users.outerjoin(
             users_pre_registration_details,
@@ -334,11 +459,7 @@ def _build_right_outer_join_query(
         )
     )
 
-    return (
-        right_outer_join.where(sa.and_(*right_where_conditions))
-        if right_where_conditions
-        else None
-    )
+    return right_outer_join.where(sa.and_(*right_where_conditions)) if right_where_conditions else None
 
 
 async def search_merged_pre_and_registered_users(
@@ -361,9 +482,7 @@ async def search_merged_pre_and_registered_users(
         .label("invited_by")
     )
 
-    account_request_reviewed_by_username = (
-        _create_account_request_reviewed_by_username_subquery()
-    )
+    account_request_reviewed_by_username = _create_account_request_reviewed_by_username_subquery()
 
     columns = (
         users_pre_registration_details.c.id,
@@ -381,6 +500,7 @@ async def search_merged_pre_and_registered_users(
         users_pre_registration_details.c.state,
         users_pre_registration_details.c.postal_code,
         users_pre_registration_details.c.country,
+        users_pre_registration_details.c.product_name,
         users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
         users_pre_registration_details.c.extras,
         users_pre_registration_details.c.account_request_status,
@@ -432,9 +552,11 @@ async def list_merged_pre_and_registered_users(
     *,
     product_name: ProductName,
     filter_any_account_request_status: list[AccountRequestStatus] | None = None,
+    filter_registered: bool | None = None,
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
+    sort_by: list[OrderClause] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
@@ -449,6 +571,8 @@ async def list_merged_pre_and_registered_users(
         product_name: Product name to filter by
         filter_any_account_request_status: If provided, only returns users with account request status in this list
             (only pre-registered users with any of these statuses will be included)
+        filter_registered: If provided, filters records by registration completion
+            (True => linked to a user, False => not linked)
         filter_include_deleted: Whether to include deleted users
         pagination_limit: Maximum number of results to return
         pagination_offset: Number of results to skip (for pagination)
@@ -463,9 +587,7 @@ async def list_merged_pre_and_registered_users(
     # Add account request status filter if specified
     if filter_any_account_request_status:
         pre_reg_where.append(
-            users_pre_registration_details.c.account_request_status.in_(
-                filter_any_account_request_status
-            )
+            users_pre_registration_details.c.account_request_status.in_(filter_any_account_request_status)
         )
 
     # Add filter for deleted users
@@ -473,9 +595,7 @@ async def list_merged_pre_and_registered_users(
         users_where.append(users.c.status != UserStatus.DELETED)
 
     # Create subquery for reviewer username
-    account_request_reviewed_by_username = (
-        _create_account_request_reviewed_by_username_subquery()
-    )
+    account_request_reviewed_by_username = _create_account_request_reviewed_by_username_subquery()
 
     # Query for pre-registered users
     # We need to left join with users to identify if the pre-registered user is already in the system
@@ -492,6 +612,7 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.state,
             users_pre_registration_details.c.postal_code,
             users_pre_registration_details.c.country,
+            users_pre_registration_details.c.product_name,
             users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.created,
@@ -508,9 +629,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal_column("true").label("is_pre_registered"),
         )
         .select_from(
-            users_pre_registration_details.outerjoin(
-                users, users_pre_registration_details.c.user_id == users.c.id
-            )
+            users_pre_registration_details.outerjoin(users, users_pre_registration_details.c.user_id == users.c.id)
         )
         .where(sa.and_(*pre_reg_where))
     )
@@ -529,6 +648,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("state"),
             sa.literal(None).label("postal_code"),
             sa.literal(None).label("country"),
+            sa.literal(None).label("product_name"),
             sa.literal(None).label("pre_reg_user_id"),
             sa.literal(None).label("extras"),
             users.c.created_at.label("created"),
@@ -555,33 +675,71 @@ async def list_merged_pre_and_registered_users(
     # If filtering by account request status, we only want pre-registered users with any of those statuses
     # No need to union with regular users as they don't have account_request_status
     merged_query: sa.sql.Select | sa.sql.CompoundSelect
-    if filter_any_account_request_status:
-        merged_query = pre_reg_query
-    else:
-        merged_query = pre_reg_query.union_all(users_query)
+    merged_query = pre_reg_query if filter_any_account_request_status else pre_reg_query.union_all(users_query)
 
-    # Add distinct on email to eliminate duplicates
+    # Apply optional registration linkage filter on the merged view before pagination/count
     merged_query_subq = merged_query.subquery()
+    filtered_query = sa.select(merged_query_subq).select_from(merged_query_subq)
+    if filter_registered is True:
+        filtered_query = filtered_query.where(merged_query_subq.c.user_id.is_not(None))
+    elif filter_registered is False:
+        filtered_query = filtered_query.where(merged_query_subq.c.user_id.is_(None))
+
+    filtered_query_subq = filtered_query.subquery()
+
+    # De-duplicate by email first while preserving the previous preference for
+    # pre-registered rows and the newest record per email.
+    dedupe_rank = sa.func.row_number().over(
+        partition_by=filtered_query_subq.c.email,
+        order_by=(
+            filtered_query_subq.c.is_pre_registered.desc(),
+            filtered_query_subq.c.created.desc(),
+            filtered_query_subq.c.user_id.asc().nullsfirst(),
+        ),
+    )
+    deduped_rows_subq = (
+        sa.select(filtered_query_subq, dedupe_rank.label("email_rank")).select_from(filtered_query_subq).subquery()
+    )
+    deduped_query_subq = (
+        sa.select(*[deduped_rows_subq.c[column.name] for column in filtered_query_subq.c])
+        .where(deduped_rows_subq.c.email_rank == 1)
+        .subquery()
+    )
+
+    # Apply the requested ordering after de-duplication.
+    if sort_by:
+        order_by_dicts: list[OrderByDict] = [
+            {"field": c.field, "direction": OrderDirection(c.direction.value)} for c in sort_by
+        ]
+        column_map = {
+            "first_name": deduped_query_subq.c.first_name,
+            "email": deduped_query_subq.c.email,
+            "status": deduped_query_subq.c.status,
+            "account_request_reviewed_at": deduped_query_subq.c.account_request_reviewed_at,
+            "created": deduped_query_subq.c.created,
+        }
+        primary_clauses = create_ordering_clauses(order_by_dicts, column_map)
+        sort_fields = {c.field for c in sort_by}
+    else:
+        primary_clauses = [deduped_query_subq.c.email.asc()]
+        sort_fields = {"email"}
+
+    final_order_by_clauses = list(primary_clauses)
+    if "email" not in sort_fields:
+        final_order_by_clauses.append(deduped_query_subq.c.email.asc())
+    final_order_by_clauses.append(deduped_query_subq.c.user_id.asc().nullsfirst())
+
     distinct_query = (
-        sa.select(merged_query_subq)
-        .select_from(merged_query_subq)
-        .distinct(merged_query_subq.c.email)
-        .order_by(
-            merged_query_subq.c.email,
-            # Prioritize pre-registration records if duplicate emails exist
-            merged_query_subq.c.is_pre_registered.desc(),
-            merged_query_subq.c.created.desc(),
-        )
+        sa.select(deduped_query_subq)
+        .select_from(deduped_query_subq)
+        .order_by(*final_order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )
 
     # Count query (for pagination)
     count_query = sa.select(sa.func.count().label("total")).select_from(
-        sa.select(merged_query_subq.c.email)
-        .select_from(merged_query_subq)
-        .distinct()
-        .subquery()
+        sa.select(filtered_query_subq.c.email).select_from(filtered_query_subq).distinct().subquery()
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:

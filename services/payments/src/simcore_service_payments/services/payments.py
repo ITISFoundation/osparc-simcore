@@ -1,4 +1,4 @@
-"""Functions here support two types of payments worklows:
+"""Functions here support two types of payments workflows:
 - One-time payment
 - Payment w/ payment-method
 
@@ -33,10 +33,11 @@ from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from tenacity import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
+
+from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 
 from .._constants import RUT
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
@@ -91,9 +92,7 @@ async def init_one_time_payment(
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
             stripe_tax_exempt_value=(
-                StripeTaxExempt.none
-                if user_address.country in COUNTRIES_WITH_VAT
-                else StripeTaxExempt.reverse
+                StripeTaxExempt.none if user_address.country in COUNTRIES_WITH_VAT else StripeTaxExempt.reverse
             ),
         ),
     )
@@ -128,9 +127,7 @@ async def cancel_one_time_payment(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-    payment = await repo.get_payment_transaction(
-        payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
-    )
+    payment = await repo.get_payment_transaction(payment_id=payment_id, user_id=user_id, wallet_id=wallet_id)
 
     if payment is None:
         raise PaymentNotFoundError(payment_id=payment_id)
@@ -141,9 +138,7 @@ async def cancel_one_time_payment(
             return
         raise PaymentAlreadyAckedError(payment_id=payment_id)
 
-    payment_cancelled = await gateway.cancel_payment(
-        PaymentInitiated(payment_id=payment_id)
-    )
+    payment_cancelled = await gateway.cancel_payment(PaymentInitiated(payment_id=payment_id))
 
     await repo.update_ack_payment_transaction(
         payment_id=payment_id,
@@ -163,11 +158,7 @@ async def acknowledge_one_time_payment(
 ) -> PaymentsTransactionsDB:
     return await repo_transactions.update_ack_payment_transaction(
         payment_id=payment_id,
-        completion_state=(
-            PaymentTransactionState.SUCCESS
-            if ack.success
-            else PaymentTransactionState.FAILED
-        ),
+        completion_state=(PaymentTransactionState.SUCCESS if ack.success else PaymentTransactionState.FAILED),
         state_message=ack.message,
         invoice_url=ack.invoice_url,
         stripe_invoice_id=ack.stripe_invoice_id,
@@ -248,9 +239,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     """
     initiated_at = arrow.utcnow().datetime
 
-    acked = await repo_methods.get_payment_method(
-        payment_method_id, user_id=user_id, wallet_id=wallet_id
-    )
+    acked = await repo_methods.get_payment_method(payment_method_id, user_id=user_id, wallet_id=wallet_id)
 
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         # WARNING: if gateway raises UnverifiedPaymentError, we do not have guarantee that the payment is or not done.
@@ -267,9 +256,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
             stripe_tax_exempt_value=(
-                StripeTaxExempt.none
-                if user_address.country in COUNTRIES_WITH_VAT
-                else StripeTaxExempt.reverse
+                StripeTaxExempt.none if user_address.country in COUNTRIES_WITH_VAT else StripeTaxExempt.reverse
             ),
         ),
     )
@@ -298,11 +285,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
 
     transaction = await repo_transactions.update_ack_payment_transaction(
         payment_id=payment_id,
-        completion_state=(
-            PaymentTransactionState.SUCCESS
-            if ack.success
-            else PaymentTransactionState.FAILED
-        ),
+        completion_state=(PaymentTransactionState.SUCCESS if ack.success else PaymentTransactionState.FAILED),
         state_message=ack.message,
         invoice_url=ack.invoice_url,
         stripe_invoice_id=ack.stripe_invoice_id,
@@ -357,8 +340,6 @@ async def get_payment_invoice_url(
     # NOTE: A new method for generating invoices directly from Stripe has been introduced (https://github.com/ITISFoundation/osparc-simcore/pull/5537).
     # In order to maintain backward compatibility with older invoices, the old invoice URL is provided in such cases.
     if payment.stripe_invoice_id:
-        invoice_data: InvoiceData = await stripe_api.get_invoice(
-            payment.stripe_invoice_id
-        )
+        invoice_data: InvoiceData = await stripe_api.get_invoice(payment.stripe_invoice_id)
         return invoice_data.hosted_invoice_url
     return payment.invoice_url

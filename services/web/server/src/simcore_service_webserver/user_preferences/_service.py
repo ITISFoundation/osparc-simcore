@@ -19,7 +19,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import FrontendUserPreferenceIsNotDefinedError
 from ._models import (
     ALL_FRONTEND_PREFERENCES,
@@ -53,9 +53,7 @@ async def _get_frontend_user_preferences(
 
     return [
         preference_class() if result is None else result
-        for (result, preference_class) in zip(
-            saved_user_preferences, ALL_FRONTEND_PREFERENCES, strict=True
-        )
+        for (result, preference_class) in zip(saved_user_preferences, ALL_FRONTEND_PREFERENCES, strict=True)
     ]
 
 
@@ -76,11 +74,9 @@ async def get_frontend_user_preference(
 async def get_frontend_user_preferences_aggregation(
     app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> AggregatedPreferences:
-    async with get_database_engine_legacy(app).acquire() as conn:
-        group_extra_properties = (
-            await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                conn, user_id=user_id, product_name=product_name
-            )
+    async with get_asyncpg_engine(app).connect() as conn:
+        group_extra_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            conn, user_id=user_id, product_name=product_name
         )
 
     is_telemetry_enabled: bool = group_extra_properties.enable_telemetry
@@ -97,9 +93,7 @@ async def get_frontend_user_preferences_aggregation(
         return True
 
     aggregated_preferences: AggregatedPreferences = {
-        p.preference_identifier: Preference.model_validate(
-            {"value": p.value, "default_value": p.get_default_value()}
-        )
+        p.preference_identifier: Preference.model_validate({"value": p.value, "default_value": p.get_default_value()})
         for p in await _get_frontend_user_preferences(app, user_id, product_name)
         if include_preference(p.preference_identifier)
     }
@@ -115,13 +109,9 @@ async def set_frontend_user_preference(
     value: Any,
 ) -> None:
     try:
-        preference_name: PreferenceName = get_preference_name(
-            frontend_preference_identifier
-        )
+        preference_name: PreferenceName = get_preference_name(frontend_preference_identifier)
     except KeyError as e:
-        raise FrontendUserPreferenceIsNotDefinedError(
-            frontend_preference_identifier
-        ) from e
+        raise FrontendUserPreferenceIsNotDefinedError(frontend_preference_identifier) from e
 
     preference_class = cast(
         type[AnyUserPreference],

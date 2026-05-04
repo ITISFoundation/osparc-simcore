@@ -68,7 +68,8 @@ def docker_compose_service_dynamic_scheduler_env_vars(
             envs[name] = string.Template(value).substitute(env_devel_dict)
         except (KeyError, ValueError) as err:
             pytest.fail(
-                f"{err}: {value} is not defined in .env-devel but used as RHS in docker-compose services['dynamic-schdlr'].environment[{name}]"
+                f"{err}: {value} is not defined in .env-devel but used as RHS in docker-compose "
+                f"services['dynamic-schdlr'].environment[{name}]"
             )
     return envs
 
@@ -122,14 +123,7 @@ def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def disable_generic_scheduler_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_EVENTS_MODULE}.generic_scheduler_lifespan")
-
-
-@pytest.fixture
-def disable_postgres_lifespan(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def disable_postgres_lifespan(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     setenvs_from_dict(
         monkeypatch,
         {
@@ -148,9 +142,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN: Final[float] = 10
 
 
 @pytest.fixture
-async def app(
-    app_environment: EnvVarsDict, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
+async def app(app_environment: EnvVarsDict, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     # forces rebuild of middleware stack on next test
     nicegui.app.user_middleware.clear()
     nicegui.app.middleware_stack = None
@@ -170,6 +162,4 @@ async def remove_redis_data(redis_service: RedisSettings) -> None:
         redis_service,
         client_name="pytest",
     ) as manager:
-        await logged_gather(
-            *[manager.client(d).redis.flushall() for d in RedisDatabase]
-        )
+        await logged_gather(*[manager.client(d).redis.flushall() for d in RedisDatabase])

@@ -57,7 +57,7 @@ def _setup_app_from_settings(
 
 
 async def app_factory() -> web.Application:
-    """WARNING: this is called in the entrypoint of the service. DO NOT CHAGE THE NAME!
+    """WARNING: this is called in the entrypoint of the service. DO NOT CHANGE THE NAME!
 
     Created to launch app from gunicorn (see docker/boot.sh)
     """
@@ -65,22 +65,16 @@ async def app_factory() -> web.Application:
     from .log import setup_logging
 
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(
-        app_settings.WEBSERVER_TRACING, service_name=APP_NAME
-    )
+    tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)
 
     _logger.info(
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
 
-    _logger.info(
-        "Using application factory: %s", app_settings.WEBSERVER_APP_FACTORY_NAME
-    )
+    _logger.info("Using application factory: %s", app_settings.WEBSERVER_APP_FACTORY_NAME)
 
-    logging_lifespan_cleanup_event = setup_logging(
-        app_settings, tracing_config=tracing_config
-    )
+    logging_lifespan_cleanup_event = setup_logging(app_settings, tracing_config=tracing_config)
 
     if app_settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY":
         app = create_application_auth()
@@ -95,9 +89,7 @@ async def app_factory() -> web.Application:
 
 main = typer.Typer(name="simcore-service-webserver")
 
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
 
 _NO_TRIAL_DAYS: Final[int] = -1
 
@@ -128,8 +120,6 @@ def run():
     from .application import run_service
 
     app_settings = ApplicationSettings.create_from_envs()
-    app_tracing_config = TracingConfig.create(
-        app_settings.WEBSERVER_TRACING, service_name=APP_NAME
-    )
+    app_tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)
     app, cfg = _setup_app_from_settings(app_settings, app_tracing_config)
     run_service(app, cfg)

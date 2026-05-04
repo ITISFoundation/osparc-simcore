@@ -27,9 +27,7 @@ async def raise_if_migration_not_ready(engine: AsyncEngine) -> None:
     :raises DBMigrationError
     """
     async with engine.connect() as conn:
-        version_num = await conn.scalar(
-            sa.DDL('SELECT "version_num" FROM "alembic_version"')
-        )
+        version_num = await conn.scalar(sa.DDL('SELECT "version_num" FROM "alembic_version"'))
         head_version_num = get_current_head()
         if version_num != head_version_num:
             msg = f"Migration is incomplete, expected {head_version_num} but got {version_num}"
@@ -66,9 +64,7 @@ def map_db_exception(
     if isinstance(exception, sql_exc.IntegrityError) and hasattr(exception, "orig"):
         orig_error = exception.orig
         # Handle asyncpg adapter exceptions
-        if isinstance(orig_error, AsyncAdapt_asyncpg_dbapi.IntegrityError) and hasattr(
-            orig_error, "pgcode"
-        ):
+        if isinstance(orig_error, AsyncAdapt_asyncpg_dbapi.IntegrityError) and hasattr(orig_error, "pgcode"):
             assert hasattr(orig_error, "pgcode")  # nosec
             pgcode = orig_error.pgcode
 

@@ -52,6 +52,7 @@ from ._constants import (
     MSG_UNEXPECTED_DISPATCH_ERROR,
 )
 from ._errors import GuestUsersLimitError
+from ._guards import check_studies_dispatcher_enabled
 from ._users import create_temporary_guest_user, get_authorized_user
 
 _logger = logging.getLogger(__name__)
@@ -76,82 +77,93 @@ async def _get_published_template_project(
     is_user_authenticated: bool,
 ) -> ProjectDict:
     """
-    raises RedirectToFrontEndPageError
+    Validates and returns a published template project if accessible.
+
+    A project is accessible if:
+    1. It exists and is a template
+    2. It's published (if user is unauthenticated)
+    3. It's shared with either EVERYONE group (gid=1) or the product's group with read access
+
+    Raises:
+        RedirectToFrontEndPageError: If project doesn't meet access requirements
     """
     db = ProjectDBAPI.get_from_app_context(request.app)
-
+    product = products_web.get_current_product(request)
     only_public_projects = not is_user_authenticated
 
-    try:
-        prj, _ = await db.get_project_dict_and_type(
-            project_uuid=project_uuid,
-            # NOTE: these are the conditions for a published study
-            # 1. MUST be a template
-            only_templates=True,
-            # 2. If user is unauthenticated, then MUST be public
-            only_published=only_public_projects,
-        )
-        # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-        project_group_get = await get_project_group(
-            request.app, project_id=ProjectID(project_uuid), group_id=1
-        )
-        if project_group_get.read is False:
-            raise ProjectGroupNotFoundError(
-                details=f"Project {project_uuid} group 1 not read access"
-            )
-
-        if not prj:
-            # Not sure this happens but this condition was checked before so better be safe
-            raise ProjectNotFoundError(project_uuid)
-
-        return prj
-
-    except (
-        ProjectGroupNotFoundError,
-        ProjectNotFoundError,
-        ProjectInvalidRightsError,
-    ) as err:
+    # Helper to create appropriate error for current context
+    def _create_access_denied_error(reason: str) -> RedirectToFrontEndPageError:
         _logger.debug(
-            "Project with %s %s was not found. Reason: %s",
-            f"{project_uuid=}",
-            f"{only_public_projects=}",
-            err.debug_message(),
+            "Access denied to project %s (only_public=%s): %s",
+            project_uuid,
+            only_public_projects,
+            reason,
         )
 
-        support_email = products_web.get_current_product(request).support_email
         if only_public_projects:
-            raise RedirectToFrontEndPageError(
-                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
+            return RedirectToFrontEndPageError(
+                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=product.support_email),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
                 status_code=status.HTTP_401_UNAUTHORIZED,
-            ) from err
+            )
 
-        raise RedirectToFrontEndPageError(
+        return RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
             error_code="PROJECT_NOT_PUBLISHED",
             status_code=status.HTTP_404_NOT_FOUND,
-        ) from err
+        )
+
+    # Step 1: Verify project exists and meets template/published requirements
+    try:
+        prj, _ = await db.get_project_dict_and_type(
+            project_uuid=project_uuid,
+            only_templates=True,
+            only_published=only_public_projects,
+        )
+    except (ProjectNotFoundError, ProjectInvalidRightsError) as err:
+        raise _create_access_denied_error(err.debug_message()) from err
+
+    # Step 2: Verify project is shared with appropriate groups
+    groups_to_check = [1]  # group 1 = everyone
+    if product.group_id is not None:
+        groups_to_check.append(product.group_id)
+
+    for gid in groups_to_check:
+        try:
+            project_group = await get_project_group(request.app, project_id=ProjectID(project_uuid), group_id=gid)
+            if project_group.read:
+                _logger.debug(
+                    "Project %s accessible via group %s for product %s",
+                    project_uuid,
+                    gid,
+                    product.name,
+                )
+                return prj
+        except ProjectGroupNotFoundError:
+            # This group doesn't have access, try next group
+            continue
+
+    # No group has read access
+    reason = f"Project not shared with required groups {groups_to_check}"
+    raise _create_access_denied_error(reason)
 
 
-async def copy_study_to_account(
-    request: web.Request, template_project: dict, user: dict
-):
+async def copy_study_to_account(request: web.Request, template_project: dict, user: dict):
     """
     Creates a copy of the study to a given project in user's account
 
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY
-    from ..projects.utils import clone_project_document, substitute_parameterized_inputs
+    # NOTE: Avoids circular dependencies
+    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY  # noqa: PLC0415
+    from ..projects.utils import clone_project_document, substitute_parameterized_inputs  # noqa: PLC0415
 
     db: ProjectDBAPI = request.config_dict[PROJECT_DBAPI_APPKEY]
     template_parameters = dict(request.query)
 
     # assign new uuid to copy
-    project_uuid = _compose_uuid(
-        template_project["uuid"], user["id"], str(template_parameters)
-    )
+    project_uuid = _compose_uuid(template_project["uuid"], user["id"], str(template_parameters))
 
     try:
         product_name = await db.get_project_product(template_project["uuid"])
@@ -168,23 +180,16 @@ async def copy_study_to_account(
 
     except ProjectNotFoundError:
         # New project cloned from template
-        project, nodes_map = clone_project_document(
-            template_project, forced_copy_project_id=UUID(project_uuid)
-        )
+        project, nodes_map = clone_project_document(template_project, forced_copy_project_id=UUID(project_uuid))
 
         # remove template access rights
-        # TODO: PC: what should I do with this stuff? can we re-use the same entrypoint?
-        # FIXME: temporary fix until. Unify access management while cloning a project. Right not, at least two workflows have different implementations
+        # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/8887
         project["accessRights"] = {}
 
         # check project inputs and substitute template_parameters
         if template_parameters:
-            _logger.info(
-                "Substituting parameters '%s' in template", template_parameters
-            )
-            project = (
-                substitute_parameterized_inputs(project, template_parameters) or project
-            )
+            _logger.info("Substituting parameters '%s' in template", template_parameters)
+            project = substitute_parameterized_inputs(project, template_parameters) or project
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = products_web.get_product_name(request)
         await db.insert_project(
@@ -218,9 +223,7 @@ async def copy_study_to_account(
             product_name,
             get_api_base_url(request),
         )
-        await dynamic_scheduler_service.update_projects_networks(
-            request.app, project_id=ProjectID(project["uuid"])
-        )
+        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
 
         await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
             request.app,
@@ -235,9 +238,7 @@ async def copy_study_to_account(
 
 
 class RedirectToFrontEndPageError(Exception):
-    def __init__(
-        self, human_readable_message: str, error_code: str, status_code: int
-    ) -> None:
+    def __init__(self, human_readable_message: str, error_code: str, status_code: int) -> None:
         self.human_readable_message = human_readable_message
         self.error_code = error_code
         self.status_code = status_code
@@ -249,6 +250,10 @@ def _handle_errors_with_error_page(handler: Handler):
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
+
+        except web.HTTPNotFound:
+            # Pass through 404 to allow dispatcher-disabled responses
+            raise
 
         except ProjectNotFoundError as err:
             raise create_redirect_to_page_response(
@@ -272,7 +277,8 @@ def _handle_errors_with_error_page(handler: Handler):
         except Exception as err:
             error_code = create_error_code(err)
             user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
+                msg=MSG_UNEXPECTED_DISPATCH_ERROR,
+                error_code=error_code,
             )
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
@@ -302,6 +308,9 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     - if user is not registered, it creates a temporary guest account with limited resources and expiration
     - this handler is NOT part of the API and therefore does NOT respond with json
     """
+    # Check if studies dispatcher is enabled for this product
+    check_studies_dispatcher_enabled(request)
+
     project_id = request.match_info["id"]
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
@@ -377,8 +386,10 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
-
-        user_error_msg = MSG_UNEXPECTED_DISPATCH_ERROR
+        user_error_msg = compose_support_error_msg(
+            msg=MSG_UNEXPECTED_DISPATCH_ERROR,
+            error_code=error_code,
+        )
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 user_error_msg,
@@ -387,9 +398,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
                 error_context={
                     "user_id": user.get("id"),
                     "user": dict(user),
-                    "template_project": {
-                        k: template_project.get(k) for k in ["name", "uuid"]
-                    },
+                    "template_project": {k: template_project.get(k) for k in ["name", "uuid"]},
                 },
                 tip=f"Failed while copying project '{template_project.get('name')}' to '{user.get('email')}'",
             )
@@ -402,11 +411,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         ) from exc
 
     # Creating REDIRECTION LINK
-    redirect_url = (
-        request.app.router[INDEX_RESOURCE_NAME]
-        .url_for()
-        .with_fragment(f"/study/{copied_project_id}")
-    )
+    redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(f"/study/{copied_project_id}")
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:

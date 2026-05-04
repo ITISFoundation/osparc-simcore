@@ -87,9 +87,7 @@ async def test_with_project_locked(
             status=project_status,
         )
         # check lock name formatting is correct
-        redis_lock = await redis_client_sdk.redis.get(
-            _PROJECT_REDIS_LOCK_KEY.format(project_uuid)
-        )
+        redis_lock = await redis_client_sdk.redis.get(_PROJECT_REDIS_LOCK_KEY.format(project_uuid))
         assert redis_lock
         assert ProjectLocked.model_validate_json(redis_lock) == ProjectLocked(
             value=True,

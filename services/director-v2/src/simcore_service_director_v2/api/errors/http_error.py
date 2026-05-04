@@ -14,9 +14,7 @@ _logger = logging.getLogger(__name__)
 async def http_error_handler(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, HTTPException)
 
-    return JSONResponse(
-        content=jsonable_encoder({"errors": [exc.detail]}), status_code=exc.status_code
-    )
+    return JSONResponse(content=jsonable_encoder({"errors": [exc.detail]}), status_code=exc.status_code)
 
 
 def make_http_error_handler_for_exception(
@@ -41,8 +39,6 @@ def make_http_error_handler_for_exception(
                 )
             )
 
-        return JSONResponse(
-            content=jsonable_encoder({"errors": [str(exc)]}), status_code=status_code
-        )
+        return JSONResponse(content=jsonable_encoder({"errors": [str(exc)]}), status_code=status_code)
 
     return _http_error_handler

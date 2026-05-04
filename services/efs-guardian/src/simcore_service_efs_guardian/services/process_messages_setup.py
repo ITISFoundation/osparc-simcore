@@ -27,9 +27,7 @@ async def _subscribe_to_rabbitmq(app) -> str:
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         subscribed_queue, _ = await rabbit_client.subscribe(
             DynamicServiceRunningMessage.get_channel_name(),
-            message_handler=functools.partial(
-                process_dynamic_service_running_message, app
-            ),
+            message_handler=functools.partial(process_dynamic_service_running_message, app),
             exclusive_queue=False,
             message_ttl=_EFS_MESSAGE_TTL_IN_MS,
         )
@@ -38,9 +36,10 @@ async def _subscribe_to_rabbitmq(app) -> str:
 
 def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
-        with log_context(
-            _logger, logging.INFO, msg="setup efs guardian process messages"
-        ), log_catch(_logger, reraise=False):
+        with (
+            log_context(_logger, logging.INFO, msg="setup efs guardian process messages"),
+            log_catch(_logger, reraise=False),
+        ):
             app_settings: ApplicationSettings = app.state.settings
             app.state.efs_guardian_rabbitmq_consumer = None
             settings: RabbitSettings | None = app_settings.EFS_GUARDIAN_RABBITMQ

@@ -43,7 +43,7 @@ def resource_tracker_service_run_db(
         con.execute(resource_tracker_service_runs.delete())
 
 
-@pytest.mark.rpc_test()
+@pytest.mark.rpc_test
 async def test_rpc_list_service_runs_with_wallet(
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,

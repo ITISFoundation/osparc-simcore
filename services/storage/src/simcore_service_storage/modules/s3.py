@@ -25,9 +25,7 @@ _logger = logging.getLogger(__name__)
     before_sleep=before_sleep_log(_logger, logging.WARNING),
     reraise=True,
 )
-async def _ensure_s3_bucket(
-    client: SimcoreS3API, settings: ApplicationSettings
-) -> None:
+async def _ensure_s3_bucket(client: SimcoreS3API, settings: ApplicationSettings) -> None:
     assert settings.STORAGE_S3  # nosec
     if await client.bucket_exists(bucket=settings.STORAGE_S3.S3_BUCKET_NAME):
         _logger.info(
@@ -37,9 +35,9 @@ async def _ensure_s3_bucket(
         return
     await client.create_bucket(
         bucket=settings.STORAGE_S3.S3_BUCKET_NAME,
-        region=TypeAdapter(
-            BucketLocationConstraintType | Literal["us-east-1"]
-        ).validate_python(settings.STORAGE_S3.S3_REGION),
+        region=TypeAdapter(BucketLocationConstraintType | Literal["us-east-1"]).validate_python(
+            settings.STORAGE_S3.S3_REGION
+        ),
     )
 
 
@@ -79,7 +77,5 @@ def setup_s3(app: FastAPI) -> None:
 
 def get_s3_client(app: FastAPI) -> SimcoreS3API:
     if not app.state.s3_client:
-        raise ConfigurationError(
-            msg="S3 client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="S3 client is not available. Please check the configuration.")
     return cast(SimcoreS3API, app.state.s3_client)

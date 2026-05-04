@@ -27,6 +27,7 @@ def minimal_project(faker: Faker) -> dict[str, Any]:
         "workbench": {},
         "type": "STANDARD",
         "templateType": None,
+        "productName": "osparc",
     }
 
 

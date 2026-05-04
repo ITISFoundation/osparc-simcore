@@ -94,9 +94,7 @@ def reset_nicegui_app() -> None:
 
 
 @pytest.fixture
-def not_initialized_app(
-    reset_nicegui_app: None, app_environment: EnvVarsDict
-) -> FastAPI:
+def not_initialized_app(reset_nicegui_app: None, app_environment: EnvVarsDict) -> FastAPI:
     return create_app()
 
 
@@ -110,7 +108,6 @@ def remove_old_screenshots() -> None:
 async def app_runner(
     remove_old_screenshots: None, not_initialized_app: FastAPI, server_host_port: str
 ) -> AsyncIterable[None]:
-
     shutdown_event = asyncio.Event()
 
     async def _wait_for_shutdown_event():
@@ -121,20 +118,14 @@ async def app_runner(
         config.bind = [server_host_port]
 
         with suppress(asyncio.CancelledError):
-            await serve(
-                not_initialized_app, config, shutdown_trigger=_wait_for_shutdown_event
-            )
+            await serve(not_initialized_app, config, shutdown_trigger=_wait_for_shutdown_event)
 
     server_task = asyncio.create_task(_run_server())
 
     settings: ApplicationSettings = not_initialized_app.state.settings
 
-    home_page_url = (
-        f"http://{server_host_port}{settings.DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
-    )
-    async for attempt in AsyncRetrying(
-        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(2)
-    ):
+    home_page_url = f"http://{server_host_port}{settings.DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
+    async for attempt in AsyncRetrying(reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(2)):
         with attempt:
             async with AsyncClient(timeout=1) as client:
                 response = await client.get(f"{home_page_url}")
@@ -148,8 +139,9 @@ async def app_runner(
 
 @pytest.fixture
 def download_playwright_browser() -> None:
-    subprocess.run(  # noqa: S603
-        ["playwright", "install", "chromium"], check=True  # noqa: S607
+    subprocess.run(
+        ["playwright", "install", "chromium"],
+        check=True,
     )
 
 

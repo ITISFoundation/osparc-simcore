@@ -6,9 +6,7 @@ from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class ExporterSettings(BaseCustomSettings):
-    EXPORTER_ENABLED: bool = Field(
-        False, description="disabled by default since it is half finished"
-    )
+    EXPORTER_ENABLED: bool = Field(False, description="disabled by default since it is half finished")
 
 
 def get_plugin_settings(app: Application) -> ExporterSettings:

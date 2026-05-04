@@ -35,7 +35,6 @@ def create_app(
     settings: ApplicationSettings | None = None,
     tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
-
     app_settings = settings or ApplicationSettings.create_from_envs()
     app_tracing_config = tracing_config or TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app_settings.PAYMENTS_TRACING

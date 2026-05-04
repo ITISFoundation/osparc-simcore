@@ -39,18 +39,10 @@ def get_dynamic_proxy_spec(
         "ONLY for legacy. This function should not be called with product_name==None"
     )  # nosec
 
-    proxy_settings: DynamicSidecarProxySettings = (
-        dynamic_services_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
-    )
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        dynamic_services_settings.DYNAMIC_SIDECAR
-    )
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
-        dynamic_services_settings.DYNAMIC_SCHEDULER
-    )
-    wb_auth_settings: webserver.WebServerSettings = (
-        dynamic_services_settings.WEBSERVER_AUTH_SETTINGS
-    )
+    proxy_settings: DynamicSidecarProxySettings = dynamic_services_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+    dynamic_sidecar_settings: DynamicSidecarSettings = dynamic_services_settings.DYNAMIC_SIDECAR
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = dynamic_services_settings.DYNAMIC_SCHEDULER
+    wb_auth_settings: webserver.WebServerSettings = dynamic_services_settings.WEBSERVER_AUTH_SETTINGS
 
     mounts = [
         # docker socket needed to use the docker api
@@ -61,9 +53,7 @@ def get_dynamic_proxy_spec(
             "ReadOnly": True,
         }
     ]
-    caddy_file = (
-        f"{{\n admin 0.0.0.0:{proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT} \n}}"
-    )
+    caddy_file = f"{{\n admin 0.0.0.0:{proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT} \n}}"
 
     # expose this service on an empty port
 
@@ -127,7 +117,10 @@ def get_dynamic_proxy_spec(
             cpu_limit=float(CPU_10_PERCENT) / 1e9,
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.proxy_service_name,
-        "networks": [swarm_network_id, dynamic_sidecar_network_id],
+        "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
+            swarm_network_id,
+            dynamic_sidecar_network_id,
+        ],
         "task_template": {
             "ContainerSpec": {
                 "Env": {},
@@ -153,10 +146,14 @@ def get_dynamic_proxy_spec(
                 ],
                 "Mounts": mounts,
             },
+            "Networks": [
+                {"Target": swarm_network_id},
+                {"Target": dynamic_sidecar_network_id},
+            ],
             "Placement": {
                 "Constraints": [
-                    "node.platform.os == linux",
-                    f"node.id == {scheduler_data.dynamic_sidecar.docker_node_id}",
+                    "node.platform.os==linux",
+                    f"node.id=={scheduler_data.dynamic_sidecar.docker_node_id}",
                 ]
             },
             "Resources": {

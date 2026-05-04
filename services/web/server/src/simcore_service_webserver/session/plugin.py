@@ -16,9 +16,7 @@ _logger = logging.getLogger(__name__)
 APP_SESSION_KEY: Final = web.AppKey("APP_SESSION_KEY", object)
 
 
-@app_setup_func(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_SESSION", logger=_logger
-)
+@app_setup_func(__name__, ModuleCategory.ADDON, settings_name="WEBSERVER_SESSION", logger=_logger)
 def setup_session(app: web.Application):
     """
     Inits and registers a session middleware in aiohttp.web.Application

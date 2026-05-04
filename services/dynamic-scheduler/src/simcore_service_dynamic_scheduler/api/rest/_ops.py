@@ -17,8 +17,6 @@ router = APIRouter()
 async def running_services(
     app: Annotated[FastAPI, Depends(get_app)],
 ) -> list[DynamicServiceGet]:
-    """returns all running dynamic services. Used by ops internall to determine
+    """returns all running dynamic services. Used by ops internally to determine
     when it is safe to shutdown the platform"""
-    return await common_interface.list_tracked_dynamic_services(
-        app, user_id=None, project_id=None
-    )
+    return await common_interface.list_tracked_dynamic_services(app, user_id=None, project_id=None)

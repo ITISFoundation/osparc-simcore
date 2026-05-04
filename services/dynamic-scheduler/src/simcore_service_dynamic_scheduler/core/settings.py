@@ -35,9 +35,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DYNAMIC_SCHEDULER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "DYNAMIC_SCHEDULER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("DYNAMIC_SCHEDULER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
 
@@ -149,9 +147,7 @@ class ApplicationSettings(_BaseApplicationSettings):
         bool, Field(description="If true, it displays swagger doc at /doc")
     ] = True
 
-    CLIENT_REQUEST: ClientRequestSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    CLIENT_REQUEST: ClientRequestSettings = Field(json_schema_extra={"auto_default_from_env": True})
 
     DYNAMIC_SCHEDULER_DIRECTOR_V0_SETTINGS: DirectorV0Settings = Field(
         json_schema_extra={"auto_default_from_env": True},

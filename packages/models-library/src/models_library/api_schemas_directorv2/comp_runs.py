@@ -1,14 +1,15 @@
 from datetime import datetime
 from typing import Any, NamedTuple
 
-from models_library.computations import CollectionRunID
-from models_library.services_types import ServiceRunID
 from pydantic import (
     AnyUrl,
     BaseModel,
     ConfigDict,
     PositiveInt,
 )
+
+from models_library.computations import CollectionRunID
+from models_library.services_types import ServiceRunID
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID

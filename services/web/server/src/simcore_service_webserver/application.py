@@ -34,7 +34,6 @@ from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics, setup_profiling_middleware
 from .director_v2.plugin import setup_director_v2
 from .dynamic_scheduler.plugin import setup_dynamic_scheduler
-from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .folders.plugin import setup_folders
 from .functions.plugin import setup_functions
@@ -49,7 +48,6 @@ from .notifications.plugin import setup_notifications
 from .payments.plugin import setup_payments
 from .products.plugin import setup_products
 from .projects.plugin import setup_projects
-from .publications.plugin import setup_publications
 from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .resource_manager.plugin import setup_resource_manager
@@ -101,7 +99,7 @@ def _create_finished_banner() -> Callable:
     return _finished_banner
 
 
-def create_application(tracing_config: TracingConfig) -> web.Application:
+def create_application(tracing_config: TracingConfig) -> web.Application:  # noqa: PLR0915
     """
     Initializes service
     """
@@ -145,7 +143,6 @@ def create_application(tracing_config: TracingConfig) -> web.Application:
     setup_profiling_middleware(app)
 
     # login
-    setup_email(app)
     setup_invitations(app)
     setup_login(app)
     setup_api_keys(app)
@@ -187,7 +184,6 @@ def create_application(tracing_config: TracingConfig) -> web.Application:
     setup_tags(app)
 
     setup_announcements(app)
-    setup_publications(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_realtime_collaboration(app)
@@ -208,9 +204,7 @@ def create_application_auth() -> web.Application:
     app = create_safe_application()
 
     settings = setup_settings(app)
-    tracing_config = TracingConfig.create(
-        settings.WEBSERVER_TRACING, service_name=APP_NAME
-    )
+    tracing_config = TracingConfig.create(settings.WEBSERVER_TRACING, service_name=APP_NAME)
     app[TRACING_CONFIG_KEY] = tracing_config
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
 
@@ -245,6 +239,6 @@ def run_service(app: web.Application, config: dict[str, Any]):
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        # this gets overriden by the gunicorn config in /docker/boot.sh
+        # this gets overridden by the gunicorn config in /docker/boot.sh
         access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )

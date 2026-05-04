@@ -1,6 +1,4 @@
-""" Collection of jinja2 templates for customizable docs (e.g. emails, sites)
-
-"""
+"""Collection of jinja2 templates for customizable docs (e.g. emails, sites)"""
 
 import sqlalchemy as sa
 from sqlalchemy.sql import func

@@ -8,7 +8,7 @@ IFS=$'\n\t'
 #
 #
 # NOTE: check --py* flag in CLI when PYTHON_VERSION is modified
-PYTHON_VERSION=3.11.9
+PYTHON_VERSION=3.13.9
 IMAGE_NAME="local/pyupgrade-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
@@ -24,7 +24,7 @@ RUN uv pip install \
   pyupgrade
 
 ENTRYPOINT ["pyupgrade", \
-  "--py311-plus" ]
+  "--py313-plus" ]
 EOF
 }
 

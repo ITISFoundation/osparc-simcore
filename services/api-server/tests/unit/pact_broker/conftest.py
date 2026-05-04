@@ -42,15 +42,9 @@ def pact_broker_credentials(
     request: pytest.FixtureRequest,
 ) -> tuple[str, str, str]:
     # Get credentials from either CLI arguments or environment variables
-    broker_url = request.config.getoption("--broker-url", None) or os.getenv(
-        "PACT_BROKER_URL"
-    )
-    broker_username = request.config.getoption("--broker-username", None) or os.getenv(
-        "PACT_BROKER_USERNAME"
-    )
-    broker_password = request.config.getoption("--broker-password", None) or os.getenv(
-        "PACT_BROKER_PASSWORD"
-    )
+    broker_url = request.config.getoption("--broker-url", None) or os.getenv("PACT_BROKER_URL")
+    broker_username = request.config.getoption("--broker-username", None) or os.getenv("PACT_BROKER_USERNAME")
+    broker_password = request.config.getoption("--broker-password", None) or os.getenv("PACT_BROKER_PASSWORD")
 
     # Identify missing credentials
     missing = [

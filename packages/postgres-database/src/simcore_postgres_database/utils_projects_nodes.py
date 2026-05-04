@@ -6,15 +6,13 @@ from typing import Annotated, Any
 import asyncpg.exceptions  # type: ignore[import-untyped]
 import sqlalchemy as sa
 import sqlalchemy.exc
-from common_library.async_tools import maybe_await
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql.selectable import Subquery
 
-from ._protocols import DBConnection
-from .aiopg_errors import ForeignKeyViolation, UniqueViolation
 from .models.projects import projects
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
@@ -43,16 +41,12 @@ class ProjectNodesNonUniqueNodeFoundError(BaseProjectNodesError):
 
 
 class ProjectNodesDuplicateNodeError(BaseProjectNodesError):
-    msg_template: str = (
-        "Project node already exists, you cannot have 2x the same node in the same project."
-    )
+    msg_template: str = "Project node already exists, you cannot have 2x the same node in the same project."
 
 
 class ProjectNodeCreate(BaseModel):
     node_id: uuid.UUID
-    required_resources: Annotated[dict[str, Any], Field(default_factory=dict)] = (
-        DEFAULT_FACTORY
-    )
+    required_resources: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
     key: str
     version: str
     label: str
@@ -123,15 +117,9 @@ def create_workbench_subquery(project_id: str) -> Subquery:
     return (
         sa.select(
             projects_nodes.c.project_uuid,
-            sa.func.json_object_agg(
-                projects_nodes.c.node_id, sa.func.json(workbench_obj)
-            ).label("workbench"),
+            sa.func.json_object_agg(projects_nodes.c.node_id, sa.func.json(workbench_obj)).label("workbench"),
         )
-        .select_from(
-            projects_nodes.join(
-                projects, projects_nodes.c.project_uuid == projects.c.uuid
-            )
-        )
+        .select_from(projects_nodes.join(projects, projects_nodes.c.project_uuid == projects.c.uuid))
         .where(projects.c.uuid == project_id)
         .group_by(projects_nodes.c.project_uuid)
         .subquery()
@@ -144,7 +132,7 @@ class ProjectNodesRepo:
 
     async def add(
         self,
-        connection: DBConnection,
+        connection: AsyncConnection,
         *,
         nodes: list[ProjectNodeCreate],
     ) -> list[ProjectNode]:
@@ -172,31 +160,14 @@ class ProjectNodesRepo:
         insert_stmt = (
             projects_nodes.insert()
             .values(values)
-            .returning(
-                *[
-                    c
-                    for c in projects_nodes.columns
-                    if c is not projects_nodes.c.project_uuid
-                ]
-            )
+            .returning(*[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid])
         )
 
         try:
             result = await connection.execute(insert_stmt)
             assert result  # nosec
-            rows = await maybe_await(result.fetchall())
-            assert isinstance(rows, list)  # nosec
+            rows = result.mappings().all()
             return [ProjectNode.model_validate(r) for r in rows]
-
-        except ForeignKeyViolation as exc:
-            # this happens when the project does not exist, as we first check the node exists
-            raise ProjectNodesProjectNotFoundError(
-                project_uuid=self.project_uuid
-            ) from exc
-
-        except UniqueViolation as exc:
-            # this happens if the node already exists on creation
-            raise ProjectNodesDuplicateNodeError from exc
 
         except sqlalchemy.exc.IntegrityError as exc:
             raise map_db_exception(
@@ -213,25 +184,20 @@ class ProjectNodesRepo:
                 },
             ) from exc
 
-    async def list(self, connection: DBConnection) -> list[ProjectNode]:
+    async def list(self, connection: AsyncConnection) -> list[ProjectNode]:
         """list the nodes in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
         """
         list_stmt = sqlalchemy.select(
-            *[
-                c
-                for c in projects_nodes.columns
-                if c is not projects_nodes.c.project_uuid
-            ]
+            *[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid]
         ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
         result = await connection.execute(list_stmt)
         assert result  # nosec
-        rows = await maybe_await(result.fetchall())
-        assert isinstance(rows, list)  # nosec
+        rows = result.mappings().all()
         return [ProjectNode.model_validate(row) for row in rows]
 
-    async def get(self, connection: DBConnection, *, node_id: uuid.UUID) -> ProjectNode:
+    async def get(self, connection: AsyncConnection, *, node_id: uuid.UUID) -> ProjectNode:
         """get a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -240,26 +206,18 @@ class ProjectNodesRepo:
             ProjectsNodesNodeNotFound: _description_
         """
 
-        get_stmt = sqlalchemy.select(
-            *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
-        ).where(
-            (projects_nodes.c.project_uuid == f"{self.project_uuid}")
-            & (projects_nodes.c.node_id == f"{node_id}")
+        get_stmt = sqlalchemy.select(*[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]).where(
+            (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
         )
 
         result = await connection.execute(get_stmt)
         assert result  # nosec
-        row = await maybe_await(result.first())
+        row = result.mappings().one_or_none()
         if row is None:
-            raise ProjectNodesNodeNotFoundError(
-                project_uuid=self.project_uuid, node_id=node_id
-            )
-        assert row  # nosec
+            raise ProjectNodesNodeNotFoundError(project_uuid=self.project_uuid, node_id=node_id)
         return ProjectNode.model_validate(row)
 
-    async def update(
-        self, connection: DBConnection, *, node_id: uuid.UUID, **values
-    ) -> ProjectNode:
+    async def update(self, connection: AsyncConnection, *, node_id: uuid.UUID, **values) -> ProjectNode:
         """update a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -271,23 +229,17 @@ class ProjectNodesRepo:
             projects_nodes.update()
             .values(**values)
             .where(
-                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
-                & (projects_nodes.c.node_id == f"{node_id}")
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
             )
-            .returning(
-                *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
-            )
+            .returning(*[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid])
         )
         result = await connection.execute(update_stmt)
-        row = await maybe_await(result.first())
+        row = result.mappings().one_or_none()
         if not row:
-            raise ProjectNodesNodeNotFoundError(
-                project_uuid=self.project_uuid, node_id=node_id
-            )
-        assert row  # nosec
+            raise ProjectNodesNodeNotFoundError(project_uuid=self.project_uuid, node_id=node_id)
         return ProjectNode.model_validate(row)
 
-    async def delete(self, connection: DBConnection, *, node_id: uuid.UUID) -> None:
+    async def delete(self, connection: AsyncConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -296,13 +248,12 @@ class ProjectNodesRepo:
             Nothing special
         """
         delete_stmt = sqlalchemy.delete(projects_nodes).where(
-            (projects_nodes.c.project_uuid == f"{self.project_uuid}")
-            & (projects_nodes.c.node_id == f"{node_id}")
+            (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
         )
         await connection.execute(delete_stmt)
 
     async def get_project_node_pricing_unit_id(
-        self, connection: DBConnection, *, node_uuid: uuid.UUID
+        self, connection: AsyncConnection, *, node_uuid: uuid.UUID
     ) -> tuple | None:
         """get a pricing unit that is connected to the project node or None if there is non connected
 
@@ -316,23 +267,21 @@ class ProjectNodesRepo:
             .select_from(
                 projects_nodes.join(
                     projects_node_to_pricing_unit,
-                    projects_nodes.c.project_node_id
-                    == projects_node_to_pricing_unit.c.project_node_id,
+                    projects_nodes.c.project_node_id == projects_node_to_pricing_unit.c.project_node_id,
                 )
             )
             .where(
-                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
-                & (projects_nodes.c.node_id == f"{node_uuid}")
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )
-        row = await maybe_await(result.fetchone())
+        row = result.mappings().one_or_none()
         if row is not None:
-            return (row.pricing_plan_id, row.pricing_unit_id)  # type: ignore[union-attr]
+            return (row["pricing_plan_id"], row["pricing_unit_id"])
         return None
 
     async def connect_pricing_unit_to_project_node(
         self,
-        connection: DBConnection,
+        connection: AsyncConnection,
         *,
         node_uuid: uuid.UUID,
         pricing_plan_id: int,
@@ -340,8 +289,7 @@ class ProjectNodesRepo:
     ) -> None:
         result = await connection.scalar(
             sqlalchemy.select(projects_nodes.c.project_node_id).where(
-                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
-                & (projects_nodes.c.node_id == f"{node_uuid}")
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )
         project_node_id = int(result) if result else 0
@@ -366,9 +314,7 @@ class ProjectNodesRepo:
         await connection.execute(on_update_stmt)
 
     @staticmethod
-    async def get_project_id_from_node_id(
-        connection: DBConnection, *, node_id: uuid.UUID
-    ) -> uuid.UUID:
+    async def get_project_id_from_node_id(connection: AsyncConnection, *, node_id: uuid.UUID) -> uuid.UUID:
         """
         WARNING: this function should not be used! it has a flaw! a Node ID is not unique and there can
         be more than one project linked to it.
@@ -377,12 +323,9 @@ class ProjectNodesRepo:
             ProjectNodesNodeNotFound: if no node_id found
             ProjectNodesNonUniqueNodeFoundError: there are multiple projects that contain that node
         """
-        get_stmt = sqlalchemy.select(projects_nodes.c.project_uuid).where(
-            projects_nodes.c.node_id == f"{node_id}"
-        )
+        get_stmt = sqlalchemy.select(projects_nodes.c.project_uuid).where(projects_nodes.c.node_id == f"{node_id}")
         result = await connection.execute(get_stmt)
-        project_ids = await maybe_await(result.fetchall())
-        assert isinstance(project_ids, list)  # nosec
+        project_ids = result.all()
         if not project_ids:
             raise ProjectNodesNodeNotFoundError(project_uuid=None, node_id=node_id)
         if len(project_ids) > 1:

@@ -83,9 +83,7 @@ def client(minimal_app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-def app_environment(
-    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -96,9 +94,7 @@ def app_environment(
 
 
 @pytest.fixture()
-async def initialized_app(
-    app_environment: None, minimal_app: FastAPI
-) -> AsyncIterator[FastAPI]:
+async def initialized_app(app_environment: None, minimal_app: FastAPI) -> AsyncIterator[FastAPI]:
     async with LifespanManager(minimal_app):
         yield minimal_app
 
@@ -212,15 +208,11 @@ def pennsieve_file_id(request, create_pennsieve_fake_package_id) -> str:
 
 @pytest.fixture(scope="session")
 def use_real_pennsieve_interface(request) -> bool:
-    return request.config.getoption("--api-key") and request.config.getoption(
-        "--api-secret"
-    )
+    return request.config.getoption("--api-key") and request.config.getoption("--api-secret")
 
 
 @pytest.fixture(scope="session")
-def pennsieve_api_headers(
-    pennsieve_api_key: str, pennsieve_api_secret: str
-) -> dict[str, str]:
+def pennsieve_api_headers(pennsieve_api_key: str, pennsieve_api_secret: str) -> dict[str, str]:
     return {
         "x-datcore-api-key": pennsieve_api_key,
         "x-datcore-api-secret": pennsieve_api_secret,
@@ -296,13 +288,9 @@ async def pennsieve_subsystem_mock(
             )
 
             # get user
-            mock.get("https://api.pennsieve.io/user/").respond(
-                status.HTTP_200_OK, json={"id": "some_user_id"}
-            )
+            mock.get("https://api.pennsieve.io/user/").respond(status.HTTP_200_OK, json={"id": "some_user_id"})
             # get dataset packages counts
-            mock.get(
-                f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}/packageTypeCounts"
-            ).respond(
+            mock.get(f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}/packageTypeCounts").respond(
                 status.HTTP_200_OK,
                 json={"part1": len(pennsieve_mock_dataset_packages["packages"])},
             )
@@ -311,9 +299,7 @@ async def pennsieve_subsystem_mock(
                 status.HTTP_200_OK, json=pennsieve_random_fake_datasets
             )
             # get dataset details
-            mock.get(
-                f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}"
-            ).respond(
+            mock.get(f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}").respond(
                 status.HTTP_200_OK,
                 json={
                     "content": {
@@ -325,14 +311,12 @@ async def pennsieve_subsystem_mock(
                 },
             )
             # get datasets packages
-            mock.get(
-                f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}/packages"
-            ).respond(status.HTTP_200_OK, json=pennsieve_mock_dataset_packages)
+            mock.get(f"https://api.pennsieve.io/datasets/{pennsieve_dataset_id}/packages").respond(
+                status.HTTP_200_OK, json=pennsieve_mock_dataset_packages
+            )
 
             # get collection packages
-            mock.get(
-                rf"https://api.pennsieve.io/packages/{pennsieve_collection_id}"
-            ).respond(
+            mock.get(rf"https://api.pennsieve.io/packages/{pennsieve_collection_id}").respond(
                 status.HTTP_200_OK,
                 json={
                     "content": {"name": "this package name is also awesome"},
@@ -369,9 +353,7 @@ async def pennsieve_subsystem_mock(
                 },
             )
             # get packages files
-            mock.get(
-                url__regex=r"https://api.pennsieve.io/packages/.+/files\?limit=1&offset=0$"
-            ).respond(
+            mock.get(url__regex=r"https://api.pennsieve.io/packages/.+/files\?limit=1&offset=0$").respond(
                 status.HTTP_200_OK,
                 json=[
                     jsonable_encoder(
@@ -392,9 +374,7 @@ async def pennsieve_subsystem_mock(
             )
 
             # download file
-            mock.get(
-                url__regex=r"https://api.pennsieve.io/packages/.+/files/[\S]+$"
-            ).respond(
+            mock.get(url__regex=r"https://api.pennsieve.io/packages/.+/files/[\S]+$").respond(
                 status.HTTP_200_OK,
                 json={"url": faker.url()},
             )

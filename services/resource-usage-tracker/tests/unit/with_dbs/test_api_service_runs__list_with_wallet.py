@@ -33,11 +33,7 @@ def resource_tracker_service_run_db(
         for _ in range(_TOTAL_GENERATED_RESOURCE_TRACKER_SERVICE_RUNS_ROWS):
             result = con.execute(
                 resource_tracker_service_runs.insert()
-                .values(
-                    **random_resource_tracker_service_run(
-                        user_id=_USER_ID_1, wallet_id=_WALLET_ID
-                    )
-                )
+                .values(**random_resource_tracker_service_run(user_id=_USER_ID_1, wallet_id=_WALLET_ID))
                 .returning(resource_tracker_service_runs)
             )
             row = result.first()
@@ -47,11 +43,7 @@ def resource_tracker_service_run_db(
         for _ in range(_TOTAL_GENERATED_RESOURCE_TRACKER_SERVICE_RUNS_ROWS):
             result = con.execute(
                 resource_tracker_service_runs.insert()
-                .values(
-                    **random_resource_tracker_service_run(
-                        user_id=_USER_ID_2, wallet_id=_WALLET_ID
-                    )
-                )
+                .values(**random_resource_tracker_service_run(user_id=_USER_ID_2, wallet_id=_WALLET_ID))
                 .returning(resource_tracker_service_runs)
             )
             row = result.first()
@@ -63,7 +55,7 @@ def resource_tracker_service_run_db(
         con.execute(resource_tracker_service_runs.delete())
 
 
-@pytest.mark.rpc_test()
+@pytest.mark.rpc_test
 async def test_rpc_list_service_runs_with_wallet(
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,

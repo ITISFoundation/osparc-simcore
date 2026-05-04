@@ -1,21 +1,19 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
 from common_library.users_enums import AccountRequestStatus, UserStatus
-from models_library.groups import AccessRightsDict
-from models_library.rest_filters import Filters
-from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
     AfterValidator,
     BaseModel,
     ConfigDict,
     EmailStr,
     Field,
+    HttpUrl,
     ValidationInfo,
     field_validator,
     model_validator,
@@ -27,6 +25,9 @@ from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..rest_filters import Filters
+from ..rest_ordering import OrderingQueryParams
+from ..rest_pagination import PageQueryParameters
 from ..string_types import (
     GlobPatternSafeStr,
     SearchPatternSafeStr,
@@ -49,6 +50,7 @@ from ._base import (
     OutputSchemaWithoutCamelCase,
 )
 from .groups import MyGroupsGet
+from .notifications import MessageContent, MessageContentGet
 from .products import TrialAccountAnnotated, WelcomeCreditsAnnotated
 from .users_preferences import AggregatedPreferences
 
@@ -82,9 +84,7 @@ class MyProfileAddressGet(OutputSchema):
 
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
-    user_name: Annotated[
-        IDStr, Field(description="Unique username identifier", alias="userName")
-    ]
+    user_name: Annotated[IDStr, Field(description="Unique username identifier", alias="userName")]
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
@@ -241,7 +241,10 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     def _validate_user_name(cls, value: str):
         # Ensure valid characters (alphanumeric + . _ -)
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9._-]*$", value):
-            msg = f"Username '{value}' must start with a letter and can only contain letters, numbers and '_', '.' or '-'."
+            msg = (
+                f"Username '{value}' must start with a letter and can only "
+                "contain letters, numbers and '_', '.' or '-'."
+            )
             raise ValueError(msg)
 
         # Ensure no consecutive special characters
@@ -313,11 +316,37 @@ class UsersForAdminListFilter(Filters):
     #     CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
     #
     review_status: Literal["PENDING", "REVIEWED"] | None = None
+    registered: bool | None = None
+    product_name: ProductName | None = None
 
     model_config = ConfigDict(extra="forbid")
 
 
-class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
+type UserAccountSortableField = Literal[
+    "name",
+    "email",
+    "status",
+    "accountRequestedReviewedAt",
+    "preRegistrationCreated",
+]
+
+
+class UsersAccountListOrderParams(
+    OrderingQueryParams[UserAccountSortableField],
+):
+    _default_order_by: ClassVar[str] = "email"
+    _field_name_map: ClassVar[dict[str, str]] = {
+        "name": "first_name",
+        "accountRequestedReviewedAt": "account_request_reviewed_at",
+        "preRegistrationCreated": "created",
+    }
+
+
+class UsersAccountListQueryParams(
+    UsersForAdminListFilter,
+    PageQueryParameters,
+    UsersAccountListOrderParams,
+): ...
 
 
 class _InvitationDetails(InputSchema):
@@ -325,13 +354,48 @@ class _InvitationDetails(InputSchema):
     extra_credits_in_usd: WelcomeCreditsAnnotated = None
 
 
+#
+# Account approval
+#
+
+
 class UserAccountApprove(InputSchema):
     email: EmailStr
-    invitation: _InvitationDetails | None = None
+    invitation_url: HttpUrl
+    message_content: MessageContent | None = None
+
+
+class UserAccountPreviewApproval(InputSchema):
+    email: EmailStr
+    invitation: _InvitationDetails
+
+
+class UserAccountPreviewApprovalGet(OutputSchema):
+    invitation_url: HttpUrl
+    message_content: MessageContentGet | None = None
+
+
+#
+# Account rejection
+#
 
 
 class UserAccountReject(InputSchema):
     email: EmailStr
+    message_content: MessageContent | None = None
+
+
+class UserAccountMoveProduct(InputSchema):
+    pre_registration_id: int
+    new_product_name: ProductName
+
+
+class UserAccountPreviewRejection(InputSchema):
+    email: EmailStr
+
+
+class UserAccountPreviewRejectionGet(OutputSchema):
+    message_content: MessageContentGet | None = None
 
 
 class UserAccountSearchQueryParams(RequestParameters):
@@ -363,6 +427,12 @@ class UserAccountSearchQueryParams(RequestParameters):
         return self
 
 
+class UserAccountProductOptionGet(OutputSchema):
+    name: ProductName
+    display_name: str
+    is_current: bool = False
+
+
 class UserAccountGet(OutputSchema):
     # ONLY for admins
     first_name: str | None
@@ -375,6 +445,7 @@ class UserAccountGet(OutputSchema):
     state: Annotated[str | None, Field(description="State, province, canton, ...")]
     postal_code: str | None
     country: str | None
+    product_name: ProductName | None = None
     extras: Annotated[
         dict[str, Any],
         Field(
@@ -383,7 +454,7 @@ class UserAccountGet(OutputSchema):
         ),
     ] = DEFAULT_FACTORY
 
-    # pre-registration NOTE: that some users have no pre-registartion and therefore all options here can be none
+    # pre-registration NOTE: that some users have no pre-registration and therefore all options here can be none
     pre_registration_id: int | None
     pre_registration_created: datetime | None
     invited_by: UserNameID | None = None
@@ -458,9 +529,7 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
 class MyTokenGet(OutputSchemaWithoutCamelCase):
     service: IDStr
     token_key: IDStr
-    token_secret: Annotated[
-        IDStr | None, Field(deprecated=True, description="Will be removed")
-    ] = None
+    token_secret: Annotated[IDStr | None, Field(deprecated=True, description="Will be removed")] = None
 
     @classmethod
     def from_domain_model(cls, token: UserThirdPartyToken) -> Self:

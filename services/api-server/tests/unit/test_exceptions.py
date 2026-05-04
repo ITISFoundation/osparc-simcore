@@ -51,9 +51,7 @@ def app() -> FastAPI:
 
     @app.post("/raise-http-exception")
     def _raise_http_exception():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="fail message"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="fail message")
 
     @app.post("/raise-custom-error")
     def _raise_custom_exception():

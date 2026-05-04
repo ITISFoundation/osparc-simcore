@@ -29,9 +29,7 @@ class OsparcUserBase(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.deploy_auth = DeploymentAuth()
-        _logger.debug(
-            "Using deployment auth with username: %s", self.deploy_auth.SC_USER_NAME
-        )
+        _logger.debug("Using deployment auth with username: %s", self.deploy_auth.SC_USER_NAME)
 
     def authenticated_get(self, url, **kwargs):
         """Make GET request with deployment auth"""
@@ -65,7 +63,7 @@ class OsparcUserBase(FastHttpUser):
 
 
 @events.init_command_line_parser.add_listener
-def _(parser: LocustArgumentParser) -> None:
+def __add_cli_args(parser: LocustArgumentParser) -> None:
     parser.add_argument(
         "--requires-login",
         action="store_true",
@@ -75,7 +73,7 @@ def _(parser: LocustArgumentParser) -> None:
 
 
 @events.init.add_listener
-def _(environment: Environment, **_kwargs: Any) -> None:
+def __log_parsed_options(environment: Environment, **_kwargs: Any) -> None:
     # Only log the parsed options, as the full environment is not JSON serializable
     options_dict: dict[str, Any] = vars(environment.parsed_options)
     _logger.debug("Testing environment options: %s", json.dumps(options_dict, indent=2))
@@ -95,8 +93,7 @@ class OsparcWebUserBase(OsparcUserBase):
         super().__init__(*args, **kwargs)
         # Determine if login is required once during initialization
         self._login_required = (
-            getattr(self.__class__, "requires_login", False)
-            or self.environment.parsed_options.requires_login
+            getattr(self.__class__, "requires_login", False) or self.environment.parsed_options.requires_login
         )
 
         # Initialize auth if login is required
@@ -133,13 +130,9 @@ class OsparcWebUserBase(OsparcUserBase):
             },
         )
         response.raise_for_status()
-        _logger.debug(
-            "Logged in user with email: %s", self.osparc_auth.OSPARC_USER_NAME
-        )
+        _logger.debug("Logged in user with email: %s", self.osparc_auth.OSPARC_USER_NAME)
 
     def _logout(self) -> None:
         # Implement logout logic here
         self.authenticated_post("/v0/auth/logout")
-        _logger.debug(
-            "Logged out user with email: %s", self.osparc_auth.OSPARC_USER_NAME
-        )
+        _logger.debug("Logged out user with email: %s", self.osparc_auth.OSPARC_USER_NAME)

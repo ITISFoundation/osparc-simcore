@@ -7,7 +7,7 @@ import logging
 import sys
 from collections import namedtuple
 from itertools import chain
-from os.path import exists, relpath
+from os.path import relpath
 from pathlib import Path
 
 import pytest
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 # Conventions
 COMMON = "common"
-OPENAPI_MAIN_FILENAME = "openapi.yaml"
+OPENAPI_MAIN_FILENAME = "openapi.json"
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -45,18 +45,12 @@ def api_specs_info(api_specs_dir):
     """
     Returns a namedtuple with info on every
     """
-    service_dirs = [
-        d for d in api_specs_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)
-    ]
+    service_dirs = [d for d in api_specs_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
 
-    info_cls = namedtuple(
-        "ApiSpecsInfo", "service version openapi_path url_path".split()
-    )
+    info_cls = namedtuple("ApiSpecsInfo", ["service", "version", "openapi_path", "url_path"])  # noqa: PYI024
     info = []
     for srv_dir in service_dirs:
-        version_dirs = [
-            d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)
-        ]
+        version_dirs = [d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
         for ver_dir in version_dirs:
             openapi_path = ver_dir / OPENAPI_MAIN_FILENAME
             if openapi_path.exists():
@@ -65,9 +59,7 @@ def api_specs_info(api_specs_dir):
                         service=srv_dir.name,
                         version=ver_dir.name,
                         openapi_path=openapi_path,
-                        url_path=relpath(
-                            openapi_path, srv_dir
-                        ),  # ${version}/openapi.yaml
+                        url_path=relpath(openapi_path, srv_dir),  # ${version}/openapi.json
                     )
                 )
     # https://yarl.readthedocs.io/en/stable/api.html#yarl.URL
@@ -83,9 +75,7 @@ def all_api_specs_tails(api_specs_dir):
 
 def _all_api_specs_tails_impl(api_specs_dir):
     tails = []
-    for fpath in chain(
-        *[api_specs_dir.rglob(wildcard) for wildcard in ("*.json", "*.y*ml")]
-    ):
+    for fpath in chain(*[api_specs_dir.rglob(wildcard) for wildcard in ("*.json", "*.y*ml")]):
         tail = relpath(fpath, api_specs_dir)
         tails.append(Path(tail))
     return tails
@@ -114,5 +104,5 @@ def api_specs_tail(request, api_specs_dir):
     NOTE: as_str==True, so it gets printed
     """
     specs_tail = request.param
-    assert exists(api_specs_dir / specs_tail)
+    assert (api_specs_dir / specs_tail).exists()
     return Path(specs_tail)

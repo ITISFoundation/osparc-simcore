@@ -8,10 +8,10 @@ from ._public import (
 )
 
 __all__: tuple[str, ...] = (
+    "SidecarsClient",
     "get_dynamic_sidecar_service_health",
     "get_sidecars_client",
     "remove_sidecars_client",
     "setup",
     "shutdown",
-    "SidecarsClient",
 )

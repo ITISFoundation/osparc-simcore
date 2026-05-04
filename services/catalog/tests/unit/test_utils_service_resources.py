@@ -30,9 +30,7 @@ from simcore_service_catalog.utils.service_resources import (
     "generic_resources, expected_resources_dict",
     [
         pytest.param([], ResourcesDict(), id="empty resources"),
-        pytest.param(
-            ["malformed_generic-resource"], ResourcesDict(), id="malformed resources"
-        ),
+        pytest.param(["malformed_generic-resource"], ResourcesDict(), id="malformed resources"),
         pytest.param(
             [{"MalformedResource": {"Kind": "VRAM", "Value": 10}}],
             ResourcesDict(),
@@ -50,9 +48,7 @@ from simcore_service_catalog.utils.service_resources import (
         ),
     ],
 )
-def test_parse_generic_resources(
-    generic_resources: list[Any], expected_resources_dict: ResourcesDict
-):
+def test_parse_generic_resources(generic_resources: list[Any], expected_resources_dict: ResourcesDict):
     assert parse_generic_resource(generic_resources) == expected_resources_dict
 
 
@@ -92,9 +88,7 @@ def test_parse_generic_resources(
         pytest.param(
             ResourcesDict(),
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350)))),  # type: ignore
-            ResourcesDict(
-                {"CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9)}
-            ),
+            ResourcesDict({"CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9)}),
             id="task with cpu limit defined",
         ),
         pytest.param(
@@ -102,9 +96,7 @@ def test_parse_generic_resources(
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=350 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=123, reservation=123),
                 }
             ),
@@ -112,12 +104,12 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123, Pids=43)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123, Pids=43)))
+            ),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=350 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=123, reservation=123),
                 }
             ),
@@ -126,19 +118,17 @@ def test_parse_generic_resources(
         pytest.param(
             ResourcesDict(),
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(NanoCPUs=350)))),  # type: ignore
-            ResourcesDict(
-                {"CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9)}
-            ),
+            ResourcesDict({"CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9)}),
             id="task with cpu reservation defined",
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))
+            ),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=350 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=123, reservation=123),
                 }
             ),
@@ -146,12 +136,17 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=150, MemoryBytes=23), Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Limits=Limit(NanoCPUs=150, MemoryBytes=23),
+                        Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123),
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=150 / 10**9, reservation=150 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=150 / 10**9, reservation=150 / 10**9),
                     "RAM": ResourceValue(limit=23, reservation=23),
                 }
             ),
@@ -159,12 +154,17 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=650, MemoryBytes=623), Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Limits=Limit(NanoCPUs=650, MemoryBytes=623),
+                        Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123),
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=650 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=650 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=623, reservation=123),
                 }
             ),
@@ -178,19 +178,45 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource()])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource()]))
+                )
+            ),  # type: ignore
             ResourcesDict(),
             id="task with empty generic reservations",
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource(DiscreteResourceSpec=DiscreteResourceSpec()), GenericResource(NamedResourceSpec=NamedResourceSpec())])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(
+                            GenericResources=[
+                                GenericResource(DiscreteResourceSpec=DiscreteResourceSpec()),
+                                GenericResource(NamedResourceSpec=NamedResourceSpec()),
+                            ]
+                        )
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(),
             id="task with empty generic reservations",
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource(DiscreteResourceSpec=DiscreteResourceSpec(Kind="Fake", Value=432)), GenericResource(NamedResourceSpec=NamedResourceSpec(Kind="NamedFake", Value="myfake"))])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(
+                            GenericResources=[
+                                GenericResource(DiscreteResourceSpec=DiscreteResourceSpec(Kind="Fake", Value=432)),
+                                GenericResource(NamedResourceSpec=NamedResourceSpec(Kind="NamedFake", Value="myfake")),
+                            ]
+                        )
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "Fake": ResourceValue(limit=432, reservation=432),
@@ -208,7 +234,18 @@ def test_parse_generic_resources(
                     "NamedFake": ResourceValue(limit=27, reservation=12),
                 }
             ),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource(DiscreteResourceSpec=DiscreteResourceSpec(Kind="Fake", Value=432)), GenericResource(NamedResourceSpec=NamedResourceSpec(Kind="NamedFake", Value="myfake"))])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(
+                            GenericResources=[
+                                GenericResource(DiscreteResourceSpec=DiscreteResourceSpec(Kind="Fake", Value=432)),
+                                GenericResource(NamedResourceSpec=NamedResourceSpec(Kind="NamedFake", Value="myfake")),
+                            ]
+                        )
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "CPU": ResourceValue(limit=10, reservation=2),
@@ -284,13 +321,9 @@ def test_merge_service_resources_with_user_specs(
     user_specs: ServiceSpec,
     expected_resources: ResourcesDict,
 ):
-    merged_resources = merge_service_resources_with_user_specs(
-        service_resources, user_specs
-    )
+    merged_resources = merge_service_resources_with_user_specs(service_resources, user_specs)
     assert all(key in expected_resources for key in merged_resources)
     assert all(key in merged_resources for key in expected_resources)
     for resource_key, resource_value in merged_resources.items():
         # NOTE: so that float values are compared correctly
-        assert resource_value.model_dump() == pytest.approx(
-            expected_resources[resource_key].model_dump()
-        )
+        assert resource_value.model_dump() == pytest.approx(expected_resources[resource_key].model_dump())

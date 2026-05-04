@@ -5,6 +5,7 @@ Revises: 5860ac6ad178
 Create Date: 2021-08-23 13:00:25.803959+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -49,9 +50,7 @@ def upgrade():
         sa.Column("id", sa.BigInteger(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
-        sa.Column(
-            "type", sa.Enum("AWS", "ON_PREMISE", name="clustertype"), nullable=False
-        ),
+        sa.Column("type", sa.Enum("AWS", "ON_PREMISE", name="clustertype"), nullable=False),
         sa.Column("owner", sa.BigInteger(), nullable=False),
         sa.Column(
             "thumbnail",
@@ -59,12 +58,8 @@ def upgrade():
             nullable=True,
             doc="Link to image as to cluster thumbnail",
         ),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["owner"],
             ["groups.gid"],
@@ -78,9 +73,7 @@ def upgrade():
         "cluster_to_groups",
         sa.Column("cluster_id", sa.BigInteger(), nullable=True),
         sa.Column("gid", sa.BigInteger(), nullable=True),
-        sa.Column(
-            "read_access", sa.Boolean(), server_default=sa.text("false"), nullable=False
-        ),
+        sa.Column("read_access", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column(
             "write_access",
             sa.Boolean(),
@@ -93,12 +86,8 @@ def upgrade():
             server_default=sa.text("false"),
             nullable=False,
         ),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["cluster_id"],
             ["clusters.id"],

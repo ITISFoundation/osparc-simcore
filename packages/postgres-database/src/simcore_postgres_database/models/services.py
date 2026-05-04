@@ -58,9 +58,11 @@ services_meta_data = sa.Table(
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
-        doc="A flag that determines how the `description` column is rendered in the UI (editable)"
-        "Specifically, it indicates whether the `description` should be presented as a single web page (=true) or in another structured format (default=false)."
-        "This field is primarily used by the front-end of the application to decide on the presentation style of the service's metadata.",
+        doc="A flag that determines how the `description` column is rendered in the UI (editable). "
+        "Specifically, it indicates whether the `description` should be presented as a single web "
+        "page (=true) or in another structured format (default=false). "
+        "This field is primarily used by the front-end of the application to decide on the presentation "
+        "style of the service's metadata.",
     ),
     sa.Column(
         "thumbnail",
@@ -93,7 +95,14 @@ services_meta_data = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON with quality assesment based on TSR (editable)",
+        doc="Free JSON with quality assessment based on TSR (editable)",
+    ),
+    # RELEASE NOTES -------------------------
+    sa.Column(
+        "release_notes_url",
+        sa.String,
+        nullable=True,
+        doc="URL to external release notes page for this service (editable)",
     ),
     # LIFECYCLE ----------------------------
     sa.Column(
@@ -202,7 +211,5 @@ services_access_rights = sa.Table(
         onupdate=RefActions.CASCADE,
         ondelete=RefActions.CASCADE,
     ),
-    sa.PrimaryKeyConstraint(
-        "key", "version", "gid", "product_name", name="services_access_pk"
-    ),
+    sa.PrimaryKeyConstraint("key", "version", "gid", "product_name", name="services_access_pk"),
 )

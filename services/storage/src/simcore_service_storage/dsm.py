@@ -39,7 +39,5 @@ def setup_dsm(app: FastAPI) -> None:
 
 def get_dsm_provider(app: FastAPI) -> DataManagerProvider:
     if not hasattr(app.state, "dsm_provider"):
-        raise ConfigurationError(
-            msg="DSM provider not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="DSM provider not available. Please check the configuration.")
     return cast(DataManagerProvider, app.state.dsm_provider)

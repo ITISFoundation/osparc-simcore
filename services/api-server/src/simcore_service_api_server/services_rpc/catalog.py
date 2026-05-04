@@ -60,10 +60,7 @@ class CatalogService:
         pagination_limit: PageLimitInt | None = None,
         filters: ServiceListFilters | None = None,
     ) -> tuple[list[LatestServiceGet], PageMetaInfoLimitOffset]:
-
-        pagination_kwargs = as_dict_exclude_none(
-            offset=pagination_offset, limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 
         page = await catalog_rpc.list_services_paginated(
             self._rpc_client,
@@ -82,10 +79,7 @@ class CatalogService:
         pagination_offset: PageOffsetInt | None = None,
         pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[ServiceRelease], PageMetaInfoLimitOffset]:
-
-        pagination_kwargs = as_dict_exclude_none(
-            offset=pagination_offset, limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 
         page = await catalog_rpc.list_my_service_history_latest_first(
             self._rpc_client,
@@ -118,9 +112,7 @@ class CatalogService:
             Tuple containing list of service summaries and pagination metadata
         """
 
-        pagination_kwargs = as_dict_exclude_none(
-            offset=pagination_offset, limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 
         page = await catalog_rpc.list_all_services_summaries_paginated(
             self._rpc_client,
@@ -145,7 +137,6 @@ class CatalogService:
         name: ServiceKey,
         version: ServiceVersion,
     ) -> ServiceGetV2:
-
         return await catalog_rpc.get_service(
             self._rpc_client,
             product_name=self.product_name,

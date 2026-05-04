@@ -33,7 +33,7 @@ def app_environment(
     with_disabled_postgres: None,
     external_stripe_environment: EnvVarsDict,
 ):
-    # set environs
+    # set environs for the app and for the external stripe API
     return setenvs_from_dict(
         monkeypatch,
         {**app_environment, **external_stripe_environment},
@@ -82,9 +82,7 @@ async def test_get_invoice(
 
     assert await stripe_api.is_healthy()
 
-    _invoice = await stripe_api.get_invoice(
-        stripe_invoice_id=StripeInvoiceID(stripe_invoice_id)
-    )
+    _invoice = await stripe_api.get_invoice(stripe_invoice_id=StripeInvoiceID(stripe_invoice_id))
     assert _invoice
     assert _invoice.hosted_invoice_url
 

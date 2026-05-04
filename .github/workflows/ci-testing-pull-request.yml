@@ -36,14 +36,14 @@ jobs:
       - name: setup python environment
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: install uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.x"
           enable-cache: false
       - name: checkout source branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Generate openapi specs
         run: |
           make devenv
@@ -66,9 +66,9 @@ jobs:
       - name: setup python environment
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -94,9 +94,9 @@ jobs:
       - name: setup python environment
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then

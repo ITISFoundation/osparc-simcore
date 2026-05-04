@@ -16,9 +16,7 @@ from servicelib.utils import fire_and_forget_task
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from . import _crud_api_read
-from . import _projects_repository as _projects_repository
-from . import _projects_service, _projects_service_delete
+from . import _crud_api_read, _projects_repository, _projects_service, _projects_service_delete
 from ._access_rights_service import check_user_project_permission
 from .exceptions import (
     ProjectNotFoundError,
@@ -37,14 +35,8 @@ async def _is_project_running(
     user_id: UserID,
     project_id: ProjectID,
 ) -> bool:
-    return bool(
-        await director_v2_service.is_pipeline_running(
-            app, user_id=user_id, project_id=project_id
-        )
-    ) or bool(
-        await dynamic_scheduler_service.list_dynamic_services(
-            app, user_id=user_id, project_id=project_id
-        )
+    return bool(await director_v2_service.is_pipeline_running(app, user_id=user_id, project_id=project_id)) or bool(
+        await dynamic_scheduler_service.list_dynamic_services(app, user_id=user_id, project_id=project_id)
     )
 
 
@@ -72,10 +64,9 @@ async def trash_project(
     )
 
     if force_stop_first:
-
         fire_and_forget_task(
             _projects_service_delete.batch_stop_services_in_project(
-                app, user_id=user_id, project_uuid=project_id
+                app, user_id=user_id, project_uuid=project_id, product_name=product_name
             ),
             task_suffix_name=f"trash_project_force_stop_first_{user_id=}_{project_id=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
@@ -115,9 +106,7 @@ async def untrash_project(
         user_id=user_id,
         product_name=product_name,
         project_uuid=project_id,
-        project_patch=ProjectPatchInternalExtended(
-            trashed_at=None, trashed_explicitly=False, trashed_by=None
-        ),
+        project_patch=ProjectPatchInternalExtended(trashed_at=None, trashed_explicitly=False, trashed_by=None),
         client_session_id=None,
     )
 
@@ -163,9 +152,7 @@ async def list_explicitly_trashed_projects(
     """
     trashed_projects: list[ProjectID] = []
 
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             projects,
             page_params.total_number_of_items,
@@ -189,11 +176,7 @@ async def list_explicitly_trashed_projects(
         # was refactored, as defining a custom trash_filter was needed to allow more
         # flexibility in filtering options.
         trashed_projects.extend(
-            [
-                project["uuid"]
-                for project in projects
-                if _can_delete(project, user_id, until_equal_datetime)
-            ]
+            [project["uuid"] for project in projects if _can_delete(project, user_id, until_equal_datetime)]
         )
     return trashed_projects
 
@@ -203,6 +186,7 @@ async def delete_explicitly_trashed_project(
     *,
     user_id: UserID,
     project_id: ProjectID,
+    product_name: ProductName,
     until_equal_datetime: datetime | None = None,
 ) -> None:
     """
@@ -212,9 +196,7 @@ async def delete_explicitly_trashed_project(
         ProjectNotFoundError: If the project is not found.
         ProjectNotTrashedError: If the project was not trashed explicitly by the user from the specified datetime.
     """
-    project = await _projects_service.get_project_for_user(
-        app, project_uuid=f"{project_id}", user_id=user_id
-    )
+    project = await _projects_service.get_project_for_user(app, project_uuid=f"{project_id}", user_id=user_id)
 
     if not project:
         raise ProjectNotFoundError(project_uuid=project_id, user_id=user_id)
@@ -231,6 +213,7 @@ async def delete_explicitly_trashed_project(
         app,
         user_id=user_id,
         project_uuid=project_id,
+        product_name=product_name,
     )
 
 
@@ -240,13 +223,10 @@ async def batch_delete_trashed_projects_as_admin(
     trashed_before: datetime,
     fail_fast: bool,
 ) -> list[ProjectID]:
-
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             page_params.total_number_of_items,
             expired_trashed_projects,
@@ -260,13 +240,13 @@ async def batch_delete_trashed_projects_as_admin(
         )
         # BATCH delete
         for project in expired_trashed_projects:
-
             assert project.trashed  # nosec
 
             try:
                 await _projects_service_delete.delete_project_as_admin(
                     app,
                     project_uuid=project.uuid,
+                    product_name=project.product_name,
                 )
                 deleted_project_ids.append(project.uuid)
             except Exception as err:  # pylint: disable=broad-exception-caught
@@ -299,9 +279,7 @@ async def batch_delete_projects_in_root_workspace_as_admin(
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             page_params.total_number_of_items,
             projects_for_deletion,
@@ -318,6 +296,7 @@ async def batch_delete_projects_in_root_workspace_as_admin(
                 await _projects_service_delete.delete_project_as_admin(
                     app,
                     project_uuid=project.uuid,
+                    product_name=project.product_name,
                 )
                 deleted_project_ids.append(project.uuid)
             except Exception as err:  # pylint: disable=broad-exception-caught

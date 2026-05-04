@@ -69,9 +69,7 @@ def mock_postgres(monkeypatch: pytest.MonkeyPatch, faker: Faker) -> EnvVarsDict:
 
 
 @pytest.fixture()
-def mock_environment(
-    mock_postgres: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def mock_environment(mock_postgres: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {"STORAGE_HOST": "fake_storage", "STORAGE_PORT": "1535", **mock_postgres},
@@ -165,7 +163,7 @@ async def test_get_upload_file_links(
     assert file_upload_links.urls[0].scheme in expected_scheme
 
 
-async def test_get_file_metada(
+async def test_get_file_metadata(
     clear_caches: None,
     mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
@@ -174,13 +172,9 @@ async def test_get_file_metada(
     file_id: SimcoreS3FileID,
     location_id: LocationID,
 ):
-    file_metadata = await get_file_metadata(
-        session=session, file_id=file_id, location_id=location_id, user_id=user_id
-    )
+    file_metadata = await get_file_metadata(session=session, file_id=file_id, location_id=location_id, user_id=user_id)
     assert file_metadata
-    assert file_metadata == FileMetaDataGet.model_validate(
-        FileMetaDataGet.model_json_schema()["examples"][0]
-    )
+    assert file_metadata == FileMetaDataGet.model_validate(FileMetaDataGet.model_json_schema()["examples"][0])
 
 
 @pytest.fixture(params=["version1", "version2"])
@@ -188,9 +182,7 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
     request,
     aioresponses_mocker: AioResponsesMock,
 ) -> AioResponsesMock:
-    get_file_metadata_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
-    )
+    get_file_metadata_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$")
     if request.param == "version1":
         #
         # WARNING: this is a LEGACY test. Do not modify this response.
@@ -211,7 +203,7 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
     return aioresponses_mocker
 
 
-async def test_get_file_metada_invalid_s3_path(
+async def test_get_file_metadata_invalid_s3_path(
     clear_caches: None,
     mock_environment: EnvVarsDict,
     storage_v0_service_mock_get_file_meta_data_not_found: AioResponsesMock,
@@ -253,9 +245,7 @@ async def test_delete_file(
     file_id: SimcoreS3FileID,
     location_id: LocationID,
 ):
-    await delete_file(
-        session=session, file_id=file_id, location_id=location_id, user_id=user_id
-    )
+    await delete_file(session=session, file_id=file_id, location_id=location_id, user_id=user_id)
 
 
 @pytest.mark.parametrize(
@@ -319,9 +309,7 @@ def test_mode_ports_storage_with_auth(
     setenvs_from_dict(monkeypatch, envs)
 
     assert get_base_url() == expected_base_url
-    assert get_basic_auth() == aiohttp.BasicAuth(
-        login="user", password="passwd", encoding="latin1"
-    )
+    assert get_basic_auth() == aiohttp.BasicAuth(login="user", password="passwd", encoding="latin1")
 
 
 @pytest.mark.parametrize(

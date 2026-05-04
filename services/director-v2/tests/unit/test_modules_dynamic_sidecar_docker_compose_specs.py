@@ -52,20 +52,14 @@ environment:
 
     assert docker_compose_specs._EnvironmentSection.parse(
         compose_as_dict["environment"]
-    ) == docker_compose_specs._EnvironmentSection.parse(
-        compose_as_list_str["environment"]
-    )
+    ) == docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])
 
     assert (
-        docker_compose_specs._EnvironmentSection.parse(
-            compose_as_list_str["environment"]
-        )
+        docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])
         == compose_as_dict["environment"]
     )
 
-    envs = docker_compose_specs._EnvironmentSection.export_as_list(
-        compose_as_dict["environment"]
-    )
+    envs = docker_compose_specs._EnvironmentSection.export_as_list(compose_as_dict["environment"])
     assert envs == compose_as_list_str["environment"]
 
 
@@ -120,20 +114,12 @@ async def test_inject_resource_limits_and_reservations(
 
     if compose_spec_version_major >= 3:
         for spec in service_spec["services"].values():
-            assert (
-                spec["deploy"]["resources"]["reservations"]["cpus"] == cpu.reservation
-            )
-            assert (
-                spec["deploy"]["resources"]["reservations"]["memory"]
-                == f"{memory.reservation}"
-            )
+            assert spec["deploy"]["resources"]["reservations"]["cpus"] == cpu.reservation
+            assert spec["deploy"]["resources"]["reservations"]["memory"] == f"{memory.reservation}"
             assert spec["deploy"]["resources"]["limits"]["cpus"] == cpu.limit
             assert spec["deploy"]["resources"]["limits"]["memory"] == f"{memory.limit}"
 
-            assert (
-                f"{CPU_RESOURCE_LIMIT_KEY}={int(float(cpu.limit) * 10**9)}"
-                in spec["environment"]
-            )
+            assert f"{CPU_RESOURCE_LIMIT_KEY}={int(float(cpu.limit) * 10**9)}" in spec["environment"]
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
     else:
         for spec in service_spec["services"].values():
@@ -142,10 +128,7 @@ async def test_inject_resource_limits_and_reservations(
             assert int(spec["mem_reservation"]) <= int(spec["mem_limit"])
             assert spec["cpus"] == max(cpu.limit, cpu.reservation)
 
-            assert (
-                f"{CPU_RESOURCE_LIMIT_KEY}={int(max(cpu.limit, cpu.reservation) * 10**9)}"
-                in spec["environment"]
-            )
+            assert f"{CPU_RESOURCE_LIMIT_KEY}={int(max(cpu.limit, cpu.reservation) * 10**9)}" in spec["environment"]
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
 
 
@@ -153,11 +136,7 @@ async def test_inject_resource_limits_and_reservations(
     "compose_spec, storage_opt_count",
     [
         pytest.param(
-            json.loads(
-                SimcoreServiceLabels.model_json_schema()["examples"][2][
-                    "simcore.service.compose-spec"
-                ]
-            ),
+            json.loads(SimcoreServiceLabels.model_json_schema()["examples"][2]["simcore.service.compose-spec"]),
             2,
             id="two_storage_opt_entries",
         ),
@@ -198,9 +177,7 @@ def test_regression_service_has_no_reservations():
         "version": "3.7",
         "services": {DEFAULT_SINGLE_SERVICE_NAME: {}},
     }
-    service_resources: ServiceResourcesDict = TypeAdapter(
-        ServiceResourcesDict
-    ).validate_python({})
+    service_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python({})
 
     spec_before = deepcopy(service_spec)
     docker_compose_specs._update_resource_limits_and_reservations(
@@ -253,9 +230,7 @@ EXPECTED_LABELS: list[str] = sorted(
         ),
     ],
 )
-async def test_update_container_labels(
-    service_spec: dict[str, Any], expected_result: dict[str, Any]
-):
+async def test_update_container_labels(service_spec: dict[str, Any], expected_result: dict[str, Any]):
     docker_compose_specs._update_container_labels(
         service_spec,
         USER_ID,

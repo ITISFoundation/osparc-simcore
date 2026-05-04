@@ -21,10 +21,8 @@ from ._pricing_plans_service import (
 async def get_wallet_total_available_credits(
     app: web.Application, product_name: ProductName, wallet_id: WalletID
 ) -> WalletTotalCredits:
-    available_credits: WalletTotalCredits = (
-        await _client.sum_total_available_credits_in_the_wallet(
-            app, product_name, wallet_id
-        )
+    available_credits: WalletTotalCredits = await _client.sum_total_available_credits_in_the_wallet(
+        app, product_name, wallet_id
     )
     return available_credits
 
@@ -56,6 +54,6 @@ async def add_credits_to_wallet(
 
 __all__ = (
     "get_default_service_pricing_plan",
-    "get_pricing_plan_unit",
     "get_pricing_plan",
+    "get_pricing_plan_unit",
 )

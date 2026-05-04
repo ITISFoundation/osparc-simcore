@@ -55,9 +55,7 @@ def env_file():
 
 
 @pytest.fixture
-def mock_environment(
-    project_tests_data_folder: Path, monkeypatch, env_file: str
-) -> EnvVarsDict:
+def mock_environment(project_tests_data_folder: Path, monkeypatch, env_file: str) -> EnvVarsDict:
     """mocks environment provided in the env_file"""
     env_file_path = project_tests_data_folder / env_file
     assert env_file_path.exists()

@@ -11,16 +11,12 @@ from simcore_service_dynamic_sidecar.core.reserved_space import (
 )
 
 
-def test_reserved_disk_space_workflow(
-    cleanup_reserved_disk_space: None, mock_environment: EnvVarsDict
-):
+def test_reserved_disk_space_workflow(cleanup_reserved_disk_space: None, mock_environment: EnvVarsDict):
     assert not _RESERVED_DISK_SPACE_NAME.exists()
     create_base_app()
 
     assert _RESERVED_DISK_SPACE_NAME.exists()
-    assert _RESERVED_DISK_SPACE_NAME.stat().st_size == TypeAdapter(
-        ByteSize
-    ).validate_python("10MiB")
+    assert _RESERVED_DISK_SPACE_NAME.stat().st_size == TypeAdapter(ByteSize).validate_python("10MiB")
 
     free_reserved_disk_space()
     assert not _RESERVED_DISK_SPACE_NAME.exists()

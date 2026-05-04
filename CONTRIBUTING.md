@@ -34,7 +34,7 @@ To enable GitHub Actions on your forked repository:
 
 ### Code styles and conventions
 
-Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Black](https://black.readthedocs.io/en/stable/) + [Pylint](https://www.pylint.org) for `Python`. Have a look in the project root for individual configuration files.
+Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Ruff](https://docs.astral.sh/ruff/) + [Pylint](https://www.pylint.org) for `Python`. Have a look in the project root for individual configuration files.
 
 Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 
@@ -59,7 +59,7 @@ Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 **A:** Add `[ci skip]` in any part of your commit message. The CI will not run get started.
 
 **Q:** I don't have a good understanding of the aims of the project. Where can I read more?
-**A:** [D1.1 Technical Specs. & Technology Evaluation](https://osparc-docs.readthedocs.io/en/latest/) is extensive, but explains the decision making behind most of the code. Please consider reading it. Afterwords you can better grasp the [Computational backend](docs/comp-services.md) description.
+**A:** [D1.1 Technical Specs. & Technology Evaluation](https://osparc-docs.readthedocs.io/en/latest/) is extensive, but explains the decision making behind most of the code. Please consider reading it. Afterwards you can better grasp the [Computational backend](docs/comp-services.md) description.
 
 **Q:** Can I have some sort of introduction video about the project?
 **A:** Have a look at the following videos, targeted for wider audiences: [What is the SPARC program?](https://www.youtube.com/watch?v=IrZS_IHgrcE&feature=emb_title), [Ideas Lab Introduction to o²S²PARC](https://www.youtube.com/watch?time_continue=11&v=Q96jyFgSFHc&feature=emb_title) and [SPARC Webinar: Introduction to o²S²PARC](https://www.youtube.com/watch?v=vrdVealYydE&feature=emb_title)

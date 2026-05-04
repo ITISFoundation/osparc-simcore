@@ -5,6 +5,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from models_library.notifications import Channel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -13,6 +14,8 @@ from simcore_postgres_database.models.users import UserStatus
 from ...._meta import API_VTAG
 from ....groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ....invitations.api import is_service_invitation_code
+from ....notifications import notifications_service
+from ....notifications.models import EmailContact
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import (
@@ -30,7 +33,6 @@ from ... import (
     _security_service,
     _twofa_service,
 )
-from ..._emails_service import get_template_path, send_email_from_template
 from ..._invitations_service import (
     ConfirmedInvitationData,
     check_and_consume_invitation,
@@ -83,9 +85,7 @@ async def check_registration_invitation(request: web.Request):
     raises HTTPForbidden, HTTPServiceUnavailable
     """
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
 
     # disabled -> None
     if not settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
@@ -98,9 +98,7 @@ async def check_registration_invitation(request: web.Request):
         return envelope_json_response(InvitationInfo(email=None))
 
     # extracted -> email
-    email = await extract_email_from_invitation(
-        request.app, invitation_code=check.invitation
-    )
+    email = await extract_email_from_invitation(request.app, invitation_code=check.invitation)
     return envelope_json_response(InvitationInfo(email=email))
 
 
@@ -114,27 +112,18 @@ async def register(request: web.Request):
     An email with a link to 'email_confirmation' is sent to complete registration
     """
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
 
     registration = await parse_request_body_as(RegisterBody, request)
 
-    await check_other_registrations(
-        request.app, email=registration.email, current_product=product
-    )
+    await check_other_registrations(request.app, email=registration.email, current_product=product)
 
     # Check for weak passwords
     # This should strictly happen before invitation links are checked and consumed
     # So the invitation can be re-used with a stronger password.
-    if (
-        len(registration.password.get_secret_value())
-        < settings.LOGIN_PASSWORD_MIN_LENGTH
-    ):
+    if len(registration.password.get_secret_value()) < settings.LOGIN_PASSWORD_MIN_LENGTH:
         raise web.HTTPUnauthorized(
-            text=MSG_WEAK_PASSWORD.format(
-                LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH
-            ),
+            text=MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH),
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
@@ -174,9 +163,7 @@ async def register(request: web.Request):
         )
         if invitation.trial_account_days:
             # NOTE: expires_at is currently set as offset-naive
-            expires_at = (
-                datetime.now(UTC) + timedelta(invitation.trial_account_days)
-            ).replace(tzinfo=None)
+            expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
 
     #  get authorized user or create new
     user = await _auth_service.get_user_or_none(request.app, email=registration.email)
@@ -204,9 +191,7 @@ async def register(request: web.Request):
 
     # setup user groups
     assert (  # nosec
-        product.name == invitation.product
-        if invitation and invitation.product
-        else True
+        product.name == invitation.product if invitation and invitation.product else True
     )
 
     await auto_add_user_to_groups(app=request.app, user_id=user["id"])
@@ -225,24 +210,29 @@ async def register(request: web.Request):
             data=invitation.model_dump_json() if invitation else None,
         )
 
+        email_confirmation_url = _confirmation_web.make_confirmation_link(request, _confirmation.code)
+
         try:
-            email_confirmation_url = _confirmation_web.make_confirmation_link(
-                request, _confirmation.code
-            )
-            email_template_path = await get_template_path(
-                request, "registration_email.jinja2"
-            )
-            await send_email_from_template(
-                request,
-                from_=product.support_email,
-                to=registration.email,
-                template=email_template_path,
+            await notifications_service.send_message_from_template(
+                request.app,
+                user_id=user["id"],
+                product_name=product.name,
+                channel=Channel.email,
+                group_ids=None,
+                external_contacts=[
+                    EmailContact(
+                        name=user.get("first_name") or user["name"],
+                        email=registration.email,
+                    )
+                ],
+                template_name="registered",
                 context={
                     "host": request.host,
-                    "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
-                    "name": user.get("first_name") or user["name"],
-                    "support_email": product.support_email,
-                    "product": product,
+                    "link": email_confirmation_url,
+                    "user": {
+                        "first_name": user.get("first_name"),
+                        "user_name": user.get("name"),
+                    },
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
@@ -265,9 +255,7 @@ async def register(request: web.Request):
                 )
             )
 
-            await confirmation_service.delete_confirmation_and_user(
-                user_id=user["id"], confirmation=_confirmation
-            )
+            await confirmation_service.delete_confirmation_and_user(user_id=user["id"], confirmation=_confirmation)
 
             raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
@@ -280,9 +268,7 @@ async def register(request: web.Request):
     # NOTE: Here confirmation is disabled
     assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
     assert (  # nosec
-        product.name == invitation.product
-        if invitation and invitation.product
-        else True
+        product.name == invitation.product if invitation and invitation.product else True
     )
 
     await notify_user_confirmation(
@@ -320,9 +306,7 @@ async def register_phone(request: web.Request):
     - registration is completed requesting to 'phone_confirmation' route with the code received
     """
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
@@ -332,13 +316,19 @@ async def register_phone(request: web.Request):
 
     registration = await parse_request_body_as(RegisterPhoneBody, request)
 
-    try:
-        assert settings.LOGIN_2FA_REQUIRED
-        assert settings.LOGIN_TWILIO
-        if not product.twilio_messaging_sid:
-            msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
-            raise ValueError(msg)
+    assert settings.LOGIN_2FA_REQUIRED  # nosec
+    assert settings.LOGIN_TWILIO  # nosec
+    if not product.twilio_messaging_sid:
+        _logger.error(
+            "Messaging SID is not configured for product '%s'. Update product's twilio_messaging_sid in database.",
+            product.name,
+        )
+        raise web.HTTPServiceUnavailable(
+            text="Currently we cannot register phone numbers",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
+    try:
         code = await _twofa_service.create_2fa_code(
             app=request.app,
             user_email=registration.email,
@@ -350,9 +340,7 @@ async def register_phone(request: web.Request):
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=_registration_service.get_user_name_from_email(
-                registration.email
-            ),
+            first_name=_registration_service.get_user_name_from_email(registration.email),
         )
 
         return envelope_response(
@@ -362,9 +350,7 @@ async def register_phone(request: web.Request):
                 "parameters": {
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                "message": MSG_2FA_CODE_SENT.format(
-                    phone_number=_twofa_service.mask_phone_number(registration.phone)
-                ),
+                "message": MSG_2FA_CODE_SENT.format(phone_number=_twofa_service.mask_phone_number(registration.phone)),
                 "level": "INFO",
                 "logger": "user",
             },

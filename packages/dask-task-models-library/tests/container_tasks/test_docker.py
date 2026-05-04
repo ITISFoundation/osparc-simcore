@@ -2,7 +2,7 @@ import pytest
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 
 
-@pytest.mark.parametrize("model_cls", [(DockerBasicAuth)])
+@pytest.mark.parametrize("model_cls", [DockerBasicAuth])
 def test_docker_models_examples(model_cls):
     examples = model_cls.model_config["json_schema_extra"]["examples"]
 

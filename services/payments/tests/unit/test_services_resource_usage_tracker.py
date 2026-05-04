@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -58,9 +58,7 @@ def app(
     return create_app()
 
 
-async def test_add_credits_to_wallet(
-    app: FastAPI, faker: Faker, mock_resoruce_usage_tracker_service_api: MockRouter
-):
+async def test_add_credits_to_wallet(app: FastAPI, faker: Faker, mock_resource_usage_tracker_service_api: MockRouter):
     # test
     rut_api = ResourceUsageTrackerApi.get_from_app_state(app)
 
@@ -73,7 +71,7 @@ async def test_add_credits_to_wallet(
             user_email=faker.email(),
             osparc_credits=100,
             payment_transaction_id=faker.pystr(),
-            created_at=datetime.now(tz=timezone.utc),
+            created_at=datetime.now(tz=UTC),
         )
         > 0
     )

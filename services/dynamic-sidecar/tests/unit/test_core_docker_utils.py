@@ -32,9 +32,7 @@ def service_run_id() -> ServiceRunID:
 
 
 @pytest.fixture
-async def volume_with_label(
-    volume_name: str, service_run_id: ServiceRunID
-) -> AsyncIterable[None]:
+async def volume_with_label(volume_name: str, service_run_id: ServiceRunID) -> AsyncIterable[None]:
     async with aiodocker.Docker() as docker_client:
         volume = await docker_client.volumes.create(
             {
@@ -75,9 +73,7 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
             await container.delete(force=True)
 
 
-async def test_volume_with_label(
-    volume_with_label: None, volume_name: str, service_run_id: ServiceRunID
-) -> None:
+async def test_volume_with_label(volume_with_label: None, volume_name: str, service_run_id: ServiceRunID) -> None:
     assert await get_volume_by_label(volume_name, service_run_id)
 
 
@@ -90,14 +86,10 @@ async def test_volume_label_missing(service_run_id: ServiceRunID) -> None:
     assert "not_exist" in error_msg
 
 
-async def test__get_containers_inspect_from_names(
-    started_services: None, container_names: list[str], faker: Faker
-):
+async def test__get_containers_inspect_from_names(started_services: None, container_names: list[str], faker: Faker):
     MISSING_CONTAINER_NAME = f"missing-container-{faker.uuid4()}"
-    container_details: dict[str, DockerContainer | None] = (
-        await _get_containers_inspect_from_names(
-            [*container_names, MISSING_CONTAINER_NAME]
-        )
+    container_details: dict[str, DockerContainer | None] = await _get_containers_inspect_from_names(
+        [*container_names, MISSING_CONTAINER_NAME]
     )
     # containers which do not exist always return None
     assert MISSING_CONTAINER_NAME in container_details
@@ -108,9 +100,7 @@ async def test__get_containers_inspect_from_names(
         assert docker_container is not None
 
 
-async def test_get_container_statuses(
-    started_services: None, container_names: list[str], faker: Faker
-):
+async def test_get_container_statuses(started_services: None, container_names: list[str], faker: Faker):
     MISSING_CONTAINER_NAME = f"missing-container-{faker.uuid4()}"
     container_states: dict[str, ContainerState | None] = await get_container_states(
         [*container_names, MISSING_CONTAINER_NAME]

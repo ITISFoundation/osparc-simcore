@@ -13,9 +13,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         if is_rabbitmq_enabled(app):
             rpc_client = get_rabbitmq_rpc_client(app)
             for router in [clusters_router, ec2_instances_router]:
-                await rpc_client.register_router(
-                    router, CLUSTERS_KEEPER_RPC_NAMESPACE, app
-                )
+                await rpc_client.register_router(router, CLUSTERS_KEEPER_RPC_NAMESPACE, app)
 
     return _start
 

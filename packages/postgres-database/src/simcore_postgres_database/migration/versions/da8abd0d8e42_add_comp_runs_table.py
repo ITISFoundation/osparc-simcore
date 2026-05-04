@@ -5,6 +5,7 @@ Revises: ec3ef74cddae
 Create Date: 2021-05-12 13:46:36.676255+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ENUM
@@ -46,12 +47,8 @@ def upgrade():
             server_default="NOT_STARTED",
             nullable=False,
         ),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("started", sa.DateTime(), nullable=True),
         sa.Column("ended", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(

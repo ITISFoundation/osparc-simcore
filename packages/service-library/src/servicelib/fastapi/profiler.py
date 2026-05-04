@@ -15,9 +15,7 @@ from ..utils_profiling_middleware import (
 
 
 def _is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
-    if (
-        content_type := response_headers.get(b"content-type")
-    ) and content_type == MIMETYPE_APPLICATION_JSON.encode():
+    if (content_type := response_headers.get(b"content-type")) and content_type == MIMETYPE_APPLICATION_JSON.encode():
         return True
     if (more_body := message.get("more_body")) is not None:
         return not more_body
@@ -67,9 +65,7 @@ class ProfilerMiddleware:
 
         try:
             request_headers.pop(self._profile_header_trigger)
-            scope["headers"] = [
-                (k.encode("utf8"), v.encode("utf8")) for k, v in request_headers.items()
-            ]
+            scope["headers"] = [(k.encode("utf8"), v.encode("utf8")) for k, v in request_headers.items()]
             _profiler.start()
             _is_profiling.set(True)
 
@@ -82,13 +78,9 @@ class ProfilerMiddleware:
                     elif message["type"] == "http.response.body":
                         if _is_last_response(response_headers, message):
                             _profiler.stop()
-                            profile_text = _profiler.output_text(
-                                unicode=True, color=True, show_all=True
-                            )
+                            profile_text = _profiler.output_text(unicode=True, color=True, show_all=True)
                             _profiler.reset()
-                            message["body"] = append_profile(
-                                message["body"].decode(), profile_text
-                            ).encode()
+                            message["body"] = append_profile(message["body"].decode(), profile_text).encode()
                         else:
                             message["more_body"] = True
                 await send(message)

@@ -5,6 +5,7 @@ Revises: 90c92dae8fc9
 Create Date: 2022-11-11 10:54:13.921120+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -49,9 +50,7 @@ def downgrade():
         sa.Column(
             "issues_login_url",
             sa.VARCHAR(),
-            server_default=sa.text(
-                "'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"
-            ),
+            server_default=sa.text("'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"),
             autoincrement=False,
             nullable=True,
         ),
@@ -61,9 +60,7 @@ def downgrade():
         sa.Column(
             "manual_url",
             sa.VARCHAR(),
-            server_default=sa.text(
-                "'https://itisfoundation.github.io/osparc-manual/'::character varying"
-            ),
+            server_default=sa.text("'https://itisfoundation.github.io/osparc-manual/'::character varying"),
             autoincrement=False,
             nullable=False,
         ),
@@ -73,9 +70,7 @@ def downgrade():
         sa.Column(
             "issues_new_url",
             sa.VARCHAR(),
-            server_default=sa.text(
-                "'https://github.com/ITISFoundation/osparc-simcore/issues/new'::character varying"
-            ),
+            server_default=sa.text("'https://github.com/ITISFoundation/osparc-simcore/issues/new'::character varying"),
             autoincrement=False,
             nullable=True,
         ),
@@ -85,18 +80,14 @@ def downgrade():
         sa.Column(
             "manual_extra_url",
             sa.VARCHAR(),
-            server_default=sa.text(
-                "'https://itisfoundation.github.io/osparc-manual-z43/'::character varying"
-            ),
+            server_default=sa.text("'https://itisfoundation.github.io/osparc-manual-z43/'::character varying"),
             autoincrement=False,
             nullable=True,
         ),
     )
     op.add_column(
         "products",
-        sa.Column(
-            "feedback_form_url", sa.VARCHAR(), autoincrement=False, nullable=True
-        ),
+        sa.Column("feedback_form_url", sa.VARCHAR(), autoincrement=False, nullable=True),
     )
     op.drop_column("products", "support")
     op.drop_column("products", "manuals")

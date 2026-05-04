@@ -16,9 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 class OutputsWatcher:
-    def __init__(
-        self, *, outputs_manager: OutputsManager, outputs_context: OutputsContext
-    ) -> None:
+    def __init__(self, *, outputs_manager: OutputsManager, outputs_context: OutputsContext) -> None:
         self.outputs_manager = outputs_manager
         self.outputs_context = outputs_context
 
@@ -32,9 +30,7 @@ class OutputsWatcher:
 
     async def _worker_events(self) -> None:
         while True:
-            event: str | None = (
-                await self.outputs_context.port_key_events_queue.coro_get()
-            )
+            event: str | None = await self.outputs_context.port_key_events_queue.coro_get()
             if event is None:
                 break
 
@@ -48,9 +44,7 @@ class OutputsWatcher:
 
     async def start(self) -> None:
         with log_context(_logger, logging.INFO, f"{OutputsWatcher.__name__} start"):
-            self._task_events_worker = create_task(
-                self._worker_events(), name="outputs_watcher_events_worker"
-            )
+            self._task_events_worker = create_task(self._worker_events(), name="outputs_watcher_events_worker")
 
             await self._event_filter.start()
             await self._observer_monitor.start()
@@ -62,7 +56,7 @@ class OutputsWatcher:
             await self._observer_monitor.stop()
 
             if self._task_events_worker is not None:
-                self._task_events_worker.cancel()
+                self._task_events_worker.cancel("shutting down outputs watcher")
                 with suppress(CancelledError):
                     await self._task_events_worker
 
@@ -103,7 +97,7 @@ async def enable_event_propagation(app: FastAPI) -> None:
 
 
 @asynccontextmanager
-async def event_propagation_disabled(app: FastAPI) -> AsyncGenerator[None, None]:
+async def event_propagation_disabled(app: FastAPI) -> AsyncGenerator[None]:
     try:
         await disable_event_propagation(app)
         yield None

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Define arguments in the global scope
-ARG PYTHON_VERSION="3.11.9"
+ARG PYTHON_VERSION="3.13.9"
 ARG UV_VERSION="0.9"
 
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
@@ -170,10 +170,9 @@ EXPOSE 8000
 ENTRYPOINT [ "/bin/sh", "services/agent/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/agent/docker/boot.sh"]
 
-
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as scu with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR

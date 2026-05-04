@@ -119,11 +119,7 @@ class UserAddress:
 
     @classmethod
     def create_from_db(cls, row) -> Self:
-        parts = (
-            getattr(row, col_name)
-            for col_name in ("institution", "address")
-            if getattr(row, col_name)
-        )
+        parts = (getattr(row, col_name) for col_name in ("institution", "address") if getattr(row, col_name))
         return cls(
             line1=". ".join(parts),
             state=row.state,
@@ -252,7 +248,7 @@ async def test_create_and_link_user_from_pre_registration(
     pre_registered_user: tuple[str, dict[str, Any]],
 ):
     """Test that a user can be created from a pre-registration link and is linked properly."""
-    pre_email, _ = pre_registered_user
+    pre_email, pre_registration_data = pre_registered_user
 
     # Invitation link is clicked and the user is created and linked to the pre-registration
     async with transaction_context(asyncpg_engine) as connection:
@@ -274,12 +270,18 @@ async def test_create_and_link_user_from_pre_registration(
     # Verify the user was created and linked
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         result = await connection.execute(
-            sa.select(users_pre_registration_details.c.user_id).where(
-                users_pre_registration_details.c.pre_email == pre_email
-            )
+            sa.select(
+                users_pre_registration_details.c.user_id,
+                users_pre_registration_details.c.account_request_status,
+                users_pre_registration_details.c.account_request_reviewed_by,
+                users_pre_registration_details.c.account_request_reviewed_at,
+            ).where(users_pre_registration_details.c.pre_email == pre_email)
         )
-        user_id = result.scalar()
-        assert user_id == new_user.id
+        pre_registration = result.one()
+        assert pre_registration.user_id == new_user.id
+        assert pre_registration.account_request_status == AccountRequestStatus.PENDING
+        assert pre_registration.account_request_reviewed_by == pre_registration_data["account_request_reviewed_by"]
+        assert pre_registration.account_request_reviewed_at is None
 
 
 @pytest.mark.acceptance_test(
@@ -310,9 +312,7 @@ async def test_get_billing_details_from_pre_registration(
         )
 
     # Get billing details
-    invoice_data = await repo.get_billing_details(
-        user_id=new_user.id, product_name=product["name"]
-    )
+    invoice_data = await repo.get_billing_details(user_id=new_user.id, product_name=product["name"])
     assert invoice_data is not None
 
     # Test UserAddress model conversion
@@ -354,10 +354,7 @@ async def test_update_user_from_pre_registration(
     # Update the user manually
     async with transaction_context(asyncpg_engine) as connection:
         result = await connection.execute(
-            users.update()
-            .values(first_name="My New Name")
-            .where(users.c.id == new_user.id)
-            .returning("*")
+            users.update().values(first_name="My New Name").where(users.c.id == new_user.id).returning("*")
         )
         updated_user = result.one()
 
@@ -374,9 +371,7 @@ async def test_update_user_from_pre_registration(
             new_user_email=new_user.email,
         )
 
-        result = await connection.execute(
-            users.select().where(users.c.id == new_user.id)
-        )
+        result = await connection.execute(users.select().where(users.c.id == new_user.id))
         current_user = result.one()
         assert current_user
 
@@ -436,10 +431,7 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
 
         registrations = result.fetchall()
         assert len(registrations) == 2
-        assert all(
-            reg.account_request_status == AccountRequestStatus.PENDING
-            for reg in registrations
-        )
+        assert all(reg.account_request_status == AccountRequestStatus.PENDING for reg in registrations)
 
     # 2. PO approves and rejects the requests
     async with transaction_context(asyncpg_engine) as connection:
@@ -532,12 +524,8 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
         assert len(registrations) == 2
 
         # Both pre-registrations should be linked to the user, regardless of approval status
-        product1_reg = next(
-            reg for reg in registrations if reg.product_name == product1["name"]
-        )
-        product2_reg = next(
-            reg for reg in registrations if reg.product_name == product2["name"]
-        )
+        product1_reg = next(reg for reg in registrations if reg.product_name == product1["name"])
+        product2_reg = next(reg for reg in registrations if reg.product_name == product2["name"])
 
         assert product1_reg.user_id == new_user.id  # Linked
         assert product2_reg.user_id == new_user.id  # Linked

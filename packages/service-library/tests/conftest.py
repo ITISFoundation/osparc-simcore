@@ -52,9 +52,7 @@ def package_dir() -> Path:
 def osparc_simcore_root_dir(package_tests_dir: Path) -> Path:
     root_dir = package_tests_dir.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(
-        root_dir.glob("packages/service-library")
-    ), f"{root_dir} not look like rootdir"
+    assert any(root_dir.glob("packages/service-library")), f"{root_dir} not look like rootdir"
     return root_dir
 
 
@@ -74,18 +72,14 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 @asynccontextmanager
 async def _get_redis_client_sdk(
     redis_settings: RedisSettings,
-) -> AsyncIterator[
-    Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
-]:
+) -> AsyncIterator[Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]]:
     @asynccontextmanager
     async def _(
         database: RedisDatabase,
         decode_response: bool = True,  # noqa: FBT002
     ) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_settings.build_redis_dsn(database)
-        client = RedisClientSDK(
-            redis_resources_dns, decode_responses=decode_response, client_name="pytest"
-        )
+        client = RedisClientSDK(redis_resources_dns, decode_responses=decode_response, client_name="pytest")
         await client.setup()
         assert client
         assert client.redis_dsn == redis_resources_dns
@@ -113,9 +107,7 @@ async def _get_redis_client_sdk(
 @pytest.fixture
 async def get_redis_client_sdk(
     use_in_memory_redis: RedisSettings,
-) -> AsyncIterable[
-    Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
-]:
+) -> AsyncIterable[Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]]:
     async with _get_redis_client_sdk(use_in_memory_redis) as client:
         yield client
 
@@ -123,8 +115,6 @@ async def get_redis_client_sdk(
 @pytest.fixture
 async def get_in_process_redis_client_sdk(
     redis_service: RedisSettings,
-) -> AsyncIterable[
-    Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
-]:
+) -> AsyncIterable[Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]]:
     async with _get_redis_client_sdk(redis_service) as client:
         yield client

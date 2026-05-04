@@ -50,9 +50,7 @@ def test_my_profile_patch_username_valid_characters():
 
 def test_my_profile_patch_username_special_characters():
     # Ensure no consecutive special characters
-    with pytest.raises(
-        ValidationError, match="consecutive special characters"
-    ) as err_info:
+    with pytest.raises(ValidationError, match="consecutive special characters") as err_info:
         MyProfileRestPatch.model_validate({"userName": "u1__234"})
 
     assert err_info.value.error_count() == 1

@@ -9,7 +9,10 @@ etc
 NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
 required fields in postgres_database.models tables or pydantic models.
 
-NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
+IMPORTANT: in order to reduce coupling, please do import `simcore_postgres_database`
+and any other third-party dependencies (exception faker and arrow) inside of the functions
+and append ` # noqa: PLC0415`
+
 """
 
 import itertools
@@ -34,47 +37,27 @@ def random_service_version(fake: Faker = DEFAULT_FAKER) -> str:
     return ".".join([str(fake.pyint(0, 100)) for _ in range(3)])
 
 
-def random_icon_url(fake: Faker):
+def random_icon_url(fake: Faker) -> str:
     return fake.image_url(width=16, height=16)
 
 
-def random_thumbnail_url(fake: Faker):
+def random_thumbnail_url(fake: Faker) -> str:
     return fake.image_url(width=32, height=32)
 
 
 def random_phone_number(fake: Faker = DEFAULT_FAKER) -> str:
     # NOTE: faker.phone_number() does not validate with `phonenumbers` library.
-    phone = fake.random_element(
-        ["+41763456789", "+19104630364", "+13013044567", "+34 950 453 837"]
-    )
+    phone = fake.random_element(["+41763456789", "+19104630364", "+13013044567", "+34 950 453 837"])
     tail = f"{fake.pyint(100, 999)}"
     return phone[: -len(tail)] + tail  # ensure phone keeps its length
 
 
-def _compute_hash(password: str) -> str:
-    try:
-        # 'passlib' will be used only if already installed.
-        # This way we do not force all modules to install
-        # it only for testing.
-        import passlib.hash
-
-        return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
-
-    except ImportError:
-        # if 'passlib' is not installed, we will use a library
-        # from the python distribution for convenience
-        import hashlib
-
-        return hashlib.sha224(password.encode("ascii")).hexdigest()
-
-
 DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
-_DEFAULT_HASH = _compute_hash(DEFAULT_TEST_PASSWORD)
 
 
 def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
-    from simcore_postgres_database.models.users import users
-    from simcore_postgres_database.webserver_models import UserStatus
+    from simcore_postgres_database.models.users import users  # noqa: PLC0415
+    from simcore_postgres_database.webserver_models import UserStatus  # noqa: PLC0415
 
     assert set(overrides.keys()).issubset({c.name for c in users.columns})
 
@@ -91,6 +74,19 @@ def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     return data
 
 
+def _compute_hash(password: str) -> str:
+    try:
+        import passlib.hash  # noqa: PLC0415
+
+        return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
+    except ImportError:
+        # fallback to a simple hash if passlib is not available, but it should be enough for testing purposes
+        import hashlib  # noqa: PLC0415
+
+        return hashlib.sha256(password.encode()).hexdigest()
+
+
 def random_user_secrets(
     fake: Faker = DEFAULT_FAKER,
     *,
@@ -99,7 +95,7 @@ def random_user_secrets(
     password: str | None = None,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.users_secrets import users_secrets
+    from simcore_postgres_database.models.users_secrets import users_secrets  # noqa: PLC0415
 
     assert fake  # nosec
 
@@ -107,7 +103,7 @@ def random_user_secrets(
 
     data = {
         "user_id": user_id,
-        "password_hash": _DEFAULT_HASH,
+        "password_hash": _compute_hash(DEFAULT_TEST_PASSWORD),
     }
     assert set(data.keys()).issubset({c.name for c in users_secrets.columns})
 
@@ -130,13 +126,11 @@ def random_pre_registration_details(
     account_request_reviewed_by: int | None = None,
     **overrides,
 ):
-    from simcore_postgres_database.models.users_details import (
+    from simcore_postgres_database.models.users_details import (  # noqa: PLC0415
         users_pre_registration_details,
     )
 
-    assert set(overrides.keys()).issubset(
-        {c.name for c in users_pre_registration_details.columns}
-    )
+    assert set(overrides.keys()).issubset({c.name for c in users_pre_registration_details.columns})
 
     data = {
         "user_id": user_id,
@@ -163,9 +157,7 @@ def random_pre_registration_details(
         "account_request_reviewed_by": account_request_reviewed_by,
     }
 
-    assert set(data.keys()).issubset(
-        {c.name for c in users_pre_registration_details.columns}
-    )
+    assert set(data.keys()).issubset({c.name for c in users_pre_registration_details.columns})
 
     data.update(overrides)
     return data
@@ -173,7 +165,7 @@ def random_pre_registration_details(
 
 def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     """Generates random fake data projects DATABASE table"""
-    from simcore_postgres_database.models.projects import projects
+    from simcore_postgres_database.models.projects import projects  # noqa: PLC0415
 
     data = {
         "uuid": fake.uuid4(),
@@ -183,6 +175,7 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "thumbnail": fake.image_url(width=120, height=120),
         "access_rights": {},
         "published": False,
+        "product_name": "osparc",
     }
 
     icon = fake.random_element([random_icon_url(fake), None])  # nullable
@@ -197,7 +190,7 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
 
 def random_project_node(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     """Generates random fake data project nodes DATABASE table"""
-    from simcore_postgres_database.models.projects_nodes import projects_nodes
+    from simcore_postgres_database.models.projects_nodes import projects_nodes  # noqa: PLC0415
 
     fake_name = fake.name()
 
@@ -216,8 +209,8 @@ def random_project_node(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, A
 
 
 def random_group(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
-    from simcore_postgres_database.models.groups import groups
-    from simcore_postgres_database.webserver_models import GroupType
+    from simcore_postgres_database.models.groups import groups  # noqa: PLC0415
+    from simcore_postgres_database.webserver_models import GroupType  # noqa: PLC0415
 
     data = {
         "name": fake.company(),
@@ -232,7 +225,7 @@ def random_group(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
 
 
 def _get_comp_pipeline_test_states():
-    from simcore_postgres_database.models.comp_pipeline import StateType
+    from simcore_postgres_database.models.comp_pipeline import StateType  # noqa: PLC0415
 
     return [
         StateType.NOT_STARTED,
@@ -262,9 +255,9 @@ def fake_task_factory(
     def fake_task(**overrides) -> dict[str, Any]:
         t0 = arrow.utcnow().datetime
         data = {
-            "project_id": uuid4(),
-            "node_id": uuid4(),
-            "job_id": uuid4(),
+            "project_id": str(uuid4()),
+            "node_id": str(uuid4()),
+            "job_id": str(uuid4()),
             "internal_id": next(_index_in_sequence),
             "schema": json.dumps({}),
             "inputs": json.dumps({}),
@@ -283,8 +276,9 @@ def fake_task_factory(
 
 def random_product(
     *,
-    group_id: int | None = None,
+    group_id: int | None = None,  # group id of the product
     support_standard_group_id: int | None = None,
+    support_chatbot_user_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
@@ -295,7 +289,7 @@ def random_product(
         - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
         - registration_email_template
     """
-    from simcore_postgres_database.models.products import Vendor, VendorUI, products
+    from simcore_postgres_database.models.products import Vendor, VendorUI, products  # noqa: PLC0415
 
     name = overrides.get("name")
     suffix = fake.unique.word() if name is None else name
@@ -307,12 +301,8 @@ def random_product(
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "base_url": f"https://{suffix}.com",
         "support_email": f"support@{suffix}.io",
-        "product_owners_email": fake.random_element(
-            elements=[f"product-owners@{suffix}.io", None]
-        ),
-        "twilio_messaging_sid": fake.random_element(
-            elements=(None, f"{fake.uuid4()}"[:34])
-        ),
+        "product_owners_email": fake.random_element(elements=[f"product-owners@{suffix}.io", None]),
+        "twilio_messaging_sid": fake.random_element(elements=(None, f"{fake.uuid4()}"[:34])),
         "vendor": Vendor(
             name=fake.company(),
             copyright=fake.company_suffix(),
@@ -333,6 +323,7 @@ def random_product(
         "max_open_studies_per_user": fake.pyint(1, 10),
         "group_id": group_id,
         "support_standard_group_id": support_standard_group_id,
+        "support_chatbot_user_id": support_chatbot_user_id,
     }
 
     if ui := fake.random_element(
@@ -358,17 +349,13 @@ def random_product(
     return data
 
 
-def random_product_price(
-    *, product_name: str, fake: Faker = DEFAULT_FAKER, **overrides
-) -> dict[str, Any]:
-    from simcore_postgres_database.models.products_prices import products_prices
+def random_product_price(*, product_name: str, fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+    from simcore_postgres_database.models.products_prices import products_prices  # noqa: PLC0415
 
     data = {
         "product_name": product_name,
         "usd_per_credit": fake.pydecimal(left_digits=2, right_digits=2, positive=True),
-        "min_payment_amount_usd": fake.pydecimal(
-            left_digits=2, right_digits=2, positive=True
-        ),
+        "min_payment_amount_usd": fake.pydecimal(left_digits=2, right_digits=2, positive=True),
         "comment": fake.sentence(),
         "valid_from": fake.date_time_this_decade(),
         "stripe_price_id": fake.uuid4(),
@@ -389,7 +376,7 @@ def random_payment_method(
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.payments_methods import (
+    from simcore_postgres_database.models.payments_methods import (  # noqa: PLC0415
         InitPromptAckFlowState,
         payments_methods,
     )
@@ -414,7 +401,7 @@ def random_payment_transaction(
     **overrides,
 ) -> dict[str, Any]:
     """Generates Metadata + concept/info (excludes state)"""
-    from simcore_postgres_database.models.payments_transactions import (
+    from simcore_postgres_database.models.payments_transactions import (  # noqa: PLC0415
         PaymentTransactionState,
         payments_transactions,
     )
@@ -444,12 +431,39 @@ def random_payment_transaction(
     return data
 
 
+def random_wallet(
+    product_name: str,
+    user_group_id: int,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.wallets import (  # noqa: PLC0415
+        wallets,
+    )
+
+    data = {
+        "wallet_id": fake.pyint(),
+        "name": fake.word(),
+        "description": fake.word(),
+        "owner": user_group_id,
+        "thumbnail": fake.url(),
+        "status": "ACTIVE",
+        "created": utcnow(),
+        "modified": utcnow(),
+        "product_name": product_name,
+    }
+    assert set(data.keys()).issubset({c.name for c in wallets.columns})
+
+    data.update(overrides)
+    return data
+
+
 def random_payment_autorecharge(
     primary_payment_method_id: str = "UNDEFINED__",
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.payments_autorecharge import (
+    from simcore_postgres_database.models.payments_autorecharge import (  # noqa: PLC0415
         payments_autorecharge,
     )
 
@@ -469,10 +483,8 @@ def random_payment_autorecharge(
     return data
 
 
-def random_api_auth(
-    product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides
-) -> dict[str, Any]:
-    from simcore_postgres_database.models.api_keys import api_keys
+def random_api_auth(product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+    from simcore_postgres_database.models.api_keys import api_keys  # noqa: PLC0415
 
     data = {
         "display_name": fake.word(),
@@ -487,9 +499,7 @@ def random_api_auth(
     return data
 
 
-def random_payment_method_view(
-    fake: Faker = DEFAULT_FAKER, **overrides
-) -> dict[str, Any]:
+def random_payment_method_view(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     # Produces data for GetPaymentMethod
     data = {
         "id": fake.uuid4(),
@@ -510,7 +520,7 @@ def random_service_meta_data(
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.services import services_meta_data
+    from simcore_postgres_database.models.services import services_meta_data  # noqa: PLC0415
 
     _version = random_service_version(fake)
     _name = fake.name()
@@ -524,9 +534,7 @@ def random_service_meta_data(
         # optional
         "description_ui": fake.pybool(),
         "owner": owner_primary_gid,
-        "thumbnail": fake.random_element(
-            [random_thumbnail_url(fake), None]
-        ),  # nullable
+        "thumbnail": fake.random_element([random_thumbnail_url(fake), None]),  # nullable
         "icon": fake.random_element([random_icon_url(fake), None]),  # nullable
         "version_display": fake.random_element([f"v{_version}", None]),  # nullable
         "classifiers": [],  # has default
@@ -550,7 +558,7 @@ def random_service_access_rights(
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.services import services_access_rights
+    from simcore_postgres_database.models.services import services_access_rights  # noqa: PLC0415
 
     data: dict[str, Any] = {
         # required
@@ -609,7 +617,7 @@ def random_service_consume_filetype(
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.services_consume_filetypes import (
+    from simcore_postgres_database.models.services_consume_filetypes import (  # noqa: PLC0415
         services_consume_filetypes,
     )
 
@@ -637,7 +645,7 @@ def random_group_classifier(
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.classifiers import group_classifiers
+    from simcore_postgres_database.models.classifiers import group_classifiers  # noqa: PLC0415
 
     data = {
         "gid": gid,

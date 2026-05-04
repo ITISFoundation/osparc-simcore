@@ -69,15 +69,13 @@ async def test_conditionally_unsubscribe_from_project_logs(
 ):
     # Use-case: 2 users open the same shared project, then close it
     # Only when the last user closes the project, the unsubscribe from project logs is done
-    # (this is important to avoid loosing logs when multiple users are working on the same project)
+    # (this is important to avoid losing logs when multiple users are working on the same project)
 
     client_1 = client
     client_2 = client_on_running_server_factory()
 
     # 1. user 1 opens project
-    sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(
-        None, client_1
-    )
+    sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
     await _open_project(
         client_1,
         client_id1,
@@ -92,9 +90,7 @@ async def test_conditionally_unsubscribe_from_project_logs(
         enable_check=True,
         exit_stack=exit_stack,
     )
-    sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(
-        None, client_2
-    )
+    sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(None, client_2)
     await _open_project(
         client_2,
         client_id2,
@@ -103,13 +99,9 @@ async def test_conditionally_unsubscribe_from_project_logs(
     )
 
     # 3. user 1 closes the project (As user 2 is still connected, no unsubscribe should happen)
-    await _close_project(
-        client_1, client_id1, shared_project, status.HTTP_204_NO_CONTENT
-    )
+    await _close_project(client_1, client_id1, shared_project, status.HTTP_204_NO_CONTENT)
     assert not mocked_publish_unsubscribe_from_project_logs_event.called
 
     # 4. user 2 closes the project (now unsubscribe should happen)
-    await _close_project(
-        client_2, client_id2, shared_project, status.HTTP_204_NO_CONTENT
-    )
+    await _close_project(client_2, client_id2, shared_project, status.HTTP_204_NO_CONTENT)
     assert mocked_publish_unsubscribe_from_project_logs_event.called

@@ -28,7 +28,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this._introText = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(this._introText);

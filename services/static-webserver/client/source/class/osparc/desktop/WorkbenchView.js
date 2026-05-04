@@ -42,13 +42,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     decorateSplitter: function(splitter) {
       splitter.set({
         width: 2,
-        backgroundColor: "workbench-view-splitter"
+        height: 2,
+        backgroundColor: "workbench-view-navbar"
       });
     },
 
     decorateSlider: function(slider) {
       slider.set({
         width: 2,
+        height: 2,
         backgroundColor: "visual-blue",
         opacity: 1
       });
@@ -351,22 +353,35 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initPrimaryColumn: function() {
-      const study = this.getStudy();
-
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
-      this.__removePages(tabViewPrimary);
       tabViewPrimary.setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
+      this.__removePages(tabViewPrimary);
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "workbench-view-navbar"
       });
+
       this.__addTopBarSpacer(topBar);
 
-      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+      const nodesTabContent = this.__initNodesTab();
+      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), nodesTabContent, this.self().PRIMARY_COL_BG_COLOR);
+      tabViewPrimary.add(nodesPage);
+
+      const filesTabContent = this.__initFilesTab();
+      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTabContent, this.self().PRIMARY_COL_BG_COLOR);
+      tabViewPrimary.add(storagePage);
+
+      this.__addTopBarSpacer(topBar);
+    },
+
+    __initNodesTab: function() {
+      const nodesTabContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
         backgroundColor: "transparent"
       });
+
+      const study = this.getStudy();
 
       const studyTreeItem = this.__studyTreeItem = new osparc.widget.StudyTitleOnlyTree().set({
         alignY: "middle",
@@ -375,7 +390,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         backgroundColor: "transparent"
       });
       studyTreeItem.setStudy(study);
-      homeAndNodesTree.add(studyTreeItem);
+      nodesTabContent.add(studyTreeItem);
 
       const nodesTree = this.__nodesTree = new osparc.widget.NodesTree().set({
         backgroundColor: "transparent",
@@ -383,7 +398,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         minHeight: 5
       });
       nodesTree.setStudy(study);
-      homeAndNodesTree.add(nodesTree);
+      nodesTabContent.add(nodesTree);
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
         appearance: "form-button",
@@ -404,21 +419,48 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           y: 50
         });
       });
-      homeAndNodesTree.add(addNewNodeBtn);
+      nodesTabContent.add(addNewNodeBtn);
 
-      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, this.self().PRIMARY_COL_BG_COLOR);
-      tabViewPrimary.add(nodesPage);
+      return nodesTabContent;
+    },
+
+    __initFilesTab: function() {
+      const filesTabContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        backgroundColor: "transparent"
+      });
+
+      const reloadButton = new qx.ui.form.Button().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/sync-alt/14",
+        allowGrowX: false,
+      });
+      filesTabContent.add(reloadButton);
 
       const filesTree = new osparc.file.FilesTree().set({
         backgroundColor: "transparent",
         dragMechanism: true,
-        hideRoot: true
       });
-      filesTree.populateLocations();
-      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, this.self().PRIMARY_COL_BG_COLOR);
-      tabViewPrimary.add(storagePage);
+      const studyId = this.getStudy().getUuid();
+      const s3Alias = this.tr("Other Projects");
+      filesTabContent.add(filesTree, {
+        flex: 1
+      });
 
-      this.__addTopBarSpacer(topBar);
+      const loadTree = () => {
+        filesTree.resetCache();
+        filesTree.populateStudyAndLocations(studyId, s3Alias);
+
+        if (filesTree.getModel() && filesTree.getModel().getChildren().length > 0) {
+          const projectModel = filesTree.getModel().getChildren().getItem(0);
+          if (projectModel) {
+            this.getStudy().bind("name", projectModel, "label");
+          }
+        }
+      };
+      loadTree();
+      reloadButton.addListener("execute", () => loadTree());
+
+      return filesTabContent;
     },
 
     __initSecondaryColumn: function() {

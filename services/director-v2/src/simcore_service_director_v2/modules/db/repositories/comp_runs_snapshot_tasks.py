@@ -21,21 +21,15 @@ logger = logging.getLogger(__name__)
 
 
 class CompRunsSnapshotTasksRepository(BaseRepository):
-    async def batch_create(
-        self, *, data: list[dict]
-    ) -> None:  # list[CompRunSnapshotTaskAtDBGet]:
+    async def batch_create(self, *, data: list[dict]) -> None:  # list[CompRunSnapshotTaskAtDBGet]:
         if not data:
-            logger.warning(
-                "No data provided for batch creation of comp run snapshot tasks"
-            )
+            logger.warning("No data provided for batch creation of comp run snapshot tasks")
             return
 
         async with transaction_context(self.db_engine) as conn:
             try:
                 await conn.execute(
-                    comp_run_snapshot_tasks.insert().returning(
-                        *COMP_RUN_SNAPSHOT_TASKS_DB_COLS
-                    ),
+                    comp_run_snapshot_tasks.insert().returning(*COMP_RUN_SNAPSHOT_TASKS_DB_COLS),
                     data,
                 )
             except Exception:
@@ -87,9 +81,7 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
         )
 
         # Select total count from base_query
-        count_query = sa.select(sa.func.count()).select_from(
-            base_select_query.subquery()
-        )
+        count_query = sa.select(sa.func.count()).select_from(base_select_query.subquery())
 
         # Ordering and pagination
         if order_by.direction == OrderDirection.ASC:

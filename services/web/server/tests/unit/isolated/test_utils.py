@@ -29,21 +29,14 @@ def test_yarl_new_url_generation():
 
     # Since 1.6.x composition using '/' creates URLs with auto-encoding enabled by default
     assert (
-        str(
-            base_url_with_autoencode / "services" / quoted_service_key / service_version
-        )
+        str(base_url_with_autoencode / "services" / quoted_service_key / service_version)
         == "http://director:8001/v0/services/simcore%252Fservices%252Fdynamic%252Fsmash/1.0.3"
     )
 
     # Passing encoded=True parameter prevents URL auto-encoding, user is responsible about URL correctness
-    url_without_autoencode = URL(
-        f"http://director:8001/v0/services/{quoted_service_key}/1.0.3", encoded=True
-    )
+    url_without_autoencode = URL(f"http://director:8001/v0/services/{quoted_service_key}/1.0.3", encoded=True)
 
-    assert (
-        str(url_without_autoencode)
-        == "http://director:8001/v0/services/simcore%2Fservices%2Fdynamic%2Fsmash/1.0.3"
-    )
+    assert str(url_without_autoencode) == "http://director:8001/v0/services/simcore%2Fservices%2Fdynamic%2Fsmash/1.0.3"
 
 
 def test_time_utils():
@@ -63,16 +56,20 @@ def test_time_utils():
 
 
 def test_compose_support_error_msg():
-
     msg = compose_support_error_msg(
         "first sentence for Mr.X   \n  Second sentence.",
         error_code="OEC:139641204989600",
         support_email="support@email.com",
     )
-    assert (
-        msg == "First sentence for Mr.X. Second sentence."
-        " For more information please forward this message to support@email.com (supportID=OEC:139641204989600)"
+    assert msg == "First sentence for Mr.X. Second sentence. Forward to support@email.com with [OEC:139641204989600]"
+
+
+def test_compose_support_error_msg_without_email():
+    msg = compose_support_error_msg(
+        "first sentence for Mr.X   \n  Second sentence.",
+        error_code="OEC:139641204989600",
     )
+    assert msg == "First sentence for Mr.X. Second sentence. [OEC:139641204989600]"
 
 
 async def test_get_task_info():

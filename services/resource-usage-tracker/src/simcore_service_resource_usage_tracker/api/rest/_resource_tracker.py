@@ -88,6 +88,6 @@ async def get_pricing_plan_unit(
     pricing_unit: Annotated[
         RutPricingUnitGet,
         Depends(pricing_units.get_pricing_unit),
-    ]
+    ],
 ):
     return pricing_unit

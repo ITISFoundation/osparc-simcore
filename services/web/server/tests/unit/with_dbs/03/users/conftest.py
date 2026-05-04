@@ -61,7 +61,7 @@ def asyncpg_engine(
 @pytest.fixture
 async def pre_registration_details_db_cleanup(
     app: web.Application,
-) -> AsyncGenerator[None, None]:
+) -> AsyncGenerator[None]:
     """Fixture to clean up all pre-registration details after test"""
     yield
 

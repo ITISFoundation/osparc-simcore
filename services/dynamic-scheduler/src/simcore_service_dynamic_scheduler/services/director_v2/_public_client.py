@@ -41,9 +41,7 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
     async def teardown_client(self) -> None:
         await self.thin_client.teardown_client()
 
-    async def get_status(
-        self, node_id: NodeID
-    ) -> NodeGet | DynamicServiceGet | NodeGetIdle:
+    async def get_status(self, node_id: NodeID) -> NodeGet | DynamicServiceGet | NodeGetIdle:
         try:
             response = await self.thin_client.get_status(node_id)
             dict_response: dict[str, Any] = response.json()
@@ -62,9 +60,7 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
                 return NodeGetIdle.from_node_id(node_id)
             raise
 
-    async def run_dynamic_service(
-        self, dynamic_service_start: DynamicServiceStart
-    ) -> NodeGet | DynamicServiceGet:
+    async def run_dynamic_service(self, dynamic_service_start: DynamicServiceStart) -> NodeGet | DynamicServiceGet:
         response = await self.thin_client.post_dynamic_service(dynamic_service_start)
         dict_response: dict[str, Any] = response.json()
 
@@ -122,9 +118,7 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
     async def list_tracked_dynamic_services(
         self, *, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[DynamicServiceGet]:
-        response = await self.thin_client.get_dynamic_services(
-            user_id=user_id, project_id=project_id
-        )
+        response = await self.thin_client.get_dynamic_services(user_id=user_id, project_id=project_id)
         return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
 
     async def get_project_inactivity(
@@ -133,9 +127,7 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         response = await self.thin_client.get_projects_inactivity(
             project_id=project_id, max_inactivity_seconds=max_inactivity_seconds
         )
-        return TypeAdapter(GetProjectInactivityResponse).validate_python(
-            response.json()
-        )
+        return TypeAdapter(GetProjectInactivityResponse).validate_python(response.json())
 
     async def restart_user_services(self, *, node_id: NodeID) -> None:
         await self.thin_client.post_restart(node_id=node_id)

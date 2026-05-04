@@ -16,6 +16,7 @@ from celery.contrib.testing.worker import (  # pylint: disable=no-name-in-module
 )
 from celery.signals import worker_init, worker_shutdown
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
+from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -47,7 +48,7 @@ def celery_config() -> dict[str, Any]:
 @pytest.fixture
 async def mocked_log_streamer_setup(mocker: MockerFixture) -> MockerFixture:
     # mock log streamer: He is looking for non-existent queues. Should be solved more elegantly
-    from simcore_service_api_server.services_http import rabbitmq
+    from simcore_service_api_server.services_http import rabbitmq  # noqa: PLC0415
 
     return mocker.patch.object(rabbitmq, "LogDistributor", spec=True)
 
@@ -118,7 +119,7 @@ async def with_api_server_celery_worker(
         tracing_settings=None,  # disable tracing in tests
         service_name="api-server-worker-test",
     )
-     # Signals must be explicitily connected
+    # Signals must be explicitly connected
     monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
 
@@ -139,6 +140,6 @@ async def with_api_server_celery_worker(
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,
-        queues="api_worker_queue",
+        queues=API_SERVER_CELERY_QUEUE_DEFAULT,
     ) as worker:
         yield worker

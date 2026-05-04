@@ -111,27 +111,27 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserialize: function(workbenchInitData, uiData = {}) {
-      const nodeDatas = {};
-      const nodeUiDatas = {};
+      const nodesData = {};
+      const nodesUiData = {};
       for (const nodeId in workbenchInitData) {
         const nodeData = workbenchInitData[nodeId];
-        nodeDatas[nodeId] = nodeData;
+        nodesData[nodeId] = nodeData;
         if (uiData["workbench"] && nodeId in uiData["workbench"]) {
-          nodeUiDatas[nodeId] = uiData["workbench"][nodeId];
+          nodesUiData[nodeId] = uiData["workbench"][nodeId];
         }
       }
-      this.__deserializeNodes(nodeDatas, nodeUiDatas)
+      this.__deserializeNodes(nodesData, nodesUiData)
         .then(() => {
           this.__deserializeEdges(workbenchInitData);
           this.setDeserialized(true);
         });
     },
 
-    __deserializeNodes: function(nodeDatas, nodeUiDatas) {
+    __deserializeNodes: function(nodesData, nodesUiData) {
       const nodesPromises = [];
-      for (const nodeId in nodeDatas) {
-        const nodeData = nodeDatas[nodeId];
-        const nodeUiData = nodeUiDatas[nodeId];
+      for (const nodeId in nodesData) {
+        const nodeData = nodesData[nodeId];
+        const nodeUiData = nodesUiData[nodeId];
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
         nodesPromises.push(node.fetchMetadataAndPopulate(nodeData, nodeUiData));
       }
@@ -426,7 +426,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         downstreamNodes.forEach(downstreamNode => {
           downstreamNode.getPortIds().forEach(portId => {
             const link = downstreamNode.getLink(portId);
-            if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
+            if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === osparc.data.model.NodePort.FP_PORT_KEY) {
               // connected to file picker's output
               setTimeout(() => {
                 // start retrieving state after 2"
@@ -498,18 +498,18 @@ qx.Class.define("osparc.data.model.Workbench", {
         requesterNode.addInputNode(filePickerId);
         // reload also before port connection happens
         this.fireEvent("reloadModel");
-        requesterNode.addPortLink(portId, filePickerId, "outFile")
+        requesterNode.addPortLink(portId, filePickerId, osparc.data.model.NodePort.FP_PORT_KEY)
           .then(success => {
             if (success) {
               if (file) {
                 const fileObj = file.data;
-                osparc.file.FilePicker.setOutputValueFromStore(
-                  filePicker,
-                  fileObj.getLocation(),
-                  fileObj.getDatasetId(),
-                  fileObj.getFileId(),
-                  fileObj.getLabel()
-                );
+                const outFileValue = {
+                  store: fileObj.getLocation(),
+                  dataset: fileObj.getDatasetId(),
+                  path: fileObj.getFileId(),
+                  label: fileObj.getLabel()
+                };
+                osparc.file.FilePicker.setOutputValueFromStore(filePicker, outFileValue);
               }
               this.fireDataEvent("openNode", filePicker.getNodeId());
               this.fireEvent("reloadModel");
@@ -548,7 +548,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           const pmId = parameterNode.getNodeId();
           requesterNode.addInputNode(pmId);
           // bypass the compatibility check
-          if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
+          if (requesterNode.getPropsForm().addPortLink(portId, pmId, osparc.data.model.NodePort.PARAM_PORT_KEY) !== true) {
             this.removeNode(pmId);
             const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
             osparc.FlashMessenger.logError(msg);
@@ -803,14 +803,30 @@ qx.Class.define("osparc.data.model.Workbench", {
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
           // if workbenchDiffs is an array means that the node was added
+          // if somebody else is uploading data don't patch it, the backend already knows
+          if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+            console.warn("File picker added by another user, skipping patch");
+            return;
+          }
           patchData = nodeData;
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
-            if (nodeData[changedFieldKey] !== undefined) {
-              // do not patch if it's undefined
-              patchData[changedFieldKey] = nodeData[changedFieldKey];
+            // do not patch if it's undefined
+            if (nodeData[changedFieldKey] === undefined) {
+              return;
             }
+            // if someone else is actively uploading (progress between NOT_STARTED and COMPLETED), don't patch it, the backend already knows
+            if (
+              node.isFilePicker() &&
+              nodeData["progress"] > osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED &&
+              nodeData["progress"] < osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED &&
+              !osparc.file.FilePicker.isRTCTokenMine(node)
+            ) {
+              console.warn("File picker progress changed by another user, skipping patch");
+              return;
+            }
+            patchData[changedFieldKey] = nodeData[changedFieldKey];
           });
         }
         const params = {

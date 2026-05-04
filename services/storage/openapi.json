@@ -62,9 +62,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -115,9 +114,18 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "osparc",
+              "title": "Product Name"
             }
           }
         ],
@@ -177,9 +185,18 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "osparc",
+              "title": "Product Name"
             }
           },
           {
@@ -240,9 +257,18 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "osparc",
+              "title": "Product Name"
             }
           },
           {
@@ -348,9 +374,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -446,9 +471,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -489,7 +513,7 @@
           "files"
         ],
         "summary": "Upload File",
-        "description": "creates upload file links:\n\nThis function covers v1 and v2 versions of the handler.\nNote: calling this entrypoint on an already existing file will overwrite that file. That file will be deleted\nbefore the upload takes place.\n\nv1 rationale:\n    - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend\n    - client uploads the file\n    - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)\n\nv2 rationale:\n    - client calls this handler, which returns a FileUploadSchema object containing 1 or more links (either S3/presigned links)\n    - client uploads the file (by chunking it if there are more than 1 presigned link)\n    - client calls complete_upload handle which will reconstruct the file on S3 backend\n    - client waits for completion to finish and then the file is accessible on S3 backend\n\n\nUse-case v1: query.file_size is not defined, returns a PresignedLink model (backward compatibility)\nUse-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)\nUse-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)\n\nUser-case v2: query.is_directory is True (query.file_size is forced to -1), returns an s3 path where to upload all the content of the directory\nUser-case v2: if query.file_size is defined, returns a FileUploadSchema model, expects client to call \"complete_upload\" when the file is finished uploading\nUse-case v2.1: if query.file_size == 0 and query.link_type=presigned or None, returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)\nUse-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)\nUse-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)",
+        "description": "creates upload file links:\n\nThis function covers v1 and v2 versions of the handler.\nNote: calling this entrypoint on an already existing file will overwrite that file. That file will be deleted\nbefore the upload takes place.\n\nv1 rationale:\n    - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend\n    - client uploads the file\n    - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data,\n    or if the dsm_cleaner goes over it after the upload time is expired)\n\nv2 rationale:\n    - client calls this handler, which returns a FileUploadSchema object containing 1\n    or more links (either S3/presigned links)\n    - client uploads the file (by chunking it if there are more than 1 presigned link)\n    - client calls complete_upload handle which will reconstruct the file on S3 backend\n    - client waits for completion to finish and then the file is accessible on S3 backend\n\n\nUse-case v1: query.file_size is not defined, returns a PresignedLink model (backward compatibility)\nUse-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)\nUse-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)\n\nUser-case v2: query.is_directory is True (query.file_size is forced to -1),\nreturns an s3 path where to upload all the content of the directory\nUser-case v2: if query.file_size is defined, returns a FileUploadSchema model,\nexpects client to call \"complete_upload\" when the file is finished uploading\nUse-case v2.1: if query.file_size == 0 and query.link_type=presigned or None,\nreturns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)\nUse-case v2.2: if query.file_size > 0 and query.link_type=presigned or None,\nreturns 1 or more presigned links depending on the file size (limited to a single 5TB file)\nUse-case v2.3: if query.link_type=s3 and query.file_size>=0,\nreturns a single s3 direct link (limited to a single 5TB file)",
         "operationId": "upload_file_v0_locations__location_id__files__file_id__put",
         "parameters": [
           {
@@ -525,9 +549,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -659,9 +682,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -723,9 +745,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -787,9 +808,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -877,9 +897,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -939,9 +958,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -1003,9 +1021,17 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
             }
           },
           {
@@ -1060,7 +1086,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_"
+                  "$ref": "#/components/schemas/CursorPage_TypeVar_Customized_PathMetaDataGet_"
                 }
               }
             }
@@ -1111,9 +1137,17 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
             }
           }
         ],
@@ -1155,9 +1189,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -1167,7 +1200,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_S3Settings_"
+                  "$ref": "#/components/schemas/Envelope_S3SettingsGet_"
                 }
               }
             }
@@ -1208,9 +1241,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1262,9 +1294,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           },
           {
@@ -1430,7 +1461,7 @@
         ],
         "title": "AppStatusCheck"
       },
-      "CursorPage___T_Customized_PathMetaDataGet_": {
+      "CursorPage_TypeVar_Customized_PathMetaDataGet_": {
         "properties": {
           "items": {
             "items": {
@@ -1504,7 +1535,7 @@
         "required": [
           "items"
         ],
-        "title": "CursorPage[~_T]Customized[PathMetaDataGet]"
+        "title": "CursorPage[TypeVar]Customized[PathMetaDataGet]"
       },
       "DatasetMetaDataGet": {
         "properties": {
@@ -1784,12 +1815,12 @@
         "type": "object",
         "title": "Envelope[PathTotalSizeCreate]"
       },
-      "Envelope_S3Settings_": {
+      "Envelope_S3SettingsGet_": {
         "properties": {
           "data": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/S3Settings"
+                "$ref": "#/components/schemas/S3SettingsGet"
               },
               {
                 "type": "null"
@@ -1807,7 +1838,7 @@
           }
         },
         "type": "object",
-        "title": "Envelope[S3Settings]"
+        "title": "Envelope[S3SettingsGet]"
       },
       "Envelope_dict_": {
         "properties": {
@@ -2162,8 +2193,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": true,
-                "minimum": 0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -2473,17 +2503,15 @@
         ],
         "title": "PathTotalSizeCreate"
       },
-      "S3Settings": {
+      "S3SettingsGet": {
         "properties": {
           "S3_ACCESS_KEY": {
             "type": "string",
-            "maxLength": 50,
-            "minLength": 1,
             "title": "S3 Access Key"
           },
           "S3_BUCKET_NAME": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "S3 Bucket Name"
           },
@@ -2503,14 +2531,12 @@
           },
           "S3_REGION": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "S3 Region"
           },
           "S3_SECRET_KEY": {
             "type": "string",
-            "maxLength": 50,
-            "minLength": 1,
             "title": "S3 Secret Key"
           }
         },
@@ -2521,7 +2547,7 @@
           "S3_REGION",
           "S3_SECRET_KEY"
         ],
-        "title": "S3Settings"
+        "title": "S3SettingsGet"
       },
       "SoftCopyBody": {
         "properties": {
@@ -2541,9 +2567,8 @@
         "properties": {
           "number": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Number",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Number"
           },
           "e_tag": {
             "type": "string",

@@ -10,12 +10,12 @@ from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from models_library.celery import TaskState, TaskUUID
+from models_library.celery import TaskStatus as CeleryTaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import TaskState
-from servicelib.celery.models import TaskStatus as CeleryTaskStatus
-from servicelib.celery.models import TaskUUID
 from simcore_service_api_server.api.routes import tasks as task_routes
 from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
 
@@ -28,10 +28,7 @@ _faker = Faker()
 
 
 @pytest.fixture
-def mock_task_manager(
-    mocker: MockerFixture, mock_task_manager_object: MockType
-) -> MockType:
-
+def mock_task_manager(mocker: MockerFixture, mock_task_manager_object: MockType) -> MockType:
     def _get_task_manager(app):
         return mock_task_manager_object
 
@@ -44,7 +41,6 @@ async def test_list_celery_tasks(
     client: AsyncClient,
     auth: BasicAuth,
 ):
-
     response = await client.get("/v0/tasks", auth=auth)
     assert mock_task_manager.list_tasks.called
     assert response.status_code == status.HTTP_200_OK
@@ -65,7 +61,7 @@ async def test_get_task_status(
 ):
     task_id = f"{_faker.uuid4()}"
     response = await client.get(f"/v0/tasks/{task_id}", auth=auth)
-    assert mock_task_manager.get_task_status.called
+    assert mock_task_manager.get_status.called
     assert response.status_code == status.HTTP_200_OK
     TaskStatus.model_validate_json(response.text)
 
@@ -77,7 +73,7 @@ async def test_cancel_task(
 ):
     task_id = f"{_faker.uuid4()}"
     response = await client.post(f"/v0/tasks/{task_id}:cancel", auth=auth)
-    assert mock_task_manager.cancel_task.called
+    assert mock_task_manager.cancel.called
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
@@ -89,12 +85,13 @@ async def test_get_task_result(
     task_id = f"{_faker.uuid4()}"
     response = await client.get(f"/v0/tasks/{task_id}/result", auth=auth)
     assert response.status_code == status.HTTP_200_OK
-    assert mock_task_manager.get_task_result.called
-    assert f"{mock_task_manager.get_task_result.call_args[1]['task_uuid']}" == task_id
+    assert mock_task_manager.get_result.called
+    assert f"{mock_task_manager.get_result.call_args[1]['task_or_group_uuid']}" == task_id
 
 
 @pytest.mark.parametrize(
-    "method, url, list_tasks_return_value, get_task_status_return_value, cancel_task_return_value, get_task_result_return_value, expected_status_code",
+    "method, url, list_tasks_return_value, get_task_status_return_value, "
+    "cancel_task_return_value, get_task_result_return_value, expected_status_code",
     [
         (
             "GET",
@@ -137,16 +134,16 @@ async def test_get_task_result(
             f"/v0/tasks/{_faker.uuid4()}/result",
             None,
             CeleryTaskStatus(
-                task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
+                task_uuid=TypeAdapter(TaskUUID).validate_python("123e4567-e89b-12d3-a456-426614174000"),
                 task_state=TaskState.STARTED,
                 progress_report=ProgressReport(
                     actual_value=0.5,
                     total=1.0,
                     unit="Byte",
                     message=ProgressStructuredMessage.model_validate(
-                        ProgressStructuredMessage.model_json_schema(
-                            schema_generator=GenerateResolvedJsonSchema
-                        )["examples"][0]
+                        ProgressStructuredMessage.model_json_schema(schema_generator=GenerateResolvedJsonSchema)[
+                            "examples"
+                        ][0]
                     ),
                 ),
             ),

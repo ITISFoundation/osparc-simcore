@@ -10,9 +10,7 @@ class SSMNotConnectedError(SSMRuntimeError):
 
 
 class SSMAccessError(SSMRuntimeError):
-    msg_template: str = (
-        "Unexpected error while accessing SSM backend: {operation_name}:{code}:{error}"
-    )
+    msg_template: str = "Unexpected error while accessing SSM backend: {operation_name}:{code}:{error}"
 
 
 class SSMTimeoutError(SSMAccessError):

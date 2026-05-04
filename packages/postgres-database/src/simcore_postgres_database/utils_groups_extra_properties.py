@@ -1,26 +1,18 @@
 import datetime
 import logging
-import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, fields
 from typing import Any
 
 import sqlalchemy as sa
-from common_library.async_tools import maybe_await
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ._protocols import DBConnection
 from .models.groups import GroupType, groups, user_to_groups
 from .models.groups_extra_properties import groups_extra_properties
 from .utils_models import FromRowMixin
 from .utils_repos import pass_or_acquire_connection
 
 _logger = logging.getLogger(__name__)
-
-_WARNING_FMSG = (
-    f"{__name__}.{{}} uses aiopg which has been deprecated in this repo. Use {{}} instead. "
-    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529"
-)
 
 
 class GroupExtraPropertiesError(Exception): ...
@@ -30,7 +22,9 @@ class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class GroupExtraProperties(FromRowMixin):
+class GroupExtraProperties(  # pylint: disable=too-many-instance-attributes
+    FromRowMixin
+):
     group_id: int
     product_name: str
     internet_access: bool
@@ -40,6 +34,7 @@ class GroupExtraProperties(FromRowMixin):
     created: datetime.datetime
     modified: datetime.datetime
     enable_efs: bool
+    mount_data: bool
 
 
 def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: str):
@@ -66,10 +61,7 @@ def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: s
                 groups_extra_properties.c.group_id == groups.c.gid,
             )
         )
-        .where(
-            (groups_extra_properties.c.product_name == product_name)
-            & (user_to_groups.c.uid == user_id)
-        )
+        .where((groups_extra_properties.c.product_name == product_name) & (user_to_groups.c.uid == user_id))
         .alias()
     )
 
@@ -94,8 +86,7 @@ class GroupExtraPropertiesRepo:
     @staticmethod
     def _get_stmt(gid: int, product_name: str):
         return sa.select(groups_extra_properties).where(
-            (groups_extra_properties.c.group_id == gid)
-            & (groups_extra_properties.c.product_name == product_name)
+            (groups_extra_properties.c.group_id == gid) & (groups_extra_properties.c.product_name == product_name)
         )
 
     @staticmethod
@@ -116,9 +107,7 @@ class GroupExtraPropertiesRepo:
             raise GroupExtraPropertiesNotFoundError(msg)
 
     @staticmethod
-    def _aggregate(
-        rows, user_id, product_name, from_row: Callable
-    ) -> GroupExtraProperties:
+    def _aggregate(rows, user_id, product_name, from_row: Callable) -> GroupExtraProperties:
         merged_standard_extra_properties = None
         for row in rows:
             group_extra_properties: GroupExtraProperties = from_row(row)
@@ -128,20 +117,16 @@ class GroupExtraPropertiesRepo:
                     return group_extra_properties
                 case GroupType.STANDARD:
                     if merged_standard_extra_properties:
-                        merged_standard_extra_properties = (
-                            _merge_extra_properties_booleans(
-                                merged_standard_extra_properties,
-                                group_extra_properties,
-                            )
+                        merged_standard_extra_properties = _merge_extra_properties_booleans(
+                            merged_standard_extra_properties,
+                            group_extra_properties,
                         )
                     else:
                         merged_standard_extra_properties = group_extra_properties
                 case GroupType.EVERYONE:
                     # if there are standard properties, they take precedence
                     return (
-                        merged_standard_extra_properties
-                        if merged_standard_extra_properties
-                        else group_extra_properties
+                        merged_standard_extra_properties if merged_standard_extra_properties else group_extra_properties
                     )
                 case _:
                     _logger.warning(
@@ -155,32 +140,16 @@ class GroupExtraPropertiesRepo:
 
     @staticmethod
     async def get_aggregated_properties_for_user(
-        connection: DBConnection,
+        connection: AsyncConnection,
         *,
         user_id: int,
         product_name: str,
     ) -> GroupExtraProperties:
-        warnings.warn(
-            _WARNING_FMSG.format(
-                "get_aggregated_properties_for_user",
-                "get_aggregated_properties_for_user_v2",
-            ),
-            DeprecationWarning,
-            stacklevel=1,
-        )
+        list_stmt = _list_table_entries_ordered_by_group_type_stmt(user_id=user_id, product_name=product_name)
 
-        list_stmt = _list_table_entries_ordered_by_group_type_stmt(
-            user_id=user_id, product_name=product_name
-        )
-
-        result = await connection.execute(
-            sa.select(list_stmt).order_by(list_stmt.c.type_order)
-        )
+        result = await connection.execute(sa.select(list_stmt).order_by(list_stmt.c.type_order))
         assert result  # nosec
 
-        rows = await maybe_await(result.fetchall())
-        assert isinstance(rows, list)  # nosec
+        rows = result.mappings().all()
 
-        return GroupExtraPropertiesRepo._aggregate(
-            rows, user_id, product_name, GroupExtraProperties.from_row
-        )
+        return GroupExtraPropertiesRepo._aggregate(rows, user_id, product_name, GroupExtraProperties.from_row)

@@ -27,9 +27,7 @@ from simcore_service_webserver.workspaces._common.models import (
 router = APIRouter(
     prefix=f"/{API_VTAG}",
     tags=["trash"],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 

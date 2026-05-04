@@ -96,15 +96,11 @@ async def _handle_confirm_registration(
         app,
         user_id=user_id,
         product_name=product_name,
-        extra_credits_in_usd=parse_extra_credits_in_usd_or_none(
-            _confirmation_to_legacy_dict(confirmation)
-        ),
+        extra_credits_in_usd=parse_extra_credits_in_usd_or_none(_confirmation_to_legacy_dict(confirmation)),
     )
 
 
-async def _handle_confirm_change_email(
-    app: web.Application, confirmation: Confirmation
-):
+async def _handle_confirm_change_email(app: web.Application, confirmation: Confirmation):
     confirmation_service = get_confirmation_service(app)
     user_id = confirmation.user_id
 
@@ -112,9 +108,7 @@ async def _handle_confirm_change_email(
     await confirmation_service.delete_confirmation_and_update_user(
         confirmation=confirmation,
         user_id=user_id,
-        updates={
-            "email": TypeAdapter(LowerCaseEmailStr).validate_python(confirmation.data)
-        },
+        updates={"email": TypeAdapter(LowerCaseEmailStr).validate_python(confirmation.data)},
     )
 
 
@@ -141,10 +135,8 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
 
-    confirmation: Confirmation | None = (
-        await confirmation_service.validate_confirmation_code(
-            path_params.code.get_secret_value()
-        )
+    confirmation: Confirmation | None = await confirmation_service.validate_confirmation_code(
+        path_params.code.get_secret_value()
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
@@ -156,14 +148,10 @@ async def validate_confirmation_and_redirect(request: web.Request):
                     product_name=product.name,
                     confirmation=confirmation,
                 )
-                redirect_to_login_url = redirect_to_login_url.with_fragment(
-                    "?registered=true"
-                )
+                redirect_to_login_url = redirect_to_login_url.with_fragment("?registered=true")
 
             elif action == CHANGE_EMAIL:
-                await _handle_confirm_change_email(
-                    app=request.app, confirmation=confirmation
-                )
+                await _handle_confirm_change_email(app=request.app, confirmation=confirmation)
 
             elif action == RESET_PASSWORD:
                 #
@@ -183,10 +171,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
-            user_error_msg = (
-                f"Sorry, we cannot confirm your {action}."
-                "Please try again in a few moments."
-            )
+            user_error_msg = f"Sorry, we cannot confirm your {action}.Please try again in a few moments."
 
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
@@ -215,9 +200,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 )
 async def phone_confirmation(request: web.Request):
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
@@ -237,16 +220,12 @@ async def phone_confirmation(request: web.Request):
             await _auth_service.get_user_or_none(request.app, email=request_body.email)
         )
 
-        await _registration_service.register_user_phone(
-            request.app, user_id=user["id"], user_phone=request_body.phone
-        )
+        await _registration_service.register_user_phone(request.app, user_id=user["id"], user_phone=request_body.phone)
 
         return await _security_service.login_granted_response(request, user=user)
 
     # fails because of invalid or no code
-    raise web.HTTPUnauthorized(
-        text="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
-    )
+    raise web.HTTPUnauthorized(text="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post("/v0/auth/reset-password/{code}", name="complete_reset_password")
@@ -263,14 +242,10 @@ async def complete_reset_password(request: web.Request):
     path_params = parse_request_path_parameters_as(CodePathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
-    confirmation = await confirmation_service.validate_confirmation_code(
-        code=path_params.code.get_secret_value()
-    )
+    confirmation = await confirmation_service.validate_confirmation_code(code=path_params.code.get_secret_value())
 
     if confirmation:
-        user = await _auth_service.get_user_or_none(
-            request.app, user_id=confirmation.user_id
-        )
+        user = await _auth_service.get_user_or_none(request.app, user_id=confirmation.user_id)
         assert user  # nosec
 
         await _auth_service.update_user_password(
@@ -286,7 +261,5 @@ async def complete_reset_password(request: web.Request):
         return flash_response(MSG_PASSWORD_CHANGED)
 
     raise web.HTTPUnauthorized(
-        text=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(
-            support_email=product.support_email
-        ),
+        text=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(support_email=product.support_email),
     )  # 401

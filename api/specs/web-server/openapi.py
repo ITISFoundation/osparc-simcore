@@ -4,8 +4,8 @@
 # pylint: disable=too-many-arguments
 
 import importlib
+import json
 
-import yaml
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from servicelib.fastapi.openapi import create_openapi_specs
@@ -45,9 +45,9 @@ openapi_modules = [
         "_licensed_items_checkouts",
         "_nih_sparc",
         "_nih_sparc_redirections",
+        "_notifications",
         "_projects",
         "_projects_access_rights",
-        "_projects_comments",
         "_projects_conversations",
         "_projects_folders",
         "_projects_metadata",
@@ -58,17 +58,40 @@ openapi_modules = [
         "_projects_tags",
         "_projects_wallet",
         "_projects_workspaces",
-        "_publications",
         "_resource_usage",
         "_statics",
         "_storage",
         "_trash",
         "_workspaces",
         # maintenance ----
-        "_admin",
         "_diagnostics",
     )
 ]
+
+
+def _enrich_order_by_params(openapi: dict) -> None:
+    """Patch order_by query params with description and examples.
+
+    FastAPI's Depends() pattern strips Query() metadata, so we post-process the spec.
+    Only patches endpoints using the new comma-separated format (skips JSON-serialized).
+    """
+    description = (
+        "Comma-separated list of field names for sorting. "
+        "Prefix with '-' for descending, '+' or no prefix for ascending."
+    )
+    examples = ["-name,email", "email", "-status"]
+    for path_item in openapi.get("paths", {}).values():
+        for operation in path_item.values():
+            if not isinstance(operation, dict):
+                continue
+            for param in operation.get("parameters", []):
+                if param.get("name") == "order_by" and param.get("in") == "query":
+                    # Skip endpoints still using JSON-serialized order_by
+                    if param.get("schema", {}).get("contentMediaType") == "application/json":
+                        continue
+                    param["description"] = description
+                    param["schema"]["description"] = description
+                    param["schema"]["examples"] = examples
 
 
 def main():
@@ -101,16 +124,17 @@ def main():
         app.include_router(module.router)
 
     openapi = create_openapi_specs(app, remove_main_sections=False)
+    _enrich_order_by_params(openapi)
 
-    # .yaml
-    oas_path = webserver_resources.get_path("api/v0/openapi.yaml").resolve()
+    # .json
+    oas_path = webserver_resources.get_path("api/v0/openapi.json").resolve()
     if not oas_path.exists():
         oas_path.parent.mkdir(parents=True)
         oas_path.write_text("")
-    print(f"Writing {oas_path}...", end=None)
+    print(f"Writing {oas_path}...", end=None)  # noqa: T201
     with oas_path.open("wt") as fh:
-        yaml.safe_dump(openapi, stream=fh, sort_keys=False)
-    print("done")
+        json.dump(openapi, fh, sort_keys=False, indent=2)
+    print("done")  # noqa: T201
 
 
 if __name__ == "__main__":

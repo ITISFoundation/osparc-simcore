@@ -270,7 +270,7 @@ qx.Class.define("osparc.Application", {
       let productName = osparc.product.Utils.getProductName();
       if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
         productName = "s4l";
-      } else if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+      } else if (osparc.product.Utils.isTIPProduct()) {
         productName = "tis";
       }
 
@@ -402,50 +402,19 @@ qx.Class.define("osparc.Application", {
       // first, pop up new release window
       this.__checkNewRelease();
 
-      const platformName = osparc.store.StaticInfo.getPlatformName();
-      if (platformName !== "master") {
-        // then, pop up cookies accepted window. It will go on top.
-        this.__checkCookiesAccepted();
-      }
+      // then, pop up cookies accepted window. It will go on top.
+      this.__checkCookiesAccepted();
     },
 
     __checkNewRelease: function() {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
-        const newRelease = new osparc.NewRelease();
-        const title = this.tr("New Version Released");
-        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: true
-        });
-        const closeBtn = win.getChildControl("close-button");
-        osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+        osparc.NewRelease.popUpReleaseNotes();
       }
     },
 
     __checkCookiesAccepted: function() {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
-        const cookiePolicy = new osparc.CookiePolicy();
-        let title = this.tr("Privacy Policy");
-        let height = 160;
-        if (osparc.product.Utils.showLicenseExtra()) {
-          // "tis", "tiplite" and "s4llite" include the license terms
-          title = this.tr("Privacy Policy and License Terms");
-          height = 210;
-        }
-        const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: false
-        });
-        cookiePolicy.addListener("cookiesAccepted", () => {
-          osparc.CookiePolicy.acceptCookies();
-          win.close();
-        }, this);
-        cookiePolicy.addListener("cookiesDeclined", () => {
-          osparc.CookiePolicy.declineCookies();
-          win.close();
-        }, this);
+        osparc.CookiePolicy.popUpCookieBanner();
       }
     },
 

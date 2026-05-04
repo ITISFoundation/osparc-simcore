@@ -21,7 +21,7 @@ qx.Class.define("osparc.po.Users", {
 
   statics: {
     GRID_POS: {
-      NAME: 0,
+      USERNAME: 0,
       EMAIL: 1,
       DATE: 2,
       ACCOUNT_REQUEST_STATUS: 3,
@@ -129,9 +129,9 @@ qx.Class.define("osparc.po.Users", {
 
     __addHeader: function() {
       const foundUsersLayout = this.getChildControl("found-users-layout");
-      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Name")), {
+      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Username")), {
         row: 0,
-        column: this.self().GRID_POS.NAME,
+        column: this.self().GRID_POS.USERNAME,
       });
       foundUsersLayout.add(this.__createHeaderLabel(this.tr("Email")), {
         row: 0,
@@ -159,12 +159,12 @@ qx.Class.define("osparc.po.Users", {
       foundUsers.forEach((user, index) => {
         const row = index + 1;
 
-        const fullNameLabel = new qx.ui.basic.Label(user.firstName + " " + user.lastName).set({
+        const userNameLabel = new qx.ui.basic.Label(user["username"]).set({
           selectable: true,
         });
-        foundUsersLayout.add(fullNameLabel, {
+        foundUsersLayout.add(userNameLabel, {
           row,
-          column: this.self().GRID_POS.NAME,
+          column: this.self().GRID_POS.USERNAME,
         });
 
         const emailLabel = new qx.ui.basic.Label(user["email"]).set({

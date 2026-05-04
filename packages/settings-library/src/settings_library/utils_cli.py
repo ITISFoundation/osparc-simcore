@@ -1,3 +1,6 @@
+"""ruff noqa: C901, FBT001, FBT002, FBT003"""
+
+# ruff: noqa: C901, FBT001, FBT002, FBT003
 import logging
 import os
 from collections.abc import Callable
@@ -29,9 +32,8 @@ def print_as_envfile(
     settings_cls = settings_obj.__class__
 
     for name, field in settings_cls.model_fields.items():
-        auto_default_from_env = (
-            field.json_schema_extra is not None
-            and field.json_schema_extra.get("auto_default_from_env", False)
+        auto_default_from_env = field.json_schema_extra is not None and field.json_schema_extra.get(
+            "auto_default_from_env", False
         )
 
         value = getattr(settings_obj, name)
@@ -45,22 +47,21 @@ def print_as_envfile(
         if isinstance(value, BaseSettings):
             if compact:
                 value = json_dumps(
-                    model_dump_with_secrets(
-                        value, show_secrets=show_secrets, **pydantic_export_options
-                    )
-                )  # flat
-            else:
-                if verbose:
-                    typer.echo(f"\n# --- {name} --- ")
-                print_as_envfile(
-                    value,
-                    compact=False,
-                    verbose=verbose,
-                    show_secrets=show_secrets,
-                    **pydantic_export_options,
-                )
+                    model_dump_with_secrets(value, show_secrets=show_secrets, **pydantic_export_options)
+                )  # flat, wrap in single quotes so bash preserves double quotes
+                typer.echo(f"{name}='{value}'")
                 continue
-        elif show_secrets and hasattr(value, "get_secret_value"):
+            if verbose:
+                typer.echo(f"\n# --- {name} --- ")
+            print_as_envfile(
+                value,
+                compact=False,
+                verbose=verbose,
+                show_secrets=show_secrets,
+                **pydantic_export_options,
+            )
+            continue
+        if show_secrets and hasattr(value, "get_secret_value"):
             value = value.get_secret_value()
 
         if verbose and field.description:
@@ -69,7 +70,10 @@ def print_as_envfile(
             value = value.value
         elif isinstance(value, dict | list):
             # Serialize complex objects as JSON to ensure they can be parsed correctly
+            # Wrap in single quotes so bash preserves the double quotes when sourcing
             value = json_dumps(value)
+            typer.echo(f"{name}='{value}'")
+            continue
         typer.echo(f"{name}={value}")
 
 
@@ -82,9 +86,7 @@ def _print_as_json(
 ):
     typer.echo(
         json_dumps(
-            model_dump_with_secrets(
-                settings_obj, show_secrets=show_secrets, **pydantic_export_options
-            ),
+            model_dump_with_secrets(settings_obj, show_secrets=show_secrets, **pydantic_export_options),
             indent=None if compact else 2,
         )
     )
@@ -111,7 +113,7 @@ def create_settings_command(
         exclude_unset: bool = typer.Option(
             False,
             help="displays settings that were explicitly set"
-            "This represents current config (i.e. required+ defaults overriden).",
+            "This represents current config (i.e. required+ defaults overridden).",
         ),
     ):
         """Resolves settings and prints envfile"""
@@ -138,20 +140,13 @@ def create_settings_command(
 
             assert logger is not None  # nosec
             logger.error(  # noqa: TRY400
-                "Invalid settings. "
-                "Typically this is due to an environment variable missing or misspelled :\n%s",
+                "Invalid settings. Typically this is due to an environment variable missing or misspelled :\n%s",
                 "\n".join(
                     [
                         HEADER_STR.format("detail"),
                         str(err),
                         HEADER_STR.format("environment variables"),
-                        pformat(
-                            {
-                                k: v
-                                for k, v in dict(os.environ).items()
-                                if k.upper() == k
-                            }
-                        ),
+                        pformat({k: v for k, v in dict(os.environ).items() if k.upper() == k}),
                         HEADER_STR.format("json-schema"),
                         settings_schema,
                     ]
@@ -182,7 +177,7 @@ def create_settings_command(
 
 
 def create_version_callback(application_version: str) -> Callable:
-    def _version_callback(value: bool):  # noqa: FBT001
+    def _version_callback(value: bool):
         if value:
             rich.print(application_version)
             raise typer.Exit

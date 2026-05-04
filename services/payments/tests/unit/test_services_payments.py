@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -95,9 +96,7 @@ def notifier_service(
 
 @pytest.fixture
 async def no_funds_payment_method_id(
-    create_fake_payment_method_in_db: Callable[
-        [PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]
-    ],
+    create_fake_payment_method_in_db: Callable[[PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]],
     no_funds_payment_method_id: PaymentMethodID,
     wallet_id: WalletID,
     user_id: UserID,
@@ -122,6 +121,7 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     no_funds_payment_method_id: PaymentMethodID,
     mock_payments_gateway_service_or_none: MockRouter | None,
     wallet_id: WalletID,
+    product_name: ProductName,
     wallet_name: IDStr,
     user_id: UserID,
     user_name: IDStr,
@@ -132,9 +132,7 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     mock_ws_provider: MagicMock,
 ):
     if mock_payments_gateway_service_or_none is None:
-        pytest.skip(
-            "cannot run this test against external because it sets up a payment method"
-        )
+        pytest.skip("cannot run this test against external because it sets up a payment method")
 
     rut = ResourceUsageTrackerApi.get_from_app_state(app)
     rut_create_credit_transaction = mocker.spy(rut, "create_credit_transaction")
@@ -145,11 +143,10 @@ async def test_fails_to_pay_with_payment_method_without_funds(
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         notifier=notifier_service,
-        #
         payment_method_id=no_funds_payment_method_id,
         amount_dollars=100,
         target_credits=100,
-        product_name="my_product",
+        product_name=product_name,
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         user_id=user_id,
@@ -175,16 +172,8 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     assert len(notifier_service._background_tasks) == 0  # noqa: SLF001
 
     assert mock_email_provider.notify_payment_completed.called
-    assert (
-        mock_email_provider.notify_payment_completed.call_args.kwargs["user_id"]
-        == user_id
-    )
-    assert (
-        to_payments_api_model(
-            mock_email_provider.notify_payment_completed.call_args.kwargs["payment"]
-        )
-        == payment
-    )
+    assert mock_email_provider.notify_payment_completed.call_args.kwargs["user_id"] == user_id
+    assert to_payments_api_model(mock_email_provider.notify_payment_completed.call_args.kwargs["payment"]) == payment
 
     # Websockets notification should be in the exclude list
     assert not mock_ws_provider.notify_payment_completed.called
@@ -198,6 +187,7 @@ async def test_gateway_server_timesout_during_payment(
     wallet_name: IDStr,
     user_id: UserID,
     user_name: IDStr,
+    product_name: ProductName,
     user_email: EmailStr,
     notifier_service: NotifierService,
     payments_clean_db: None,
@@ -220,11 +210,10 @@ async def test_gateway_server_timesout_during_payment(
             repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
             repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
             notifier=notifier_service,
-            #
             payment_method_id=no_funds_payment_method_id,
             amount_dollars=100,
             target_credits=100,
-            product_name="my_product",
+            product_name=product_name,
             wallet_id=wallet_id,
             wallet_name=wallet_name,
             user_id=user_id,

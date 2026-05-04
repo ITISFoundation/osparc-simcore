@@ -258,8 +258,12 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       return this._resourcesList.find(template => template.uuid === id);
     },
 
-    _deleteResourceRequested: function(templateId) {
-      this._deleteTemplateRequested(this.__getTemplateData(templateId));
+    _emptyProjectIconClicked: function(templateId) {
+      const templateData = this.__getTemplateData(templateId);
+      const deleteAccess = templateData && osparc.data.model.Study.canIDelete(templateData["accessRights"]);
+      if (deleteAccess) {
+        this._deleteTemplateRequested(templateData);
+      }
     },
     // MENU //
 
@@ -268,7 +272,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       const tasks = osparc.store.PollTasks.getInstance().getPublishTemplateTasks();
       tasks.forEach(task => {
         const studyName = "";
-        this.taskToTemplateReceived(task, studyName);
+        this.taskToTemplateReceived(task, studyName, osparc.data.model.StudyUI.TUTORIAL_TYPE);
       });
     },
     // TASKS //

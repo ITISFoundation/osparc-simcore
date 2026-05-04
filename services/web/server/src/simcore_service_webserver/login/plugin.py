@@ -2,7 +2,6 @@ import logging
 
 from aiohttp import web
 from pydantic import ValidationError
-from settings_library.email import SMTPSettings
 
 from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import (
@@ -15,8 +14,6 @@ from ..constants import (
     INDEX_RESOURCE_NAME,
 )
 from ..db.plugin import setup_db
-from ..email.plugin import setup_email
-from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
 from ..login_accounts.plugin import setup_login_account
 from ..login_auth.plugin import setup_login_auth
@@ -46,13 +43,11 @@ _logger = logging.getLogger(__name__)
 
 @ensure_single_setup(f"{__name__}.login_options", logger=_logger)
 def _setup_login_options(app: web.Application):
-    settings: SMTPSettings = get_email_plugin_settings(app)
-
-    cfg = settings.model_dump()
     if INDEX_RESOURCE_NAME in app.router:
-        cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
-
-    app[LOGIN_OPTIONS_APPKEY] = LoginOptions(**cfg)
+        options = LoginOptions(LOGIN_REDIRECT=f"{app.router[INDEX_RESOURCE_NAME].url_for()}")
+    else:
+        options = LoginOptions()
+    app[LOGIN_OPTIONS_APPKEY] = options
 
 
 async def _resolve_login_settings_per_product(app: web.Application):
@@ -72,13 +67,11 @@ async def _resolve_login_settings_per_product(app: web.Application):
         errors = {}
         for product in products_service.list_products(app):
             try:
-                login_settings_per_product[product.name] = (
-                    LoginSettingsForProduct.create_from_composition(
-                        app_login_settings=app_login_settings,
-                        product_login_settings=product.login_settings,
-                    )
+                login_settings_per_product[product.name] = LoginSettingsForProduct.create_from_composition(
+                    app_login_settings=app_login_settings,
+                    product_login_settings=product.login_settings,
                 )
-            except ValidationError as err:  # noqa: PERF203
+            except ValidationError as err:
                 errors[product.name] = err
 
         if errors:
@@ -92,9 +85,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     # product-based public config: Overrides  ApplicationSettings.public_dict
     public_data_per_product = {}
     for product_name, settings in login_settings_per_product.items():
-        public_data_per_product[product_name] = {
-            "invitation_required": settings.LOGIN_REGISTRATION_INVITATION_REQUIRED
-        }
+        public_data_per_product[product_name] = {"invitation_required": settings.LOGIN_REGISTRATION_INVITATION_REQUIRED}
 
     app.setdefault(APP_PUBLIC_CONFIG_PER_PRODUCT, public_data_per_product)
 
@@ -112,7 +103,6 @@ def setup_login(app: web.Application):
     setup_redis(app)
     setup_products(app)
     setup_rest(app)
-    setup_email(app)
     setup_invitations(app)
     setup_confirmation(app)
 

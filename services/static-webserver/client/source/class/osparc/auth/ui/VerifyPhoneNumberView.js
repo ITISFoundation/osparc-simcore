@@ -143,8 +143,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         itiInput.setEnabled(false);
         verifyPhoneNumberBtn.setFetching(true);
         const promise = this.isUpdatingNumber() ?
-          osparc.auth.Manager.getInstance().updatePhoneNumber(itiInput.getNumber()) :
-          osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), itiInput.getNumber());
+          osparc.auth.Manager.getInstance().updatePhoneNumber(itiInput.getValue()) :
+          osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), itiInput.getValue());
         promise
           .then(resp => {
             const msg = (resp && resp.message) ? resp.message : "A verification code has been sent via SMS";
@@ -200,7 +200,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       if (this.isUpdatingNumber()) {
         manager.validateCodeUpdatePhoneNumber(validateCodeField.getValue(), loginFun, failFun, this);
       } else {
-        manager.validateCodeRegister(this.getUserEmail(), itiInput.getNumber(), validateCodeField.getValue(), loginFun, failFun, this);
+        manager.validateCodeRegister(this.getUserEmail(), itiInput.getValue(), validateCodeField.getValue(), loginFun, failFun, this);
       }
     },
 

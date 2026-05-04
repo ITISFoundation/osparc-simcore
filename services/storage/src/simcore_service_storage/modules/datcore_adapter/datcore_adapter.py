@@ -73,9 +73,7 @@ async def check_user_can_connect(app: FastAPI, api_key: str, api_secret: str) ->
 async def list_all_datasets_files_metadatas(
     app: FastAPI, user_id: UserID, api_key: str, api_secret: str
 ) -> list[FileMetaData]:
-    all_datasets: list[DatasetMetaData] = await list_all_datasets(
-        app, api_key, api_secret
-    )
+    all_datasets: list[DatasetMetaData] = await list_all_datasets(app, api_key, api_secret)
     results = await logged_gather(
         *(
             list_all_files_metadatas_in_dataset(
@@ -147,22 +145,16 @@ class CursorParameters(BaseModel):
     size: _Size
 
 
-def _init_pagination(
-    cursor: GenericCursor | None, limit: NonNegativeInt
-) -> tuple[_Page, _Size]:
+def _init_pagination(cursor: GenericCursor | None, limit: NonNegativeInt) -> tuple[_Page, _Size]:
     if cursor is not None:
         cursor_params = CursorParameters.model_validate_json(cursor)
         return cursor_params.next_page, cursor_params.size
     return 1, limit
 
 
-def _create_next_cursor(
-    total: TotalNumber, page: _Page, size: _Size
-) -> GenericCursor | None:
+def _create_next_cursor(total: TotalNumber, page: _Page, size: _Size) -> GenericCursor | None:
     if total > page * size:
-        return CursorParameters.model_validate(
-            {"next_page": page + 1, "size": size}
-        ).model_dump_json()
+        return CursorParameters.model_validate({"next_page": page + 1, "size": size}).model_dump_json()
     return None
 
 
@@ -266,9 +258,7 @@ async def get_package_file_as_path(
     )
 
 
-async def list_all_datasets(
-    app: FastAPI, api_key: str, api_secret: str
-) -> list[DatasetMetaData]:
+async def list_all_datasets(app: FastAPI, api_key: str, api_secret: str) -> list[DatasetMetaData]:
     all_datasets: list[DatasetMetaData] = await retrieve_all_pages(
         app,
         api_key,
@@ -308,10 +298,7 @@ async def list_datasets(
     next_cursor = _create_next_cursor(total, page, size)
 
     return (
-        [
-            DatasetMetaData(dataset_id=d.id, display_name=d.display_name)
-            for d in datasets
-        ],
+        [DatasetMetaData(dataset_id=d.id, display_name=d.display_name) for d in datasets],
         next_cursor,
         total,
     )
@@ -335,16 +322,12 @@ async def get_dataset(
     datcore_dataset = DatCoreDatasetMetaData(**response)
 
     return (
-        DatasetMetaData(
-            dataset_id=datcore_dataset.id, display_name=datcore_dataset.display_name
-        ),
+        DatasetMetaData(dataset_id=datcore_dataset.id, display_name=datcore_dataset.display_name),
         datcore_dataset.size,
     )
 
 
-async def get_file_download_presigned_link(
-    app: FastAPI, api_key: str, api_secret: str, file_id: str
-) -> AnyUrl:
+async def get_file_download_presigned_link(app: FastAPI, api_key: str, api_secret: str, file_id: str) -> AnyUrl:
     try:
         file_download_data = cast(
             dict[str, Any],
@@ -357,9 +340,7 @@ async def get_file_download_presigned_link(
         raise
 
 
-async def get_package_files(
-    app: FastAPI, *, api_key: str, api_secret: str, package_id: str
-) -> list[PackageMetaData]:
+async def get_package_files(app: FastAPI, *, api_key: str, api_secret: str, package_id: str) -> list[PackageMetaData]:
     return TypeAdapter(list[PackageMetaData]).validate_python(
         await request(
             app,
@@ -371,7 +352,5 @@ async def get_package_files(
     )
 
 
-async def delete_file(
-    app: FastAPI, api_key: str, api_secret: str, file_id: str
-) -> None:
+async def delete_file(app: FastAPI, api_key: str, api_secret: str, file_id: str) -> None:
     await request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")

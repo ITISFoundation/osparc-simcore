@@ -45,9 +45,7 @@ class WorkerTracker:
         timeout: timedelta,
     ) -> TaskExecutionResult:
         self._tasks[task_uid] = task = asyncio.create_task(
-            _get_task_with_timeout(
-                deferred_handler.run(deferred_context), timeout=timeout
-            )
+            _get_task_with_timeout(deferred_handler.run(deferred_context), timeout=timeout)
         )
 
         result_to_return: TaskExecutionResult
@@ -87,7 +85,7 @@ class WorkerTracker:
             # it's result in case of cancellation.
             # As a side effect it produces a RuntimeWarning coroutine: '...' was never awaited
             # which cannot be suppressed
-            task.cancel()
+            task.cancel("manually cancelling the deferred task")
             return True
         return False
 

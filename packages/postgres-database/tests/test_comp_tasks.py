@@ -8,63 +8,64 @@ import json
 from collections.abc import AsyncIterator
 
 import pytest
-from aiopg.sa.engine import Engine, SAConnection
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import (
     DB_CHANNEL_NAME,
     NodeClass,
     comp_tasks,
 )
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql.elements import literal_column
 
 
 @pytest.fixture()
-async def db_connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
-    async with aiopg_engine.acquire() as conn:
+async def db_connection(asyncpg_engine: AsyncEngine) -> AsyncIterator[AsyncConnection]:
+    async with asyncpg_engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
         yield conn
 
 
 @pytest.fixture()
 async def db_notification_queue(
-    db_connection: SAConnection,
+    db_connection: AsyncConnection,
 ) -> AsyncIterator[asyncio.Queue]:
-    listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    await db_connection.execute(listen_query)
-    assert db_connection.connection
-    notifications_queue: asyncio.Queue = db_connection.connection.notifies
+    notifications_queue: asyncio.Queue = asyncio.Queue()
+
+    raw_conn = await db_connection.get_raw_connection()
+    driver_conn = raw_conn.driver_connection
+
+    def _on_notification(_connection, _pid, _channel, payload):
+        notifications_queue.put_nowait(payload)
+
+    await driver_conn.add_listener(DB_CHANNEL_NAME, _on_notification)
     assert notifications_queue.empty()
     yield notifications_queue
 
-    assert (
-        notifications_queue.empty()
-    ), f"the notification queue was not emptied: {notifications_queue.qsize()} remaining notifications"
+    assert notifications_queue.empty(), (
+        f"the notification queue was not emptied: {notifications_queue.qsize()} remaining notifications"
+    )
+    await driver_conn.remove_listener(DB_CHANNEL_NAME, _on_notification)
 
 
 @pytest.fixture()
 async def task(
-    db_connection: SAConnection,
+    db_connection: AsyncConnection,
     db_notification_queue: asyncio.Queue,
     task_class: NodeClass,
 ) -> dict:
     result = await db_connection.execute(
-        comp_tasks.insert()
-        .values(outputs=json.dumps({}), node_class=task_class)
-        .returning(literal_column("*"))
+        comp_tasks.insert().values(outputs=json.dumps({}), node_class=task_class).returning(literal_column("*"))
     )
-    row = await result.fetchone()
+    row = result.mappings().one()
     assert row
     task = dict(row)
 
-    assert (
-        db_notification_queue.empty()
-    ), "database triggered change although it should only trigger on updates!"
+    assert db_notification_queue.empty(), "database triggered change although it should only trigger on updates!"
 
     return task
 
 
-async def _assert_notification_queue_status(
-    notification_queue: asyncio.Queue, num_exp_messages: int
-) -> list[dict]:
+async def _assert_notification_queue_status(notification_queue: asyncio.Queue, num_exp_messages: int) -> list[dict]:
     if num_exp_messages > 0:
         assert not notification_queue.empty()
 
@@ -73,7 +74,7 @@ async def _assert_notification_queue_status(
         msg = await notification_queue.get()
 
         assert msg, "notification msg from postgres is empty!"
-        task_data = json.loads(msg.payload)
+        task_data = json.loads(msg)
         expected_keys = [
             "task_id",
             "project_id",
@@ -86,19 +87,13 @@ async def _assert_notification_queue_status(
             assert k in task_data, f"invalid structure, expected [{k}] in {task_data}"
 
         tasks.append(task_data)
-    assert (
-        notification_queue.empty()
-    ), f"there are {notification_queue.qsize()} remaining messages in the queue"
+    assert notification_queue.empty(), f"there are {notification_queue.qsize()} remaining messages in the queue"
 
     return tasks
 
 
-async def _update_comp_task_with(conn: SAConnection, task: dict, **kwargs):
-    await conn.execute(
-        comp_tasks.update()
-        .values(**kwargs)
-        .where(comp_tasks.c.task_id == task["task_id"])
-    )
+async def _update_comp_task_with(conn: AsyncConnection, task: dict, **kwargs):
+    await conn.execute(comp_tasks.update().values(**kwargs).where(comp_tasks.c.task_id == task["task_id"]))
 
 
 @pytest.mark.parametrize(
@@ -107,15 +102,13 @@ async def _update_comp_task_with(conn: SAConnection, task: dict, **kwargs):
 )
 async def test_listen_query(
     db_notification_queue: asyncio.Queue,
-    db_connection: SAConnection,
+    db_connection: AsyncConnection,
     task: dict,
 ):
-    """this tests how the postgres LISTEN query and in particular the aiopg implementation of it works"""
+    """this tests how the postgres LISTEN query and in particular the asyncpg implementation of it works"""
     # let's test the trigger
     updated_output = {"some new stuff": "it is new"}
-    await _update_comp_task_with(
-        db_connection, task, outputs=updated_output, state=StateType.ABORTED
-    )
+    await _update_comp_task_with(db_connection, task, outputs=updated_output, state=StateType.ABORTED)
     tasks = await _assert_notification_queue_status(db_notification_queue, 1)
     assert tasks[0]["changes"] == ["modified", "outputs", "state"]
     assert tasks[0]["action"] == "UPDATE"
@@ -124,9 +117,7 @@ async def test_listen_query(
     assert tasks[0]["project_id"] == task["project_id"]
     assert tasks[0]["node_id"] == task["node_id"]
 
-    assert (
-        "data" not in tasks[0]
-    ), "data is not expected in the notification payload anymore"
+    assert "data" not in tasks[0], "data is not expected in the notification payload anymore"
 
     # setting the exact same data twice triggers only ONCE
     updated_output = {"some new stuff": "it is newer"}

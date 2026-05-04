@@ -24,7 +24,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..application_settings import get_application_settings
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
@@ -72,7 +72,7 @@ async def create_or_update_pipeline(
     }
 
     try:
-        computation_task_out = await request_director_v2(
+        computation_task_out, _ = await request_director_v2(
             app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
         )
         assert isinstance(computation_task_out, dict)  # nosec
@@ -90,10 +90,8 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=_logger)
-async def is_pipeline_running(
-    app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> bool | None:
-    # NOTE: possiblity to make it cheaper by /computations/{project_id}/state. First trial shows
+async def is_pipeline_running(app: web.Application, user_id: PositiveInt, project_id: UUID) -> bool | None:
+    # NOTE: possibility to make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
     pipeline = await get_computation_task(app, user_id, project_id)
@@ -110,13 +108,9 @@ async def is_pipeline_running(
 
 
 @log_decorator(logger=_logger)
-async def get_computation_task(
-    app: web.Application, user_id: UserID, project_id: ProjectID
-) -> ComputationTask | None:
+async def get_computation_task(app: web.Application, user_id: UserID, project_id: ProjectID) -> ComputationTask | None:
     try:
-        dv2_computation = await DirectorV2RestClient(app).get_computation(
-            project_id=project_id, user_id=user_id
-        )
+        dv2_computation = await DirectorV2RestClient(app).get_computation(project_id=project_id, user_id=user_id)
         task_out = ComputationTask.model_validate(dv2_computation, from_attributes=True)
         _logger.debug("found computation task: %s", f"{task_out=}")
 
@@ -125,9 +119,7 @@ async def get_computation_task(
         if exc.status == status.HTTP_404_NOT_FOUND:
             # the pipeline might not exist and that is ok
             return None
-        _logger.warning(
-            "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
-        )
+        _logger.warning("getting pipeline for project %s failed: %s.", f"{project_id=}", exc)
         return None
 
 
@@ -142,12 +134,8 @@ def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
     reason="silence in case the pipeline does not exist",
     predicate=_skip_if_pipeline_not_found,
 )
-async def stop_pipeline(
-    app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
-):
-    await DirectorV2RestClient(app).stop_computation(
-        project_id=project_id, user_id=user_id
-    )
+async def stop_pipeline(app: web.Application, *, user_id: PositiveInt, project_id: ProjectID):
+    await DirectorV2RestClient(app).stop_computation(project_id=project_id, user_id=user_id)
 
 
 @log_decorator(logger=_logger)
@@ -170,7 +158,7 @@ async def delete_pipeline(
             "user_id": user_id,
             "force": force,
         },
-    )
+    )  # status code ignored
 
 
 #
@@ -186,7 +174,7 @@ async def get_batch_tasks_outputs(
 ) -> TasksOutputs:
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
-    response_payload = await request_director_v2(
+    response_payload, _ = await request_director_v2(
         app,
         "POST",
         url=(settings.base_url / f"computations/{project_id}/tasks/-/outputs:batchGet"),
@@ -217,13 +205,9 @@ async def get_wallet_info(
     check_user_wallet_permission: bool = True,
 ) -> WalletInfo | None:
     app_settings = get_application_settings(app)
-    if not (
-        product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
-    ):
+    if not (product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED):
         return None
-    project_wallet = await projects_wallets_service.get_project_wallet(
-        app, project_id=project_id
-    )
+    project_wallet = await projects_wallets_service.get_project_wallet(app, project_id=project_id)
     if project_wallet is None:
         user_default_wallet_preference = await user_preferences_service.get_frontend_user_preference(
             app,
@@ -233,9 +217,7 @@ async def get_wallet_info(
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)
-        project_wallet_id = TypeAdapter(WalletID).validate_python(
-            user_default_wallet_preference.value
-        )
+        project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
         await projects_wallets_service.connect_wallet_to_project(
             app,
             product_name=product_name,
@@ -248,17 +230,17 @@ async def get_wallet_info(
 
     if check_user_wallet_permission:
         # Check whether user has access to the wallet
-        wallet = (
-            await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
-                app,
-                user_id=user_id,
-                wallet_id=project_wallet_id,
-                product_name=product_name,
-            )
+        wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+            app,
+            user_id=user_id,
+            wallet_id=project_wallet_id,
+            product_name=product_name,
         )
     else:
-        # This function is used also when we are synchronizing the projects/projects_nodes with the comp_pipelines/comp_tasks tables in director-v2
-        # In situations where a project is connected to a wallet, but the user does not have access to it and is performing an action such as
+        # This function is used also when we are synchronizing the projects/projects_nodes
+        # with the comp_pipelines/comp_tasks tables in director-v2
+        # In situations where a project is connected to a wallet, but the user does not have access to it and
+        # is performing an action such as
         # upgrading the service version, we still want to retrieve the wallet info and pass it to director-v2.
         wallet = await wallets_service.get_wallet_with_available_credits(
             app, wallet_id=project_wallet_id, product_name=product_name
@@ -277,7 +259,7 @@ async def get_group_properties(
     product_name: ProductName,
     user_id: UserID,
 ) -> GroupExtraProperties:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with get_asyncpg_engine(app).connect() as conn:
         return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
             conn, user_id=user_id, product_name=product_name
         )

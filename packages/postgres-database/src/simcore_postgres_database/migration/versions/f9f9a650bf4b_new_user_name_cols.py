@@ -5,6 +5,7 @@ Revises: 392a86f2e446
 Create Date: 2024-01-12 06:29:40.364669+00:00
 
 """
+
 import re
 import secrets
 import string
@@ -43,9 +44,7 @@ def upgrade():
         first_name = parts[0].capitalize()
         last_name = parts[1].capitalize() if len(parts) == 2 else None
 
-        query = sa.text(
-            "UPDATE users SET first_name=:first, last_name=:last, name=:uname WHERE id=:id"
-        )
+        query = sa.text("UPDATE users SET first_name=:first, last_name=:last, name=:uname WHERE id=:id")
         values = {
             "first": first_name,
             "last": last_name,

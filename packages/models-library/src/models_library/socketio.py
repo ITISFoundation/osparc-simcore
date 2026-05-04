@@ -1,6 +1,5 @@
-from typing import Any
-
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Any,
     TypedDict,
 )
 

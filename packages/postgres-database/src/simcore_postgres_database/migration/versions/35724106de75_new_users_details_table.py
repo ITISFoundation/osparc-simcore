@@ -5,6 +5,7 @@ Revises: 20d60d2663ad
 Create Date: 2024-03-05 13:13:37.921956+00:00
 
 """
+
 from typing import Final
 
 import sqlalchemy as sa
@@ -21,9 +22,7 @@ depends_on = None
 # TRIGGERS ------------------------
 _TABLE_NAME: Final[str] = "users_pre_registration_details"
 _TRIGGER_NAME: Final[str] = "trigger_auto_update"  # NOTE: scoped on table
-_PROCEDURE_NAME: Final[
-    str
-] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
+_PROCEDURE_NAME: Final[str] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
 
 modified_timestamp_trigger = sa.DDL(
     f"""
@@ -64,18 +63,10 @@ def upgrade():
         sa.Column("country", sa.String(), nullable=True),
         sa.Column("postal_code", sa.String(), nullable=True),
         sa.Column("created_by", sa.Integer(), nullable=True),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.ForeignKeyConstraint(
-            ["created_by"], ["users.id"], onupdate="CASCADE", ondelete="SET NULL"
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.ForeignKeyConstraint(["created_by"], ["users.id"], onupdate="CASCADE", ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"),
         sa.UniqueConstraint("pre_email"),
     )
     # ### end Alembic commands ###
@@ -86,7 +77,6 @@ def upgrade():
 
 
 def downgrade():
-
     # custom
     op.execute(f"DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};")
     op.execute(f"DROP FUNCTION {_PROCEDURE_NAME};")

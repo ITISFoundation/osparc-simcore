@@ -19,9 +19,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch, {"CLUSTERS_KEEPER_TASK_INTERVAL": "00:00:01"}
-    )
+    return app_environment | setenvs_from_dict(monkeypatch, {"CLUSTERS_KEEPER_TASK_INTERVAL": "00:00:01"})
 
 
 @pytest.fixture

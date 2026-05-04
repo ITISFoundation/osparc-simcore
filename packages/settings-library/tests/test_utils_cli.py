@@ -44,9 +44,7 @@ def fake_version() -> str:
 
 
 @pytest.fixture
-def cli(
-    fake_settings_class: type[BaseCustomSettings], fake_version: str
-) -> typer.Typer:
+def cli(fake_settings_class: type[BaseCustomSettings], fake_version: str) -> typer.Typer:
     main = typer.Typer(name="app")
 
     @main.command()
@@ -74,8 +72,6 @@ def fake_granular_env_file_content() -> str:
         POSTGRES_USER=foo
         POSTGRES_PASSWORD=secret
         POSTGRES_DB=foodb
-        POSTGRES_MINSIZE=1
-        POSTGRES_MAXSIZE=50
         POSTGRES_MAX_POOLSIZE=10
         POSTGRES_MAX_OVERFLOW=20
         POSTGRES_CLIENT_NAME=None
@@ -126,9 +122,7 @@ def test_settings_as_json(
     mock_environment,
     cli_runner: CliRunner,
 ):
-    result = cli_runner.invoke(
-        cli, ["settings", "--as-json", "--show-secrets"], catch_exceptions=False
-    )
+    result = cli_runner.invoke(cli, ["settings", "--as-json", "--show-secrets"], catch_exceptions=False)
     print(result.stdout)
 
     # reuse resulting json to build settings
@@ -142,9 +136,7 @@ def test_settings_as_json_schema(
     mock_environment,
     cli_runner: CliRunner,
 ):
-    result = cli_runner.invoke(
-        cli, ["settings", "--as-json-schema"], catch_exceptions=False
-    )
+    result = cli_runner.invoke(cli, ["settings", "--as-json-schema"], catch_exceptions=False)
     print(result.stdout)
 
     # reuse resulting json to build settings
@@ -190,8 +182,6 @@ def test_cli_default_settings_envs(
                 "POSTGRES_USER": "foo",
                 "POSTGRES_PASSWORD": "secret",
                 "POSTGRES_DB": "foodb",
-                "POSTGRES_MINSIZE": 1,
-                "POSTGRES_MAXSIZE": 50,
                 "POSTGRES_MAX_POOLSIZE": 10,
                 "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
@@ -223,8 +213,6 @@ def test_cli_compact_settings_envs(
                 "POSTGRES_USER": "foo",
                 "POSTGRES_PASSWORD": "secret",
                 "POSTGRES_DB": "foodb",
-                "POSTGRES_MINSIZE": 1,
-                "POSTGRES_MAXSIZE": 50,
                 "POSTGRES_MAX_POOLSIZE": 10,
                 "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
@@ -250,7 +238,12 @@ def test_cli_compact_settings_envs(
             "APP_HOST": "localhost",
             "APP_PORT": "80",
             "APP_OPTIONAL_ADDON": '{"MODULE_VALUE":10,"MODULE_VALUE_DEFAULT":42}',
-            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST":"localhost","POSTGRES_PORT":5432,"POSTGRES_USER":"foo","POSTGRES_PASSWORD":"secret","POSTGRES_DB":"foodb","POSTGRES_MINSIZE":1,"POSTGRES_MAXSIZE":50,"POSTGRES_MAX_POOLSIZE":10,"POSTGRES_MAX_OVERFLOW":20,"POSTGRES_CLIENT_NAME":null}',
+            "APP_REQUIRED_PLUGIN": (
+                '{"POSTGRES_HOST":"localhost","POSTGRES_PORT":5432,'
+                '"POSTGRES_USER":"foo","POSTGRES_PASSWORD":"secret",'
+                '"POSTGRES_DB":"foodb","POSTGRES_MAX_POOLSIZE":10,'
+                '"POSTGRES_MAX_OVERFLOW":20,"POSTGRES_CLIENT_NAME":null}'
+            ),
         }
 
         settings_2 = fake_settings_class()
@@ -261,13 +254,19 @@ def test_compact_format(
     monkeypatch: pytest.MonkeyPatch,
     fake_settings_class: type[BaseCustomSettings],
 ):
+    app_required_plugin = (
+        '{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, '
+        '"POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", '
+        '"POSTGRES_DB": "foodb", "POSTGRES_MAX_POOLSIZE": 10, '
+        '"POSTGRES_MAX_OVERFLOW": 20, "POSTGRES_CLIENT_NAME": "None"}'
+    )
     compact_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
-        """
+        f"""
         APP_HOST=localhost
         APP_PORT=80
-        APP_OPTIONAL_ADDON='{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}'
-        APP_REQUIRED_PLUGIN='{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_MAX_POOLSIZE": 10, "POSTGRES_MAX_OVERFLOW": 20, "POSTGRES_CLIENT_NAME": "None"}'
+        APP_OPTIONAL_ADDON='{{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}}'
+        APP_REQUIRED_PLUGIN='{app_required_plugin}'
         """,
     )
 
@@ -298,11 +297,10 @@ def test_granular_format(
     POSTGRES_PASSWORD=secret
     # Database name
     POSTGRES_DB=foodb
-    POSTGRES_MINSIZE=1
-    POSTGRES_MAXSIZE=50
     POSTGRES_MAX_POOLSIZE=10
     POSTGRES_MAX_OVERFLOW=20
-    # Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)
+    # Name of the application connecting the postgres database,
+    # will default to use the host hostname (hostname on linux)
     POSTGRES_CLIENT_NAME=None
     """,
     )
@@ -319,8 +317,6 @@ def test_granular_format(
             "POSTGRES_USER": "foo",
             "POSTGRES_PASSWORD": "secret",
             "POSTGRES_DB": "foodb",
-            "POSTGRES_MINSIZE": 1,
-            "POSTGRES_MAXSIZE": 50,
             "POSTGRES_MAX_POOLSIZE": 10,
             "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
@@ -350,7 +346,7 @@ def test_cli_settings_exclude_unset(
         POSTGRES_DB=foodb
 
         # this is optional but set
-        POSTGRES_MAXSIZE=20
+        POSTGRES_MAX_POOLSIZE=20
         """,
     )
 
@@ -363,15 +359,11 @@ def test_cli_settings_exclude_unset(
     print(stdout_as_envfile)
 
     # parsing output as an envfile
-    envs_exclude_unset_from_env: EnvVarsDict = dotenv_values(
-        stream=StringIO(stdout_as_envfile)
-    )
+    envs_exclude_unset_from_env: EnvVarsDict = dotenv_values(stream=StringIO(stdout_as_envfile))
     assert envs_exclude_unset_from_env == mocked_envs
 
 
-@pytest.mark.xfail(
-    reason="--show-secrets and --exclude-unset still not implemented with --as-json"
-)
+@pytest.mark.xfail(reason="--show-secrets and --exclude-unset still not implemented with --as-json")
 def test_cli_settings_exclude_unset_as_json(
     cli: typer.Typer,
     cli_runner: CliRunner,
@@ -394,7 +386,7 @@ def test_cli_settings_exclude_unset_as_json(
         POSTGRES_DB=foodb
 
         # this is optional but set
-        POSTGRES_MAXSIZE=20
+        POSTGRES_MAX_POOLSIZE=20
         """,
     )
     stdout_as_json = cli_runner.invoke(
@@ -415,7 +407,7 @@ def test_cli_settings_exclude_unset_as_json(
             "POSTGRES_USER": "foo",
             "POSTGRES_PASSWORD": "secret",
             "POSTGRES_DB": "foodb",
-            "POSTGRES_MAXSIZE": 20,
+            "POSTGRES_MAX_POOLSIZE": 20,
         },
     }
 
@@ -426,7 +418,7 @@ def test_print_as(capsys: pytest.CaptureFixture):
         SECRET: SecretStr
         URL: AnyHttpUrl
 
-    settings_obj = FakeSettings(INTEGER=1, SECRET="secret", URL="http://google.com")  # type: ignore
+    settings_obj = FakeSettings(INTEGER=1, SECRET="secret", URL="http://google.com")  # type: ignore  # noqa: S106
 
     print_as_envfile(settings_obj, compact=True, verbose=True, show_secrets=True)
     captured = capsys.readouterr()

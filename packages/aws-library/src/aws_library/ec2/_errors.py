@@ -33,15 +33,11 @@ class EC2InstanceTypeInvalidError(EC2AccessError):
 
 
 class EC2TooManyInstancesError(EC2AccessError):
-    msg_template: str = (
-        "The maximum amount of instances {num_instances} is already reached!"
-    )
+    msg_template: str = "The maximum amount of instances {num_instances} is already reached!"
 
 
 class EC2InsufficientCapacityError(EC2AccessError):
-    msg_template: str = (
-        "Insufficient capacity in {availability_zones} for {instance_type}"
-    )
+    msg_template: str = "Insufficient capacity in {availability_zones} for {instance_type}"
 
 
 class EC2SubnetsNotEnoughIPsError(EC2AccessError):

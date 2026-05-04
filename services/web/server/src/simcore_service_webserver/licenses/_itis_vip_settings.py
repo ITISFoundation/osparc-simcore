@@ -13,9 +13,7 @@ def _validate_url_contains_category(url: str) -> str:
     return url
 
 
-def _to_categories(
-    api_url: str, category_map: dict[CategoryID, CategoryDisplay]
-) -> list[CategoryTuple]:
+def _to_categories(api_url: str, category_map: dict[CategoryID, CategoryDisplay]) -> list[CategoryTuple]:
     return [
         CategoryTuple(
             url=HttpUrl(api_url.format(category=category_id)),
@@ -27,9 +25,7 @@ def _to_categories(
 
 
 class ItisVipSettings(BaseCustomSettings):
-    LICENSES_ITIS_VIP_API_URL: Annotated[
-        str, AfterValidator(_validate_url_contains_category)
-    ]
+    LICENSES_ITIS_VIP_API_URL: Annotated[str, AfterValidator(_validate_url_contains_category)]
     LICENSES_ITIS_VIP_CATEGORIES: dict[CategoryID, CategoryDisplay]
 
     def get_urls(self) -> list[HttpUrl]:
@@ -46,9 +42,7 @@ class ItisVipSettings(BaseCustomSettings):
 
 
 class SpeagPhantomsSettings(BaseCustomSettings):
-    LICENSES_SPEAG_PHANTOMS_API_URL: Annotated[
-        str, AfterValidator(_validate_url_contains_category)
-    ]
+    LICENSES_SPEAG_PHANTOMS_API_URL: Annotated[str, AfterValidator(_validate_url_contains_category)]
     LICENSES_SPEAG_PHANTOMS_CATEGORIES: dict[CategoryID, CategoryDisplay]
 
     def to_categories(self) -> list[CategoryTuple]:

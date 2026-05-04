@@ -23,9 +23,7 @@ class CreateLinkCoroutine(Protocol):
     ) -> ProjectPermalink: ...
 
 
-_PROJECT_PERMALINK_FACTORY_APPKEY: Final = web.AppKey(
-    "PROJECT_PERMALINK_FACTORY", CreateLinkCoroutine
-)
+_PROJECT_PERMALINK_FACTORY_APPKEY: Final = web.AppKey("PROJECT_PERMALINK_FACTORY", CreateLinkCoroutine)
 
 
 def register_factory(app: web.Application, factory_coro: CreateLinkCoroutine):
@@ -78,9 +76,7 @@ async def update_or_pop_permalink_in_project(
     If fails, it pops it from project (so it is not set in the pydantic model. SEE ProjectGet.permalink)
     """
     try:
-        permalink = await _create_permalink(
-            app, request_url, request_headers, project_uuid=project["uuid"]
-        )
+        permalink = await _create_permalink(app, request_url, request_headers, project_uuid=project["uuid"])
 
         assert permalink  # nosec
         project["permalink"] = permalink

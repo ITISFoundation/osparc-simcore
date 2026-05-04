@@ -1,6 +1,7 @@
 """
-    NOTE: this was decoupled from utils_cli.py in order to reduce requirements
+NOTE: this was decoupled from utils_cli.py in order to reduce requirements
 """
+
 import sys
 from pathlib import Path
 from typing import Final
@@ -8,9 +9,7 @@ from typing import Final
 from alembic.config import Config as AlembicConfig
 from alembic.script.base import ScriptDirectory
 
-_CURRENT_DIR = Path(
-    sys.argv[0] if __name__ == "__main__" else __file__
-).parent.resolve()
+_CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.resolve()
 
 DEFAULT_INI: Final[Path] = _CURRENT_DIR / "alembic.ini"
 MIGRATION_DIR: Final[Path] = _CURRENT_DIR / "migration"

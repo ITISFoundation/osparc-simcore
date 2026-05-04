@@ -21,27 +21,23 @@ from .settings import StaticWebserverModuleSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-@app_setup_func(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=_logger
-)
+@app_setup_func(__name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=_logger)
 def setup_statics(app: web.Application) -> None:
-
     settings: StaticWebserverModuleSettings = get_plugin_settings(app)
     assert settings  # nosec
 
     setup_products(app)
 
     # serves information composed by making N http requests (once for each product)
-    # to the index.html in each of the N product directories /osparc, /s4l, /s4llite, /s4lacad, /s4lengine, /s4ldesktop, /s4ldesktopacad, /tis and /tiplite
+    # to the index.html in each of the N product directories:
+    #  /osparc, /s4l, /s4llite, /s4lacad, /s4lengine, /s4ldesktop, /s4ldesktopacad, /tis and /tiplite
     app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
 
-    # statics.json is computed here and contains information used
+    # static-frontend-data.json is computed here and contains information used
     # by the frontend to properly render the client
-    app.router.add_get(
-        "/static-frontend-data.json", get_statics_json, name="static_frontend_data"
-    )
+    app.router.add_get("/static-frontend-data.json", get_statics_json, name="static_frontend_data")
 
-    # compute statics.json content
+    # compute static-frontend-data.json content
     app.on_startup.append(create_and_cache_statics_json)
 
     # fetch all index.html for various frontends

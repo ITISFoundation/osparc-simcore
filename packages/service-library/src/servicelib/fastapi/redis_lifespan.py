@@ -29,13 +29,10 @@ async def redis_client_sdk_lifespan(_: FastAPI, state: State) -> AsyncIterator[S
     _lifespan_name = f"{__name__}.{redis_client_sdk_lifespan.__name__}"
 
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-
         # Validate input state
         try:
             redis_state = RedisLifespanState.model_validate(state)
-            redis_dsn_with_secrets = redis_state.REDIS_SETTINGS.build_redis_dsn(
-                redis_state.REDIS_CLIENT_DB
-            )
+            redis_dsn_with_secrets = redis_state.REDIS_SETTINGS.build_redis_dsn(redis_state.REDIS_CLIENT_DB)
         except ValidationError as exc:
             raise RedisConfigurationError(validation_error=exc, state=state) from exc
 
@@ -45,7 +42,7 @@ async def redis_client_sdk_lifespan(_: FastAPI, state: State) -> AsyncIterator[S
             logging.INFO,
             f"Creating redis client with name={redis_state.REDIS_CLIENT_NAME}",
         ):
-            # NOTE: sdk integrats waiting until connection is ready
+            # NOTE: sdk integrates waiting until connection is ready
             # and will raise an exception if it cannot connect
             redis_client = RedisClientSDK(
                 redis_dsn_with_secrets,

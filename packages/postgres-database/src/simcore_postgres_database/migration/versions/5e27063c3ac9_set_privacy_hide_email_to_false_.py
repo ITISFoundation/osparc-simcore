@@ -5,6 +5,7 @@ Revises: 4d007819e61a
 Create Date: 2024-12-10 15:50:48.024204+00:00
 
 """
+
 from alembic import op
 from sqlalchemy.sql import expression
 
@@ -25,7 +26,6 @@ def upgrade():
 
 
 def downgrade():
-
     # Revert the server_default of privacy_hide_email to true
     with op.batch_alter_table("users") as batch_op:
         batch_op.alter_column("privacy_hide_email", server_default=expression.true())

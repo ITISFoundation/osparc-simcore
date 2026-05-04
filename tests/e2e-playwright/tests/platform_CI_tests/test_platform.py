@@ -5,13 +5,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import pytest
-from playwright.sync_api import expect
+from playwright.sync_api import Page, expect
 from playwright.sync_api._generated import BrowserContext, Playwright
 from pydantic import AnyUrl
+from pytest_simcore.helpers.playwright import SECOND
 
 
 @pytest.fixture(scope="session")
@@ -49,7 +50,6 @@ def logged_in_context(
 
 @pytest.fixture(scope="module")
 def test_module_teardown() -> Iterable[None]:
-
     yield  # Run the tests
 
     file_path = Path("state.json")
@@ -57,20 +57,16 @@ def test_module_teardown() -> Iterable[None]:
         file_path.unlink()
 
 
-def test_simple_folder_workflow(
-    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
-):
+def test_simple_folder_workflow(logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None):
     page = logged_in_context.new_page()
 
     page.goto(f"{product_url}")
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(1 * SECOND)
     page.get_by_test_id("newPlusBtn").click()
     page.get_by_test_id("newFolderButton").click()
 
     with page.expect_response(
-        lambda response: "folders" in response.url
-        and response.status == 201
-        and response.request.method == "POST"
+        lambda response: "folders" in response.url and response.status == 201 and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("folderEditorTitle").fill("My new folder")
         page.get_by_test_id("folderEditorCreate").click()
@@ -80,19 +76,15 @@ def test_simple_folder_workflow(
     page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()
 
 
-def test_simple_workspace_workflow(
-    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
-):
+def test_simple_workspace_workflow(logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None):
     page = logged_in_context.new_page()
 
     page.goto(f"{product_url}")
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(1 * SECOND)
     page.get_by_test_id("workspacesAndFoldersTreeItem_-1_null").click()
 
     with page.expect_response(
-        lambda response: "workspaces" in response.url
-        and response.status == 201
-        and response.request.method == "POST"
+        lambda response: "workspaces" in response.url and response.status == 201 and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("newWorkspaceButton").click()
 
@@ -104,3 +96,24 @@ def test_simple_workspace_workflow(
     _workspace_id = response_info.value.json()["data"]["workspaceId"]
     page.get_by_test_id(f"workspaceItem_{_workspace_id}").click()
     page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()
+
+
+@pytest.mark.parametrize(
+    "path, expected_og_title",
+    [
+        ("/", "oSPARC"),
+        ("/s4l/index.html", "Sim4Life"),
+        ("/tis/index.html", "TI Plan - IT'IS"),
+    ],
+)
+def test_product_frontend_app_served(page: Page, path: str, product_url: AnyUrl, expected_og_title: str):
+    response = page.goto(f"{product_url}{path}")
+    page.wait_for_timeout(1 * SECOND)
+    assert response
+    assert response.ok, response.body()
+
+    locator = page.locator("meta[property='og:title']")
+    expect(locator).to_be_attached(timeout=1 * SECOND)
+
+    if expected_og_title is not None:
+        expect(locator).to_have_attribute("content", expected_og_title, timeout=1 * SECOND)

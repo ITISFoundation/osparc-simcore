@@ -15,9 +15,7 @@ def test_invitations(mocker: MockerFixture):
     code_length = 10
 
     # Spy on generate_password to track generated codes
-    spy_generate_password = mocker.spy(
-        simcore_service_webserver.login.cli, "generate_password"
-    )
+    spy_generate_password = mocker.spy(simcore_service_webserver.login.cli, "generate_password")
 
     # Mock sys.stdout to capture printed output
     mock_stdout = StringIO()

@@ -8,13 +8,11 @@ from simcore_service_webserver.application_settings_utils import (
 )
 
 
-def test_settings_infered_from_default_tests_config(
+def test_settings_inferred_from_default_tests_config(
     default_app_cfg: AppConfigDict, monkeypatch_setenv_from_app_config: Callable
 ):
     envs = monkeypatch_setenv_from_app_config(default_app_cfg)
-    assert envs == {
-        k: f"{v}" for k, v in convert_to_environ_vars(default_app_cfg).items()
-    }
+    assert envs == {k: f"{v}" for k, v in convert_to_environ_vars(default_app_cfg).items()}
 
     settings = ApplicationSettings.create_from_envs(WEBSERVER_RPC_NAMESPACE=None)
 

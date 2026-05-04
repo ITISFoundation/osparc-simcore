@@ -1,5 +1,4 @@
-""" Helper script to generate OAS automatically
-"""
+"""Helper script to generate OAS automatically"""
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -35,9 +34,7 @@ router = APIRouter(
     tags=[
         "workspaces",
     ],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 
@@ -48,8 +45,7 @@ router = APIRouter(
 )
 async def create_workspace(
     _body: WorkspaceCreateBodyParams,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -58,8 +54,7 @@ async def create_workspace(
 )
 async def list_workspaces(
     _query: Annotated[as_query(WorkspacesListQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -68,8 +63,7 @@ async def list_workspaces(
 )
 async def get_workspace(
     _path: Annotated[WorkspacesPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.put(
@@ -79,8 +73,7 @@ async def get_workspace(
 async def replace_workspace(
     _path: Annotated[WorkspacesPathParams, Depends()],
     _body: WorkspaceReplaceBodyParams,
-):
-    ...
+): ...
 
 
 @router.delete(
@@ -89,8 +82,7 @@ async def replace_workspace(
 )
 async def delete_workspace(
     _path: Annotated[WorkspacesPathParams, Depends()],
-):
-    ...
+): ...
 
 
 ### Workspaces groups
@@ -106,8 +98,7 @@ _extra_tags: list[str | Enum] = ["groups"]
 async def create_workspace_group(
     _path: Annotated[WorkspacesGroupsPathParams, Depends()],
     _body: WorkspacesGroupsBodyParams,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -117,8 +108,7 @@ async def create_workspace_group(
 )
 async def list_workspace_groups(
     _path: Annotated[WorkspacesPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.put(
@@ -129,8 +119,7 @@ async def list_workspace_groups(
 async def replace_workspace_group(
     _path: Annotated[WorkspacesGroupsPathParams, Depends()],
     _body: WorkspacesGroupsBodyParams,
-):
-    ...
+): ...
 
 
 @router.delete(
@@ -140,5 +129,4 @@ async def replace_workspace_group(
 )
 async def delete_workspace_group(
     _path: Annotated[WorkspacesGroupsPathParams, Depends()],
-):
-    ...
+): ...

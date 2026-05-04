@@ -5,6 +5,7 @@ Revises: a3a58471b0f1
 Create Date: 2025-01-21 13:13:18.256109+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -29,21 +30,15 @@ def upgrade():
     )
     op.add_column(
         "projects_nodes",
-        sa.Column(
-            "version", sa.String(), nullable=True, comment="Semantic version number"
-        ),
+        sa.Column("version", sa.String(), nullable=True, comment="Semantic version number"),
     )
     op.add_column(
         "projects_nodes",
-        sa.Column(
-            "label", sa.String(), nullable=True, comment="Short name used for display"
-        ),
+        sa.Column("label", sa.String(), nullable=True, comment="Short name used for display"),
     )
     op.add_column(
         "projects_nodes",
-        sa.Column(
-            "progress", sa.Numeric(), nullable=True, comment="Progress value (0-100)"
-        ),
+        sa.Column("progress", sa.Numeric(), nullable=True, comment="Progress value (0-100)"),
     )
     op.add_column(
         "projects_nodes",

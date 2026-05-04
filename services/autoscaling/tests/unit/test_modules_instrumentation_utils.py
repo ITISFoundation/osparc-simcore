@@ -21,7 +21,7 @@ def _assert_metrics(
     *,
     expected_num_samples: int,
     check_sample_index: int | None,
-    expected_sample: _ExpectedSample | None
+    expected_sample: _ExpectedSample | None,
 ) -> None:
     collected_metrics = list(metrics_to_collect.collect())
     assert len(collected_metrics) == 1
@@ -38,7 +38,7 @@ def _assert_metrics(
 
 
 def test_update_gauge_sets_old_entries_to_0(
-    fake_ec2_instance_data: Callable[..., EC2InstanceData]
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     # Create a Gauge with example labels
     registry = CollectorRegistry()

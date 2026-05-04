@@ -4,8 +4,7 @@ from typing import Any, TypedDict
 
 import simcore_postgres_database.cli
 import sqlalchemy as sa
-from psycopg2 import OperationalError
-from simcore_postgres_database.models.base import metadata
+import sqlalchemy.exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
@@ -18,19 +17,22 @@ class PostgresTestConfig(TypedDict):
 
 
 def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
+    # inspector = sa.inspect(sa_sync_engine)
+    # tables = inspector.get_table_names()
+
     with sa_sync_engine.begin() as conn:
         conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
         conn.execute(
-            # NOTE: terminates all open transactions before droping all tables
+            # NOTE: terminates all open transactions before dropping all tables
             # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
-            sa.DDL(
-                "SELECT pg_terminate_backend(pid) "
-                "FROM pg_stat_activity "
-                "WHERE state = 'idle in transaction';"
-            )
+            sa.DDL("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle in transaction';")
         )
+        # for table in tables:
+        #     conn.execute(sa.text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
+
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
-        metadata.drop_all(bind=conn)
+        # Drop all tables including those not in metadata, with CASCADE to handle dependencies
+        conn.execute(sa.DDL("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"))
 
 
 @contextmanager
@@ -42,9 +44,7 @@ def migrated_pg_tables_context(
     using migration upgrade/downgrade routines
     """
 
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_config
-    )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_config)
 
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback
@@ -79,7 +79,7 @@ def is_postgres_responsive(url) -> bool:
         sync_engine = sa.create_engine(url)
         conn = sync_engine.connect()
         conn.close()
-    except OperationalError:
+    except sqlalchemy.exc.OperationalError:
         return False
     return True
 
@@ -109,9 +109,7 @@ async def _async_insert_and_get_row(
     else:
         returning_cols = [pk_col]
 
-    result = await conn.execute(
-        table.insert().values(**values).returning(*returning_cols)
-    )
+    result = await conn.execute(table.insert().values(**values).returning(*returning_cols))
     row = result.one()
 
     if composite_pk_provided:
@@ -123,9 +121,7 @@ async def _async_insert_and_get_row(
                 assert getattr(row, col.name) == expected_value
 
         # Build WHERE clause for composite key
-        where_clause = sa.and_(
-            *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-        )
+        where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
     else:
         # Handle single primary key (existing logic)
         if pk_value is None:
@@ -176,9 +172,7 @@ def _sync_insert_and_get_row(
                 assert getattr(row, col.name) == expected_value
 
         # Build WHERE clause for composite key
-        where_clause = sa.and_(
-            *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-        )
+        where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
     else:
         # Handle single primary key (existing logic)
         if pk_value is None:
@@ -310,9 +304,7 @@ async def insert_and_get_row_lifespan(
         if pk_cols is not None:
             if pk_values is None:
                 pk_values = [getattr(row, col.name) for col in pk_cols]
-            where_clause = sa.and_(
-                *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-            )
+            where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
         else:
             if pk_value is None:
                 pk_value = getattr(row, pk_col.name)
@@ -365,9 +357,7 @@ def sync_insert_and_get_row_lifespan(
         if pk_cols is not None:
             if pk_values is None:
                 pk_values = [getattr(row, col.name) for col in pk_cols]
-            where_clause = sa.and_(
-                *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-            )
+            where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
         else:
             if pk_value is None:
                 pk_value = getattr(row, pk_col.name)

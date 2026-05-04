@@ -1,5 +1,4 @@
-""" Helper script to generate OAS automatically
-"""
+"""Helper script to generate OAS automatically"""
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -32,9 +31,7 @@ router = APIRouter(
         "licenses",
         "catalog",
     ],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 
@@ -44,8 +41,7 @@ router = APIRouter(
 )
 async def list_licensed_items(
     _query: Annotated[as_query(LicensedItemsListQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -55,5 +51,4 @@ async def list_licensed_items(
 async def purchase_licensed_item(
     _path: Annotated[LicensedItemsPathParams, Depends()],
     _body: LicensedItemsBodyParams,
-):
-    ...
+): ...

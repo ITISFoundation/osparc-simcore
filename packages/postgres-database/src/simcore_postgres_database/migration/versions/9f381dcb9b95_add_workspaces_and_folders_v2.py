@@ -5,6 +5,7 @@ Revises: 926c3eb2254e
 Create Date: 2024-09-03 05:49:16.581965+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -133,15 +134,9 @@ def upgrade():
         "workspaces_access_rights",
         sa.Column("workspace_id", sa.BigInteger(), nullable=True),
         sa.Column("gid", sa.BigInteger(), nullable=True),
-        sa.Column(
-            "read", sa.Boolean(), server_default=sa.text("false"), nullable=False
-        ),
-        sa.Column(
-            "write", sa.Boolean(), server_default=sa.text("false"), nullable=False
-        ),
-        sa.Column(
-            "delete", sa.Boolean(), server_default=sa.text("false"), nullable=False
-        ),
+        sa.Column("read", sa.Boolean(), server_default=sa.text("false"), nullable=False),
+        sa.Column("write", sa.Boolean(), server_default=sa.text("false"), nullable=False),
+        sa.Column("delete", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),

@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import warnings
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,19 +18,13 @@ from .helpers.host import get_localhost_ip
 
 
 @pytest.fixture
-async def dask_scheduler_service(
-    simcore_services_ready: None, monkeypatch: pytest.MonkeyPatch
-) -> str:
+async def dask_scheduler_service(simcore_services_ready: None, monkeypatch: pytest.MonkeyPatch) -> str:
     # the dask scheduler has a UI for the dashboard and a secondary port for the API
     # simcore_services fixture already ensure the dask-scheduler is up and running
-    dask_scheduler_api_port = get_service_published_port(
-        "dask-scheduler", target_ports=[8786]
-    )
+    dask_scheduler_api_port = get_service_published_port("dask-scheduler", target_ports=[8786])
     # override the port
     monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{dask_scheduler_api_port}")
-    url = AnyUrl.build(
-        scheme="tls", host=get_localhost_ip(), port=int(dask_scheduler_api_port)
-    )
+    url = AnyUrl.build(scheme="tls", host=get_localhost_ip(), port=int(dask_scheduler_api_port))
     return f"{url}"
 
 
@@ -93,12 +88,13 @@ def dask_client_security(
 
 
 @pytest.fixture
-def dask_client(
-    dask_scheduler_service: str, dask_client_security: distributed.Security
-) -> Iterator[Client]:
+def dask_client(dask_scheduler_service: str, dask_client_security: distributed.Security) -> Iterator[Client]:
     client = Client(dask_scheduler_service, security=dask_client_security)
     yield client
-    client.close()
+    # SEE https://github.com/dask/distributed/issues/2507
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        client.close()
 
 
 @pytest.fixture

@@ -1,0 +1,78 @@
+from abc import ABC
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any, TypeVar
+
+from models_library.notifications import Channel, TemplateName
+from pydantic import BaseModel
+from pydantic.json_schema import SkipJsonSchema
+
+
+class BaseTemplateContext(BaseModel):
+    product: SkipJsonSchema[dict[str, Any]]
+
+
+_TEMPLATE_CONTEXT_REGISTRY: dict[tuple[Channel, TemplateName], type[BaseTemplateContext]] = {}
+
+C = TypeVar("C", bound=type[BaseTemplateContext])
+
+
+@dataclass(frozen=True)
+class TemplateRef:
+    """
+    Uniquely identifies a template in the system.
+    """
+
+    channel: Channel
+    template_name: TemplateName
+
+
+@dataclass(frozen=True)
+class Template(ABC):
+    ref: TemplateRef
+    context_model: type[BaseTemplateContext]
+
+    parts: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class TemplatePreview[C]:
+    template_ref: TemplateRef
+    message_content: C
+
+
+def register_template_context(
+    channel: Channel,
+    template_name: TemplateName,
+) -> Callable[[C], C]:
+    """Decorator to register a template context model.
+
+    Args:
+        channel: The notification channel (e.g., ChannelType.email)
+        template_name: The template name
+
+    Returns:
+        The decorator function
+
+    Example:
+        @register_template_context(ChannelType.email, "account_approved")
+        class AccountApprovedTemplateContext(BaseTemplateContext):
+            ...
+    """
+
+    def decorator(cls: C) -> C:
+        key = (channel, template_name)
+        if key in _TEMPLATE_CONTEXT_REGISTRY:
+            msg = f"Template context model already registered for {channel}/{template_name}"
+            raise ValueError(msg)
+        _TEMPLATE_CONTEXT_REGISTRY[key] = cls
+        return cls
+
+    return decorator
+
+
+def get_template_context_model(
+    channel: Channel,
+    template_name: TemplateName,
+) -> type[BaseTemplateContext]:
+    return _TEMPLATE_CONTEXT_REGISTRY.get((channel, template_name), BaseTemplateContext)

@@ -39,9 +39,7 @@ async def create_user_api_key(
     node_id: NodeID,
 ) -> str:
     # NOTE: Given the display name, the API key is deterministically generated
-    return generate_unique_api_key(
-        create_unique_api_name_for(product_name, user_id, project_id, node_id)
-    )
+    return generate_unique_api_key(create_unique_api_name_for(product_name, user_id, project_id, node_id))
 
 
 async def create_user_api_secret(
@@ -51,9 +49,7 @@ async def create_user_api_secret(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> str:
-    display_name = create_unique_api_name_for(
-        product_name, user_id, project_id, node_id
-    )
+    display_name = create_unique_api_name_for(product_name, user_id, project_id, node_id)
     _logger.debug("Creating API key for %s", display_name)
     data = await rpc_create_api_key(
         app,

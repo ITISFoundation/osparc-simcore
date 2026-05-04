@@ -38,9 +38,7 @@ class ProjectFromCsv(ProjectAtDB):
         return v
 
 
-def validate_csv_exported_pg_project(
-    csvpath: Path, verbose: int = typer.Option(0, "--verbose", "-v", count=True)
-):
+def validate_csv_exported_pg_project(csvpath: Path, verbose: int = typer.Option(0, "--verbose", "-v", count=True)):
     """Validates a postgres (pg) projects table exported as a CSV file
 
 
@@ -67,14 +65,12 @@ def validate_csv_exported_pg_project(
                         typer.echo(model.model_dump_json(indent=2))
             except ValidationError as err:
                 failed.append(pid)
-                typer.secho(
-                    f"Invalid project {pid} (from {row['last_change_date']}", err=True
-                )
+                typer.secho(f"Invalid project {pid} (from {row['last_change_date']}", err=True)
                 typer.secho(f" {err}", fg=typer.colors.RED, err=True)
 
     if failed:
         typer.secho(
-            f"Found {len(failed)}/{index+1} invalid projects",
+            f"Found {len(failed)}/{index + 1} invalid projects",
             fg=typer.colors.RED,
             err=True,
         )

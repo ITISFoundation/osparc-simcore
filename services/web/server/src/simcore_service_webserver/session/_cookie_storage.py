@@ -24,9 +24,7 @@ def _share_cookie_across_all_subdomains(
     """
     host = request.url.host
     if host is None:
-        raise SessionValueError(
-            invalid="host", host=host, request_url=request.url, params=params
-        )
+        raise SessionValueError(invalid="host", host=host, request_url=request.url, params=params)
 
     params["domain"] = f".{host.lstrip('.')}"
 
@@ -40,7 +38,7 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         response: web.StreamResponse,
         session: aiohttp_session.Session,
     ) -> None:
-        # link response to originating request (allows to detect the orginal request url)
+        # link response to originating request (allows to detect the original request url)
         response._req = request  # pylint:disable=protected-access  # noqa: SLF001
 
         await super().save_session(request, response, session)
@@ -52,7 +50,6 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         *,
         max_age: int | None = None,
     ) -> None:
-
         params = self._cookie_params.copy()
         request = response._req  # pylint:disable=protected-access  # noqa: SLF001
         if not request:

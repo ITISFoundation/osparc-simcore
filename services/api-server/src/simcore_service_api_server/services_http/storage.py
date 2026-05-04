@@ -13,11 +13,6 @@ from httpx import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataArray,
-)
-from models_library.api_schemas_storage.storage_schemas import (
-    FileMetaDataGet as StorageFileMetaData,
-)
-from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
@@ -27,6 +22,9 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
     UploadedPart,
 )
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet as StorageFileMetaData,
+)
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -34,9 +32,6 @@ from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from models_library.users import UserID
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
-from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutError
-from simcore_service_api_server.models.schemas.files import UserFile
-from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -45,6 +40,10 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
+
+from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutError
+from simcore_service_api_server.models.schemas.files import UserFile
+from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -75,8 +74,7 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
     return File(
         id=file_id,  # type: ignore
         filename=filename,
-        content_type=guess_type(stored_file_meta.file_name)[0]
-        or "application/octet-stream",
+        content_type=guess_type(stored_file_meta.file_name)[0] or "application/octet-stream",
         e_tag=stored_file_meta.entity_tag,
         checksum=stored_file_meta.sha256_checksum,
     )
@@ -107,12 +105,8 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        files_metadata = (
-            Envelope[FileMetaDataArray].model_validate_json(response.text).data
-        )
-        files: list[StorageFileMetaData] = (
-            [] if files_metadata is None else files_metadata.root
-        )
+        files_metadata = Envelope[FileMetaDataArray].model_validate_json(response.text).data
+        files: list[StorageFileMetaData] = [] if files_metadata is None else files_metadata.root
         return files
 
     @_exception_mapper(http_status_map={})
@@ -144,19 +138,13 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        files_metadata = (
-            Envelope[FileMetaDataArray].model_validate_json(response.text).data
-        )
-        files: list[StorageFileMetaData] = (
-            [] if files_metadata is None else files_metadata.root
-        )
+        files_metadata = Envelope[FileMetaDataArray].model_validate_json(response.text).data
+        files: list[StorageFileMetaData] = [] if files_metadata is None else files_metadata.root
         assert len(files) <= limit if limit else True  # nosec
         return files
 
     @_exception_mapper(http_status_map={})
-    async def get_download_link(
-        self, *, user_id: int, file_id: UUID, file_name: str
-    ) -> AnyUrl:
+    async def get_download_link(self, *, user_id: int, file_id: UUID, file_name: str) -> AnyUrl:
         object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
 
         response = await self.client.get(
@@ -165,9 +153,7 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        presigned_link: PresignedLink | None = (
-            Envelope[PresignedLink].model_validate_json(response.text).data
-        )
+        presigned_link: PresignedLink | None = Envelope[PresignedLink].model_validate_json(response.text).data
         assert presigned_link is not None
         link: AnyUrl = presigned_link.link
         return link
@@ -184,7 +170,6 @@ class StorageApi(BaseServiceClientApi):
     async def get_file_upload_links(
         self, *, user_id: int, file: File, client_file: UserFileToProgramJob | UserFile
     ) -> FileUploadSchema:
-
         query_params = QueryParams(
             user_id=f"{user_id}",
             link_type=LinkType.PRESIGNED.value,
@@ -205,19 +190,14 @@ class StorageApi(BaseServiceClientApi):
         return enveloped_data.data
 
     @_exception_mapper(http_status_map={})
-    async def complete_file_upload(
-        self, *, user_id: int, file: File, uploaded_parts: list[UploadedPart]
-    ) -> ETag:
-
+    async def complete_file_upload(self, *, user_id: int, file: File, uploaded_parts: list[UploadedPart]) -> ETag:
         response = await self.client.post(
             f"/locations/{self.SIMCORE_S3_ID}/files/{file.storage_file_id}:complete",
             params={"user_id": f"{user_id}"},
             json=jsonable_encoder(FileUploadCompletionBody(parts=uploaded_parts)),
         )
         response.raise_for_status()
-        file_upload_complete_response = Envelope[
-            FileUploadCompleteResponse
-        ].model_validate_json(response.text)
+        file_upload_complete_response = Envelope[FileUploadCompleteResponse].model_validate_json(response.text)
         assert file_upload_complete_response.data  # nosec
         state_url = f"{file_upload_complete_response.data.links.state}"
         try:
@@ -231,9 +211,7 @@ class StorageApi(BaseServiceClientApi):
                 with attempt:
                     resp = await self.client.post(state_url)
                     resp.raise_for_status()
-                    future_enveloped = Envelope[
-                        FileUploadCompleteFutureResponse
-                    ].model_validate_json(resp.text)
+                    future_enveloped = Envelope[FileUploadCompleteFutureResponse].model_validate_json(resp.text)
                     assert future_enveloped.data  # nosec
                     if future_enveloped.data.state == FileUploadCompleteState.NOK:
                         raise TryAgain()
@@ -258,9 +236,7 @@ class StorageApi(BaseServiceClientApi):
         response.raise_for_status()
 
     @_exception_mapper(http_status_map={})
-    async def create_soft_link(
-        self, *, user_id: int, target_s3_path: str, as_file_id: UUID
-    ) -> File:
+    async def create_soft_link(self, *, user_id: int, target_s3_path: str, as_file_id: UUID) -> File:
         assert len(target_s3_path.split("/")) == 3  # nosec
 
         # define api-prefixed object-path for link
@@ -279,17 +255,13 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        stored_file_meta = (
-            Envelope[StorageFileMetaData].model_validate_json(response.text).data
-        )
+        stored_file_meta = Envelope[StorageFileMetaData].model_validate_json(response.text).data
         assert stored_file_meta is not None
         file_meta: File = to_file_api_model(stored_file_meta)
         return file_meta
 
     @_exception_mapper(http_status_map={})
-    async def delete_project_s3_assets(
-        self, user_id: UserID, project_id: ProjectID
-    ) -> None:
+    async def delete_project_s3_assets(self, user_id: UserID, project_id: ProjectID) -> None:
         response = await self.client.delete(
             f"/simcore-s3/folders/{project_id}",
             params={"user_id": user_id},
@@ -300,9 +272,7 @@ class StorageApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(
-    app: FastAPI, settings: StorageSettings, tracing_settings: TracingSettings | None
-) -> None:
+def setup(app: FastAPI, settings: StorageSettings, tracing_settings: TracingSettings | None) -> None:
     if not settings:
         settings = StorageSettings()
 

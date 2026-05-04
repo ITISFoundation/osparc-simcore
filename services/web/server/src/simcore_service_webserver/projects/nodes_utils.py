@@ -2,7 +2,6 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -15,9 +14,7 @@ from . import _projects_service
 log = logging.getLogger(__name__)
 
 
-async def project_get_depending_nodes(
-    project: dict[str, Any], node_uuid: NodeID
-) -> set[NodeID]:
+async def project_get_depending_nodes(project: dict[str, Any], node_uuid: NodeID) -> set[NodeID]:
     depending_node_uuids = set()
     for dep_node_uuid, dep_node_data in project.get("workbench", {}).items():
         for dep_node_inputs_key_data in dep_node_data.get("inputs", {}).values():
@@ -38,7 +35,6 @@ async def update_node_outputs(
     node_uuid: NodeID,
     outputs: dict,
     run_hash: str | None,
-    node_errors: list[ErrorDict] | None,
     client_session_id: ClientSessionID | None,
     *,
     ui_changed_keys: set[str] | None,
@@ -54,16 +50,11 @@ async def update_node_outputs(
         client_session_id=client_session_id,
     )
 
-    await _projects_service.notify_project_node_update(
-        app, project, node_uuid, errors=node_errors
-    )
+    await _projects_service.notify_project_node_update(app, project, node_uuid)
     # get depending node and notify for these ones as well
     depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
     await logged_gather(
-        *[
-            _projects_service.notify_project_node_update(app, project, nid, errors=None)
-            for nid in depending_node_uuids
-        ]
+        *[_projects_service.notify_project_node_update(app, project, nid) for nid in depending_node_uuids]
     )
 
     # changed keys are coming from two sources:
@@ -78,11 +69,7 @@ async def update_node_outputs(
     # this method will be invoked with the `ui_changed_keys` containing all
     # the keys which have changed.
 
-    keys: list[str] = (
-        keys_changed
-        if ui_changed_keys is None
-        else list(ui_changed_keys | set(keys_changed))
-    )
+    keys: list[str] = keys_changed if ui_changed_keys is None else list(ui_changed_keys | set(keys_changed))
 
     # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
     await _projects_service.post_trigger_connected_service_retrieve(

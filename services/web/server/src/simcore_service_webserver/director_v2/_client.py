@@ -49,15 +49,11 @@ class DirectorV2RestClient:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
-    async def get_computation(
-        self, project_id: ProjectID, user_id: UserID
-    ) -> DirectorV2ComputationGet:
-        computation_task_out = await request_director_v2(
+    async def get_computation(self, project_id: ProjectID, user_id: UserID) -> DirectorV2ComputationGet:
+        computation_task_out, _ = await request_director_v2(
             self._app,
             "GET",
-            (self._settings.base_url / "computations" / f"{project_id}").with_query(
-                user_id=int(user_id)
-            ),
+            (self._settings.base_url / "computations" / f"{project_id}").with_query(user_id=int(user_id)),
             expected_status=web.HTTPOk,
         )
         assert isinstance(computation_task_out, dict)  # nosec
@@ -70,25 +66,23 @@ class DirectorV2RestClient:
         product_name: str,
         product_api_base_url: str,
         **options,
-    ) -> str:
-        computation_task_out = await request_director_v2(
+    ) -> tuple[str, int]:
+        computation_task_out, response_status = await request_director_v2(
             self._app,
             "POST",
             self._settings.base_url / "computations",
-            expected_status=web.HTTPCreated,
+            expected_status={web.HTTPOk, web.HTTPCreated},
             data=DirectorV2ComputationCreate(
                 user_id=user_id,
                 project_id=project_id,
                 product_name=product_name,
-                product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(
-                    product_api_base_url
-                ),
+                product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(product_api_base_url),
                 **options,
             ).model_dump(mode="json", exclude_unset=True),
         )
         assert isinstance(computation_task_out, dict)  # nosec
         computation_task_out_id: str = computation_task_out["id"]
-        return computation_task_out_id
+        return computation_task_out_id, response_status
 
     async def stop_computation(self, project_id: ProjectID, user_id: UserID):
         await request_director_v2(
@@ -97,12 +91,10 @@ class DirectorV2RestClient:
             self._settings.base_url / "computations" / f"{project_id}:stop",
             expected_status=web.HTTPAccepted,
             data={"user_id": user_id},
-        )
+        )  # status code ignored
 
 
-DIRECTOR_V2_CLIENT_APPKEY: Final = web.AppKey(
-    "DIRECTOR_V2_CLIENT", DirectorV2RestClient
-)
+DIRECTOR_V2_CLIENT_APPKEY: Final = web.AppKey("DIRECTOR_V2_CLIENT", DirectorV2RestClient)
 
 
 def set_directorv2_client(app: web.Application, obj: DirectorV2RestClient):

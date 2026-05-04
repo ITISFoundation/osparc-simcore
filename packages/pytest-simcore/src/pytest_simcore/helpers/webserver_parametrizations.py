@@ -8,7 +8,7 @@ from simcore_postgres_database.models.users import UserRole
 
 class ExpectedResponse(NamedTuple):
     """
-    Stores respons status to an API request in function of the user
+    Stores response status to an API request in function of the user
 
     e.g. for a request that normally returns OK, a non-authorized user
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
@@ -27,9 +27,7 @@ class ExpectedResponse(NamedTuple):
 
     def __str__(self) -> str:
         # pylint: disable=no-member
-        items = ", ".join(
-            f"{k}={get_code_display_name(c)}" for k, c in self._asdict().items()
-        )
+        items = ", ".join(f"{k}={get_code_display_name(c)}" for k, c in self._asdict().items())
         return f"{self.__class__.__name__}({items})"
 
 
@@ -101,17 +99,11 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
     )
 
 
-def standard_user_role_response() -> (
-    tuple[str, list[tuple[UserRole, ExpectedResponse]]]
-):
+def standard_user_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse]]]:
     all_roles = standard_role_response()
     return (
         all_roles[0],
-        [
-            (user_role, response)
-            for user_role, response in all_roles[1]
-            if user_role in [UserRole.USER]
-        ],
+        [(user_role, response) for user_role, response in all_roles[1] if user_role in [UserRole.USER]],
     )
 
 

@@ -19,9 +19,7 @@ _logger = logging.getLogger(__name__)
 # NOTE: 'main' variable is referred in the setup's entrypoint!
 main = typer.Typer(name=PROJECT_NAME)
 
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
 main.callback()(create_version_callback(__version__))
 
 
@@ -57,16 +55,10 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
         CATALOG_POSTGRES=os.environ.get(
             "CATALOG_POSTGRES",
             PostgresSettings.create_from_envs(
-                POSTGRES_HOST=os.environ.get(
-                    "POSTGRES_HOST", "replace-with-postgres-host"
-                ),
-                POSTGRES_USER=os.environ.get(
-                    "POSTGRES_USER", "replace-with-postgres-user"
-                ),
+                POSTGRES_HOST=os.environ.get("POSTGRES_HOST", "replace-with-postgres-host"),
+                POSTGRES_USER=os.environ.get("POSTGRES_USER", "replace-with-postgres-user"),
                 POSTGRES_DB=os.environ.get("POSTGRES_DB", "replace-with-postgres-db"),
-                POSTGRES_PASSWORD=os.environ.get(
-                    "POSTGRES_PASSWORD", "replace-with-postgres-password"
-                ),
+                POSTGRES_PASSWORD=os.environ.get("POSTGRES_PASSWORD", "replace-with-postgres-password"),
             ),
         ),
         CATALOG_RABBITMQ=os.environ.get(
@@ -75,9 +67,7 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
                 RABBIT_HOST=os.environ.get("RABBIT_HOST", "replace-with-rabbit-host"),
                 RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "True"),
                 RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
-                RABBIT_PASSWORD=os.environ.get(
-                    "RABBIT_PASSWORD", "replace-with-rabbit-password"
-                ),
+                RABBIT_PASSWORD=os.environ.get("RABBIT_PASSWORD", "replace-with-rabbit-password"),
             ),
         ),
         CATALOG_DIRECTOR=DirectorSettings.create_from_envs(

@@ -31,9 +31,7 @@ def create_app(
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url=(
-            "/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None
-        ),
+        docs_url=("/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None),
         redoc_url=None,
         lifespan=events.create_app_lifespan(
             tracing_config=app_tracing_config,

@@ -21,8 +21,4 @@ def get_status_as_dict(
     status: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet,
 ) -> dict:
     """shared between different backend services to guarantee same result to frontend"""
-    return (
-        status.model_dump(by_alias=True)
-        if isinstance(status, DynamicServiceGet)
-        else status.model_dump()
-    )
+    return status.model_dump(by_alias=True) if isinstance(status, DynamicServiceGet) else status.model_dump()

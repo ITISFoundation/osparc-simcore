@@ -57,7 +57,6 @@ async def create_if_not_exists(
     licensed_resource_type: LicensedResourceType,
     licensed_resource_data: dict[str, Any] | None = None,
 ) -> LicensedResourceDB:
-
     insert_or_none_query = _create_insert_query(
         display_name,
         licensed_resource_name,
@@ -72,10 +71,7 @@ async def create_if_not_exists(
         if row is None:
             select_query = select(*_SELECTION_ARGS).where(
                 (licensed_resources.c.licensed_resource_name == licensed_resource_name)
-                & (
-                    licensed_resources.c.licensed_resource_type
-                    == licensed_resource_type
-                )
+                & (licensed_resources.c.licensed_resource_type == licensed_resource_type)
             )
 
             result = await conn.execute(select_query)
@@ -136,7 +132,5 @@ async def update(
         )
         row = result.one_or_none()
         if row is None:
-            raise LicensedResourceNotFoundError(
-                licensed_resource_id=licensed_resource_id
-            )
+            raise LicensedResourceNotFoundError(licensed_resource_id=licensed_resource_id)
         return LicensedResourceDB.model_validate(row)

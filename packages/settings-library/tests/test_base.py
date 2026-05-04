@@ -22,7 +22,7 @@ from settings_library.base import (
     BaseCustomSettings,
     DefaultFromEnvFactoryError,
 )
-from settings_library.email import SMTPSettings
+from settings_library.tracing import TracingSettings
 
 pydantic_version = ".".join(pydantic.__version__.split(".")[:2])
 
@@ -153,8 +153,8 @@ def test_create_settings_class_with_environment(
         # WARNING: patch.setenv("VALUE_NULLABLE_REQUIRED", None)
         # leads to E   pydantic.env_settings.SettingsError: error parsing JSON for "value_nullable_required"
         # because type(M.VALUE_NULLABLE_REQUIRED) is S that is a model and settings try to json.decode from it
-        # TODO: So far, i only manage to null it setting VALUE_NULLABLE_REQUIRED=None in the constructor
-        # FIXME: if set to {} -> it returns S1 ???
+        # PC: So far, i only manage to null it setting VALUE_NULLABLE_REQUIRED=None in the constructor
+        # if set to {} -> it returns S1 ???
         patch.setenv("VALUE_NULLABLE_REQUIRED", S3)
 
         _print_defaults(SettingsClass)
@@ -243,8 +243,8 @@ def test_auto_default_to_none_logs_a_warning(
     assert logger_warn.call_count == 1
     assert (
         _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-            field_name="VALUE_NULLABLE_DEFAULT_ENV"
-        )
+            field_name="VALUE_NULLABLE_DEFAULT_ENV", err="pytest"
+        ).split("pytest")[0]
         in logger_warn.call_args[0][0]
     )
 
@@ -336,7 +336,6 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_fixed_issubclass_type_error_with_pydantic_models():
-
     assert not issubclass(dict, BaseSettings)
     assert not issubclass(
         # FIXED with
@@ -356,7 +355,7 @@ def test_fixed_issubclass_type_error_with_pydantic_models():
         # >> issubclass(dict[str, str], BaseSettings)
         # Traceback (most recent call last):
         # File "<string>", line 1, in <module>
-        # File "/home/crespo/.pyenv/versions/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
+        # File "/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
         #     return _abc_subclasscheck(cls, subclass)
         # TypeError: issubclass() arg 1 must be a class
         #
@@ -364,7 +363,7 @@ def test_fixed_issubclass_type_error_with_pydantic_models():
         BaseSettings,
     )
 
-    # here reproduces the problem with our settings that ANE and PC had
+    # here reproduces the problem with our settings that ANE and PC had  # spellchecker:disable-line
     class SettingsClassThatFailed(BaseCustomSettings):
         FOO: dict[str, str] | None = None
 
@@ -376,9 +375,9 @@ def test_upgrade_failure_to_pydantic_settings_2_6(
     mock_env_devel_environment: EnvVarsDict,
 ):
     class ProblematicSettings(BaseCustomSettings):
-        WEBSERVER_EMAIL: SMTPSettings | None = None
+        WEBSERVER_TRACING: TracingSettings | None = None
 
         model_config = SettingsConfigDict(nested_model_default_partial_update=True)
 
     settings = ProblematicSettings()
-    assert settings.WEBSERVER_EMAIL is not None
+    assert settings.WEBSERVER_TRACING is not None

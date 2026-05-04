@@ -6,7 +6,6 @@ from simcore_service_catalog.utils.versioning import is_patch_release
 
 
 def test_is_patch_check():
-
     assert is_patch_release("1.0.4", "1.0.3")
     assert is_patch_release("1.0.5", "1.0.3")
 

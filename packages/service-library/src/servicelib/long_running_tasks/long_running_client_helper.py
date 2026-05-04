@@ -36,9 +36,7 @@ class LongRunningClientHelper:
     async def cleanup(self, namespace: LRTNamespace) -> None:
         """removes Redis keys associated to the LRTNamespace if they exist"""
         redis_namespace = to_redis_namespace(namespace)
-        keys_to_remove: list[str] = [
-            x async for x in self._redis.scan_iter(f"{redis_namespace}*")
-        ]
+        keys_to_remove: list[str] = [x async for x in self._redis.scan_iter(f"{redis_namespace}*")]
         with log_context(
             _logger,
             logging.INFO,

@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI
 
@@ -18,9 +18,7 @@ ________             __                                               _____     
  |    `   \ / __ \_ |  |  \  \___ (  <_> ) |  | \/\  ___/  /_____/ /    |    \/ /_/ |  / __ \_|  |_> > |  |  \  ___/  |  | \/
 /_______  /(____  / |__|   \___  > \____/  |__|    \___  >         \____|__  /\____ | (____  /|   __/  |__|   \___  > |__|
         \/      \/             \/                      \/                  \/      \/      \/ |__|                \/              {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 
 def on_startup() -> None:

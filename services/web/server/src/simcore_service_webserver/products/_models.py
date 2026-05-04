@@ -33,6 +33,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
+from sqlalchemy import Column
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 
@@ -96,8 +97,7 @@ class Product(BaseModel):
     support_email: Annotated[
         LowerCaseEmailStr,
         Field(
-            description="Main support email."
-            " Other support emails can be defined under 'support' field",
+            description="Main support email. Other support emails can be defined under 'support' field",
         ),
     ]
 
@@ -127,8 +127,10 @@ class Product(BaseModel):
     login_settings: Annotated[
         ProductLoginSettingsDict,
         Field(
-            description="Product customization of login settings. "
-            "Note that these are NOT the final plugin settings but those are obtained from login.settings.get_plugin_settings",
+            description=(
+                "Product customization of login settings. Note that these are NOT the final "
+                "plugin settings but those are obtained from login.settings.get_plugin_settings"
+            ),
         ),
     ]
 
@@ -139,19 +141,17 @@ class Product(BaseModel):
     max_open_studies_per_user: Annotated[
         PositiveInt | None,
         Field(
-            description="Limits the number of studies a user may have open concurently (disabled if NULL)",
+            description="Limits the number of studies a user may have open concurrently (disabled if NULL)",
         ),
     ] = None
 
-    group_id: Annotated[
-        int | None, Field(description="Groups associated to this product")
-    ] = None
+    group_id: Annotated[int | None, Field(description="Groups associated to this product")] = None
     support_standard_group_id: Annotated[
         int | None, Field(description="Support standard group ID, None if disabled")
     ] = None
-    support_chatbot_user_id: Annotated[
-        int | None, Field(description="Support chatbot user ID, None if disabled")
-    ] = None
+    support_chatbot_user_id: Annotated[int | None, Field(description="Support chatbot user ID, None if disabled")] = (
+        None
+    )
     support_assigned_fogbugz_person_id: Annotated[
         int | None,
         Field(description="Support assigned Fogbugz person ID, None if disabled"),
@@ -160,6 +160,14 @@ class Product(BaseModel):
         int | None,
         Field(description="Support assigned Fogbugz project ID, None if disabled"),
     ] = None
+
+    studies_dispatcher_enabled: Annotated[
+        bool,
+        Field(
+            description="If True, this product allows anonymous/guest access to "
+            "published studies via the studies dispatcher"
+        ),
+    ] = False
 
     is_payment_enabled: Annotated[
         bool,
@@ -209,8 +217,6 @@ class Product(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        from sqlalchemy import Column
-
         schema.update(
             {
                 "examples": [
@@ -228,9 +234,7 @@ class Product(BaseModel):
                         **{
                             str(c.name): c.server_default.arg  # type: ignore[union-attr]
                             for c in products.columns
-                            if isinstance(c, Column)
-                            and c.server_default
-                            and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
+                            if isinstance(c, Column) and c.server_default and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
                         },
                     },
                     # Example of data in the database with a url set with blanks
@@ -328,7 +332,7 @@ class Product(BaseModel):
         """
         Selects **public** fields from product's info
         and prefixes it with its name to produce
-        items for statics.json (reachable by front-end)
+        items for static-frontend-data.json (reachable by front-end)
         """
 
         # SECURITY WARNING: do not expose sensitive information here
@@ -354,8 +358,7 @@ class Product(BaseModel):
         template_name = filename.removesuffix(".jinja2")
         for name, field in self.__class__.model_fields.items():
             if (
-                field.json_schema_extra
-                and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
+                field.json_schema_extra and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
             ):
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute

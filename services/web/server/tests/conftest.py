@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 
 import pytest
 import simcore_service_webserver
+import tenacity
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
@@ -191,9 +192,9 @@ async def logged_user(
         },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
-        print("-----> logged in user", user["name"], user_role)
+        logging.info("-----> logged in user %s %s", user["name"], user_role)
         yield user
-        print("<----- logged out user", user["name"], user_role)
+        logging.info("<----- logged out user %s %s", user["name"], user_role)
 
 
 @pytest.fixture
@@ -206,14 +207,13 @@ def monkeypatch_setenv_from_app_config(
     def _patch(app_config: dict) -> EnvVarsDict:
         assert isinstance(app_config, dict)
 
-        print("  - app_config=\n", json_dumps(app_config, indent=1, sort_keys=True))
+        logging.info("  - app_config=\n%s", json_dumps(app_config, indent=1, sort_keys=True))
         envs: EnvVarsDict = {
-            env_key: f"{env_value}"
-            for env_key, env_value in convert_to_environ_vars(app_config).items()
+            env_key: f"{env_value}" for env_key, env_value in convert_to_environ_vars(app_config).items()
         }
 
-        print(
-            "  - convert_to_environ_vars(app_cfg)=\n",
+        logging.info(
+            "  - convert_to_environ_vars(app_cfg)=\n%s",
             json_dumps(envs, indent=1, sort_keys=True),
         )
         return setenvs_from_dict(monkeypatch, envs)
@@ -281,9 +281,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             if not as_template:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
 
-            expected_data = ProjectGet.from_domain_model(expected_data).model_dump(
-                mode="json", by_alias=True
-            )
+            expected_data = ProjectGet.from_domain_model(expected_data).model_dump(mode="json", by_alias=True)
 
         if not from_study or project:
             assert NEW_PROJECT.request_payload
@@ -294,11 +292,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
 
             for key in project_data:
                 expected_data[key] = project_data[key]
-                if (
-                    key in OVERRIDABLE_DOCUMENT_KEYS
-                    and not project_data[key]
-                    and from_study
-                ):
+                if key in OVERRIDABLE_DOCUMENT_KEYS and not project_data[key] and from_study:
                     expected_data[key] = from_study[key]
 
         # POST /v0/projects -> returns 202 or denied access
@@ -348,18 +342,14 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             parent_node_id=parent_node_id,
         )
         # Create project here:
-        resp = await client.post(
-            f"{url}", json=project_data, headers=headers
-        )  # NOTE: MD <-- here is project created!
-        print(f"<-- created project response: {resp=}")
+        resp = await client.post(f"{url}", json=project_data, headers=headers)  # NOTE: MD <-- here is project created!
+        logging.info("<-- created project response: %r", resp)
         data, error = await assert_status(resp, expected_accepted_response)
         if error:
             assert not data
             return {}
         assert data
-        assert all(
-            x in data for x in ["task_id", "status_href", "result_href", "abort_href"]
-        )
+        assert all(x in data for x in ["task_id", "status_href", "result_href", "abort_href"])
         status_url = data["status_href"]
         result_url = data["result_href"]
 
@@ -371,23 +361,22 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             retry=retry_if_exception_type(AssertionError),
         ):
             with attempt:
-                print(
-                    f"--> waiting for creation {attempt.retry_state.attempt_number}..."
-                )
+                logging.info("--> waiting for creation %s...", attempt.retry_state.attempt_number)
                 result = await client.get(urlparse(status_url).path)
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
                 task_status = TaskStatus.model_validate(data)
                 assert task_status
-                print(f"<-- status: {task_status.model_dump_json(indent=2)}")
+                logging.info("<-- status: %s", task_status.model_dump_json(indent=2))
                 assert task_status.done, "task incomplete"
-                print(
-                    f"-- project creation completed: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+                logging.info(
+                    "-- project creation completed: %s",
+                    json.dumps(attempt.retry_state.retry_object.statistics, indent=2),
                 )
 
         # get result GET /{task_id}/result
-        print("--> getting project creation result...")
+        logging.info("--> getting project creation result...")
         result = await client.get(urlparse(result_url).path)
         data, error = await assert_status(result, expected_creation_response)
         if error:
@@ -395,16 +384,12 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             return {}
         assert data
         assert not error
-        print(f"<-- result: {data}")
+        logging.info("<-- result: %r", data)
         new_project = data
 
         # Setup access rights to the project
-        if project_data and (
-            project_data.get("access_rights") or project_data.get("accessRights")
-        ):
-            _access_rights = project_data.get("access_rights", {}) | project_data.get(
-                "accessRights", {}
-            )
+        if project_data and (project_data.get("access_rights") or project_data.get("accessRights")):
+            _access_rights = project_data.get("access_rights", {}) | project_data.get("accessRights", {})
             for group_id, permissions in _access_rights.items():
                 await update_or_insert_project_group(
                     client.app,
@@ -415,11 +400,11 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                     delete=permissions["delete"],
                 )
         # Get project with already added access rights
-        print("--> getting project groups after access rights change...")
+        logging.info("--> getting project groups after access rights change...")
         url = client.app.router["list_project_groups"].url_for(project_id=data["uuid"])
         resp = await client.get(url.path)
         data, error = await assert_status(resp, status.HTTP_200_OK)
-        print(f"<-- result: {data}")
+        logging.info("<-- result: %r", data)
         new_project_access_rights = {}
         for item in data:
             new_project_access_rights.update(
@@ -436,21 +421,15 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         # now check returned is as expected
         if new_project:
             # has project state
-            assert not ProjectStateOutputSchema(
-                **new_project.get("state", {})
-            ).share_state.locked, "Newly created projects should be unlocked"
+            assert not ProjectStateOutputSchema(**new_project.get("state", {})).share_state.locked, (
+                "Newly created projects should be unlocked"
+            )
 
             # updated fields
             assert expected_data["uuid"] != new_project["uuid"]
-            assert (
-                new_project["prjOwner"] == logged_user["email"]
-            )  # the project owner is assigned the user id e-mail
-            assert to_datetime(expected_data["creationDate"]) < to_datetime(
-                new_project["creationDate"]
-            )
-            assert to_datetime(expected_data["lastChangeDate"]) < to_datetime(
-                new_project["lastChangeDate"]
-            )
+            assert new_project["prjOwner"] == logged_user["email"]  # the project owner is assigned the user id e-mail
+            assert to_datetime(expected_data["creationDate"]) < to_datetime(new_project["creationDate"])
+            assert to_datetime(expected_data["lastChangeDate"]) < to_datetime(new_project["lastChangeDate"])
             # the access rights are set to use the logged user primary group + whatever was inside the project
             expected_data["accessRights"].update(
                 {
@@ -493,8 +472,36 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
 
     # cleanup projects
     for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
+        # NOTE: delete does not wait for completion
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
-        await client.delete(url.path)
+        resp = await client.delete(url.path)
+
+        if resp.ok:
+            # NOTE: If deleted OK, then let's wait until project is really gone
+            url = client.app.router["get_project"].url_for(project_id=project_uuid)
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.1),
+                stop=stop_after_delay(10),
+                reraise=True,
+                retry=retry_if_exception_type(tenacity.TryAgain),
+            ):
+                with attempt:
+                    logging.info(
+                        "--> waiting for deletion %s...",
+                        attempt.retry_state.attempt_number,
+                    )
+                    resp = await client.get(url.path)
+                    if resp.status in {
+                        status.HTTP_200_OK,
+                        status.HTTP_403_FORBIDDEN,
+                    }:
+                        raise tenacity.TryAgain
+
+                    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+                    logging.info(
+                        "-- project deletion completed: %s",
+                        json.dumps(attempt.retry_state.retry_object.statistics, indent=2),
+                    )
 
 
 @pytest.fixture
@@ -510,9 +517,7 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def with_dev_features_enabled(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def with_dev_features_enabled(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     setenvs_from_dict(
         monkeypatch,
         {

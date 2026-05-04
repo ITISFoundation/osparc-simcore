@@ -1,5 +1,4 @@
-""" Common utils for api/dependencies
-"""
+"""Common utils for api/dependencies"""
 
 from collections.abc import Callable
 from typing import Any, cast

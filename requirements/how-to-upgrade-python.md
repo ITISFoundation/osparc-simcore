@@ -1,20 +1,17 @@
 # Python version
 
-In principle every service can use a different python version (*) but in practice it is more
-suitable to keep the same python version througout the entire repository.
+In principle every service can use a different python version but in practice it is more
+suitable to keep the same python version throughout the entire repository.
 
 
-(*) so far only ``director`` service uses a different python version because it was
-frozen and marked as deprecated.
 
 ## Where is python version specified?
 
 Both python and pip version are specified:
 
--  repository's *prefered* python version file in ``requirements/PYTHON_VERSION`` (could not version standard `.python-version` because then we cannot work with different versions on the same repo)
 -  in the services/scripts ``Dockerfile``:
   ```Dockerfile
-    ARG PYTHON_VERSION="3.9.12"
+    ARG PYTHON_VERSION="3.9.13"
     FROM python:${PYTHON_VERSION}-slim-bookworm as base
   ```
 - in ``.python-version``
@@ -30,7 +27,7 @@ Both python and pip version are specified:
 
 ## Tools to assist python upgrade?
 
-- CI ``.github/workflows/ci-testing-deploy.yml`` runs ``unit-test-python-linting`` job that monitor early incompatibilities fo the codebase with next python's version. See
+- CI ``.github/workflows/ci-testing-deploy.yml`` runs ``unit-test-python-linting`` job that monitor early incompatibilities for the codebase with next python's version. See
   ```yaml
   unit-test-python-linting:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
@@ -38,7 +35,7 @@ Both python and pip version are specified:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9", "3.11"]
+        python: ["3.13", "3.14"]
   ```
 - [pyupgrade](https://github.com/asottile/pyupgrade) tool which has been containarized (``scripts/pyupgrade.bash``) and added as a Makefile recipe (``make pyupgrade``)
 

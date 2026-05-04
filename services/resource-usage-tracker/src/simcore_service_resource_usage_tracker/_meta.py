@@ -15,9 +15,7 @@ __version__: Final[VersionStr] = info.__version__
 PROJECT_NAME: Final[str] = info.project_name
 VERSION: Final[Version] = info.version
 API_VERSION: Final[VersionStr] = info.__version__
-API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(
-    info.api_prefix_path_tag
-)
+API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(info.api_prefix_path_tag)
 SUMMARY: Final[str] = info.get_summary()
 APP_NAME: Final[str] = info.app_name
 
@@ -29,9 +27,7 @@ d8888b. d88888b .d8888.  .d88b.  db    db d8888b.  .o88b. d88888b        db    d
 88`8b   88~~~~~   `Y8b. 88    88 88    88 88`8b   8b      88~~~~~ C8888D 88    88   `Y8b. 88~~~88 88  ooo 88~~~~~ C8888D    88    88`8b   88~~~88 8b      88`8b   88~~~~~ 88`8b
 88 `88. 88.     db   8D `8b  d8' 88b  d88 88 `88. Y8b  d8 88.            88b  d88 db   8D 88   88 88. ~8~ 88.               88    88 `88. 88   88 Y8b  d8 88 `88. 88.     88 `88.
 88   YD Y88888P `8888Y'  `Y88P'  ~Y8888P' 88   YD  `Y88P' Y88888P        ~Y8888P' `8888Y' YP   YP  Y888P  Y88888P           YP    88   YD YP   YP  `Y88P' YP   YD Y88888P 88   YD  {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 
 APP_FINISHED_BANNER_MSG = info.get_finished_banner()

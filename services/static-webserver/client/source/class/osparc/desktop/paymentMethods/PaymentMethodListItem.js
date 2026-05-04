@@ -32,7 +32,14 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     layout.setColumnFlex(this.self().GRID_POS.INFO_BUTTON, 0);
     layout.setColumnFlex(this.self().GRID_POS.DELETE_BUTTON, 0);
 
-    this.getChildControl("thumbnail").setSource("@FontAwesome5Solid/credit-card/18");
+    this.set({
+      height: 32,
+    });
+
+    this.getChildControl("thumbnail").set({
+      source: "@FontAwesome5Solid/credit-card/18",
+      paddingTop: 6,
+    });
 
     const cardHolderName = this.getChildControl("card-holder-name");
     this.bind("cardHolderName", cardHolderName, "value");
@@ -122,7 +129,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
       switch (id) {
         case "card-holder-name":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle",
+            minWidth: 200,
           });
           this._add(control, {
             row: 0,
@@ -131,7 +140,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           break;
         case "card-type":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle",
+            minWidth: 100,
           });
           this._add(control, {
             row: 0,
@@ -140,7 +151,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           break;
         case "card-number-masked":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle",
+            minWidth: 120,
           });
           this._add(control, {
             row: 0,
@@ -149,7 +162,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           break;
         case "expiration-date":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle",
+            minWidth: 80,
           });
           this._add(control, {
             row: 0,
@@ -158,7 +173,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           break;
         case "details-button":
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/info/14"
+            icon: "@FontAwesome5Solid/info/14",
+            marginTop: 6,
+            marginBottom: 6,
           });
           control.addListener("execute", () => this.fireDataEvent("openPaymentMethodDetails", this.getKey()));
           this._add(control, {
@@ -168,7 +185,10 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           break;
         case "delete-button":
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/trash/14"
+            icon: "@FontAwesome5Solid/trash/14",
+            marginTop: 6,
+            marginBottom: 6,
+            marginRight: 6,
           });
           control.addListener("execute", () => this.__deletePressed());
           this._add(control, {

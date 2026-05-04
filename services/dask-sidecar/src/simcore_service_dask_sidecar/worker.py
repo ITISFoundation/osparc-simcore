@@ -54,9 +54,7 @@ class GracefulKiller:
         )
         self.kill_now = True
         assert self.worker  # nosec
-        self.task = asyncio.create_task(
-            self.worker.close(timeout=5), name="close_dask_worker_task"
-        )
+        self.task = asyncio.create_task(self.worker.close(timeout=5), name="close_dask_worker_task")
 
 
 async def dask_setup(worker: distributed.Worker) -> None:
@@ -75,9 +73,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
 
         if settings.DASK_SIDECAR_RABBITMQ:
             try:
-                await worker.plugin_add(
-                    RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False
-                )
+                await worker.plugin_add(RabbitMQPlugin(settings.DASK_SIDECAR_RABBITMQ), catch_errors=False)
             except Exception:
                 await worker.close(reason="failed to add RabbitMQ plugin")
                 raise
@@ -91,9 +87,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
 
 
 async def dask_teardown(worker: distributed.Worker) -> None:
-    with log_context(
-        _logger, logging.INFO, f"tear down dask worker at {worker.address}"
-    ):
+    with log_context(_logger, logging.INFO, f"tear down dask worker at {worker.address}"):
         ...
 
 
@@ -112,9 +106,7 @@ async def _run_computational_sidecar_async(
     )
     current_task = asyncio.current_task()
     assert current_task  # nosec
-    async with monitor_task_abortion(
-        task_name=current_task.get_name(), task_publishers=task_publishers
-    ):
+    async with monitor_task_abortion(task_name=current_task.get_name(), task_publishers=task_publishers):
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
             task_parameters=task_parameters,

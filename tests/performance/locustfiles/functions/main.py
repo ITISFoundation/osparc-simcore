@@ -9,12 +9,8 @@ from pathlib import Path
 import numpy
 import numpy as np
 import s4l_v1 as s4l
-import s4l_v1.analysis as analysis
-import s4l_v1.document as document
-import s4l_v1.model as model
-import s4l_v1.units as units
 import XCoreModeling as xcm
-from s4l_v1 import Vec3
+from s4l_v1 import Vec3, analysis, document, model, units
 from s4l_v1._api.application import get_app_safe, run_application
 from s4l_v1.model import Unit
 from s4l_v1.simulation import emlf, neuron
@@ -53,7 +49,7 @@ filename_model = os.path.join(input_folder, "Nerve_Model.sab")
 
 
 def Creates_EM_Simulation():
-    import s4l_v1.materials.database as database
+    from s4l_v1.materials import database
 
     # Creating the simulation
     simulation = emlf.ElectroQsOhmicSimulation()
@@ -134,9 +130,7 @@ def Creates_EM_Simulation():
     ]
     material_settings.Name = "Fascicles"
     material_settings.ElectricProps.ConductivityAnisotropic = True
-    material_settings.ElectricProps.ConductivityDiagonalElements = numpy.array(
-        [0.16, 0.16, 0.57]
-    ), Unit("S/m")
+    material_settings.ElectricProps.ConductivityDiagonalElements = numpy.array([0.16, 0.16, 0.57]), Unit("S/m")
     simulation.Add(material_settings, components)
 
     # Adding a new MaterialSettings
@@ -176,9 +170,7 @@ def Creates_EM_Simulation():
 
     # Editing BoundarySettings "Boundary Settings
     boundary_settings = [
-        x
-        for x in simulation.AllSettings
-        if isinstance(x, emlf.BoundarySettings) and x.Name == "Boundary Settings"
+        x for x in simulation.AllSettings if isinstance(x, emlf.BoundarySettings) and x.Name == "Boundary Settings"
     ][0]
     components = [
         component__plane_x,
@@ -207,9 +199,7 @@ def Creates_EM_Simulation():
 
     # Editing GlobalGridSettings "Grid (Empty)
     global_grid_settings = simulation.GlobalGridSettings
-    global_grid_settings.DiscretizationMode = (
-        global_grid_settings.DiscretizationMode.enum.Manual
-    )
+    global_grid_settings.DiscretizationMode = global_grid_settings.DiscretizationMode.enum.Manual
     global_grid_settings.MaxStep = numpy.array([0.05, 0.05, 0.05]), units.MilliMeters
     global_grid_settings.Resolution = (
         numpy.array([0.625, 0.625, 0.625]),
@@ -316,9 +306,7 @@ def Creates_EM_Simulation():
 
     # Editing SolverSettings "Solver
     solver_settings = simulation.SolverSettings
-    solver_settings.PredefinedTolerances = (
-        solver_settings.PredefinedTolerances.enum.High
-    )
+    solver_settings.PredefinedTolerances = solver_settings.PredefinedTolerances.enum.High
 
     # Update the materials with the new frequency parameters
     simulation.UpdateAllMaterials()
@@ -333,7 +321,6 @@ def Creates_EM_Simulation():
 
 
 def Creates_Electrode(length, gap, angle, radius, silicone_length):
-
     center = Vec3(0, 0, 1)
 
     angle = (360 - angle) * 2 * np.pi / 360
@@ -421,7 +408,6 @@ def ExtractThresholdsInfo(sim):
 
 
 def ExtractsResults(simulation):
-
     ## Normalize the field
     assert simulation.HasResults(), "EM Simulation Should Have Results"
     print("Scaling E_Potential")
@@ -435,9 +421,7 @@ def ExtractsResults(simulation):
     scale = 0.001 / flux
 
     inputs = [em_sensor_extractor.Outputs["EM Potential(x,y,z,f0)"]]
-    user_defined_field_normalizer = s4l.analysis.field.UserDefinedFieldNormalizer(
-        inputs=inputs
-    )
+    user_defined_field_normalizer = s4l.analysis.field.UserDefinedFieldNormalizer(inputs=inputs)
     user_defined_field_normalizer.Target.Value = scale
     user_defined_field_normalizer.UpdateAttributes()
     user_defined_field_normalizer.Update()
@@ -445,9 +429,7 @@ def ExtractsResults(simulation):
 
     # Adding a new UserDefinedFieldNormalizer
     inputs = [em_sensor_extractor.Outputs["EM E(x,y,z,f0)"]]
-    user_defined_field_normalizer = analysis.field.UserDefinedFieldNormalizer(
-        inputs=inputs
-    )
+    user_defined_field_normalizer = analysis.field.UserDefinedFieldNormalizer(inputs=inputs)
     user_defined_field_normalizer.Target.Value = scale
     user_defined_field_normalizer.Description = "Field Scaling E-Field"
     user_defined_field_normalizer.UpdateAttributes()
@@ -455,17 +437,13 @@ def ExtractsResults(simulation):
 
     # Adding a new VolumeAverageElectricFieldEvaluator
     inputs = [user_defined_field_normalizer.Outputs["EM E(x,y,z,f0)"]]
-    volume_average_electric_field_evaluator = (
-        analysis.em_evaluators.VolumeAverageElectricFieldEvaluator(inputs=inputs)
-    )
+    volume_average_electric_field_evaluator = analysis.em_evaluators.VolumeAverageElectricFieldEvaluator(inputs=inputs)
     volume_average_electric_field_evaluator.CubeLength = 0.0001, units.Meters
     volume_average_electric_field_evaluator.UpdateAttributes()
     document.AllAlgorithms.Add(volume_average_electric_field_evaluator)
 
     # Extracting Peak Averaged
-    evaluator = volume_average_electric_field_evaluator.Outputs[
-        "Volume-Average Report [ICNIRP 2010]"
-    ]
+    evaluator = volume_average_electric_field_evaluator.Outputs["Volume-Average Report [ICNIRP 2010]"]
     assert evaluator.Update()
     keys = evaluator.Data.RowKeys()
     values = evaluator.Data.ToList()
@@ -501,12 +479,8 @@ def CreatesNeuroCache(axonlist):
     # Adding a new SourceSettings
     source_settings = sim.AddGenericSource([])
     source_settings.SourceType = source_settings.SourceType.enum.DataObject
-    source_settings.SourceDataObject.DataOriginType = (
-        source_settings.SourceDataObject.DataOriginType.enum.Pipeline
-    )
-    source_settings.SourceDataObject.DataOrigin = (
-        document.AllAlgorithms["Field Scaling"].Outputs[0].raw
-    )
+    source_settings.SourceDataObject.DataOriginType = source_settings.SourceDataObject.DataOriginType.enum.Pipeline
+    source_settings.SourceDataObject.DataOrigin = document.AllAlgorithms["Field Scaling"].Outputs[0].raw
     source_settings.SourceDataObject.DataOrigin.Update()
     source_settings.PulseType = source_settings.PulseType.enum.Bipolar
     source_settings.InitialTime = 0.0002, units.Seconds
@@ -522,7 +496,6 @@ def CreatesNeuroCache(axonlist):
 
 
 def Create_Axon_Distribution():
-
     axon_ent = s4l.model.CreateGroup("Axons_Folder")
     point_ent = s4l.model.CreateGroup("Points_Folder")
 
@@ -585,9 +558,7 @@ def Create_Axon_Distribution():
             x = p[0]
             y = p[1]
             z = p[2]
-            a = s4l.model.CreateSpline(
-                [Vec3(x, y, z0 - 0.5 * L1), Vec3(x, y, z0 + 0.5 * L1)]
-            )
+            a = s4l.model.CreateSpline([Vec3(x, y, z0 - 0.5 * L1), Vec3(x, y, z0 + 0.5 * L1)])
             a.Name = name + "_Spline_" + str(cm) + "_Random"
             splines.Add(a)
             axons.append(a)
@@ -674,8 +645,6 @@ output_values = {
 print(output_values)
 
 ## convert to the format that the (de)jsonifier understand
-output_values = {
-    f"number_{i+1}": value for i, value in enumerate(output_values.values())
-}
+output_values = {f"number_{i + 1}": value for i, value in enumerate(output_values.values())}
 output_values_path = pl.Path(output_folder / "values.json")
 output_values_path.write_text(json.dumps(output_values))

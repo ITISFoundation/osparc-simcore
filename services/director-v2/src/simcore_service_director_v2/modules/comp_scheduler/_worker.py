@@ -26,17 +26,13 @@ def _get_scheduler_worker(app: FastAPI) -> BaseCompScheduler:
     return cast(BaseCompScheduler, app.state.scheduler_worker)
 
 
-def _unique_key_builder(
-    _app, user_id: UserID, project_id: ProjectID, iteration: Iteration
-) -> str:
+def _unique_key_builder(_app, user_id: UserID, project_id: ProjectID, iteration: Iteration) -> str:
     return f"{user_id}:{project_id}:{iteration}"
 
 
 @exclusive(
     get_redis_client_from_app,
-    lock_key=get_redis_lock_key(
-        MODULE_NAME_WORKER, unique_lock_key_builder=_unique_key_builder
-    ),
+    lock_key=get_redis_lock_key(MODULE_NAME_WORKER, unique_lock_key_builder=_unique_key_builder),
 )
 async def _exclusively_schedule_pipeline(
     app: FastAPI, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
@@ -71,9 +67,7 @@ async def setup_worker(app: FastAPI) -> None:
                 functools.partial(_handle_apply_distributed_schedule, app),
                 exclusive_queue=False,
             )
-            for _ in range(
-                app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY
-            )
+            for _ in range(app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY)
         )
     )
 
@@ -84,9 +78,6 @@ async def shutdown_worker(app: FastAPI) -> None:
     assert app.state.scheduler_worker  # nosec
     rabbitmq_client = get_rabbitmq_client(app)
     await asyncio.gather(
-        *(
-            rabbitmq_client.unsubscribe_consumer(*consumer)
-            for consumer in app.state.scheduler_worker_consumers
-        ),
+        *(rabbitmq_client.unsubscribe_consumer(*consumer) for consumer in app.state.scheduler_worker_consumers),
         return_exceptions=False,
     )

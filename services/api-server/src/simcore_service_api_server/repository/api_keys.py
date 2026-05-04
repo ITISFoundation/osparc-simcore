@@ -45,19 +45,10 @@ class ApiKeysRepository(BaseRepository):
             auth_api_keys_table.c.user_id,
             auth_api_keys_table.c.product_name,
         ).where(
-            (
-                auth_api_keys_table.c.api_key == api_key
-            )  # NOTE: keep order, api_key is indexed
-            & (
-                auth_api_keys_table.c.api_secret
-                == sa.func.crypt(api_secret, auth_api_keys_table.c.api_secret)
-            )
+            (auth_api_keys_table.c.api_key == api_key)  # NOTE: keep order, api_key is indexed
+            & (auth_api_keys_table.c.api_secret == sa.func.crypt(api_secret, auth_api_keys_table.c.api_secret))
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(stmt)
             row = result.one_or_none()
-            return (
-                UserAndProductTuple(user_id=row.user_id, product_name=row.product_name)
-                if row
-                else None
-            )
+            return UserAndProductTuple(user_id=row.user_id, product_name=row.product_name) if row else None

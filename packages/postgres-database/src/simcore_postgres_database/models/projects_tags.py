@@ -26,9 +26,7 @@ projects_tags = sa.Table(
     sa.Column(
         "tag_id",
         sa.BigInteger,
-        sa.ForeignKey(
-            tags.c.id, onupdate=RefActions.CASCADE, ondelete=RefActions.CASCADE
-        ),
+        sa.ForeignKey(tags.c.id, onupdate=RefActions.CASCADE, ondelete=RefActions.CASCADE),
         nullable=False,
     ),
     sa.Column(
@@ -36,7 +34,5 @@ projects_tags = sa.Table(
         sa.String,
         nullable=False,
     ),
-    sa.UniqueConstraint(
-        "project_uuid_for_rut", "tag_id", name="project_tags_project_uuid_unique"
-    ),
+    sa.UniqueConstraint("project_uuid_for_rut", "tag_id", name="project_tags_project_uuid_unique"),
 )

@@ -5,6 +5,7 @@ Revises: 1c84432e5dbb
 Create Date: 2022-05-12 16:07:33.288844+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -37,9 +38,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint(
-            "service_key", "service_version", "gid", name="services_specifications_pk"
-        ),
+        sa.PrimaryKeyConstraint("service_key", "service_version", "gid", name="services_specifications_pk"),
     )
     # ### end Alembic commands ###
 

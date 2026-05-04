@@ -4,7 +4,7 @@ import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_dynamic_sidecar.ports import (
-    InputPortSatus,
+    InputPortStatus,
     InputStatus,
     OutputPortStatus,
     OutputStatus,
@@ -13,7 +13,9 @@ from models_library.api_schemas_dynamic_sidecar.socketio import (
     SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
     SOCKET_IO_STATE_INPUT_PORTS_EVENT,
     SOCKET_IO_STATE_OUTPUT_PORTS_EVENT,
+    SOCKET_IO_STATE_PATHS_EVENT,
 )
+from models_library.api_schemas_dynamic_sidecar.state_paths import MountActivityStatus, StatePathsStatus
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
     MountPathCategory,
@@ -77,11 +79,26 @@ class Notifier(SingletonInAppStateMixin):
         await self._sio_manager.emit(
             SOCKET_IO_STATE_INPUT_PORTS_EVENT,
             data=jsonable_encoder(
-                InputPortSatus(
+                InputPortStatus(
                     project_id=project_id,
                     node_id=node_id,
                     port_key=port_key,
                     status=input_status,
+                )
+            ),
+            room=SocketIORoomStr.from_user_id(user_id),
+        )
+
+    async def notify_state_paths_status(
+        self, user_id: UserID, project_id: ProjectID, node_id: NodeID, status: MountActivityStatus
+    ) -> None:
+        await self._sio_manager.emit(
+            SOCKET_IO_STATE_PATHS_EVENT,
+            data=jsonable_encoder(
+                StatePathsStatus(
+                    project_id=project_id,
+                    node_id=node_id,
+                    status=status,
                 )
             ),
             room=SocketIORoomStr.from_user_id(user_id),

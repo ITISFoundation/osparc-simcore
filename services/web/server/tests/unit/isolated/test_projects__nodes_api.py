@@ -102,10 +102,7 @@ def _get_comparable(entries: list[_FileWithThumbnail]) -> set[tuple[str, str]]:
         ),
         pytest.param(
             [_c(f"a{x}") for x in _SUPPORTED_PREVIEW_FILE_EXTENSIONS],
-            [
-                _FileWithThumbnail(_c(f"a{x}"), _c(f"a{x}"))
-                for x in _SUPPORTED_PREVIEW_FILE_EXTENSIONS
-            ],
+            [_FileWithThumbnail(_c(f"a{x}"), _c(f"a{x}")) for x in _SUPPORTED_PREVIEW_FILE_EXTENSIONS],
             id="all_supported_extensions_detected",
         ),
     ],

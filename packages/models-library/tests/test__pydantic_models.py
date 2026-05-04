@@ -21,10 +21,10 @@ from pydantic.version import version_short
 #
 # structured data  -->| (parse+validate) --> [ Model.fields ] --> (export)                       |--> structured data
 # - no guarantees         - map (alias)       - accessors        - filter (include/exclude ...)       - w/ guarantees
-#                         - ...               - doc              - map (by_alias, copy&udpate )
+#                         - ...               - doc              - map (by_alias, copy&update )
 #                                                                - format (json, dict)
 #
-# NOTE: think of the direction of data in a pydantic model. It defines how the field contraints are defined! The
+# NOTE: think of the direction of data in a pydantic model. It defines how the field constraints are defined! The
 #    model does not necessarily can be used in the opposite direction. e.g. cannot always use the same model
 #    to read from a database and to write in it.
 #
@@ -39,9 +39,7 @@ def test_json_type():
         data_schema: Json
 
     # notice that this is a raw string!
-    jsonschema_of_x = json_dumps(
-        {**TypeAdapter(list[int]).json_schema(), "title": "schema[x]"}
-    )
+    jsonschema_of_x = json_dumps({**TypeAdapter(list[int]).json_schema(), "title": "schema[x]"})
     assert isinstance(jsonschema_of_x, str)
 
     x_annotation = ArgumentAnnotation(name="x", data_schema=jsonschema_of_x)
@@ -63,7 +61,7 @@ def test_json_type():
         },
     }
 
-    # Notice how this model is not "reversable", i.e. exported outputs
+    # Notice how this model is not "reversible", i.e. exported outputs
     # cannot be used as inputs again
     #
     # the constructor would expect a raw string but we produced a nested dict
@@ -154,15 +152,11 @@ def test_union_types_coercion():
     # (undefined) json string vs SimCoreFileLink.model_dump() ------------
     MINIMAL = 2  # <--- index of the example with the minimum required fields
     assert SimCoreFileLink in get_args(OutputTypes)
-    example = SimCoreFileLink.model_validate(
-        SimCoreFileLink.model_json_schema()["examples"][MINIMAL]
-    )
+    example = SimCoreFileLink.model_validate(SimCoreFileLink.model_json_schema()["examples"][MINIMAL])
     model = Func.model_validate(
         {
             "input": '{"w": 42, "z": false}',
-            "output": example.model_dump(
-                exclude_unset=True
-            ),  # NOTE: this is NOT a raw json string
+            "output": example.model_dump(exclude_unset=True),  # NOTE: this is NOT a raw json string
         }
     )
     print(model.model_dump_json(indent=1))
@@ -171,9 +165,7 @@ def test_union_types_coercion():
     assert isinstance(model.output, SimCoreFileLink)
 
     # json array and objects
-    model = Func.model_validate(
-        {"input": {"w": 42, "z": False}, "output": [1, 2, 3, None]}
-    )
+    model = Func.model_validate({"input": {"w": 42, "z": False}, "output": [1, 2, 3, None]})
     print(model.model_dump_json(indent=1))
     assert model.input == {"w": 42, "z": False}
     assert model.output == [1, 2, 3, None]
@@ -184,9 +176,7 @@ def test_nullable_fields_from_pydantic_v1():
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/6751
     class MyModel(BaseModel):
         # pydanticv1 would add a default to fields set as nullable
-        nullable_required: (
-            str | None
-        )  # <--- This was default to =None in pydantic 1 !!!
+        nullable_required: str | None  # <--- This was default to =None in pydantic 1 !!!
         nullable_required_with_hyphen: str | None = Field(default=...)
         nullable_optional: str | None = None
 
@@ -257,7 +247,6 @@ def test_model_config_validate_by_alias_and_name(
     assert TestModel.model_config.get("extra") == extra
 
     if validate_by_alias is False:
-
         if extra == "forbid":
             with pytest.raises(ValidationError):
                 TestModel.model_validate({"snakeCase": "foo"})
@@ -313,7 +302,7 @@ def test_model_config_populate_by_name(populate_by_name: bool):
     assert TestModel.model_config.get("validate_by_name") == populate_by_name
     assert TestModel.model_config.get("validate_by_alias") is True  # Default
 
-    # validate_by_alias BEHAVIUOR defaults to True
+    # validate_by_alias BEHAVIOR defaults to True
     TestModel.model_validate({"snakeCase": "foo"})
 
     if populate_by_name:

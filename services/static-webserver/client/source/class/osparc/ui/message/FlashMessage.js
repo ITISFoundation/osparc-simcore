@@ -83,22 +83,22 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       "INFO": {
         color: "info",
         icon: "@FontAwesome5Solid/check/",
-        backgroundColor: "flash_message_bg"
+        backgroundColor: "flash-message-background"
       },
       "DEBUG": {
         color: "warning",
         icon: "@FontAwesome5Solid/info/",
-        backgroundColor: "flash_message_bg"
+        backgroundColor: "flash-message-background"
       },
       "WARNING": {
         color: "warning",
         icon: "@FontAwesome5Solid/exclamation-triangle/",
-        backgroundColor: "flash_message_bg"
+        backgroundColor: "flash-message-background"
       },
       "ERROR": {
         color: "error",
         icon: "@FontAwesome5Solid/exclamation/",
-        backgroundColor: "flash_message_bg"
+        backgroundColor: "flash-message-background"
       }
     }
   },

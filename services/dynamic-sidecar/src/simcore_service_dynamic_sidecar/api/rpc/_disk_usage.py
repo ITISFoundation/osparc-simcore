@@ -22,9 +22,7 @@ async def update_disk_usage(app: FastAPI, *, usage: dict[str, DiskUsage]) -> Non
     disk_usage_monitor = get_disk_usage_monitor(app)
 
     if disk_usage_monitor is None:
-        _logger.warning(
-            "Disk usage monitor not initialized, could not update disk usage"
-        )
+        _logger.warning("Disk usage monitor not initialized, could not update disk usage")
         return
 
     disk_usage_monitor.set_disk_usage_for_path(usage)

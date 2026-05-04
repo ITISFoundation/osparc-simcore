@@ -72,9 +72,7 @@ def _get_openapi_specs(url: httpx.URL) -> dict[str, Any]:
     return openapi_spec
 
 
-def _get_params(
-    openapi_spec: dict[str, Any], path: str, method: str | None = None
-) -> set[CapturedParameter]:
+def _get_params(openapi_spec: dict[str, Any], path: str, method: str | None = None) -> set[CapturedParameter]:
     """Returns all parameters for the method associated with a given resource (and optionally also a given method)"""
     endpoints: dict[str, Any] | None
     if (endpoints := openapi_spec["paths"].get(path)) is None:
@@ -91,9 +89,7 @@ def _get_params(
     return set(all_params)
 
 
-def _determine_path(
-    openapi_spec: dict[str, Any], response_path: Path
-) -> PathDescription:
+def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> PathDescription:
     def parts(p: str) -> tuple[str, ...]:
         all_parts: list[str] = sum((elm.split("/") for elm in p.split(":")), start=[])
         return tuple(part for part in all_parts if len(part) > 0)
@@ -103,19 +99,11 @@ def _determine_path(
         response_parts: tuple[str, ...] = tuple(parts(f"{response_path}"))
         if len(openapi_parts) != len(response_parts):
             continue
-        path_params = {
-            param.name: param for param in _get_params(openapi_spec, p) if param.is_path
-        }
+        path_params = {param.name: param for param in _get_params(openapi_spec, p) if param.is_path}
         if (len(path_params) == 0) and (openapi_parts == response_parts):
-            return PathDescription(
-                path=str(response_path), path_parameters=list(path_params.values())
-            )
-        path_param_indices: tuple[int, ...] = tuple(
-            openapi_parts.index("{" + name + "}") for name in path_params
-        )
-        if tuple(
-            elm for ii, elm in enumerate(openapi_parts) if ii not in path_param_indices
-        ) != tuple(
+            return PathDescription(path=str(response_path), path_parameters=list(path_params.values()))
+        path_param_indices: tuple[int, ...] = tuple(openapi_parts.index("{" + name + "}") for name in path_params)
+        if tuple(elm for ii, elm in enumerate(openapi_parts) if ii not in path_param_indices) != tuple(
             elm for ii, elm in enumerate(response_parts) if ii not in path_param_indices
         ):
             continue
@@ -135,6 +123,4 @@ def enhance_path_description_from_openapi_spec(
     response: httpx.Response,
 ) -> PathDescription:
     openapi_spec: dict[str, Any] = _get_openapi_specs(response.url)
-    return _determine_path(
-        openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
-    )
+    return _determine_path(openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0]))

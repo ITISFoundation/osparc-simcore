@@ -53,11 +53,7 @@ pytest_simcore_core_services_selection = [
 _logger = logging.getLogger(__name__)
 
 
-CURRENT_DIR = (
-    (Path(sys.argv[0] if __name__ == "__main__" else __file__) / ".." / "..")
-    .resolve()
-    .parent
-)
+CURRENT_DIR = (Path(sys.argv[0] if __name__ == "__main__" else __file__) / ".." / "..").resolve().parent
 
 _MOCK_FRONTEND_NEW_TSR_FORMAT: dict[str, Any] = {
     "enabled": True,
@@ -183,9 +179,7 @@ async def client(
     assert app_settings.WEBSERVER_SCICRUNCH is not None
     assert app_settings.WEBSERVER_RABBITMQ is not None
     assert app_settings.WEBSERVER_EXPORTER is not None
-    assert (
-        exporter_settings.get_plugin_settings(app) is not None
-    ), "Should capture defaults"
+    assert exporter_settings.get_plugin_settings(app) is not None, "Should capture defaults"
 
     setup_db(app)
     setup_session(app)
@@ -264,14 +258,10 @@ async def test_export_project(
         return msg["content-type"].params
 
     assert url_export == URL(f"/{API_VTAG}/projects/{project_id}:xport")
-    async with await client.post(
-        f"{url_export}", headers=headers, timeout=10
-    ) as export_response:
+    async with await client.post(f"{url_export}", headers=headers, timeout=10) as export_response:
         assert export_response.status == 200, await export_response.text()
 
-        file_to_download_name = _get_header_params(
-            export_response.headers["Content-Disposition"]
-        )["filename"]
+        file_to_download_name = _get_header_params(export_response.headers["Content-Disposition"])["filename"]
         assert file_to_download_name.endswith(".zip")
 
         download_file_path = dir_downloaded / file_to_download_name
@@ -290,6 +280,4 @@ async def test_export_project(
         assert generated_file_path.exists()
         # cannot compare the contents since .xlsx contain some last change date
 
-        assert _get_files_in_zip(generated_file_path) == _get_files_in_zip(
-            download_file_path
-        )
+        assert _get_files_in_zip(generated_file_path) == _get_files_in_zip(download_file_path)

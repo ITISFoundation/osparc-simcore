@@ -61,18 +61,17 @@ qx.Class.define("osparc.info.MergedLarge", {
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       this._add(titleLayout);
 
-      const extraInfo = this.__extraInfo();
-      const extraInfoLayout = this.__createExtraInfo(extraInfo);
-
-      const bounds = this.getBounds();
-      const offset = 30;
-      const widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING;
-      const maxThumbnailHeight = extraInfo.length*20;
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignX: "center"
       }));
+      const extraInfo = this.__extraInfo();
+      const extraInfoLayout = this.__createExtraInfo(extraInfo);
       hBox.add(extraInfoLayout);
+
+      const bounds = this.getBounds();
+      const offset = 30;
+      let thumbnailWidth = bounds ? bounds.width - offset : 500 - offset;
+      const maxThumbnailHeight = extraInfo.length*20;
       thumbnailWidth -= osparc.info.CardLarge.EXTRA_INFO_WIDTH;
       thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
@@ -361,10 +360,11 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize());
-      const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
+      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize()).set({
+        liveUpdate: true,
+      });
+      osparc.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
-        win.close();
         const updatedData = e.getData();
         this.getStudy().setTags(updatedData["tags"]);
         this.fireDataEvent("updateStudy", updatedData);

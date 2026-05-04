@@ -13,7 +13,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_dynamic_sidecar.ports import (
-    InputPortSatus,
+    InputPortStatus,
     InputStatus,
     OutputPortStatus,
     OutputStatus,
@@ -22,7 +22,9 @@ from models_library.api_schemas_dynamic_sidecar.socketio import (
     SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
     SOCKET_IO_STATE_INPUT_PORTS_EVENT,
     SOCKET_IO_STATE_OUTPUT_PORTS_EVENT,
+    SOCKET_IO_STATE_PATHS_EVENT,
 )
+from models_library.api_schemas_dynamic_sidecar.state_paths import MountActivityStatus, StatePathsStatus
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
     MountPathCategory,
@@ -41,6 +43,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications import (
     PortNotifier,
+    StatePathsNotifier,
     publish_disk_usage,
 )
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
@@ -102,9 +105,7 @@ async def disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor:
 @pytest.fixture
 async def socketio_server(
     app: FastAPI,
-    socketio_server_factory: Callable[
-        [RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]
-    ],
+    socketio_server_factory: Callable[[RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]],
 ) -> AsyncIterable[AsyncServer]:
     # Same configuration as simcore_service_webserver/socketio/server.py
     settings: ApplicationSettings = app.state.settings
@@ -120,9 +121,7 @@ def room_name(user_id: UserID) -> SocketIORoomStr:
 
 
 async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True
-    ):
+    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True):
         with attempt:
             assert mock.call_count == call_count
 
@@ -154,9 +153,7 @@ def _get_on_service_disk_usage_spy(
     "usage",
     [
         pytest.param({}, id="empty"),
-        pytest.param(
-            {MountPathCategory.HOST: _get_mocked_disk_usage("1kb")}, id="one_entry"
-        ),
+        pytest.param({MountPathCategory.HOST: _get_mocked_disk_usage("1kb")}, id="one_entry"),
         pytest.param(
             {
                 MountPathCategory.HOST: _get_mocked_disk_usage("1kb"),
@@ -173,9 +170,7 @@ async def test_notifier_publish_disk_usage(
     user_id: UserID,
     usage: dict[Path, DiskUsage],
     node_id: NodeID,
-    socketio_client_factory: Callable[
-        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
-    ],
+    socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
 ):
     # web server spy events
     server_connect = socketio_server_events["connect"]
@@ -192,18 +187,11 @@ async def test_notifier_publish_disk_usage(
         await _assert_call_count(server_connect, call_count=_NUMBER_OF_CLIENTS)
 
         # client emits and check it was received
-        await logged_gather(
-            *[
-                frontend_client.emit("check", data="an_event")
-                for frontend_client in frontend_clients
-            ]
-        )
+        await logged_gather(*[frontend_client.emit("check", data="an_event") for frontend_client in frontend_clients])
         await _assert_call_count(server_on_check, call_count=_NUMBER_OF_CLIENTS)
 
         # attach spy to client
-        on_service_disk_usage_events: list[AsyncMock] = [
-            _get_on_service_disk_usage_spy(c) for c in frontend_clients
-        ]
+        on_service_disk_usage_events: list[AsyncMock] = [_get_on_service_disk_usage_spy(c) for c in frontend_clients]
 
         # server publishes a message
         await publish_disk_usage(app, user_id=user_id, node_id=node_id, usage=usage)
@@ -228,10 +216,10 @@ def _get_on_input_port_spy(
 ) -> AsyncMock:
     # emulates front-end receiving message
 
-    async def on_service_status(data):
-        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
+    async def on_input_port_status(data):
+        assert TypeAdapter(InputPortStatus).validate_python(data) is not None
 
-    on_event_spy = AsyncMock(wraps=on_service_status)
+    on_event_spy = AsyncMock(wraps=on_input_port_status)
     socketio_client.on(SOCKET_IO_STATE_INPUT_PORTS_EVENT, on_event_spy)
 
     return on_event_spy
@@ -245,9 +233,7 @@ async def test_notifier_send_input_port_status(
     project_id: ProjectID,
     node_id: NodeID,
     port_key: ServicePortKey,
-    socketio_client_factory: Callable[
-        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
-    ],
+    socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
     input_status: InputStatus,
 ):
     # web server spy events
@@ -265,18 +251,11 @@ async def test_notifier_send_input_port_status(
         await _assert_call_count(server_connect, call_count=_NUMBER_OF_CLIENTS)
 
         # client emits and check it was received
-        await logged_gather(
-            *[
-                frontend_client.emit("check", data="an_event")
-                for frontend_client in frontend_clients
-            ]
-        )
+        await logged_gather(*[frontend_client.emit("check", data="an_event") for frontend_client in frontend_clients])
         await _assert_call_count(server_on_check, call_count=_NUMBER_OF_CLIENTS)
 
         # attach spy to client
-        on_input_port_events: list[AsyncMock] = [
-            _get_on_input_port_spy(c) for c in frontend_clients
-        ]
+        on_input_port_events: list[AsyncMock] = [_get_on_input_port_spy(c) for c in frontend_clients]
 
         port_notifier = PortNotifier(app, user_id, project_id, node_id)
 
@@ -287,20 +266,16 @@ async def test_notifier_send_input_port_status(
             case InputStatus.DOWNLOAD_WAS_ABORTED:
                 await port_notifier.send_input_port_download_was_aborted(port_key)
             case InputStatus.DOWNLOAD_FINISHED_SUCCESSFULLY:
-                await port_notifier.send_input_port_download_finished_succesfully(
-                    port_key
-                )
+                await port_notifier.send_input_port_download_finished_successfully(port_key)
             case InputStatus.DOWNLOAD_FINISHED_WITH_ERROR:
-                await port_notifier.send_input_port_download_finished_with_error(
-                    port_key
-                )
+                await port_notifier.send_input_port_download_finished_with_error(port_key)
 
         # check that all clients received it
         for on_input_port_event in on_input_port_events:
             await _assert_call_count(on_input_port_event, call_count=1)
             on_input_port_event.assert_awaited_once_with(
                 jsonable_encoder(
-                    InputPortSatus(
+                    InputPortStatus(
                         project_id=project_id,
                         node_id=node_id,
                         port_key=port_key,
@@ -317,10 +292,10 @@ def _get_on_output_port_spy(
 ) -> AsyncMock:
     # emulates front-end receiving message
 
-    async def on_service_status(data):
-        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
+    async def on_output_port_status(data):
+        assert TypeAdapter(OutputPortStatus).validate_python(data) is not None
 
-    on_event_spy = AsyncMock(wraps=on_service_status)
+    on_event_spy = AsyncMock(wraps=on_output_port_status)
     socketio_client.on(SOCKET_IO_STATE_OUTPUT_PORTS_EVENT, on_event_spy)
 
     return on_event_spy
@@ -334,9 +309,7 @@ async def test_notifier_send_output_port_status(
     project_id: ProjectID,
     node_id: NodeID,
     port_key: ServicePortKey,
-    socketio_client_factory: Callable[
-        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
-    ],
+    socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
     output_status: OutputStatus,
 ):
     # web server spy events
@@ -354,35 +327,24 @@ async def test_notifier_send_output_port_status(
         await _assert_call_count(server_connect, call_count=_NUMBER_OF_CLIENTS)
 
         # client emits and check it was received
-        await logged_gather(
-            *[
-                frontend_client.emit("check", data="an_event")
-                for frontend_client in frontend_clients
-            ]
-        )
+        await logged_gather(*[frontend_client.emit("check", data="an_event") for frontend_client in frontend_clients])
         await _assert_call_count(server_on_check, call_count=_NUMBER_OF_CLIENTS)
 
         # attach spy to client
-        on_output_port_events: list[AsyncMock] = [
-            _get_on_output_port_spy(c) for c in frontend_clients
-        ]
+        on_output_port_events: list[AsyncMock] = [_get_on_output_port_spy(c) for c in frontend_clients]
 
         port_notifier = PortNotifier(app, user_id, project_id, node_id)
 
         # server publishes a message
         match output_status:
             case OutputStatus.UPLOAD_STARTED:
-                await port_notifier.send_output_port_upload_sarted(port_key)
+                await port_notifier.send_output_port_upload_started(port_key)
             case OutputStatus.UPLOAD_WAS_ABORTED:
                 await port_notifier.send_output_port_upload_was_aborted(port_key)
             case OutputStatus.UPLOAD_FINISHED_SUCCESSFULLY:
-                await port_notifier.send_output_port_upload_finished_successfully(
-                    port_key
-                )
+                await port_notifier.send_output_port_upload_finished_successfully(port_key)
             case OutputStatus.UPLOAD_FINISHED_WITH_ERROR:
-                await port_notifier.send_output_port_upload_finished_with_error(
-                    port_key
-                )
+                await port_notifier.send_output_port_upload_finished_with_error(port_key)
 
         # check that all clients received it
         for on_output_port_event in on_output_port_events:
@@ -394,6 +356,70 @@ async def test_notifier_send_output_port_status(
                         node_id=node_id,
                         port_key=port_key,
                         status=output_status,
+                    )
+                )
+            )
+
+    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS * 2)
+
+
+def _get_on_state_paths_spy(
+    socketio_client: socketio.AsyncClient,
+) -> AsyncMock:
+    # emulates front-end receiving message
+
+    async def on_state_paths_status(data):
+        assert TypeAdapter(StatePathsStatus).validate_python(data) is not None
+
+    on_event_spy = AsyncMock(wraps=on_state_paths_status)
+    socketio_client.on(SOCKET_IO_STATE_PATHS_EVENT, on_event_spy)
+
+    return on_event_spy
+
+
+@pytest.mark.parametrize("mount_activity_status", MountActivityStatus)
+async def test_state_paths_notifier_send_state_paths_status(
+    socketio_server_events: dict[str, AsyncMock],
+    app: FastAPI,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
+    mount_activity_status: MountActivityStatus,
+):
+    # web server spy events
+    server_connect = socketio_server_events["connect"]
+    server_disconnect = socketio_server_events["disconnect"]
+    server_on_check = socketio_server_events["on_check"]
+
+    async with AsyncExitStack() as socketio_frontend_clients:
+        frontend_clients: list[socketio.AsyncClient] = await logged_gather(
+            *[
+                socketio_frontend_clients.enter_async_context(socketio_client_factory())
+                for _ in range(_NUMBER_OF_CLIENTS)
+            ]
+        )
+        await _assert_call_count(server_connect, call_count=_NUMBER_OF_CLIENTS)
+
+        # client emits and check it was received
+        await logged_gather(*[frontend_client.emit("check", data="an_event") for frontend_client in frontend_clients])
+        await _assert_call_count(server_on_check, call_count=_NUMBER_OF_CLIENTS)
+
+        # attach spy to client
+        on_state_paths_events: list[AsyncMock] = [_get_on_state_paths_spy(c) for c in frontend_clients]
+
+        state_paths_notifier = StatePathsNotifier(app, user_id, project_id, node_id)
+        await state_paths_notifier.send_state_paths_status(mount_activity_status)
+
+        # check that all clients received it
+        for on_state_paths_event in on_state_paths_events:
+            await _assert_call_count(on_state_paths_event, call_count=1)
+            on_state_paths_event.assert_awaited_once_with(
+                jsonable_encoder(
+                    StatePathsStatus(
+                        project_id=project_id,
+                        node_id=node_id,
+                        status=mount_activity_status,
                     )
                 )
             )

@@ -28,15 +28,9 @@ SOCKET_IO_CONVERSATION_CREATED_EVENT: Final[str] = "conversation:created"
 SOCKET_IO_CONVERSATION_DELETED_EVENT: Final[str] = "conversation:deleted"
 SOCKET_IO_CONVERSATION_UPDATED_EVENT: Final[str] = "conversation:updated"
 
-SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT: Final[str] = (
-    "conversation:message:created"
-)
-SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT: Final[str] = (
-    "conversation:message:deleted"
-)
-SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT: Final[str] = (
-    "conversation:message:updated"
-)
+SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT: Final[str] = "conversation:message:created"
+SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT: Final[str] = "conversation:message:deleted"
+SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT: Final[str] = "conversation:message:updated"
 
 
 class BaseEvent(BaseModel):
@@ -97,16 +91,13 @@ async def _send_message_to_recipients(
     notification_message: SocketMessageDict,
 ):
     async for _ in limited_as_completed(
-        (
-            send_message_to_user(app, recipient, notification_message)
-            for recipient in recipients
-        ),
+        (send_message_to_user(app, recipient, notification_message) for recipient in recipients),
         limit=_MAX_CONCURRENT_SENDS,
     ):
         ...
 
 
-async def notify_conversation_created(
+async def notify_via_socket_conversation_created(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -126,7 +117,7 @@ async def notify_conversation_created(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_updated(
+async def notify_via_socket_conversation_updated(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -146,7 +137,7 @@ async def notify_conversation_updated(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_deleted(
+async def notify_via_socket_conversation_deleted(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -154,6 +145,7 @@ async def notify_conversation_deleted(
     user_group_id: GroupID,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
+    conversation_type: ConversationType,
 ) -> None:
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_DELETED_EVENT,
@@ -163,7 +155,7 @@ async def notify_conversation_deleted(
                 project_id=project_id,
                 conversation_id=conversation_id,
                 user_group_id=user_group_id,
-                type=ConversationType.PROJECT_STATIC,
+                type=conversation_type,
             ).model_dump(mode="json", by_alias=True),
         },
     )
@@ -171,7 +163,7 @@ async def notify_conversation_deleted(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_message_created(
+async def notify_via_socket_conversation_message_created(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -191,14 +183,13 @@ async def notify_conversation_message_created(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_message_updated(
+async def notify_via_socket_conversation_message_updated(
     app: web.Application,
     *,
     recipients: set[UserID],
     project_id: ProjectID | None,
     conversation_message: ConversationMessageGetDB,
 ) -> None:
-
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT,
         data={
@@ -212,7 +203,7 @@ async def notify_conversation_message_updated(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_message_deleted(
+async def notify_via_socket_conversation_message_deleted(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -221,7 +212,6 @@ async def notify_conversation_message_deleted(
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> None:
-
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT,
         data={

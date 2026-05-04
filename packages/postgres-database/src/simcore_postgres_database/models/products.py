@@ -5,15 +5,15 @@
 - Every product has a front-end with exactly the same name
 """
 
-from typing import Literal
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Literal,
+    TypedDict,
+)
 
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from ._common import RefActions
 from .base import metadata
@@ -22,7 +22,8 @@ from .jinja2_templates import jinja2_templates
 from .users import users
 
 # NOTE: a default entry is created in the table Product
-# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/
+# 350103a7efbd_modified_products_table.py
 
 
 #
@@ -49,11 +50,26 @@ class Vendor(TypedDict, total=False):
     license_url: str  # Which are the license terms? (if applies)
 
     invitation_url: str  # How to request a trial invitation? (if applies)
-    invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
+    invitation_form: (
+        bool  # If True, it takes precedence over invitation_url and asks the FE to show the form (if defined)
+    )
 
-    release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    # (used for the platform's release notes)
+    release_notes_url_template: str
 
     ui: VendorUI
+
+    footer_social_links: list[tuple[str, str]]  # list of (social_media_name (youtube, linkedin), social_media_url)
+    footer_share_links: list[tuple[str, str, str]]  # list of (share_name, share_label, share_url)
+    company_name: str
+    company_address: str
+    company_links: list[tuple[str, str]]  # list of (link_name, link_url)
+    marketing_fallback_products_on_wrong_password: (
+        list[str]  # list of product names to check (in order); on wrong password, if the user has an account
+        # in any of these products, suggest using the password from the first matching product
+        # (accounts were merged/unified across platforms)
+    )
 
 
 class IssueTracker(TypedDict, total=True):
@@ -121,7 +137,8 @@ _LOGIN_SETTINGS_SERVER_DEFAULT = json_dumps(LOGIN_SETTINGS_DEFAULT)
 # Table
 #
 # NOTE: a default entry is created in the table Product
-# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/
+# 350103a7efbd_modified_products_table.py
 
 products = sa.Table(
     "products",
@@ -166,8 +183,7 @@ products = sa.Table(
         sa.String,
         nullable=False,
         server_default="@".join(["support", "osparc." + "io"]),
-        doc="Support email for this product"
-        'Therefore smtp_sender = f"{display_name} support <{support_email}>"',
+        doc='Support email for this productTherefore smtp_sender = f"{display_name} support <{support_email}>"',
     ),
     sa.Column(
         "product_owners_email",
@@ -212,8 +228,7 @@ products = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
-        doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
-        "SEE LoginSettingsForProduct",
+        doc="Overrides simcore_service_webserver.login.settings.LoginSettings.SEE LoginSettingsForProduct",
     ),
     sa.Column(
         "ui",
@@ -248,7 +263,7 @@ products = sa.Table(
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
-        doc="Automaticaly updates on modification of the row",
+        doc="Automatically updates on modification of the row",
     ),
     sa.Column(
         "priority",
@@ -260,7 +275,7 @@ products = sa.Table(
         "max_open_studies_per_user",
         sa.Integer(),
         nullable=True,
-        doc="Limits the number of studies a user may have open concurently (disabled if NULL)",
+        doc="Limits the number of studies a user may have open concurrently (disabled if NULL)",
     ),
     sa.Column(
         "group_id",
@@ -314,6 +329,13 @@ products = sa.Table(
         unique=False,
         nullable=True,
         doc="Fogbugz project ID to assign support case",
+    ),
+    sa.Column(
+        "studies_dispatcher_enabled",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.false(),
+        doc="If True, this product allows anonymous/guest access to published studies via the studies dispatcher",
     ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

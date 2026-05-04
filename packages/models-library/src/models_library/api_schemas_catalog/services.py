@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Annotated, Any, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.rpc_pagination import PageRpc
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
+
+from models_library.rpc_pagination import PageRpc
 
 from ..batch_operations import BatchGetEnvelope
 from ..boot_options import BootOptions
@@ -154,9 +155,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
 }
 
 
-class ServiceGet(
-    ServiceMetaDataPublished, ServiceAccessRights, ServiceMetaDataEditable
-):  # pylint: disable=too-many-ancestors
+class ServiceGet(ServiceMetaDataPublished, ServiceAccessRights, ServiceMetaDataEditable):  # pylint: disable=too-many-ancestors
     owner: Annotated[
         LowerCaseEmailStr | None,
         Field(description="None when the owner email cannot be found in the database"),
@@ -244,15 +243,11 @@ class _BaseServiceGetV2(ServiceSummary):
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: Annotated[
-        list[str] | None,
-        Field(default_factory=list),
-    ] = DEFAULT_FACTORY
+    classifiers: Annotated[list[str] | None, Field(default_factory=list)] = DEFAULT_FACTORY
 
-    quality: Annotated[
-        dict[str, Any],
-        Field(default_factory=dict),
-    ] = DEFAULT_FACTORY
+    quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
+
+    release_notes_url: HttpUrl | None = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -295,8 +290,10 @@ class ServiceGetV2(_BaseServiceGetV2):
         list[ServiceRelease],
         Field(
             default_factory=list,
-            description="history of releases for this service at this point in time, starting from the newest to the oldest."
-            " It includes current release.",
+            description=(
+                "history of releases for this service at this point in time, "
+                "starting from the newest to the oldest. It includes current release."
+            ),
             json_schema_extra={"default": []},
         ),
     ] = DEFAULT_FACTORY
@@ -317,9 +314,7 @@ class ServiceGetV2(_BaseServiceGetV2):
                             {
                                 "version": "2.0.0",
                                 "compatibility": {
-                                    "canUpdateTo": {
-                                        "version": _EXAMPLE_SLEEPER["version"]
-                                    },
+                                    "canUpdateTo": {"version": _EXAMPLE_SLEEPER["version"]},
                                 },
                             },
                             {"version": "0.9.11"},
@@ -365,24 +360,16 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-PageRpcLatestServiceGet: TypeAlias = PageRpc[
-    # WARNING: keep this definition in models_library and not in the RPC interface
-    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
-    # and will fail to serialize/deserialize these parameters when transmitted/received
-    LatestServiceGet
-]
-
-PageRpcServiceRelease: TypeAlias = PageRpc[
-    # WARNING: keep this definition in models_library and not in the RPC interface
-    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
-    # and will fail to serialize/deserialize these parameters when transmitted/received
-    ServiceRelease
-]
+# WARNING: keep this definition in models_library and not in the RPC interface
+# otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
+# and will fail to serialize/deserialize these parameters when transmitted/received
+PageRpcLatestServiceGet: TypeAlias = PageRpc[LatestServiceGet]  # noqa: UP040
+PageRpcServiceRelease: TypeAlias = PageRpc[ServiceRelease]  # noqa: UP040
 
 # Create PageRpc types
 PageRpcServiceSummary = PageRpc[ServiceSummary]
 
-ServiceResourcesGet: TypeAlias = ServiceResourcesDict
+ServiceResourcesGet: TypeAlias = ServiceResourcesDict  # noqa: UP040
 
 
 class ServiceUpdateV2(CatalogInputSchema):
@@ -397,9 +384,11 @@ class ServiceUpdateV2(CatalogInputSchema):
     deprecated: datetime | None = None
 
     classifiers: list[str] | None = None
-    quality: dict[str, Any] = {}
+    quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
+
+    release_notes_url: HttpUrl | None = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -464,9 +453,7 @@ class MyServicesRpcBatchGet(
 class ServiceListFilters(Filters):
     service_type: Annotated[
         ServiceType | None,
-        Field(
-            description="Filter only services of a given type. If None, then all types are returned"
-        ),
+        Field(description="Filter only services of a given type. If None, then all types are returned"),
     ] = None
 
     service_key_pattern: Annotated[

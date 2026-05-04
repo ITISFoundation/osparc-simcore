@@ -164,9 +164,7 @@ class WarmBufferPoolsMetrics(MetricsBase):
             registry=self.registry,
         )
 
-    def update_from_buffer_pool_manager(
-        self, buffer_pool_manager: WarmBufferPoolManager
-    ) -> None:
+    def update_from_buffer_pool_manager(self, buffer_pool_manager: WarmBufferPoolManager) -> None:
         flat_pool = buffer_pool_manager.flatten_buffer_pool()
 
         for field_name in WARM_BUFFER_POOLS_METRICS_DEFINITIONS:

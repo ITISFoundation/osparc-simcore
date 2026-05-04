@@ -27,12 +27,9 @@ def _get_sql_stmt_string(func_smt, **kwargs):
 
 
 def test_building_sql_statements(faker: Faker):
-
     _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
-        user_or_project_filter=UserOrProjectFilter(
-            user_id=None, project_ids=[uuid4() for _ in range(2)]
-        ),
+        user_or_project_filter=UserOrProjectFilter(user_id=None, project_ids=[uuid4() for _ in range(2)]),
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
@@ -52,9 +49,7 @@ def test_building_sql_statements(faker: Faker):
 
     _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
-        user_or_project_filter=UserOrProjectFilter(
-            user_id=42, project_ids=[uuid4() for _ in range(2)]
-        ),
+        user_or_project_filter=UserOrProjectFilter(user_id=42, project_ids=[uuid4() for _ in range(2)]),
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
@@ -64,9 +59,7 @@ def test_building_sql_statements(faker: Faker):
 
     _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
-        user_or_project_filter=UserOrProjectFilter(
-            user_id=42, project_ids=[uuid4() for _ in range(2)]
-        ),
+        user_or_project_filter=UserOrProjectFilter(user_id=42, project_ids=[uuid4() for _ in range(2)]),
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
@@ -106,9 +99,7 @@ def test_building_sql_statements(faker: Faker):
 def test_list_filter_with_partial_file_id_stmt(user_id, project_ids, faker: Faker):
     sql_stmt_string = _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
-        user_or_project_filter=UserOrProjectFilter(
-            user_id=user_id, project_ids=project_ids
-        ),
+        user_or_project_filter=UserOrProjectFilter(user_id=user_id, project_ids=project_ids),
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
@@ -117,7 +108,7 @@ def test_list_filter_with_partial_file_id_stmt(user_id, project_ids, faker: Fake
         offset=0,
     )
     if user_id:
-        assert f"file_meta_data.user_id = '{user_id}'" in sql_stmt_string
+        assert f"file_meta_data.user_id = {user_id}" in sql_stmt_string
     else:
         assert "file_meta_data.user_id = " not in sql_stmt_string
     if len(project_ids) > 0:
@@ -127,6 +118,6 @@ def test_list_filter_with_partial_file_id_stmt(user_id, project_ids, faker: Fake
     if user_id and len(project_ids) > 0:
         project_ids_as_strings = [f"'{pid}'" for pid in project_ids]
         assert (
-            f"file_meta_data.user_id = '{user_id}' OR file_meta_data.project_id IN ({', '.join(project_ids_as_strings)})"
+            f"file_meta_data.user_id = {user_id} OR file_meta_data.project_id IN ({', '.join(project_ids_as_strings)})"
             in sql_stmt_string
         )

@@ -24,7 +24,7 @@ qx.Class.define("osparc.study.BillingSettings", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(20));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.__studyData = studyData;
 
@@ -32,7 +32,7 @@ qx.Class.define("osparc.study.BillingSettings", {
   },
 
   events: {
-    "debtPayed": "qx.event.type.Event",
+    "debtPaid": "qx.event.type.Event",
     "closeWindow": "qx.event.type.Event",
   },
 
@@ -44,6 +44,10 @@ qx.Class.define("osparc.study.BillingSettings", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "intro-label":
+          control = osparc.dashboard.ResourceDetails.createIntroLabel(this.tr("This section lets you control how your project and apps are funded and powered. You can switch the Credit Account assigned to the project and choose the Tiers that best matches your workload."));
+          this._add(control);
+          break;
         case "credit-account-box":
           control = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
           this._add(control);
@@ -90,6 +94,7 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("intro-label");
       if (osparc.study.Utils.isInDebt(this.__studyData)) {
         this.__buildDebtMessage();
       }
@@ -216,7 +221,7 @@ qx.Class.define("osparc.study.BillingSettings", {
             } = osparc.desktop.credits.Utils.openBuyCredits(paymentMethods);
             buyCreditsWidget.addListener("completed", () => {
               // at this point we can assume that the study got unblocked
-              this.__debtPayed();
+              this.__debtPaid();
             })
           });
       }
@@ -245,17 +250,17 @@ qx.Class.define("osparc.study.BillingSettings", {
       osparc.store.Study.getInstance().payDebt(this.__studyData["uuid"], wallet.getWalletId(), this.__studyData["debt"])
         .then(() => {
           // at this point we can assume that the study got unblocked
-          this.__debtPayed();
+          this.__debtPaid();
           // also switch the study's wallet to this one
           this.__switchWallet(wallet.getWalletId());
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __debtPayed: function() {
+    __debtPaid: function() {
       delete this.__studyData["debt"];
       osparc.store.Study.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
-      this.fireEvent("debtPayed");
+      this.fireEvent("debtPaid");
       if (this.__debtMessage) {
         this._remove(this.__debtMessage);
       }

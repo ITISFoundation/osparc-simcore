@@ -26,19 +26,14 @@ async def get_project_nodes_services(
     return list(dict.fromkeys((node.key, node.version) for node in project_nodes))
 
 
-async def get_project_nodes_map(
-    app: web.Application, *, project_id: ProjectID
-) -> dict[NodeID, Node]:
-
+async def get_project_nodes_map(app: web.Application, *, project_id: ProjectID) -> dict[NodeID, Node]:
     repo = ProjectNodesRepo(project_uuid=project_id)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
         project_nodes = await repo.list(conn)
 
     workbench = {
-        project_node.node_id: _nodes_models_adapters.node_from_project_node(
-            project_node
-        )
+        project_node.node_id: _nodes_models_adapters.node_from_project_node(project_node)
         for project_node in project_nodes
     }
     return TypeAdapter(dict[NodeID, Node]).validate_python(workbench)
@@ -60,16 +55,12 @@ async def update_project_nodes_map(
                 node_id=node_id,
                 **node.model_dump(exclude_none=True, exclude_unset=True),
             )
-            workbench[node_id] = _nodes_models_adapters.node_from_project_node(
-                project_node
-            )
+            workbench[node_id] = _nodes_models_adapters.node_from_project_node(project_node)
 
     return TypeAdapter(dict[NodeID, Node]).validate_python(workbench)
 
 
-async def get_project_nodes(
-    app: web.Application, *, project_uuid: ProjectID
-) -> list[ProjectNode]:
+async def get_project_nodes(app: web.Application, *, project_uuid: ProjectID) -> list[ProjectNode]:
     repo = ProjectNodesRepo(project_uuid=project_uuid)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:

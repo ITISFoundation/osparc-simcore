@@ -58,10 +58,8 @@ async def list_wallets_with_available_credits_for_user(
     # Now we return the user wallets with available credits
     wallets_api = []
     for wallet in user_wallets:
-        available_credits: WalletTotalCredits = (
-            await get_wallet_total_available_credits(
-                app, product_name, wallet.wallet_id
-            )
+        available_credits: WalletTotalCredits = await get_wallet_total_available_credits(
+            app, product_name, wallet.wallet_id
         )
         wallets_api.append(
             WalletGetWithAvailableCredits(
@@ -114,9 +112,7 @@ async def get_wallet_with_available_credits(
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> WalletGetWithAvailableCredits:
-    wallet_db: WalletDB = await db.get_wallet(
-        app=app, wallet_id=wallet_id, product_name=product_name
-    )
+    wallet_db: WalletDB = await db.get_wallet(app=app, wallet_id=wallet_id, product_name=product_name)
 
     available_credits: WalletTotalCredits = await get_wallet_total_available_credits(
         app, product_name, wallet_db.wallet_id
@@ -149,9 +145,7 @@ async def get_user_default_wallet_with_available_credits(
     )
     if user_default_wallet_preference is None:
         raise UserDefaultWalletNotFoundError(uid=user_id)
-    default_wallet_id = TypeAdapter(WalletID).validate_python(
-        user_default_wallet_preference.value
-    )
+    default_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
     return await get_wallet_with_available_credits_by_user_and_wallet(
         app, user_id=user_id, wallet_id=default_wallet_id, product_name=product_name
     )
@@ -173,9 +167,7 @@ async def any_wallet_owned_by_user(
     user_id: UserID,
     product_name: ProductName,
 ) -> bool:
-    wallet_ids = await db.list_wallets_owned_by_user(
-        app, user_id=user_id, product_name=product_name
-    )
+    wallet_ids = await db.list_wallets_owned_by_user(app, user_id=user_id, product_name=product_name)
 
     if len(wallet_ids) > 1:
         _logger.warning(
@@ -207,9 +199,7 @@ async def update_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.model_dump(
-                include={"read", "write", "delete"}
-            ),
+            user_access_rights_on_wallet=wallet.model_dump(include={"read", "write", "delete"}),
         )
 
     wallet_db: WalletDB = await db.update_wallet(
@@ -241,9 +231,7 @@ async def delete_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.model_dump(
-                include={"read", "write", "delete"}
-            ),
+            user_access_rights_on_wallet=wallet.model_dump(include={"read", "write", "delete"}),
         )
 
     raise NotImplementedError
@@ -264,9 +252,7 @@ async def get_wallet_by_user(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.model_dump(
-                include={"read", "write", "delete"}
-            ),
+            user_access_rights_on_wallet=wallet.model_dump(include={"read", "write", "delete"}),
         )
 
     wallet_api: WalletGet = WalletGet(

@@ -97,9 +97,7 @@ async def progress_rabbitmq_consumer(
 
 @pytest.fixture
 async def running_service_tasks(
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     async_docker_client: aiodocker.Docker,
 ) -> Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]]:
@@ -130,9 +128,7 @@ def dask_task(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> DaskTask:
-    dask_key = generate_dask_job_id(
-        service_key, service_version, user_id, project_id, node_id
-    )
+    dask_key = generate_dask_job_id(service_key, service_version, user_id, project_id, node_id)
     return DaskTask(task_id=dask_key, required_resources={})
 
 
@@ -188,14 +184,10 @@ async def test_post_task_log_message_docker(
     faker: Faker,
     logs_rabbitmq_consumer: AsyncMock,
 ):
-    docker_tasks = await running_service_tasks(
-        osparc_docker_label_keys.to_simcore_runtime_docker_labels()
-    )
+    docker_tasks = await running_service_tasks(osparc_docker_label_keys.to_simcore_runtime_docker_labels())
     assert len(docker_tasks) == 1
     log_message = faker.pystr()
-    await post_tasks_log_message(
-        initialized_app, tasks=docker_tasks, message=log_message, level=0
-    )
+    await post_tasks_log_message(initialized_app, tasks=docker_tasks, message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -232,9 +224,7 @@ async def test_post_task_log_message_dask(
     logs_rabbitmq_consumer: AsyncMock,
 ):
     log_message = faker.pystr()
-    await post_tasks_log_message(
-        initialized_app, tasks=[dask_task], message=log_message, level=0
-    )
+    await post_tasks_log_message(initialized_app, tasks=[dask_task], message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -358,9 +348,7 @@ async def test_post_task_messages_does_not_raise_if_service_has_no_labels(
 
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
-    await post_tasks_log_message(
-        initialized_app, tasks=docker_tasks, message=faker.pystr(), level=0
-    )
+    await post_tasks_log_message(initialized_app, tasks=docker_tasks, message=faker.pystr(), level=0)
     await post_tasks_progress_message(
         initialized_app,
         tasks=docker_tasks,

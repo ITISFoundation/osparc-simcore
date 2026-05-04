@@ -1,5 +1,5 @@
 import logging
-from typing import Any, TypeAlias
+from typing import Any
 
 import aiohttp
 from aiohttp import ClientSession, ClientTimeout, web
@@ -27,18 +27,14 @@ DEFAULT_RETRY_POLICY: dict[str, Any] = {
 }
 
 
-DataType: TypeAlias = dict[str, Any]
-DataBody: TypeAlias = DataType | list[DataType] | None
+type DataType = dict[str, Any]
+type DataBody = DataType | list[DataType] | None
 
 
-_StatusToExceptionMapping = dict[
-    int, tuple[type[DirectorV2ServiceError], dict[str, Any]]
-]
+_StatusToExceptionMapping = dict[int, tuple[type[DirectorV2ServiceError], dict[str, Any]]]
 
 
-def _get_exception_from(
-    status_code: int, on_error: _StatusToExceptionMapping | None, details: str, url: URL
-):
+def _get_exception_from(status_code: int, on_error: _StatusToExceptionMapping | None, details: str, url: URL):
     if on_error and status_code in on_error:
         exc_cls, exc_ctx = on_error[status_code]
         return exc_cls(**exc_ctx, status=status_code, details=details)
@@ -53,25 +49,24 @@ async def _make_request(
     method: str,
     headers: dict[str, str] | None,
     data: Any | None,
-    expected_status: type[web.HTTPSuccessful],
+    expected_status: type[web.HTTPSuccessful] | set[type[web.HTTPSuccessful]],
     on_error: _StatusToExceptionMapping | None,
     url: URL,
     **kwargs,
-) -> DataBody | str:
-    async with session.request(
-        method, url, headers=headers, json=data, **kwargs
-    ) as response:
+) -> tuple[DataBody | str, int]:
+    async with session.request(method, url, headers=headers, json=data, **kwargs) as response:
         payload: dict[str, Any] | list[dict[str, Any]] | None | str = (
-            await response.json()
-            if response.content_type == MIMETYPE_APPLICATION_JSON
-            else await response.text()
+            await response.json() if response.content_type == MIMETYPE_APPLICATION_JSON else await response.text()
         )
 
-        if response.status != expected_status.status_code:
-            raise _get_exception_from(
-                response.status, on_error, details=f"{payload}", url=url
-            )
-        return payload
+        if isinstance(expected_status, set):
+            expected_codes = {s.status_code for s in expected_status}
+        else:
+            expected_codes = {expected_status.status_code}
+
+        if response.status not in expected_codes:
+            raise _get_exception_from(response.status, on_error, details=f"{payload}", url=url)
+        return payload, response.status
 
 
 async def request_director_v2(
@@ -79,12 +74,12 @@ async def request_director_v2(
     method: str,
     url: URL,
     *,
-    expected_status: type[web.HTTPSuccessful] = web.HTTPOk,
+    expected_status: type[web.HTTPSuccessful] | set[type[web.HTTPSuccessful]] = web.HTTPOk,
     headers: dict[str, str] | None = None,
     data: Any | None = None,
     on_error: _StatusToExceptionMapping | None = None,
     **kwargs,
-) -> DataBody | str:
+) -> tuple[DataBody | str, int]:
     """
     helper to make requests to director-v2 API
     SEE OAS in services/director-v2/openapi.json
@@ -93,10 +88,10 @@ async def request_director_v2(
     on_error = on_error or {}
 
     try:
-        payload: DataBody | str = await _make_request(
+        payload, response_status = await _make_request(
             session, method, headers, data, expected_status, on_error, url, **kwargs
         )
-        return payload
+        return payload, response_status
 
     except TimeoutError as err:
         raise DirectorV2ServiceError(
@@ -111,3 +106,7 @@ async def request_director_v2(
             details=f"request to director-v2 service unexpected error {err}",
             url=url,
         ) from err
+
+    # NOTE: unreachable but makes mypy happy
+    msg = "Unexpected state"
+    raise RuntimeError(msg)

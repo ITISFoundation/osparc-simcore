@@ -54,10 +54,7 @@ async def test_list_all_solvers_paginated_with_filters(
     )
     assert response.status_code == status.HTTP_200_OK
     solvers = response.json()["items"]
-    assert all(
-        solver["version_display"] and "Xtreme" in solver["version_display"]
-        for solver in solvers
-    )
+    assert all(solver["version_display"] and "Xtreme" in solver["version_display"] for solver in solvers)
 
     # Test combination of both filters
     response = await client.get(
@@ -89,9 +86,7 @@ async def test_list_all_solvers_releases_paginated(
     auth: httpx.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
-    response = await client.get(
-        f"/{API_VTAG}/solvers/{solver_key}/releases/page", auth=auth
-    )
+    response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases/page", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["items"]) == response.json()["total"]
 
@@ -113,9 +108,7 @@ async def test_get_solver_release(
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "2.2.1"
-    response = await client.get(
-        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}", auth=auth
-    )
+    response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}", auth=auth)
     assert response.status_code == status.HTTP_200_OK
 
     solver = Solver.model_validate(response.json())
@@ -167,9 +160,7 @@ async def test_list_solver_ports_again(
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "3.2.1"
-    response = await client.get(
-        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/ports", auth=auth
-    )
+    response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/ports", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     assert TypeAdapter(OnePage[SolverPort]).validate_python(response.json())
 
@@ -196,9 +187,7 @@ async def test_solvers_page_pagination_links(
     assert "self" in links, "Pagination should include 'self' link"
 
     # Verify the self link contains the correct limit parameter
-    assert (
-        f"limit={limit}" in links["self"]
-    ), "Self link should reflect the requested limit"
+    assert f"limit={limit}" in links["self"], "Self link should reflect the requested limit"
 
 
 async def test_solvers_page_pagination_last_page(
@@ -211,16 +200,14 @@ async def test_solvers_page_pagination_last_page(
     assert response.status_code == status.HTTP_200_OK
     total_items = response.json()["total"]
 
-    assert (
-        total_items > 1
-    ), "Total items in MOCK examples should be greater than 1 for pagination test since we need 'prev', 'self' and 'prev' links"
+    assert total_items > 1, (
+        "Total items in MOCK examples should be greater than 1 for pagination test since we need 'prev', 'self' and 'prev' links"
+    )
     last_item = total_items - 1
     page_size = 1
 
     # Request the last page by using the total count as offset
-    response = await client.get(
-        f"/{API_VTAG}/solvers/page?limit={page_size}&offset={last_item}", auth=auth
-    )
+    response = await client.get(f"/{API_VTAG}/solvers/page?limit={page_size}&offset={last_item}", auth=auth)
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -228,9 +215,5 @@ async def test_solvers_page_pagination_last_page(
 
     links = response_data["links"]
     assert links["next"] is None, "Next link should be None for the last page (size=1)"
-    assert (
-        links["prev"] is not None
-    ), "Prev link should be present for the last page (size=1)"
-    assert (
-        links["last"] == links["self"]
-    ), "Last link should be the same as self link for the last page"
+    assert links["prev"] is not None, "Prev link should be present for the last page (size=1)"
+    assert links["last"] == links["self"], "Last link should be the same as self link for the last page"

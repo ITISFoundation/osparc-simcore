@@ -54,9 +54,7 @@ async def test_list_viewers_info_filtered_by_filetype(
     assert viewers[0].filetype == "CSV"
 
     # Test with non-existent filetype
-    viewers_empty = await studies_dispatcher_repository.list_viewers_info(
-        file_type="NONEXISTENT"
-    )
+    viewers_empty = await studies_dispatcher_repository.list_viewers_info(file_type="NONEXISTENT")
     assert len(viewers_empty) == 0
 
 
@@ -66,9 +64,7 @@ async def test_list_viewers_info_only_default(
 ):
     """Test listing only default viewer services."""
     # Act
-    viewers = await studies_dispatcher_repository.list_viewers_info(
-        file_type="CSV", only_default=True
-    )
+    viewers = await studies_dispatcher_repository.list_viewers_info(file_type="CSV", only_default=True)
 
     # Assert
     assert len(viewers) == 1
@@ -81,9 +77,7 @@ async def test_get_default_viewer_for_filetype(
 ):
     """Test getting the default viewer for a specific file type."""
     # Act
-    viewer = await studies_dispatcher_repository.get_default_viewer_for_filetype(
-        file_type="CSV"
-    )
+    viewer = await studies_dispatcher_repository.get_default_viewer_for_filetype(file_type="CSV")
 
     # Assert
     assert viewer is not None
@@ -94,9 +88,7 @@ async def test_get_default_viewer_for_filetype(
     assert viewer.label == consume_filetypes_in_db["service_display_name"]
 
     # Test with non-existent filetype
-    viewer_none = await studies_dispatcher_repository.get_default_viewer_for_filetype(
-        file_type="NONEXISTENT"
-    )
+    viewer_none = await studies_dispatcher_repository.get_default_viewer_for_filetype(file_type="NONEXISTENT")
     assert viewer_none is None
 
 

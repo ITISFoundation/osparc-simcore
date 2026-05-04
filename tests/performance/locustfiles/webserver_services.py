@@ -26,14 +26,10 @@ def _(environment: Environment, **_kwargs: Any) -> None:
         _kwargs: Additional keyword arguments
     """
     # Log that this test requires login
-    _logger.info(
-        "This test requires login (requires_login=True class attribute is set)."
-    )
+    _logger.info("This test requires login (requires_login=True class attribute is set).")
 
     # Only log the parsed options, as the full environment is not JSON serializable
-    assert (
-        environment.parsed_options is not None
-    ), "Environment parsed options must not be None"
+    assert environment.parsed_options is not None, "Environment parsed options must not be None"
     options_dict: dict[str, Any] = vars(environment.parsed_options)
     _logger.info("Testing environment options: %s", json.dumps(options_dict, indent=2))
 
@@ -50,9 +46,7 @@ class WebApiUser(OsparcWebUserBase):
         params = {"offset": 0, "limit": 20}
         page_num = 0
         while True:
-            response = self.authenticated_get(
-                base_url, params=params, name=f"{base_url}/{page_num}"
-            )
+            response = self.authenticated_get(base_url, params=params, name=f"{base_url}/{page_num}")
             response.raise_for_status()
 
             page = response.json()

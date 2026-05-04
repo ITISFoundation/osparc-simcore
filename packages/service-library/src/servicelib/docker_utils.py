@@ -75,9 +75,7 @@ class DockerImageManifestsV2(BaseModel):
 
     @cached_property
     def layers_total_size(self) -> ByteSize:
-        return TypeAdapter(ByteSize).validate_python(
-            sum(layer.size for layer in self.layers)
-        )
+        return TypeAdapter(ByteSize).validate_python(sum(layer.size for layer in self.layers))
 
 
 class DockerImageMultiArchManifestsV2(BaseModel):
@@ -91,10 +89,24 @@ class DockerImageMultiArchManifestsV2(BaseModel):
     )
 
 
+class _DockerPullImageProgressDetail(ProgressDetail):
+    units: str | None = (
+        None  # if empty or None, the units are in bytes https://pkg.go.dev/github.com/moby/moby/pkg/jsonmessage#JSONProgress
+    )
+
+    _TIME_UNITS: frozenset[str] = frozenset({"s", "sec", "secs", "second", "seconds"})
+
+    def are_units_bytes(self) -> bool:
+        return self.units is None or self.units in ["", "B", "bytes"]
+
+    def are_units_time(self) -> bool:
+        return self.units is not None and self.units.lower().strip() in self._TIME_UNITS
+
+
 class _DockerPullImage(BaseModel):
     status: str
     id: str | None = None
-    progress_detail: ProgressDetail | None = None
+    progress_detail: _DockerPullImageProgressDetail | None = None
     progress: str | None = None
     model_config = ConfigDict(
         frozen=True,
@@ -113,9 +125,7 @@ def _create_docker_hub_complete_url(image: DockerGenericTag) -> URL:
     return URL(f"https://{DOCKER_HUB_HOST}/{image}")
 
 
-def get_image_complete_url(
-    image: DockerGenericTag, registry_settings: RegistrySettings
-) -> URL:
+def get_image_complete_url(image: DockerGenericTag, registry_settings: RegistrySettings) -> URL:
     if registry_settings.REGISTRY_URL and registry_settings.REGISTRY_URL in image:
         # this is an image available in the private registry
         return URL(f"http{'s' if registry_settings.REGISTRY_AUTH else ''}://{image}")
@@ -149,9 +159,69 @@ class _PulledStatus:
     extracted: int = 0
 
 
-async def _parse_pull_information(
-    parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]
-):
+def _handle_extracting_progress(
+    parsed_progress: _DockerPullImage,
+    *,
+    layer_id_to_size: dict[str, _PulledStatus],
+    logged_non_byte_extraction_layers: set[str],
+    logged_cap_reached_layers: set[str],
+) -> None:
+    assert parsed_progress.id  # nosec
+    assert parsed_progress.progress_detail  # nosec
+    assert parsed_progress.progress_detail.current is not None  # nosec
+    if parsed_progress.progress_detail.are_units_bytes():
+        layer_id_to_size.setdefault(
+            parsed_progress.id,
+            _PulledStatus(parsed_progress.progress_detail.total or 0),
+        ).extracted = parsed_progress.progress_detail.current
+    elif parsed_progress.progress_detail.are_units_time():
+        # Docker v29+: extraction progress reports elapsed seconds instead of bytes.
+        # We estimate extracted bytes using a throughput constant.
+        if parsed_progress.id not in logged_non_byte_extraction_layers:
+            logged_non_byte_extraction_layers.add(parsed_progress.id)
+            _logger.info(
+                "Extraction progress for layer %s uses non-byte units (%s). "
+                "Estimating extraction progress using throughput of %s/s.",
+                parsed_progress.id,
+                parsed_progress.progress_detail.units,
+                _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC.human_readable(),
+            )
+        layer_status = layer_id_to_size.setdefault(
+            parsed_progress.id,
+            _PulledStatus(parsed_progress.progress_detail.total or 0),
+        )
+        max_estimated = int(layer_status.size * _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO)
+        estimated_extracted = int(parsed_progress.progress_detail.current * _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC)
+        if estimated_extracted >= max_estimated and parsed_progress.id not in logged_cap_reached_layers:
+            logged_cap_reached_layers.add(parsed_progress.id)
+            _logger.warning(
+                "Estimated extraction for layer %s reached cap of %d%% "
+                "(%s of %s bytes) after %ss. "
+                "TIP: consider decreasing _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC.",
+                parsed_progress.id,
+                int(_EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO * 100),
+                max_estimated,
+                layer_status.size,
+                parsed_progress.progress_detail.current,
+            )
+        layer_status.extracted = min(estimated_extracted, max_estimated)
+    else:
+        _logger.warning(
+            "Extraction progress for layer %s uses unknown units (%s). "
+            "Cannot estimate extraction progress. Please check.",
+            parsed_progress.id,
+            parsed_progress.progress_detail.units,
+        )
+
+
+async def _parse_pull_information(  # noqa: C901
+    parsed_progress: _DockerPullImage,
+    *,
+    layer_id_to_size: dict[str, _PulledStatus],
+    image_information: DockerImageManifestsV2 | None,
+    logged_non_byte_extraction_layers: set[str],
+    logged_cap_reached_layers: set[str],
+) -> None:
     match parsed_progress.status.lower():
         case progress_status if any(
             msg in progress_status
@@ -167,40 +237,45 @@ async def _parse_pull_information(
         case "downloading":
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
-            assert parsed_progress.progress_detail.current  # nosec
-
-            layer_id_to_size.setdefault(
-                parsed_progress.id,
-                _PulledStatus(parsed_progress.progress_detail.total or 0),
-            ).downloaded = parsed_progress.progress_detail.current
+            assert parsed_progress.progress_detail.current is not None  # nosec
+            if (image_information is not None) and (parsed_progress.id not in layer_id_to_size):
+                _logger.warning(
+                    "Unexpected layer during download: %s (size: %s bytes). This layer "
+                    "is not in the image manifest and will be ignored in the progress.",
+                    f"{parsed_progress.id=}",
+                    f"{parsed_progress.progress_detail.total=}",
+                )
+                return
+            if parsed_progress.progress_detail.are_units_bytes():
+                layer_id_to_size.setdefault(
+                    parsed_progress.id,
+                    _PulledStatus(parsed_progress.progress_detail.total or 0),
+                ).downloaded = parsed_progress.progress_detail.current
         case "verifying checksum" | "download complete":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).downloaded = layer_id_to_size.setdefault(
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size.setdefault(
                 parsed_progress.id, _PulledStatus(0)
             ).size
         case "extracting":
-            assert parsed_progress.id  # nosec
-            assert parsed_progress.progress_detail  # nosec
-            assert parsed_progress.progress_detail.current  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id,
-                _PulledStatus(parsed_progress.progress_detail.total or 0),
-            ).extracted = parsed_progress.progress_detail.current
+            _handle_extracting_progress(
+                parsed_progress,
+                layer_id_to_size=layer_id_to_size,
+                logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+                logged_cap_reached_layers=logged_cap_reached_layers,
+            )
         case "pull complete":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).extracted = layer_id_to_size[parsed_progress.id].size
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
+                parsed_progress.id
+            ].size
         case "already exists":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).extracted = layer_id_to_size[parsed_progress.id].size
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).downloaded = layer_id_to_size[parsed_progress.id].size
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
+                parsed_progress.id
+            ].size
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size[
+                parsed_progress.id
+            ].size
         case progress_status if any(
             msg in progress_status
             for msg in [
@@ -216,6 +291,54 @@ async def _parse_pull_information(
                 "unknown pull state: %s. Please check",
                 f"{parsed_progress=}",
             )
+
+
+async def _pull_image_with_retry(
+    client: aiodocker.Docker,
+    image: DockerGenericTag,
+    image_short_name: str,
+    registry_auth: dict[str, str] | None,
+    layer_id_to_size: dict[str, _PulledStatus],
+    image_information: DockerImageManifestsV2 | None,
+    progress_bar: ProgressBarData,
+    log_cb: LogCB,
+) -> None:
+    reported_progress = 0.0
+    logged_non_byte_extraction_layers: set[str] = set()
+    logged_cap_reached_layers: set[str] = set()
+    last_log_message = ""
+    async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
+        try:
+            parsed_progress = TypeAdapter(_DockerPullImage).validate_python(pull_progress)
+        except ValidationError:
+            _logger.exception(
+                "Unexpected error while validating '%s'. "
+                "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
+                "The pulling process will still continue.",
+                f"{pull_progress=}",
+            )
+        else:
+            await _parse_pull_information(
+                parsed_progress,
+                layer_id_to_size=layer_id_to_size,
+                image_information=image_information,
+                logged_non_byte_extraction_layers=logged_non_byte_extraction_layers,
+                logged_cap_reached_layers=logged_cap_reached_layers,
+            )
+
+        # compute total progress
+        total_downloaded_size = sum(layer.downloaded for layer in layer_id_to_size.values())
+        total_extracted_size = sum(layer.extracted for layer in layer_id_to_size.values())
+        total_progress = (total_downloaded_size + total_extracted_size) / 2.0
+        progress_to_report = total_progress - reported_progress
+
+        await progress_bar.update(progress_to_report)
+        reported_progress = total_progress
+
+        log_message = f"pulling {image_short_name}: {pull_progress}..."
+        if log_message != last_log_message:
+            await log_cb(log_message, logging.DEBUG)
+            last_log_message = log_message
 
 
 async def pull_image(
@@ -256,9 +379,15 @@ async def pull_image(
                 layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
                 for layer in image_information.layers
             }
+            _logger.info(
+                "pulling image with layer information for %s. Progress will be accurate and uses %s",
+                f"{image=}",
+                f"{layer_id_to_size=}",
+            )
         else:
             _logger.warning(
-                "pulling image without layer information for %s. Progress will be approximative. TIP: check why this happens",
+                "pulling image without layer information for %s. Progress will be approximative. "
+                "TIP: check why this happens",
                 f"{image=}",
             )
 
@@ -278,71 +407,44 @@ async def pull_image(
             retry=retry_if_exception_type(asyncio.TimeoutError),
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         )
-        async def _pull_image_with_retry() -> None:
+        async def _do_pull() -> None:
             nonlocal attempt
             if attempt > 1:
-                # for each attempt rest the progress
                 progress_bar.reset()
                 _reset_progress_from_previous_attempt()
             attempt += 1
 
-            _logger.info("attempt '%s' trying to pull image='%s'", attempt, image)
+            await _pull_image_with_retry(
+                client,
+                image,
+                image_short_name,
+                registry_auth,
+                layer_id_to_size,
+                image_information,
+                progress_bar,
+                log_cb,
+            )
 
-            reported_progress = 0.0
-            async for pull_progress in client.images.pull(
-                image, stream=True, auth=registry_auth
-            ):
-                try:
-                    parsed_progress = TypeAdapter(_DockerPullImage).validate_python(
-                        pull_progress
-                    )
-                except ValidationError:
-                    _logger.exception(
-                        "Unexpected error while validating '%s'. "
-                        "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
-                        "The pulling process will still continue.",
-                        f"{pull_progress=}",
-                    )
-                else:
-                    await _parse_pull_information(
-                        parsed_progress, layer_id_to_size=layer_id_to_size
-                    )
-
-                # compute total progress
-                total_downloaded_size = sum(
-                    layer.downloaded for layer in layer_id_to_size.values()
-                )
-                total_extracted_size = sum(
-                    layer.extracted for layer in layer_id_to_size.values()
-                )
-                total_progress = (total_downloaded_size + total_extracted_size) / 2.0
-                progress_to_report = total_progress - reported_progress
-                await progress_bar.update(progress_to_report)
-                reported_progress = total_progress
-
-                await log_cb(
-                    f"pulling {image_short_name}: {pull_progress}...",
-                    logging.DEBUG,
-                )
-
-        await _pull_image_with_retry()
+        await _do_pull()
 
 
-_CPUS_SAFE_MARGIN: Final[float] = (
-    1.4  # accounts for machine overhead (ops + sidecar itself)
-)
+# NOTE: Docker v29+ reports extraction progress as elapsed seconds instead of bytes.
+# We estimate extraction progress using a throughput constant based on EC2 EBS gp3 baseline
+# (125 MB/s throughput, 3000 IOPS) combined with average CPU decompression overhead.
+_ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("150MiB")
+# NOTE: Cap estimated extraction at 99% of layer size. The final 100% comes from the
+# "pull complete" event. If this cap is hit, the throughput constant may need adjustment.
+_EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO: Final[float] = 0.99
+
+_CPUS_SAFE_MARGIN: Final[float] = 1.4  # accounts for machine overhead (ops + sidecar itself)
 _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
     0.1  # NOTE: machines always have less available RAM than advertised
 )
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
-    "1GiB"
-)
+_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
 DYNAMIC_SIDECAR_MIN_CPUS: Final[float] = 0.5
 
 
-def estimate_dynamic_sidecar_resources_from_ec2_instance(
-    cpus: float, ram: int
-) -> tuple[float, int]:
+def estimate_dynamic_sidecar_resources_from_ec2_instance(cpus: float, ram: int) -> tuple[float, int]:
     """Estimates the resources available to a dynamic-sidecar running in an EC2 instance,
     taking into account safe margins for CPU and RAM, as the EC2 full resources are not completely visible
 
@@ -351,8 +453,6 @@ def estimate_dynamic_sidecar_resources_from_ec2_instance(
     """
     # dynamic-sidecar usually needs less CPU
     sidecar_cpus = max(DYNAMIC_SIDECAR_MIN_CPUS, cpus - _CPUS_SAFE_MARGIN)
-    sidecar_ram = int(
-        ram - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * ram - _SIDECARS_OPS_SAFE_RAM_MARGIN
-    )
+    sidecar_ram = int(ram - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * ram - _SIDECARS_OPS_SAFE_RAM_MARGIN)
 
     return (sidecar_cpus, sidecar_ram)

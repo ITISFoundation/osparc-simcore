@@ -1,15 +1,14 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import Mapping
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
-from typing import Any, Literal, cast
+from typing import Any, ClassVar, Literal
 
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import AsyncConnection
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectID, ProjectType
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
@@ -27,6 +26,8 @@ from simcore_postgres_database.webserver_models import (
     projects,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import Row
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
@@ -50,16 +51,31 @@ PermissionStr = Literal["read", "write", "delete"]
 ANY_USER_ID_SENTINEL = -1
 
 
-class ProjectAccessRights(Enum):
-    # NOTE: PC->SAN: enum with dict as values is unual. need to review
-    OWNER = {"read": True, "write": True, "delete": True}
-    COLLABORATOR = {"read": True, "write": True, "delete": False}
-    VIEWER = {"read": True, "write": False, "delete": False}
+@dataclass(frozen=True)
+class ProjectAccessRights:
+    read: bool
+    write: bool
+    delete: bool
+
+    OWNER: ClassVar[ProjectAccessRights]
+    COLLABORATOR: ClassVar[ProjectAccessRights]
+    VIEWER: ClassVar[ProjectAccessRights]
+
+    @property
+    def value(self) -> dict[str, bool]:
+        return {"read": self.read, "write": self.write, "delete": self.delete}
+
+    @classmethod
+    def all(cls) -> tuple[ProjectAccessRights, ...]:
+        return (cls.OWNER, cls.COLLABORATOR, cls.VIEWER)
 
 
-def create_project_access_rights(
-    gid: int, access: ProjectAccessRights
-) -> dict[str, dict[str, bool]]:
+ProjectAccessRights.OWNER = ProjectAccessRights(read=True, write=True, delete=True)
+ProjectAccessRights.COLLABORATOR = ProjectAccessRights(read=True, write=True, delete=False)
+ProjectAccessRights.VIEWER = ProjectAccessRights(read=True, write=False, delete=False)
+
+
+def create_project_access_rights(gid: int, access: ProjectAccessRights) -> dict[str, dict[str, bool]]:
     return {f"{gid}": access.value}
 
 
@@ -85,9 +101,7 @@ def convert_to_db_names(project_document_data: dict) -> dict:
     return converted_args
 
 
-def convert_to_schema_names(
-    project_database_data: Mapping, user_email: str, **kwargs
-) -> dict:
+def convert_to_schema_names(project_database_data: Mapping, user_email: str, **kwargs) -> dict:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3516
     converted_args = {}
     for col_name, col_value in project_database_data.items():
@@ -112,29 +126,25 @@ def convert_to_schema_names(
     return converted_args
 
 
-def assemble_array_groups(user_groups: list[RowProxy]) -> str:
+def assemble_array_groups(user_groups: list[Row]) -> str:
     return (
         "array[]::text[]"
         if len(user_groups) == 0
-        else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
+        else f"""array[{", ".join(f"'{group.gid}'" for group in user_groups)}]"""
     )
 
 
 class BaseProjectDB:
     @classmethod
-    async def _get_everyone_group(cls, conn: SAConnection) -> RowProxy:
-        result = await conn.execute(
-            sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
-        )
-        row = await result.first()
+    async def _get_everyone_group(cls, conn: AsyncConnection) -> Row:
+        result = await conn.execute(sa.select(groups).where(groups.c.type == GroupType.EVERYONE))
+        row = result.first()
         assert row is not None  # nosec
-        return cast(RowProxy, row)  # mypy: not sure why this cast is necessary
+        return row
 
     @classmethod
-    async def _list_user_groups(
-        cls, conn: SAConnection, user_id: int
-    ) -> list[RowProxy]:
-        user_groups = []
+    async def _list_user_groups(cls, conn: AsyncConnection, user_id: int) -> list[Row]:
+        user_groups: list[Row] = []
 
         if user_id == ANY_USER_ID_SENTINEL:
             everyone_group = await cls._get_everyone_group(conn)
@@ -142,15 +152,13 @@ class BaseProjectDB:
             user_groups.append(everyone_group)
         else:
             result = await conn.execute(
-                sa.select(groups)
-                .select_from(groups.join(user_to_groups))
-                .where(user_to_groups.c.uid == user_id)
+                sa.select(groups).select_from(groups.join(user_to_groups)).where(user_to_groups.c.uid == user_id)
             )
-            user_groups = await result.fetchall() or []
+            user_groups = list(result.fetchall())
         return user_groups
 
     @staticmethod
-    async def _get_user_email(conn: SAConnection, user_id: int | None) -> str:
+    async def _get_user_email(conn: AsyncConnection, user_id: int | None) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
         email = await conn.scalar(sa.select(users.c.email).where(users.c.id == user_id))
@@ -158,25 +166,22 @@ class BaseProjectDB:
         return email or "Unknown"
 
     @staticmethod
-    async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
-        primary_gid = await conn.scalar(
-            sa.select(users.c.primary_gid).where(users.c.id == str(user_id))
-        )
+    async def _get_user_primary_group_gid(conn: AsyncConnection, user_id: int) -> int:
+        primary_gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.id == user_id))
         if not primary_gid:
             raise UserNotFoundError(user_id=user_id)
         assert isinstance(primary_gid, int)
         return primary_gid
 
     @staticmethod
-    async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
-        query = sa.select(projects_tags.c.tag_id).where(
-            projects_tags.c.project_id == project_id
-        )
-        return [row.tag_id async for row in conn.execute(query)]
+    async def _get_tags_by_project(conn: AsyncConnection, project_id: int) -> list:
+        query = sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_id)
+        result = await conn.execute(query)
+        return [row.tag_id for row in result]
 
     @staticmethod
     async def _upsert_tags_in_project(
-        conn: SAConnection,
+        conn: AsyncConnection,
         project_index_id: int,
         project_uuid: ProjectID,
         project_tags: list[int],
@@ -187,14 +192,14 @@ class BaseProjectDB:
                 .values(
                     project_id=project_index_id,
                     tag_id=tag_id,
-                    project_uuid_for_rut=project_uuid,
+                    project_uuid_for_rut=f"{project_uuid}",
                 )
                 .on_conflict_do_nothing()
             )
 
     async def _get_project(
         self,
-        connection: SAConnection,
+        connection: AsyncConnection,
         project_uuid: str,
         *,
         exclude_foreign: list[str] | None = None,
@@ -233,9 +238,7 @@ class BaseProjectDB:
                 *PROJECT_DB_COLS,
                 users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
-                sa.func.coalesce(
-                    workbench_subquery.c.workbench, sa.text("'{}'::json")
-                ).label("workbench"),
+                sa.func.coalesce(workbench_subquery.c.workbench, sa.text("'{}'::json")).label("workbench"),
             )
             .select_from(
                 projects.join(access_rights_subquery, isouter=True)
@@ -247,27 +250,22 @@ class BaseProjectDB:
             )
             .where(
                 (projects.c.uuid == f"{project_uuid}")
-                & (
-                    projects.c.type == f"{ProjectType.TEMPLATE.value}"
-                    if only_templates
-                    else True
-                )
+                & (projects.c.type == ProjectTypeDB.TEMPLATE if only_templates else True)
             )
         )
 
         if only_published:
-            query = query.where(projects.c.published == "true")
+            query = query.where(projects.c.published.is_(True))
 
         if for_update:
-            # NOTE: It seems that blocking this row in the database is necessary; otherwise, there are some concurrency issues.
-            # As the WITH FOR UPDATE clause cannot be used with the GROUP BY clause, I have added a separate query for that.
-            blocking_query = (
-                sa.select(projects).where(projects.c.uuid == f"{project_uuid}")
-            ).with_for_update()
+            # NOTE: It seems that blocking this row in the database is necessary;
+            # otherwise, there are some concurrency issues. As the WITH FOR UPDATE
+            # clause cannot be used with the GROUP BY clause, I have added a separate query for that.
+            blocking_query = (sa.select(projects).where(projects.c.uuid == f"{project_uuid}")).with_for_update()
             await connection.execute(blocking_query)
 
         result = await connection.execute(query)
-        project_row = await result.first()
+        project_row = result.mappings().one_or_none()
 
         if not project_row:
             raise ProjectNotFoundError(
@@ -275,12 +273,10 @@ class BaseProjectDB:
                 search_context=f"{only_templates=}, {only_published=}",
             )
 
-        project: dict[str, Any] = dict(project_row.items())
+        project: dict[str, Any] = dict(project_row)
 
         if "tags" not in exclude_foreign:
-            tags = await self._get_tags_by_project(
-                connection, project_id=project_row.id
-            )
+            tags = await self._get_tags_by_project(connection, project_id=project_row["id"])
             project["tags"] = tags
 
         return project
@@ -293,7 +289,7 @@ def update_workbench(old_project: ProjectDict, new_project: ProjectDict) -> Proj
         ProjectInvalidUsageError: it is not allowed to add/remove nodes
 
     Returns:
-        udpated project
+        updated project
     """
 
     old_workbench: dict[NodeIDStr, Any] = old_project["workbench"]
@@ -341,9 +337,7 @@ def patch_workbench(
         node_key,
         new_node_data,
     ) in new_partial_workbench_data.items():
-        current_node_data: dict[str, Any] | None = patched_project.get(
-            "workbench", {}
-        ).get(node_key)
+        current_node_data: dict[str, Any] | None = patched_project.get("workbench", {}).get(node_key)
 
         if current_node_data is None:
             if not allow_workbench_changes:
@@ -354,9 +348,7 @@ def patch_workbench(
                 patched_project["workbench"][node_key] = new_node_data
                 changed_entries.update({node_key: new_node_data})
             except ValidationError as err:
-                raise NodeNotFoundError(
-                    project_uuid=patched_project["uuid"], node_uuid=node_key
-                ) from err
+                raise NodeNotFoundError(project_uuid=patched_project["uuid"], node_uuid=node_key) from err
         elif new_node_data is None:
             if not allow_workbench_changes:
                 raise ProjectInvalidUsageError
@@ -389,8 +381,6 @@ async def get_project_workbench(
 
     project_nodes = await project_nodes_repo.list(connection)
     for project_node in project_nodes:
-        node_data = project_node.model_dump(
-            exclude=exclude_fields, exclude_none=True, exclude_unset=True
-        )
+        node_data = project_node.model_dump(exclude=exclude_fields, exclude_none=True, exclude_unset=True)
         workbench[f"{project_node.node_id}"] = node_data
     return workbench

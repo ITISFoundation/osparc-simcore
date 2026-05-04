@@ -1,4 +1,3 @@
-// This is a template. Clone and replace extension ".template.json" by ".json"
 {
   "autoDocstring.docstringFormat": "pep257",
   "editor.tabSize": 2,
@@ -54,7 +53,9 @@
   ],
   "[python]": {
     "editor.detectIndentation": false,
-    "editor.tabSize": 4
+    "editor.tabSize": 4,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "[makefile]": {
     "editor.insertSpaces": false

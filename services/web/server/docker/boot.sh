@@ -44,6 +44,7 @@ SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 # RUNNING application ----------------------------------------
 echo "$INFO" "Selected config ${APP_CONFIG}"
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
+echo "$INFO" "Starting service..."
 
 # NOTE: the number of workers ```(2 x $num_cores) + 1``` is
 # the official recommendation https://docs.gunicorn.org/en/latest/design.html#how-many-workers

@@ -16,9 +16,7 @@ class ProductPriceInfo(NamedTuple):
     min_payment_amount_usd: Decimal
 
 
-async def get_product_latest_price_info_or_none(
-    conn: AsyncConnection, product_name: str
-) -> ProductPriceInfo | None:
+async def get_product_latest_price_info_or_none(conn: AsyncConnection, product_name: str) -> ProductPriceInfo | None:
     """If the product is not billable, it returns None"""
     # newest price of a product
     result = await conn.execute(
@@ -36,9 +34,7 @@ async def get_product_latest_price_info_or_none(
         assert row.min_payment_amount_usd is not None  # nosec
         return ProductPriceInfo(
             usd_per_credit=Decimal(row.usd_per_credit).quantize(QUANTIZE_EXP_ARG),
-            min_payment_amount_usd=Decimal(row.min_payment_amount_usd).quantize(
-                QUANTIZE_EXP_ARG
-            ),
+            min_payment_amount_usd=Decimal(row.min_payment_amount_usd).quantize(QUANTIZE_EXP_ARG),
         )
     return None
 

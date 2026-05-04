@@ -19,19 +19,13 @@ from .settings import get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 _TIP: Final[str] = (
-    "`empty_trash_safe` is set `fail_fast=False`."
-    "\nErrors while deletion are ignored."
-    "\nNew runs might resolve them"
+    "`empty_trash_safe` is set `fail_fast=False`.\nErrors while deletion are ignored.\nNew runs might resolve them"
 )
 
 
-async def _empty_explicitly_trashed_projects(
-    app: web.Application, product_name: ProductName, user_id: UserID
-):
-    trashed_projects_ids = (
-        await projects_trash_service.list_explicitly_trashed_projects(
-            app=app, product_name=product_name, user_id=user_id
-        )
+async def _empty_explicitly_trashed_projects(app: web.Application, product_name: ProductName, user_id: UserID):
+    trashed_projects_ids = await projects_trash_service.list_explicitly_trashed_projects(
+        app=app, product_name=product_name, user_id=user_id
     )
 
     with log_context(
@@ -46,6 +40,7 @@ async def _empty_explicitly_trashed_projects(
                     app,
                     user_id=user_id,
                     project_id=project_id,
+                    product_name=product_name,
                 )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -100,7 +95,7 @@ async def _empty_explicitly_trashed_folders_and_content(
                 )
 
 
-async def _empty_explicitely_trashed_workspaces_and_content(
+async def _empty_explicitly_trashed_workspaces_and_content(
     app: web.Application, product_name: ProductName, user_id: UserID
 ):
     trashed_workspaces_ids = await workspaces_trash_service.list_trashed_workspaces(
@@ -153,7 +148,7 @@ async def safe_empty_trash(
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
     # Delete explicitly trashed workspaces (and all implicitly trashed sub-folders and projects)
-    await _empty_explicitely_trashed_workspaces_and_content(app, product_name, user_id)
+    await _empty_explicitly_trashed_workspaces_and_content(app, product_name, user_id)
 
 
 async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
@@ -176,12 +171,10 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
         }
 
         try:
-            deleted_workspace_ids = (
-                await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
-                    app,
-                    trashed_before=delete_until,
-                    fail_fast=False,
-                )
+            deleted_workspace_ids = await workspaces_trash_service.batch_delete_trashed_workspaces_as_admin(
+                app,
+                trashed_before=delete_until,
+                fail_fast=False,
             )
             _logger.info("Deleted %d trashed workspaces", len(deleted_workspace_ids))
 
@@ -214,12 +207,10 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                 )
 
         try:
-            deleted_project_ids = (
-                await projects_trash_service.batch_delete_trashed_projects_as_admin(
-                    app,
-                    trashed_before=delete_until,
-                    fail_fast=False,
-                )
+            deleted_project_ids = await projects_trash_service.batch_delete_trashed_projects_as_admin(
+                app,
+                trashed_before=delete_until,
+                fail_fast=False,
             )
 
             _logger.info("Deleted %d trashed projects", len(deleted_project_ids))

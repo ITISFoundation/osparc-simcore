@@ -1,11 +1,11 @@
-""" resource_tracker_service_runs table
-"""
+"""resource_tracker_service_runs table"""
+
 import enum
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import NUMERIC_KWARGS, column_modified_datetime
+from ._common import NUMERIC_KWARGS, RefActions, column_modified_datetime
 from .base import metadata
 
 
@@ -25,7 +25,17 @@ resource_tracker_service_runs = sa.Table(
     metadata,
     # Primary keys
     sa.Column(
-        "product_name", sa.String, nullable=False, doc="Product name", primary_key=True
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_service_runs_to_product_name",
+        ),
+        nullable=False,
+        doc="Product name",
+        primary_key=True,
     ),
     sa.Column(
         "service_run_id",
@@ -231,8 +241,5 @@ resource_tracker_service_runs = sa.Table(
 sa.Index(
     "ix_resource_tracker_credit_transactions_status_running",
     resource_tracker_service_runs.c.service_run_status,
-    postgresql_where=(
-        resource_tracker_service_runs.c.service_run_status
-        == ResourceTrackerServiceRunStatus.RUNNING
-    ),
+    postgresql_where=(resource_tracker_service_runs.c.service_run_status == ResourceTrackerServiceRunStatus.RUNNING),
 )

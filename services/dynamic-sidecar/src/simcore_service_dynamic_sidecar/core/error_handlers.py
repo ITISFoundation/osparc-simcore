@@ -7,18 +7,14 @@ from starlette.responses import JSONResponse
 from .errors import BaseDynamicSidecarError
 
 
-async def http_error_handler(
-    _: Request, exception: BaseDynamicSidecarError
-) -> JSONResponse:
+async def http_error_handler(_: Request, exception: BaseDynamicSidecarError) -> JSONResponse:
     return JSONResponse(
         content=jsonable_encoder({"errors": [exception.message]}),
         status_code=exception.status_code,  # type:ignore[attr-defined]
     )
 
 
-async def node_not_found_error_handler(
-    _: Request, exception: NodeNotFound
-) -> JSONResponse:
+async def node_not_found_error_handler(_: Request, exception: NodeNotFound) -> JSONResponse:
     error_fields = {
         "code": "dynamic_sidecar.nodeports.node_not_found",
         "message": f"{exception}",

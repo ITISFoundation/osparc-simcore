@@ -3,7 +3,7 @@
 #
 .DEFAULT_GOAL := help
 
-PYTHON_VERSION=3.11.9
+PYTHON_VERSION=3.13.9
 
 # locations
 REPODIR := $(shell git rev-parse --show-toplevel)
@@ -40,7 +40,7 @@ shell: build ## Opens shell in ${IMAGE_NAME}
 
 
 .PHONY: run
-run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULY]
+run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULLY]
 	docker run -it \
 		--workdir="/home/$(USER)" \
     --volume="/etc/group:/etc/group:ro" \

@@ -14,7 +14,5 @@ from pytest_mock import MockerFixture
 def mock_otel_collector(mocker: MockerFixture) -> Iterator[InMemorySpanExporter]:
     memory_exporter = InMemorySpanExporter()
     span_processor = SimpleSpanProcessor(memory_exporter)
-    mocker.patch(
-        "servicelib.aiohttp.tracing._create_span_processor", return_value=span_processor
-    )
-    yield memory_exporter
+    mocker.patch("servicelib.aiohttp.tracing._create_span_processor", return_value=span_processor)
+    return memory_exporter

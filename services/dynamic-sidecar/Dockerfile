@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Define arguments in the global scope
-ARG PYTHON_VERSION="3.11.9"
+ARG PYTHON_VERSION="3.13.9"
 ARG UV_VERSION="0.9"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
@@ -73,20 +73,6 @@ RUN \
   --mount=type=bind,source=scripts/install_7zip.bash,target=install_7zip.bash \
   ./install_7zip.bash
 
-RUN AWS_CLI_VERSION="2.11.11" \
-  && case "${TARGETARCH}" in \
-  "amd64") ARCH="x86_64" ;; \
-  "arm64") ARCH="aarch64" ;; \
-  *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
-  esac \
-  && curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
-  && apt-get update && apt-get install -y unzip \
-  && unzip awscliv2.zip \
-  && ./aws/install \
-  && apt-get remove --purge -y unzip \
-  && rm awscliv2.zip \
-  && rm -rf awscliv2 \
-  && aws --version
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -114,7 +100,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # volumes between itself and the spawned containers
 ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
-# create direcotry to persist SharedStore data accessiable
+# create directory to persist SharedStore data accessible
 # between dynamic-sidecar reboots
 ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}/shared-store"
 RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
@@ -200,14 +186,11 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# NOTE: the start period of 3 minutes is to allow the dynamic-sidecar
-# enough time to connect to the externald dependencies. some times the docker
-# networks take time to get created
-# https://docs.docker.com/reference/dockerfile/#healthcheck
+# NOTE: sometimes docker network may take some time to resolve DNS, thus the longer start-period
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=180s \
+  --start-period=64s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
@@ -220,7 +203,7 @@ CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as my with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR

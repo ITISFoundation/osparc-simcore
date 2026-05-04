@@ -67,21 +67,19 @@ async def test_licensed_items_listing(
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
-    got_licensed_resource_duke = (
-        await _licensed_resources_repository.create_if_not_exists(
-            client.app,
-            display_name="Duke",
-            licensed_resource_name="Duke",
-            licensed_resource_type=LicensedResourceType.VIP_MODEL,
-            licensed_resource_data={
-                "category_id": "HumanWholeBody",
-                "category_display": "Humans",
-                "source": VIP_DETAILS_EXAMPLE,
-            },
-        )
+    got_licensed_resource_duke = await _licensed_resources_repository.create_if_not_exists(
+        client.app,
+        display_name="Duke",
+        licensed_resource_name="Duke",
+        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+        licensed_resource_data={
+            "category_id": "HumanWholeBody",
+            "category_display": "Humans",
+            "source": VIP_DETAILS_EXAMPLE,
+        },
     )
 
-    # Connect them via licensed_item_to_resorce DB table
+    # Connect them via licensed_item_to_resource DB table
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(
             licensed_item_to_resource.insert().values(
@@ -122,27 +120,25 @@ async def test_licensed_items_listing(
     assert data == []
 
 
-_LICENSED_ITEM_PURCHASE_GET = (
-    rut_licensed_items_purchases.LicensedItemPurchaseGet.model_validate(
-        {
-            "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
-            "product_name": "osparc",
-            "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
-            "key": "Duke",
-            "version": "1.0.0",
-            "wallet_id": 1,
-            "wallet_name": "My Wallet",
-            "pricing_unit_cost_id": 1,
-            "pricing_unit_cost": Decimal(10),
-            "start_at": "2023-01-11 13:11:47.293595",
-            "expire_at": "2023-01-11 13:11:47.293595",
-            "num_of_seats": 1,
-            "purchased_by_user": 1,
-            "user_email": "test@test.com",
-            "purchased_at": "2023-01-11 13:11:47.293595",
-            "modified": "2023-01-11 13:11:47.293595",
-        }
-    )
+_LICENSED_ITEM_PURCHASE_GET = rut_licensed_items_purchases.LicensedItemPurchaseGet.model_validate(
+    {
+        "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
+        "product_name": "osparc",
+        "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
+        "key": "Duke",
+        "version": "1.0.0",
+        "wallet_id": 1,
+        "wallet_name": "My Wallet",
+        "pricing_unit_cost_id": 1,
+        "pricing_unit_cost": Decimal(10),
+        "start_at": "2023-01-11 13:11:47.293595",
+        "expire_at": "2023-01-11 13:11:47.293595",
+        "num_of_seats": 1,
+        "purchased_by_user": 1,
+        "user_email": "test@test.com",
+        "purchased_at": "2023-01-11 13:11:47.293595",
+        "modified": "2023-01-11 13:11:47.293595",
+    }
 )
 
 
@@ -158,16 +154,12 @@ def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
     mock_get_pricing_plan = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan",
         spec=True,
-        return_value=RutPricingPlanGet.model_validate(
-            RutPricingPlanGet.model_json_schema()["examples"][2]
-        ),
+        return_value=RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][2]),
     )
     mock_get_pricing_unit = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan_unit",
         spec=True,
-        return_value=RutPricingUnitGet.model_validate(
-            RutPricingUnitGet.model_json_schema()["examples"][2]
-        ),
+        return_value=RutPricingUnitGet.model_validate(RutPricingUnitGet.model_json_schema()["examples"][2]),
     )
     mock_create_licensed_item_purchase = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.licensed_items_purchases.create_licensed_item_purchase",
@@ -205,21 +197,19 @@ async def test_licensed_items_purchase(
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
-    got_licensed_resource_duke = (
-        await _licensed_resources_repository.create_if_not_exists(
-            client.app,
-            display_name="Duke",
-            licensed_resource_name="Duke",
-            licensed_resource_type=LicensedResourceType.VIP_MODEL,
-            licensed_resource_data={
-                "category_id": "HumanWholeBody",
-                "category_display": "Humans",
-                "source": VIP_DETAILS_EXAMPLE,
-            },
-        )
+    got_licensed_resource_duke = await _licensed_resources_repository.create_if_not_exists(
+        client.app,
+        display_name="Duke",
+        licensed_resource_name="Duke",
+        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+        licensed_resource_data={
+            "category_id": "HumanWholeBody",
+            "category_display": "Humans",
+            "source": VIP_DETAILS_EXAMPLE,
+        },
     )
 
-    # Connect them via licensed_item_to_resorce DB table
+    # Connect them via licensed_item_to_resource DB table
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(
             licensed_item_to_resource.insert().values(
@@ -230,9 +220,7 @@ async def test_licensed_items_purchase(
         )
 
     # purchase
-    url = client.app.router["purchase_licensed_item"].url_for(
-        licensed_item_id=f"{_licensed_item_id}"
-    )
+    url = client.app.router["purchase_licensed_item"].url_for(licensed_item_id=f"{_licensed_item_id}")
     resp = await client.post(
         f"{url}",
         json={

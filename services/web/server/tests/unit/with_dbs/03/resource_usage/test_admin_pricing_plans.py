@@ -54,9 +54,7 @@ async def test_get_admin_pricing_endpoints_user_role_access(
     resp = await client.get(f"{url}")
     await assert_status(resp, expected)
 
-    url = client.app.router["get_pricing_plan_for_admin_user"].url_for(
-        pricing_plan_id="1"
-    )
+    url = client.app.router["get_pricing_plan_for_admin_user"].url_for(pricing_plan_id="1")
     resp = await client.get(f"{url}")
     await assert_status(resp, expected)
 
@@ -87,9 +85,7 @@ async def test_get_admin_pricing_endpoints_user_role_access(
 
     ## Pricing Units
 
-    url = client.app.router["get_pricing_unit"].url_for(
-        pricing_plan_id="1", pricing_unit_id="1"
-    )
+    url = client.app.router["get_pricing_unit"].url_for(pricing_plan_id="1", pricing_unit_id="1")
     resp = await client.get(f"{url}")
     await assert_status(resp, expected)
 
@@ -108,9 +104,7 @@ async def test_get_admin_pricing_endpoints_user_role_access(
     )
     await assert_status(resp, expected)
 
-    url = client.app.router["update_pricing_unit"].url_for(
-        pricing_plan_id="1", pricing_unit_id="1"
-    )
+    url = client.app.router["update_pricing_unit"].url_for(pricing_plan_id="1", pricing_unit_id="1")
     resp = await client.put(
         f"{url}",
         json={
@@ -127,15 +121,11 @@ async def test_get_admin_pricing_endpoints_user_role_access(
 
     ## Pricing Plan to Service
 
-    url = client.app.router["list_connected_services_to_pricing_plan"].url_for(
-        pricing_plan_id="1"
-    )
+    url = client.app.router["list_connected_services_to_pricing_plan"].url_for(pricing_plan_id="1")
     resp = await client.get(f"{url}")
     await assert_status(resp, expected)
 
-    url = client.app.router["connect_service_to_pricing_plan"].url_for(
-        pricing_plan_id="1"
-    )
+    url = client.app.router["connect_service_to_pricing_plan"].url_for(pricing_plan_id="1")
     resp = await client.post(
         f"{url}",
         json={

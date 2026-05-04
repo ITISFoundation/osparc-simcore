@@ -291,9 +291,7 @@ def test_get_pipeline_state_from_task_states(
     exp_pipeline_state: RunningState,
     fake_task: CompTaskAtDB,
 ):
-    tasks: list[CompTaskAtDB] = [
-        fake_task.model_copy(deep=True, update={"state": s}) for s in task_states
-    ]
+    tasks: list[CompTaskAtDB] = [fake_task.model_copy(deep=True, update={"state": s}) for s in task_states]
 
     pipeline_state: RunningState = get_pipeline_state_from_task_states(tasks)
     assert pipeline_state == exp_pipeline_state, (
@@ -315,7 +313,5 @@ def test_get_pipeline_state_from_task_states(
     ],
 )
 def test_is_pipeline_running(state, exp: bool):
-    assert is_pipeline_running(state) is exp, (
-        f"pipeline in {state}, i.e. running state should be {exp}"
-    )
+    assert is_pipeline_running(state) is exp, f"pipeline in {state}, i.e. running state should be {exp}"
     assert is_pipeline_stopped is not exp

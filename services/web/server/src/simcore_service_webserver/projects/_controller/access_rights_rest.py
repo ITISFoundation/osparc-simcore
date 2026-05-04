@@ -53,33 +53,24 @@ async def share_project(request: web.Request):
         path_params.project_id,
         body_params.sharee_email,
     ):
-
-        confirmation_code: IDStr = (
-            await _groups_service.create_confirmation_action_to_share_project(
-                app=request.app,
-                user_id=req_ctx.user_id,
-                project_id=path_params.project_id,
-                sharee_email=body_params.sharee_email,
-                read=body_params.read,
-                write=body_params.write,
-                delete=body_params.delete,
-                product_name=req_ctx.product_name,
-            )
+        confirmation_code: IDStr = await _groups_service.create_confirmation_action_to_share_project(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            sharee_email=body_params.sharee_email,
+            read=body_params.read,
+            write=body_params.write,
+            delete=body_params.delete,
+            product_name=req_ctx.product_name,
         )
 
-        confirmation_link: str = login_web.make_confirmation_link(
-            request, code=confirmation_code
-        )
+        confirmation_link: str = login_web.make_confirmation_link(request, code=confirmation_code)
 
         _logger.debug(
             "Send email with confirmation link %s to %s with %s ",
             confirmation_link,
             body_params.sharee_email,
-            (
-                f"message {body_params.sharer_message}"
-                if body_params.sharer_message
-                else "no message"
-            ),
+            (f"message {body_params.sharer_message}" if body_params.sharer_message else "no message"),
         )
 
         data = ProjectShareAccepted(sharee_email=body_params.sharee_email, confirmation_link=confirmation_link)  # type: ignore
@@ -91,9 +82,7 @@ async def share_project(request: web.Request):
         )
 
 
-@routes.post(
-    f"/{VTAG}/projects/{{project_id}}/groups/{{group_id}}", name="create_project_group"
-)
+@routes.post(f"/{VTAG}/projects/{{project_id}}/groups/{{group_id}}", name="create_project_group")
 @login_required
 @permission_required("project.access_rights.update")
 @handle_plugin_requests_exceptions
@@ -124,13 +113,11 @@ async def list_project_groups(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    project_groups: list[ProjectGroupGet] = (
-        await _groups_service.list_project_groups_by_user_and_project(
-            request.app,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            product_name=req_ctx.product_name,
-        )
+    project_groups: list[ProjectGroupGet] = await _groups_service.list_project_groups_by_user_and_project(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(project_groups, web.HTTPOk)

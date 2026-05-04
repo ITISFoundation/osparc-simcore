@@ -36,9 +36,7 @@ def mock_create_async_engine_and_database_ready(mocker: MockerFixture) -> MockTy
 
 @pytest.fixture
 def app_environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch, PostgresSettings.model_json_schema()["examples"][0]
-    )
+    return setenvs_from_dict(monkeypatch, PostgresSettings.model_json_schema()["examples"][0])
 
 
 @pytest.fixture
@@ -57,9 +55,7 @@ def app_lifespan(
     async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
         app.state.settings = AppSettings.create_from_envs()
 
-        yield {
-            PostgresLifespanState.POSTGRES_SETTINGS: app.state.settings.CATALOG_POSTGRES
-        }
+        yield {PostgresLifespanState.POSTGRES_SETTINGS: app.state.settings.CATALOG_POSTGRES}
 
     async def my_database_setup(app: FastAPI, state: State) -> AsyncIterator[State]:
         app.state.my_db_engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
@@ -70,7 +66,7 @@ def app_lifespan(
     app_lifespan = LifespanManager()
     app_lifespan.add(my_app_settings)
 
-    # potsgres
+    # postgres
     app_lifespan.add(postgres_database_lifespan)
     app_lifespan.add(my_database_setup)
 
@@ -97,8 +93,7 @@ async def test_lifespan_postgres_database_in_an_app(
 
         # Verify that the async engine is in the lifespan manager state
         assert (
-            PostgresLifespanState.POSTGRES_ASYNC_ENGINE
-            in asgi_manager._state  # noqa: SLF001
+            PostgresLifespanState.POSTGRES_ASYNC_ENGINE in asgi_manager._state  # noqa: SLF001
         )
         assert app.state.my_db_engine
         assert (
@@ -108,10 +103,7 @@ async def test_lifespan_postgres_database_in_an_app(
             ]
         )
 
-        assert (
-            app.state.my_db_engine
-            == mock_create_async_engine_and_database_ready.return_value
-        )
+        assert app.state.my_db_engine == mock_create_async_engine_and_database_ready.return_value
 
     # Verify that the engine was disposed
     async_engine: Any = mock_create_async_engine_and_database_ready.return_value
@@ -145,7 +137,7 @@ async def test_lifespan_postgres_database_dispose_engine_on_failure(
         ):
             ...
 
-    # Verify that the engine was disposed even if error happend
+    # Verify that the engine was disposed even if error happened
     async_engine: Any = mock_create_async_engine_and_database_ready.return_value
     async_engine.dispose.assert_called_once()
 

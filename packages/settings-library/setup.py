@@ -20,13 +20,9 @@ def read_reqs(reqs_path: Path) -> set[str]:
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-INSTALL_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_base.in")
-)  # WEAK requirements
+INSTALL_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_base.in"))  # WEAK requirements
 
-TEST_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
-)  # STRONG requirements
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))  # STRONG requirements
 
 
 SETUP = {
@@ -45,7 +41,7 @@ SETUP = {
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     "long_description": (CURRENT_DIR / "README.md").read_text(),
     "license": "MIT license",

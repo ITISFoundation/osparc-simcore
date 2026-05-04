@@ -7,6 +7,7 @@ from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_message
 from models_library.utils.change_case import snake_to_camel
 from packaging.version import Version
 from servicelib.aiohttp.client_session import get_client_session
@@ -71,18 +72,19 @@ async def create_cached_indexes(app: web.Application) -> None:
         try:
             body = ""
             # web-static server might still not be up
-            async for attempt in AsyncRetrying(
-                **_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY
-            ):
+            async for attempt in AsyncRetrying(**_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY):
                 with attempt:
                     response = await session.get(url, raise_for_status=True)
                     body = await response.text()
 
         except ClientError as err:
-            _logger.exception("Could not fetch index from static server")
-
-            # ANE: Yes this is supposed to fail the boot process
-            msg = f"Could not fetch index at {url!s}. Stopping application boot"
+            # NOTE: Yes this is supposed to fail the boot process
+            msg = create_troubleshooting_log_message(
+                f"Could not fetch index from static server at {url!s}. Stopping application boot",
+                error=err,
+                error_context={"url": url},
+                tip="Check that the static webserver is running and reachable at the configured URL",
+            )
             raise RuntimeError(msg) from err
 
         # fixes relative paths
@@ -106,7 +108,7 @@ def _get_product_data(product: Product) -> dict[str, Any]:
 
 async def create_and_cache_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
-    # (qx-compile takes time), therefore we create statics.json
+    # (qx-compile takes time), therefore we create static-frontend-data.json
     # on_startup instead of upon setup
 
     # Adds general server settings
@@ -142,13 +144,12 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             and product.vendor
             and (template_url := product.vendor.get("release_notes_url_template", None))
         ):
-            # template URL should be somethign like:
+            # template URL should be something like:
             # https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/{vtag}.md
             release_vtag = _get_release_notes_vtag(vtag)
             data["vcsReleaseUrl"] = template_url.format(vtag=release_vtag)
 
         data_json = json_dumps(data)
-        _logger.debug("Front-end statics.json: %s", data_json)
+        _logger.debug("Content of `/static-frontend-data.json` for product='%s': %s", product.name, data_json)
 
-        # cache computed statics.json
         app[FRONTEND_CACHED_STATICS_JSON_APPKEY][product.name] = data_json

@@ -4,7 +4,6 @@ import asyncio
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Optional
 
 import typer
 from httpx import URL, AsyncClient, HTTPStatusError
@@ -25,12 +24,10 @@ def create_human_readable_message(exc: HTTPStatusError) -> str:
 
 async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr):
     typer.secho(
-        f"loging user {email}",
+        f"logging user {email}",
     )
     path = "/auth/login"
-    r = await client.post(
-        path, json={"email": email, "password": password.get_secret_value()}
-    )
+    r = await client.post(path, json={"email": email, "password": password.get_secret_value()})
     r.raise_for_status()
     typer.secho(
         f"user {email} logged in",
@@ -87,9 +84,7 @@ async def publish_as_template(client: AsyncClient, project_uuid: str) -> str:
 
     # set access rights
     modified_project = r.json()["data"]
-    modified_project["accessRights"].update(
-        {"1": {"read": True, "write": False, "delete": False}}
-    )
+    modified_project["accessRights"].update({"1": {"read": True, "write": False, "delete": False}})
 
     path = "/projects"
     typer.secho(
@@ -143,13 +138,10 @@ def main(
     endpoint: str,
     username: str,
     project_file: Path,
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
     share_with_gid: int = EVERYONE_GROUP_ID,
-    password: str = typer.Option(
-        ..., prompt=True, confirmation_prompt=True, hide_input=True
-    ),
+    password: str = typer.Option(..., prompt=True, confirmation_prompt=True, hide_input=True),
 ) -> int:
-
     if project_name is None:
         project_name = project_file.name
 

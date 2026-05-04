@@ -25,7 +25,7 @@ from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging import version
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -96,9 +96,7 @@ def expected_director_rest_api_list_services(
 ) -> list[dict[str, Any]]:
     # OVERRIDES: Changes the values returned by the mocked_director_service_api
 
-    return create_director_list_services_from(
-        expected_director_rest_api_list_services, fake_data_for_services
-    )
+    return create_director_list_services_from(expected_director_rest_api_list_services, fake_data_for_services)
 
 
 @pytest.fixture
@@ -248,14 +246,10 @@ async def test_rpc_list_services_paginated_with_filter_combinations(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
-        filters=ServiceListFilters(
-            service_type=ServiceType.DYNAMIC, service_key_pattern="*/jupyter-*"
-        ),
+        filters=ServiceListFilters(service_type=ServiceType.DYNAMIC, service_key_pattern="*/jupyter-*"),
     )
     assert page.meta.total == 2
-    assert all(
-        "services/dynamic/" in item.key and "jupyter-" in item.key for item in page.data
-    )
+    assert all("services/dynamic/" in item.key and "jupyter-" in item.key for item in page.data)
 
     # Test 5: Combined filters with version display pattern
     page = await catalog_rpc.list_services_paginated(
@@ -296,9 +290,7 @@ async def test_rpc_catalog_client_workflow(
 ):
     assert app
 
-    page = await catalog_rpc.list_services_paginated(
-        rpc_client, product_name=product_name, user_id=user_id
-    )
+    page = await catalog_rpc.list_services_paginated(rpc_client, product_name=product_name, user_id=user_id)
 
     assert page.data
     service_key = page.data[0].key
@@ -334,12 +326,15 @@ async def test_rpc_catalog_client_workflow(
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
-        update=ServiceUpdateV2(
-            name="foo",
-            description="bar",
-            icon=random_icon_url(faker),
-            version_display="this is a nice version",
-            description_ui=True,  # owner activates wiki view
+        update=TypeAdapter(ServiceUpdateV2).validate_python(
+            {
+                "name": "foo",
+                "description": "bar",
+                "icon": random_icon_url(faker),
+                "version_display": "this is a nice version",
+                "description_ui": True,  # owner activates wiki view
+                "release_notes_url": "https://example.com/release-notes",
+            }
         ),
     )
 
@@ -351,6 +346,7 @@ async def test_rpc_catalog_client_workflow(
     assert updated.version_display == "this is a nice version"
     assert updated.icon is not None
     assert not updated.classifiers
+    assert f"{updated.release_notes_url}" == "https://example.com/release-notes"
 
     got = await catalog_rpc.get_service(
         rpc_client,
@@ -370,7 +366,6 @@ async def test_rpc_get_service_not_found_error(
     product_name: ProductName,
     user_id: UserID,
 ):
-
     with pytest.raises(CatalogItemNotFoundRpcError, match="unknown"):
         await catalog_rpc.get_service(
             rpc_client,
@@ -389,7 +384,6 @@ async def test_rpc_get_service_validation_error(
     product_name: ProductName,
     user_id: UserID,
 ):
-
     with pytest.raises(ValidationError, match="service_key"):
         await catalog_rpc.get_service(
             rpc_client,
@@ -629,9 +623,7 @@ async def test_rpc_batch_get_my_services(
     assert my_services[0].key == service_key
     assert my_services[0].release.version == service_version_1
     assert my_services[0].release.compatibility
-    assert (
-        my_services[0].release.compatibility.can_update_to.version == service_version_2
-    )
+    assert my_services[0].release.compatibility.can_update_to.version == service_version_2
 
     assert my_services[1].my_access_rights.model_dump() == {
         "execute": True,
@@ -802,10 +794,7 @@ async def test_rpc_get_service_ports_permission_denied(
 
     # Modify access rights to restrict access
     # Remove user's access if present
-    if (
-        "access_rights" in fake_restricted_service
-        and user["primary_gid"] in fake_restricted_service["access_rights"]
-    ):
+    if "access_rights" in fake_restricted_service and user["primary_gid"] in fake_restricted_service["access_rights"]:
         fake_restricted_service["access_rights"].pop(user["primary_gid"])
 
     await services_db_tables_injector([fake_restricted_service])
@@ -1026,9 +1015,7 @@ async def test_rpc_compare_latest_vs_all_services_summaries(
         assert len(versions_in_all) == num_versions_per_service
 
         # Get the latest version from latest_page
-        latest_version = next(
-            item.version for item in latest_page.data if item.key == key
-        )
+        latest_version = next(item.version for item in latest_page.data if item.key == key)
 
         # Verify this version exists in versions_in_all
         assert latest_version in versions_in_all

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import Self, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -15,5 +15,5 @@ class BaseRepository:
     db_engine: AsyncEngine
 
     @classmethod
-    def instance(cls: type[RepositoryType], db_engine: AsyncEngine) -> RepositoryType:
+    def instance(cls, db_engine: AsyncEngine) -> Self:
         return cls(db_engine=db_engine)

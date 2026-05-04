@@ -8,7 +8,6 @@ This OAS are the source of truth
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from typing import Annotated
 
 from _common import as_query
@@ -145,5 +144,14 @@ async def delete_conversation_message(
     response_model=Envelope[ConversationMessageRestGet],
 )
 async def get_conversation_message(
+    _params: Annotated[_ConversationMessagePathParams, Depends()],
+): ...
+
+
+@router.post(
+    "/conversations/{conversation_id}/messages/{message_id}:trigger-chatbot",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def trigger_chatbot_processing(
     _params: Annotated[_ConversationMessagePathParams, Depends()],
 ): ...

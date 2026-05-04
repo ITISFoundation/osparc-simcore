@@ -1,4 +1,5 @@
 import contextlib
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, TypedDict
 
@@ -14,8 +15,30 @@ from .faker_factories import DEFAULT_TEST_PASSWORD
 from .postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
-# WARNING: DO NOT use UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):
-# NOTE: this is modified dict version of packages/postgres-database/src/simcore_postgres_database/models/users.py for testing purposes
+@dataclass
+class MixedUserTestData:
+    """Test data for user pre-registration tests with mixed states."""
+
+    created_by_user_id: UserID
+    product_owner_email: str
+    product_owner_id: UserID
+    pre_reg_email: str
+    pre_reg_id: int
+    owner_pre_reg_id: int
+    approved_email: str
+    approved_reg_id: int
+
+
+@dataclass
+class SortingUserTestData:
+    emails_by_name_asc: list[str]
+
+
+# WARNING: DO NOT use UserDict. It already exists in:
+# https://docs.python.org/3/library/collections.html#collections.UserDict
+# NOTE: this is a modified dict version of
+# packages/postgres-database/src/simcore_postgres_database/models/users.py
+# for testing purposes
 class _UserInfoDictRequired(TypedDict, total=True):
     id: int
     name: str
@@ -39,7 +62,6 @@ async def _create_user_in_db(
     exit_stack: contextlib.AsyncExitStack,
     data: dict | None = None,
 ) -> UserInfoDict:
-
     # create fake
     data = data or {}
     data.setdefault("status", UserStatus.ACTIVE.name)
@@ -64,16 +86,8 @@ async def _create_user_in_db(
         name=user["name"],
         email=user["email"],
         primary_gid=user["primary_gid"],
-        status=(
-            UserStatus(user["status"])
-            if not isinstance(user["status"], UserStatus)
-            else user["status"]
-        ),
-        role=(
-            UserRole(user["role"])
-            if not isinstance(user["role"], UserRole)
-            else user["role"]
-        ),
+        status=(UserStatus(user["status"]) if not isinstance(user["status"], UserStatus) else user["status"]),
+        role=(UserRole(user["role"]) if not isinstance(user["role"], UserRole) else user["role"]),
         # optional
         #  - in db
         created_at=(
@@ -95,9 +109,7 @@ async def _register_user_in_default_product(app: web.Application, user_id: UserI
     assert products
     product_name = products[0].name
 
-    return await groups_service.auto_add_user_to_product_group(
-        app, user_id, product_name=product_name
-    )
+    return await groups_service.auto_add_user_to_product_group(app, user_id, product_name=product_name)
 
 
 async def _create_account_in_db(
@@ -106,9 +118,7 @@ async def _create_account_in_db(
     user_data: dict[str, Any] | None = None,
 ) -> UserInfoDict:
     # users, groups in db
-    user = await _create_user_in_db(
-        get_asyncpg_engine(app), exit_stack=exit_stack, data=user_data
-    )
+    user = await _create_user_in_db(get_asyncpg_engine(app), exit_stack=exit_stack, data=user_data)
 
     # user has default product
     await _register_user_in_default_product(app, user_id=user["id"])
@@ -130,9 +140,7 @@ class NewUser:
         self.exit_stack = contextlib.AsyncExitStack()
 
     async def __aenter__(self) -> UserInfoDict:
-        self.user = await _create_account_in_db(
-            self.app, self.exit_stack, self.user_data
-        )
+        self.user = await _create_account_in_db(self.app, self.exit_stack, self.user_data)
         return self.user
 
     async def __aexit__(self, *args):

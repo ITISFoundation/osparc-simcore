@@ -1,5 +1,6 @@
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
 
 import sqlalchemy as sa
 from models_library.rabbitmq_messages import (
@@ -32,6 +33,7 @@ async def test_process_event_functions(
 ):
     engine = initialized_app.state.engine
     publisher = create_rabbitmq_client("publisher")
+    rpc_client = AsyncMock()
 
     msg = random_rabbit_message_start(
         wallet_id=None,
@@ -40,27 +42,27 @@ async def test_process_event_functions(
         pricing_unit_id=None,
         pricing_unit_cost_id=None,
     )
-    await _process_start_event(engine, msg, publisher)
+    await _process_start_event(engine, msg, publisher, rpc_client)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
     assert output.stopped_at is None
     assert output.service_run_status == "RUNNING"
-    first_occurence_of_last_heartbeat_at = output.last_heartbeat_at
+    first_occurrence_of_last_heartbeat_at = output.last_heartbeat_at
 
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
+        service_run_id=msg.service_run_id, created_at=datetime.now(tz=UTC)
     )
-    await _process_heartbeat_event(engine, heartbeat_msg, publisher)
+    await _process_heartbeat_event(engine, heartbeat_msg, publisher, rpc_client)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
     assert output.stopped_at is None
     assert output.service_run_status == "RUNNING"
-    assert first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
+    assert first_occurrence_of_last_heartbeat_at < output.last_heartbeat_at
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await _process_stop_event(engine, stopped_msg, publisher)
+    await _process_stop_event(engine, stopped_msg, publisher, rpc_client)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
     assert output.stopped_at is not None
     assert output.service_run_status == "SUCCESS"

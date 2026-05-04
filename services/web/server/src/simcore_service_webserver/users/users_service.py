@@ -1,11 +1,9 @@
 # mypy: disable-error-code=truthy-function
 
-from ._accounts_service import (
-    pre_register_user,
-)
 from ._models import FullNameDict
 from ._users_service import (
     delete_user_without_projects,
+    get_active_users_email_data,
     get_guest_user_ids_and_names,
     get_user,
     get_user_credentials,
@@ -27,6 +25,7 @@ from ._users_service import (
 __all__: tuple[str, ...] = (
     "FullNameDict",
     "delete_user_without_projects",
+    "get_active_users_email_data",
     "get_guest_user_ids_and_names",
     "get_user",
     "get_user_credentials",
@@ -40,9 +39,7 @@ __all__: tuple[str, ...] = (
     "get_user_role",
     "get_users_in_group",
     "is_user_in_product",
-    "pre_register_user",
     "search_public_users",
     "set_user_as_deleted",
     "update_expired_users",
 )
-# nopycln: file

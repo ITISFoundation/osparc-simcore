@@ -74,7 +74,6 @@ async def create(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
 ) -> LicensedItemDB:
-
     query = _create_insert_query(
         display_name,
         key,
@@ -101,17 +100,12 @@ async def list_(
     filter_by_licensed_resource_type: LicensedResourceType | None = None,
     include_hidden_items_on_market: bool = False,
 ) -> tuple[int, list[LicensedItemDB]]:
-
     base_query = (
-        select(*_SELECTION_ARGS)
-        .select_from(licensed_items)
-        .where(licensed_items.c.product_name == product_name)
+        select(*_SELECTION_ARGS).select_from(licensed_items).where(licensed_items.c.product_name == product_name)
     )
 
     if filter_by_licensed_resource_type:
-        base_query.where(
-            licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
-        )
+        base_query.where(licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type)
     if not include_hidden_items_on_market:
         base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
 
@@ -123,18 +117,14 @@ async def list_(
     if order_by.direction == OrderDirection.ASC:
         list_query = base_query.order_by(asc(getattr(licensed_items.c, order_by.field)))
     else:
-        list_query = base_query.order_by(
-            desc(getattr(licensed_items.c, order_by.field))
-        )
+        list_query = base_query.order_by(desc(getattr(licensed_items.c, order_by.field)))
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[LicensedItemDB] = [
-            LicensedItemDB.model_validate(row) async for row in result
-        ]
+        items: list[LicensedItemDB] = [LicensedItemDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -150,8 +140,7 @@ async def get(
         select(*_SELECTION_ARGS)
         .select_from(licensed_items)
         .where(
-            (licensed_items.c.licensed_item_id == licensed_item_id)
-            & (licensed_items.c.product_name == product_name)
+            (licensed_items.c.licensed_item_id == licensed_item_id) & (licensed_items.c.product_name == product_name)
         )
     )
 
@@ -224,23 +213,18 @@ def _create_licensed_resource_subquery(product_name: ProductName):
         .select_from(
             licensed_item_to_resource.join(
                 licensed_resources,
-                licensed_resources.c.licensed_resource_id
-                == licensed_item_to_resource.c.licensed_resource_id,
+                licensed_resources.c.licensed_resource_id == licensed_item_to_resource.c.licensed_resource_id,
             )
         )
         .where(licensed_item_to_resource.c.product_name == product_name)
-        .order_by(
-            licensed_resources.c.priority, licensed_resources.c.licensed_resource_id
-        )
+        .order_by(licensed_resources.c.priority, licensed_resources.c.licensed_resource_id)
     ).subquery("ordered_subquery")
 
     # Step 2: Aggregate the ordered subquery results
     _licensed_resource_subquery = (
         select(
             _ordered_subquery.c.licensed_item_id,
-            func.array_agg(_ordered_subquery.c.licensed_resource_data).label(
-                "licensed_resources"
-            ),
+            func.array_agg(_ordered_subquery.c.licensed_resource_data).label("licensed_resources"),
         ).group_by(_ordered_subquery.c.licensed_item_id)
     ).subquery("licensed_resource_subquery")
 
@@ -255,10 +239,7 @@ async def get_licensed_item_by_key_version(
     version: LicensedItemVersion,
     product_name: ProductName,
 ) -> LicensedItem:
-
-    _licensed_resource_subquery = _create_licensed_resource_subquery(
-        product_name=product_name
-    )
+    _licensed_resource_subquery = _create_licensed_resource_subquery(product_name=product_name)
 
     select_query = (
         select(
@@ -276,8 +257,7 @@ async def get_licensed_item_by_key_version(
         .select_from(
             licensed_items.join(
                 _licensed_resource_subquery,
-                licensed_items.c.licensed_item_id
-                == _licensed_resource_subquery.c.licensed_item_id,
+                licensed_items.c.licensed_item_id == _licensed_resource_subquery.c.licensed_item_id,
             )
         )
         .where(
@@ -307,10 +287,7 @@ async def list_licensed_items(
     filter_by_licensed_resource_type: LicensedResourceType | None = None,
     include_hidden_items_on_market: bool = False,
 ) -> tuple[int, list[LicensedItem]]:
-
-    _licensed_resource_subquery = _create_licensed_resource_subquery(
-        product_name=product_name
-    )
+    _licensed_resource_subquery = _create_licensed_resource_subquery(product_name=product_name)
 
     base_query = (
         select(
@@ -328,17 +305,14 @@ async def list_licensed_items(
         .select_from(
             licensed_items.join(
                 _licensed_resource_subquery,
-                licensed_items.c.licensed_item_id
-                == _licensed_resource_subquery.c.licensed_item_id,
+                licensed_items.c.licensed_item_id == _licensed_resource_subquery.c.licensed_item_id,
             )
         )
         .where(licensed_items.c.product_name == product_name)
     )
 
     if filter_by_licensed_resource_type:
-        base_query = base_query.where(
-            licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
-        )
+        base_query = base_query.where(licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type)
     if not include_hidden_items_on_market:
         base_query = base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
 
@@ -363,8 +337,6 @@ async def list_licensed_items(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[LicensedItem] = [
-            LicensedItem.model_validate(dict(row)) async for row in result
-        ]
+        items: list[LicensedItem] = [LicensedItem.model_validate(dict(row)) async for row in result]
 
         return cast(int, total_count), items

@@ -14,8 +14,8 @@ from celery.contrib.testing.worker import (
     start_worker,
 )
 from celery.signals import worker_init, worker_shutdown
-from celery_library.backends.redis import RedisTaskStore
-from celery_library.task_manager import CeleryTaskManager
+from celery_library import CeleryTaskManager
+from celery_library.backends import RedisTaskStore
 from celery_library.types import register_celery_types
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -51,13 +51,9 @@ class FakeAppServer(BaseAppServer):
         assert self._task_manager, "Task manager is not initialized"
         return self._task_manager
 
-    async def run_until_shutdown(
-        self, startup_completed_event: threading.Event
-    ) -> None:
+    async def run_until_shutdown(self, startup_completed_event: threading.Event) -> None:
         redis_client_sdk = RedisClientSDK(
-            self._settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
-                RedisDatabase.CELERY_TASKS
-            ),
+            self._settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
             client_name="pytest_celery_tasks",
         )
         await redis_client_sdk.setup()
@@ -125,14 +121,11 @@ async def with_celery_worker(
     celery_settings: CelerySettings,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-
     def _app_server_factory() -> BaseAppServer:
         return FakeAppServer(app=celery_app, settings=celery_settings)
 
     # NOTE: explicitly connect the signals in tests
-    worker_init.connect(
-        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
-    )
+    worker_init.connect(_worker_init_wrapper(celery_app, _app_server_factory), weak=False)
     worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
     register_celery_tasks(celery_app)

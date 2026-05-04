@@ -1,4 +1,7 @@
 import logging
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -6,12 +9,9 @@ from models_library.projects import ProjectID, ProjectIDStr
 from pydantic import HttpUrl, TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import ProjectType, projects
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 from yarl import URL
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
 from ..projects.projects_permalink_service import (
     ProjectPermalink,
@@ -51,20 +51,12 @@ def create_permalink_for_study(
 
     # check: criterias/conditions on a project to have a permalink
     if project_type != ProjectType.TEMPLATE:
-        msg = (
-            "Can only create permalink from a template project. "
-            f"Got {project_uuid=} with {project_type=}"
-        )
+        msg = f"Can only create permalink from a template project. Got {project_uuid=} with {project_type=}"
         raise PermalinkNotAllowedError(msg)
 
-    project_access_rights_group_1_or_empty: _GroupAccessRightsDict | dict = (
-        project_access_rights.get("1", {})
-    )
+    project_access_rights_group_1_or_empty: _GroupAccessRightsDict | dict = project_access_rights.get("1", {})
     if not project_access_rights_group_1_or_empty.get("read", False):
-        msg = (
-            "Cannot create permalink if not shared with everyone. "
-            f"Got {project_uuid=} with {project_access_rights=}"
-        )
+        msg = f"Cannot create permalink if not shared with everyone. Got {project_uuid=} with {project_access_rights=}"
         raise PermalinkNotAllowedError(msg)
 
     # create
@@ -90,8 +82,8 @@ async def permalink_factory(
 
     """
     # NOTE: next iterations will mobe this as part of the project repository pattern
-    engine = get_database_engine_legacy(app)
-    async with engine.acquire() as conn:
+    engine = get_asyncpg_engine(app)
+    async with engine.connect() as conn:
         access_rights_subquery = (
             sa.select(
                 project_to_groups.c.project_uuid,
@@ -122,7 +114,7 @@ async def permalink_factory(
             .where(projects.c.uuid == f"{project_uuid}")
         )
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.one_or_none()
         if not row:
             raise ProjectNotFoundError(project_uuid=project_uuid)
 
@@ -137,8 +129,6 @@ async def permalink_factory(
     )
 
 
-def setup_projects_permalinks(
-    app: web.Application, settings: StudiesDispatcherSettings
-):
+def setup_projects_permalinks(app: web.Application, settings: StudiesDispatcherSettings):
     assert settings  # nosec
     register_permalink_factory(app, permalink_factory)

@@ -27,7 +27,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 )
 
 from ..application_settings import get_application_settings
-from ..rabbitmq import get_rabbitmq_rpc_server
+from ..rabbitmq import get_rabbitmq_rpc_client
 from . import _licensed_items_checkouts_service, _licensed_items_service
 
 router = RPCRouter()
@@ -41,15 +41,13 @@ async def get_licensed_items(
     offset: int,
     limit: int,
 ) -> LicensedItemRpcGetPage:
-    licensed_item_page: LicensedItemPage = (
-        await _licensed_items_service.list_licensed_items(
-            app=app,
-            product_name=product_name,
-            include_hidden_items_on_market=True,
-            offset=offset,
-            limit=limit,
-            order_by=OrderBy(field=IDStr("display_name")),
-        )
+    licensed_item_page: LicensedItemPage = await _licensed_items_service.list_licensed_items(
+        app=app,
+        product_name=product_name,
+        include_hidden_items_on_market=True,
+        offset=offset,
+        limit=limit,
+        order_by=OrderBy(field=IDStr("display_name")),
     )
 
     licensed_item_get_page: LicensedItemRpcGetPage = LicensedItemRpcGetPage(
@@ -60,10 +58,7 @@ async def get_licensed_items(
                 version=licensed_item.version,
                 display_name=licensed_item.display_name,
                 licensed_resource_type=licensed_item.licensed_resource_type,
-                licensed_resources=[
-                    LicensedResource(**resource)
-                    for resource in licensed_item.licensed_resources
-                ],
+                licensed_resources=[LicensedResource(**resource) for resource in licensed_item.licensed_resources],
                 pricing_plan_id=licensed_item.pricing_plan_id,
                 is_hidden_on_market=licensed_item.is_hidden_on_market,
                 created_at=licensed_item.created_at,
@@ -106,16 +101,14 @@ async def checkout_licensed_item_for_wallet(
     num_of_seats: int,
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutRpcGet:
-    licensed_item_get = (
-        await _licensed_items_checkouts_service.checkout_licensed_item_for_wallet(
-            app,
-            wallet_id=wallet_id,
-            product_name=product_name,
-            licensed_item_id=licensed_item_id,
-            num_of_seats=num_of_seats,
-            service_run_id=service_run_id,
-            user_id=user_id,
-        )
+    licensed_item_get = await _licensed_items_checkouts_service.checkout_licensed_item_for_wallet(
+        app,
+        wallet_id=wallet_id,
+        product_name=product_name,
+        licensed_item_id=licensed_item_id,
+        num_of_seats=num_of_seats,
+        service_run_id=service_run_id,
+        user_id=user_id,
     )
     return LicensedItemCheckoutRpcGet.model_construct(
         licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
@@ -139,13 +132,11 @@ async def release_licensed_item_for_wallet(
     user_id: UserID,
     licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutRpcGet:
-    licensed_item_get = (
-        await _licensed_items_checkouts_service.release_licensed_item_for_wallet(
-            app,
-            product_name=product_name,
-            user_id=user_id,
-            licensed_item_checkout_id=licensed_item_checkout_id,
-        )
+    licensed_item_get = await _licensed_items_checkouts_service.release_licensed_item_for_wallet(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        licensed_item_checkout_id=licensed_item_checkout_id,
     )
     return LicensedItemCheckoutRpcGet.model_construct(
         licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
@@ -162,10 +153,10 @@ async def release_licensed_item_for_wallet(
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_server = get_rabbitmq_rpc_server(app)
+    rpc_client = get_rabbitmq_rpc_client(app)
     settings = get_application_settings(app)
     if not settings.WEBSERVER_RPC_NAMESPACE:
         msg = "RPC namespace is not configured"
         raise ValueError(msg)
 
-    await rpc_server.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)
+    await rpc_client.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)

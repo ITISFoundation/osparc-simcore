@@ -1,0 +1,144 @@
+/* ==========================================================
+ * release-notes.css
+ * Styles for the "New Version Released" dialog markdown.
+ * Scoped under .osparc-release-notes so they don't leak.
+ *
+ * Colors are injected as CSS custom properties from JS
+ * (see NewRelease.__applyThemeCssVars) so both dark and
+ * light themes are supported.
+ * ========================================================== */
+
+.osparc-release-notes {
+  font-family: "Manrope", sans-serif;
+  font-size: 14px !important;
+  line-height: 1.6;
+  word-break: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── headings ─────────────────────────────────────────── */
+
+.osparc-release-notes h1 {
+  font-size: 1.65em;
+  font-weight: 600;
+  margin: 1.25em 0 0.75em;
+  line-height: 1.25;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--rn-border, rgba(128, 128, 128, 0.25));
+}
+
+.osparc-release-notes h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 1.5em 0 0.75em;
+  line-height: 1.25;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--rn-border, rgba(128, 128, 128, 0.25));
+}
+
+.osparc-release-notes h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin: 1.5em 0 0.75em;
+  line-height: 1.25;
+}
+
+.osparc-release-notes h4,
+.osparc-release-notes h5,
+.osparc-release-notes h6 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 1em 0 0.5em;
+  line-height: 1.25;
+}
+
+/* ── paragraphs ───────────────────────────────────────── */
+
+.osparc-release-notes p {
+  margin: 0 0 1em;
+}
+
+/* ── lists ─────────────────────────────────────────────── */
+
+.osparc-release-notes ul,
+.osparc-release-notes ol {
+  margin: 0 0 1em;
+  padding-left: 2em;
+}
+
+.osparc-release-notes li {
+  margin: 0 0;
+  padding: 0;
+}
+
+.osparc-release-notes li + li {
+  margin-top: 0.25em;
+}
+
+.osparc-release-notes li::marker {
+  color: var(--rn-text-muted);
+}
+
+/* ── emphasis & strong ────────────────────────────────── */
+
+.osparc-release-notes strong {
+  font-weight: 600;
+}
+
+.osparc-release-notes em {
+  font-style: italic;
+}
+
+/* ── blockquotes ──────────────────────────────────────── */
+
+.osparc-release-notes blockquote {
+  color: var(--rn-text-muted);
+  margin: 0 0 1em;
+  padding: 0 1em;
+  border-left: 0.25em solid var(--rn-border, rgba(128, 128, 128, 0.25));
+}
+
+/* ── horizontal rules ─────────────────────────────────── */
+
+.osparc-release-notes hr {
+  height: 0;
+  margin: 1.5em 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--rn-border, rgba(128, 128, 128, 0.25));
+}
+
+/* ── code ──────────────────────────────────────────────── */
+
+.osparc-release-notes code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.85em;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.osparc-release-notes pre {
+  margin: 0 0 1em;
+  padding: 1em;
+  border-radius: 6px;
+  overflow: auto;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.osparc-release-notes pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.85em;
+}
+
+/* ── images ────────────────────────────────────────────── */
+
+.osparc-release-notes img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.5em 0;
+  border-radius: 6px;
+}

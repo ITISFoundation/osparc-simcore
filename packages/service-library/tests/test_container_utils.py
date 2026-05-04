@@ -35,9 +35,7 @@ async def test_run_command_in_container_container_not_found():
 
 async def test_run_command_in_container_command_timed_out(running_container_name: str):
     with pytest.raises(ContainerExecTimeoutError):
-        await run_command_in_container(
-            running_container_name, command="sleep 10", timeout=0.1
-        )
+        await run_command_in_container(running_container_name, command="sleep 10", timeout=0.1)
 
 
 async def test_run_command_in_container_none_zero_exit_code(

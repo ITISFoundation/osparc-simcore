@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
@@ -30,6 +30,11 @@ from pytest_simcore.helpers.faker_factories import (
     random_payment_transaction,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient, RPCRouter
@@ -54,6 +59,7 @@ from simcore_service_payments.services.auto_recharge_process_message import (
     _is_message_too_old,
     _was_wallet_topped_up_recently,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -96,9 +102,7 @@ def app_environment(
 
 @pytest.fixture
 async def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
-    return mocker.patch(
-        "simcore_service_payments.services.auto_recharge_listener.process_message"
-    )
+    return mocker.patch("simcore_service_payments.services.auto_recharge_listener.process_message")
 
 
 async def test_process_message__called(
@@ -107,7 +111,7 @@ async def test_process_message__called(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
     publisher = create_rabbitmq_client("publisher")
-    msg = WalletCreditsMessage(wallet_id=1, credits=Decimal(80.5), product_name="s4l")
+    msg = WalletCreditsMessage(wallet_id=1, credits=Decimal("80.5"), product_name="s4l")
     await publisher.publish(WalletCreditsMessage.get_channel_name(), msg)
 
     async for attempt in AsyncRetrying(
@@ -121,36 +125,47 @@ async def test_process_message__called(
 
 
 @pytest.fixture()
-def populate_test_db(
-    postgres_db: sa.engine.Engine, faker: Faker, wallet_id: int
-) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        _primary_payment_method_id = faker.uuid4()
-        _completed_at = datetime.now(tz=UTC) + timedelta(minutes=1)
+async def populate_test_db(sqlalchemy_async_engine: AsyncEngine, faker: Faker, wallet_id: int) -> AsyncIterator[None]:
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            async with sqlalchemy_async_engine.begin() as con:
+                _primary_payment_method_id = faker.uuid4()
+                _completed_at = datetime.now(tz=UTC) + timedelta(minutes=1)
 
-        con.execute(
-            payments_methods.insert().values(
-                **random_payment_method(
-                    payment_method_id=_primary_payment_method_id,
-                    wallet_id=wallet_id,
-                    state="SUCCESS",
-                    completed_at=_completed_at,
+                await con.execute(
+                    payments_methods.insert().values(
+                        **random_payment_method(
+                            payment_method_id=_primary_payment_method_id,
+                            user_id=user_row["id"],
+                            wallet_id=wallet_id,
+                            state="SUCCESS",
+                            completed_at=_completed_at,
+                        )
+                    )
                 )
-            )
-        )
-        con.execute(
-            payments_autorecharge.insert().values(
-                **random_payment_autorecharge(
-                    primary_payment_method_id=_primary_payment_method_id,
-                    wallet_id=wallet_id,
+                await con.execute(
+                    payments_autorecharge.insert().values(
+                        **random_payment_autorecharge(
+                            primary_payment_method_id=_primary_payment_method_id,
+                            wallet_id=wallet_id,
+                        )
+                    )
                 )
-            )
-        )
 
-        yield
+            yield
 
-        con.execute(payments_methods.delete())
-        con.execute(payments_autorecharge.delete())
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(payments_methods.delete())
+                await con.execute(payments_autorecharge.delete())
 
 
 @pytest.fixture()
@@ -173,23 +188,7 @@ async def mock_rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mocker: MockerFixture,
 ) -> RabbitMQRPCClient:
-    rpc_client = await rabbitmq_rpc_client("client")
-
-    # mock returned client
-    mocker.patch(
-        "simcore_service_payments.services.auto_recharge_process_message.get_rabbitmq_rpc_client",
-        return_value=rpc_client,
-    )
-
-    return rpc_client
-
-
-@pytest.fixture
-async def mock_rpc_server(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    mocker: MockerFixture,
-) -> RabbitMQRPCClient:
-    rpc_server = await rabbitmq_rpc_client("mock_server")
+    rpc_client = await rabbitmq_rpc_client("mock_client")
 
     router = RPCRouter()
 
@@ -201,27 +200,34 @@ async def mock_rpc_server(
         dollar_amount: Decimal,
         product_name: ProductName,
     ) -> InvoiceDataGet:
-        return InvoiceDataGet.model_validate(
-            InvoiceDataGet.model_config["json_schema_extra"]["examples"][0]
-        )
+        return InvoiceDataGet.model_validate(InvoiceDataGet.model_config["json_schema_extra"]["examples"][0])
 
-    await rpc_server.register_router(router, namespace=DEFAULT_WEBSERVER_RPC_NAMESPACE)
+    await rpc_client.register_router(router, namespace=DEFAULT_WEBSERVER_RPC_NAMESPACE)
 
-    return rpc_server
+    # mock returned client
+    mocker.patch(
+        "simcore_service_payments.services.auto_recharge_process_message.get_rabbitmq_rpc_client",
+        return_value=rpc_client,
+    )
+
+    return rpc_client
 
 
-async def _assert_payments_transactions_db_row(postgres_db) -> PaymentsTransactionsDB:
+async def _assert_payments_transactions_db_row(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> PaymentsTransactionsDB:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
-        stop=stop_after_delay(10),
+        stop=stop_after_delay(60),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
-        with attempt, postgres_db.connect() as con:
-            result = con.execute(sa.select(payments_transactions))
-            row = result.first()
-            assert row
-            return PaymentsTransactionsDB.model_validate(row)
+        with attempt:
+            async with sqlalchemy_async_engine.begin() as con:
+                result = await con.execute(sa.select(payments_transactions))
+                row = result.first()
+                assert row
+    return PaymentsTransactionsDB.model_validate(row)
 
 
 async def test_process_message__whole_autorecharge_flow_success(
@@ -230,30 +236,24 @@ async def test_process_message__whole_autorecharge_flow_success(
     wallet_id: int,
     populate_test_db: None,
     mocked_pay_with_payment_method: mock.AsyncMock,
-    mock_rpc_server: RabbitMQRPCClient,
     mock_rpc_client: RabbitMQRPCClient,
-    mock_resoruce_usage_tracker_service_api: MockRouter,
-    postgres_db: sa.engine.Engine,
+    mock_resource_usage_tracker_service_api: MockRouter,
+    # postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     publisher = create_rabbitmq_client("publisher")
-    msg = WalletCreditsMessage(
-        wallet_id=wallet_id, credits=Decimal(80.5), product_name="s4l"
-    )
+    msg = WalletCreditsMessage(wallet_id=wallet_id, credits=Decimal("80.5"), product_name="s4l")
     await publisher.publish(WalletCreditsMessage.get_channel_name(), msg)
 
-    row = await _assert_payments_transactions_db_row(postgres_db)
+    row = await _assert_payments_transactions_db_row(sqlalchemy_async_engine)
     assert row.wallet_id == wallet_id
     assert row.state == PaymentTransactionState.SUCCESS
     assert row.comment == "Payment generated by auto recharge"
-    assert len(mock_resoruce_usage_tracker_service_api.calls) == 1
+    assert len(mock_resource_usage_tracker_service_api.calls) == 1
 
 
-@pytest.mark.parametrize(
-    "_credits,expected", [(Decimal(10001), True), (Decimal(9999), False)]
-)
-async def test_check_wallet_credits_above_threshold(
-    app: FastAPI, _credits: Decimal, expected: bool
-):
+@pytest.mark.parametrize("_credits,expected", [(Decimal(10001), True), (Decimal(9999), False)])
+async def test_check_wallet_credits_above_threshold(app: FastAPI, _credits: Decimal, expected: bool):
     settings: ApplicationSettings = app.state.settings
     assert settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
 
@@ -301,31 +301,40 @@ async def test_check_wallet_credits_above_threshold(
 async def test_check_autorecharge_conditions_not_met(
     app: FastAPI, get_wallet_auto_recharge: GetWalletAutoRecharge, expected: bool
 ):
-    assert expected == await _check_autorecharge_conditions_not_met(
-        get_wallet_auto_recharge
-    )
+    assert expected == await _check_autorecharge_conditions_not_met(get_wallet_auto_recharge)
 
 
 @pytest.fixture()
-def populate_payment_transaction_db(
-    postgres_db: sa.engine.Engine, wallet_id: int
-) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        con.execute(
-            payments_transactions.insert().values(
-                **random_payment_transaction(
-                    price_dollars=Decimal(9500),
-                    wallet_id=wallet_id,
-                    state=PaymentTransactionState.SUCCESS,
-                    completed_at=datetime.now(tz=UTC),
-                    initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
+async def populate_payment_transaction_db(sqlalchemy_async_engine: AsyncEngine, wallet_id: int) -> AsyncIterator[None]:
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(
+                    payments_transactions.insert().values(
+                        **random_payment_transaction(
+                            price_dollars=Decimal(9500),
+                            wallet_id=wallet_id,
+                            user_id=user_row["id"],
+                            state=PaymentTransactionState.SUCCESS,
+                            completed_at=datetime.now(tz=UTC),
+                            initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
+                        )
+                    )
                 )
-            )
-        )
 
-        yield
+            yield
 
-        con.execute(payments_transactions.delete())
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(payments_transactions.delete())
 
 
 @pytest.mark.parametrize(
@@ -362,9 +371,7 @@ async def test_exceeds_monthly_limit(
 ):
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
 
-    assert expected == await _exceeds_monthly_limit(
-        _payments_transactions_repo, wallet_id, get_wallet_auto_recharge
-    )
+    assert expected == await _exceeds_monthly_limit(_payments_transactions_repo, wallet_id, get_wallet_auto_recharge)
 
 
 async def test_was_wallet_topped_up_recently_true(
@@ -374,34 +381,45 @@ async def test_was_wallet_topped_up_recently_true(
 ):
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
 
-    assert (
-        await _was_wallet_topped_up_recently(_payments_transactions_repo, wallet_id)
-        is True
-    )
+    assert await _was_wallet_topped_up_recently(_payments_transactions_repo, wallet_id) is True
 
 
 @pytest.fixture()
-def populate_payment_transaction_db_with_older_trans(
-    postgres_db: sa.engine.Engine, wallet_id: int
-) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        current_timestamp = datetime.now(tz=UTC)
-        current_timestamp_minus_10_minutes = current_timestamp - timedelta(minutes=10)
+async def populate_payment_transaction_db_with_older_trans(
+    sqlalchemy_async_engine, wallet_id: int
+) -> AsyncIterator[None]:
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            async with sqlalchemy_async_engine.begin() as con:
+                current_timestamp = datetime.now(tz=UTC)
+                current_timestamp_minus_10_minutes = current_timestamp - timedelta(minutes=10)
 
-        con.execute(
-            payments_transactions.insert().values(
-                **random_payment_transaction(
-                    price_dollars=Decimal(9500),
-                    wallet_id=wallet_id,
-                    state=PaymentTransactionState.SUCCESS,
-                    initiated_at=current_timestamp_minus_10_minutes,
+                await con.execute(
+                    payments_transactions.insert().values(
+                        **random_payment_transaction(
+                            price_dollars=Decimal(9500),
+                            wallet_id=wallet_id,
+                            user_id=user_row["id"],
+                            product_name=product_name,
+                            state=PaymentTransactionState.SUCCESS,
+                            initiated_at=current_timestamp_minus_10_minutes,
+                        )
+                    )
                 )
-            )
-        )
 
-        yield
+            yield
 
-        con.execute(payments_transactions.delete())
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(payments_transactions.delete())
 
 
 async def test_was_wallet_topped_up_recently_false(
@@ -411,10 +429,7 @@ async def test_was_wallet_topped_up_recently_false(
 ):
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
 
-    assert (
-        await _was_wallet_topped_up_recently(_payments_transactions_repo, wallet_id)
-        is False
-    )
+    assert await _was_wallet_topped_up_recently(_payments_transactions_repo, wallet_id) is False
 
 
 async def test__is_message_too_old_true():

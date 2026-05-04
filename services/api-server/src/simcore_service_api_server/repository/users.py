@@ -38,12 +38,6 @@ class UsersRepository(BaseRepository):
         """
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             email = await conn.scalar(
-                sa.select(users.c.email).where(
-                    (users.c.id == user_id) & (users.c.status == UserStatus.ACTIVE)
-                )
+                sa.select(users.c.email).where((users.c.id == user_id) & (users.c.status == UserStatus.ACTIVE))
             )
-        return (
-            TypeAdapter(LowerCaseEmailStr).validate_python(email)
-            if email is not None
-            else None
-        )
+        return TypeAdapter(LowerCaseEmailStr).validate_python(email) if email is not None else None

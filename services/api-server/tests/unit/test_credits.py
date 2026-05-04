@@ -14,7 +14,6 @@ async def test_get_credits_price(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     project_tests_dir: Path,
 ):
-
     create_respx_mock_from_capture(
         respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / "get_credits_price.json",

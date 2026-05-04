@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from contextlib import suppress
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
@@ -14,7 +14,7 @@ from servicelib.utils import logged_gather
 
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..catalog import catalog_service
-from ..db import plugin
+from ..db import db_service
 from ..director_v2 import director_v2_service
 from ..login.decorators import login_required
 from ..resource_usage._client import is_resource_usage_tracking_service_responsive
@@ -46,18 +46,12 @@ async def get_app_diagnostics(request: web.Request):
         /v0/status/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
     """
     # tasks in loop
-    data: dict[str, Any] = {
-        "loop_tasks": [get_task_info(task) for task in asyncio.all_tasks()]
-    }
+    data: dict[str, Any] = {"loop_tasks": [get_task_info(task) for task in asyncio.all_tasks()]}
 
     # allocated memory
-    query_params: StatusDiagnosticsQueryParam = parse_request_query_parameters_as(
-        StatusDiagnosticsQueryParam, request
-    )
+    query_params: StatusDiagnosticsQueryParam = parse_request_query_parameters_as(StatusDiagnosticsQueryParam, request)
     if query_params.top_tracemalloc is not None:
-        data.update(
-            top_tracemalloc=get_tracemalloc_info(top=query_params.top_tracemalloc)
-        )
+        data.update(top_tracemalloc=get_tracemalloc_info(top=query_params.top_tracemalloc))
 
     assert StatusDiagnosticsGet.model_validate(data) is not None  # nosec
     return envelope_json_response(data)
@@ -67,7 +61,7 @@ async def get_app_diagnostics(request: web.Request):
 @login_required
 @permission_required("diagnostics.read")
 async def get_app_status(request: web.Request):
-    SERVICES = (
+    service_names: Final = (
         "postgres",
         "storage",
         "director_v2",
@@ -76,11 +70,7 @@ async def get_app_status(request: web.Request):
     )
 
     def _get_url_for(operation_id, **kwargs):
-        return str(
-            request.url.with_path(
-                str(request.app.router[operation_id].url_for(**kwargs))
-            )
-        )
+        return str(request.url.with_path(str(request.app.router[operation_id].url_for(**kwargs))))
 
     def _get_client_session_info():
         client: ClientSession = get_client_session(request.app)
@@ -100,7 +90,7 @@ async def get_app_status(request: web.Request):
         {
             "app_name": APP_NAME,
             "version": API_VERSION,
-            "services": {name: {"healthy": False} for name in SERVICES},
+            "services": {name: {"healthy": False} for name in service_names},
             "sessions": {"main": _get_client_session_info()},
             # hyperlinks
             "url": _get_url_for("get_app_status"),
@@ -112,8 +102,8 @@ async def get_app_status(request: web.Request):
 
     async def _check_pg():
         check.services["postgres"] = {
-            "healthy": await plugin.is_service_responsive(request.app),
-            "pool": plugin.get_engine_state(request.app),
+            "healthy": await db_service.is_service_responsive(request.app),
+            "pool": db_service.get_engine_state(request.app),
         }
 
     async def _check_storage():
@@ -123,14 +113,10 @@ async def get_app_status(request: web.Request):
         }
 
     async def _check_director2():
-        check.services["director_v2"] = {
-            "healthy": await director_v2_service.is_healthy(request.app)
-        }
+        check.services["director_v2"] = {"healthy": await director_v2_service.is_healthy(request.app)}
 
     async def _check_catalog():
-        check.services["catalog"] = {
-            "healthy": await catalog_service.is_catalog_service_responsive(request.app)
-        }
+        check.services["catalog"] = {"healthy": await catalog_service.is_catalog_service_responsive(request.app)}
 
     async def _check_resource_usage_tracker():
         check.services["resource_usage_tracker"] = {

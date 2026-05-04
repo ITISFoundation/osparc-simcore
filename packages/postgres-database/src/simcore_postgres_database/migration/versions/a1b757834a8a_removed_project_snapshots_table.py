@@ -5,6 +5,7 @@ Revises: e1227c539ff4
 Create Date: 2021-10-01 13:18:57.108487+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -28,9 +29,7 @@ def downgrade():
         "projects_snapshots",
         sa.Column("id", sa.BIGINT(), autoincrement=True, nullable=False),
         sa.Column("name", sa.VARCHAR(), autoincrement=False, nullable=False),
-        sa.Column(
-            "created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=False
-        ),
+        sa.Column("created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
         sa.Column("parent_uuid", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column("project_uuid", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column("deleted", sa.BOOLEAN(), autoincrement=False, nullable=True),
@@ -47,9 +46,7 @@ def downgrade():
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id", name="projects_snapshots_pkey"),
-        sa.UniqueConstraint(
-            "parent_uuid", "created_at", name="snapshot_from_project_uniqueness"
-        ),
+        sa.UniqueConstraint("parent_uuid", "created_at", name="snapshot_from_project_uniqueness"),
         sa.UniqueConstraint("project_uuid", name="projects_snapshots_project_uuid_key"),
     )
     # ### end Alembic commands ###

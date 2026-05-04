@@ -1,19 +1,20 @@
-from typing import Final, TypeAlias
+from typing import Final
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ._protocols import DBConnection
 from .models.services_environments import VENDOR_SECRET_PREFIX, services_vendor_secrets
 
 # This constraint is to avoid deserialization issues after substitution!
-VendorSecret: TypeAlias = bool | int | float | str
+type VendorSecret = bool | int | float | str
 
 LATEST: Final[str] = "latest"
+NUM_VERSION_PARTS: Final = 3
 
 
 async def get_vendor_secrets(
-    conn: DBConnection,
+    conn: AsyncConnection,
     product_name: str,  # NOTE: ProductName as defined in models_library
     vendor_service_key: str,  # NOTE: ServiceKey is defined in models_library
     vendor_service_version: str = LATEST,  # NOTE: ServiceVersion is defined in models_library
@@ -37,22 +38,16 @@ async def get_vendor_secrets(
         query = query.where(
             (services_vendor_secrets.c.product_name == product_name)
             & (services_vendor_secrets.c.service_key == vendor_service_key)
-            & (
-                services_vendor_secrets.c.service_base_version
-                == latest_version.scalar_subquery()
-            )
+            & (services_vendor_secrets.c.service_base_version == latest_version.scalar_subquery())
         )
     else:
-        assert len([int(p) for p in vendor_service_version.split(".")]) == 3  # nosec
+        assert len([int(p) for p in vendor_service_version.split(".")]) == NUM_VERSION_PARTS  # nosec
 
         query = (
             query.where(
                 (services_vendor_secrets.c.product_name == product_name)
                 & (services_vendor_secrets.c.service_key == vendor_service_key)
-                & (
-                    _version(services_vendor_secrets.c.service_base_version)
-                    <= _version(vendor_service_version)
-                )
+                & (_version(services_vendor_secrets.c.service_base_version) <= _version(vendor_service_version))
             )
             .order_by(_version(services_vendor_secrets.c.service_base_version).desc())
             .limit(1)

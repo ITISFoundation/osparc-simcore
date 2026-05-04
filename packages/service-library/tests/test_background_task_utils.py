@@ -27,9 +27,7 @@ from tenacity import (
 
 @pytest.fixture
 async def redis_client_sdk(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    get_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
 ) -> AsyncIterator[RedisClientSDK]:
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as client:
         yield client
@@ -66,9 +64,7 @@ async def _assert_task_completes_once(
 
     await cancel_wait_task(task, max_delay=5)
 
-    events_timestamps: tuple[float, ...] = tuple(
-        x.args[0].timestamp() for x in sleep_events.call_args_list
-    )
+    events_timestamps: tuple[float, ...] = tuple(x.args[0].timestamp() for x in sleep_events.call_args_list)
     return events_timestamps
 
 
@@ -96,10 +92,7 @@ async def test_exclusive_periodic_decorator_parallel_all_finish(
 ):
     parallel_tasks = 10
     results = await asyncio.gather(
-        *[
-            _assert_task_completes_once(redis_client_sdk, stop_after=60)
-            for _ in range(parallel_tasks)
-        ],
+        *[_assert_task_completes_once(redis_client_sdk, stop_after=60) for _ in range(parallel_tasks)],
         return_exceptions=True,
     )
 

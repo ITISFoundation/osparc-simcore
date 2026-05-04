@@ -36,9 +36,7 @@ routes = web.RouteTableDef()
 async def list_user_notifications(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     product_name = products_web.get_product_name(request)
-    notifications = await _service.list_user_notifications(
-        request.app, req_ctx.user_id, product_name
-    )
+    notifications = await _service.list_user_notifications(request.app, req_ctx.user_id, product_name)
     return envelope_json_response(notifications)
 
 
@@ -79,6 +77,4 @@ async def list_user_permissions(request: web.Request) -> web.Response:
     list_permissions: list[UserPermission] = await _users_service.list_user_permissions(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
-    return envelope_json_response(
-        [MyPermissionGet.from_domain_model(p) for p in list_permissions]
-    )
+    return envelope_json_response([MyPermissionGet.from_domain_model(p) for p in list_permissions])

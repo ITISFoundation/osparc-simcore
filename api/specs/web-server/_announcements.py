@@ -21,5 +21,4 @@ router = APIRouter(
     "/announcements",
     response_model=Envelope[list[Announcement]],
 )
-async def list_announcements():
-    ...
+async def list_announcements(): ...

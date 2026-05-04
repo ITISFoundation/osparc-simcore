@@ -11,18 +11,17 @@ SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"
 
 
 class SciCrunchSettings(BaseCustomSettings):
-
-    SCICRUNCH_API_BASE_URL: Annotated[
-        HttpUrl, Field(description="Base url to scicrunch API's entrypoint")
-    ] = TypeAdapter(HttpUrl).validate_python(f"{SCICRUNCH_DEFAULT_URL}/api/1")
+    SCICRUNCH_API_BASE_URL: Annotated[HttpUrl, Field(description="Base url to scicrunch API's entrypoint")] = (
+        TypeAdapter(HttpUrl).validate_python(f"{SCICRUNCH_DEFAULT_URL}/api/1")
+    )
 
     # NOTE: Login in https://scicrunch.org and get API Key under My Account -> API Keys
     # WARNING: this needs to be setup in osparc-ops before deploying
     SCICRUNCH_API_KEY: SecretStr
 
-    SCICRUNCH_RESOLVER_BASE_URL: Annotated[
-        HttpUrl, Field(description="Base url to scicrunch resolver entrypoint")
-    ] = TypeAdapter(HttpUrl).validate_python(f"{SCICRUNCH_DEFAULT_URL}/resolver")
+    SCICRUNCH_RESOLVER_BASE_URL: Annotated[HttpUrl, Field(description="Base url to scicrunch resolver entrypoint")] = (
+        TypeAdapter(HttpUrl).validate_python(f"{SCICRUNCH_DEFAULT_URL}/resolver")
+    )
 
 
 def get_plugin_settings(app: web.Application) -> SciCrunchSettings:

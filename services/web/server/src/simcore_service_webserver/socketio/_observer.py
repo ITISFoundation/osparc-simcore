@@ -21,10 +21,7 @@ _logger = logging.getLogger(__name__)
 
 async def _disconnect_other_sockets(sio: AsyncServer, sockets: list[str]) -> None:
     _logger.debug("disconnecting sockets %s", sockets)
-    logout_tasks = [
-        sio.emit("logout", to=sid, data={"reason": "user logged out"})
-        for sid in sockets
-    ]
+    logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
     await logged_gather(*logout_tasks, reraise=False)
 
     # let the client react
@@ -34,9 +31,7 @@ async def _disconnect_other_sockets(sio: AsyncServer, sockets: list[str]) -> Non
     await logged_gather(*disconnect_tasks)
 
 
-async def _on_user_logout(
-    user_id: str, client_session_id: str | None, app: web.Application
-) -> None:
+async def _on_user_logout(user_id: str, client_session_id: str | None, app: web.Application) -> None:
     _logger.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
     sio: AsyncServer = get_socket_server(app)

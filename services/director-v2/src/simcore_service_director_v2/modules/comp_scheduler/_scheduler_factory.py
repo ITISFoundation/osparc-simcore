@@ -16,9 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 def create_scheduler(app: FastAPI) -> BaseCompScheduler:
-    with log_context(
-        _logger, logging.INFO, msg="Creating Dask-based computational scheduler"
-    ):
+    with log_context(_logger, logging.INFO, msg="Creating Dask-based computational scheduler"):
         app_settings: AppSettings = app.state.settings
         return DaskScheduler(
             settings=app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,

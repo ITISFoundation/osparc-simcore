@@ -139,11 +139,7 @@ async def test_node_ports_accessors(
     # test batch add
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await node_ports.set_multiple(
-            {
-                port.key: (port.value, None)
-                for port in list(original_inputs.values())
-                + list(original_outputs.values())
-            },
+            {port.key: (port.value, None) for port in list(original_inputs.values()) + list(original_outputs.values())},
             progress_bar=progress_bar,
             outputs_callbacks=AsyncMock(),
         )
@@ -175,9 +171,7 @@ async def test_node_ports_set_file_by_keymap(
     db_manager = mock_db_manager(default_configuration)
 
     original_inputs = create_valid_port_mapping(InputsList, suffix="original")
-    original_outputs = create_valid_port_mapping(
-        OutputsList, suffix="original", file_to_key=Path(__file__).name
-    )
+    original_outputs = create_valid_port_mapping(OutputsList, suffix="original", file_to_key=Path(__file__).name)
 
     async def mock_save_db_cb(*args, **kwargs):
         pass
@@ -231,9 +225,7 @@ def mock_port_set(mocker: MockFixture) -> None:
     async def _always_raise_error(*args, **kwargs):
         raise ValidationError.from_exception_data(title="Just a test", line_errors=[])
 
-    mocker.patch(
-        "simcore_sdk.node_ports_v2.port.Port._set", side_effect=_always_raise_error
-    )
+    mocker.patch("simcore_sdk.node_ports_v2.port.Port._set", side_effect=_always_raise_error)
 
 
 async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
@@ -270,8 +262,7 @@ async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
             await node_ports.set_multiple(
                 {
                     port.key: (port.value, None)
-                    for port in list(original_inputs.values())
-                    + list(original_outputs.values())
+                    for port in list(original_inputs.values()) + list(original_outputs.values())
                 },
                 progress_bar=progress_bar,
                 outputs_callbacks=None,

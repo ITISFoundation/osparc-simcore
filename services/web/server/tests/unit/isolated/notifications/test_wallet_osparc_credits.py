@@ -28,9 +28,7 @@ def wallet_id() -> WalletID:
     return WalletID(1)
 
 
-async def test_subscribe_first_and_second(
-    app_with_wallets: web.Application, wallet_id: WalletID
-):
+async def test_subscribe_first_and_second(app_with_wallets: web.Application, wallet_id: WalletID):
     app = app_with_wallets
     app[WALLET_SUBSCRIPTIONS_COUNT_APPKEY][wallet_id] = 0
     mock_rabbit = AsyncMock()

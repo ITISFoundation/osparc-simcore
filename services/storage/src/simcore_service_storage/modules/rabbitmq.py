@@ -2,48 +2,99 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import (
-    RabbitMQRPCClient,
-    wait_till_rabbitmq_responsive,
+from models_library.basic_regex import SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import DatCoreFileID, NodeID, StorageFileID
+from models_library.rabbitmq_messages import (
+    FileNotificationEventType,
+    FileNotificationMessage,
 )
-from settings_library.rabbit import RabbitSettings
+from models_library.users import UserID
+from pydantic import TypeAdapter, ValidationError
+from servicelib.logging_utils import log_catch, log_context
+from servicelib.rabbitmq import RabbitMQClient
 
-from ..exceptions.errors import ConfigurationError
+from .._meta import APP_NAME
+from ..core.settings import get_application_settings
 
 _logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI) -> None:
+def setup_rabbitmq(app: FastAPI) -> None:
     async def on_startup() -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Storage startup Rabbitmq",
-        ):
-            rabbit_settings: RabbitSettings | None = app.state.settings.STORAGE_RABBITMQ
-            if not rabbit_settings:
-                raise ConfigurationError(
-                    msg="RabbitMQ client is de-activated in the settings"
-                )
-            await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
-            app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-                client_name="storage_rpc_server", settings=rabbit_settings
-            )
+        settings = get_application_settings(app).STORAGE_RABBITMQ
+        app.state.rabbitmq_client = RabbitMQClient(
+            client_name=f"{APP_NAME}",
+            settings=settings,
+        )
 
     async def on_shutdown() -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Storage shutdown Rabbitmq",
-        ):
-            if app.state.rabbitmq_rpc_server:
-                await app.state.rabbitmq_rpc_server.close()
+        if app.state.rabbitmq_client:
+            await cast(RabbitMQClient, app.state.rabbitmq_client).close()
+            app.state.rabbitmq_client = None
 
+    app.state.rabbitmq_client = None
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    assert app.state.rabbitmq_rpc_server  # nosec
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
+def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
+    rabbit_client: RabbitMQClient = app.state.rabbitmq_client
+    return rabbit_client
+
+
+def _is_datcore_file_id(file_id: StorageFileID) -> bool:
+    try:
+        TypeAdapter(DatCoreFileID).validate_python(f"{file_id}")
+    except ValidationError:
+        return False
+    return True
+
+
+async def post_file_notification(
+    app: FastAPI,
+    *,
+    event_type: FileNotificationEventType,
+    user_id: UserID,
+    file_id: StorageFileID,
+) -> None:
+    if _is_datcore_file_id(file_id):
+        _logger.debug("Skip notification for DatCore file_id=%s", file_id)
+        return
+
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(_logger, logging.DEBUG, msg=f"posting file notification for {file_id=} with {event_type=}"),
+    ):
+        parts = f"{file_id}".split("/")
+
+        if parts[0] in SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES:
+            _logger.info("Skip notification for file_id=%s starting with prefix %s", file_id, parts[0])
+            return
+
+        try:
+            project_id = ProjectID(parts[0]) if len(parts) > 0 else None
+        except ValueError:
+            project_id = None
+        try:
+            node_id = NodeID(parts[1]) if len(parts) > 1 else None
+        except ValueError:
+            node_id = None
+
+        if project_id is None or node_id is None:
+            _logger.warning(
+                "Skip notification for file_id=%s because project_id=%s or node_id=%s could not be extracted",
+                file_id,
+                project_id,
+                node_id,
+            )
+            return
+
+        message = FileNotificationMessage(
+            event_type=event_type,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            file_id=file_id,
+        )
+        await get_rabbitmq_client(app).publish(message.channel_name, message)

@@ -11,6 +11,7 @@ import logging
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
+from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.status_codes_utils import get_code_display_name
@@ -22,6 +23,7 @@ from simcore_service_webserver.exception_handling._base import (
 from simcore_service_webserver.exception_handling._factory import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
+    create_error_response,
     create_exception_handler_from_http_info,
     to_exceptions_handlers_map,
 )
@@ -68,9 +70,7 @@ async def test_handling_different_exceptions_with_context(
         OneError: HttpErrorInfo(status.HTTP_400_BAD_REQUEST, "Error {code} to 400"),
         OtherError: HttpErrorInfo(status.HTTP_500_INTERNAL_SERVER_ERROR, "{code}"),
     }
-    cm = ExceptionHandlingContextManager(
-        to_exceptions_handlers_map(exc_to_http_error_map), request=fake_request
-    )
+    cm = ExceptionHandlingContextManager(to_exceptions_handlers_map(exc_to_http_error_map), request=fake_request)
 
     with caplog.at_level(logging.ERROR):
         # handles as 4XX
@@ -112,9 +112,7 @@ async def test_handling_different_exceptions_with_decorator(
         OneError: HttpErrorInfo(status.HTTP_503_SERVICE_UNAVAILABLE, "{code}"),
     }
 
-    exc_handling_decorator = exception_handling_decorator(
-        to_exceptions_handlers_map(exc_to_http_error_map)
-    )
+    exc_handling_decorator = exception_handling_decorator(to_exceptions_handlers_map(exc_to_http_error_map))
 
     @exc_handling_decorator
     async def _rest_handler(request: web.Request) -> web.Response:
@@ -125,7 +123,6 @@ async def test_handling_different_exceptions_with_decorator(
         return web.json_response(reason="all good")
 
     with caplog.at_level(logging.ERROR):
-
         # emulates successful call
         resp = await _rest_handler(make_mocked_request("GET", "/foo"))
         assert resp.status == status.HTTP_200_OK
@@ -135,9 +132,7 @@ async def test_handling_different_exceptions_with_decorator(
 
         # reraised
         with pytest.raises(ArithmeticError):
-            await _rest_handler(
-                make_mocked_request("GET", "/foo?raise=ArithmeticError")
-            )
+            await _rest_handler(make_mocked_request("GET", "/foo?raise=ArithmeticError"))
 
         assert not caplog.records
 
@@ -146,3 +141,13 @@ async def test_handling_different_exceptions_with_decorator(
         assert resp.status == status.HTTP_503_SERVICE_UNAVAILABLE
         assert caplog.records, "Expected 5XX troubleshooting logged as error"
         assert caplog.records[0].levelno == logging.ERROR
+
+
+async def test_create_error_response_uses_aliases():
+    error = ErrorGet(
+        message="Test error",
+        support_id="SUPPORT-123",
+        status=400,
+    )
+    response = create_error_response(error, status_code=400)
+    assert response.text == '{"error":{"message":"Test error","supportId":"SUPPORT-123","status":400}}'

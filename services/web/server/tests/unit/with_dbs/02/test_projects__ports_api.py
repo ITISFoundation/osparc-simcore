@@ -10,7 +10,7 @@ import pytest
 from models_library.projects_nodes import Node, NodeID
 from models_library.utils.json_schema import jsonschema_validate_schema
 from simcore_service_webserver.projects._ports_service import (
-    InvalidInputValue,
+    InvalidInputValueError,
     _get_outputs_in_workbench,
     get_project_inputs,
     iter_project_ports,
@@ -42,9 +42,7 @@ def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
     input_1 = input_port_ids[1]
     input_2 = input_port_ids[2]
 
-    modified = set_inputs_in_project(
-        workbench=workbench, update={input_0: 42, input_1: 3, input_2: False}
-    )
+    modified = set_inputs_in_project(workbench=workbench, update={input_0: 42, input_1: 3, input_2: False})
     assert modified == {input_0, input_1}
     assert get_project_inputs(workbench=workbench) == {
         input_0: 42,
@@ -52,10 +50,8 @@ def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
         input_2: False,
     }
 
-    with pytest.raises(InvalidInputValue):
-        set_inputs_in_project(
-            workbench=workbench, update={input_2: "THIS SHOULD HAVE BEEN A BOOL"}
-        )
+    with pytest.raises(InvalidInputValueError):
+        set_inputs_in_project(workbench=workbench, update={input_2: "THIS SHOULD HAVE BEEN A BOOL"})
 
 
 def test_get_outputs_in_workbench(workbench: dict[NodeID, Node]):

@@ -138,20 +138,16 @@ async def test_chown_triggers_event(
 
     for command in (
         f"ls -lah {file_path}",
-        command_template.format(
-            uid=file_stat.st_uid, gid=file_stat.st_gid, path=file_path
-        ),
+        command_template.format(uid=file_stat.st_uid, gid=file_stat.st_gid, path=file_path),
         f"ls -lah {file_path}",
     ):
         command_result = await async_command(command)
         assert command_result.success is True
         print(f"$ {command_result.command}\n{command_result.message}")
 
-    # normally logs get deliverd by this point, sleep to make sure they are here
+    # normally logs get delivered by this point, sleep to make sure they are here
     await asyncio.sleep(ENSURE_LOGS_DELIVERED)
-    assert log_receiver.has_log_within(
-        msg=f"Attribute change to: '{file_path}'", levelname="INFO"
-    )
+    assert log_receiver.has_log_within(msg=f"Attribute change to: '{file_path}'", levelname="INFO")
 
 
 @pytest.mark.parametrize("file_is_present", [True, False])

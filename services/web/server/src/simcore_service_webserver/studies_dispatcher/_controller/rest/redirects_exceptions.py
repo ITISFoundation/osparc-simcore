@@ -29,9 +29,7 @@ _logger = logging.getLogger(__name__)
 #
 
 
-def _create_redirect_response_to_error_page(
-    app: web.Application, message: str, status_code: int
-) -> web.HTTPFound:
+def _create_redirect_response_to_error_page(app: web.Application, message: str, status_code: int) -> web.HTTPFound:
     # NOTE: these are 'error' page params and need to be interpreted by front-end correctly!
     return create_redirect_to_page_response(
         app,
@@ -80,9 +78,7 @@ def _create_simple_error_redirect(
 
     WARNING: note that the `public_error` is exposed as-is in the user-message
     """
-    user_error_msg = user_message(
-        f"Unable to open your project: {public_error}", _version=1
-    )
+    user_error_msg = user_message(f"Unable to open your project: {public_error}", _version=1)
     return _create_redirect_response_to_error_page(
         request.app,
         message=user_error_msg,
@@ -95,6 +91,10 @@ def handle_errors_with_error_page(handler: Handler):
     async def _wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
+
+        except web.HTTPNotFound:
+            # Pass through 404 to allow dispatcher-disabled responses
+            raise
 
         except (web.HTTPRedirection, web.HTTPSuccessful):
             # NOTE: that response is a redirection that is reraised and not returned
@@ -138,7 +138,8 @@ def handle_errors_with_error_page(handler: Handler):
                 request,
                 err,
                 message=user_message(
-                    "The link you provided is invalid because it doesn't contain valid information related to data or a service. "
+                    "The link you provided is invalid because it doesn't contain valid "
+                    "information related to data or a service. "
                     "Please check the link and make sure it is correct.",
                     _version=1,
                 ),

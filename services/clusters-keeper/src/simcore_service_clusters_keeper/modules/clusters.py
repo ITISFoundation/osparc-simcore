@@ -3,7 +3,6 @@ from collections.abc import Iterable
 
 import arrow
 from aws_library.ec2 import (
-    AWSTagKey,
     AWSTagValue,
     EC2InstanceBootSpecific,
     EC2InstanceConfig,
@@ -15,11 +14,13 @@ from aws_library.ec2._errors import EC2InstanceNotFoundError
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..utils.clusters import create_startup_script
 from ..utils.ec2 import (
+    EC2_NAME_TAG_KEY,
     HEARTBEAT_TAG_KEY,
     all_created_ec2_instances_filter,
     creation_ec2_tags,
@@ -35,37 +36,24 @@ async def _get_primary_ec2_params(
     app_settings: ApplicationSettings, ec2_client: SimcoreEC2API
 ) -> tuple[EC2InstanceType, EC2InstanceBootSpecific]:
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
-    assert (
-        len(
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
-        )
-        == 1
-    )  # nosec
+    assert len(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES) == 1  # nosec
     ec2_type_name, ec2_boot_specs = next(
-        iter(
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES.items()
-        )
+        iter(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES.items())
     )
-    ec2_instance_types: list[EC2InstanceType] = (
-        await ec2_client.get_ec2_instance_capabilities(
-            instance_type_names={ec2_type_name}
-        )
+    ec2_instance_types: list[EC2InstanceType] = await ec2_client.get_ec2_instance_capabilities(
+        instance_type_names={ec2_type_name}
     )
     assert ec2_instance_types  # nosec
     assert len(ec2_instance_types) == 1  # nosec
     return ec2_instance_types[0], ec2_boot_specs
 
 
-async def create_cluster(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
-) -> list[EC2InstanceData]:
+async def create_cluster(app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None) -> list[EC2InstanceData]:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
 
-    ec2_instance_type, ec2_instance_boot_specs = await _get_primary_ec2_params(
-        app_settings, ec2_client
-    )
+    ec2_instance_type, ec2_instance_boot_specs = await _get_primary_ec2_params(app_settings, ec2_client)
 
     instance_config = EC2InstanceConfig(
         type=ec2_instance_type,
@@ -94,9 +82,7 @@ async def get_all_clusters(app: FastAPI) -> set[EC2InstanceData]:
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     ec2_instance_data: set[EC2InstanceData] = set(
         await get_ec2_client(app).get_instances(
-            key_names=[
-                app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
-            ],
+            key_names=[app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME],
             tags=all_created_ec2_instances_filter(app_settings),
             state_names=["running"],
         )
@@ -104,45 +90,33 @@ async def get_all_clusters(app: FastAPI) -> set[EC2InstanceData]:
     return ec2_instance_data
 
 
-async def get_cluster(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
-) -> EC2InstanceData:
+async def get_cluster(app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None) -> EC2InstanceData:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     if instances := await get_ec2_client(app).get_instances(
-        key_names=[
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
-        ],
-        tags=ec2_instances_for_user_wallet_filter(
-            app_settings, user_id=user_id, wallet_id=wallet_id
-        ),
+        key_names=[app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME],
+        tags=ec2_instances_for_user_wallet_filter(app_settings, user_id=user_id, wallet_id=wallet_id),
     ):
         assert len(instances) == 1  # nosec
         return instances[0]
     raise EC2InstanceNotFoundError
 
 
-async def get_cluster_workers(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
-) -> list[EC2InstanceData]:
+async def get_cluster_workers(app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None) -> list[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
-    ec2_instance_data: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
-        key_names=[
-            app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME
-        ],
+    return await get_ec2_client(app).get_instances(
+        key_names=[app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME],
         tags={
-            AWSTagKey("Name"): AWSTagValue(
-                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}*"
+            EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}"
             )
+            + "*"  # NOTE: this is done this way as * is a special char in AWS tag filtering
         },
     )
-    return ec2_instance_data
 
 
-async def cluster_heartbeat(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
-) -> None:
+async def cluster_heartbeat(app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None) -> None:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     instance = await get_cluster(app, user_id=user_id, wallet_id=wallet_id)
@@ -150,17 +124,13 @@ async def cluster_heartbeat(
 
 
 async def set_instance_heartbeat(app: FastAPI, *, instance: EC2InstanceData) -> None:
-    with log_context(
-        _logger, logging.DEBUG, msg=f"set instance heartbeat for {instance.id}"
-    ):
+    with log_context(_logger, logging.DEBUG, msg=f"set instance heartbeat for {instance.id}"):
         ec2_client = get_ec2_client(app)
         await ec2_client.set_instances_tags(
             [instance],
-            tags={HEARTBEAT_TAG_KEY: AWSTagValue(arrow.utcnow().datetime.isoformat())},
+            tags={HEARTBEAT_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(arrow.utcnow().datetime.isoformat())},
         )
 
 
-async def delete_clusters(
-    app: FastAPI, *, instances: Iterable[EC2InstanceData]
-) -> None:
+async def delete_clusters(app: FastAPI, *, instances: Iterable[EC2InstanceData]) -> None:
     await get_ec2_client(app).terminate_instances(instances)

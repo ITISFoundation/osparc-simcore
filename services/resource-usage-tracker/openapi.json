@@ -68,9 +68,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "Wallet Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "Wallet Id"
             }
           }
         ],
@@ -217,9 +216,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "Pricing Plan Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "Pricing Plan Id"
             }
           },
           {
@@ -228,9 +226,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "Pricing Unit Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "Pricing Unit Id"
             }
           },
           {
@@ -278,9 +275,8 @@
           },
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "wallet_name": {
             "type": "string",
@@ -288,9 +284,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "user_email": {
             "type": "string",
@@ -334,9 +329,8 @@
         "properties": {
           "credit_transaction_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Credit Transaction Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Credit Transaction Id"
           }
         },
         "type": "object",
@@ -387,9 +381,8 @@
         "properties": {
           "pricing_plan_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Plan Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Plan Id"
           },
           "display_name": {
             "type": "string",
@@ -447,9 +440,8 @@
         "properties": {
           "pricing_unit_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Unit Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Unit Id"
           },
           "unit_name": {
             "type": "string",
@@ -472,9 +464,8 @@
           },
           "current_cost_per_unit_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Current Cost Per Unit Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Current Cost Per Unit Id"
           },
           "default": {
             "type": "boolean",
@@ -577,9 +568,8 @@
         "properties": {
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "available_osparc_credits": {
             "type": "number",

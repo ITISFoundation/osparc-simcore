@@ -54,11 +54,7 @@ async def add(
     values = node.model_dump(mode="json", exclude_none=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.execute(
-            projects_nodes.insert().values(
-                project_uuid=f"{project_id}", node_id=f"{node_id}", **values
-            )
-        )
+        await conn.execute(projects_nodes.insert().values(project_uuid=f"{project_id}", node_id=f"{node_id}", **values))
 
 
 async def delete(
@@ -71,8 +67,7 @@ async def delete(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             projects_nodes.delete().where(
-                (projects_nodes.c.project_uuid == f"{project_id}")
-                & (projects_nodes.c.node_id == f"{node_id}")
+                (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
             )
         )
 
@@ -86,8 +81,7 @@ async def get(
 ) -> Node:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         get_stmt = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            (projects_nodes.c.project_uuid == f"{project_id}")
-            & (projects_nodes.c.node_id == f"{node_id}")
+            (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
         )
 
         result = await conn.execute(get_stmt)
@@ -95,9 +89,7 @@ async def get(
 
         row = result.one_or_none()
         if row is None:
-            raise NodeNotFoundError(
-                project_uuid=f"{project_id}", node_uuid=f"{node_id}"
-            )
+            raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
         assert row  # nosec
         return Node.model_validate(row, from_attributes=True)
 
@@ -109,9 +101,7 @@ async def get_by_project(
     project_id: ProjectID,
 ) -> list[tuple[NodeID, Node]]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            projects_nodes.c.project_uuid == f"{project_id}"
-        )
+        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(projects_nodes.c.project_uuid == f"{project_id}")
 
         stream = await conn.stream(query)
         assert stream  # nosec
@@ -119,9 +109,9 @@ async def get_by_project(
         result: list[tuple[NodeID, Node]] = []
         async for row in stream:
             # build Model only once on top of row
-            pn = ProjectNode.model_validate(row, from_attributes=True)
+            on = ProjectNode.model_validate(row, from_attributes=True)
             node = Node.model_validate(
-                pn.model_dump(
+                on.model_dump(
                     exclude_none=True,
                     exclude_unset=True,
                     exclude={"node_id", "created", "modified"},
@@ -149,9 +139,7 @@ async def get_by_projects(
         assert stream  # nosec
 
         # Initialize dict with empty lists for all requested project_ids
-        projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {
-            pid: [] for pid in project_ids
-        }
+        projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {pid: [] for pid in project_ids}
 
         # Fill in the actual data
         async for row in stream:
@@ -163,9 +151,7 @@ async def get_by_projects(
                 )
             )
 
-            projects_to_nodes[ProjectID(row.project_uuid)].append(
-                (NodeID(row.node_id), node)
-            )
+            projects_to_nodes[ProjectID(row.project_uuid)].append((NodeID(row.node_id), node))
 
         return projects_to_nodes
 
@@ -184,10 +170,7 @@ async def update(
         result = await conn.execute(
             projects_nodes.update()
             .values(**values)
-            .where(
-                (projects_nodes.c.project_uuid == f"{project_id}")
-                & (projects_nodes.c.node_id == f"{node_id}")
-            )
+            .where((projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}"))
             .returning(*_SELECTION_PROJECTS_NODES_DB_ARGS)
         )
         return Node.model_validate(result.one(), from_attributes=True)

@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -77,14 +78,12 @@ def test_get_service_with_details(
     service_key = expected_service["key"]
     service_version = expected_service["version"]
 
-    url = URL(
-        f"/v0/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-    ).with_query({"user_id": user_id})
+    url = URL(f"/v0/services/{urllib.parse.quote_plus(service_key)}/{service_version}").with_query({"user_id": user_id})
 
     response = client.get(
         f"{url}",
         headers={
-            "x-simcore-products-name": target_product,
+            X_PRODUCT_NAME_HEADER: target_product,
         },
     )
 

@@ -5,6 +5,7 @@ Revises: be0dece4e67c
 Create Date: 2023-10-26 06:53:52.079499+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -42,9 +43,7 @@ def upgrade():
         op.execute(sa.DDL(f"UPDATE api_keys SET product_name = '{default_product}'"))
 
     # make it non nullable now
-    op.alter_column(
-        "api_keys", "product_name", existing_type=sa.String(), nullable=False
-    )
+    op.alter_column("api_keys", "product_name", existing_type=sa.String(), nullable=False)
 
 
 def downgrade():

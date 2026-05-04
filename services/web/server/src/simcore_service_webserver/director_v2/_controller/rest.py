@@ -50,9 +50,7 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 @handle_rest_requests_exceptions
 async def start_computation(request: web.Request) -> web.Response:
-    simcore_user_agent = request.headers.get(
-        X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-    )
+    simcore_user_agent = request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE)
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
@@ -80,15 +78,15 @@ async def start_computation(request: web.Request) -> web.Response:
 
     # Get Project custom metadata information
     # inject the collection_id to the options
-    custom_metadata = await get_project_custom_metadata_or_empty_dict(
-        request.app, project_uuid=path_params.project_id
-    )
+    custom_metadata = await get_project_custom_metadata_or_empty_dict(request.app, project_uuid=path_params.project_id)
     group_id_or_none = custom_metadata.get("group_id")
 
     comp_run_collection: CompRunCollectionDBGet | None = None
     if group_id_or_none:
-        comp_run_collection = await _comp_runs_collections_service.get_comp_run_collection_or_none_by_client_generated_id(
-            request.app, client_or_system_generated_id=str(group_id_or_none)
+        comp_run_collection = (
+            await _comp_runs_collections_service.get_comp_run_collection_or_none_by_client_generated_id(
+                request.app, client_or_system_generated_id=str(group_id_or_none)
+            )
         )
     if comp_run_collection is not None:
         created_at: datetime = comp_run_collection.created
@@ -104,9 +102,7 @@ async def start_computation(request: web.Request) -> web.Response:
     is_generated_by_system = False
     if group_id_or_none in {None, "", "00000000-0000-0000-0000-000000000000"}:
         is_generated_by_system = True
-        client_or_system_generated_id = (
-            f"system-generated/{path_params.project_id}/{uuid.uuid4()}"
-        )
+        client_or_system_generated_id = f"system-generated/{path_params.project_id}/{uuid.uuid4()}"
     else:
         client_or_system_generated_id = f"{group_id_or_none}"
     group_name = custom_metadata.get("group_name", "No Group Name")
@@ -137,9 +133,7 @@ async def start_computation(request: web.Request) -> web.Response:
     (
         running_project_ids,
         project_vc_commits,
-    ) = await run_policy.get_or_create_runnable_projects(
-        request, path_params.project_id
-    )
+    ) = await run_policy.get_or_create_runnable_projects(request, path_params.project_id)
     _logger.debug(
         "Project %s will start %d variants: %s",
         f"{path_params.project_id=}",
@@ -149,13 +143,11 @@ async def start_computation(request: web.Request) -> web.Response:
 
     assert running_project_ids  # nosec
     assert (  # nosec
-        len(running_project_ids) == len(project_vc_commits)
-        if project_vc_commits
-        else True
+        len(running_project_ids) == len(project_vc_commits) if project_vc_commits else True
     )
 
     computations = DirectorV2RestClient(request.app)
-    _started_pipelines_ids = await asyncio.gather(
+    _started_results: list[tuple[str, int]] = await asyncio.gather(
         *[
             computations.start_computation(
                 pid,
@@ -168,6 +160,9 @@ async def start_computation(request: web.Request) -> web.Response:
         ]
     )
 
+    _started_pipelines_ids = [r[0] for r in _started_results]
+    _response_statuses = [r[1] for r in _started_results]
+
     assert set(_started_pipelines_ids) == set(map(str, running_project_ids))  # nosec
 
     data: dict[str, Any] = {
@@ -176,9 +171,10 @@ async def start_computation(request: web.Request) -> web.Response:
     if project_vc_commits:
         data["ref_ids"] = project_vc_commits
 
-    return envelope_json_response(
-        ComputationStarted.model_validate(data), status_cls=web.HTTPCreated
-    )
+    # Return 200 only when ALL pipelines are up-to-date (nothing to run)
+    all_ok = bool(_response_statuses) and all(s == status.HTTP_200_OK for s in _response_statuses)
+    response_cls = web.HTTPOk if all_ok else web.HTTPCreated
+    return envelope_json_response(ComputationStarted.model_validate(data), status_cls=response_cls)
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")
@@ -194,16 +190,10 @@ async def stop_computation(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
-    project_ids = await run_policy.get_runnable_projects_ids(
-        request, path_params.project_id
-    )
-    _logger.debug(
-        "Project %s will stop %d variants", path_params.project_id, len(project_ids)
-    )
+    project_ids = await run_policy.get_runnable_projects_ids(request, path_params.project_id)
+    _logger.debug("Project %s will stop %d variants", path_params.project_id, len(project_ids))
 
-    await asyncio.gather(
-        *[computations.stop_computation(pid, req_ctx.user_id) for pid in project_ids]
-    )
+    await asyncio.gather(*[computations.stop_computation(pid, req_ctx.user_id) for pid in project_ids])
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -220,26 +210,16 @@ async def get_computation(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
-    project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(
-        request, path_params.project_id
-    )
+    project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(request, path_params.project_id)
 
-    _logger.debug(
-        "Project %s will get %d variants", path_params.project_id, len(project_ids)
-    )
+    _logger.debug("Project %s will get %d variants", path_params.project_id, len(project_ids))
 
     list_computation_tasks = await asyncio.gather(
-        *[
-            dv2_client.get_computation(project_id=pid, user_id=user_id)
-            for pid in project_ids
-        ]
+        *[dv2_client.get_computation(project_id=pid, user_id=user_id) for pid in project_ids]
     )
 
     assert len(list_computation_tasks) == len(project_ids)  # nosec
 
     return envelope_json_response(
-        [
-            ComputationGet.model_construct(**m.model_dump(exclude_unset=True))
-            for m in list_computation_tasks
-        ],
+        [ComputationGet.model_construct(**m.model_dump(exclude_unset=True)) for m in list_computation_tasks],
     )

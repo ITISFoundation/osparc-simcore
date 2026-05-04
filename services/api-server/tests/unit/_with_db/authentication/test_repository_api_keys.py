@@ -13,9 +13,7 @@ async def test_get_user_with_valid_credentials(
     api_key_repo: ApiKeysRepository,
 ):
     # Act
-    result = await api_key_repo.get_user(
-        api_key=api_key_in_db.api_key, api_secret=api_key_in_db.api_secret
-    )
+    result = await api_key_repo.get_user(api_key=api_key_in_db.api_key, api_secret=api_key_in_db.api_secret)
 
     # Assert
     assert result is not None
@@ -27,13 +25,10 @@ async def test_get_user_with_invalid_credentials(
     api_key_in_db: ApiKeyInDB,
     api_key_repo: ApiKeysRepository,
 ):
-
     # Generate a fake API key
 
     # Act - use wrong secret
-    result = await api_key_repo.get_user(
-        api_key=api_key_in_db.api_key, api_secret="wrong_secret"
-    )
+    result = await api_key_repo.get_user(api_key=api_key_in_db.api_key, api_secret="wrong_secret")
 
     # Assert
     assert result is None

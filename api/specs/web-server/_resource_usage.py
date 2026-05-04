@@ -1,4 +1,4 @@
-""" Helper script to automatically generate OAS
+"""Helper script to automatically generate OAS
 
 This OAS are the source of truth
 """
@@ -7,7 +7,6 @@ This OAS are the source of truth
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
-
 
 from typing import Annotated
 
@@ -57,8 +56,7 @@ router = APIRouter(prefix=f"/{API_VTAG}")
 )
 async def list_resource_usage_services(
     _query: Annotated[as_query(ServicesResourceUsagesListQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -69,9 +67,8 @@ async def list_resource_usage_services(
     tags=["usage"],
 )
 async def list_osparc_credits_aggregated_usages(
-    _query: Annotated[as_query(ServicesAggregatedUsagesListQueryParams), Depends()]
-):
-    ...
+    _query: Annotated[as_query(ServicesAggregatedUsagesListQueryParams), Depends()],
+): ...
 
 
 @router.get(
@@ -87,9 +84,8 @@ async def list_osparc_credits_aggregated_usages(
     "user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(
-    _query: Annotated[as_query(ServicesResourceUsagesReportQueryParams), Depends()]
-):
-    ...
+    _query: Annotated[as_query(ServicesResourceUsagesReportQueryParams), Depends()],
+): ...
 
 
 @router.get(
@@ -99,8 +95,7 @@ async def export_resource_usage_services(
 )
 async def get_pricing_plan_unit(
     _path: Annotated[PricingPlanUnitGetPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -110,9 +105,8 @@ async def get_pricing_plan_unit(
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
 async def list_pricing_plans(
-    _query: Annotated[as_query(PageQueryParameters), Depends()]
-):
-    ...
+    _query: Annotated[as_query(PageQueryParameters), Depends()],
+): ...
 
 
 @router.get(
@@ -122,8 +116,7 @@ async def list_pricing_plans(
 )
 async def get_pricing_plan(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
-):
-    ...
+): ...
 
 
 ## Pricing plans for Admin panel
@@ -136,9 +129,8 @@ async def get_pricing_plan(
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
 async def list_pricing_plans_for_admin_user(
-    _query: Annotated[as_query(PageQueryParameters), Depends()]
-):
-    ...
+    _query: Annotated[as_query(PageQueryParameters), Depends()],
+): ...
 
 
 @router.get(
@@ -148,8 +140,7 @@ async def list_pricing_plans_for_admin_user(
 )
 async def get_pricing_plan_for_admin_user(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -159,8 +150,7 @@ async def get_pricing_plan_for_admin_user(
 )
 async def create_pricing_plan(
     _body: CreatePricingPlanBodyParams,
-):
-    ...
+): ...
 
 
 @router.put(
@@ -171,8 +161,7 @@ async def create_pricing_plan(
 async def update_pricing_plan(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
     _body: UpdatePricingPlanBodyParams,
-):
-    ...
+): ...
 
 
 ## Pricing units for Admin panel
@@ -185,8 +174,7 @@ async def update_pricing_plan(
 )
 async def get_pricing_unit(
     _path: Annotated[PricingUnitGetPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -197,8 +185,7 @@ async def get_pricing_unit(
 async def create_pricing_unit(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
     _body: CreatePricingUnitBodyParams,
-):
-    ...
+): ...
 
 
 @router.put(
@@ -209,8 +196,7 @@ async def create_pricing_unit(
 async def update_pricing_unit(
     _path: Annotated[PricingUnitGetPathParams, Depends()],
     _body: UpdatePricingUnitBodyParams,
-):
-    ...
+): ...
 
 
 ## Pricing Plans to Service Admin panel
@@ -223,8 +209,7 @@ async def update_pricing_unit(
 )
 async def list_connected_services_to_pricing_plan(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -235,5 +220,4 @@ async def list_connected_services_to_pricing_plan(
 async def connect_service_to_pricing_plan(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
     _body: ConnectServiceToPricingPlanBodyParams,
-):
-    ...
+): ...

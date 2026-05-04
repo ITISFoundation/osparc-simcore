@@ -17,7 +17,7 @@ filenames.forEach(filepath => {
     const contents = fs.readFileSync(inputPath + "/" + filepath, 'utf8');
     const object = JSON.parse(contents);
     const convertedSchema = toOpenApi(object);
-    console.log("converted " + filepath + " succesfully");
+    console.log("converted " + filepath + " successfully");
 
     var yamlSchema = yaml.dump(convertedSchema)
     // console.log(yamlSchema);

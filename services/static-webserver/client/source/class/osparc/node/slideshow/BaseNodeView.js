@@ -26,19 +26,21 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
   construct: function() {
     this.base(arguments, "vertical");
 
+    this.set({
+      decorator: "border",
+    });
+
     this.setOffset(2);
     osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
     osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
     this.__buildLayout();
-
-    this.set({
-      paddingBottom: 2
-    });
   },
 
   statics: {
     HEADER_HEIGHT: 32,
+    CARD_MARGIN: 4,
+    BUTTONS_BACKGROUND_COLOR: "background-main-3",
 
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
@@ -48,7 +50,30 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         layout: new qx.ui.layout.VBox(10)
       });
       return settingsGroupBox;
-    }
+    },
+
+    styleView: function(node, view) {
+      view.getContentElement().setStyles({
+        "border-radius": "4px"
+      });
+      view.set({
+        maxWidth: node.isDynamic() ? null : 800,
+        margin: this.CARD_MARGIN,
+      });
+      if (node.isParameter()) {
+        view.set({
+          padding: 6
+        });
+      } else if (node.isDynamic()) {
+        view.getMainView().set({
+          padding: 0
+        });
+      } else {
+        view.getMainView().set({
+          padding: 6
+        });
+      }
+    },
   },
 
   properties: {
@@ -86,17 +111,17 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const header = this.__header = this.__buildHeader();
       layout.add(header);
 
-      const mainView = this.__buildMainView();
-      layout.add(mainView, {
-        flex: 1
-      });
-
       const progressBar = this.__progressBar = new qx.ui.core.Widget().set({
         visibility: "excluded",
         allowGrowX: true,
         height: 6
       });
       layout.add(progressBar);
+
+      const mainView = this.__buildMainView();
+      layout.add(mainView, {
+        flex: 1
+      });
 
       this.add(layout, 1);
     },
@@ -106,7 +131,6 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         alignX: "center"
       })).set({
         padding: 6,
-        paddingTop: 0,
         height: this.self().HEADER_HEIGHT
       });
 
@@ -115,7 +139,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         width: 110,
         label: this.tr("Inputs"),
         icon: "@FontAwesome5Solid/sign-in-alt/14",
-        backgroundColor: "background-main-4"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
       header.add(inputsStateBtn);
@@ -133,7 +157,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       header.add(infoBtn);
 
       const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
-        backgroundColor: "background-main-3"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       instructionsBtn.addListener("appear", () => this.__openInstructions(), this);
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
@@ -142,7 +166,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const startBtn = this.__nodeStartButton = new qx.ui.form.Button().set({
         label: this.tr("Start"),
         icon: "@FontAwesome5Solid/play/14",
-        backgroundColor: "background-main-4",
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR,
         visibility: "excluded"
       });
       header.add(startBtn);
@@ -150,13 +174,13 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const stopBtn = this.__nodeStopButton = new qx.ui.form.Button().set({
         label: this.tr("Stop"),
         icon: "@FontAwesome5Solid/stop/14",
-        backgroundColor: "background-main-4",
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR,
         visibility: "excluded"
       });
       header.add(stopBtn);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
-        backgroundColor: "background-main-4"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);
@@ -169,7 +193,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         width: 110,
         label: this.tr("Outputs"),
         icon: "@FontAwesome5Solid/sign-out-alt/14",
-        backgroundColor: "background-main-4"
+        backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
@@ -178,13 +202,11 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     },
 
     __buildMainView: function() {
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const settingsBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
-      mainView.bind("backgroundColor", settingsBox, "backgroundColor");
-      mainView.bind("backgroundColor", settingsBox.getChildControl("frame"), "backgroundColor");
+      this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
 
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
@@ -196,10 +218,15 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         padding: 4,
         width: 280
       });
-      mainView.bind("backgroundColor", outputsLayout, "backgroundColor");
-      mainView.bind("backgroundColor", outputsLayout.getChildControl("frame"), "backgroundColor");
       this.__outputsBtn.bind("value", outputsLayout, "visibility", {
         converter: value => value ? "visible" : "excluded"
+      });
+      this.__outputsBtn.addListener("changeValue", e => {
+        const outputsVisible = e.getData();
+        const separatorStyle = "1px solid var(--qx-theme-background-main-3, #3d3d3d)";
+        this._settingsLayout.getContentElement().setStyles({
+          "border-right": outputsVisible ? separatorStyle : "none"
+        });
       });
       hBox.add(outputsLayout);
 
@@ -227,29 +254,13 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     },
 
     __openInstructions: function() {
-      if (this.getInstructionsWindow()) {
-        this.getInstructionsWindow().center();
+      if (this.__instructionsWindow) {
+        this.__instructionsWindow.center();
         return;
       }
-      const desc = this.getNode().getSlideshowInstructions();
-      if (desc) {
-        const markdownInstructions = new osparc.ui.markdown.Markdown().set({
-          value: desc,
-          padding: 3,
-          font: "text-14"
-        });
-        const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
-        const width = 600;
-        const minHeight = 200;
-        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(markdownInstructions, title, width, minHeight).set({
-          modal: false,
-          clickAwayClose: false
-        });
-        markdownInstructions.addListener("resized", () => win.center());
 
-        win.getContentElement().setStyles({
-          "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
-        });
+      const win = this.__instructionsWindow = osparc.node.slideshow.Instructions.popUpInWindow(this.getNode());
+      if (win) {
         win.addListener("close", () => {
           this.__instructionsWindow = null;
           osparc.utils.Utils.makeButtonBlink(this.__instructionsBtn, 2);
@@ -257,8 +268,10 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       }
     },
 
-    getInstructionsWindow: function() {
-      return this.__instructionsWindow;
+    closeInstructionsWindow: function() {
+      if (this.__instructionsWindow) {
+        this.__instructionsWindow.close();
+      }
     },
 
     getHeaderLayout: function() {
@@ -409,10 +422,10 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       }
 
       node.bind("outputs", this.__outputsBtn, "label", {
-        converter: outputsData => {
+        converter: outputs => {
           let outputCounter = 0;
-          Object.keys(outputsData).forEach(outKey => {
-            const outValue = osparc.data.model.Node.getOutput(outputsData, outKey);
+          outputs.forEach(output => {
+            const outValue = output.getValue();
             if (![null, undefined, ""].includes(outValue)) {
               outputCounter++;
             }

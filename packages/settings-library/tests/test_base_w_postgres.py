@@ -55,8 +55,6 @@ def model_classes_factory() -> Callable:
             POSTGRES_PASSWORD: str
 
             POSTGRES_DB: str
-            POSTGRES_MINSIZE: Annotated[int, Field(ge=1)] = 1
-            POSTGRES_MAXSIZE: Annotated[int, Field(ge=1)] = 50
             POSTGRES_MAX_POOLSIZE: int = 10
             POSTGRES_MAX_OVERFLOW: Annotated[int, Field(ge=0)] = 20
 
@@ -97,9 +95,7 @@ def model_classes_factory() -> Callable:
 
         class S5(BaseCustomSettings):
             # defaults disabled but only explicit enabled
-            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL: _FakePostgresSettings | None = (
-                None
-            )
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL: _FakePostgresSettings | None = None
 
         return (
             S1,
@@ -115,7 +111,7 @@ def model_classes_factory() -> Callable:
 #
 # NOTE: Tests below are progressive to understand and validate the construction mechanism
 #       implemented in BaseCustomSettings.
-#       Pay attention how the defaults of SubSettings are automaticaly captured from env vars
+#       Pay attention how the defaults of SubSettings are automatically captured from env vars
 #       at construction time.
 #
 # NOTE: pytest.MonkeyPatching envs using envfile text gets the tests closer
@@ -125,9 +121,7 @@ def model_classes_factory() -> Callable:
 #
 
 
-def test_parse_from_empty_envs(
-    postgres_envvars_unset: None, model_classes_factory: Callable
-):
+def test_parse_from_empty_envs(postgres_envvars_unset: None, model_classes_factory: Callable):
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     with pytest.raises(ValidationError, match="WEBSERVER_POSTGRES") as exc_info:
@@ -199,8 +193,6 @@ def test_parse_from_individual_envs(
             "POSTGRES_PORT": 5432,
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
             "POSTGRES_MAX_POOLSIZE": 10,
             "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
@@ -216,8 +208,6 @@ def test_parse_from_individual_envs(
             "POSTGRES_PORT": 5432,
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
             "POSTGRES_MAX_POOLSIZE": 10,
             "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
@@ -229,9 +219,7 @@ def test_parse_from_individual_envs(
     assert s5.model_dump() == {"WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": None}
 
 
-def test_parse_compact_env(
-    postgres_envvars_unset: None, monkeypatch, model_classes_factory
-):
+def test_parse_compact_env(postgres_envvars_unset: None, monkeypatch, model_classes_factory):
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     # environment
@@ -264,8 +252,6 @@ def test_parse_compact_env(
                 "POSTGRES_PORT": 5432,
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
                 "POSTGRES_MAX_POOLSIZE": 10,
                 "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
@@ -344,9 +330,7 @@ def test_parse_compact_env(
         }
 
 
-def test_parse_from_mixed_envs(
-    postgres_envvars_unset: None, monkeypatch, model_classes_factory
-):
+def test_parse_from_mixed_envs(postgres_envvars_unset: None, monkeypatch, model_classes_factory):
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     # environment
@@ -375,8 +359,6 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_PORT": 5432,
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
                 "POSTGRES_MAX_POOLSIZE": 10,
                 "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
@@ -475,9 +457,7 @@ def test_parse_from_mixed_envs(
 #
 
 
-def test_toggle_plugin_1(
-    postgres_envvars_unset: None, monkeypatch, model_classes_factory
-):
+def test_toggle_plugin_1(postgres_envvars_unset: None, monkeypatch, model_classes_factory):
     *_, S4, S5 = model_classes_factory()
 
     # empty environ
@@ -489,9 +469,7 @@ def test_toggle_plugin_1(
     assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_2(
-    postgres_envvars_unset: None, monkeypatch, model_classes_factory
-):
+def test_toggle_plugin_2(postgres_envvars_unset: None, monkeypatch, model_classes_factory):
     *_, S4, S5 = model_classes_factory()
 
     # minimal
@@ -512,9 +490,7 @@ def test_toggle_plugin_2(
     assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_3(
-    postgres_envvars_unset: None, monkeypatch, model_classes_factory
-):
+def test_toggle_plugin_3(postgres_envvars_unset: None, monkeypatch, model_classes_factory):
     *_, S4, S5 = model_classes_factory()
 
     # explicitly disables
@@ -537,9 +513,7 @@ def test_toggle_plugin_3(
     assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_4(
-    postgres_envvars_unset: None, monkeypatch, model_classes_factory
-):
+def test_toggle_plugin_4(postgres_envvars_unset: None, monkeypatch, model_classes_factory):
     *_, S4, S5 = model_classes_factory()
     JSON_VALUE = '{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
 
@@ -563,10 +537,7 @@ def test_toggle_plugin_4(
 
         assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is not None
         assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is not None
-        assert (
-            s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV
-            == s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL
-        )
+        assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV == s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL
 
     with monkeypatch.context() as patch:
         # Enables both but remove individuals
@@ -582,7 +553,4 @@ def test_toggle_plugin_4(
 
         assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is not None
         assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is not None
-        assert (
-            s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV
-            == s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL
-        )
+        assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV == s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL

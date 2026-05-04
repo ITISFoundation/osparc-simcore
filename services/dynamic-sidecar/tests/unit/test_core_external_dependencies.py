@@ -16,16 +16,36 @@ from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.external_dependencies import (
     CouldNotReachExternalDependenciesError,
 )
+from simcore_service_dynamic_sidecar.modules.service_liveness import (
+    wait_for_service_liveness as original_wait_for_service_liveness,
+)
 
 _LONG_STARTUP_SHUTDOWN_TIMEOUT: Final[NonNegativeFloat] = 60
 
 
 @pytest.fixture
 def mock_liveness_timeout(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.service_liveness._DEFAULT_TIMEOUT_INTERVAL",
-        new=timedelta(seconds=0.1),
-    )
+    # Wrap wait_for_service_liveness to inject a short timeout
+
+    async def _wait_with_timeout(*args, **kwargs):
+        # Force a short timeout for all liveness checks
+        kwargs["max_delay"] = timedelta(seconds=0.5)
+        kwargs["check_interval"] = timedelta(seconds=0.1)
+        return await original_wait_for_service_liveness(  # pylint: disable=missing-kwoa
+            *args, **kwargs
+        )
+
+    # Patch in all modules that import it
+    for module in [
+        "simcore_service_dynamic_sidecar.modules.database",
+        "simcore_service_dynamic_sidecar.core.storage",
+        "simcore_service_dynamic_sidecar.core.rabbitmq",
+        "simcore_service_dynamic_sidecar.core.registry",
+    ]:
+        mocker.patch(
+            f"{module}.wait_for_service_liveness",
+            side_effect=_wait_with_timeout,
+        )
 
 
 @pytest.fixture

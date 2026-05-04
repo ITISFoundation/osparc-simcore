@@ -7,7 +7,9 @@
 
 
 import hashlib
+import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -16,7 +18,6 @@ import pytest
 import respx
 import simcore_service_catalog
 import simcore_service_catalog.core.events
-import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -74,14 +75,12 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
-def env_devel_dict(
-    env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
-) -> EnvVarsDict:
+@pytest.fixture
+def env_devel_dict(env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
     if external_envfile_dict:
         assert "CATALOG_DEV_FEATURES_ENABLED" in external_envfile_dict
         assert "CATALOG_SERVICES_DEFAULT_RESOURCES" in external_envfile_dict
-        return external_envfile_dict
+        return deepcopy(external_envfile_dict)
     return env_devel_dict
 
 
@@ -148,7 +147,8 @@ async def app(
     # create instance
     assert app_environment
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     app_under_test = create_app(tracing_config=tracing_config)
 
@@ -170,21 +170,18 @@ async def app(
 
 
 @pytest.fixture
-def client(
-    app_settings: ApplicationSettings, spy_app: AppLifeSpanSpyTargets
-) -> Iterator[TestClient]:
+def client(app_settings: ApplicationSettings, spy_app: AppLifeSpanSpyTargets) -> Iterator[TestClient]:
     # NOTE: DO NOT add `app` as a dependency since it is already initialized
 
     # create instance
     assert app_environment
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     app_under_test = create_app(tracing_config=tracing_config)
 
-    assert (
-        spy_app.on_startup.call_count == 0
-    ), "TIP: Remove dependencies from `app` fixture and get it via `client.app`"
+    assert spy_app.on_startup.call_count == 0, "TIP: Remove dependencies from `app` fixture and get it via `client.app`"
     assert spy_app.on_shutdown.call_count == 0
 
     with TestClient(app_under_test) as cli:
@@ -198,9 +195,7 @@ def client(
 
 
 @pytest.fixture
-async def aclient(
-    app: FastAPI, spy_app: AppLifeSpanSpyTargets
-) -> AsyncIterator[httpx.AsyncClient]:
+async def aclient(app: FastAPI, spy_app: AppLifeSpanSpyTargets) -> AsyncIterator[httpx.AsyncClient]:
     # NOTE: Avoids TestClient since `app` fixture already runs LifespanManager
     # Otherwise `with TestClient` will call twice start/shutdown events
 
@@ -269,12 +264,8 @@ def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch.object(
-        simcore_service_catalog.core.events, "rabbitmq_lifespan", autospec=True
-    )
-    mocker.patch.object(
-        simcore_service_catalog.core.events, "rpc_api_lifespan", autospec=True
-    )
+    mocker.patch.object(simcore_service_catalog.core.events, "rabbitmq_lifespan", autospec=True)
+    mocker.patch.object(simcore_service_catalog.core.events, "rpc_api_lifespan", autospec=True)
 
 
 @pytest.fixture
@@ -291,9 +282,7 @@ async def rpc_client(
 
 @pytest.fixture
 def director_lifespan_disabled(mocker: MockerFixture) -> None:
-    mocker.patch.object(
-        simcore_service_catalog.core.events, "director_lifespan", autospec=True
-    )
+    mocker.patch.object(simcore_service_catalog.core.events, "director_lifespan", autospec=True)
 
 
 @pytest.fixture
@@ -301,15 +290,9 @@ def director_rest_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
     openapi_path = (
-        osparc_simcore_services_dir
-        / "director"
-        / "src"
-        / "simcore_service_director"
-        / "api"
-        / "v0"
-        / "openapi.yaml"
+        osparc_simcore_services_dir / "director" / "src" / "simcore_service_director" / "api" / "v0" / "openapi.json"
     )
-    return yaml.safe_load(openapi_path.read_text())
+    return json.loads(openapi_path.read_text())
 
 
 @pytest.fixture
@@ -324,9 +307,7 @@ def expected_director_rest_api_list_services(
     """
     return [
         {
-            "image_digest": hashlib.sha256(
-                f"simcore/services/comp/ans-model:{major}".encode()
-            ).hexdigest(),
+            "image_digest": hashlib.sha256(f"simcore/services/comp/ans-model:{major}".encode()).hexdigest(),
             "authors": [
                 {
                     "name": f"{user_first_name} {user_last_name}",
@@ -387,13 +368,11 @@ def mocked_director_rest_api_base(
     Use `mocked_director_service_api_base` to customize the mocks
 
     """
-    assert (
-        app_settings.CATALOG_DIRECTOR
-    ), "Check dependency on fixture `director_setup_disabled`"
+    assert app_settings.CATALOG_DIRECTOR, "Check dependency on fixture `director_setup_disabled`"
 
     # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
     openapi = director_rest_openapi_specs
-    assert Version(openapi["info"]["version"]) == Version("0.1.0")
+    assert Version(openapi["info"]["version"]) == Version("1.0.0")
 
     with respx.mock(
         base_url=app_settings.CATALOG_DIRECTOR.base_url,  # NOTE: it include v0/
@@ -408,8 +387,8 @@ def mocked_director_rest_api_base(
                 "data": {
                     "name": "simcore-service-director",
                     "status": "SERVICE_RUNNING",
-                    "api_version": "0.1.0",
-                    "version": "0.1.0",
+                    "api_version": "1.0.0",
+                    "version": "1.0.0",
                 }
             },
         )
@@ -419,26 +398,39 @@ def mocked_director_rest_api_base(
 
 @pytest.fixture
 def get_mocked_service_labels() -> Callable[[str, str], dict]:
-    def _(
-        service_key: str, service_version: str, *, include_org_labels: bool = True
-    ) -> dict:
+    def _(service_key: str, service_version: str, *, include_org_labels: bool = True) -> dict:
         base_labels = {
-            "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
+            "io.simcore.authors": (
+                '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}'
+            ),
             "io.simcore.contact": '{"contact": "john@acme.com"}',
             "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
-            "io.simcore.inputs": '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", "description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": {"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}',
+            "io.simcore.inputs": (
+                '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", '
+                '"description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": '
+                '{"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}'
+            ),
             "io.simcore.integration-version": '{"integration-version": "1.0.0"}',
             "io.simcore.key": '{"key": "xxxxx"}'.replace("xxxxx", service_key),
             "io.simcore.name": '{"name": "Autonomous Nervous System Network model"}',
-            "io.simcore.outputs": '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", "description": "Output of simulation of Autonomous Nervous System Network model", "type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": {"displayOrder": 2.0, "label": "Stimulation parameters", "description": "stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", "fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}',
+            "io.simcore.outputs": (
+                '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", '
+                '"description": "Output of simulation of Autonomous Nervous System Network model", '
+                '"type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": '
+                '{"displayOrder": 2.0, "label": "Stimulation parameters", "description": '
+                '"stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", '
+                '"fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}'
+            ),
             "io.simcore.thumbnail": '{"thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png"}',
             "io.simcore.type": '{"type": "computational"}',
-            "io.simcore.version": '{"version": "xxxxx"}'.replace(
-                "xxxxx", service_version
-            ),
+            "io.simcore.version": '{"version": "xxxxx"}'.replace("xxxxx", service_version),
             "maintainer": "johnsmith",
             "simcore.service.restart-policy": "no-restart",
-            "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000, "MemoryBytes": 4194304}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
+            "simcore.service.settings": (
+                '[{"name": "Resources", "type": "Resources", "value": '
+                '{"Limits": {"NanoCPUs": 1000000000, "MemoryBytes": 4194304}, "Reservations": '
+                '{"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]'
+            ),
         }
 
         if include_org_labels:
@@ -497,14 +489,14 @@ def mocked_director_rest_api(
             return None
 
     # LIST
-    assert openapi["paths"].get("/services")
+    assert openapi["paths"].get("/v0/services")
 
     respx_mock.get(path__regex=r"/services$", name="list_services").respond(
         status.HTTP_200_OK, json={"data": expected_director_rest_api_list_services}
     )
 
     # GET
-    assert openapi["paths"].get("/services/{service_key}/{service_version}")
+    assert openapi["paths"].get("/v0/services/{service_key}/{service_version}")
 
     @respx_mock.get(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
@@ -514,9 +506,7 @@ def mocked_director_rest_api(
         if found := _search(service_key, service_version):
             # NOTE: this is a defect in director's API
             single_service_list = [found]
-            return httpx.Response(
-                status.HTTP_200_OK, json={"data": single_service_list}
-            )
+            return httpx.Response(status.HTTP_200_OK, json={"data": single_service_list})
         return httpx.Response(
             status.HTTP_404_NOT_FOUND,
             json={
@@ -528,7 +518,7 @@ def mocked_director_rest_api(
         )
 
     # GET LABELS
-    assert openapi["paths"].get("/services/{service_key}/{service_version}/labels")
+    assert openapi["paths"].get("/v0/services/{service_key}/{service_version}/labels")
 
     @respx_mock.get(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",
@@ -538,9 +528,7 @@ def mocked_director_rest_api(
         if found := _search(service_key, service_version):
             return httpx.Response(
                 status_code=status.HTTP_200_OK,
-                json={
-                    "data": get_mocked_service_labels(found["key"], found["version"])
-                },
+                json={"data": get_mocked_service_labels(found["key"], found["version"])},
             )
         return httpx.Response(
             status.HTTP_404_NOT_FOUND,

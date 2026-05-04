@@ -5,9 +5,8 @@ from aiohttp import web
 from models_library.products import ProductName
 from pydantic import BaseModel, ValidationInfo, field_validator
 from pydantic.fields import Field
-from pydantic.types import PositiveFloat, PositiveInt, SecretStr
+from pydantic.types import PositiveFloat, PositiveInt
 from settings_library.base import BaseCustomSettings
-from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
@@ -22,8 +21,11 @@ class LoginSettings(BaseCustomSettings):
         PositiveInt,
         Field(
             default=30,
-            description="Retention time (in days) of all the data after a user has requested the deletion of their account"
-            "NOTE: exposed to the front-end as `to_client_statics`",
+            description=(
+                "Retention time (in days) of all the data after a user has "
+                "requested the deletion of their account. "
+                "NOTE: exposed to the front-end as `to_client_statics`"
+            ),
         ),
     ]
 
@@ -40,9 +42,7 @@ class LoginSettings(BaseCustomSettings):
         description="Twilio service settings. Used to send SMS for 2FA",
     )
 
-    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
-        default=120, description="Expiration time for code [sec]"
-    )
+    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(default=120, description="Expiration time for code [sec]")
 
     LOGIN_2FA_REQUIRED: Annotated[
         bool,
@@ -104,9 +104,7 @@ class LoginSettingsForProduct(LoginSettings):
 
         if "two_factor_enabled" in composed_settings:
             # legacy safe
-            composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop(
-                "two_factor_enabled"
-            )
+            composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop("two_factor_enabled")
         return cls(**composed_settings)
 
 
@@ -119,12 +117,6 @@ class LoginOptions(BaseModel):
     PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"
-
-    SMTP_HOST: str
-    SMTP_PORT: int
-    SMTP_PROTOCOL: EmailProtocol
-    SMTP_USERNAME: str | None = Field(...)
-    SMTP_PASSWORD: SecretStr | None = Field(...)
 
     # NOTE: lifetime limits are expressed in days (use constants above)
     REGISTRATION_CONFIRMATION_LIFETIME: PositiveFloat = 5 * _DAYS
@@ -147,9 +139,7 @@ LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final = web.AppKey(
 )
 
 
-def get_plugin_settings(
-    app: web.Application, product_name: str
-) -> LoginSettingsForProduct:
+def get_plugin_settings(app: web.Application, product_name: str) -> LoginSettingsForProduct:
     """login plugin's settings are customized per product"""
     settings = app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY][product_name]
     assert settings, "setup_settings not called?"  # nosec

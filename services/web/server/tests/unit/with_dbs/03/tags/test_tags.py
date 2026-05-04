@@ -31,7 +31,7 @@ from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.db.plugin import get_database_engine_legacy
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.products._service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -125,10 +125,10 @@ async def test_tags_to_studies(
 @pytest.fixture
 async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
     assert client.app
-    engine = get_database_engine_legacy(client.app)
+    engine = get_asyncpg_engine(client.app)
     assert engine
 
-    async with engine.acquire() as conn:
+    async with engine.begin() as conn:
         tag_id = await create_tag(
             conn,
             name="TG",
@@ -140,8 +140,9 @@ async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
             delete=False,
         )
 
-        yield tag_id
+    yield tag_id
 
+    async with engine.begin() as conn:
         await delete_tag(conn, tag_id=tag_id)
 
 
@@ -156,9 +157,9 @@ async def test_read_tags(
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
-    datas, _ = await assert_status(resp, status.HTTP_200_OK)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    assert datas == [
+    assert data == [
         {
             "id": everybody_tag_id,
             "name": "TG",
@@ -378,9 +379,7 @@ async def user_tag_id(client: TestClient) -> IdInt:
     return tag["id"]
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
 async def test_cannot_share_tag_with_everyone(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -392,9 +391,7 @@ async def test_cannot_share_tag_with_everyone(
     assert UserRole(logged_user["role"]) == user_role
 
     # cannot SHARE with everyone group
-    url = client.app.router["create_tag_group"].url_for(
-        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
-    )
+    url = client.app.router["create_tag_group"].url_for(tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}")
     resp = await client.post(
         f"{url}",
         json={"read": True, "write": True, "delete": True},
@@ -403,9 +400,7 @@ async def test_cannot_share_tag_with_everyone(
     assert error
 
     # cannot REPLACE with everyone group
-    url = client.app.router["replace_tag_group"].url_for(
-        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
-    )
+    url = client.app.router["replace_tag_group"].url_for(tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}")
     resp = await client.put(
         f"{url}",
         json={"read": True, "write": True, "delete": True},
@@ -414,9 +409,7 @@ async def test_cannot_share_tag_with_everyone(
     assert error
 
     # cannot DELETE with everyone group
-    url = client.app.router["delete_tag_group"].url_for(
-        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
-    )
+    url = client.app.router["delete_tag_group"].url_for(tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}")
     resp = await client.delete(
         f"{url}",
         json={"read": True, "write": True, "delete": True},
@@ -431,11 +424,7 @@ async def test_cannot_share_tag_with_everyone(
         (
             role,
             # granted only to:
-            (
-                status.HTTP_403_FORBIDDEN
-                if role < UserRole.TESTER
-                else status.HTTP_201_CREATED
-            ),
+            (status.HTTP_403_FORBIDDEN if role < UserRole.TESTER else status.HTTP_201_CREATED),
         )
         for role in UserRole
         if role >= UserRole.USER
@@ -456,9 +445,7 @@ async def test_can_only_share_tag_with_product_group_if_granted_by_role(
     product_group_id = get_product(client.app, product_name=product_name).group_id
 
     # cannot SHARE with everyone group
-    url = client.app.router["create_tag_group"].url_for(
-        tag_id=f"{user_tag_id}", group_id=f"{product_group_id}"
-    )
+    url = client.app.router["create_tag_group"].url_for(tag_id=f"{user_tag_id}", group_id=f"{product_group_id}")
     resp = await client.post(
         f"{url}",
         json={"read": True, "write": True, "delete": True},

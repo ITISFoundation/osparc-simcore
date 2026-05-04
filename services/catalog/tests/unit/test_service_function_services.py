@@ -14,9 +14,7 @@ from simcore_service_catalog.service.function_services import (
 )
 
 
-@pytest.mark.parametrize(
-    "image_metadata", iter_service_docker_data(), ids=lambda obj: obj.name
-)
+@pytest.mark.parametrize("image_metadata", iter_service_docker_data(), ids=lambda obj: obj.name)
 def test_create_services_metadata(image_metadata: ServiceMetaDataPublished):
     assert isinstance(image_metadata, ServiceMetaDataPublished)
 

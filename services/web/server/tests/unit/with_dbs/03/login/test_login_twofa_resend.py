@@ -43,9 +43,7 @@ def postgres_db(postgres_db: sa.engine.Engine):
         products.update()
         .values(
             twilio_messaging_sid="x" * 34,
-            login_settings=ProductLoginSettingsDict(
-                LOGIN_2FA_REQUIRED=True
-            ),  # <--- 2FA Enabled for product
+            login_settings=ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True),  # <--- 2FA Enabled for product
         )
         .where(products.c.name == "osparc")
     )

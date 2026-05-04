@@ -16,6 +16,7 @@ import pytest
 import simcore_service_dynamic_sidecar
 from common_library.json_serialization import json_dumps
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceRunID
@@ -50,6 +51,7 @@ pytest_plugins = [
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
+    "pytest_simcore.simcore_services",
     "pytest_simcore.socketio",
 ]
 
@@ -134,6 +136,11 @@ def service_run_id() -> ServiceRunID:
 
 
 @pytest.fixture
+def product_name() -> ProductName:
+    return TypeAdapter(ProductName).validate_python("osparc")
+
+
+@pytest.fixture
 def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
     shared_store_dir.mkdir(parents=True, exist_ok=True)
     assert shared_store_dir.exists() is True
@@ -182,6 +189,7 @@ def base_mock_envs(
     node_id: NodeID,
     service_run_id: ServiceRunID,
     ensure_shared_store_dir: None,
+    product_name: ProductName,
 ) -> EnvVarsDict:
     return {
         # envs in Dockerfile
@@ -208,6 +216,7 @@ def base_mock_envs(
             }
         ),
         "DYNAMIC_SIDECAR_TRACING": "null",
+        "DY_SIDECAR_PRODUCT_NAME": product_name,
     }
 
 
@@ -232,6 +241,7 @@ def mock_environment(
     dy_volumes: Path,
     shared_store_dir: Path,
     faker: Faker,
+    product_name: ProductName,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
@@ -280,15 +290,14 @@ def mock_environment(
                     "REGISTRY_URL": "registry.pytest.com",
                 }
             ),
+            "DY_SIDECAR_PRODUCT_NAME": product_name,
         },
     )
 
 
 @pytest.fixture
-def mock_environment_with_envdevel(
-    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
-) -> EnvVarsDict:
-    """Alternative environment loaded fron .env-devel.
+def mock_environment_with_envdevel(monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path) -> EnvVarsDict:
+    """Alternative environment loaded from .env-devel.
 
     .env-devel is used mainly to run CLI
     """
@@ -343,6 +352,16 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
         ),
         "rpc.register_router": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQRPCClient.register_router",
+            return_value=None,
+            autospec=True,
+        ),
+        "subscribe": mocker.patch(
+            "servicelib.rabbitmq.RabbitMQClient.subscribe",
+            return_value=("mock_queue_name", "mock_consumer_tag"),
+            autospec=True,
+        ),
+        "unsubscribe": mocker.patch(
+            "servicelib.rabbitmq.RabbitMQClient.unsubscribe",
             return_value=None,
             autospec=True,
         ),

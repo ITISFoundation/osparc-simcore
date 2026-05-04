@@ -35,15 +35,12 @@ builtin_exceptions = {
 
 http_exceptions = {
     status_code: HTTPException(status_code=status_code, detail=f"test {status_code}")
-    for status_code in [
-        e.value for e in http.HTTPStatus if e.value >= _MIN_ERROR_STATUS_CODE
-    ]
+    for status_code in [e.value for e in http.HTTPStatus if e.value >= _MIN_ERROR_STATUS_CODE]
 }
 
 
 @pytest.fixture
 def app() -> FastAPI:
-
     app = FastAPI()
     app.add_exception_handler(Exception, handle_errors_as_500)
     app.add_exception_handler(HTTPException, http_exception_as_json_response)
@@ -60,9 +57,7 @@ def app() -> FastAPI:
 
 
 @pytest.mark.parametrize("code,exception", list(http_exceptions.items()))
-async def test_http_errors_respond_with_error_model(
-    client: AsyncClient, code: int, exception: HTTPException
-):
+async def test_http_errors_respond_with_error_model(client: AsyncClient, code: int, exception: HTTPException):
     response = await client.post(f"/error/{code}")
     assert response.status_code == code
 
@@ -73,9 +68,7 @@ async def test_http_errors_respond_with_error_model(
 
 @pytest.mark.xfail
 @pytest.mark.parametrize("code,exception", list(builtin_exceptions.items()))
-async def test_non_http_error_handling(
-    client: AsyncClient, code: int | str, exception: BaseException
-):
+async def test_non_http_error_handling(client: AsyncClient, code: int | str, exception: BaseException):
     response = await client.post(f"/raise/{code}")
     print(response)
 

@@ -2,14 +2,15 @@ import asyncio
 import json
 import logging
 import socket
-import tempfile
 from asyncio.streams import StreamReader
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 from textwrap import dedent
 from typing import Final
-from uuid import uuid4
 
+import aiofiles.tempfile
 import httpx
 from fastapi import FastAPI
 from servicelib.container_utils import run_command_in_container
@@ -23,9 +24,7 @@ _TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 _logger = logging.getLogger(__name__)
 
 
-_R_CLONE_CONFIG: Final[
-    str
-] = """
+_R_CLONE_CONFIG: Final[str] = """
 [dst]
 type = s3
 provider = {destination_provider}
@@ -37,19 +36,25 @@ acl = private
 """
 
 
-def _get_config_file_path(settings: ApplicationSettings) -> Path:
+@asynccontextmanager
+async def _rclone_config_file(settings: ApplicationSettings) -> AsyncIterator[Path]:
     config_content = _R_CLONE_CONFIG.format(
-        destination_provider=resolve_provider(
-            settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER
-        ),
+        destination_provider=resolve_provider(settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER),
         destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
         destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
         destination_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
         destination_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
     )
-    conf_path = Path(tempfile.gettempdir()) / f"rclone_config_{uuid4()}.ini"
-    conf_path.write_text(config_content)
-    return conf_path
+    async with aiofiles.tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".ini",
+        prefix="rclone_config_",
+        delete=True,
+        delete_on_close=False,
+    ) as tmp:
+        await tmp.write(config_content)
+        await tmp.flush()
+        yield Path(str(tmp.name))
 
 
 def _get_s3_path(s3_bucket: str, labels: DynamicServiceVolumeLabels) -> Path:
@@ -121,9 +126,7 @@ def _get_self_container_ip() -> str:
 async def _get_self_container() -> str:
     ip = _get_self_container_ip()
 
-    async with httpx.AsyncClient(
-        transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")
-    ) as client:
+    async with httpx.AsyncClient(transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")) as client:
         response = await client.get("http://localhost/containers/json")
         for entry in response.json():
             if ip in json.dumps(entry):
@@ -148,83 +151,80 @@ async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
         )
 
 
-async def _store_in_s3(
-    settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails
-) -> None:
-    exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
+def _is_source_dir_available(source_dir: Path) -> bool:
+    try:
+        return source_dir.exists()
+    except Exception:  # pylint: disable=broad-exception-caught
+        return False
 
-    config_file_path = _get_config_file_path(settings)
 
+async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails) -> None:
     source_dir = volume_details.mountpoint
-    if not Path(source_dir).exists():
-        _logger.info(
-            "Volume mountpoint %s does not exist. Skipping backup, volume %s will be removed.",
-            source_dir,
-            volume_name,
-        )
+
+    if not _is_source_dir_available(source_dir):
+        _logger.info("Source directory %s is not available, skipping backup for volume %s", source_dir, volume_name)
         return
 
-    s3_path = _get_s3_path(
-        settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels
-    )
+    exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
+    s3_path = _get_s3_path(settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels)
 
-    # listing files rclone will sync
-    r_clone_ls = [
-        "rclone",
-        "--config",
-        f"{config_file_path}",
-        "ls",
-        f"{source_dir}",
-    ]
-    process = await asyncio.create_subprocess_shell(
-        _get_r_clone_str_command(r_clone_ls, exclude_files),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
+    async with _rclone_config_file(settings) as config_file_path:
+        # listing files rclone will sync
+        r_clone_ls = [
+            "rclone",
+            "--config",
+            f"{config_file_path}",
+            "ls",
+            f"{source_dir}",
+        ]
+        process = await asyncio.create_subprocess_shell(
+            _get_r_clone_str_command(r_clone_ls, exclude_files),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
 
-    assert process.stdout  # nosec
-    r_clone_ls_output = await _read_stream(process.stdout)
-    await process.wait()
-    _log_expected_operation(
-        volume_details.labels, s3_path, r_clone_ls_output, volume_name
-    )
+        assert process.stdout  # nosec
+        r_clone_ls_output = await _read_stream(process.stdout)
+        await process.wait()
+        _log_expected_operation(volume_details.labels, s3_path, r_clone_ls_output, volume_name)
 
-    await _ensure_permissions_on_source_dir(source_dir)
+        await _ensure_permissions_on_source_dir(source_dir)
 
-    # sync files via rclone
-    r_clone_sync = [
-        "rclone",
-        "--config",
-        f"{config_file_path}",
-        "--low-level-retries",
-        "3",
-        "--retries",
-        f"{settings.AGENT_VOLUMES_CLEANUP_RETRIES}",
-        "--transfers",
-        f"{settings.AGENT_VOLUMES_CLEANUP_PARALLELISM}",
-        # below two options reduce to a minimum the memory footprint
-        # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
-        "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
-        "0M",
-        "--stats",
-        "5s",
-        "--stats-one-line",
-        "sync",
-        f"{source_dir}",
-        f"dst:{s3_path}",
-        "--verbose",
-    ]
+        # sync files via rclone
+        r_clone_sync = [
+            "rclone",
+            "--config",
+            f"{config_file_path}",
+            "--low-level-retries",
+            "3",
+            "--retries",
+            f"{settings.AGENT_VOLUMES_CLEANUP_RETRIES}",
+            "--transfers",
+            f"{settings.AGENT_VOLUMES_CLEANUP_PARALLELISM}",
+            # below two options reduce to a minimum the memory footprint
+            # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
+            "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
+            "16M",
+            "--stats",
+            "5s",
+            "--stats-one-line",
+            "sync",
+            f"{source_dir}",
+            f"dst:{s3_path}",
+            "--verbose",
+        ]
 
-    str_r_clone_sync = _get_r_clone_str_command(r_clone_sync, exclude_files)
-    process = await asyncio.create_subprocess_shell(
-        str_r_clone_sync,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
+        str_r_clone_sync = _get_r_clone_str_command(r_clone_sync, exclude_files)
+        process = await asyncio.create_subprocess_shell(
+            str_r_clone_sync,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
 
-    assert process.stdout  # nosec
-    r_clone_sync_output = await _read_stream(process.stdout)
-    await process.wait()
+        assert process.stdout  # nosec
+        r_clone_sync_output = await _read_stream(process.stdout)
+        await process.wait()
+
     _logger.info("Sync result:\n%s", r_clone_sync_output)
 
     if process.returncode != 0:
@@ -235,10 +235,6 @@ async def _store_in_s3(
         raise RuntimeError(msg)
 
 
-async def backup_volume(
-    app: FastAPI, volume_details: VolumeDetails, volume_name: str
-) -> None:
+async def backup_volume(app: FastAPI, volume_details: VolumeDetails, volume_name: str) -> None:
     settings: ApplicationSettings = app.state.settings
-    await _store_in_s3(
-        settings=settings, volume_name=volume_name, volume_details=volume_details
-    )
+    await _store_in_s3(settings=settings, volume_name=volume_name, volume_details=volume_details)

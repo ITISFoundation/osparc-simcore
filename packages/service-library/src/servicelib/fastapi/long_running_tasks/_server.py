@@ -44,22 +44,18 @@ def setup(
         app.include_router(main_router)
 
         # add components to state
-        app.state.long_running_manager = long_running_manager = (
-            FastAPILongRunningManager(
-                stale_task_check_interval=stale_task_check_interval,
-                stale_task_detect_timeout=stale_task_detect_timeout,
-                redis_settings=redis_settings,
-                rabbit_settings=rabbit_settings,
-                lrt_namespace=lrt_namespace,
-            )
+        app.state.long_running_manager = long_running_manager = FastAPILongRunningManager(
+            stale_task_check_interval=stale_task_check_interval,
+            stale_task_detect_timeout=stale_task_detect_timeout,
+            redis_settings=redis_settings,
+            rabbit_settings=rabbit_settings,
+            lrt_namespace=lrt_namespace,
         )
         await long_running_manager.setup()
 
     async def on_shutdown() -> None:
         if app.state.long_running_manager:
-            long_running_manager: FastAPILongRunningManager = (
-                app.state.long_running_manager
-            )
+            long_running_manager: FastAPILongRunningManager = app.state.long_running_manager
             await long_running_manager.teardown()
 
     app.add_event_handler("startup", on_startup)

@@ -16,9 +16,7 @@ class DiskStreamWriter:
                 await f.write(chunk)
                 await f.flush()
 
-    async def write_from_file_like(
-        self, file_like_reader: FileLikeBytesIterReader
-    ) -> None:
+    async def write_from_file_like(self, file_like_reader: FileLikeBytesIterReader) -> None:
         async with aiofiles.open(self.destination_path, "wb") as f:
             while True:
                 chunk = await file_like_reader.read(100)

@@ -1,12 +1,11 @@
-""" Utils to deal with environment variables (environs in short)
+"""Utils to deal with environment variables (environs in short)"""
 
-"""
 import re
 from pathlib import Path
 
 import yaml
 
-VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)+")  #
+VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)+")
 
 
 def load_env(file_handler) -> dict:
@@ -67,9 +66,7 @@ def replace_environs_in_docker_compose_service(
                 # In VAR=${FOO} matches VAR and FOO
                 #    - TODO: add to read defaults
                 envkey = m.groups()[0]
-                value = host_environ[
-                    envkey
-                ]  # fails when variable in docker-compose is NOT defined
+                value = host_environ[envkey]  # fails when variable in docker-compose is NOT defined
             service_environ[key] = value
 
     service_section["environment"] = service_environ
@@ -101,9 +98,7 @@ def eval_service_environ(
         content = yaml.safe_load(f)
 
     service = content["services"][service_name]
-    replace_environs_in_docker_compose_service(
-        service, docker_compose_dir, host_environ, use_env_devel=use_env_devel
-    )
+    replace_environs_in_docker_compose_service(service, docker_compose_dir, host_environ, use_env_devel=use_env_devel)
 
     host_environ = host_environ or {}
     image_environ = image_environ or {}

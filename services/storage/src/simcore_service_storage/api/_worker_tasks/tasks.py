@@ -35,9 +35,7 @@ def register_worker_tasks(app: Celery) -> None:
     )
     with log_context(_logger, logging.INFO, msg="worker tasks registration"):
         register_task(app, export_data, dont_autoretry_for=(AccessRightError,))
-        register_task(
-            app, export_data_as_download_link, dont_autoretry_for=(AccessRightError,)
-        )
+        register_task(app, export_data_as_download_link, dont_autoretry_for=(AccessRightError,))
         register_task(app, compute_path_size)
         register_task(app, complete_upload_file)
         register_task(app, delete_paths)

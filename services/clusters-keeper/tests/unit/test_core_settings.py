@@ -13,7 +13,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     setenvs_from_dict,
 )
-from simcore_service_clusters_keeper.core.settings import ApplicationSettings
+from simcore_service_clusters_keeper.core.settings import ApplicationSettings, PrimaryEC2InstancesSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
@@ -26,23 +26,15 @@ def test_settings(app_environment: EnvVarsDict):
     assert settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES
 
 
-@pytest.mark.xfail(
-    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
-)
 def test_empty_primary_ec2_instances_raises(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    setenvs_from_dict(
-        monkeypatch, {"PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps({})}
-    )
-    with pytest.raises(ValidationError, match="Only one exact value"):
-        ApplicationSettings.create_from_envs()
+    setenvs_from_dict(monkeypatch, {"PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps({})})
+    with pytest.raises(ValidationError, match="at least 1 item"):
+        PrimaryEC2InstancesSettings.create_from_envs()
 
 
-@pytest.mark.xfail(
-    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
-)
 def test_multiple_primary_ec2_instances_raises(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -53,21 +45,16 @@ def test_multiple_primary_ec2_instances_raises(
         {
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: secrets.choice(
-                        EC2InstanceBootSpecific.model_json_schema()["examples"]
-                    )
+                    ec2_type_name: secrets.choice(EC2InstanceBootSpecific.model_json_schema()["examples"])
                     for ec2_type_name in ec2_instances
                 }
             )
         },
     )
-    with pytest.raises(ValidationError, match="Only one exact value"):
-        ApplicationSettings.create_from_envs()
+    with pytest.raises(ValidationError, match="at most 1 item"):
+        PrimaryEC2InstancesSettings.create_from_envs()
 
 
-@pytest.mark.xfail(
-    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
-)
 @pytest.mark.parametrize(
     "invalid_tag",
     [
@@ -89,7 +76,7 @@ def test_invalid_primary_custom_tags_raises(
         {"PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(invalid_tag)},
     )
     with pytest.raises(ValidationError):
-        ApplicationSettings.create_from_envs()
+        PrimaryEC2InstancesSettings.create_from_envs()
 
 
 @pytest.mark.parametrize(
@@ -110,7 +97,7 @@ def test_valid_primary_custom_tags(
         monkeypatch,
         {"PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(valid_tag)},
     )
-    ApplicationSettings.create_from_envs()
+    PrimaryEC2InstancesSettings.create_from_envs()
 
 
 def test_valid_application_settings(

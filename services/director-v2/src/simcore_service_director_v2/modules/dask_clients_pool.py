@@ -36,9 +36,7 @@ class DaskClientsPool:
     _cluster_to_client_map: dict[_ClusterUrl, DaskClient] = field(default_factory=dict)
     _task_handlers: TaskHandlers | None = None
     # Track references to each client by endpoint
-    _client_to_refs: defaultdict[_ClusterUrl, set[ClientRef]] = field(
-        default_factory=lambda: defaultdict(set)
-    )
+    _client_to_refs: defaultdict[_ClusterUrl, set[ClientRef]] = field(default_factory=lambda: defaultdict(set))
     _ref_to_clients: dict[ClientRef, _ClusterUrl] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -49,9 +47,7 @@ class DaskClientsPool:
         self._task_handlers = task_handlers
 
     @classmethod
-    async def create(
-        cls, app: FastAPI, settings: ComputationalBackendSettings
-    ) -> "DaskClientsPool":
+    async def create(cls, app: FastAPI, settings: ComputationalBackendSettings) -> "DaskClientsPool":
         return cls(app=app, settings=settings)
 
     @staticmethod
@@ -87,9 +83,7 @@ class DaskClientsPool:
 
                 # If we found an endpoint with no more refs, clean it up
                 if not self._client_to_refs[cluster_endpoint] and (
-                    dask_client := self._cluster_to_client_map.pop(
-                        cluster_endpoint, None
-                    )
+                    dask_client := self._cluster_to_client_map.pop(cluster_endpoint, None)
                 ):
                     _logger.info(
                         "Last reference to client %s released, deleting client",
@@ -102,9 +96,7 @@ class DaskClientsPool:
                     )
 
     @asynccontextmanager
-    async def acquire(
-        self, cluster: BaseCluster, *, ref: ClientRef
-    ) -> AsyncIterator[DaskClient]:
+    async def acquire(self, cluster: BaseCluster, *, ref: ClientRef) -> AsyncIterator[DaskClient]:
         """Returns a dask client for the given cluster.
 
         This method is thread-safe and can be called concurrently.
@@ -114,7 +106,7 @@ class DaskClientsPool:
         `release_client_ref` to release the client reference when done.
         """
 
-        async def _concurently_safe_acquire_client() -> DaskClient:
+        async def _concurrently_safe_acquire_client() -> DaskClient:
             async with self._client_acquisition_lock:
                 with log_context(
                     _logger,
@@ -123,26 +115,18 @@ class DaskClientsPool:
                 ):
                     dask_client = self._cluster_to_client_map.get(cluster.endpoint)
                     if not dask_client:
-                        tasks_file_link_type = (
-                            self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE
-                        )
+                        tasks_file_link_type = self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE
                         if cluster == self.settings.default_cluster:
-                            tasks_file_link_type = (
-                                self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
-                            )
+                            tasks_file_link_type = self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
                         if cluster.type == ClusterTypeInModel.ON_DEMAND.value:
-                            tasks_file_link_type = (
-                                self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
-                            )
-                        self._cluster_to_client_map[cluster.endpoint] = dask_client = (
-                            await DaskClient.create(
-                                app=self.app,
-                                settings=self.settings,
-                                endpoint=cluster.endpoint,
-                                authentication=cluster.authentication,
-                                tasks_file_link_type=tasks_file_link_type,
-                                cluster_type=cluster.type,
-                            )
+                            tasks_file_link_type = self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
+                        self._cluster_to_client_map[cluster.endpoint] = dask_client = await DaskClient.create(
+                            app=self.app,
+                            settings=self.settings,
+                            endpoint=cluster.endpoint,
+                            authentication=cluster.authentication,
+                            tasks_file_link_type=tasks_file_link_type,
+                            cluster_type=cluster.type,
                         )
                         if self._task_handlers:
                             dask_client.register_handlers(self._task_handlers)
@@ -161,7 +145,7 @@ class DaskClientsPool:
                     return dask_client
 
         try:
-            dask_client = await _concurently_safe_acquire_client()
+            dask_client = await _concurrently_safe_acquire_client()
 
         except Exception as exc:
             raise DaskClientAcquisisitonError(cluster=cluster, error=exc) from exc
@@ -181,9 +165,7 @@ class DaskClientsPool:
 
 def setup(app: FastAPI, settings: ComputationalBackendSettings) -> None:
     async def on_startup() -> None:
-        app.state.dask_clients_pool = await DaskClientsPool.create(
-            app=app, settings=settings
-        )
+        app.state.dask_clients_pool = await DaskClientsPool.create(app=app, settings=settings)
 
         _logger.info(
             "Default cluster is set to %s",

@@ -38,9 +38,7 @@ class DirectorV2ThinClient(BaseThinClient):
         super().__init__(
             total_retry_interval=DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
-            default_http_client_timeout=Timeout(
-                DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S
-            ),
+            default_http_client_timeout=Timeout(DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S),
             extra_allowed_method_names={"attach_lifespan_to"},
             tracing_config=get_tracing_config(app),
         )
@@ -48,15 +46,11 @@ class DirectorV2ThinClient(BaseThinClient):
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_status(self, node_id: NodeID) -> Response:
-        return await self.client.get(
-            f"/dynamic_services/{node_id}", follow_redirects=True
-        )
+        return await self.client.get(f"/dynamic_services/{node_id}", follow_redirects=True)
 
     @retry_on_errors()
     @expect_status(status.HTTP_201_CREATED)
-    async def post_dynamic_service(
-        self, dynamic_service_start: DynamicServiceStart
-    ) -> Response:
+    async def post_dynamic_service(self, dynamic_service_start: DynamicServiceStart) -> Response:
         post_data = {
             "product_name": dynamic_service_start.product_name,
             "product_api_base_url": dynamic_service_start.product_api_base_url,
@@ -67,9 +61,7 @@ class DirectorV2ThinClient(BaseThinClient):
             "version": dynamic_service_start.version,
             "node_uuid": dynamic_service_start.node_uuid,
             "basepath": f"/x/{dynamic_service_start.node_uuid}",
-            "service_resources": ServiceResourcesDictHelpers.create_jsonable(
-                dynamic_service_start.service_resources
-            ),
+            "service_resources": ServiceResourcesDictHelpers.create_jsonable(dynamic_service_start.service_resources),
             "wallet_info": dynamic_service_start.wallet_info,
             "pricing_info": dynamic_service_start.pricing_info,
             "hardware_info": dynamic_service_start.hardware_info,
@@ -158,6 +150,4 @@ class DirectorV2ThinClient(BaseThinClient):
     @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def patch_projects_networks(self, *, project_id: ProjectID) -> Response:
-        return await self.client.patch(
-            f"/dynamic_services/projects/{project_id}/-/networks"
-        )
+        return await self.client.patch(f"/dynamic_services/projects/{project_id}/-/networks")

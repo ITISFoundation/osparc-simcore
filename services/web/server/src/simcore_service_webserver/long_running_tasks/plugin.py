@@ -30,9 +30,7 @@ def webserver_request_context_decorator(handler: Handler):
     ) -> web.StreamResponse:
         """this task context callback tries to get the user_id from the query if available"""
         req_ctx = AuthenticatedRequestContext.model_validate(request)
-        request[LONG_RUNNING_TASKS_CONTEXT_REQKEY] = req_ctx.model_dump(
-            mode="json", by_alias=True
-        )
+        request[LONG_RUNNING_TASKS_CONTEXT_REQKEY] = req_ctx.model_dump(mode="json", by_alias=True)
         return await handler(request)
 
     return _test_task_context_decorator

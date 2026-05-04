@@ -41,11 +41,8 @@ def mock_director_v2_service(
 )
 async def test_running_services(
     mock_director_v2_service: None,
-    disable_generic_scheduler_lifespan: None,
     client: AsyncClient,
 ):
     response = await client.get(f"/{API_VTAG}/ops/running-services")
     assert response.status_code == status.HTTP_200_OK
-    assert isinstance(
-        TypeAdapter(list[DynamicServiceGet]).validate_python(response.json()), list
-    )
+    assert isinstance(TypeAdapter(list[DynamicServiceGet]).validate_python(response.json()), list)

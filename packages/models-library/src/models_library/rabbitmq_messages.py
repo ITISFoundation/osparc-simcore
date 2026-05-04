@@ -2,8 +2,8 @@ import datetime
 import logging
 from abc import abstractmethod
 from decimal import Decimal
-from enum import Enum, IntEnum, auto
-from typing import Annotated, Any, Literal, TypeAlias
+from enum import IntEnum, auto
+from typing import Annotated, Any, Literal
 
 import arrow
 from common_library.basic_types import DEFAULT_FACTORY
@@ -13,7 +13,7 @@ from .conversations import ConversationGetDB, ConversationMessageID
 from .products import ProductName
 from .progress_bar import ProgressReport
 from .projects import ProjectID
-from .projects_nodes_io import NodeID
+from .projects_nodes_io import NodeID, StorageFileID
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceType, ServiceVersion
 from .services_resources import ServiceResourcesDict
@@ -22,14 +22,12 @@ from .users import UserID
 from .utils.enums import StrAutoEnum
 from .wallets import WalletID
 
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
+type LogLevelInt = int
+type LogMessageStr = str
 
 
-class RabbitEventMessageType(str, Enum):
-    __slots__ = ()
-
-    RELOAD_IFRAME = "RELOAD_IFRAME"
+class RabbitEventMessageType(StrAutoEnum):
+    RELOAD_IFRAME = auto()
 
 
 class RabbitMessageBase(BaseModel):
@@ -84,9 +82,7 @@ class WebserverInternalEventRabbitMessageAction(StrAutoEnum):
 
 
 class WebserverInternalEventRabbitMessage(RabbitMessageBase):
-    channel_name: Literal["simcore.services.webserver_internal_events"] = (
-        "simcore.services.webserver_internal_events"
-    )
+    channel_name: Literal["simcore.services.webserver_internal_events"] = "simcore.services.webserver_internal_events"
     action: WebserverInternalEventRabbitMessageAction
     data: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
 
@@ -95,9 +91,7 @@ class WebserverInternalEventRabbitMessage(RabbitMessageBase):
 
 
 class WebserverChatbotRabbitMessage(RabbitMessageBase):
-    channel_name: Literal["simcore.services.webserver-chatbot"] = (
-        "simcore.services.webserver-chatbot"
-    )
+    channel_name: Literal["simcore.services.webserver-chatbot"] = "simcore.services.webserver-chatbot"
     conversation: ConversationGetDB
     last_message_id: ConversationMessageID
 
@@ -123,12 +117,8 @@ class ProgressType(StrAutoEnum):
 
 
 class ProgressMessageMixin(RabbitMessageBase):
-    channel_name: Literal["simcore.services.progress.v2"] = (
-        "simcore.services.progress.v2"
-    )
-    progress_type: ProgressType = (
-        ProgressType.COMPUTATION_RUNNING
-    )  # NOTE: backwards compatible
+    channel_name: Literal["simcore.services.progress.v2"] = "simcore.services.progress.v2"
+    progress_type: ProgressType = ProgressType.COMPUTATION_RUNNING  # NOTE: backwards compatible
     report: ProgressReport
 
     def routing_key(self) -> str | None:
@@ -146,9 +136,7 @@ class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
 
 
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
-    channel_name: Literal["simcore.services.instrumentation"] = (
-        "simcore.services.instrumentation"
-    )
+    channel_name: Literal["simcore.services.instrumentation"] = "simcore.services.instrumentation"
     metrics: str
     service_uuid: NodeID
     service_type: str
@@ -163,21 +151,15 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
 
 class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.autoscaling"] = "io.simcore.autoscaling"
-    origin: str = Field(
-        ..., description="autoscaling app type, in case there would be more than one"
-    )
+    origin: str = Field(..., description="autoscaling app type, in case there would be more than one")
 
     def routing_key(self) -> str | None:
         return None
 
 
 class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
-    nodes_total: int = Field(
-        ..., description="total number of usable nodes (machines) in the cluster"
-    )
-    nodes_active: int = Field(
-        ..., description="number of active nodes (curently in use)"
-    )
+    nodes_total: int = Field(..., description="total number of usable nodes (machines) in the cluster")
+    nodes_active: int = Field(..., description="number of active nodes (currently in use)")
     nodes_drained: int = Field(
         ...,
         description="number of drained nodes (currently empty but ready for use if needed)",
@@ -186,16 +168,10 @@ class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     cluster_total_resources: dict[str, Any] = Field(
         ..., description="the total available resources in the cluster (cpu, ram, ...)"
     )
-    cluster_used_resources: dict[str, Any] = Field(
-        ..., description="the used resources in the cluster (cpu, ram, ...)"
-    )
+    cluster_used_resources: dict[str, Any] = Field(..., description="the used resources in the cluster (cpu, ram, ...)")
 
-    instances_pending: int = Field(
-        ..., description="the number of EC2 instances currently in pending state in AWS"
-    )
-    instances_running: int = Field(
-        ..., description="the number of EC2 instances currently in running state in AWS"
-    )
+    instances_pending: int = Field(..., description="the number of EC2 instances currently in pending state in AWS")
+    instances_running: int = Field(..., description="the number of EC2 instances currently in running state in AWS")
 
 
 class RabbitResourceTrackingMessageType(StrAutoEnum):
@@ -207,9 +183,7 @@ class RabbitResourceTrackingMessageType(StrAutoEnum):
 class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.tracking"] = "io.simcore.service.tracking"
 
-    service_run_id: ServiceRunID = Field(
-        ..., description="uniquely identitifies the service run"
-    )
+    service_run_id: ServiceRunID = Field(..., description="uniquely identitifies the service run")
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",
@@ -299,10 +273,8 @@ class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
     )
 
 
-RabbitResourceTrackingMessages: TypeAlias = (
-    RabbitResourceTrackingStartedMessage
-    | RabbitResourceTrackingStoppedMessage
-    | RabbitResourceTrackingHeartbeatMessage
+type RabbitResourceTrackingMessages = (
+    RabbitResourceTrackingStartedMessage | RabbitResourceTrackingStoppedMessage | RabbitResourceTrackingHeartbeatMessage
 )
 
 
@@ -332,9 +304,7 @@ class WalletCreditsLimitReachedMessage(RabbitMessageBase):
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",
     )
-    service_run_id: str = Field(
-        ..., description="uniquely identitifies the service run"
-    )
+    service_run_id: str = Field(..., description="uniquely identitifies the service run")
     user_id: UserID
     project_id: ProjectID
     node_id: NodeID
@@ -354,3 +324,25 @@ class ComputationalPipelineStatusMessage(RabbitMessageBase, ProjectMessageBase):
 
     def routing_key(self) -> str | None:
         return f"{self.project_id}.all_nodes"
+
+
+class FileNotificationEventType(StrAutoEnum):
+    FILE_UPLOADED = auto()
+    FILE_DELETED = auto()
+
+
+class FileNotificationMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.service.file-notifications"] = "io.simcore.service.file-notifications"
+
+    event_type: FileNotificationEventType
+    user_id: UserID
+    project_id: ProjectID
+    node_id: NodeID
+    file_id: StorageFileID
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
+
+    def routing_key(self) -> str | None:
+        return f"{self.project_id}.{self.node_id}"

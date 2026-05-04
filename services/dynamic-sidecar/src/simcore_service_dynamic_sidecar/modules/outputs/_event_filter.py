@@ -6,7 +6,7 @@ from asyncio import CancelledError, Queue, Task, create_task
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Final, TypeAlias
+from typing import Final
 
 from pydantic import (
     ByteSize,
@@ -22,7 +22,7 @@ from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 from ._directory_utils import get_directory_total_size
 from ._manager import OutputsManager
 
-PortEvent: TypeAlias = str | None
+type PortEvent = str | None
 
 _logger = logging.getLogger(__name__)
 
@@ -70,10 +70,10 @@ class EventFilter:
     def __init__(
         self,
         outputs_manager: OutputsManager,
-        delay_policy: BaseDelayPolicy = DefaultDelayPolicy(),
+        delay_policy: BaseDelayPolicy | None = None,
     ):
         self.outputs_manager = outputs_manager
-        self.delay_policy = delay_policy
+        self.delay_policy = DefaultDelayPolicy() if delay_policy is None else delay_policy
 
         self._incoming_events_queue: Queue[PortEvent] = Queue()
         self._task_incoming_event_ingestion: Task | None = None
@@ -96,9 +96,7 @@ class EventFilter:
             port_key = port_event
 
             if port_key not in self._port_key_tracked_event:
-                self._port_key_tracked_event[port_key] = TrackedEvent(
-                    last_detection=time.time()
-                )
+                self._port_key_tracked_event[port_key] = TrackedEvent(last_detection=time.time())
             else:
                 self._port_key_tracked_event[port_key].last_detection = time.time()
 
@@ -115,9 +113,7 @@ class EventFilter:
                 elapsed_since_detection = current_time - tracked_event.last_detection
 
                 # ensure minimum interval has passed
-                if elapsed_since_detection < (
-                    tracked_event.wait_interval or self.delay_policy.get_min_interval()
-                ):
+                if elapsed_since_detection < (tracked_event.wait_interval or self.delay_policy.get_min_interval()):
                     continue
 
                 # Set the wait_interval for future events.
@@ -126,16 +122,9 @@ class EventFilter:
                 # Size of directory will only be computed if:
                 # - event was just added
                 # - already waited more than the wait_interval
-                if (
-                    tracked_event.wait_interval is None
-                    or elapsed_since_detection > tracked_event.wait_interval
-                ):
-                    port_key_dir_path = (
-                        self.outputs_manager.outputs_context.outputs_path / port_key
-                    )
-                    total_wait_for = self.delay_policy.get_wait_interval(
-                        get_directory_total_size(port_key_dir_path)
-                    )
+                if tracked_event.wait_interval is None or elapsed_since_detection > tracked_event.wait_interval:
+                    port_key_dir_path = self.outputs_manager.outputs_context.outputs_path / port_key
+                    total_wait_for = self.delay_policy.get_wait_interval(get_directory_total_size(port_key_dir_path))
                     tracked_event.wait_interval = total_wait_for
 
                 # could require to wait more since wait_interval was just updated
@@ -153,12 +142,10 @@ class EventFilter:
     async def _worker_event_emitter(self) -> None:
         """checks at fixed intervals if it should emit events to upload"""
         with ThreadPoolExecutor(max_workers=1) as pool:
-            await asyncio.get_event_loop().run_in_executor(
-                pool, self._worker_blocking_event_emitter
-            )
+            await asyncio.get_event_loop().run_in_executor(pool, self._worker_blocking_event_emitter)
 
     async def _worker_upload_events(self) -> None:
-        """enqueues uploads for port  `port_key`"""
+        """enqueues uploads for port `port_key`"""
         while True:
             port_key: str | None = await self._upload_events_queue.get()
             if port_key is None:
@@ -191,7 +178,7 @@ class EventFilter:
             if task is None:
                 return
 
-            task.cancel()
+            task.cancel("shutting down EventFilter")
             with suppress(CancelledError):
                 await task
 

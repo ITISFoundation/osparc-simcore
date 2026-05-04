@@ -78,8 +78,6 @@ def downgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.UniqueConstraint(
-            "cluster_id", "gid", name="cluster_to_groups_cluster_id_gid_key"
-        ),
+        sa.UniqueConstraint("cluster_id", "gid", name="cluster_to_groups_cluster_id_gid_key"),
     )
     # ### end Alembic commands ###

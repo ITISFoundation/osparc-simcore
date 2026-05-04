@@ -6,8 +6,8 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.observer import (
-    registed_observers_report,
     register_observer,
+    registered_observers_report,
     setup_observer_registry,
 )
 from servicelib.utils import logged_gather
@@ -28,13 +28,8 @@ async def _on_user_disconnected(
     assert client_session_id  # nosec
 
     # Get all user wallets and unsubscribe
-    user_wallet = await wallets_service.list_wallets_for_user(
-        app, user_id=user_id, product_name=product_name
-    )
-    disconnect_tasks = [
-        wallet_osparc_credits.unsubscribe(app, wallet.wallet_id)
-        for wallet in user_wallet
-    ]
+    user_wallet = await wallets_service.list_wallets_for_user(app, user_id=user_id, product_name=product_name)
+    disconnect_tasks = [wallet_osparc_credits.unsubscribe(app, wallet.wallet_id) for wallet in user_wallet]
     await logged_gather(*disconnect_tasks)
 
 
@@ -46,13 +41,9 @@ async def _on_user_connected(
 ) -> None:
     assert client_session_id  # nosec
     # Get all user wallets and subscribe
-    user_wallet = await wallets_service.list_wallets_for_user(
-        app, user_id=user_id, product_name=product_name
-    )
+    user_wallet = await wallets_service.list_wallets_for_user(app, user_id=user_id, product_name=product_name)
     _logger.debug("Connecting user %s to wallets %s", f"{user_id}", f"{user_wallet}")
-    connect_tasks = [
-        wallet_osparc_credits.subscribe(app, wallet.wallet_id) for wallet in user_wallet
-    ]
+    connect_tasks = [wallet_osparc_credits.subscribe(app, wallet.wallet_id) for wallet in user_wallet]
     await logged_gather(*connect_tasks)
 
 
@@ -63,6 +54,4 @@ def setup_resource_usage_observer_events(app: web.Application) -> None:
     register_observer(app, _on_user_connected, event="SIGNAL_USER_CONNECTED")
     register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
 
-    _logger.info(
-        "App registered events (at this point):\n%s", registed_observers_report(app)
-    )
+    _logger.info("App registered events (at this point):\n%s", registered_observers_report(app))

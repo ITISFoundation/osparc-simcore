@@ -59,7 +59,6 @@ def server_lifetime(port: int) -> Iterator[ServerInfo]:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ) as proc:
-
         url = f"http://127.0.0.1:{port}"
         print("\nStarted", proc.args)
 
@@ -77,7 +76,6 @@ def server_lifetime(port: int) -> Iterator[ServerInfo]:
 
 
 def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
-
     with server_lifetime(port=get_unused_port()) as server:
         url, proc = server
         print("--> testing server")

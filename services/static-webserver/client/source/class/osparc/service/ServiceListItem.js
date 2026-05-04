@@ -116,10 +116,5 @@ qx.Class.define("osparc.service.ServiceListItem", {
       }
       return false;
     },
-
-    _filterClassifiers: function(classifiers) {
-      const checks = this.getService().getClassifiers();
-      return osparc.dashboard.CardBase.filterText(checks, classifiers);
-    }
   }
 });

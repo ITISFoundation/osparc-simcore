@@ -12,9 +12,7 @@ MetadataDict: TypeAlias = dict[str, MetaValueType]
 
 class ProjectMetadataGet(OutputSchema):
     project_uuid: ProjectID
-    custom: MetadataDict = Field(
-        default_factory=dict, description="Custom key-value map"
-    )
+    custom: MetadataDict = Field(default_factory=dict, description="Custom key-value map")
 
 
 class ProjectMetadataUpdate(InputSchema):

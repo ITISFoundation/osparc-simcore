@@ -4,7 +4,6 @@ from pathlib import Path
 
 
 def main():
-
     input_path = Path(os.environ["INPUT_FOLDER"])
     output_path = Path(os.environ["OUTPUT_FOLDER"])
 

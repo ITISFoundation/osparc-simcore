@@ -14,7 +14,7 @@ Needs including pytest_plugins = [
 
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -68,8 +68,7 @@ def successful_transaction(
     invoice_pdf_url: HttpUrl,
     stripe_invoice_id: StripeInvoiceID,
 ) -> dict[str, Any]:
-
-    initiated_at = datetime.now(tz=timezone.utc)
+    initiated_at = datetime.now(tz=UTC)
     return random_payment_transaction(
         payment_id=f"pt_{faker.pyint()}",
         price_dollars=faker.pydecimal(positive=True, right_digits=2, left_digits=4),

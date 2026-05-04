@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
     ServiceSpecificationsGet,
@@ -29,20 +29,16 @@ async def get_service_specifications(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    groups_repository: Annotated[
-        GroupsRepository, Depends(get_repository(GroupsRepository))
-    ],
-    services_repo: Annotated[
-        ServicesRepository, Depends(get_repository(ServicesRepository))
-    ],
-    default_service_specifications: Annotated[
-        ServiceSpecifications, Depends(get_default_service_specifications)
-    ],
+    groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
+    services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
+    default_service_specifications: Annotated[ServiceSpecifications, Depends(get_default_service_specifications)],
+    x_simcore_products_name: Annotated[str, Header(...)],
     *,
     strict: Annotated[
         bool,
         Query(
-            description="if True only the version specs will be retrieved, if False the latest version will be used instead",
+            description="if True only the version specs will be retrieved, "
+            "if False the latest version will be used instead",
         ),
     ] = False,
 ):
@@ -58,13 +54,14 @@ async def get_service_specifications(
         # deny access, but this should not happen
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have unsufficient rights to access the services",
+            detail="You have insufficient rights to access the services",
         )
 
     service_specs = await services_repo.get_service_specifications(
         service_key,
         service_version,
         tuple(user_groups),
+        x_simcore_products_name,
         allow_use_latest_service_version=not strict,
     )
 

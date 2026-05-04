@@ -92,9 +92,7 @@ async def create_function(  # noqa: PLR0913
 
         registered_function = RegisteredFunctionDB.model_validate(row)
 
-        user_primary_group_id = await users_service.get_user_primary_group_id(
-            app, user_id=user_id
-        )
+        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
         await _internal_set_group_permissions(
             app,
             connection=transaction,
@@ -129,9 +127,7 @@ async def get_function(
             permissions=["read"],
         )
 
-        result = await conn.execute(
-            functions_table.select().where(functions_table.c.uuid == function_id)
-        )
+        result = await conn.execute(functions_table.select().where(functions_table.c.uuid == function_id))
         row = result.one_or_none()
 
         if row is None:
@@ -148,25 +144,17 @@ def _create_list_functions_attributes_filters(
     attributes_filters: list[ColumnElement] = []
 
     if filter_by_function_class is not None:
-        attributes_filters.append(
-            functions_table.c.function_class == filter_by_function_class.value
-        )
+        attributes_filters.append(functions_table.c.function_class == filter_by_function_class.value)
 
     if search_by_multi_columns is not None:
         attributes_filters.append(
             (functions_table.c.title.ilike(f"%{search_by_multi_columns}%"))
             | (functions_table.c.description.ilike(f"%{search_by_multi_columns}%"))
-            | (
-                cast(functions_table.c.uuid, String).ilike(
-                    f"%{search_by_multi_columns}%"
-                )
-            )
+            | (cast(functions_table.c.uuid, String).ilike(f"%{search_by_multi_columns}%"))
         )
 
     if search_by_function_title is not None:
-        attributes_filters.append(
-            functions_table.c.title.ilike(f"%{search_by_function_title}%")
-        )
+        attributes_filters.append(functions_table.c.title.ilike(f"%{search_by_function_title}%"))
 
     return attributes_filters
 
@@ -184,7 +172,6 @@ async def list_functions(
     search_by_multi_columns: str | None = None,
     search_by_function_title: str | None = None,
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
-
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_api_access_rights(
             app,
@@ -217,13 +204,9 @@ async def list_functions(
         )
 
         # Get total count
-        total_count = await conn.scalar(
-            func.count().select().select_from(base_query.subquery())
-        )
+        total_count = await conn.scalar(func.count().select().select_from(base_query.subquery()))
         if total_count == 0:
-            return [], PageMetaInfoLimitOffset(
-                total=0, offset=pagination_offset, limit=pagination_limit, count=0
-            )
+            return [], PageMetaInfoLimitOffset(total=0, offset=pagination_offset, limit=pagination_limit, count=0)
 
         if order_by is None:
             order_by = DEFAULT_ORDER_BY
@@ -241,9 +224,7 @@ async def list_functions(
 
         function_rows = [
             RegisteredFunctionDB.model_validate(row)
-            async for row in await conn.stream(
-                base_query.offset(pagination_offset).limit(pagination_limit)
-            )
+            async for row in await conn.stream(base_query.offset(pagination_offset).limit(pagination_limit))
         ]
 
         return function_rows, PageMetaInfoLimitOffset(
@@ -275,9 +256,7 @@ async def delete_function(
         )
 
         # Check if the function exists
-        result = await transaction.execute(
-            functions_table.select().where(functions_table.c.uuid == function_id)
-        )
+        result = await transaction.execute(functions_table.select().where(functions_table.c.uuid == function_id))
         row = result.one_or_none()
 
         if row is None:
@@ -293,14 +272,10 @@ async def delete_function(
             jobs_count = jobs_result.scalar() or 0
 
             if jobs_count > 0:
-                raise FunctionHasJobsCannotDeleteError(
-                    function_id=function_id, jobs_count=jobs_count
-                )
+                raise FunctionHasJobsCannotDeleteError(function_id=function_id, jobs_count=jobs_count)
 
         # Proceed with deletion
-        await transaction.execute(
-            functions_table.delete().where(functions_table.c.uuid == function_id)
-        )
+        await transaction.execute(functions_table.delete().where(functions_table.c.uuid == function_id))
 
 
 async def update_function(

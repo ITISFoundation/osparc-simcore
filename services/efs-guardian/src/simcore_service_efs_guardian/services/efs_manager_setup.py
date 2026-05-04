@@ -18,9 +18,7 @@ _logger = logging.getLogger(__name__)
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        aws_efs_settings: AwsEfsSettings = (
-            app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
-        )
+        aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
 
         app.state.efs_manager = None
         app.state.efs_manager = efs_manager = await EfsManager.create(
@@ -48,7 +46,5 @@ def setup(app: FastAPI) -> None:
 
 def get_efs_manager(app: FastAPI) -> EfsManager:
     if not app.state.efs_manager:
-        raise ApplicationSetupError(
-            msg="Efs Manager is not available. Please check the configuration."
-        )
+        raise ApplicationSetupError(msg="Efs Manager is not available. Please check the configuration.")
     return cast(EfsManager, app.state.efs_manager)

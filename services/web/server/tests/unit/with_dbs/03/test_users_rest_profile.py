@@ -16,13 +16,11 @@ from unittest.mock import patch
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole
 from models_library.api_schemas_webserver.users import (
     MyProfileRestGet,
 )
 from models_library.groups import AccessRightsDict
-from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -37,9 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -99,7 +95,7 @@ async def test_access_update_profile(
 @pytest.fixture
 def product(client: TestClient, osparc_product_name: str) -> Product:
     assert client.app
-    from simcore_service_webserver.products import products_service
+    from simcore_service_webserver.products import products_service  # noqa: PLC0415
 
     return products_service.get_product(client.app, osparc_product_name)
 
@@ -150,17 +146,12 @@ async def test_get_profile_user_not_in_support_group(
     support_group_id = got_profile_groups["support"]["gid"]
 
     assert support_group_id == support_group_before_app_starts["gid"]
-    assert (
-        got_profile_groups["support"]["description"]
-        == support_group_before_app_starts["description"]
-    )
+    assert got_profile_groups["support"]["description"] == support_group_before_app_starts["description"]
     assert "accessRights" not in got_profile_groups["support"]
 
     # standard groups with at least read access
     sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
-    assert sorted_by_group_id(
-        got_profile_groups["organizations"]
-    ) == sorted_by_group_id(standard_groups)
+    assert sorted_by_group_id(got_profile_groups["organizations"]) == sorted_by_group_id(standard_groups)
 
     # user is NOT part of the support group
     all_standard_groups_ids = {g["gid"] for g in standard_groups}
@@ -185,7 +176,7 @@ async def test_get_profile_user_in_support_group(
     product: Product,
 ):
     assert client.app
-    from simcore_service_webserver.groups import _groups_repository
+    from simcore_service_webserver.groups import _groups_repository  # noqa: PLC0415
 
     # Now add user to support group with read-only access
     await _groups_repository.add_new_user_in_group(
@@ -227,10 +218,7 @@ async def test_get_profile_user_in_support_group(
     support_group_id = got_profile_groups["support"]["gid"]
 
     assert support_group_id == support_group_before_app_starts["gid"]
-    assert (
-        got_profile_groups["support"]["description"]
-        == support_group_before_app_starts["description"]
-    )
+    assert got_profile_groups["support"]["description"] == support_group_before_app_starts["description"]
     assert "accessRights" not in got_profile_groups["support"]
 
     # When user is part of support group, it should appear in standard groups
@@ -245,9 +233,7 @@ async def test_get_profile_user_in_support_group(
             "accessRights": {"read": True, "write": False, "delete": False},
         },
     ]
-    assert sorted_by_group_id(
-        got_profile_groups["organizations"]
-    ) == sorted_by_group_id(expected_standard_groups)
+    assert sorted_by_group_id(got_profile_groups["organizations"]) == sorted_by_group_id(expected_standard_groups)
     assert support_group_id in {g["gid"] for g in got_profile_groups["organizations"]}
 
 
@@ -397,7 +383,7 @@ async def test_get_profile_with_failing_db_connection(
     """
     Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160
 
-    A logged user fails to get profie because though authentication because
+    A logged user fails to get profile because though authentication because
 
     i.e. conn.execute(query) will raise psycopg2.OperationalError: server closed the connection unexpectedly
 
@@ -405,19 +391,17 @@ async def test_get_profile_with_failing_db_connection(
     - https://github.com/ITISFoundation/osparc-simcore/issues/880
     - https://github.com/ITISFoundation/osparc-simcore/pull/1160
     """
+    from psycopg2 import OperationalError  # noqa: PLC0415
+
     assert client.app
 
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
-    with patch.object(SAConnection, "execute") as mock_sa_execute, patch.object(
-        AsyncConnection, "execute"
-    ) as mock_async_execute:
-
+    with (
+        patch.object(AsyncConnection, "execute") as mock_async_execute,
+    ):
         # Emulates a database connection failure
-        mock_sa_execute.side_effect = OperationalError(
-            "MOCK: server closed the connection unexpectedly"
-        )
         mock_async_execute.side_effect = SQLAlchemyOperationalError(
             statement="MOCK statement",
             params=(),
@@ -438,11 +422,11 @@ async def user_pre_registration(
 ) -> AsyncIterator[int]:
     """Creates pre-registration data for the logged user and yields the pre-registration ID.
     Automatically cleans up after the test."""
-    from simcore_postgres_database.models.users_details import (
+    from simcore_postgres_database.models.users_details import (  # noqa: PLC0415
         users_pre_registration_details,
     )
-    from simcore_service_webserver.db.plugin import get_asyncpg_engine
-    from simcore_service_webserver.users._accounts_repository import (
+    from simcore_service_webserver.db.plugin import get_asyncpg_engine  # noqa: PLC0415
+    from simcore_service_webserver.users._accounts_repository import (  # noqa: PLC0415
         create_user_pre_registration,
     )
 
@@ -545,8 +529,8 @@ async def test_get_profile_user_without_pre_registration(
     """Test getting profile of a user that does not have pre-registration data"""
     assert client.app
 
-    from simcore_service_webserver.db.plugin import get_asyncpg_engine
-    from simcore_service_webserver.users._accounts_repository import (
+    from simcore_service_webserver.db.plugin import get_asyncpg_engine  # noqa: PLC0415
+    from simcore_service_webserver.users._accounts_repository import (  # noqa: PLC0415
         search_merged_pre_and_registered_users,
     )
 
@@ -560,11 +544,7 @@ async def test_get_profile_user_without_pre_registration(
     )
 
     # Filter for exact email match and pre-registration records
-    user_pre_regs = [
-        row
-        for row in pre_reg_users
-        if row.pre_email == logged_user["email"] and row.id is not None
-    ]
+    user_pre_regs = [row for row in pre_reg_users if row.pre_email == logged_user["email"] and row.id is not None]
     assert len(user_pre_regs) == 0, "User should not have pre-registration data"
 
     url = client.app.router["get_my_profile"].url_for()
@@ -600,9 +580,7 @@ async def test_get_profile_user_without_pre_registration(
 
     # Verify standard groups
     sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
-    assert sorted_by_group_id(
-        got_profile_groups["organizations"]
-    ) == sorted_by_group_id(standard_groups)
+    assert sorted_by_group_id(got_profile_groups["organizations"]) == sorted_by_group_id(standard_groups)
 
     # Verify preferences are working
     assert profile.preferences == await get_frontend_user_preferences_aggregation(

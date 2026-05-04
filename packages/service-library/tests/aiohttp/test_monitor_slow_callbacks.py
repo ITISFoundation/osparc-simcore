@@ -35,7 +35,7 @@ async def incidents_manager() -> dict:
     asyncio.ensure_future(_slow_function(0.3), loop=event_loop)  # noqa: RUF006
     asyncio.ensure_future(_slow_function(0.4), loop=event_loop)  # noqa: RUF006
 
-    incidents_pg = None  # aiopg_utils.monitor_pg_responsiveness.enable()
+    incidents_pg = None
     asyncio.ensure_future(_raising_function(), loop=event_loop)  # noqa: RUF006
 
     return {"slow_callback": incidents, "posgres_responsive": incidents_pg}

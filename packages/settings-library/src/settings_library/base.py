@@ -16,7 +16,7 @@ from pydantic_settings import (
 _logger = logging.getLogger(__name__)
 
 _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING: Final[str] = (
-    "{field_name} auto_default_from_env unresolved, defaulting to None"
+    "{field_name} auto_default_from_env unresolved due to {err}, defaulting to None"
 )
 
 
@@ -40,9 +40,7 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
         except ValidationError as err:
             if is_nullable(info):
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
-                msg = _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                    field_name=field_name
-                )
+                msg = _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(field_name=field_name, err=err)
                 _logger.warning(msg)
                 return None
             _logger.warning("Validation errors=%s", err.errors())
@@ -52,19 +50,16 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
 
 
 def _is_auto_default_from_env_enabled(field: FieldInfo) -> bool:
-    return bool(
-        field.json_schema_extra is not None
-        and field.json_schema_extra.get("auto_default_from_env", False)  # type: ignore[union-attr]
-    )
+    if field.json_schema_extra and isinstance(field.json_schema_extra, dict):
+        return bool(field.json_schema_extra.get("auto_default_from_env", False))
+    return False
 
 
 _MARKED_AS_UNSET: Final[dict] = {}
 
 
 class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
-    def __init__(
-        self, settings_cls: type[BaseSettings], env_settings: EnvSettingsSource
-    ):
+    def __init__(self, settings_cls: type[BaseSettings], env_settings: EnvSettingsSource):
         super().__init__(
             settings_cls,
             env_settings.case_sensitive,
@@ -82,9 +77,7 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
         value: Any,
         value_is_complex: bool,  # noqa: FBT001
     ) -> Any:
-        prepared_value = super().prepare_field_value(
-            field_name, field, value, value_is_complex
-        )
+        prepared_value = super().prepare_field_value(field_name, field, value, value_is_complex)
         if (
             _is_auto_default_from_env_enabled(field)
             and field.default_factory
@@ -137,7 +130,6 @@ class BaseCustomSettings(BaseSettings):
             auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
             is_not_literal = not is_literal(field)
-
             if is_not_literal and issubclass(field_type, BaseCustomSettings):
                 if auto_default_from_env:
                     # Builds a default factory `Field(default_factory=create_settings_from_env(field))`
@@ -174,7 +166,8 @@ class BaseCustomSettings(BaseSettings):
         return (
             init_settings,
             EnvSettingsWithAutoDefaultSource(
-                settings_cls, env_settings=env_settings  # type:ignore[arg-type]
+                settings_cls,
+                env_settings=env_settings,  # type:ignore[arg-type]
             ),
             dotenv_settings,
             file_secret_settings,

@@ -150,6 +150,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __pullingInputsLayout: null,
     __disclaimerTimer: null,
     __disclaimerText: null,
+    __sidecarFakeProgressTimer: null,
 
     getDefaultStartValues: function() {
       return {
@@ -194,7 +195,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
           value: report["actual_value"] / report["total"]
         }
       }
-      const percentage = parseFloat((report["actual_value"] / report["total"] * 100).toFixed(2))
+      const percentage = osparc.utils.Utils.safeToFixed(report["actual_value"] / report["total"] * 100, 2);
       return {
         progressLabel: `${percentage}%`,
         value: report["actual_value"] / report["total"]
@@ -282,7 +283,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applySidecarPulling: function(value) {
-      if (value.value > 0) {
+      if (value.value === 1) {
+        // on non autoscaled deployments, there is no cluster upscaling phase
+        // when the sidecar pulling is done, make sure the cluster upscaling is also set to 100%
         const defaultEndVals = this.getDefaultEndValues();
         this.setClusterUpScaling(defaultEndVals);
       }
@@ -339,6 +342,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingInputsLayout, value);
 
       this.__computeOverallProgress();
-    }
+    },
   }
 });

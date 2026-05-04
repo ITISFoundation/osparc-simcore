@@ -89,23 +89,23 @@
               }
             }
           },
-          "404": {
-            "description": "Project or pricing details not found"
+          "200": {
+            "description": "Pipeline is up-to-date, nothing was started"
           },
-          "406": {
-            "description": "Cluster not found"
+          "404": {
+            "description": "Project/cluster/pricing details not found"
           },
           "503": {
-            "description": "Service not available"
-          },
-          "422": {
-            "description": "Configuration error"
+            "description": "Service not available or configuration error"
           },
           "402": {
             "description": "Payment required"
           },
           "409": {
-            "description": "Project already started"
+            "description": "Project already started or contains deprecated services"
+          },
+          "422": {
+            "description": "Invalid computation request (e.g. missing collection_run_id)"
           }
         }
       }
@@ -135,9 +135,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -289,9 +288,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -358,9 +356,8 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
+              "exclusiveMinimum": 0,
+              "title": "User Id"
             }
           }
         ],
@@ -460,8 +457,7 @@
               "anyOf": [
                 {
                   "type": "integer",
-                  "exclusiveMinimum": true,
-                  "minimum": 0
+                  "exclusiveMinimum": 0
                 },
                 {
                   "type": "null"
@@ -1265,9 +1261,8 @@
         "properties": {
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -1376,9 +1371,8 @@
         "properties": {
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "force": {
             "anyOf": [
@@ -1432,8 +1426,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": true,
-                "minimum": 0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -1520,9 +1513,8 @@
         "properties": {
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           }
         },
         "type": "object",
@@ -1536,7 +1528,7 @@
           "Status": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Status2"
+                "$ref": "#/components/schemas/Status1"
               },
               {
                 "type": "null"
@@ -1590,7 +1582,7 @@
               }
             ],
             "title": "Oomkilled",
-            "description": "Whether this container has been killed because it ran out of memory.\n"
+            "description": "Whether a process within this container has been killed because it ran\nout of memory since the container was last started.\n"
           },
           "Dead": {
             "anyOf": [
@@ -1704,10 +1696,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "oneOf": [
@@ -1790,9 +1780,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -2099,6 +2088,45 @@
         ],
         "title": "DynamicSidecarStatus"
       },
+      "ErrorDict": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Loc"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "ctx": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ctx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ErrorDict",
+        "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
+      },
       "GetProjectInactivityResponse": {
         "properties": {
           "is_inactive": {
@@ -2114,6 +2142,10 @@
         "example": {
           "is_inactive": "false"
         }
+      },
+      "GroupID": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "HTTPValidationError": {
         "properties": {
@@ -2367,10 +2399,8 @@
               "anyOf": [
                 {
                   "type": "integer",
-                  "exclusiveMaximum": true,
-                  "exclusiveMinimum": true,
-                  "maximum": 65535,
-                  "minimum": 0
+                  "exclusiveMaximum": 65535,
+                  "exclusiveMinimum": 0
                 },
                 {
                   "oneOf": [
@@ -2416,9 +2446,7 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "integer",
-                  "exclusiveMinimum": true,
-                  "minimum": 0
+                  "$ref": "#/components/schemas/GroupID"
                 },
                 "type": "array"
               },
@@ -2505,6 +2533,21 @@
               }
             ],
             "description": "the node's lock state"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDict"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "error details when the node is in a FAILED state"
           }
         },
         "additionalProperties": false,
@@ -2654,21 +2697,18 @@
         "properties": {
           "pricing_plan_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Plan Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Plan Id"
           },
           "pricing_unit_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Unit Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Unit Id"
           },
           "pricing_unit_cost_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricing Unit Cost Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Pricing Unit Cost Id"
           }
         },
         "type": "object",
@@ -2787,9 +2827,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -2826,21 +2865,17 @@
           },
           "service_port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Service Port",
-            "description": "the service swarm internal port",
-            "maximum": 65535,
-            "minimum": 0
+            "description": "the service swarm internal port"
           },
           "published_port": {
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -2860,7 +2895,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {
@@ -3019,9 +3054,8 @@
           },
           "user_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "User Id"
           },
           "project_id": {
             "type": "string",
@@ -3051,17 +3085,20 @@
           },
           "port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Port",
             "description": "dynamic-sidecar port",
-            "default": 8000,
-            "maximum": 65535,
-            "minimum": 0
+            "default": 8000
           },
           "dynamic_sidecar": {
             "$ref": "#/components/schemas/DynamicSidecar",
             "description": "stores information fetched from the dynamic-sidecar"
+          },
+          "requires_data_mounting": {
+            "type": "boolean",
+            "title": "Requires Data Mounting",
+            "default": false
           },
           "dynamic_sidecar_network_name": {
             "type": "string",
@@ -3075,13 +3112,11 @@
           },
           "service_port": {
             "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "exclusiveMaximum": 65535,
+            "exclusiveMinimum": 0,
             "title": "Service Port",
             "description": "port where the service is exposed defined by the service; NOTE: temporary default because it will be changed once the service is started, this value is fetched from the service start spec",
-            "default": 65534,
-            "maximum": 65535,
-            "minimum": 0
+            "default": 65534
           },
           "service_resources": {
             "type": "object",
@@ -3112,10 +3147,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -3155,7 +3188,7 @@
                 "type": "null"
               }
             ],
-            "description": "contains harware information so we know on which hardware to run the service"
+            "description": "contains hardware information so we know on which hardware to run the service"
           },
           "product_name": {
             "anyOf": [
@@ -3277,12 +3310,27 @@
             ],
             "title": "Close Requested At",
             "description": "moment in which the process of stopping the service was requested"
+          },
+          "request_trace_carrier": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Trace Carrier",
+            "description": "W3C traceparent and tracestate headers from the originating request for span linking"
           }
         },
         "type": "object",
         "title": "ServicesInstrumentation"
       },
-      "Status2": {
+      "Status1": {
         "type": "string",
         "enum": [
           "created",
@@ -3293,7 +3341,7 @@
           "exited",
           "dead"
         ],
-        "title": "Status2",
+        "title": "Status1",
         "description": "String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"."
       },
       "TaskLogFileGet": {
@@ -3440,9 +3488,8 @@
         "properties": {
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "wallet_name": {
             "type": "string",
@@ -3472,9 +3519,8 @@
         "properties": {
           "wallet_id": {
             "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "exclusiveMinimum": 0,
+            "title": "Wallet Id"
           },
           "wallet_name": {
             "type": "string",
@@ -3499,10 +3545,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "oneOf": [
@@ -3523,10 +3567,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMaximum": true,
-                "exclusiveMinimum": true,
-                "maximum": 65535,
-                "minimum": 0
+                "exclusiveMaximum": 65535,
+                "exclusiveMinimum": 0
               },
               {
                 "oneOf": [

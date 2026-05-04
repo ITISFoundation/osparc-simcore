@@ -27,7 +27,7 @@ Run server passing a configuration file (see example under ``services/web/server
 ```bash
 python3 -m simcore_service_webserver --config path/to/config.yml
 
-# or altenatively, use script entrypoint
+# or alternatively, use script entrypoint
 simcore-service-webserver -c path/to/config.yml
 ```
 

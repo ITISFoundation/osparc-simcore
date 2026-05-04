@@ -62,23 +62,17 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
 async def stop_heart_beat_task(app: FastAPI) -> None:
     resource_tracking: ResourceTrackingState = app.state.resource_tracking
     if resource_tracking.heart_beat_task:
-        await cancel_wait_task(
-            resource_tracking.heart_beat_task, max_delay=_STOP_WORKER_TIMEOUT_S
-        )
+        await cancel_wait_task(resource_tracking.heart_beat_task, max_delay=_STOP_WORKER_TIMEOUT_S)
 
 
 async def _heart_beat_task(app: FastAPI):
     settings: ApplicationSettings = _get_settings(app)
     shared_store: SharedStore = app.state.shared_store
 
-    container_states: dict[str, ContainerState | None] = await get_container_states(
-        shared_store.container_names
-    )
+    container_states: dict[str, ContainerState | None] = await get_container_states(shared_store.container_names)
 
     if are_all_containers_in_expected_states(container_states.values()):
-        rut_message = RabbitResourceTrackingHeartbeatMessage(
-            service_run_id=settings.DY_SIDECAR_RUN_ID
-        )
+        rut_message = RabbitResourceTrackingHeartbeatMessage(service_run_id=settings.DY_SIDECAR_RUN_ID)
         dyn_message = DynamicServiceRunningMessage(
             project_id=settings.DY_SIDECAR_PROJECT_ID,
             node_id=settings.DY_SIDECAR_NODE_ID,
@@ -92,14 +86,10 @@ async def _heart_beat_task(app: FastAPI):
             ]
         )
     else:
-        _logger.info(
-            "heart beat message skipped: container_states=%s", container_states
-        )
+        _logger.info("heart beat message skipped: container_states=%s", container_states)
 
 
-async def send_service_stopped(
-    app: FastAPI, simcore_platform_status: SimcorePlatformStatus
-) -> None:
+async def send_service_stopped(app: FastAPI, simcore_platform_status: SimcorePlatformStatus) -> None:
     await stop_heart_beat_task(app)
 
     settings: ApplicationSettings = _get_settings(app)
@@ -110,9 +100,7 @@ async def send_service_stopped(
     await post_resource_tracking_message(app, message)
 
 
-async def send_service_started(
-    app: FastAPI, *, metrics_params: CreateServiceMetricsAdditionalParams
-) -> None:
+async def send_service_started(app: FastAPI, *, metrics_params: CreateServiceMetricsAdditionalParams) -> None:
     settings: ApplicationSettings = _get_settings(app)
 
     message = RabbitResourceTrackingStartedMessage(

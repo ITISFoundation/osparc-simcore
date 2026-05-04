@@ -17,9 +17,7 @@ from ..modules.outputs import (
 _logger = logging.getLogger(__name__)
 
 
-async def toggle_ports_io(
-    app: FastAPI, *, enable_outputs: bool, enable_inputs: bool
-) -> None:
+async def toggle_ports_io(app: FastAPI, *, enable_outputs: bool, enable_inputs: bool) -> None:
     if enable_outputs:
         await enable_event_propagation(app)
     else:
@@ -31,9 +29,7 @@ async def toggle_ports_io(
         disable_inputs_pulling(app)
 
 
-async def create_output_dirs(
-    app: FastAPI, *, outputs_labels: dict[str, ServiceOutput]
-) -> None:
+async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceOutput]) -> None:
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
     outputs_context: OutputsContext = app.state.outputs_context
 
@@ -49,23 +45,18 @@ async def create_output_dirs(
         else:
             non_file_port_keys.append(port_key)
 
-    _logger.debug(
-        "Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}"
-    )
+    _logger.debug("Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}")
     await outputs_context.set_file_type_port_keys(file_type_port_keys)
     outputs_context.non_file_type_port_keys = non_file_port_keys
 
 
-async def attach_container_to_network(
-    *, container_id: str, network_id: str, network_aliases: list[str]
-) -> None:
+async def attach_container_to_network(*, container_id: str, network_id: str, network_aliases: list[str]) -> None:
     async with docker_client() as docker:
         container_instance = await docker.containers.get(container_id)
         container_inspect = await container_instance.show()
 
         attached_network_ids: set[str] = {
-            x["NetworkID"]
-            for x in container_inspect["NetworkSettings"]["Networks"].values()
+            x["NetworkID"] for x in container_inspect["NetworkSettings"]["Networks"].values()
         }
 
         if network_id in attached_network_ids:
@@ -92,9 +83,7 @@ async def detach_container_from_network(*, container_id: str, network_id: str) -
         container_instance = await docker.containers.get(container_id)
         container_inspect = await container_instance.show()
 
-        attached_network_ids: set[str] = set(
-            container_inspect["NetworkSettings"]["Networks"].keys()
-        )
+        attached_network_ids: set[str] = set(container_inspect["NetworkSettings"]["Networks"].keys())
 
         if network_id not in attached_network_ids:
             _logger.debug(

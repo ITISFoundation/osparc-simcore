@@ -45,11 +45,17 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       }
       node.bind("errors", this, "toolTipText", {
         converter: errors => {
-          let errorsText = "";
+          const parts = [];
           if (errors) {
-            errors.forEach(error => errorsText += error["msg"] + "<br>");
+            errors.forEach(error => {
+              parts.push(qx.log.appender.Formatter.escapeHTML(error["msg"]));
+              const hint = osparc.data.model.Node.getRuntimeErrorHint(error);
+              if (hint) {
+                parts.push(hint);
+              }
+            });
           }
-          return errorsText;
+          return parts.length ? parts.join("<br>") : null;
         }
       });
     },
@@ -127,7 +133,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupFilePicker: function() {
-      osparc.service.StatusUI.setupFilePickerIcon(this.getNode(), this.getChildControl("icon"));
+      this.getChildControl("icon").exclude();
 
       this.getNode().bind("outputs", this.getChildControl("label"), "value", {
         converter: outputs => {

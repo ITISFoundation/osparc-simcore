@@ -14,9 +14,7 @@ from ..exceptions.backend_errors import SolverOutputNotFoundError
 log = logging.getLogger(__name__)
 
 # ResultsTypes are types used in the job outputs (see ArgumentType)
-ResultsTypes: TypeAlias = (
-    StrictFloat | StrictInt | StrictBool | BaseFileLink | str | list | None
-)
+ResultsTypes: TypeAlias = StrictFloat | StrictInt | StrictBool | BaseFileLink | str | list | None
 
 
 async def get_solver_output_results(
@@ -44,9 +42,7 @@ async def get_solver_output_results(
                 port.property_type,
                 port.value,
             )
-            assert (
-                TypeAdapter(ResultsTypes).validate_python(port.value) == port.value
-            )  # nosec
+            assert TypeAdapter(ResultsTypes).validate_python(port.value) == port.value  # nosec
 
             solver_output_results[port.key] = port.value
 

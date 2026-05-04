@@ -19,9 +19,7 @@ def read_reqs(reqs_path: Path) -> set[str]:
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-INSTALL_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_base.in")
-)  # WEAK requirements
+INSTALL_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_base.in"))  # WEAK requirements
 
 TEST_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
@@ -36,7 +34,7 @@ SETUP = {
     "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "author": "Sylvain Anderegg (sanderegg)",
     "description": "Core service library for simcore pydantic dask task models",
-    "python_requires": "~=3.11",
+    "python_requires": "~=3.13",
     "classifiers": [
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",

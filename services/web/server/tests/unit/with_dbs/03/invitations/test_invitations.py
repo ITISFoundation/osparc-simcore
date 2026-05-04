@@ -106,14 +106,11 @@ async def test_invalid_invitation_if_guest_is_already_registered_in_product(
         },
         app=client.app,
     ) as user:
-
         # valid because user is not assigned to product
         assert await validate_invitation_url(**kwargs) == fake_osparc_invitation
 
         # now use is in product
-        await auto_add_user_to_product_group(
-            client.app, user_id=user["id"], product_name=current_product.name
-        )
+        await auto_add_user_to_product_group(client.app, user_id=user["id"], product_name=current_product.name)
 
         # invitation is invalid now
         with pytest.raises(InvalidInvitationError):

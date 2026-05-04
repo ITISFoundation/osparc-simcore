@@ -6,115 +6,108 @@
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
-from aiopg.sa.result import ResultProxy, RowProxy
-from psycopg2.errors import ForeignKeyViolation
-from pytest_simcore.helpers.faker_factories import random_project, random_user
-from simcore_postgres_database.webserver_models import projects, users
+import sqlalchemy.exc
+from pytest_simcore.helpers.faker_factories import (
+    random_product,
+    random_project,
+    random_user,
+)
+from simcore_postgres_database.webserver_models import products, projects, users
 from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-async def engine(aiopg_engine: Engine):
-    async with aiopg_engine.acquire() as conn:
+async def engine(asyncpg_engine: AsyncEngine):
+    async with asyncpg_engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+
         await conn.execute(users.insert().values(**random_user(name="A")))
         await conn.execute(users.insert().values(**random_user()))
         await conn.execute(users.insert().values(**random_user()))
 
-        await conn.execute(projects.insert().values(**random_project(prj_owner=1)))
-        await conn.execute(projects.insert().values(**random_project(prj_owner=2)))
-        await conn.execute(projects.insert().values(**random_project(prj_owner=3)))
-        with pytest.raises(ForeignKeyViolation):
+        await conn.execute(products.insert().values(**random_product(name="test-product")))
+
+        await conn.execute(projects.insert().values(**random_project(prj_owner=1, product_name="test-product")))
+        await conn.execute(projects.insert().values(**random_project(prj_owner=2, product_name="test-product")))
+        await conn.execute(projects.insert().values(**random_project(prj_owner=3, product_name="test-product")))
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
             await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
 
-    return aiopg_engine
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            await conn.execute(projects.insert().values(**random_project(prj_owner=1, product_name="unknown-product")))
+
+    return asyncpg_engine
 
 
 @pytest.mark.skip(reason="sandbox for dev purposes")
-async def test_insert_user(engine):
-    async with engine.acquire() as conn:
-        # execute + scalar
-        res: ResultProxy = await conn.execute(
-            users.insert().values(**random_user(name="FOO"))
-        )
-        assert res.returns_rows
-        assert res.rowcount == 1
-        assert res.keys() == ("id",)
+async def test_insert_user(engine: AsyncEngine):
+    async with engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
 
-        user_id = await res.scalar()
+        # execute + scalar
+        result = await conn.execute(users.insert().values(**random_user(name="FOO")))
+        assert result.returns_rows
+        assert result.rowcount == 1
+        assert result.keys() == ("id",)
+
+        user_id = result.scalars().one()
         assert isinstance(user_id, int)
         assert user_id > 0
 
         # only scalar
-        user2_id: int = await conn.scalar(
-            users.insert().values(**random_user(name="BAR"))
-        )
+        user2_id = await conn.scalar(users.insert().values(**random_user(name="BAR")))
         assert isinstance(user2_id, int)
         assert user2_id == user_id + 1
 
         # query result
-        res: ResultProxy = await conn.execute(
-            users.select().where(users.c.id == user2_id)
-        )
-        assert res.returns_rows
-        assert res.rowcount == 1
-        assert len(res.keys()) > 1
+        result = await conn.execute(users.select().where(users.c.id == user2_id))
+        assert result.returns_rows
+        assert result.rowcount == 1
+        assert len(result.keys()) > 1
 
-        # DIFFERENT betwen .first() and fetchone()
+        user2 = result.mappings().first()
+        assert user2 is not None
 
-        user2: RowProxy = await res.first()
-        # Fetch the first row and then close the result set unconditionally.
-        assert res.closed
-
-        res: ResultProxy = await conn.execute(
-            users.select().where(users.c.id == user2_id)
-        )
-        user2a: RowProxy = await res.fetchone()
-        # If rows are present, the cursor remains open after this is called.
-        assert not res.closed
-        assert user2 == user2a
-
-        user2b: RowProxy = await res.fetchone()
-        # If no more rows, the cursor is automatically closed and None is returned
-        assert user2b is None
-        assert res.closed
+        result = await conn.execute(users.select().where(users.c.id == user2_id))
+        user2a = result.mappings().first()
+        assert user2a is not None
+        assert dict(user2) == dict(user2a)
 
 
-async def test_count_users(engine):
-    async with engine.acquire() as conn:
+async def test_count_users(engine: AsyncEngine):
+    async with engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+
         users_count = await conn.scalar(sa.select(func.count()).select_from(users))
         assert users_count == 3
 
-        users_count = await conn.scalar(
-            sa.select(sa.func.count()).where(users.c.name == "A")
-        )
+        users_count = await conn.scalar(sa.select(sa.func.count()).where(users.c.name == "A"))
         assert users_count == 1
 
-        users_count = await conn.scalar(
-            sa.select(sa.func.count()).where(users.c.name == "UNKNOWN NAME")
-        )
+        users_count = await conn.scalar(sa.select(sa.func.count()).where(users.c.name == "UNKNOWN NAME"))
         assert users_count == 0
 
 
 @pytest.mark.skip(reason="UNDER DEV")
-async def test_view(engine):
-    async with engine.acquire() as conn:
-        async for row in conn.execute(users.select()):
+async def test_view(engine: AsyncEngine):
+    async with engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+
+        result = await conn.execute(users.select())
+        for row in result.mappings():
             print(row)
 
-        async for row in conn.execute(projects.select()):
+        result = await conn.execute(projects.select())
+        for row in result.mappings():
             print(row)
 
-        #
         await conn.execute(users.delete().where(users.c.name == "A"))
 
-        res: ResultProxy = None
-        rows: list[RowProxy] = []
-
-        res = await conn.execute(users.select())
-        rows = await res.fetchall()
+        result = await conn.execute(users.select())
+        rows = result.mappings().all()
         assert len(rows) == 2
 
-        res = await conn.execute(projects.select())
-        rows = await res.fetchall()
+        result = await conn.execute(projects.select())
+        rows = result.mappings().all()
         assert len(rows) == 3

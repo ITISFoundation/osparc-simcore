@@ -91,16 +91,10 @@ def dask_subsystem_mock(
     dask_client_mock = mocker.patch("distributed.Client", autospec=True)
 
     # mock tasks get worker and state
-    dask_distributed_worker_mock = mocker.patch(
-        "simcore_service_dask_sidecar.utils.dask.get_worker", autospec=True
-    )
-    dask_task_mock = mocker.patch(
-        "simcore_service_dask_sidecar.utils.dask.TaskState", autospec=True
-    )
+    dask_distributed_worker_mock = mocker.patch("simcore_service_dask_sidecar.utils.dask.get_worker", autospec=True)
+    dask_task_mock = mocker.patch("simcore_service_dask_sidecar.utils.dask.TaskState", autospec=True)
     dask_task_mock.resource_restrictions = {}
-    dask_distributed_worker_mock.return_value.state.tasks.get.return_value = (
-        dask_task_mock
-    )
+    dask_distributed_worker_mock.return_value.state.tasks.get.return_value = dask_task_mock
 
     # ensure dask logger propagates
     logging.getLogger("distributed").propagate = True
@@ -109,9 +103,7 @@ def dask_subsystem_mock(
     dask_distributed_worker_events_mock = mocker.patch(
         "dask_task_models_library.container_tasks.events.get_worker", autospec=True
     )
-    dask_distributed_worker_events_mock.return_value.get_current_task.return_value = (
-        "pytest_jobid"
-    )
+    dask_distributed_worker_events_mock.return_value.get_current_task.return_value = "pytest_jobid"
     # mock dask event publishing
     mocker.patch(
         "simcore_service_dask_sidecar.utils.dask.is_current_task_aborted",
@@ -125,9 +117,7 @@ def dask_subsystem_mock(
     )
     mock_rabbitmq_client = create_rabbitmq_client("pytest_dask_sidecar_logs_publisher")
     mock_dask_rabbitmq_plugin.get_client.return_value = mock_rabbitmq_client
-    mock_dask_rabbitmq_plugin.publish_message_from_any_thread = (
-        mock_rabbitmq_client.publish
-    )
+    mock_dask_rabbitmq_plugin.publish_message_from_any_thread = mock_rabbitmq_client.publish
 
     mocker.patch(
         "simcore_service_dask_sidecar.utils.dask.get_rabbitmq_client",
@@ -180,7 +170,8 @@ class ServiceExampleParam:
 def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
     return [
         f"if [ -z ${{{variable_name}+x}} ];then echo {variable_name} does not exist && exit 9;fi",
-        f'if [ "${{{variable_name}}}" != "{variable_value}" ];then echo expected "{variable_value}" and found "${{{variable_name}}}" && exit 9;fi',
+        f'if [ "${{{variable_name}}}" != "{variable_value}" ];then echo expected '
+        f'"{variable_value}" and found "${{{variable_name}}}" && exit 9;fi',
     ]
 
 
@@ -207,9 +198,7 @@ def integration_version(request: pytest.FixtureRequest) -> version.Version:
 
 @pytest.fixture
 def additional_envs(faker: Faker) -> dict[EnvVarKey, str]:
-    return TypeAdapter(dict[EnvVarKey, str]).validate_python(
-        faker.pydict(allowed_types=(str,))
-    )
+    return TypeAdapter(dict[EnvVarKey, str]).validate_python(faker.pydict(allowed_types=(str,)))
 
 
 @pytest.fixture
@@ -223,7 +212,8 @@ def sleeper_task(
     task_owner: TaskOwner,
     s3_settings: S3Settings,
 ) -> ServiceExampleParam:
-    """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
+    """Creates a console task in an ubuntu distro that
+    checks for the expected files and error in case they are missing"""
     # let's have some input files on the file server
     NUM_FILES = 12
     list_of_files = [file_on_s3_server() for _ in range(NUM_FILES)]
@@ -235,10 +225,7 @@ def sleeper_task(
             "input_23": "a string input",
             "the_input_43": 15.0,
             "the_bool_input_54": False,
-            **{
-                f"some_file_input_{index + 1}": FileUrl(url=file)
-                for index, file in enumerate(list_of_files)
-            },
+            **{f"some_file_input_{index + 1}": FileUrl(url=file) for index, file in enumerate(list_of_files)},
             **{
                 f"some_file_input_with_mapping{index + 1}": FileUrl(
                     url=file,
@@ -248,7 +235,8 @@ def sleeper_task(
             },
         }
     )
-    # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
+    # check in the console that the expected files are present
+    # in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
     file_names = [file.path for file in list_of_files]
     list_of_bash_commands = [
         "echo User: $(id $(whoami))",
@@ -276,9 +264,7 @@ def sleeper_task(
         variable_value=f"{_DEFAULT_MAX_RESOURCES['RAM']}",
     )
     for env_name, env_value in additional_envs.items():
-        list_of_bash_commands += _bash_check_env_exist(
-            variable_name=env_name, variable_value=env_value
-        )
+        list_of_bash_commands += _bash_check_env_exist(variable_name=env_name, variable_value=env_value)
 
     # check input files
     list_of_bash_commands += [
@@ -286,15 +272,12 @@ def sleeper_task(
         for file in file_names
     ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
 
-    input_json_file_name = (
-        "inputs.json"
-        if integration_version > LEGACY_INTEGRATION_VERSION
-        else "input.json"
-    )
+    input_json_file_name = "inputs.json" if integration_version > LEGACY_INTEGRATION_VERSION else "input.json"
 
     list_of_bash_commands += [
         f"echo '{faker.text(max_nb_chars=17216)}'",
-        f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
+        f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || "
+        f"(echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
         f"sleep {randint(1, 4)}",  # noqa: S311
     ]
@@ -344,21 +327,19 @@ def sleeper_task(
         }
     )
     jsonized_outputs = json.dumps(jsonable_outputs).replace('"', '\\"')
-    output_json_file_name = (
-        "outputs.json"
-        if integration_version > LEGACY_INTEGRATION_VERSION
-        else "output.json"
-    )
+    output_json_file_name = "outputs.json" if integration_version > LEGACY_INTEGRATION_VERSION else "output.json"
 
     # check for the log file if legacy version
     list_of_bash_commands += [
         "echo $(ls -tlah ${LOG_FOLDER})",
-        f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''} -f ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} || (echo ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} file does {'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists && exit 1))",
+        f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''} "
+        f"-f ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} || "
+        f"(echo ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} file does "
+        f"{'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists && exit 1))",
     ]
     if integration_version == LEGACY_INTEGRATION_VERSION:
         list_of_bash_commands = [
-            f"{c} >> ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME}"
-            for c in list_of_bash_commands
+            f"{c} >> ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME}" for c in list_of_bash_commands
         ]
     # set the final command to generate the output file(s) (files and json output)
     list_of_bash_commands += [
@@ -371,9 +352,7 @@ def sleeper_task(
     log_file_url = s3_remote_file_url(file_path="log.dat")
 
     return ServiceExampleParam(
-        docker_basic_auth=DockerBasicAuth(
-            server_address="docker.io", username="pytest", password=SecretStr("")
-        ),
+        docker_basic_auth=DockerBasicAuth(server_address="docker.io", username="pytest", password=SecretStr("")),
         #
         # NOTE: we use sleeper because it defines a user
         # that can write in outputs and the
@@ -431,13 +410,10 @@ def sidecar_task(
         input_data: TaskInputData | None = None,
     ) -> ServiceExampleParam:
         return ServiceExampleParam(
-            docker_basic_auth=DockerBasicAuth(
-                server_address="docker.io", username="pytest", password=SecretStr("")
-            ),
+            docker_basic_auth=DockerBasicAuth(server_address="docker.io", username="pytest", password=SecretStr("")),
             service_key=service_key or "ubuntu",
             service_version=service_version or "latest",
-            command=command
-            or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
+            command=command or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
             input_data=input_data or TaskInputData.model_validate({}),
             output_data_keys=TaskOutputDataSchema.model_validate({}),
             log_file_url=s3_remote_file_url(file_path="log.dat"),
@@ -482,9 +458,7 @@ def task_with_file_to_key_map_in_input_data(
                 "the_input_43": 15.0,
                 "the_bool_input_54": False,
                 "some_file_input_with_mapping": FileUrl(
-                    url=TypeAdapter(AnyUrl).validate_python(
-                        "s3://myserver/some_file_url.zip"
-                    ),
+                    url=TypeAdapter(AnyUrl).validate_python("s3://myserver/some_file_url.zip"),
                     file_mapping="some_file_mapping",
                 ),
             }
@@ -501,9 +475,7 @@ def caplog_info_level(
 
 
 @pytest.fixture
-def mocked_get_image_labels(
-    integration_version: version.Version, mocker: MockerFixture
-) -> mock.Mock:
+def mocked_get_image_labels(integration_version: version.Version, mocker: MockerFixture) -> mock.Mock:
     assert "json_schema_extra" in ServiceMetaDataPublished.model_config
     labels: ImageLabels = TypeAdapter(ImageLabels).validate_python(
         ServiceMetaDataPublished.model_json_schema()["examples"][0],
@@ -553,9 +525,7 @@ async def log_rabbit_client_parser(
         loop.close()
 
     # Start the worker thread
-    worker = threading.Thread(
-        target=message_processor, kwargs={"a_mock": the_mock}, daemon=False
-    )
+    worker = threading.Thread(target=message_processor, kwargs={"a_mock": the_mock}, daemon=False)
     worker.start()
 
     # Wait for subscription to be ready
@@ -593,13 +563,11 @@ def test_run_computational_sidecar_real_fct(
 
     # check that the task produces expected logs
     for log in sleeper_task.expected_logs:
-        r = re.compile(
-            rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})"
-        )
+        r = re.compile(rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})")
         search_results = list(filter(r.search, caplog_info_level.messages))
-        assert (
-            len(search_results) > 0
-        ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
+        assert len(search_results) > 0, (
+            f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
+        )
     for log in sleeper_task.expected_logs:
         assert re.search(
             rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})",
@@ -622,18 +590,14 @@ def test_run_computational_sidecar_real_fct(
                 assert fp.details.get("size") > 0  # type: ignore
 
     # check the task has created a log file
-    with fsspec.open(
-        f"{sleeper_task.log_file_url}", mode="rt", **s3_storage_kwargs
-    ) as fp:
+    with fsspec.open(f"{sleeper_task.log_file_url}", mode="rt", **s3_storage_kwargs) as fp:
         saved_logs = fp.read()  # type: ignore
     assert saved_logs
     for log in sleeper_task.expected_logs:
         assert log in saved_logs
 
 
-@pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
-)
+@pytest.mark.parametrize("integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True)
 def test_run_multiple_computational_sidecar_dask(
     dask_client: distributed.Client,
     sleeper_task: ServiceExampleParam,
@@ -675,20 +639,15 @@ def _assert_parse_progresses_from_progress_event_handler(
 ) -> list[float]:
     assert progress_event_handler.called
     worker_progresses = [
-        TaskProgressEvent.model_validate_json(msg.args[0][1]).progress
-        for msg in progress_event_handler.call_args_list
+        TaskProgressEvent.model_validate_json(msg.args[0][1]).progress for msg in progress_event_handler.call_args_list
     ]
-    assert worker_progresses == sorted(
-        set(worker_progresses)
-    ), "ordering of progress values incorrectly sorted!"
+    assert worker_progresses == sorted(set(worker_progresses)), "ordering of progress values incorrectly sorted!"
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
     return worker_progresses
 
 
-@pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
-)
+@pytest.mark.parametrize("integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True)
 async def test_run_computational_sidecar_dask(
     app_environment: EnvVarsDict,
     sleeper_task: ServiceExampleParam,
@@ -715,7 +674,7 @@ async def test_run_computational_sidecar_dask(
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(30),
+        stop=stop_after_delay(60),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
@@ -724,9 +683,7 @@ async def test_run_computational_sidecar_dask(
             worker_logs = [
                 message
                 for msg in log_rabbit_client_parser.call_args_list
-                for message in LoggerRabbitMessage.model_validate_json(
-                    msg.args[0]
-                ).messages
+                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
             ]
 
             print(f"<-- we got {len(worker_logs)} lines of logs")
@@ -734,9 +691,9 @@ async def test_run_computational_sidecar_dask(
             for log in sleeper_task.expected_logs:
                 r = re.compile(rf"^({log}).*")
                 search_results = list(filter(r.search, worker_logs))
-                assert (
-                    len(search_results) > 0
-                ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
+                assert len(search_results) > 0, (
+                    f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
+                )
 
     # check that the task produce the expected data, not less not more
     assert isinstance(output_data, TaskOutputData)
@@ -778,7 +735,8 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
                 "-c",
                 " && ".join(
                     [
-                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; echo "progress: $i/{NUMBER_OF_LOGS}"; done '
+                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; '
+                        f'echo "progress: $i/{NUMBER_OF_LOGS}"; done '
                     ]
                 ),
             ],
@@ -794,7 +752,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(30),
+        stop=stop_after_delay(60),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
@@ -804,14 +762,10 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
             worker_logs = [
                 message
                 for msg in log_rabbit_client_parser.call_args_list
-                for message in LoggerRabbitMessage.model_validate_json(
-                    msg.args[0]
-                ).messages
+                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
             ]
             # check all the awaited logs are in there
-            filtered_worker_logs = filter(
-                lambda log: "This is iteration" in log, worker_logs
-            )
+            filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
             assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
     mocked_get_image_labels.assert_called()
 
@@ -951,14 +905,21 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     mocked_get_image_labels: mock.Mock,
 ):
     # Configure the task to exceed memory limit
-    allocation_size = TypeAdapter(ByteSize).validate_python("100MB")
+    # NOTE: We allocate memory gradually (1MB chunks in a loop) instead of a single
+    # large bytearray to ensure pages are actually committed and the kernel OOM killer
+    # fires reliably. A single large malloc can fail with MemoryError (exit code 1)
+    # instead of triggering OOMKilled, depending on the host's overcommit settings.
+    memory_limit = TypeAdapter(ByteSize).validate_python("50MiB")
     memory_exceeding_task = sidecar_task(
         service_key="python",
         service_version="3.11-slim",
         command=[
             "python",
             "-c",
-            f"print('Allocating memory {allocation_size} bytes', flush=True); a = bytearray({allocation_size}); print('Allocating memory {allocation_size} bytes DONE', flush=True); import time; time.sleep(10)",
+            "import sys; blocks = [];\n"
+            "while True:\n"
+            "    blocks.append(bytearray(1024*1024))\n"
+            "    print(f'Allocated {len(blocks)} MiB', flush=True)\n",
         ],
     )
 
@@ -967,7 +928,7 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     future = dask_client.submit(
         run_computational_sidecar,
         **memory_exceeding_task.sidecar_params(),
-        resources={"RAM": allocation_size * 3 // 4},  # set limit to 75% of allocation
+        resources={"RAM": memory_limit},
     )
     with pytest.raises(ServiceOutOfMemoryError):
         future.result()

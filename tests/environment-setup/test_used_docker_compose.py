@@ -37,19 +37,16 @@ def test_no_docker_compose_v1_in_ci_scripts(
     versions_in_workflow_files: set[str] = set()
     for workflow_file in ci_workflows_path.rglob("ci-*.yml"):
         versions_in_file: set[str] = {
-            found.group(1)
-            for found in re.finditer(
-                r"docker_compose: \[([\d\.]+)\]", workflow_file.read_text()
-            )
+            found.group(1) for found in re.finditer(r"docker_compose: \[([\d\.]+)\]", workflow_file.read_text())
         }
-        assert (
-            len(versions_in_file) == 0
-        ), f"found docker_compose versions in {workflow_file}, versions found {versions_in_file}, please check!"
+        assert len(versions_in_file) == 0, (
+            f"found docker_compose versions in {workflow_file}, versions found {versions_in_file}, please check!"
+        )
 
         versions_in_workflow_files.update(versions_in_file)
-    assert (
-        len(versions_in_workflow_files) == 0
-    ), f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('ci-*.yml'))}!"
+    assert len(versions_in_workflow_files) == 0, (
+        f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('ci-*.yml'))}!"
+    )
 
 
 def test_there_are_no_docker_compose_v1_anywhere(
@@ -98,16 +95,12 @@ compose_paths = filter(
 
 @pytest.fixture
 def docker_compose_config_bash(osparc_simcore_scripts_dir: Path) -> Path:
-    docker_compose_config_script = (
-        osparc_simcore_scripts_dir / "docker" / "docker-stack-config.bash"
-    )
+    docker_compose_config_script = osparc_simcore_scripts_dir / "docker" / "docker-stack-config.bash"
     assert docker_compose_config_script.exists()
     return docker_compose_config_script
 
 
-@pytest.mark.parametrize(
-    "compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir))
-)
+@pytest.mark.parametrize("compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir)))
 def test_validate_compose_file(
     compose_path: Path,
     env_devel_file: Path,
@@ -138,9 +131,7 @@ def test_validate_compose_file(
     assert "version" not in compose
 
 
-@pytest.mark.parametrize(
-    "compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir))
-)
+@pytest.mark.parametrize("compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir)))
 def test_network_names_contain_only_letters_and_underscores(
     compose_path: Path,
 ):
@@ -160,6 +151,6 @@ def test_network_names_contain_only_letters_and_underscores(
     networks = compose.get("networks", {})
 
     for network_name in networks:
-        assert re.match(
-            r"^[a-zA-Z_]+$", network_name
-        ), f"Network name '{network_name}' in {compose_path.relative_to(repo_dir)} contains invalid characters. Only letters and underscores are allowed."
+        assert re.match(r"^[a-zA-Z_]+$", network_name), (
+            f"Network name '{network_name}' in {compose_path.relative_to(repo_dir)} contains invalid characters. Only letters and underscores are allowed."
+        )

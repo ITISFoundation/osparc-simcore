@@ -11,7 +11,7 @@ class DaskTaskResources(TypedDict, total=False):
     # threads is a constant of 1 (enforced by static type checkers via Literal)
     # NOTE: a dask worker can take a task if it has a free thread,
     # regardless of its resources so we need to be careful when interpreting
-    # the resources, adding the thread here will mimick this
+    # the resources, adding the thread here will mimic this
     threads: Required[Literal[1]]
 
 
@@ -28,15 +28,11 @@ def get_ec2_instance_type_from_resources(
     return None
 
 
-_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
+_RAM_SAFE_MARGIN_RATIO: Final[float] = 0.1  # NOTE: machines always have less available RAM than advertised
 _CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 
-def estimate_dask_worker_resources_from_ec2_instance(
-    cpus: float, ram: int
-) -> tuple[float, int]:
+def estimate_dask_worker_resources_from_ec2_instance(cpus: float, ram: int) -> tuple[float, int]:
     """Estimates the resources available to a dask worker running in an EC2 instance,
     taking into account safe margins for CPU and RAM.
 

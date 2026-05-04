@@ -56,9 +56,7 @@ class SimcoreSSMAPI:
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
-        ec2_client = cast(
-            SSMClient, await exit_stack.enter_async_context(session_client)
-        )
+        ec2_client = cast(SSMClient, await exit_stack.enter_async_context(session_client))
         return cls(ec2_client, session, exit_stack)
 
     async def close(self) -> None:
@@ -74,9 +72,7 @@ class SimcoreSSMAPI:
     # a function to send a command via ssm
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
-    async def send_command(
-        self, instance_ids: Sequence[str], *, command: str, command_name: str
-    ) -> SSMCommand:
+    async def send_command(self, instance_ids: Sequence[str], *, command: str, command_name: str) -> SSMCommand:
         # NOTE: using Targets instead of instances as this is limited to 50 instances
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.send_command
         response = await self._client.send_command(
@@ -107,9 +103,7 @@ class SimcoreSSMAPI:
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
     async def get_command(self, instance_id: str, *, command_id: str) -> SSMCommand:
-        response = await self._client.get_command_invocation(
-            CommandId=command_id, InstanceId=instance_id
-        )
+        response = await self._client.get_command_invocation(CommandId=command_id, InstanceId=instance_id)
 
         return SSMCommand(
             name=response["Comment"],
@@ -123,18 +117,14 @@ class SimcoreSSMAPI:
                 else None
             ),
             finish_time=(
-                arrow.get(response["ExecutionEndDateTime"]).datetime
-                if response.get("ExecutionEndDateTime")
-                else None
+                arrow.get(response["ExecutionEndDateTime"]).datetime if response.get("ExecutionEndDateTime") else None
             ),
         )
 
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
     async def cancel_command(self, instance_id: str, *, command_id: str) -> None:
-        await self._client.cancel_command(
-            CommandId=command_id, InstanceIds=[instance_id]
-        )
+        await self._client.cancel_command(CommandId=command_id, InstanceIds=[instance_id])
 
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
@@ -149,21 +139,15 @@ class SimcoreSSMAPI:
                 }
             ],
         )
-        if response.get(
-            "InstanceInformationList"
-        ):  # NOTE: the key is actually NOT REQUIRED!
+        if response.get("InstanceInformationList"):  # NOTE: the key is actually NOT REQUIRED!
             assert len(response["InstanceInformationList"]) == 1  # nosec
             assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
-            return bool(
-                response["InstanceInformationList"][0]["PingStatus"] == "Online"
-            )
+            return bool(response["InstanceInformationList"][0]["PingStatus"] == "Online")
         return False
 
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
-    async def wait_for_has_instance_completed_cloud_init(
-        self, instance_id: str
-    ) -> bool:
+    async def wait_for_has_instance_completed_cloud_init(self, instance_id: str) -> bool:
         cloud_init_status_command = await self.send_command(
             (instance_id,),
             command=_CLOUD_INIT_STATUS_COMMAND,

@@ -24,7 +24,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 # This package can be used either as a 'library' or an isolated 'executable'.
 # In the first case, the requirements should not be strict in order to facilitate
 # integrating with other libraries. In the latter, strict requirements are desirable
-# since we value reproduciability and the code will be as in the tests.
+# since we value reproducibility and the code will be as in the tests.
 #
 # Depending on the case, we suggest two installation methods:
 #
@@ -34,13 +34,9 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 #       make install-prod
 #
 
-INSTALL_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_base.in") | {"simcore-models-library"}
-)
+INSTALL_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_base.in") | {"simcore-models-library"})
 
-TEST_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
-)  # STRICT requirements
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))  # STRICT requirements
 
 
 SETUP = {
@@ -64,7 +60,7 @@ SETUP = {
         "Framework :: Pytest",
     ],
     "long_description": Path(CURRENT_DIR / "README.md").read_text(),
-    "python_requires": "~=3.11",
+    "python_requires": "~=3.13",
     "license": "MIT license",
     "install_requires": INSTALL_REQUIREMENTS,
     "packages": find_packages(where="src"),

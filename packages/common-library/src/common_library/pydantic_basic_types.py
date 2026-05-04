@@ -50,10 +50,7 @@ class IDStr(ConstrainedStr):
         assert IDStr.max_length  # nosec
         if len(result) > IDStr.max_length:
             if IDStr.max_length > len(_ELLIPSIS_CHAR):
-                result = (
-                    result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip()
-                    + _ELLIPSIS_CHAR
-                )
+                result = result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip() + _ELLIPSIS_CHAR
             else:
                 result = _ELLIPSIS_CHAR[0] * IDStr.max_length
         if len(result) < IDStr.min_length:
@@ -76,4 +73,4 @@ class LongTruncatedStr(ConstrainedStr):
     # NOTE: Use to input e.g. descriptions or summaries
     # Analogous to ShortTruncatedStr
     strip_whitespace = True
-    curtail_length = 65536  # same as github descripton
+    curtail_length = 65536  # same as github description

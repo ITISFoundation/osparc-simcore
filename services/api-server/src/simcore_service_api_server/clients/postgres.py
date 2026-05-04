@@ -30,9 +30,7 @@ def setup_postgres(app: FastAPI):
                 settings=settings,
             )
 
-        await connect_to_db(
-            app, settings.API_SERVER_POSTGRES, application_name=APP_NAME
-        )
+        await connect_to_db(app, settings.API_SERVER_POSTGRES, application_name=APP_NAME)
         assert app.state.engine  # nosec
         assert isinstance(app.state.engine, AsyncEngine)  # nosec
 

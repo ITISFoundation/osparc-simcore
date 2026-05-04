@@ -5,6 +5,8 @@
 
 import json
 from collections.abc import Iterator
+from copy import deepcopy
+from typing import Any
 
 import pytest
 import simcore_postgres_database.cli
@@ -14,15 +16,17 @@ import sqlalchemy.exc
 from common_library.users_enums import UserRole
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools
-from pytest_simcore.helpers.faker_factories import random_project, random_user
+from pytest_simcore.helpers.faker_factories import (
+    random_product,
+    random_project,
+    random_user,
+)
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 
 
 @pytest.fixture
-def sync_engine(
-    sync_engine: sqlalchemy.engine.Engine, db_metadata: sa.MetaData
-) -> Iterator[sqlalchemy.engine.Engine]:
+def sync_engine(sync_engine: sqlalchemy.engine.Engine, db_metadata: sa.MetaData) -> Iterator[sqlalchemy.engine.Engine]:
     # EXTENDS sync_engine fixture to include cleanup and parare migration
 
     # cleanup tables
@@ -47,9 +51,28 @@ def sync_engine(
     postgres_tools.force_drop_all_tables(sync_engine)
 
 
-def test_populate_projects_to_jobs_during_migration(
-    sync_engine: sqlalchemy.engine.Engine, faker: Faker
-):
+def _prepare_data(
+    params: dict[str, Any],
+    excluded_columns: list[str] | None = None,
+    default_values: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    prepared_params = deepcopy(params)
+    for col, value in params.items():
+        if excluded_columns and col in excluded_columns:
+            prepared_params.pop(col, None)
+            continue
+
+        if isinstance(value, dict):
+            prepared_params[col] = json.dumps(value)
+
+    if default_values:
+        for col, value in default_values.items():
+            prepared_params.setdefault(col, value)
+
+    return prepared_params
+
+
+def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engine.Engine, faker: Faker):
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback
 
@@ -57,12 +80,9 @@ def test_populate_projects_to_jobs_during_migration(
     simcore_postgres_database.cli.upgrade.callback("8403acca8759")
 
     with sync_engine.connect() as conn:
-
         # Ensure the projects_to_jobs table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
-            conn.execute(
-                sa.select(sa.func.count()).select_from(projects_to_jobs)
-            ).scalar()
+            conn.execute(sa.select(sa.func.count()).select_from(projects_to_jobs)).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
 
         # INSERT data (emulates data in-place)
@@ -71,9 +91,7 @@ def test_populate_projects_to_jobs_during_migration(
             name="test_populate_projects_to_jobs_during_migration",
             role=UserRole.USER.value,
         )
-        user_data["password_hash"] = (
-            "password_hash_was_still_here_at_this_migration_commit"  # noqa: S105
-        )
+        user_data["password_hash"] = "password_hash_was_still_here_at_this_migration_commit"  # noqa: S105
 
         columns = list(user_data.keys())
         values_clause = ", ".join(f":{col}" for col in columns)
@@ -87,6 +105,32 @@ def test_populate_projects_to_jobs_during_migration(
         ).bindparams(**user_data)
         result = conn.execute(stmt)
         user_id = result.scalar()
+
+        # product
+        product_name = faker.word()
+        product_data = _prepare_data(
+            random_product(
+                name=product_name,
+            ),
+            excluded_columns=[
+                "base_url",
+                "support_standard_group_id",
+                "support_chatbot_user_id",
+            ],  # NOTE: columns not present at that migration time
+        )
+
+        columns = list(product_data.keys())
+        values_clause = ", ".join(f":{col}" for col in columns)
+        columns_clause = ", ".join(columns)
+        stmt = sa.text(
+            f"""
+            INSERT INTO products ({columns_clause})
+            VALUES ({values_clause})
+            RETURNING name
+            """  # noqa: S608
+        ).bindparams(**product_data)
+        result = conn.execute(stmt)
+        product_name = result.scalar()
 
         SPACES = " " * 3
         projects_data = [
@@ -132,17 +176,14 @@ def test_populate_projects_to_jobs_during_migration(
             "workspace_id": None,
         }
 
+        excluded_columns = ["product_name"]  # NOTE: columns not present at that migration time
+
         # NOTE: cannot use `projects` table directly here because it changes
         # throughout time
         for prj in projects_data:
-            for key, value in client_default_column_values.items():
-                prj.setdefault(key, value)
+            prj_prepared = _prepare_data(prj, excluded_columns, client_default_column_values)
 
-            for key, value in prj.items():
-                if isinstance(value, dict):
-                    prj[key] = json.dumps(value)
-
-            columns = list(prj.keys())
+            columns = list(prj_prepared.keys())
             values_clause = ", ".join(f":{col}" for col in columns)
             columns_clause = ", ".join(columns)
             stmt = sa.text(
@@ -150,7 +191,16 @@ def test_populate_projects_to_jobs_during_migration(
                 INSERT INTO projects ({columns_clause})
                 VALUES ({values_clause})
                 """  # noqa: S608
-            ).bindparams(**prj)
+            ).bindparams(**prj_prepared)
+            conn.execute(stmt)
+
+            # projects_to_products
+            stmt = sa.text(
+                """
+            INSERT INTO projects_to_products (project_uuid, product_name)
+            VALUES (:project_uuid, :product_name)
+                """
+            ).bindparams(project_uuid=prj_prepared["uuid"], product_name=product_name)
             conn.execute(stmt)
 
     # MIGRATE UPGRADE: this should populate
@@ -182,16 +232,9 @@ def test_populate_projects_to_jobs_during_migration(
                 projects.c.name,
                 projects.c.uuid,
                 projects_to_jobs.c.job_parent_resource_name,
-            ).select_from(
-                projects.join(
-                    projects_to_jobs, projects.c.uuid == projects_to_jobs.c.project_uuid
-                )
-            )
+            ).select_from(projects.join(projects_to_jobs, projects.c.uuid == projects_to_jobs.c.project_uuid))
         ).fetchall()
 
         # Print or assert the result as needed
         for project_name, project_uuid, job_parent_resource_name in result:
-            assert (
-                f"{job_parent_resource_name}/jobs/{project_uuid}"
-                == project_name.strip()
-            )
+            assert f"{job_parent_resource_name}/jobs/{project_uuid}" == project_name.strip()

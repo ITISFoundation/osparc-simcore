@@ -22,9 +22,7 @@ def test_enums_pre_validator():
     class ModelWithPreValidator(BaseModel):
         color: Enum1
 
-        _from_equivalent_enums = field_validator("color", mode="before")(
-            create_enums_pre_validator(Enum1)
-        )
+        _from_equivalent_enums = field_validator("color", mode="before")(create_enums_pre_validator(Enum1))
 
     # with Enum1
     model = Model(color=Enum1.RED)
@@ -46,9 +44,7 @@ def test_empty_str_to_none_pre_validator():
     class Model(BaseModel):
         nullable_message: str | None
 
-        _empty_is_none = field_validator("nullable_message", mode="before")(
-            empty_str_to_none_pre_validator
-        )
+        _empty_is_none = field_validator("nullable_message", mode="before")(empty_str_to_none_pre_validator)
 
     model = Model.model_validate({"nullable_message": None})
     assert model == Model.model_validate({"nullable_message": ""})
@@ -58,9 +54,7 @@ def test_none_to_empty_str_pre_validator():
     class Model(BaseModel):
         message: str
 
-        _none_is_empty = field_validator("message", mode="before")(
-            none_to_empty_str_pre_validator
-        )
+        _none_is_empty = field_validator("message", mode="before")(none_to_empty_str_pre_validator)
 
     model = Model.model_validate({"message": ""})
     assert model == Model.model_validate({"message": None})

@@ -19,9 +19,7 @@ def dask_workers_config() -> dict[str, Any]:
             "options": {
                 "nthreads": 2,
                 "resources": {"CPU": 2, "RAM": 48e9},
-                "preload": (
-                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
-                ),
+                "preload": ("dask_task_models_library.plugins.task_life_cycle_worker_plugin",),
             },
         },
         "gpu-worker": {
@@ -33,9 +31,7 @@ def dask_workers_config() -> dict[str, Any]:
                     "GPU": 1,
                     "RAM": 48e9,
                 },
-                "preload": (
-                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
-                ),
+                "preload": ("dask_task_models_library.plugins.task_life_cycle_worker_plugin",),
             },
         },
         "large-ram-worker": {
@@ -46,9 +42,7 @@ def dask_workers_config() -> dict[str, Any]:
                     "CPU": 8,
                     "RAM": 768e9,
                 },
-                "preload": (
-                    "dask_task_models_library.plugins.task_life_cycle_worker_plugin",
-                ),
+                "preload": ("dask_task_models_library.plugins.task_life_cycle_worker_plugin",),
             },
         },
     }
@@ -63,9 +57,7 @@ def dask_scheduler_config(
         "options": {
             "port": unused_tcp_port_factory(),
             "dashboard_address": f":{unused_tcp_port_factory()}",
-            "preload": (
-                "dask_task_models_library.plugins.task_life_cycle_scheduler_plugin",
-            ),
+            "preload": ("dask_task_models_library.plugins.task_life_cycle_scheduler_plugin",),
         },
     }
 
@@ -117,7 +109,5 @@ async def dask_local_cluster_without_workers(
 async def dask_spec_cluster_client(
     dask_spec_local_cluster: distributed.SpecCluster,
 ) -> AsyncIterator[distributed.Client]:
-    async with distributed.Client(
-        dask_spec_local_cluster.scheduler_address, asynchronous=True
-    ) as client:
+    async with distributed.Client(dask_spec_local_cluster.scheduler_address, asynchronous=True) as client:
         yield client

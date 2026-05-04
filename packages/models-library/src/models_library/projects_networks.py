@@ -17,8 +17,7 @@ DockerNetworkName: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_
 DockerNetworkAlias: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_NETWORK_RE)]
 
 
-class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
-    ...
+class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]): ...
 
 
 class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):

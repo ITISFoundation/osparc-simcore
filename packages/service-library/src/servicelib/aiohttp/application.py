@@ -25,7 +25,7 @@ _MAX_WAIT_TIME_TO_CANCEL_SECONDS = 5
 async def _cancel_all_fire_and_forget_registered_tasks(app: web.Application):
     registered_tasks = app[APP_FIRE_AND_FORGET_TASKS_KEY]
     for task in registered_tasks:
-        task.cancel()
+        task.cancel("application shutdown, cancelling fire-and-forget task")
 
     try:
         results = await asyncio.wait_for(
@@ -73,7 +73,7 @@ def create_safe_application(config: dict | None = None) -> web.Application:
     app.on_startup.append(_first_call_on_startup)
 
     # NOTE: Ensures client session context is run first (setup),
-    # then any further get_client_sesions will be correctly closed
+    # then any further get_client_sessions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
 
     app.on_cleanup.append(_first_call_on_cleanup)

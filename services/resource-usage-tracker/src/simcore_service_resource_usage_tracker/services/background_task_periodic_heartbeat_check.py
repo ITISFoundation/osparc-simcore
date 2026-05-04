@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.resource_tracker import (
     CreditTransactionStatus,
@@ -10,6 +11,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services_types import ServiceRunID
 from pydantic import NonNegativeInt, PositiveInt
+from servicelib.rabbitmq import RabbitMQRPCClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..core.settings import ApplicationSettings
@@ -20,6 +22,9 @@ from .modules.db import (
     licensed_items_checkouts_db,
     service_runs_db,
 )
+from .modules.rabbitmq import get_rabbitmq_rpc_client
+from .notifications import notify_user_of_credit_reimbursement
+from .products import get_product_email_info
 from .utils import compute_service_run_credit_costs, make_negative
 
 _logger = logging.getLogger(__name__)
@@ -29,6 +34,7 @@ _BATCH_SIZE = 20
 
 async def _check_service_heartbeat(
     db_engine: AsyncEngine,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
     base_start_timestamp: datetime,
     resource_usage_tracker_missed_heartbeat_interval: timedelta,
     resource_usage_tracker_missed_heartbeat_counter_fail: NonNegativeInt,
@@ -40,28 +46,22 @@ async def _check_service_heartbeat(
     # Check for missed heartbeats
     if (
         # Checks that in last 5 minutes we didn't get any heartbeat (ex. last heartbeat < current time - 5 minutes).
-        last_heartbeat_at
-        < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
-    ) and (  # Checks that last modified timestamp is older than some reasonable small threshold (this is here to prevent situation
-        # when RUT is restarting and in the beginning starts the `check_of_running_services_task`. If the task was already running in
-        # last 2 minutes it will not allow it to compute. )
-        modified_at
-        < base_start_timestamp - timedelta(minutes=2)
+        last_heartbeat_at < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
+    ) and (  # Checks that last modified timestamp is older than some reasonable small threshold
+        # (this is here to prevent situation when RUT is restarting and in the beginning
+        # starts the `check_of_running_services_task`. If the task was already running in
+        # last 2 minutes it will not allow it to compute.)
+        modified_at < base_start_timestamp - timedelta(minutes=2)
     ):
         missed_heartbeat_counter += 1
-        if (
-            missed_heartbeat_counter
-            > resource_usage_tracker_missed_heartbeat_counter_fail
-        ):
+        if missed_heartbeat_counter > resource_usage_tracker_missed_heartbeat_counter_fail:
             # Handle unhealthy service
             _logger.error(
                 "Service run id: %s is considered unhealthy and not billed. Counter %s",
                 service_run_id,
                 missed_heartbeat_counter,
             )
-            await _close_unhealthy_service(
-                db_engine, service_run_id, base_start_timestamp
-            )
+            await _close_unhealthy_service(db_engine, rabbitmq_rpc_client, service_run_id, base_start_timestamp)
         else:
             _logger.warning(
                 "Service run id: %s missed heartbeat. Counter %s",
@@ -78,10 +78,10 @@ async def _check_service_heartbeat(
 
 async def _close_unhealthy_service(
     db_engine: AsyncEngine,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
     service_run_id: ServiceRunID,
     base_start_timestamp: datetime,
 ):
-
     # 1. Close the service_run
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=service_run_id,
@@ -89,9 +89,7 @@ async def _close_unhealthy_service(
         service_run_status=ServiceRunStatus.ERROR,
         service_run_status_msg="Service missed more heartbeats. It's considered unhealthy.",
     )
-    running_service = await service_runs_db.update_service_run_stopped_at(
-        db_engine, data=update_service_run_stopped_at
-    )
+    running_service = await service_runs_db.update_service_run_stopped_at(db_engine, data=update_service_run_stopped_at)
 
     if running_service is None:
         _logger.error(
@@ -118,8 +116,7 @@ async def _close_unhealthy_service(
         # was caused by an issue on our side.
         _transaction_status = (
             CreditTransactionStatus.NOT_BILLED
-            if running_service.service_type
-            == ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
+            if running_service.service_type == ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
             else CreditTransactionStatus.BILLED
         )
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
@@ -149,9 +146,38 @@ async def _close_unhealthy_service(
                 )
 
     # 4. Release license seats in case some were checked out but not properly released.
-    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(
-        db_engine, service_run_id=service_run_id
-    )
+    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(db_engine, service_run_id=service_run_id)
+
+    # 5. Best-effort notification (after all critical DB/billing operations)
+    if (
+        running_service.wallet_id
+        and running_service.pricing_unit_cost is not None
+        and _transaction_status == CreditTransactionStatus.NOT_BILLED
+    ):
+        try:
+            product_email_info = await get_product_email_info(db_engine, product_name=running_service.product_name)
+            await notify_user_of_credit_reimbursement(
+                rabbitmq_rpc_client,
+                product_name=running_service.product_name,
+                product_display_name=product_email_info.display_name,
+                support_email=product_email_info.support_email,
+                user_email=running_service.user_email,
+                service_run_id=service_run_id,
+                reimbursed_credits=computed_credits,
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Notification of credit reimbursement failed",
+                    error=exc,
+                    error_context={
+                        "service_run_id": service_run_id,
+                        "user_email": running_service.user_email,
+                        "product_name": running_service.product_name,
+                    },
+                    tip="Check that the notifications service is running and the email template exists.",
+                )
+            )
 
 
 async def check_running_services(app: FastAPI) -> None:
@@ -160,14 +186,13 @@ async def check_running_services(app: FastAPI) -> None:
     # This check runs across all products
     app_settings: ApplicationSettings = app.state.settings
     _db_engine = app.state.engine
+    _rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
     base_start_timestamp = datetime.now(tz=UTC)
 
     # Get all current running services (across all products)
-    total_count: PositiveInt = (
-        await service_runs_db.total_service_runs_with_running_status_across_all_products(
-            _db_engine
-        )
+    total_count: PositiveInt = await service_runs_db.total_service_runs_with_running_status_across_all_products(
+        _db_engine
     )
 
     for offset in range(0, total_count, _BATCH_SIZE):
@@ -181,6 +206,7 @@ async def check_running_services(app: FastAPI) -> None:
             *(
                 _check_service_heartbeat(
                     db_engine=_db_engine,
+                    rabbitmq_rpc_client=_rabbitmq_rpc_client,
                     base_start_timestamp=base_start_timestamp,
                     resource_usage_tracker_missed_heartbeat_interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
                     resource_usage_tracker_missed_heartbeat_counter_fail=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL,

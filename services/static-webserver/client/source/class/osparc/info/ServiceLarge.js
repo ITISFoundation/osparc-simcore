@@ -227,7 +227,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         "THUMBNAIL": {
           view: this.__createThumbnail(),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit thumbnail")),
             callback: canIWrite ? this.__openThumbnailEditor : null,
             ctx: this,
           },
@@ -245,7 +245,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("Version"),
           view: this.__createDisplayVersion(),
           action: {
-            button: canIWrite ? osparc.utils.Utils.getEditButton() : null,
+            button: canIWrite ? osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit version")) : null,
             callback: this.__openVersionDisplayEditor,
             ctx: this,
           },
@@ -269,7 +269,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("Access"),
           view: this.__createAccessRights(),
           action: {
-            button: canIWrite ? osparc.utils.Utils.getEditButton() : null,
+            button: canIWrite ? osparc.utils.Utils.getEditButton(true, this.tr("Edit access rights")) : null,
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this,
           },
@@ -277,12 +277,24 @@ qx.Class.define("osparc.info.ServiceLarge", {
         "DESCRIPTION": {
           view: this.__createDescription(),
           action: {
-            button: osparc.utils.Utils.getEditButton(canIWrite),
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit description")),
             callback: canIWrite ? this.__openDescriptionEditor : null,
             ctx: this,
           },
         },
       };
+
+      if (canIWrite || this.getService()["releaseNotesUrl"]) {
+        infoLayout["RELEASE_NOTES_URL"] = {
+          label: this.tr("Release Notes"),
+          view: this.__createReleaseNotesUrl(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit release notes URL")),
+            callback: canIWrite ? this.__openReleaseNotesUrlEditor : null,
+            ctx: this,
+          },
+        };
+      }
 
       if (this.getNodeId()) {
         infoLayout["SERVICE_ID"] = {
@@ -406,6 +418,37 @@ qx.Class.define("osparc.info.ServiceLarge", {
         })
         .catch(err => console.error(err));
       return resourcesLayout;
+    },
+
+    __createReleaseNotesUrl: function() {
+      const url = this.getService()["releaseNotesUrl"];
+      if (url) {
+        const link = new osparc.ui.basic.LinkLabel(url, url).set({
+          font: "link-label-14",
+          toolTipText: url,
+          maxWidth: 220,
+          maxHeight: 20,
+          allowGrowX: false,
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        link.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap",
+        });
+        return link;
+      }
+      return new qx.ui.basic.Label(this.tr("Not set"));
+    },
+
+    __openReleaseNotesUrlEditor: function() {
+      const urlEditor = new osparc.widget.Renamer(this.getService()["releaseNotesUrl"] || "", null, this.tr("Edit Release Notes URL"));
+      urlEditor.addListener("labelChanged", e => {
+        urlEditor.close();
+        const newUrl = e.getData()["newLabel"];
+        this.__patchService("releaseNotesUrl", newUrl || null);
+      }, this);
+      urlEditor.center();
+      urlEditor.open();
     },
 
     __openIconEditor: function() {

@@ -6,6 +6,7 @@ from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.basic_types import SHA256Str
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -51,9 +52,7 @@ from .programs import ProgramKeyId
 JobID: TypeAlias = UUID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
-ArgumentTypes: TypeAlias = (
-    File | StrictFloat | StrictInt | StrictBool | str | list | None
-)
+ArgumentTypes: TypeAlias = File | StrictFloat | StrictInt | StrictBool | str | list | None
 KeywordArguments: TypeAlias = dict[str, ArgumentTypes]
 PositionalArguments: TypeAlias = list[ArgumentTypes]
 
@@ -103,9 +102,7 @@ class UserFileToProgramJob(ApiServerInputSchema):
         )
 
 
-assert set(UserFile.model_fields.keys()).issubset(
-    set(UserFileToProgramJob.model_fields.keys())
-)  # nosec
+assert set(UserFile.model_fields.keys()).issubset(set(UserFileToProgramJob.model_fields.keys()))  # nosec
 
 
 class JobInputs(BaseModel):
@@ -171,13 +168,11 @@ class JobOutputs(BaseModel):
 
 
 # Limits metadata values
-MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str
+type MetaValueType = StrictBool | StrictInt | StrictFloat | str
 
 
 class JobMetadataUpdate(BaseModel):
-    metadata: dict[str, MetaValueType] = Field(
-        default_factory=dict, description="Custom key-value map"
-    )
+    metadata: dict[str, MetaValueType] = Field(default_factory=dict, description="Custom key-value map")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -198,9 +193,7 @@ class JobMetadata(BaseModel):
     metadata: dict[str, MetaValueType] = Field(..., description="Custom key-value map")
 
     # Links
-    url: Annotated[HttpUrl, UriSchema()] | None = Field(
-        ..., description="Link to get this resource (self)"
-    )
+    url: Annotated[HttpUrl, UriSchema()] | None = Field(..., description="Link to get this resource (self)")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -241,14 +234,10 @@ class Job(BaseModel):
     created_at: datetime.datetime = Field(..., description="Job creation timestamp")
 
     # parent
-    runner_name: RelativeResourceName = Field(
-        ..., description="Runner that executes job"
-    )
+    runner_name: RelativeResourceName = Field(..., description="Runner that executes job")
 
     # Get links to other resources
-    url: Annotated[HttpUrl, UriSchema()] | None = Field(
-        ..., description="Link to get this resource (self)"
-    )
+    url: Annotated[HttpUrl, UriSchema()] | None = Field(..., description="Link to get this resource (self)")
     runner_url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to the solver's job (parent collection)"
     )
@@ -293,18 +282,14 @@ class Job(BaseModel):
         )
 
     @classmethod
-    def create_job_from_solver_or_program(
-        cls, *, solver_or_program_name: str, inputs: JobInputs
-    ):
+    def create_job_from_solver_or_program(cls, *, solver_or_program_name: str, inputs: JobInputs):
         return Job.create_now(
             parent_name=solver_or_program_name,
             inputs_checksum=inputs.compute_checksum(),
         )
 
     @classmethod
-    def compose_resource_name(
-        cls, parent_name: RelativeResourceName, job_id: UUID
-    ) -> RelativeResourceName:
+    def compose_resource_name(cls, parent_name: RelativeResourceName, job_id: UUID) -> RelativeResourceName:
         assert "jobs" not in parent_name  # nosec
 
         # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
@@ -322,7 +307,7 @@ class Job(BaseModel):
         return self.name
 
 
-PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
+type PercentageInt = Annotated[int, Field(ge=0, le=100)]
 
 
 class JobStatus(BaseModel):
@@ -335,9 +320,7 @@ class JobStatus(BaseModel):
     progress: PercentageInt = Field(default=0)
 
     # Timestamps on states
-    submitted_at: datetime.datetime = Field(
-        ..., description="Last modification timestamp of the solver job"
-    )
+    submitted_at: datetime.datetime = Field(..., description="Last modification timestamp of the solver job")
     started_at: datetime.datetime | None = Field(
         None,
         description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
@@ -345,6 +328,11 @@ class JobStatus(BaseModel):
     stopped_at: datetime.datetime | None = Field(
         None,
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
+    )
+
+    errors: list[ErrorDict] | None = Field(
+        None,
+        description="Error details when the job state is FAILED",
     )
 
     model_config = ConfigDict(
@@ -356,6 +344,7 @@ class JobStatus(BaseModel):
                 "submitted_at": "2021-04-01 07:15:54.631007",
                 "started_at": "2021-04-01 07:16:43.670610",
                 "stopped_at": None,
+                "errors": None,
             }
         }
     )

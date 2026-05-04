@@ -11,12 +11,14 @@ qx.Class.define("osparc.ui.window.Window", {
     this.base(arguments, caption, icon);
 
     this.getChildControl("captionbar").set({
-      padding: 8
+      padding: 8,
+      cursor: "move",
     });
 
     this.getChildControl("title").set({
       font: "text-14",
-      rich: true
+      rich: true,
+      cursor: "move",
     });
 
     this._getLayout().setSeparator("separator-vertical");
@@ -26,32 +28,18 @@ qx.Class.define("osparc.ui.window.Window", {
       backgroundColor: "window-popup-background"
     });
 
-    // Enable closing when clicking outside the modal
-    this.addListener("appear", () => {
-      const thisDom = this.getContentElement().getDomElement();
-      const thisZIndex = parseInt(thisDom.style.zIndex);
-      const modalFrame = qx.dom.Hierarchy.getSiblings(thisDom).find(el =>
-        // Hack: Qx inserts the modalFrame as a sibling of the window with a -1 zIndex
-        parseInt(el.style.zIndex) === thisZIndex - 1
-      );
-      if (modalFrame) {
-        modalFrame.addEventListener("click", () => {
-          if (
-            this.isClickAwayClose() &&
-            parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1
-          ) {
-            this.close();
-          }
-        });
-        modalFrame.style.backgroundColor = "black";
-        modalFrame.style.opacity = 0.4;
-      }
-    });
+    this.addListener("appear", () => this.__afterAppear(), this);
+    this.addListener("move", () => this.__windowMoved(), this);
+    // make the window smaller if it doesn't fit the screen
+    this.__boundKeepWithinScreen = this.__keepWithinScreen.bind(this);
+    window.addEventListener("resize", this.__boundKeepWithinScreen);
 
-    const commandEsc = new qx.ui.command.Command("Esc");
-    commandEsc.addListener("execute", () => {
-      this.fireEvent("cancel");
-      this.close();
+    this.__commandEsc = new qx.ui.command.Command("Esc");
+    this.__commandEsc.addListener("execute", () => {
+      if (this.isEscapeClose()) {
+        this.fireEvent("cancel");
+        this.close();
+      }
     });
   },
 
@@ -59,7 +47,18 @@ qx.Class.define("osparc.ui.window.Window", {
     clickAwayClose: {
       check: "Boolean",
       init: false
-    }
+    },
+
+    escapeClose: {
+      check: "Boolean",
+      init: true
+    },
+
+    // it will be used to center the window within that element
+    centerOnElement: {
+      init: null,
+      nullable: true,
+    },
   },
 
   events: {
@@ -95,11 +94,16 @@ qx.Class.define("osparc.ui.window.Window", {
   },
 
   members: {
+    __commandEsc: null,
     __recenter: null,
 
     // overridden
     center: function() {
       this.base(arguments);
+
+      if (this.getCenterOnElement()) {
+        this.__centerWithinElement(this.getCenterOnElement());
+      }
 
       this.__recenter = true;
     },
@@ -130,6 +134,144 @@ qx.Class.define("osparc.ui.window.Window", {
         const props = this.getLayoutProperties();
         this.moveTo(props.left, Math.max(props.top-up, 0));
       }, 2);
+    },
+
+    __afterAppear: function() {
+      // Enable closing when clicking outside the modal
+      const thisDom = this.getContentElement().getDomElement();
+      const thisZIndex = parseInt(thisDom.style.zIndex);
+      const modalFrame = qx.dom.Hierarchy.getSiblings(thisDom).find(el =>
+        // Hack: Qx inserts the modalFrame as a sibling of the window with a -1 zIndex
+        parseInt(el.style.zIndex) === thisZIndex - 1
+      );
+      if (modalFrame) {
+        modalFrame.addEventListener("click", () => {
+          if (
+            this.isClickAwayClose() &&
+            parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1
+          ) {
+            this.close();
+          }
+        });
+        modalFrame.style.backgroundColor = "black";
+        modalFrame.style.opacity = 0.4;
+      }
+
+      this.__keepWithinScreen();
+    },
+
+    __centerWithinElement: function(element) {
+      if (!element || !element.getContentElement()) {
+        return;
+      }
+
+      const domElement = element.getContentElement().getDomElement();
+      const elemRect = domElement.getBoundingClientRect();
+      const winSizeHint = this.getSizeHint();
+      const left = parseInt(elemRect.left + (elemRect.width - winSizeHint.width) / 2);
+      const top = parseInt(elemRect.top + (elemRect.height - winSizeHint.height) / 2);
+      this.moveTo(left, top);
+    },
+
+    __windowMoved: function() {
+      // enforce it stays within the screen
+      const bounds = this.getBounds() || this.getSizeHint(); // current window position/size
+      const root = qx.core.Init.getApplication().getRoot();
+      const rootBounds = root.getBounds(); // available screen area
+      if (!bounds || !rootBounds) {
+        return;
+      }
+
+      let {
+        left,
+        top,
+      } = bounds;
+
+      // Clamp horizontal position
+      left = Math.min(
+        Math.max(left, 0),
+        rootBounds.width - bounds.width
+      );
+
+      // Clamp vertical position
+      top = Math.min(
+        Math.max(top, 0),
+        rootBounds.height - bounds.height
+      );
+
+      // Only apply correction if needed
+      if (left !== bounds.left || top !== bounds.top) {
+        this.moveTo(left, top);
+      }
+    },
+
+    __keepWithinScreen: function() {
+      // ensure it fits within the screen
+      const bounds = this.getBounds() || this.getSizeHint(); // current window position/size
+      const root = qx.core.Init.getApplication().getRoot();
+      const rootBounds = root.getBounds(); // available screen area
+      if (!bounds || !rootBounds) {
+        return;
+      }
+
+      let {
+        width,
+        height,
+        left,
+        top
+      } = bounds;
+
+      let resized = false;
+
+      // Adjust width if needed
+      if (width > rootBounds.width) {
+        width = rootBounds.width;
+        resized = true;
+      }
+
+      // Adjust height if needed
+      if (height > rootBounds.height) {
+        height = rootBounds.height;
+        resized = true;
+      }
+
+      // Clamp horizontal position
+      left = Math.min(
+        Math.max(left, 0),
+        rootBounds.width - width
+      );
+
+      // Clamp vertical position
+      top = Math.min(
+        Math.max(top, 0),
+        rootBounds.height - height
+      );
+
+      // Apply changes if any
+      if (resized) {
+        if (width < this.getMinWidth()) {
+          this.setMinWidth(width);
+        }
+        if (height < this.getMinHeight()) {
+          this.setMinHeight(height);
+        }
+        this.set({
+          width,
+          height
+        });
+        // check left and top are numbers, they could be NaN
+        if (!isNaN(left) && !isNaN(top)) {
+          this.moveTo(left, top);
+        }
+      }
+    },
+  },
+
+  destruct: function() {
+    window.removeEventListener("resize", this.__boundKeepWithinScreen);
+    if (this.__commandEsc) {
+      this.__commandEsc.dispose();
+      this.__commandEsc = null;
     }
-  }
+  },
 });

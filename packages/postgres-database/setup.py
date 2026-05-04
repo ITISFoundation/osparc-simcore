@@ -24,9 +24,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 INSTALL_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_base.in"))
 
 # STRICT requirements
-MIGRATION_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_migration.in")
-)
+MIGRATION_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_migration.in"))
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 

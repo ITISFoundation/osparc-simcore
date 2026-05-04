@@ -144,9 +144,7 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
 ) -> list[PricingPlanToServiceGet]:
-    output: list[
-        PricingPlanToServiceGet
-    ] = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+    output: list[PricingPlanToServiceGet] = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
         db_engine=app.state.engine,

@@ -4,11 +4,13 @@ import sqlalchemy as sa
 
 from ._common import (
     NUMERIC_KWARGS,
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
 )
 from .base import metadata
+from .wallets import wallets
 
 
 @unique
@@ -38,7 +40,7 @@ payments_transactions = sa.Table(
         sa.String,
         nullable=False,
         primary_key=True,
-        doc="Identifer of the payment provided by payment gateway",
+        doc="Identifier of the payment provided by payment gateway",
     ),
     sa.Column(
         "price_dollars",
@@ -54,18 +56,30 @@ payments_transactions = sa.Table(
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="Amount of credits that will be added to the wallet_id "
-        "once the transaction completes successfuly."
+        "once the transaction completes successfully."
         "E.g. 1234.12 credits",
     ),
     sa.Column(
         "product_name",
         sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_payments_transactions_to_products_name",
+        ),
         nullable=False,
         doc="Product name from which the transaction took place",
     ),
     sa.Column(
         "user_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            "users.id",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_payments_transactions_to_user_id",
+        ),
         nullable=False,
         doc="User unique identifier",
         index=True,
@@ -79,6 +93,12 @@ payments_transactions = sa.Table(
     sa.Column(
         "wallet_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            wallets.c.wallet_id,
+            name="fk_payments_transactions_to_wallet_id",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
         nullable=False,
         doc="Wallet identifier owned by the user",
         index=True,
@@ -114,7 +134,7 @@ payments_transactions = sa.Table(
         "initiated_at",
         sa.DateTime(timezone=True),
         nullable=False,
-        doc="Timestamps when transaction initated (successful respose to /init)",
+        doc="Timestamps when transaction initiated (successful response to /init)",
     ),
     sa.Column(
         "completed_at",

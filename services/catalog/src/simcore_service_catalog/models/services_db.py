@@ -43,6 +43,9 @@ class ServiceMetaDataDBGet(BaseModel):
     classifiers: list[str]
     quality: dict[str, Any]
 
+    # release notes
+    release_notes_url: str | None
+
     # lifecycle
     created: datetime
     modified: datetime
@@ -65,31 +68,24 @@ class ServiceMetaDataDBGet(BaseModel):
                     "classifiers": ["foo", "bar"],
                     "quality": {
                         "enabled": True,
-                        "tsr_target": {
-                            f"r{n:02d}": {"level": 4, "references": ""}
-                            for n in range(1, 11)
-                        },
+                        "tsr_target": {f"r{n:02d}": {"level": 4, "references": ""} for n in range(1, 11)},
                         "annotations": {
                             "vandv": "",
                             "limitations": "",
                             "certificationLink": "",
                             "certificationStatus": "Uncertified",
                         },
-                        "tsr_current": {
-                            f"r{n:02d}": {"level": 0, "references": ""}
-                            for n in range(1, 11)
-                        },
+                        "tsr_current": {f"r{n:02d}": {"level": 0, "references": ""} for n in range(1, 11)},
                     },
                     "created": "2021-01-18 12:46:57.7315",
                     "modified": "2021-01-19 12:45:00",
                     "deprecated": "2099-01-19 12:45:00",
+                    "release_notes_url": "https://example.com/services/reading/release-notes",
                 }
             }
         )
 
-    model_config = ConfigDict(
-        from_attributes=True, json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(from_attributes=True, json_schema_extra=_update_json_schema_extra)
 
 
 def _httpurl_to_str(value: HttpUrl | str | None) -> str | None:
@@ -118,6 +114,9 @@ class ServiceMetaDataDBCreate(BaseModel):
     classifiers: Annotated[list[str], Field(default_factory=list)] = DEFAULT_FACTORY
     quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
 
+    # release notes
+    release_notes_url: str | None = None
+
     # lifecycle
     deprecated: datetime | None = None
 
@@ -140,7 +139,7 @@ class ServiceMetaDataDBCreate(BaseModel):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     _prevent_empty_strings_in_nullable_string_cols = field_validator(
-        "icon", "thumbnail", "version_display", mode="before"
+        "icon", "thumbnail", "version_display", "release_notes_url", mode="before"
     )(empty_str_to_none_pre_validator)
 
 
@@ -160,6 +159,9 @@ class ServiceMetaDataDBPatch(BaseModel):
     classifiers: Annotated[list[str], Field(default_factory=list)] = DEFAULT_FACTORY
     quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
 
+    # release notes
+    release_notes_url: str | None = None
+
     # lifecycle
     deprecated: datetime | None = None
 
@@ -173,6 +175,7 @@ class ServiceMetaDataDBPatch(BaseModel):
                     "thumbnail": "https://picsum.photos/200",
                     "icon": "https://picsum.photos/50",
                     "version_display": "S4L X",
+                    "release_notes_url": "https://example.com/release-notes",
                 }
             }
         )
@@ -180,7 +183,7 @@ class ServiceMetaDataDBPatch(BaseModel):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     _prevent_empty_strings_in_nullable_string_cols = field_validator(
-        "icon", "thumbnail", "version_display", mode="before"
+        "icon", "thumbnail", "version_display", "release_notes_url", mode="before"
     )(empty_str_to_none_pre_validator)
 
 
@@ -207,6 +210,8 @@ class ServiceWithHistoryDBGet(BaseModel):
     # tags
     classifiers: list[str]
     quality: dict[str, Any]
+    # release notes
+    release_notes_url: str | None
     # lifetime
     created: datetime
     modified: datetime
@@ -243,9 +248,7 @@ class ServiceAccessRightsDB(ServiceKeyVersion, ServiceGroupAccessRights):
             }
         )
 
-    model_config = ConfigDict(
-        from_attributes=True, json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(from_attributes=True, json_schema_extra=_update_json_schema_extra)
 
 
 class ServiceDBFilters(Filters):

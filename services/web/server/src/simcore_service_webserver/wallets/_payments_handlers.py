@@ -115,9 +115,7 @@ async def _list_all_payments(request: web.Request):
     """
 
     req_ctx = WalletsRequestContext.model_validate(request)
-    query_params: PageQueryParameters = parse_request_query_parameters_as(
-        PageQueryParameters, request
-    )
+    query_params: PageQueryParameters = parse_request_query_parameters_as(PageQueryParameters, request)
 
     payments, total_number_of_items = await list_user_payments_page(
         request.app,
@@ -215,22 +213,20 @@ async def _init_creation_of_payment_method(request: web.Request):
     with log_context(
         _logger,
         logging.INFO,
-        "Initated the creation of a payment-method for wallet %s",
+        "Initiated the creation of a payment-method for wallet %s",
         f"{path_params.wallet_id=}",
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        initiated: PaymentMethodInitiated = (
-            await init_creation_of_wallet_payment_method(
-                request.app,
-                user_id=req_ctx.user_id,
-                wallet_id=path_params.wallet_id,
-                product_name=req_ctx.product_name,
-            )
+        initiated: PaymentMethodInitiated = await init_creation_of_wallet_payment_method(
+            request.app,
+            user_id=req_ctx.user_id,
+            wallet_id=path_params.wallet_id,
+            product_name=req_ctx.product_name,
         )
 
         # NOTE: the request has been accepted to create a payment-method
-        # but it will not be completed until acked (init-promtp-ack flow)
+        # but it will not be completed until acked (init-prompt-ack flow)
         return envelope_json_response(initiated, web.HTTPAccepted)
 
 
@@ -376,14 +372,10 @@ async def _pay_with_payment_method(request: web.Request):
         async def _notify_payment_completed_after_response(app, user_id, payment):
             # NOTE: A small delay to send notification just after the response
             await asyncio.sleep(_TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH)
-            return (
-                await notify_payment_completed(app, user_id=user_id, payment=payment),
-            )
+            return (await notify_payment_completed(app, user_id=user_id, payment=payment),)
 
         fire_and_forget_task(
-            _notify_payment_completed_after_response(
-                request.app, user_id=req_ctx.user_id, payment=payment
-            ),
+            _notify_payment_completed_after_response(request.app, user_id=req_ctx.user_id, payment=payment),
             task_suffix_name=f"{__name__}._pay_with_payment_method",
             fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
@@ -448,11 +440,11 @@ async def _replace_wallet_autorecharge(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    udpated = await replace_wallet_payment_autorecharge(
+    updated = await replace_wallet_payment_autorecharge(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
         new=body_params,
     )
-    return envelope_json_response(GetWalletAutoRecharge.model_validate(udpated))
+    return envelope_json_response(GetWalletAutoRecharge.model_validate(updated))

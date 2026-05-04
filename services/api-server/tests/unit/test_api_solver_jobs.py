@@ -63,9 +63,7 @@ def _get_inspect_job_side_effect(job_id: str) -> SideEffectCallback:
     return _inspect_job_side_effect
 
 
-@pytest.mark.parametrize(
-    "capture", ["get_job_wallet_found.json", "get_job_wallet_not_found.json"]
-)
+@pytest.mark.parametrize("capture", ["get_job_wallet_found.json", "get_job_wallet_not_found.json"])
 async def test_get_solver_job_wallet(
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
@@ -127,7 +125,7 @@ async def test_get_solver_job_wallet(
         assert body.get("data") is None
         assert body.get("errors") is not None
     else:
-        pytest.fail(reason=f"Uknown {capture=}")
+        pytest.fail(reason=f"Unknown {capture=}")
 
 
 @pytest.mark.parametrize(
@@ -221,6 +219,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
     faker: Faker,
     capture_name: str,
     expected_status_code: int,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
@@ -295,6 +294,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
@@ -330,6 +330,7 @@ async def test_start_solver_job_conflict(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/itis/sleeper"
     _version: str = "2.0.2"
@@ -383,6 +384,7 @@ async def test_start_solver_job_storage_data_missing(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/itis/sleeper"
     _version: str = "2.0.2"
@@ -415,7 +417,6 @@ async def test_stop_job(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-
     _solver_key: Final[str] = "simcore/services/comp/isolve"
     _version: Final[str] = "2.1.24"
     _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
@@ -465,6 +466,7 @@ async def test_get_solver_job_outputs(
     sufficient_credits: bool,
     expected_status_code: int,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     def _sf(
         request: httpx.Request,
@@ -478,15 +480,9 @@ async def test_get_solver_job_outputs(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ):
-        wallet = (
-            TypeAdapter(Envelope[WalletGetWithAvailableCreditsLegacy])
-            .validate_python(capture.response_body)
-            .data
-        )
+        wallet = TypeAdapter(Envelope[WalletGetWithAvailableCreditsLegacy]).validate_python(capture.response_body).data
         assert wallet is not None
-        wallet.available_credits = (
-            Decimal(10.0) if sufficient_credits else Decimal(-10.0)
-        )
+        wallet.available_credits = Decimal("10.0") if sufficient_credits else Decimal("-10.0")
         envelope = Envelope[WalletGetWithAvailableCreditsLegacy]()
         envelope.data = wallet
         return jsonable_encoder(envelope)
@@ -535,11 +531,7 @@ async def test_get_solver_job_outputs(
             uuid=UUID("12345678-1234-5678-1234-123456789012"),
             name="A solver job",
             description="A description of a solver job with a single node",
-            workbench={
-                f"{uuid4()}": Node.model_validate(
-                    Node.model_json_schema()["examples"][0]
-                )
-            },
+            workbench={f"{uuid4()}": Node.model_validate(Node.model_json_schema()["examples"][0])},
             created_at=datetime.fromisoformat("2023-01-01T00:00:00Z"),
             modified_at=datetime.fromisoformat("2023-01-01T00:00:00Z"),
             job_parent_resource_name="solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
@@ -557,6 +549,7 @@ async def test_get_solver_job_outputs_assets_deleted(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     def _sf(
         request: httpx.Request,

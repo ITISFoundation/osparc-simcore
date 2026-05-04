@@ -50,12 +50,8 @@ async def docker_api_proxy_settings(
         {
             "DOCKER_API_PROXY_HOST": get_localhost_ip(),
             "DOCKER_API_PROXY_PORT": published_port,
-            "DOCKER_API_PROXY_USER": env_vars_for_docker_compose[
-                "DOCKER_API_PROXY_USER"
-            ],
-            "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose[
-                "DOCKER_API_PROXY_PASSWORD"
-            ],
+            "DOCKER_API_PROXY_USER": env_vars_for_docker_compose["DOCKER_API_PROXY_USER"],
+            "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose["DOCKER_API_PROXY_PASSWORD"],
         }
     )
 

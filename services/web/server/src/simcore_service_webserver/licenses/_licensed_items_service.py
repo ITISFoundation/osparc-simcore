@@ -52,7 +52,6 @@ async def get_licensed_item(
     version: LicensedItemVersion,
     product_name: ProductName,
 ) -> LicensedItem:
-
     return await _licensed_items_repository.get_licensed_item_by_key_version(
         app, key=key, version=version, product_name=product_name
     )
@@ -110,13 +109,9 @@ async def purchase_licensed_item(
             licensed_item_id=licensed_item.licensed_item_id,
         )
 
-    pricing_plan = await get_pricing_plan(
-        app, product_name=product_name, pricing_plan_id=body_params.pricing_plan_id
-    )
+    pricing_plan = await get_pricing_plan(app, product_name=product_name, pricing_plan_id=body_params.pricing_plan_id)
     if pricing_plan.classification is not PricingPlanClassification.LICENSE:
-        raise LicensedItemPricingPlanConfigurationError(
-            pricing_plan_id=body_params.pricing_plan_id
-        )
+        raise LicensedItemPricingPlanConfigurationError(pricing_plan_id=body_params.pricing_plan_id)
 
     pricing_unit = await get_pricing_plan_unit(
         app,
@@ -133,9 +128,7 @@ async def purchase_licensed_item(
 
     # Check whether wallet has enough credits
     if wallet.available_credits - pricing_unit.current_cost_per_unit < 0:
-        raise WalletNotEnoughCreditsError(
-            details=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
-        )
+        raise WalletNotEnoughCreditsError(details=f"Wallet '{wallet.name}' has {wallet.available_credits} credits.")
 
     user = await users_service.get_user(app, user_id=user_id)
 
@@ -158,6 +151,4 @@ async def purchase_licensed_item(
         purchased_at=datetime.now(tz=UTC),
     )
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await licensed_items_purchases.create_licensed_item_purchase(
-        rpc_client, data=_data
-    )
+    return await licensed_items_purchases.create_licensed_item_purchase(rpc_client, data=_data)

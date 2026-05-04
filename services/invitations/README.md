@@ -16,7 +16,7 @@ We assume the executable ``simcore-service-invitations`` is installed. You can t
 ```cmd
 simcore-service-invitations --version
 ```
-If not, use ``make install-prod``. Once installed have a look at all the possibilites
+If not, use ``make install-prod``. Once installed have a look at all the possibilities
 ```cmd
 simcore-service-invitations --help
 ```

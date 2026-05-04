@@ -56,17 +56,15 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message: SocketIOEvent = decode_socketio_42_message(message)
-                if (
-                    decoded_message.name == "server.video_stream.bitrate_data"
-                    and "bitrate" in decoded_message.obj
-                ):
+                if decoded_message.name == "server.video_stream.bitrate_data" and "bitrate" in decoded_message.obj:
                     current_bit_rate = decoded_message.obj["bitrate"]
                     if self._initial_bit_rate == 0:
                         self._initial_bit_rate = current_bit_rate
                         self._initial_bit_rate_time = arrow.utcnow().datetime
                         ctx.logger.info(
                             "%s",
-                            f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
+                            f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s "
+                            f"at {self._initial_bit_rate_time.isoformat()}",
                         )
                         return False
 
@@ -86,7 +84,12 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                         bitrate_test = bool(self._initial_bit_rate != current_bit_rate)
                         ctx.logger.info(
                             "%s",
-                            f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                            f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s "
+                            f"after {elapsed_time=}: {
+                                'good!'
+                                if bitrate_test
+                                else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'
+                            }",
                         )
                         return bitrate_test
 
@@ -116,11 +119,7 @@ def wait_for_launched_s4l(
         with page.expect_websocket(
             predicate,
             timeout=_S4L_STARTUP_SCREEN_MAX_TIME
-            + (
-                _S4L_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
-                else _S4L_MAX_STARTUP_TIME
-            )
+            + (_S4L_AUTOSCALED_MAX_STARTUP_TIME if autoscaled else _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME)
             + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0)
             + 10 * SECOND,
         ) as ws_info:
@@ -131,7 +130,7 @@ def wait_for_launched_s4l(
                 timeout=(
                     _S4L_AUTOSCALED_MAX_STARTUP_TIME
                     if autoscaled
-                    else _S4L_MAX_STARTUP_TIME
+                    else _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME
                 )
                 + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0),
                 press_start_button=False,
@@ -142,22 +141,16 @@ def wait_for_launched_s4l(
         ctx.logger.info("acquired S4L websocket!")
 
         def on_framesent(payload: str | bytes) -> None:
-            ctx.logger.debug(
-                "%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload
-            )
+            ctx.logger.debug("%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload)
 
         def on_framereceived(payload: str | bytes) -> None:
-            ctx.logger.debug(
-                "%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload
-            )
+            ctx.logger.debug("%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload)
 
         def on_close(_: WebSocket) -> None:
             ctx.logger.warning("%s⚠️ WebSocket closed.", _WEBSOCKET_MESSAGE_S4L_PREFIX)
 
         def on_socketerror(error_msg: str) -> None:
-            ctx.logger.error(
-                "%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, error_msg
-            )
+            ctx.logger.error("%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, error_msg)
 
         # Attach core event listeners
         s4l_websocket.on("framesent", on_framesent)
@@ -179,13 +172,8 @@ def interact_with_s4l(page: Page, s4l_iframe: FrameLocator) -> None:
     page.wait_for_timeout(3000)
 
 
-def check_video_streaming(
-    page: Page, s4l_iframe: FrameLocator, s4l_websocket: WebSocket
-) -> None:
-    assert (
-        _S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME
-        < _S4L_STREAMING_ESTABLISHMENT_MAX_TIME
-    )
+def check_video_streaming(page: Page, s4l_iframe: FrameLocator, s4l_websocket: WebSocket) -> None:
+    assert _S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME < _S4L_STREAMING_ESTABLISHMENT_MAX_TIME
     with log_context(logging.INFO, "Check videostreaming works"):
         waiter = _S4LSocketIOCheckBitRateIncreasesMessagePrinter(
             min_waiting_time_before_checking_bitrate=datetime.timedelta(

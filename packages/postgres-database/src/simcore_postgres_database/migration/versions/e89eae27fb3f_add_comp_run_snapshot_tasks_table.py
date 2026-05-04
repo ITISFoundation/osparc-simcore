@@ -51,12 +51,8 @@ def upgrade():
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.Column(
-            "pricing_info", postgresql.JSONB(astext_type=sa.Text()), nullable=True
-        ),
-        sa.Column(
-            "hardware_info", postgresql.JSONB(astext_type=sa.Text()), nullable=True
-        ),
+        sa.Column("pricing_info", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("hardware_info", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.ForeignKeyConstraint(
             ["run_id"],
             ["comp_runs.run_id"],
