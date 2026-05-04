@@ -107,24 +107,27 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         if self._parent is not None:
             if exc_type is not None:
-                # On error exit, rollback partial progress contribution so a
-                # retry does not over-count (the retry will create a fresh child).
-                # Skip finish() to avoid emitting a spurious 100% report.
-                progress_contribution = self._compute_progress(self._current_steps)
-                await self._parent.update(-progress_contribution)
-                # Restore the parent's report baseline to match the rolled-back
-                # progress, otherwise _last_report_value stays at the failed
-                # attempt's high-water mark and suppresses early retry reports.
-                async with self._parent._continuous_value_lock:  # noqa: SLF001
-                    self._parent._last_report_value = self._parent._compute_progress(  # noqa: SLF001
-                        self._parent._current_steps  # noqa: SLF001
-                    )
+                # On error exit, rollback partial progress so a retry does not
+                # over-count. Skip finish() to avoid a spurious 100% report.
+                await self._parent._on_child_error(  # noqa: SLF001
+                    self._compute_progress(self._current_steps)
+                )
             else:
                 await self.finish()
-            # Always remove child so the slot can be reused (e.g. on retry)
-            self._parent._children.remove(self)  # noqa: SLF001
+            self._parent._on_child_exit(self)  # noqa: SLF001
         else:
             await self.finish()
+
+    async def _on_child_error(self, child_progress_contribution: float) -> None:
+        """Rollback a failed child's progress and reset the report baseline
+        so a retry emits intermediate reports from the start."""
+        await self.update(-child_progress_contribution)
+        async with self._continuous_value_lock:
+            self._last_report_value = self._compute_progress(self._current_steps)
+
+    def _on_child_exit(self, child: "ProgressBarData") -> None:
+        """Remove a child so its slot can be reused (e.g. on retry)."""
+        self._children.remove(child)
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:
