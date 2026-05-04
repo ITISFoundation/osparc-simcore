@@ -564,7 +564,8 @@ async def test_sub_progress_parent_progress_decremented_on_error_exit(faker: Fak
 
 async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_cb: mock.Mock, faker: Faker):
     """Verify that after an error + retry, the progress callback reports
-    correct values (not over-counted from the previous attempt)."""
+    correct values: no spurious 100% from the failed attempt, and the
+    retry reports a monotonically increasing sequence ending at 1.0."""
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=mocked_progress_bar_cb,
@@ -580,13 +581,56 @@ async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_c
                 msg = "simulated failure"
                 raise RuntimeError(msg)
 
+        # Capture reports from the failed attempt
+        reports_after_error = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+        # The failed attempt must NOT emit a spurious 1.0 (100%) report
+        assert all(r.percent_value < 1.0 for r in reports_after_error), (
+            "finish() on error exit emitted a spurious 100% report before rollback"
+        )
+
+        mocked_progress_bar_cb.reset_mock()
+
         # Second attempt — completes fully
         async with root.sub_progress(steps=100, description="attempt 2") as sub:
             for _ in range(100):
                 await sub.update()
 
+    # Retry must end at 1.0
     last_report: ProgressReport = mocked_progress_bar_cb.call_args_list[-1].args[0]
     assert last_report.percent_value == pytest.approx(1.0)
+
+
+async def test_sub_progress_retry_emits_intermediate_reports(mocked_progress_bar_cb: mock.Mock, faker: Faker):
+    """After an error + retry, intermediate progress reports must be emitted
+    during the retry (not suppressed until the final 1.0).
+    Regression: finish() on error exit advanced _last_report_value to 1.0,
+    causing _report_external to skip all intermediate values in the retry."""
+    async with ProgressBarData(
+        num_steps=1,
+        progress_report_cb=mocked_progress_bar_cb,
+        description=faker.pystr(),
+    ) as root:
+        # First attempt — partial progress then error exit
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        mocked_progress_bar_cb.reset_mock()
+
+        # Second attempt — completes fully
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+    # Must have intermediate reports during the retry, not just the final 1.0
+    retry_reports = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+    intermediate_reports = [r for r in retry_reports if r.percent_value < 1.0]
+    assert len(intermediate_reports) > 0, (
+        "No intermediate progress reports emitted during retry — _last_report_value was not reset after rollback"
+    )
 
 
 async def test_sub_progress_guard_still_prevents_too_many_concurrent_children(faker: Faker):

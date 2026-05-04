@@ -105,15 +105,19 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-        await self.finish()
         if self._parent is not None:
             if exc_type is not None:
-                # On error exit, rollback progress contribution so a retry
-                # does not over-count (the retry will create a fresh child)
+                # On error exit, rollback partial progress contribution so a
+                # retry does not over-count (the retry will create a fresh child).
+                # Skip finish() to avoid emitting a spurious 100% report.
                 progress_contribution = self._compute_progress(self._current_steps)
                 await self._parent.update(-progress_contribution)
+            else:
+                await self.finish()
             # Always remove child so the slot can be reused (e.g. on retry)
             self._parent._children.remove(self)  # noqa: SLF001
+        else:
+            await self.finish()
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:
