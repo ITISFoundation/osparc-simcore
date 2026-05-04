@@ -149,8 +149,9 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             # externally (e.g. uploaded directly to S3) by refreshing
             # each parent segment top-down (non-recursive, cheap).
             parents = list(Path(dir_to_refresh).parents)
-            # parents is e.g. [PosixPath('a/b'), PosixPath('a'), PosixPath('.')]
-            # We want root first, then deeper levels
+            # `parents` does not include `dir_to_refresh` itself. For example,
+            # Path("a/b/c").parents is [PosixPath('a/b'), PosixPath('a'), PosixPath('.')]
+            # We want root first, then deeper levels, before refreshing `dir_to_refresh`.
             for parent in reversed(parents):
                 parent_str = "" if parent == Path() else f"{parent}"
                 await self._rc_client.post_vfs_refresh(parent_str, recursive=False)
