@@ -342,7 +342,8 @@ qx.Class.define("osparc.form.Auto", {
             if (/^\d+$/.test(d)) {
               return parseInt(d);
             }
-            return null;
+            // this avoids the moustached template issue
+            return s.defaultValue ? parseInt(String(s.defaultValue)) : 0;
           }
         },
         { // target2model
