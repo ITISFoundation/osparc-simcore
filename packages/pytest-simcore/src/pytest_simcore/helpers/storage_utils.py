@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.basic_types import SHA256Str
 from pydantic import ByteSize
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -17,7 +18,20 @@ async def get_updated_project(sqlalchemy_async_engine: AsyncEngine, project_id: 
     async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))
         row = result.one()
-        return row._asdict()
+        project = row._asdict()
+
+        # Build workbench dict from projects_nodes table
+        nodes_result = await conn.execute(sa.select(projects_nodes).where(projects_nodes.c.project_uuid == project_id))
+        workbench: dict[str, Any] = {}
+        for node_row in nodes_result:
+            node_dict = node_row._asdict()
+            node_id = str(node_dict.pop("node_id"))
+            node_dict.pop("project_uuid", None)
+            node_dict.pop("created", None)
+            node_dict.pop("modified", None)
+            workbench[node_id] = node_dict
+        project["workbench"] = workbench
+        return project
 
 
 class FileIDDict(TypedDict):
