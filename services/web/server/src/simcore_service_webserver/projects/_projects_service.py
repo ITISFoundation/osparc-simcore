@@ -196,7 +196,7 @@ from .utils import extract_dns_without_default_port
 _logger = logging.getLogger(__name__)
 
 
-async def _create_project_document_and_notify(
+async def create_project_document_and_notify(
     app,
     *,
     project_id: ProjectID,
@@ -1011,7 +1011,7 @@ async def add_project_node(
         ),
     )
 
-    await _create_project_document_and_notify(
+    await create_project_document_and_notify(
         request.app,
         project_id=project_id,
         user_id=user_id,
@@ -1141,7 +1141,7 @@ async def delete_project_node(
         node_id=NodeID(node_uuid),
     )
 
-    await _create_project_document_and_notify(
+    await create_project_document_and_notify(
         request.app,
         project_id=project_uuid,
         user_id=user_id,
@@ -1187,7 +1187,7 @@ async def update_project_node_state(
         partial_node=PartialNode.model_construct(state=NodeState(current_status=RunningState(new_state))),
     )
 
-    await _create_project_document_and_notify(
+    await create_project_document_and_notify(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -1253,7 +1253,7 @@ async def patch_project_node(
         partial_node=partial_node,
     )
 
-    await _create_project_document_and_notify(
+    await create_project_document_and_notify(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -1330,7 +1330,7 @@ async def update_project_node_outputs(
         partial_node=PartialNode.model_construct(outputs=new_outputs, run_hash=new_run_hash),
     )
 
-    await _create_project_document_and_notify(
+    await create_project_document_and_notify(
         app,
         project_id=project_id,
         user_id=user_id,

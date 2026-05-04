@@ -333,6 +333,71 @@ async def test_insert_project_to_db(
     await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+@pytest.mark.parametrize("number_of_nodes", [1, randint(50, 80)])  # noqa: S311
+async def test_update_project_nodes_concurrently(
+    fake_project: dict[str, Any],
+    logged_user: dict[str, Any],
+    asyncpg_engine: AsyncEngine,
+    insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
+    number_of_nodes: int,
+):
+    """Concurrent updates to different nodes in the same project must all succeed."""
+    BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
+    node_uuids = [str(uuid5(BASE_UUID, f"{n}")) for n in range(number_of_nodes)]
+
+    fake_project["workbench"] = {
+        node_uuids[n]: {
+            "key": "simcore/services/comp/sleepers",
+            "version": "1.43.5",
+            "label": f"I am node {n}",
+        }
+        for n in range(number_of_nodes)
+    }
+
+    new_project = await insert_project_in_db(deepcopy(fake_project), user_id=logged_user["id"])
+    await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
+
+    # concurrently update outputs on all nodes
+    randomly_created_outputs = [
+        {f"out_{k}": f"{k}" for k in range(randint(1, 10))}  # noqa: S311
+        for _ in range(number_of_nodes)
+    ]
+
+    async def _update_node(node_uuid_str: str, outputs: dict) -> None:
+        repo = ProjectNodesRepo(project_uuid=ProjectID(new_project["uuid"]))
+        async with asyncpg_engine.begin() as conn:
+            await repo.update(conn, node_id=NodeID(node_uuid_str), outputs=outputs)
+
+    await asyncio.gather(*[_update_node(node_uuids[n], randomly_created_outputs[n]) for n in range(number_of_nodes)])
+
+    # verify all updates persisted
+    async with asyncpg_engine.connect() as conn:
+        repo = ProjectNodesRepo(project_uuid=ProjectID(new_project["uuid"]))
+        nodes = await repo.list(conn)
+
+    nodes_by_id = {f"{node.node_id}": node for node in nodes}
+    assert len(nodes_by_id) == number_of_nodes
+
+    for n in range(number_of_nodes):
+        node = nodes_by_id[node_uuids[n]]
+        assert node.outputs == randomly_created_outputs[n], (
+            f"Node {node_uuids[n]} outputs mismatch after concurrent update"
+        )
+
+    # concurrently clear outputs
+    await asyncio.gather(*[_update_node(node_uuids[n], {}) for n in range(number_of_nodes)])
+
+    async with asyncpg_engine.connect() as conn:
+        nodes_after_clear = await repo.list(conn)
+
+    for node in nodes_after_clear:
+        assert node.outputs == {}, f"Node {node.node_id} outputs should be empty after clear"
+
+
 @pytest.fixture()
 async def some_projects_and_nodes(
     logged_user: dict[str, Any],

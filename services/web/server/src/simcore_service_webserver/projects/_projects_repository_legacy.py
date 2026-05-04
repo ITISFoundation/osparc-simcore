@@ -32,7 +32,7 @@ from models_library.resource_tracker import (
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
-from models_library.utils._original_fastapi_encoders import jsonable_encoder
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter

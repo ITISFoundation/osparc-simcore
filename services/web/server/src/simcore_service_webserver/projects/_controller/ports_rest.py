@@ -23,7 +23,7 @@ from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _access_rights_service, _nodes_service, _ports_service
-from .._projects_service import _create_project_document_and_notify
+from .._projects_service import create_project_document_and_notify
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
@@ -114,7 +114,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     # get updated workbench (including not updated nodes)
     updated_workbench = await _nodes_service.get_project_nodes_map(request.app, project_id=path_params.project_id)
 
-    await _create_project_document_and_notify(
+    await create_project_document_and_notify(
         request.app,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
