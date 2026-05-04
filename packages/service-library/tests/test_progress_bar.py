@@ -640,6 +640,47 @@ async def test_sub_progress_retry_emits_intermediate_reports(mocked_progress_bar
     )
 
 
+async def test_sub_progress_retry_with_weighted_parent(mocked_progress_bar_cb: mock.Mock, faker: Faker):
+    """Retry on a weighted parent must correctly rollback and re-report
+    progress using weighted _compute_progress (not just steps/num_steps)."""
+    async with ProgressBarData(
+        num_steps=2,
+        step_weights=[3, 1],
+        progress_report_cb=mocked_progress_bar_cb,
+        description=faker.pystr(),
+    ) as root:
+        # First step (weight=3/4 of total) — fails after partial progress
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        # Parent progress should be rolled back to 0
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
+
+        mocked_progress_bar_cb.reset_mock()
+
+        # Retry the first step — completes fully
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+        # Parent should have advanced by the first step's weight (3/4)
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Reports during retry should start near 0%, not at 37.5% (half of 3/4)
+        retry_reports = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+        intermediate_reports = [r for r in retry_reports if r.percent_value < 0.75]
+        assert len(intermediate_reports) > 0
+        first_retry_report = intermediate_reports[0]
+        assert first_retry_report.percent_value < 0.1, (
+            f"First retry report at {first_retry_report.percent_value:.0%} — "
+            "weighted rollback did not reset report baseline"
+        )
+
+
 async def test_sub_progress_guard_still_prevents_too_many_concurrent_children(faker: Faker):
     """The RuntimeError guard must still trigger when trying to create
     more sub_progress children than num_steps *concurrently*
