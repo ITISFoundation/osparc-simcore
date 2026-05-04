@@ -300,7 +300,7 @@ class ProjectDBAPI(BaseProjectDB):
                 **{
                     str(field_mapping.get(field, field)): value
                     for field, value in Node.model_validate(project_workbench_node)
-                    .model_dump(mode="json", by_alias=True)
+                    .model_dump(mode="json", by_alias=True, exclude_unset=True)
                     .items()
                     if field_mapping.get(field, field) in valid_fields
                 },

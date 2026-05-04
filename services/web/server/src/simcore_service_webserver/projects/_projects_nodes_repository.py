@@ -146,7 +146,7 @@ async def get_by_projects(
         # Fill in the actual data
         async for row in stream:
             node = Node.model_validate(
-                ProjectNode.model_validate(row).model_dump(
+                ProjectNode.model_validate(row, from_attributes=True).model_dump(
                     exclude_none=True,
                     exclude_unset=True,
                     exclude={"node_id", "created", "modified"},
