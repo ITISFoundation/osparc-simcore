@@ -5,7 +5,6 @@ import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import asdict
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -30,7 +29,6 @@ from notifications_library._models import (
     ShareLink,
     SocialLink,
 )
-from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.celery.task_manager import TaskManager
@@ -39,7 +37,6 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_notifications.api.celery import _email
 from simcore_service_notifications.api.celery.tasks import (
     register_worker_tasks,
 )
@@ -261,16 +258,3 @@ def fake_product_data(faker: Faker) -> dict[str, Any]:
             footer=footer_data,
         )
     )
-
-
-@pytest.fixture
-def smtp_mock_or_none(
-    mocker: MockerFixture, is_external_user_email: EmailStr | None, user_email: EmailStr
-) -> MagicMock | None:
-    if not is_external_user_email:
-        mock_smtp = AsyncMock()
-        mock_create_email_session = mocker.patch.object(_email, "create_email_session")
-        mock_create_email_session.return_value.__aenter__.return_value = mock_smtp
-        return mock_smtp
-    print("🚨 Emails might be sent to", f"{user_email=}")
-    return None

@@ -1,7 +1,5 @@
 aiofiles==25.1.0
     # via -r requirements/_base.in
-aiosmtplib==5.1.0
-    # via -r requirements/_base.in
 alembic==1.18.4
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 annotated-doc==0.0.4
