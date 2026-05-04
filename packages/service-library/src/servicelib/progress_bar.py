@@ -112,6 +112,12 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                 # Skip finish() to avoid emitting a spurious 100% report.
                 progress_contribution = self._compute_progress(self._current_steps)
                 await self._parent.update(-progress_contribution)
+                # Restore the parent's report baseline to match the rolled-back
+                # progress, otherwise _last_report_value stays at the failed
+                # attempt's high-water mark and suppresses early retry reports.
+                self._parent._last_report_value = self._parent._compute_progress(  # noqa: SLF001
+                    self._parent._current_steps  # noqa: SLF001
+                )
             else:
                 await self.finish()
             # Always remove child so the slot can be reused (e.g. on retry)

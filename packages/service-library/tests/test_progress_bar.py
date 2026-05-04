@@ -631,6 +631,13 @@ async def test_sub_progress_retry_emits_intermediate_reports(mocked_progress_bar
     assert len(intermediate_reports) > 0, (
         "No intermediate progress reports emitted during retry — _last_report_value was not reset after rollback"
     )
+    # The first emitted retry report must be near the beginning (< 10%),
+    # not stuck silent until surpassing the failed attempt's progress (~50%).
+    first_retry_report = intermediate_reports[0]
+    assert first_retry_report.percent_value < 0.1, (
+        f"First retry report at {first_retry_report.percent_value:.0%} — "
+        "expected near 0%; _last_report_value was not reset after rollback"
+    )
 
 
 async def test_sub_progress_guard_still_prevents_too_many_concurrent_children(faker: Faker):
