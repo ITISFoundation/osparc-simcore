@@ -171,8 +171,7 @@ When refactoring, move business logic from controllers to services (e.g., extrac
 
 ### Assertions & Safety Comments
 
-* Use `assert <condition>  # nosec` for runtime invariant checks in production code (e.g., verifying state after a query).
-* Use `# noqa: T201` on intentional `print()` calls (e.g., startup/shutdown banners).
+* Prefer using logging over `print()` for runtime messages. Use `# noqa: T201` on intentional `print()` calls (e.g., startup/shutdown banners).
 * Use `# type: ignore[assignment]` sparingly for legitimate Pydantic/typing workarounds, with context if non-obvious.
 
 ### Running tests
