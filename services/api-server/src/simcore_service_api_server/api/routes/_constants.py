@@ -1,5 +1,9 @@
 from typing import Final
 
+from packaging.version import Version
+
+from ..._meta import VERSION
+
 #
 # CHANGELOG formatted-messages for API routes
 #
@@ -60,3 +64,7 @@ def create_route_description(
         parts.append("\n".join(changelog))
 
     return "\n\n".join(parts)
+
+
+def include_from_version(version: str) -> bool:
+    return Version(version) <= VERSION
