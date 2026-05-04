@@ -107,6 +107,12 @@ async def create_project(
                                 node_values[field] = node_data[field]
                         await conn.execute(sa.insert(projects_nodes).values(**node_values))
 
+                # Re-read the project row to get updated last_change_date
+                # (a trigger updates it when projects_nodes changes)
+                async with sqlalchemy_async_engine.connect() as conn:
+                    result = await conn.execute(sa.select(projects).where(projects.c.uuid == project_uuid))
+                    project_row = result.one()._asdict()
+
                 # Return workbench without internal DB fields
                 project_row["workbench"] = {
                     node_id: {k: v for k, v in node_data.items() if k != "project_node_id"}
