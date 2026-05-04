@@ -5,6 +5,7 @@
 # pylint: disable=protected-access
 
 import asyncio
+import contextlib
 from unittest import mock
 
 import pytest
@@ -309,13 +310,11 @@ async def test_too_many_sub_progress_bars_raises(faker: Faker):
         async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
             for _ in range(50):
                 await sub.update()
-        async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
-            for _ in range(50):
-                await sub.update()
-
-        with pytest.raises(RuntimeError):
-            async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
-                ...
+            async with root.sub_progress(steps=50, description=faker.pystr()) as sub2:
+                for _ in range(50):
+                    await sub2.update()
+                with pytest.raises(RuntimeError):
+                    root.sub_progress(steps=50, description=faker.pystr())
 
 
 async def test_too_many_updates_does_not_raise_but_show_warning_with_stack(
@@ -503,3 +502,114 @@ async def test_concurrent_sub_progress_update_correct_sub_progress(mocked_progre
         assert sub_progress3._current_steps == 12  # noqa: SLF001
         assert mocked_progress_bar_cb.call_count == 2
         assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(2 / 6)
+
+
+# -------------------------------------------------------------------
+# Tests for sub_progress child cleanup on __aexit__ (retry support)
+# -------------------------------------------------------------------
+
+
+async def test_sub_progress_child_removed_from_parent_on_exit(faker: Faker):
+    """After a sub_progress context manager exits, the child should be
+    removed from the parent's _children list so a new sub_progress can
+    be created for the same step (e.g. on retry)."""
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as root:
+        async with root.sub_progress(steps=10, description=faker.pystr()) as sub:
+            for _ in range(10):
+                await sub.update()
+        assert len(root._children) == 0  # noqa: SLF001
+
+
+async def test_sub_progress_retry_creates_new_child_after_error_exit(faker: Faker):
+    """Simulates a retry scenario: first sub_progress exits via exception,
+    then a new sub_progress is created on the same parent with num_steps=1.
+    This should succeed (not raise RuntimeError)."""
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as root:
+        # First attempt — fails with an exception after partial progress
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated upload failure"
+                raise RuntimeError(msg)
+        # Second attempt (retry) — must NOT raise RuntimeError
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+
+async def test_sub_progress_parent_progress_decremented_on_error_exit(faker: Faker):
+    """When a child exits via exception, the parent's _current_steps
+    should be rolled back so a retry doesn't over-count progress."""
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as root:
+        await root.update()
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # First attempt via sub_progress — fails with exception
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=10, description="attempt 1") as sub:
+                for _ in range(5):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+        # Child exited via exception — parent progress rolled back
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Retry creates a new child for the same step
+        async with root.sub_progress(steps=10, description="attempt 2") as sub:
+            for _ in range(10):
+                await sub.update()
+        assert root._current_steps == pytest.approx(2)  # noqa: SLF001
+
+
+async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_cb: mock.Mock, faker: Faker):
+    """Verify that after an error + retry, the progress callback reports
+    correct values (not over-counted from the previous attempt)."""
+    async with ProgressBarData(
+        num_steps=1,
+        progress_report_cb=mocked_progress_bar_cb,
+        description=faker.pystr(),
+    ) as root:
+        mocked_progress_bar_cb.reset_mock()
+
+        # First attempt — partial progress then error exit
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        # Second attempt — completes fully
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+    last_report: ProgressReport = mocked_progress_bar_cb.call_args_list[-1].args[0]
+    assert last_report.percent_value == pytest.approx(1.0)
+
+
+async def test_sub_progress_guard_still_prevents_too_many_concurrent_children(faker: Faker):
+    """The RuntimeError guard must still trigger when trying to create
+    more sub_progress children than num_steps *concurrently*
+    (i.e., without exiting previous ones)."""
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as root:
+        sub1 = root.sub_progress(steps=10, description="child 1")
+        sub2 = root.sub_progress(steps=10, description="child 2")
+        with pytest.raises(RuntimeError, match="Too many sub progresses"):
+            root.sub_progress(steps=10, description="child 3")
+        async with sub1:
+            pass
+        async with sub2:
+            pass
+
+
+async def test_sub_progress_multiple_sequential_reuse(faker: Faker):
+    """Create and exit more sub_progress children than num_steps,
+    but sequentially (one at a time). Should succeed after fix."""
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as root:
+        for i in range(5):
+            async with root.sub_progress(steps=10, description=f"attempt {i}") as sub:
+                for _ in range(10):
+                    await sub.update()
+        assert len(root._children) == 0  # noqa: SLF001

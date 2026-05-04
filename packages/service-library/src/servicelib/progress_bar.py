@@ -106,6 +106,14 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.finish()
+        if self._parent is not None:
+            if exc_type is not None:
+                # On error exit, rollback progress contribution so a retry
+                # does not over-count (the retry will create a fresh child)
+                progress_contribution = self._compute_progress(self._current_steps)
+                await self._parent.update(-progress_contribution)
+            # Always remove child so the slot can be reused (e.g. on retry)
+            self._parent._children.remove(self)  # noqa: SLF001
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:
@@ -162,6 +170,10 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         parent_update_value = 0.0
         async with self._continuous_value_lock:
             new_steps_value = self._current_steps + steps
+            # NOTE: clamp to 0 because floating-point accumulation drift can
+            # produce tiny negatives (~ -1e-16) after __aexit__ rollback,
+            # and _compute_progress does not accept negative input.
+            new_steps_value = max(new_steps_value, 0)
             if new_steps_value > self.num_steps:
                 new_steps_value = round(new_steps_value)
             if new_steps_value > self.num_steps:
