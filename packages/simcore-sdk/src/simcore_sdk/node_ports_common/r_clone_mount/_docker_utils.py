@@ -17,7 +17,6 @@ async def _get_config(
     delegate: DelegateInterface,
     command: str,
     r_clone_version: str,
-    rc_port: PortInt,
     local_mount_path: Path,
     memory_limit: ByteSize,
     nano_cpus: NonNegativeInt,
@@ -32,7 +31,7 @@ async def _get_config(
         ],
         "ExposedPorts": {"8000/tcp": {}},
         "HostConfig": {
-            "PortBindings": {"8000/tcp": [{"HostPort": str(rc_port)}]},
+            "PortBindings": {"8000/tcp": [{"HostPort": "0"}]},
             "Binds": [],
             "Mounts": await delegate.get_bind_paths(local_mount_path),
             "Devices": [{"PathOnHost": "/dev/fuse", "PathInContainer": "/dev/fuse", "CgroupPermissions": "rwm"}],
@@ -52,17 +51,16 @@ async def create_r_clone_container(
     *,
     command: str,
     r_clone_version: str,
-    rc_port: PortInt,
     local_mount_path: Path,
     memory_limit: ByteSize,
     nano_cpus: NonNegativeInt,
-) -> None:
-    container_config = await _get_config(
-        delegate, command, r_clone_version, rc_port, local_mount_path, memory_limit, nano_cpus
-    )
+) -> PortInt:
+    container_config = await _get_config(delegate, command, r_clone_version, local_mount_path, memory_limit, nano_cpus)
     _logger.debug("Creating rclone mount container '%s' with config=%s", container_name, container_config)
     await delegate.create_container(config=container_config, name=container_name)
     container_inspect = await delegate.container_inspect(container_name)
     _logger.debug(
         "Started rclone mount container '%s' with command='%s' (inspect=%s)", container_name, command, container_inspect
     )
+    host_port = container_inspect["NetworkSettings"]["Ports"]["8000/tcp"][0]["HostPort"]
+    return int(host_port)
