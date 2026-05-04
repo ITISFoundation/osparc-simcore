@@ -2,14 +2,40 @@ from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
+from common_library.network import extract_email_domain
 from models_library.basic_types import LogLevel
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    RootModel,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
+from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+
+type Domain = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, to_lower=True, min_length=1, pattern=r"^[a-z0-9.-]+$"),
+]
+
+
+class _DomainToSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
+    """SMTP settings keyed by sender email domain (lowercase)."""
+
+    def get_settings_for_email(self, email: str) -> SMTPSettings:
+        domain = extract_email_domain(email).lower()
+        settings = self.root.get(domain)
+        if settings is None:
+            msg = f"No SMTP settings configured for domain {domain!r} (from={email!r})"
+            raise ValueError(msg)
+        return settings
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -93,7 +119,42 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
     ] = "1/s"
 
+    NOTIFICATIONS_EMAIL: Annotated[
+        _DomainToSMTPSettings | None,
+        Field(
+            description=(
+                "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
+                "Required by the notifications worker; unused by the API service."
+            ),
+            examples=[
+                {
+                    "osparc.io": {
+                        "SMTP_HOST": "smtp.osparc.io",
+                        "SMTP_PORT": 25,
+                    },
+                    "example.com": {
+                        "SMTP_HOST": "smtp.example.com",
+                        "SMTP_PORT": 587,
+                        "SMTP_USERNAME": "user@example.com",
+                        "SMTP_PASSWORD": "blabla",
+                    },
+                }
+            ],
+        ),
+    ] = None
+
     @field_validator("LOG_LEVEL")
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))
+
+    @model_validator(mode="after")
+    def _worker_requires_email_settings(self) -> "ApplicationSettings":
+        if self.NOTIFICATIONS_WORKER_MODE and self.NOTIFICATIONS_EMAIL is None:
+            msg = (
+                "NOTIFICATIONS_EMAIL must be configured when "
+                "NOTIFICATIONS_WORKER_MODE is enabled "
+                "(per-domain SMTP settings are required by the worker)."
+            )
+            raise ValueError(msg)
+        return self

@@ -124,9 +124,6 @@ def _default_app_config_for_integration_tests(
     # as docker compose does: i.e. x = ${VARIABLE:default}.
     #
     # Instead, the variables have to be defined here ------------
-    test_environ["SMTP_USERNAME"] = "None"
-    test_environ["SMTP_PASSWORD"] = "None"  # noqa: S105
-    test_environ["SMTP_PROTOCOL"] = "UNENCRYPTED"
     test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
 
