@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 _MEMORY_SAFETY_MARGIN: Final[float] = 0.7
 
-RC_PORT: Final[int] = 8000
+RC_PORT: Final[PortInt] = 8000
 _TARGET_PORT: Final[str] = f"{RC_PORT}/tcp"
 
 
