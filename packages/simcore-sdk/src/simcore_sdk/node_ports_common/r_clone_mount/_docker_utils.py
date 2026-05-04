@@ -6,11 +6,14 @@ from aiodocker.types import JSONObject
 from models_library.basic_types import PortInt
 from pydantic import ByteSize, NonNegativeInt
 
+from ._errors import PortNotAssignedError
 from ._models import DelegateInterface
 
 _logger = logging.getLogger(__name__)
 
 _MEMORY_SAFETY_MARGIN: Final[float] = 0.7
+
+_TARGET_PORT: Final[str] = "8000/tcp"
 
 
 async def _get_config(
@@ -29,9 +32,9 @@ async def _get_config(
             # This causes more aggressive GC before hitting the container's hard memory limit.
             f"GOMEMLIMIT={int(memory_limit * _MEMORY_SAFETY_MARGIN)}",
         ],
-        "ExposedPorts": {"8000/tcp": {}},
+        "ExposedPorts": {_TARGET_PORT: {}},
         "HostConfig": {
-            "PortBindings": {"8000/tcp": [{"HostPort": "0"}]},
+            "PortBindings": {_TARGET_PORT: [{"HostPort": "0"}]},
             "Binds": [],
             "Mounts": await delegate.get_bind_paths(local_mount_path),
             "Devices": [{"PathOnHost": "/dev/fuse", "PathInContainer": "/dev/fuse", "CgroupPermissions": "rwm"}],
@@ -62,5 +65,15 @@ async def create_r_clone_container(
     _logger.debug(
         "Started rclone mount container '%s' with command='%s' (inspect=%s)", container_name, command, container_inspect
     )
-    host_port = container_inspect["NetworkSettings"]["Ports"]["8000/tcp"][0]["HostPort"]
+
+    ports = container_inspect.get("NetworkSettings", {}).get("Ports", {})
+    port_bindings = ports.get(_TARGET_PORT)
+    host_port = port_bindings[0].get("HostPort") if port_bindings else None
+    if not host_port:
+        raise PortNotAssignedError(
+            container_name=container_name,
+            target_port=_TARGET_PORT,
+            ports=ports,
+        )
+
     return int(host_port)

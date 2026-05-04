@@ -77,6 +77,11 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
 
         self._rc_http_client: RemoteControlHttpClient | None = None
 
+    @property
+    def _rc_client(self) -> RemoteControlHttpClient:
+        assert self._rc_http_client is not None, "start_mount() must be called before accessing the RC client"  # nosec
+        return self._rc_http_client
+
     async def _update_and_notify_mount_activity(self, mount_activity: MountActivity) -> None:
         now = datetime.now(UTC)
 
@@ -90,7 +95,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
 
     async def _worker_mount_activity(self) -> None:
         with log_catch(logger=_logger, reraise=False):
-            mount_activity = await self._rc_http_client.get_mount_activity()
+            mount_activity = await self._rc_client.get_mount_activity()
             await self._update_and_notify_mount_activity(mount_activity)
 
     async def start_mount(self) -> None:
@@ -105,7 +110,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             transfers_completed_timeout=self._transfers_completed_timeout,
         )
 
-        await self._rc_http_client.wait_for_interface_to_be_ready()
+        await self._rc_client.wait_for_interface_to_be_ready()
 
         self._task_mount_activity = create_periodic_task(
             self._worker_mount_activity,
@@ -115,17 +120,17 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
 
     async def stop_mount(self, *, skip_transfer_wait: bool = False) -> None:
         if not skip_transfer_wait:
-            await self._rc_http_client.wait_for_all_transfers_to_complete()
+            await self._rc_client.wait_for_all_transfers_to_complete()
 
         await self._container_manager.remove()
         if self._task_mount_activity is not None:
             await cancel_wait_task(self._task_mount_activity)
 
     async def wait_for_all_transfers_to_complete(self) -> None:
-        await self._rc_http_client.wait_for_all_transfers_to_complete()
+        await self._rc_client.wait_for_all_transfers_to_complete()
 
     async def is_healthy(self) -> bool:
-        if await self._rc_http_client.is_responsive():
+        if await self._rc_client.is_responsive():
             self._consecutive_unresponsive_count = 0
             return True
 
@@ -148,8 +153,8 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             # We want root first, then deeper levels
             for parent in reversed(parents):
                 parent_str = "" if parent == Path() else f"{parent}"
-                await self._rc_http_client.post_vfs_refresh(parent_str, recursive=False)
-        await self._rc_http_client.post_vfs_refresh(dir_to_refresh, recursive=recursive)
+                await self._rc_client.post_vfs_refresh(parent_str, recursive=False)
+        await self._rc_client.post_vfs_refresh(dir_to_refresh, recursive=recursive)
 
 
 class RCloneMountManager:
