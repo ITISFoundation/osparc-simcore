@@ -60,13 +60,56 @@ async def create_project(
         async def _creator(**kwargs) -> dict[str, Any]:
             prj_config = {"prj_owner": user_id, "product_name": with_product["name"]}
             prj_config.update(kwargs)
+
+            # workbench is no longer a column in the projects table;
+            # it is stored in the projects_nodes table instead
+            workbench: dict[str, Any] = prj_config.pop("workbench", {})
+
             ctx = insert_and_get_row_lifespan(
                 sqlalchemy_async_engine,
                 table=projects,
                 values=random_project(DEFAULT_FAKER, **prj_config),
                 pk_col=projects.c.uuid,
             )
-            return await stack.enter_async_context(ctx)
+            project_row = await stack.enter_async_context(ctx)
+
+            # Insert nodes from workbench into projects_nodes table
+            if workbench:
+                project_uuid = project_row["uuid"]
+                async with sqlalchemy_async_engine.begin() as conn:
+                    for node_id, node_data in workbench.items():
+                        node_values = {
+                            "project_uuid": project_uuid,
+                            "node_id": node_id,
+                            "key": node_data.get("key", "simcore/services/frontend/file-picker"),
+                            "version": node_data.get("version", "1.0.0"),
+                            "label": node_data.get("label", "unknown"),
+                        }
+                        # Copy optional fields that exist in projects_nodes
+                        _optional_fields = (
+                            "inputs",
+                            "outputs",
+                            "input_nodes",
+                            "output_nodes",
+                            "input_access",
+                            "inputs_required",
+                            "inputs_units",
+                            "progress",
+                            "thumbnail",
+                            "run_hash",
+                            "state",
+                            "parent",
+                            "boot_options",
+                            "required_resources",
+                        )
+                        for field in _optional_fields:
+                            if field in node_data:
+                                node_values[field] = node_data[field]
+                        await conn.execute(sa.insert(projects_nodes).values(**node_values))
+
+                project_row["workbench"] = workbench
+
+            return project_row
 
         yield _creator
 
