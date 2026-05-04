@@ -122,8 +122,15 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         """Rollback a failed child's progress and reset the report baseline
         so a retry emits intermediate reports from the start."""
         await self.update(-child_progress_contribution)
+        await self._reset_report_baseline_upwards()
+
+    async def _reset_report_baseline_upwards(self) -> None:
+        """Reset _last_report_value to match current progress, then propagate
+        up to all ancestors so deeply nested retries report correctly."""
         async with self._continuous_value_lock:
             self._last_report_value = self._compute_progress(self._current_steps)
+        if self._parent is not None:
+            await self._parent._reset_report_baseline_upwards()  # noqa: SLF001
 
     def _on_child_exit(self, child: "ProgressBarData") -> None:
         """Remove a child so its slot can be reused (e.g. on retry)."""

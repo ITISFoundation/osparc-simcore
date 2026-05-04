@@ -705,3 +705,42 @@ async def test_sub_progress_multiple_sequential_reuse(faker: Faker):
                 for _ in range(10):
                     await sub.update()
         assert len(root._children) == 0  # noqa: SLF001
+
+
+async def test_sub_progress_deeply_nested_retry_emits_intermediate_reports(
+    mocked_progress_bar_cb: mock.Mock, faker: Faker
+):
+    """In a root -> mid -> leaf nesting, when the leaf fails and retries,
+    intermediate reports must be emitted at the root level (not suppressed
+    because an ancestor's _last_report_value was left at the old high-water mark)."""
+    async with (
+        ProgressBarData(
+            num_steps=1,
+            progress_report_cb=mocked_progress_bar_cb,
+            description=faker.pystr(),
+        ) as root,
+        root.sub_progress(steps=1, description="mid") as mid,
+    ):
+        # First attempt at leaf — fails after partial progress
+        with contextlib.suppress(RuntimeError):
+            async with mid.sub_progress(steps=100, description="leaf attempt 1") as leaf:
+                for _ in range(50):
+                    await leaf.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        mocked_progress_bar_cb.reset_mock()
+
+        # Retry leaf — should emit intermediate reports from near 0%
+        async with mid.sub_progress(steps=100, description="leaf attempt 2") as leaf:
+            for _ in range(100):
+                await leaf.update()
+
+    retry_reports = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+    intermediate_reports = [r for r in retry_reports if r.percent_value < 1.0]
+    assert len(intermediate_reports) > 0, "No intermediate reports during deeply nested retry"
+    first_retry_report = intermediate_reports[0]
+    assert first_retry_report.percent_value < 0.1, (
+        f"First retry report at {first_retry_report.percent_value:.0%} — "
+        "ancestor _last_report_value was not reset after rollback"
+    )
