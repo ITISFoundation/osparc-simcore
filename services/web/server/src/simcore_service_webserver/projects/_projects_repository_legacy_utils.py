@@ -382,5 +382,7 @@ async def get_project_workbench(
     project_nodes = await project_nodes_repo.list(connection)
     for project_node in project_nodes:
         node_data = project_node.model_dump(exclude=exclude_fields, exclude_none=True, exclude_unset=True)
+        # Convert snake_case keys to camelCase to match the original workbench JSON schema
+        node_data = {snake_to_camel(k): v for k, v in node_data.items()}
         workbench[f"{project_node.node_id}"] = node_data
     return workbench

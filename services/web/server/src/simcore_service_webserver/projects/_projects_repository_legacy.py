@@ -376,7 +376,6 @@ class ProjectDBAPI(BaseProjectDB):
                 private_workspace_query = (
                     sa.select(
                         *PROJECT_DB_COLS,
-                        projects.c.workbench,
                         sa.literal(None).label("folder_id"),
                     )
                     .select_from(projects)
@@ -393,7 +392,6 @@ class ProjectDBAPI(BaseProjectDB):
                 private_workspace_query = (
                     sa.select(
                         *PROJECT_DB_COLS,
-                        projects.c.workbench,
                         projects_to_folders.c.folder_id,
                     )
                     .select_from(
@@ -419,7 +417,6 @@ class ProjectDBAPI(BaseProjectDB):
                 private_workspace_query = (
                     sa.select(
                         *PROJECT_DB_COLS,
-                        projects.c.workbench,
                         projects_to_folders.c.folder_id,
                     )
                     .select_from(
@@ -485,7 +482,6 @@ class ProjectDBAPI(BaseProjectDB):
                 shared_workspace_query = (
                     sa.select(
                         *PROJECT_DB_COLS,
-                        projects.c.workbench,
                         sa.literal(None).label("folder_id"),
                     )
                     .select_from(projects)
@@ -497,7 +493,6 @@ class ProjectDBAPI(BaseProjectDB):
                 shared_workspace_query = (
                     sa.select(
                         *PROJECT_DB_COLS,
-                        projects.c.workbench,
                         projects_to_folders.c.folder_id,
                     )
                     .select_from(
@@ -519,7 +514,6 @@ class ProjectDBAPI(BaseProjectDB):
                 shared_workspace_query = (
                     sa.select(
                         *PROJECT_DB_COLS,
-                        projects.c.workbench,
                         projects_to_folders.c.folder_id,
                     )
                     .select_from(
