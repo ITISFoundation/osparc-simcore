@@ -87,10 +87,20 @@ async def create_project(
                         }
                         # Copy optional fields that exist in projects_nodes
                         _optional_fields = (
-                            "inputs", "outputs", "input_nodes", "output_nodes",
-                            "input_access", "inputs_required", "inputs_units",
-                            "progress", "thumbnail", "run_hash", "state",
-                            "parent", "boot_options", "required_resources",
+                            "inputs",
+                            "outputs",
+                            "input_nodes",
+                            "output_nodes",
+                            "input_access",
+                            "inputs_required",
+                            "inputs_units",
+                            "progress",
+                            "thumbnail",
+                            "run_hash",
+                            "state",
+                            "parent",
+                            "boot_options",
+                            "required_resources",
                         )
                         for field in _optional_fields:
                             if field in node_data:
