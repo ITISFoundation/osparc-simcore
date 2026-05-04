@@ -65,11 +65,13 @@ async def delete(
     node_id: NodeID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.execute(
+        result = await conn.execute(
             projects_nodes.delete().where(
                 (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
             )
         )
+        if result.rowcount == 0:
+            raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
 
 
 async def get(
