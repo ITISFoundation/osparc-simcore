@@ -26,6 +26,7 @@ async def get_updated_project(sqlalchemy_async_engine: AsyncEngine, project_id: 
         for node_row in nodes_result:
             node_dict = node_row._asdict()
             node_id = str(node_dict.pop("node_id"))
+            node_dict.pop("project_node_id", None)
             node_dict.pop("project_uuid", None)
             node_dict.pop("created", None)
             node_dict.pop("modified", None)

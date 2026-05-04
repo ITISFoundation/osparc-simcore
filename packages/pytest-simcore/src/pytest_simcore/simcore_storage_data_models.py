@@ -87,27 +87,21 @@ async def create_project(
                         }
                         # Copy optional fields that exist in projects_nodes
                         _optional_fields = (
-                            "inputs",
-                            "outputs",
-                            "input_nodes",
-                            "output_nodes",
-                            "input_access",
-                            "inputs_required",
-                            "inputs_units",
-                            "progress",
-                            "thumbnail",
-                            "run_hash",
-                            "state",
-                            "parent",
-                            "boot_options",
-                            "required_resources",
+                            "inputs", "outputs", "input_nodes", "output_nodes",
+                            "input_access", "inputs_required", "inputs_units",
+                            "progress", "thumbnail", "run_hash", "state",
+                            "parent", "boot_options", "required_resources",
                         )
                         for field in _optional_fields:
                             if field in node_data:
                                 node_values[field] = node_data[field]
                         await conn.execute(sa.insert(projects_nodes).values(**node_values))
 
-                project_row["workbench"] = workbench
+                # Return workbench without internal DB fields
+                project_row["workbench"] = {
+                    node_id: {k: v for k, v in node_data.items() if k != "project_node_id"}
+                    for node_id, node_data in workbench.items()
+                }
 
             return project_row
 
