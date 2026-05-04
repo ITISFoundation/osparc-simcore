@@ -16,7 +16,6 @@ from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
-    create_workbench_subquery,
 )
 from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
@@ -231,21 +230,15 @@ class BaseProjectDB:
             .group_by(project_to_groups.c.project_uuid)
         ).subquery("access_rights_subquery")
 
-        workbench_subquery = create_workbench_subquery(project_uuid)
-
         query = (
             sa.select(
                 *PROJECT_DB_COLS,
                 users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
-                sa.func.coalesce(workbench_subquery.c.workbench, sa.text("'{}'::json")).label("workbench"),
             )
             .select_from(
-                projects.join(access_rights_subquery, isouter=True)
-                .outerjoin(users, projects.c.trashed_by == users.c.id)
-                .outerjoin(
-                    workbench_subquery,
-                    projects.c.uuid == workbench_subquery.c.project_uuid,
+                projects.join(access_rights_subquery, isouter=True).outerjoin(
+                    users, projects.c.trashed_by == users.c.id
                 )
             )
             .where(
@@ -274,6 +267,7 @@ class BaseProjectDB:
             )
 
         project: dict[str, Any] = dict(project_row)
+        project["workbench"] = await get_project_workbench(connection, project_uuid)
 
         if "tags" not in exclude_foreign:
             tags = await self._get_tags_by_project(connection, project_id=project_row["id"])
