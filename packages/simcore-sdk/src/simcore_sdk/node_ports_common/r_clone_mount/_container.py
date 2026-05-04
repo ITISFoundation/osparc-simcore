@@ -26,6 +26,7 @@ from tenacity import (
 from ..r_clone_utils import overwrite_command
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY
+from ._docker_utils import RC_PORT
 from ._errors import (
     RefreshMountError,
     WaitingForQueueToBeEmptyError,
@@ -157,7 +158,7 @@ async def _get_rclone_mount_command(
         "0777",
         # REMOTE CONTROL
         "--rc",
-        "--rc-addr=0.0.0.0:8000",
+        f"--rc-addr=0.0.0.0:{RC_PORT}",
         "--rc-enable-metrics",
         f"--rc-user='{rc_user}'",
         f"--rc-pass='{rc_password}'",

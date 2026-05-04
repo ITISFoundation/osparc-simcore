@@ -13,7 +13,8 @@ _logger = logging.getLogger(__name__)
 
 _MEMORY_SAFETY_MARGIN: Final[float] = 0.7
 
-_TARGET_PORT: Final[str] = "8000/tcp"
+RC_PORT: Final[int] = 8000
+_TARGET_PORT: Final[str] = f"{RC_PORT}/tcp"
 
 
 async def _get_config(
