@@ -1,0 +1,26 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "grafana-url",
+      "description": "Url to Grafana service"
+    },
+    {
+      "type": "promptString",
+      "id": "grafana-token",
+      "description": "Grafana API Token (should only have read access)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "grafana": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-grafana", "-t", "stdio"],
+      "env": {
+        "GRAFANA_URL": "${input:grafana-url}",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "${input:grafana-token}"
+      }
+    }
+  }
+}

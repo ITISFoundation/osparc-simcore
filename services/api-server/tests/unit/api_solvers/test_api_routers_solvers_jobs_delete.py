@@ -66,8 +66,9 @@ async def test_delete_non_existing_solver_job(
     mock_dependency_get_celery_task_manager: MockType,
 ):
     # Cannot delete if it does not exists
+    _uuid = faker.uuid4()
     resp = await client.delete(
-        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{_uuid}",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
