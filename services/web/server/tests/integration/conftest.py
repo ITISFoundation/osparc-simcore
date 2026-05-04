@@ -70,6 +70,7 @@ def webserver_environ(request, docker_stack: dict, simcore_docker_compose: dict)
         "director",
         "docker-api-proxy",
         "dynamic-schdlr",
+        "temporal",
         "notifications-worker",
         "sto-worker",
         "sto-worker-cpu-bound",
@@ -133,7 +134,7 @@ def _default_app_config_for_integration_tests(
     # NOTE: previously in .env but removed from that file env since the webserver
     # can be configured as GC service as well. In integration tests, we are
     # for the moment using web-server as an all-in-one service.
-    # TODO: create integration tests using different configs
+    # NOTE: create integration tests using different configs
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
     test_environ["WEBSERVER_GARBAGE_COLLECTOR"] = (
         "{}"  # by default it is disabled. This enables it with default or env variables

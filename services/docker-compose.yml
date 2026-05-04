@@ -360,6 +360,23 @@ services:
       - default
       - interactive_services_subnet # for legacy dynamic services
 
+  temporal:
+    # Temporal server with auto schema setup — https://docs.temporal.io/self-hosted-guide
+    # Reuses the existing postgres service; auto-creates "temporal" and "temporal_visibility" databases.
+    image: temporalio/auto-setup:1.29.1
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: postgres
+      TEMPORAL_ADDRESS: temporal:7233
+      BIND_ON_IP: 0.0.0.0
+    networks:
+      - default
+
   #####################################
   ### Group simcore no dependencies ###
   #####################################
@@ -873,6 +890,9 @@ services:
   dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    # Must be greater than TEMPORALIO_WORKER_GRACEFUL_SHUTDOWN_TIMEOUT (default 30s)
+    # to allow the Temporalio worker to finish running activities before Docker sends SIGKILL.
+    stop_grace_period: 45s
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
@@ -901,6 +921,7 @@ services:
       DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: ${DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT}
       DYNAMIC_SCHEDULER_TRACING: ${DYNAMIC_SCHEDULER_TRACING}
       DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: ${DYNAMIC_SCHEDULER_UI_STORAGE_SECRET}
+      DYNAMIC_SCHEDULER_TEMPORALIO_SETTINGS: ${DYNAMIC_SCHEDULER_TEMPORALIO_SETTINGS}
       DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: ${DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER}
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
 
