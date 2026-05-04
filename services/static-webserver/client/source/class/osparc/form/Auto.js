@@ -229,6 +229,11 @@ qx.Class.define("osparc.form.Auto", {
 
     __setupDateField: function(s) {
       // capture numeric default before s.defaultValue gets mutated into a Date below
+      let defaultDate = null;
+      if (s.defaultValue != null && /^\d+$/.test(String(s.defaultValue))) {
+        const d = new Date(parseInt(s.defaultValue) * 1000);
+        defaultDate = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0);
+      }
       const defaultTimestamp = (s.defaultValue != null && /^\d+$/.test(String(s.defaultValue))) ? parseInt(s.defaultValue) : null;
       this.__formCtrl.addBindingOptions(s.key,
         { // model2target
@@ -242,7 +247,7 @@ qx.Class.define("osparc.form.Auto", {
             if (qx.lang.Type.isDate(data)) {
               return data;
             }
-            return defaultTimestamp != null ? new Date(defaultTimestamp * 1000) : null;
+            return defaultDate;
           }
         },
         { // target2model
