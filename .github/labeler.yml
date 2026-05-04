@@ -1,0 +1,217 @@
+# Configuration for actions/labeler@v5
+#
+# Maps repository paths to the existing labels defined in
+# https://github.com/ITISFoundation/osparc-simcore/labels
+#
+# Goal: identify which functional area(s) a PR touches so we can run
+# downstream analytics on the kind of work happening in the repo.
+#
+# Each top-level key is the label name. A PR receives the label when ANY
+# of its changed files matches ANY of the listed globs.
+#
+# Conventions:
+#   a:<area>          -> functional area (service, package, frontend, ...)
+#   <type>            -> cross-cutting concerns (docs, deps, e2e, security)
+# ---------------------------------------------------------------------------
+
+# =====================================================================
+# Services (services/<name>/**)
+# =====================================================================
+"a:agent":
+  - changed-files:
+      - any-glob-to-any-file: services/agent/**
+
+"a:apiserver":
+  - changed-files:
+      - any-glob-to-any-file: services/api-server/**
+
+"a:autoscaling":
+  - changed-files:
+      - any-glob-to-any-file: services/autoscaling/**
+
+"a:catalog":
+  - changed-files:
+      - any-glob-to-any-file: services/catalog/**
+
+"a:clusters-keeper":
+  - changed-files:
+      - any-glob-to-any-file: services/clusters-keeper/**
+
+"a:dask-service":
+  - changed-files:
+      - any-glob-to-any-file:
+          - services/dask-sidecar/**
+          - packages/dask-task-models-library/**
+
+"a:datcore-adapter":
+  - changed-files:
+      - any-glob-to-any-file: services/datcore-adapter/**
+
+"a:director":
+  - changed-files:
+      - any-glob-to-any-file: services/director/**
+
+"a:director-v2":
+  - changed-files:
+      - any-glob-to-any-file: services/director-v2/**
+
+"a:dynamic-scheduler":
+  - changed-files:
+      - any-glob-to-any-file: services/dynamic-scheduler/**
+
+"a:dynamic-sidecar":
+  - changed-files:
+      - any-glob-to-any-file: services/dynamic-sidecar/**
+
+"a:efs-guardian":
+  - changed-files:
+      - any-glob-to-any-file: services/efs-guardian/**
+
+"a:invitations":
+  - changed-files:
+      - any-glob-to-any-file: services/invitations/**
+
+"a:notifications":
+  - changed-files:
+      - any-glob-to-any-file:
+          - services/notifications/**
+          - packages/notifications-library/**
+
+"a:payments":
+  - changed-files:
+      - any-glob-to-any-file: services/payments/**
+
+"a:redis":
+  - changed-files:
+      - any-glob-to-any-file: services/redis/**
+
+"a:resource-usage-tracker":
+  - changed-files:
+      - any-glob-to-any-file: services/resource-usage-tracker/**
+
+"a:storage":
+  - changed-files:
+      - any-glob-to-any-file: services/storage/**
+
+# =====================================================================
+# Webserver (Python aiohttp app + its sub-apps)
+# =====================================================================
+"a:webserver":
+  - changed-files:
+      - any-glob-to-any-file: services/web/**
+
+"a:webserver/auth":
+  - changed-files:
+      - any-glob-to-any-file:
+          - services/web/server/src/simcore_service_webserver/login/**
+          - services/web/server/src/simcore_service_webserver/login_auth/**
+          - services/web/server/src/simcore_service_webserver/security/**
+          - services/web/server/src/simcore_service_webserver/session/**
+          - services/web/server/src/simcore_service_webserver/users/**
+          - services/web/server/src/simcore_service_webserver/groups/**
+          - services/web/server/src/simcore_service_webserver/api_keys/**
+
+# =====================================================================
+# Frontend (Qooxdoo client + static-webserver wrapper)
+# =====================================================================
+"a:frontend":
+  - changed-files:
+      - any-glob-to-any-file: services/static-webserver/**
+
+"a:static-webserver":
+  - changed-files:
+      - any-glob-to-any-file: services/static-webserver/**
+
+javascript:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.js"
+          - "**/*.mjs"
+          - "**/*.cjs"
+          - services/static-webserver/client/**
+
+# =====================================================================
+# Packages (packages/<name>/**)
+# =====================================================================
+"a:api":
+  - changed-files:
+      - any-glob-to-any-file:
+          - api/**
+          - packages/common-library/**
+
+"a:aws-library":
+  - changed-files:
+      - any-glob-to-any-file: packages/aws-library/**
+
+"a:celery-library":
+  - changed-files:
+      - any-glob-to-any-file: packages/celery-library/**
+
+"a:database":
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/postgres-database/**
+          - services/migration/**
+          - services/postgres/**
+
+"a:models-library":
+  - changed-files:
+      - any-glob-to-any-file: packages/models-library/**
+
+"a:ooil":
+  - changed-files:
+      - any-glob-to-any-file: packages/service-integration/**
+
+"a:services-library":
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/service-library/**
+          - packages/settings-library/**
+
+"a:simcore-sdk":
+  - changed-files:
+      - any-glob-to-any-file: packages/simcore-sdk/**
+
+# =====================================================================
+# Cross-cutting concerns
+# =====================================================================
+"a:doc":
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - "**/*.md"
+          - "**/README*"
+          - CITATION.cff
+
+"a:infra+ops":
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+          - ci/**
+          - scripts/**
+          - services/docker-compose*.y*ml
+          - "**/Dockerfile"
+          - "**/docker/**"
+          - Makefile
+          - "**/Makefile"
+
+e2e:
+  - changed-files:
+      - any-glob-to-any-file: tests/e2e/**
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/requirements/*.in"
+          - "**/requirements/*.txt"
+          - requirements/**
+          - "**/package.json"
+          - "**/package-lock.json"
+          - "**/yarn.lock"
+          - "**/pyproject.toml"
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/codeql/**
+          - .github/workflows/codeql-analysis.yml
