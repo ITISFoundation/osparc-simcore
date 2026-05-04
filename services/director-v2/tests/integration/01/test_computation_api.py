@@ -25,7 +25,7 @@ from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -197,19 +197,15 @@ async def test_start_empty_computation_returns_200(
 ):
     user = create_registered_user()
     empty_project = await create_project(user)
-    # empty project has nothing to run, returns 200 (not 201)
-    computation = await create_pipeline(
-        async_client,
-        project=empty_project,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        product_api_base_url=osparc_product_api_base_url,
-    )
-    assert computation is not None
-    assert computation.started is None
-    assert computation.state is RunningState.NOT_STARTED
-    assert computation.stopped is None
+    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
+        await create_pipeline(
+            async_client,
+            project_uuid=empty_project.uuid,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
+        )
 
 
 @dataclass
@@ -411,24 +407,23 @@ async def test_run_partial_computation(
     sleepers_project: ProjectAtDB = await create_project(user, workbench=fake_workbench_without_outputs)
 
     def _convert_to_pipeline_details(
-        project: ProjectAtDB,
-        exp_pipeline_adj_list: dict[int, list[int]],
-        exp_node_states: dict[int, dict[str, Any]],
+        workbench_node_uuids: list[NodeIDStr],
+        expected_pipeline_adj_list: dict[int, list[int]],
+        expected_node_states: dict[int, dict[str, Any]],
     ) -> PipelineDetails:
-        workbench_node_uuids = list(project.workbench.keys())
         converted_adj_list: dict[NodeID, list[NodeID]] = {}
-        for node_key, next_nodes in exp_pipeline_adj_list.items():
+        for node_key, next_nodes in expected_pipeline_adj_list.items():
             converted_adj_list[NodeID(workbench_node_uuids[node_key])] = [
                 NodeID(workbench_node_uuids[n]) for n in next_nodes
             ]
         converted_node_states: dict[NodeID, NodeState] = {
-            NodeID(workbench_node_uuids[n]): NodeState(
-                modified=s["modified"],
-                dependencies={NodeID(workbench_node_uuids[dep_n]) for dep_n in s["dependencies"]},
-                currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
-                progress=s.get("progress"),
+            NodeID(workbench_node_uuids[node_index]): NodeState(
+                modified=node_state["modified"],
+                dependencies={NodeID(workbench_node_uuids[dep_n]) for dep_n in node_state["dependencies"]},
+                current_status=node_state.get("currentStatus", RunningState.NOT_STARTED),
+                progress=node_state.get("progress"),
             )
-            for n, s in exp_node_states.items()
+            for node_index, node_state in expected_node_states.items()
         }
         pipeline_progress = 0
         for node_id in converted_adj_list:
@@ -442,13 +437,15 @@ async def test_run_partial_computation(
 
     # convert the ids to the node uuids from the project
     expected_pipeline_details = _convert_to_pipeline_details(
-        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states
+        workbench_node_uuids=list(sleepers_project.workbench.keys()),
+        expected_pipeline_adj_list=params.exp_pipeline_adj_list,
+        expected_node_states=params.exp_node_states,
     )
 
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -462,22 +459,24 @@ async def test_run_partial_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=expected_pipeline_details,
         iteration=1,
     )
 
     # now wait for the computation to finish
     task_out = await assert_and_wait_for_pipeline_status(async_client, task_out.url, user["id"], sleepers_project.uuid)
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
-        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states_after_run
+        workbench_node_uuids=list(sleepers_project.workbench.keys()),
+        expected_pipeline_adj_list=params.exp_pipeline_adj_list,
+        expected_node_states=params.exp_node_states_after_run,
     )
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=expected_pipeline_details_after_run,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.SUCCESS,
+        expected_pipeline_details=expected_pipeline_details_after_run,
         iteration=1,
     )
 
@@ -485,41 +484,32 @@ async def test_run_partial_computation(
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
-    # pipeline is up-to-date, returns 200 (nothing started)
-    new_task_out = await create_pipeline(
-        async_client,
-        project=sleepers_project,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        product_api_base_url=osparc_product_api_base_url,
-        subgraph=[
-            str(node_id)
-            for index, node_id in enumerate(sleepers_project.workbench)
-            if index in params.subgraph_elements
-        ],
-    )
-    assert new_task_out is not None
-    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
-    # empty adjacency list, and state reflects the last completed run
-    assert new_task_out.stop_url is None
-    assert new_task_out.state is RunningState.SUCCESS
-    assert new_task_out.id == task_out.id
-    assert new_task_out.iteration == task_out.iteration
-    assert new_task_out.pipeline_details.adjacency_list == {}
-    assert new_task_out.started is None
-    assert new_task_out.stopped is None
+    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
+        await create_pipeline(
+            async_client,
+            project_uuid=sleepers_project.uuid,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
+            expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            subgraph=[
+                str(node_id)
+                for index, node_id in enumerate(sleepers_project.workbench)
+                if index in params.subgraph_elements
+            ],
+        )
 
     # force run it this time.
     # the task are up-to-date but we force run them
     expected_pipeline_details_forced = _convert_to_pipeline_details(
-        sleepers_project,
-        params.exp_pipeline_adj_list_after_force_run,
-        params.exp_node_states_after_force_run,
+        workbench_node_uuids=list(sleepers_project.workbench.keys()),
+        expected_pipeline_adj_list=params.exp_pipeline_adj_list_after_force_run,
+        expected_node_states=params.exp_node_states_after_force_run,
     )
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -535,9 +525,9 @@ async def test_run_partial_computation(
 
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details_forced,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=expected_pipeline_details_forced,
         iteration=2,
     )
 
@@ -565,7 +555,7 @@ async def test_run_computation(
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -576,9 +566,9 @@ async def test_run_computation(
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
     )
 
@@ -596,33 +586,24 @@ async def test_run_computation(
 
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.SUCCESS,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=1,
     )
 
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
-    # run again should return a 200 cause everything is up-to-date (nothing started)
-    new_task_out = await create_pipeline(
-        async_client,
-        project=sleepers_project,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        product_api_base_url=osparc_product_api_base_url,
-    )
-    assert new_task_out is not None
-    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
-    # empty adjacency list, and state reflects the last completed run
-    assert new_task_out.stop_url is None
-    assert new_task_out.state is RunningState.SUCCESS
-    assert new_task_out.id == task_out.id
-    assert new_task_out.iteration == task_out.iteration
-    assert new_task_out.pipeline_details.adjacency_list == {}
-    assert new_task_out.started is None
-    assert new_task_out.stopped is None
+    # run again should return a 422 cause everything is uptodate
+    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
+        await create_pipeline(
+            async_client,
+            project_uuid=sleepers_project.uuid,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
+        )
 
     # now force run again
     # the task are up-to-date but we force run them
@@ -633,7 +614,7 @@ async def test_run_computation(
     expected_pipeline_details_forced.progress = 0
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -643,9 +624,9 @@ async def test_run_computation(
     # check the contents is correct
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
         iteration=2,
     )
 
@@ -653,9 +634,9 @@ async def test_run_computation(
     task_out = await assert_and_wait_for_pipeline_status(async_client, task_out.url, user["id"], sleepers_project.uuid)
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.SUCCESS,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=2,
     )
 
@@ -682,7 +663,7 @@ async def test_abort_computation(
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -692,9 +673,9 @@ async def test_abort_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
     )
 
@@ -755,7 +736,7 @@ async def test_update_and_delete_computation(
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -765,16 +746,16 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.NOT_STARTED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
     )
 
     # update the pipeline
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -784,16 +765,16 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.NOT_STARTED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
     )
 
     # update the pipeline
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -803,16 +784,16 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.NOT_STARTED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
     )
 
     # start it now
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -821,9 +802,9 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        project_uuid=sleepers_project.uuid,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
     )
 
@@ -843,7 +824,7 @@ async def test_update_and_delete_computation(
     with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_409_CONFLICT}"):
         await create_pipeline(
             async_client,
-            project=sleepers_project,
+            project_uuid=sleepers_project.uuid,
             user_id=user["id"],
             start_pipeline=False,
             product_name=osparc_product_name,
@@ -886,24 +867,21 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         },
     )
 
-    # this pipeline has no computational services, returns 200 (nothing to start)
-    computation = await create_pipeline(
-        async_client,
-        project=project_with_dynamic_node,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        product_api_base_url=osparc_product_api_base_url,
-    )
-    assert computation is not None
-    assert computation.started is None
-    assert computation.state is RunningState.NOT_STARTED
-    assert computation.stopped is None
+    # this pipeline is not runnable as there are no computational services
+    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
+        await create_pipeline(
+            async_client,
+            project_uuid=project_with_dynamic_node.uuid,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+            product_api_base_url=osparc_product_api_base_url,
+        )
 
     # still this pipeline shall be creatable if we do not want to start it
     await create_pipeline(
         async_client,
-        project=project_with_dynamic_node,
+        project_uuid=project_with_dynamic_node.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -1249,7 +1227,7 @@ async def test_burst_create_computations(
             [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project,
+                    project_uuid=sleepers_project.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,
@@ -1260,7 +1238,7 @@ async def test_burst_create_computations(
             + [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project2,
+                    project_uuid=sleepers_project2.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,
@@ -1278,7 +1256,7 @@ async def test_burst_create_computations(
             [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project,
+                    project_uuid=sleepers_project.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,
@@ -1289,7 +1267,7 @@ async def test_burst_create_computations(
             + [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project2,
+                    project_uuid=sleepers_project2.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,

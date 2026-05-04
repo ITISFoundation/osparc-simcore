@@ -8,14 +8,16 @@ from aiohttp import web
 from common_library.exclude import Unset, is_set
 from models_library.basic_types import IDStr
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.workspaces import WorkspaceID
-from pydantic import NonNegativeInt, PositiveInt
+from pydantic import NonNegativeInt, PositiveInt, TypeAdapter
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_extensions import projects_extensions
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils_projects_nodes import create_workbench_subquery
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -99,12 +101,24 @@ async def get_project(
     project_uuid: ProjectID,
 ) -> ProjectDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sql.select(*PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}")
-        result = await conn.execute(query)
+        result = await conn.execute(sa.select(*PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}"))
         row = result.one_or_none()
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         return ProjectDBGet.model_validate(row)
+
+
+async def get_project_product(
+    app,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: ProjectID,
+) -> ProductName:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.scalar(sa.select(projects.c.product_name).where(projects.c.uuid == f"{project_uuid}"))
+        if result is None:
+            raise ProjectNotFoundError(project_uuid=project_uuid)
+        return TypeAdapter(ProductName).validate_python(result)
 
 
 async def get_project_with_workbench(
@@ -114,7 +128,21 @@ async def get_project_with_workbench(
     project_uuid: ProjectID,
 ) -> ProjectWithWorkbenchDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sql.select(*PROJECT_DB_COLS, projects.c.workbench).where(projects.c.uuid == f"{project_uuid}")
+        workbench_subquery = create_workbench_subquery(f"{project_uuid}")
+        query = (
+            sql
+            .select(
+                *PROJECT_DB_COLS,
+                sa.func.coalesce(workbench_subquery.c.workbench, sa.text("'{}'::json")).label("workbench"),
+            )
+            .select_from(
+                projects.outerjoin(
+                    workbench_subquery,
+                    projects.c.uuid == workbench_subquery.c.project_uuid,
+                )
+            )
+            .where(projects.c.uuid == f"{project_uuid}")
+        )
         result = await conn.execute(query)
         row = result.one_or_none()
         if row is None:
@@ -134,7 +162,8 @@ async def batch_get_project_name(
     projects_uuids_str = [f"{uuid}" for uuid in projects_uuids]
 
     query = (
-        sql.select(
+        sql
+        .select(
             projects.c.uuid,
             projects.c.name,
         )
@@ -232,7 +261,8 @@ async def patch_project(
 ) -> ProjectDBGet:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
-            projects.update()
+            projects
+            .update()
             .values(
                 **new_partial_project_data,
                 last_change_date=sql.func.now(),
