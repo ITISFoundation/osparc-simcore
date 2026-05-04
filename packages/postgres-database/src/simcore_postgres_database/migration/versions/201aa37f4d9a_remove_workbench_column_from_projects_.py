@@ -85,15 +85,16 @@ def _migrate_position_to_projects_ui() -> None:
 def _migrate_workbench_to_projects_nodes() -> None:
     """Migrate nodes from projects.workbench to projects_nodes table."""
 
-    # Get database connection
     connection = op.get_bind()
 
-    # Fetch all projects with workbench data
     projects_result = connection.execute(sa.text("SELECT uuid, workbench FROM projects WHERE workbench IS NOT NULL"))
 
     errors: list[str] = []
-    updated_nodes_count = 0
-    inserted_nodes_count = 0
+    upserted_nodes_count = 0
+
+    # Collect all nodes for batch upsert
+    batch: list[dict] = []
+    _BATCH_SIZE = 500
 
     for project_uuid, workbench_json in projects_result:
         if not workbench_json:
@@ -129,15 +130,6 @@ def _migrate_workbench_to_projects_nodes() -> None:
                 )
                 continue
 
-            # Check if node already exists
-            existing_node = connection.execute(
-                sa.text(
-                    "SELECT project_node_id FROM projects_nodes WHERE project_uuid = :project_uuid AND node_id = :node_id"
-                ),
-                {"project_uuid": project_uuid, "node_id": node_id},
-            ).fetchone()
-
-            # Prepare node data for insertion/update
             node_values = {
                 "project_uuid": project_uuid,
                 "node_id": node_id,
@@ -183,58 +175,66 @@ def _migrate_workbench_to_projects_nodes() -> None:
                 ),
             }
 
-            if existing_node:
-                # Update existing node
-                update_sql = """
-                    UPDATE projects_nodes SET
-                        key = :key,
-                        version = :version,
-                        label = :label,
-                        progress = :progress,
-                        thumbnail = :thumbnail,
-                        input_access = :input_access::jsonb,
-                        input_nodes = :input_nodes::jsonb,
-                        inputs = :inputs::jsonb,
-                        inputs_required = :inputs_required::jsonb,
-                        inputs_units = :inputs_units::jsonb,
-                        output_nodes = :output_nodes::jsonb,
-                        outputs = :outputs::jsonb,
-                        run_hash = :run_hash,
-                        state = :state::jsonb,
-                        parent = :parent,
-                        boot_options = :boot_options::jsonb,
-                        modified = NOW()
-                    WHERE project_uuid = :project_uuid AND node_id = :node_id
-                """
-                connection.execute(sa.text(update_sql), node_values)
-                updated_nodes_count += 1
-                print(f"Updated existing node {node_id} in project {project_uuid}")
+            batch.append(node_values)
 
-            else:
-                # Insert new node
-                insert_sql = """
-                    INSERT INTO projects_nodes (
-                        project_uuid, node_id, key, version, label, progress, thumbnail,
-                        input_access, input_nodes, inputs, inputs_required, inputs_units,
-                        output_nodes, outputs, run_hash, state, parent, boot_options,
-                        required_resources, created, modified
-                    ) VALUES (
-                        :project_uuid, :node_id, :key, :version, :label, :progress, :thumbnail,
-                        :input_access::jsonb, :input_nodes::jsonb, :inputs::jsonb,
-                        :inputs_required::jsonb, :inputs_units::jsonb, :output_nodes::jsonb,
-                        :outputs::jsonb, :run_hash, :state::jsonb, :parent, :boot_options::jsonb,
-                        '{}'::jsonb, NOW(), NOW()
-                    )
-                """
-                connection.execute(sa.text(insert_sql), node_values)
-                inserted_nodes_count += 1
+            if len(batch) >= _BATCH_SIZE:
+                upserted_nodes_count += _flush_node_batch(connection, batch)
+                batch.clear()
 
-    print(f"Migration summary: {inserted_nodes_count} nodes inserted, {updated_nodes_count} nodes updated")
+    # Flush remaining
+    if batch:
+        upserted_nodes_count += _flush_node_batch(connection, batch)
+
+    print(f"Migration summary: {upserted_nodes_count} nodes upserted")
 
     if errors:
         error_message = f"Migration failed with {len(errors)} errors:\n" + "\n".join(errors)
         print(error_message)
         raise RuntimeError(error_message)
+
+
+def _flush_node_batch(connection, batch: list[dict]) -> int:
+    """Upsert a batch of nodes using INSERT ... ON CONFLICT."""
+    if not batch:
+        return 0
+
+    upsert_sql = """
+        INSERT INTO projects_nodes (
+            project_uuid, node_id, key, version, label, progress, thumbnail,
+            input_access, input_nodes, inputs, inputs_required, inputs_units,
+            output_nodes, outputs, run_hash, state, parent, boot_options,
+            required_resources, created, modified
+        ) VALUES (
+            :project_uuid, :node_id, :key, :version, :label, :progress, :thumbnail,
+            :input_access::jsonb, :input_nodes::jsonb, :inputs::jsonb,
+            :inputs_required::jsonb, :inputs_units::jsonb, :output_nodes::jsonb,
+            :outputs::jsonb, :run_hash, :state::jsonb, :parent, :boot_options::jsonb,
+            '{}'::jsonb, NOW(), NOW()
+        )
+        ON CONFLICT (project_uuid, node_id) DO UPDATE SET
+            key = EXCLUDED.key,
+            version = EXCLUDED.version,
+            label = EXCLUDED.label,
+            progress = EXCLUDED.progress,
+            thumbnail = EXCLUDED.thumbnail,
+            input_access = EXCLUDED.input_access,
+            input_nodes = EXCLUDED.input_nodes,
+            inputs = EXCLUDED.inputs,
+            inputs_required = EXCLUDED.inputs_required,
+            inputs_units = EXCLUDED.inputs_units,
+            output_nodes = EXCLUDED.output_nodes,
+            outputs = EXCLUDED.outputs,
+            run_hash = EXCLUDED.run_hash,
+            state = EXCLUDED.state,
+            parent = EXCLUDED.parent,
+            boot_options = EXCLUDED.boot_options,
+            modified = NOW()
+    """
+
+    for node_values in batch:
+        connection.execute(sa.text(upsert_sql), node_values)
+
+    return len(batch)
 
 
 def _restore_workbench_from_projects_nodes() -> None:

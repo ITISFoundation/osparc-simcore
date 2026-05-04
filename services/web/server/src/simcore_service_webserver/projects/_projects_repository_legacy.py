@@ -86,7 +86,7 @@ from ._projects_repository_legacy_utils import (
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
-    get_project_workbench,
+    get_projects_workbenches,
     patch_workbench,
 )
 from ._socketio_service import notify_project_document_updated
@@ -723,14 +723,20 @@ class ProjectDBAPI(BaseProjectDB):
 
             prjs_output = []
             result = await conn.execute(combined_query.offset(offset).limit(limit))
-            for row in result.mappings():
+            rows = list(result.mappings())
+
+            # Batch-fetch all workbenches in a single query
+            project_uuids = [row["uuid"] for row in rows]
+            workbenches = await get_projects_workbenches(conn, project_uuids)
+
+            for row in rows:
                 # NOTE: Historically, projects were returned as a dictionary. I have created a model that
                 # validates the DB row, but this model includes some default values inside the Workbench Node model.
                 # Therefore, if we use this model, it will return those default values, which is not backward-compatible
                 # with the frontend. The frontend would need to check and adapt how it handles default values in
                 # Workbench nodes, which are currently not returned if not set in the DB.
                 prj_dict = dict(row.items()) | {
-                    "workbench": await get_project_workbench(conn, row["uuid"]),
+                    "workbench": workbenches.get(row["uuid"], {}),
                 }
                 ProjectListAtDB.model_validate(prj_dict)
                 prjs_output.append(prj_dict)

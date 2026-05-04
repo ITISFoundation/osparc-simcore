@@ -17,7 +17,10 @@ from simcore_postgres_database.utils_repos import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from simcore_service_webserver.projects._projects_repository_legacy_utils import get_project_workbench
+from simcore_service_webserver.projects._projects_repository_legacy_utils import (
+    get_project_workbench,
+    get_projects_workbenches,
+)
 
 from ..db.base_repository import BaseRepository
 from .models import ProjectDBGet, ProjectJobDBGet
@@ -182,9 +185,16 @@ class ProjectJobsRepository(BaseRepository):
             total_count = await conn.scalar(total_query)
             assert isinstance(total_count, int)  # nosec
 
+            result = await conn.execute(list_query)
+            rows = result.all()
+
+            # Batch-fetch all workbenches in a single query
+            project_uuids = [row.uuid for row in rows]
+            workbenches = await get_projects_workbenches(conn, project_uuids)
+
             projects_list = []
-            async for project_row in await conn.stream(list_query):
-                workbench = await get_project_workbench(conn, project_row.uuid)
+            for project_row in rows:
+                workbench = workbenches.get(project_row.uuid, {})
                 projects_list.append(ProjectJobDBGet.model_validate({**project_row, "workbench": workbench}))
 
             return total_count, projects_list

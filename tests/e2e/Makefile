@@ -72,6 +72,9 @@ define _inject-templates-in-db
 @docker cp tutorials/sleepers_project_template_sql.csv $$(docker ps -q --filter="name=postgres"):/template_projects_sleepers_project_template_sql.csv
 # template is copied into the postgres container and then injected
 @docker exec $$(docker ps -q --filter="name=postgres") psql --user scu --dbname simcoredb --command "\copy projects from '/template_projects_sleepers_project_template_sql.csv' csv header;"
+# inject the sleepers project nodes
+@docker cp tutorials/sleepers_project_nodes_sql.csv $$(docker ps -q --filter="name=postgres"):/template_projects_nodes_sql.csv
+@docker exec $$(docker ps -q --filter="name=postgres") psql --user scu --dbname simcoredb --command "\copy projects_nodes from '/template_projects_nodes_sql.csv' csv header;"
 endef
 
 # SETUP ##################

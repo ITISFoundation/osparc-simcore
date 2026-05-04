@@ -14,7 +14,11 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects_nodes import (
+    projects_nodes as projects_nodes_table,
+)
 from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNode,
     ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import (
@@ -380,3 +384,27 @@ async def get_project_workbench(
         node_data = {snake_to_camel(k): v for k, v in node_data.items()}
         workbench[f"{project_node.node_id}"] = node_data
     return workbench
+
+
+async def get_projects_workbenches(
+    connection: AsyncConnection,
+    project_uuids: list[str],
+) -> dict[str, dict[str, Any]]:
+    """Batch-fetch workbenches for multiple projects in a single query."""
+    if not project_uuids:
+        return {}
+
+    exclude_fields = {"node_id", "required_resources", "created", "modified"}
+
+    stmt = sa.select(*list(projects_nodes_table.columns)).where(projects_nodes_table.c.project_uuid.in_(project_uuids))
+    result = await connection.execute(stmt)
+    rows = result.mappings().all()
+
+    workbenches: dict[str, dict[str, Any]] = {uuid: {} for uuid in project_uuids}
+    for row in rows:
+        on = ProjectNode.model_validate(row)
+        node_data = on.model_dump(exclude=exclude_fields, exclude_none=True, exclude_unset=True)
+        node_data = {snake_to_camel(k): v for k, v in node_data.items()}
+        workbenches[row["project_uuid"]][f"{on.node_id}"] = node_data
+
+    return workbenches
