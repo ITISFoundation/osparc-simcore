@@ -224,6 +224,3 @@ async def create_project_node(
             return new_node_id, node_row
 
         yield _creator
-
-    # Cleanup is handled automatically by insert_and_get_row_lifespan
-    _logger.debug("Deleting %s", created_node_entries)
