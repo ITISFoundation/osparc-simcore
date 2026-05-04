@@ -725,7 +725,7 @@ class ProjectDBAPI(BaseProjectDB):
                 # with the frontend. The frontend would need to check and adapt how it handles default values in
                 # Workbench nodes, which are currently not returned if not set in the DB.
                 prj_dict = dict(row.items()) | {
-                    "workbench": await get_project_workbench(conn, row.uuid),
+                    "workbench": await get_project_workbench(conn, row["uuid"]),
                 }
                 ProjectListAtDB.model_validate(prj_dict)
                 prjs_output.append(prj_dict)
