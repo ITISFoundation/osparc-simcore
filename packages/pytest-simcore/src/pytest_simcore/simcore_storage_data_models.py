@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import contextlib
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
@@ -23,6 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from .helpers.faker_factories import DEFAULT_FAKER, random_project
 from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
+
+_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -223,4 +226,4 @@ async def create_project_node(
         yield _creator
 
     # Cleanup is handled automatically by insert_and_get_row_lifespan
-    print("Deleting ", created_node_entries)
+    _logger.debug("Deleting %s", created_node_entries)

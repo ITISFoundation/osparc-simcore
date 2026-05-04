@@ -203,6 +203,10 @@ async def create_project_document_and_notify(
     user_id: UserID,
     client_session_id: ClientSessionID | None,
 ):
+    app_settings = get_application_settings(app)
+    if app_settings.WEBSERVER_REALTIME_COLLABORATION is None:
+        return
+
     (
         project_document,
         document_version,
@@ -1284,7 +1288,7 @@ async def patch_project_node(
             await notify_project_node_update(app, updated_project_with_states, node_uuid)
         return
 
-    await notify_project_node_update(app, updated_project.model_dump(mode="json", by_alias=True), node_id)
+    await notify_project_node_update(app, updated_project_with_states, node_id)
 
 
 async def update_project_node_outputs(
