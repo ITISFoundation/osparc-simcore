@@ -676,10 +676,12 @@ async def update_project_node_resources_from_hardware_info(
             other_services_resources = collections.Counter({"RAM": 0, "CPUS": 0})
             for service_name, sub_service_resources in node_resources.items():
                 if service_name != scalable_service_name:
-                    other_services_resources.update({
-                        "RAM": sub_service_resources.resources["RAM"].limit,
-                        "CPU": sub_service_resources.resources["CPU"].limit,
-                    })
+                    other_services_resources.update(
+                        {
+                            "RAM": sub_service_resources.resources["RAM"].limit,
+                            "CPU": sub_service_resources.resources["CPU"].limit,
+                        }
+                    )
             new_cpus_value = max(
                 new_cpus_value - other_services_resources["CPU"],
                 DYNAMIC_SIDECAR_MIN_CPUS,
@@ -1274,7 +1276,7 @@ async def patch_project_node(
     )
 
     updated_project_with_states = await add_project_states_for_user(
-        user_id=user_id, project=updated_project.model_dump(mode="json"), app=app
+        user_id=user_id, project=updated_project.model_dump(mode="json", by_alias=True), app=app
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
@@ -1282,7 +1284,7 @@ async def patch_project_node(
             await notify_project_node_update(app, updated_project_with_states, node_uuid)
         return
 
-    await notify_project_node_update(app, updated_project.model_dump(mode="json"), node_id)
+    await notify_project_node_update(app, updated_project.model_dump(mode="json", by_alias=True), node_id)
 
 
 async def update_project_node_outputs(
@@ -1345,11 +1347,11 @@ async def update_project_node_outputs(
 
     updated_project_with_states = await add_project_states_for_user(
         user_id=user_id,
-        project=updated_project.model_dump(mode="json"),
+        project=updated_project.model_dump(mode="json", by_alias=True),
         app=app,
     )
 
-    changed_keys = [k for k in new_outputs if new_outputs.get(k) != old_outputs.get(k)]
+    changed_keys = [k for k in {*new_outputs, *old_outputs} if new_outputs.get(k) != old_outputs.get(k)]
     return updated_project_with_states, changed_keys
 
 
@@ -1582,11 +1584,13 @@ async def try_open_project_for_user(  # noqa: C901
                     return True
                 # Enforce per-user open project limit
                 if max_number_of_opened_projects_per_user is not None and (
-                    len({
-                        uuid
-                        for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
-                        if uuid != f"{project_uuid}"
-                    })
+                    len(
+                        {
+                            uuid
+                            for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
+                            if uuid != f"{project_uuid}"
+                        }
+                    )
                     >= max_number_of_opened_projects_per_user
                 ):
                     raise ProjectTooManyProjectOpenedError(

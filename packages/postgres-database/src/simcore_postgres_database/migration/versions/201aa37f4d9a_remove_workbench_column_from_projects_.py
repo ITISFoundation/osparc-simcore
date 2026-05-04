@@ -300,10 +300,13 @@ def downgrade():
             "workbench",
             postgresql.JSON(astext_type=sa.Text()),
             autoincrement=False,
-            nullable=False,
+            nullable=True,
         ),
     )
 
     # Restore workbench data from projects_nodes table
     _restore_workbench_from_projects_nodes()
+
+    # Now enforce NOT NULL after data has been restored
+    op.alter_column("projects", "workbench", nullable=False)
     # ### end Alembic commands ###
