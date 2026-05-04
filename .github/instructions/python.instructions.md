@@ -70,6 +70,7 @@ Ensure compatibility with the following library versions:
 ### Code Practices
 
 * Use `f-string` formatting for all string interpolation except for logging message strings.
+* Prefer `f"{value}"` over `str(value)` for converting values to strings.
 * Use **relative imports** within the same package/module.
   - For imports within the same repository/project, always use relative imports (e.g., `from ..constants import APP_SETTINGS_KEY` instead of `from simcore_service_webserver.constants import APP_SETTINGS_KEY`)
   - Use absolute imports only for external libraries and packages
