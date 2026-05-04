@@ -94,6 +94,7 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
+    ProjectTooManyNodesError,
 )
 from .models import (
     ProjectDBGet,
@@ -292,7 +293,8 @@ class ProjectDBAPI(BaseProjectDB):
             "bootOptions": "boot_options",
         }
 
-        project_nodes |= {
+        # Build nodes from workbench, then let caller-provided project_nodes take precedence
+        workbench_nodes = {
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
                 **{
@@ -305,6 +307,15 @@ class ProjectDBAPI(BaseProjectDB):
             )
             for node_id, project_workbench_node in workbench.items()
         }
+        # Caller-provided nodes override workbench-derived ones (e.g. richer metadata from cloning)
+        workbench_nodes.update(project_nodes)
+        project_nodes = workbench_nodes
+
+        if len(project_nodes) > self.MAX_NUMBER_OF_NODES_PER_PROJECT:
+            raise ProjectTooManyNodesError(
+                max_num_nodes=self.MAX_NUMBER_OF_NODES_PER_PROJECT,
+                requested_num_nodes=len(project_nodes),
+            )
 
         inserted_project = await self._insert_project_in_db(
             insert_values,

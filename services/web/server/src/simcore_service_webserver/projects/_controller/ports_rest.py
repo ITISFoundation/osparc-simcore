@@ -7,7 +7,6 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
     ProjectOutputGet,
 )
-from models_library.basic_types import KeyIDStr
 from models_library.projects_nodes import PartialNode
 from models_library.projects_nodes_io import NodeID
 from models_library.utils.services_io import JsonSchemaDict
@@ -89,15 +88,20 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     current_workbench = await _nodes_service.get_project_nodes_map(app=request.app, project_id=path_params.project_id)
     current_inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(current_workbench)
 
-    # build workbench patch
-    partial_workbench_data = {}
+    # validate and build workbench patch
+    update = {}
     for input_update in inputs_updates:
         node_id = input_update.key
         if node_id not in current_inputs:
             raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
+        update[node_id] = input_update.value
 
-        current_workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
-        partial_workbench_data[node_id] = current_workbench[node_id].model_dump(include={"outputs"}, exclude_unset=True)
+    # validates values against JSON schema and updates workbench in-place
+    _ports_service.set_inputs_in_project(current_workbench, update)
+
+    partial_workbench_data = {
+        node_id: current_workbench[node_id].model_dump(include={"outputs"}, exclude_unset=True) for node_id in update
+    }
 
     partial_nodes_map = TypeAdapter(dict[NodeID, PartialNode]).validate_python(partial_workbench_data)
 
