@@ -1195,7 +1195,6 @@ async def update_project_node_state(
     )
 
     return await get_project_for_user(app, user_id=user_id, project_uuid=f"{project_id}", include_state=True)
-    return await get_project_for_user(app, user_id=user_id, project_uuid=f"{project_id}", include_state=True)
 
 
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
