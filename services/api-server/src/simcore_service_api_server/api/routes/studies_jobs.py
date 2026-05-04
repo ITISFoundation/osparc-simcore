@@ -65,7 +65,7 @@ router = APIRouter()
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=include_from_version("0.10-rc1"),
 )
 async def list_study_jobs(
     study_id: StudyID,
