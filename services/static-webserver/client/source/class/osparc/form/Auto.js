@@ -240,7 +240,8 @@ qx.Class.define("osparc.form.Auto", {
             if (qx.lang.Type.isDate(data)) {
               return data;
             }
-            return null;
+            // this avoids the moustached template issue
+            return s.defaultValue != null ? new Date(s.defaultValue * 1000) : null;
           }
         },
         { // target2model
@@ -249,7 +250,8 @@ qx.Class.define("osparc.form.Auto", {
               let d = new Date(Date.UTC(data.getFullYear(), data.getMonth(), data.getDate(), 0, 0, 0, 0));
               return Math.round(d.getTime()/1000);
             }
-            return null;
+            // this avoids the moustached template issue
+            return s.defaultValue != null ? parseInt(s.defaultValue) : null;
           }
         }
       );
@@ -300,7 +302,8 @@ qx.Class.define("osparc.form.Auto", {
           if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
             return String(data);
           }
-          return null;
+          // this avoids the moustached template issue
+          return s.defaultValue && !isNaN(parseFloat(s.defaultValue)) ? String(parseFloat(s.defaultValue)) : String(0);
         }
       };
       const target2model = {
@@ -312,7 +315,7 @@ qx.Class.define("osparc.form.Auto", {
         converter: function(data) {
           if (!data) {
             // this avoids the moustached template issue
-            return parseFloat(s.defaultValue);
+            return s.defaultValue && !isNaN(parseFloat(s.defaultValue)) ? parseFloat(s.defaultValue) : 0;
           }
           const tmp = data.split(" ");
           if (tmp.length > 1 && "x_unit" in this.myContext.s) {
