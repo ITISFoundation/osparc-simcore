@@ -70,7 +70,7 @@ async def delete(
                 (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
             )
         )
-        if result.rowcount == 0:  # type: ignore[union-attr]
+        if result.rowcount == 0:  # type: ignore[attr-defined]
             raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
 
 
