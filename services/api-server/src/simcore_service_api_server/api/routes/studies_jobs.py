@@ -46,6 +46,7 @@ from ._constants import (
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
+    include_from_version,
 )
 from .solvers_jobs import JOBS_STATUS_CODES
 
@@ -144,7 +145,7 @@ async def create_study_job(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=include_from_version("0.10-rc1"),
 )
 async def get_study_job(
     study_id: StudyID,
@@ -338,7 +339,10 @@ async def replace_study_job_custom_metadata(
 ):
     job_name = compose_study_job_resource_name(study_id, job_id)
 
-    msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    msg = (
+        f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} "
+        f"job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    )
     _logger.debug(msg)
 
     return await replace_custom_metadata(
