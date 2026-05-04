@@ -88,13 +88,13 @@ Ensure compatibility with the following library versions:
 
 This repository follows the **Controller-Service-Repository** layered design pattern. When adding or modifying features, respect these layers:
 
-* **Controller** (`_controller/`): Thin HTTP/REST handler. Parses requests, calls the service layer, and formats the response. Keep business logic **out** of controllers.
+* **Controller**: Thin HTTP/REST handler. Parses requests, calls the service layer, and formats the response. Keep business logic **out** of controllers.
   - Controllers should delegate complex logic to the service layer rather than calling repositories or other services directly.
   - Example: `_controller/rest/accounts_rest.py` calls `_accounts_service.py`, never `_accounts_repository.py` directly.
-* **Service** (`_*_service.py` or `*_service.py`): Business logic and orchestration. Coordinates repositories, validates business rules, and calls other services.
+* **Service**: Business logic and orchestration. Coordinates repositories, validates business rules, and calls other services.
   - Service functions accept `app: web.Application` (for aiohttp) or equivalent and use dependency injection to obtain engines/connections.
-* **Repository** (`_*_repository.py`): Data access layer. Contains all SQLAlchemy queries. Returns raw dicts or simple typed structures, not HTTP-aware types.
-  - Repository functions accept `engine: AsyncEngine` (or `connection`) and use `pass_or_acquire_connection` for flexible connection handling.
+* **Repository**: Data access layer. In the case of services which have access to the database, contains all SQLAlchemy queries. Returns raw dicts or simple typed structures, not HTTP-aware types.
+  - Access to other services (e.g., via HTTP clients or RPC clients) is also typically located in the repository layer, or occasionally in the service layer.
 
 When refactoring, move business logic from controllers to services (e.g., extracting preview/notification logic into service functions like `preview_rejection_user_account`).
 
