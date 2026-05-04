@@ -113,9 +113,15 @@ qx.Class.define("osparc.widget.StudyDataManager", {
         return false;
       }
       const node = study.getWorkbench().getNode(nodeId);
-      if (node && node.isDynamic()) {
+      if (!node) {
+        return false;
+      }
+      if (node.isDynamic()) {
         const interactive = node.getStatus().getInteractive();
-        return !["idle", "failed"].includes(interactive);
+        return ![null, "idle", "failed", "deprecated", "retired"].includes(interactive);
+      }
+      if (node.isComputational()) {
+        return osparc.data.model.NodeStatus.isComputationalRunning(node);
       }
       return false;
     },
