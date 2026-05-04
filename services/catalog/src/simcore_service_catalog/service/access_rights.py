@@ -201,12 +201,27 @@ async def inherit_from_latest_compatible_release(
     previous_release = await _find_latest_patch_compatible_release(services_repo, service_metadata=service_metadata)
 
     if not previous_release:
+        _logger.info(
+            "No previous patch release found for %s:%s, skipping inheritance",
+            service_metadata.key,
+            service_metadata.version,
+        )
         return inherited_data
 
     # 1. ACCESS-RIGHTS:
     #    Inherit access rights (from all products) from the previous release
     previous_access_rights = await services_repo.get_service_access_rights(
         previous_release.key, previous_release.version
+    )
+
+    _logger.info(
+        "Inheriting %d access rights from %s:%s to %s:%s (gids: %s)",
+        len(previous_access_rights),
+        previous_release.key,
+        previous_release.version,
+        service_metadata.key,
+        service_metadata.version,
+        {(r.gid, r.product_name) for r in previous_access_rights},
     )
 
     inherited_data["access_rights"] = [
