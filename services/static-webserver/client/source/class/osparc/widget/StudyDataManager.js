@@ -85,7 +85,7 @@ qx.Class.define("osparc.widget.StudyDataManager", {
           control
             .getChildControl("folder-viewer")
             .getChildControl("selected-file-layout")
-            .setDeleteEnabled(osparc.data.model.Study.canIDelete(this.getStudyData()["accessRights"]));
+            .setDeleteEnabled(osparc.data.model.Study.canIDelete(this.getStudyData()["accessRights"]) && !this.__isNodeRunning());
           this._add(control, {
             flex: 1
           });
@@ -101,6 +101,23 @@ qx.Class.define("osparc.widget.StudyDataManager", {
 
       const selectedFileLayout = treeFolderView.getChildControl("folder-viewer").getChildControl("selected-file-layout");
       selectedFileLayout.addListener("pathsDeleted", e => treeFolderView.pathsDeleted(e.getData()), this);
+    },
+
+    __isNodeRunning: function() {
+      const nodeId = this.getNodeId();
+      if (!nodeId) {
+        return false;
+      }
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (!study) {
+        return false;
+      }
+      const node = study.getWorkbench().getNode(nodeId);
+      if (node && node.isDynamic()) {
+        const interactive = node.getStatus().getInteractive();
+        return !["idle", "failed"].includes(interactive);
+      }
+      return false;
     },
 
     __reloadTree: function() {
