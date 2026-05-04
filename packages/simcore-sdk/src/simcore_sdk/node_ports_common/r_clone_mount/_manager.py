@@ -6,12 +6,10 @@ from typing import Final
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
-from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import NonNegativeInt
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.utils import unused_port
 from settings_library.r_clone import RCloneSettings
 
 from ._config_provider import MountRemoteType, get_config_content
@@ -39,8 +37,6 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         r_clone_settings: RCloneSettings,
         mount_remote_type: MountRemoteType,
         *,
-        rc_host: str,
-        rc_port: PortInt,
         remote_path: StorageFileID,
         local_mount_path: Path,
         index: NonNegativeInt,
@@ -60,30 +56,31 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         self._task_mount_activity: asyncio.Task[None] | None = None
         self._consecutive_unresponsive_count: int = 0
 
-        rc_user = f"{uuid4()}"
-        rc_password = f"{uuid4()}"
+        self._rc_user = f"{uuid4()}"
+        self._rc_password = f"{uuid4()}"
+        self._transfers_completed_timeout = (
+            r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT
+        )
 
         # used internally to handle the mount command
         self._container_manager = ContainerManager(
             r_clone_settings=r_clone_settings,
             node_id=node_id,
-            rc_port=rc_port,
             local_mount_path=self.local_mount_path,
             index=self.index,
             r_clone_config_content=get_config_content(r_clone_settings, mount_remote_type),
             remote_path=f"{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
-            rc_user=rc_user,
-            rc_password=rc_password,
+            rc_user=self._rc_user,
+            rc_password=self._rc_password,
             delegate=self.delegate,
         )
 
-        self._rc_http_client = RemoteControlHttpClient(
-            rc_host=rc_host,
-            rc_port=rc_port,
-            rc_user=rc_user,
-            rc_password=rc_password,
-            transfers_completed_timeout=r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT,
-        )
+        self._rc_http_client: RemoteControlHttpClient | None = None
+
+    @property
+    def _rc_client(self) -> RemoteControlHttpClient:
+        assert self._rc_http_client is not None, "start_mount() must be called before accessing the RC client"  # nosec
+        return self._rc_http_client
 
     async def _update_and_notify_mount_activity(self, mount_activity: MountActivity) -> None:
         now = datetime.now(UTC)
@@ -98,13 +95,22 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
 
     async def _worker_mount_activity(self) -> None:
         with log_catch(logger=_logger, reraise=False):
-            mount_activity = await self._rc_http_client.get_mount_activity()
+            mount_activity = await self._rc_client.get_mount_activity()
             await self._update_and_notify_mount_activity(mount_activity)
 
     async def start_mount(self) -> None:
-        await self._container_manager.create()
+        assigned_port = await self._container_manager.create()
+        node_address = await self.delegate.get_node_address()
 
-        await self._rc_http_client.wait_for_interface_to_be_ready()
+        self._rc_http_client = RemoteControlHttpClient(
+            rc_host=node_address,
+            rc_port=assigned_port,
+            rc_user=self._rc_user,
+            rc_password=self._rc_password,
+            transfers_completed_timeout=self._transfers_completed_timeout,
+        )
+
+        await self._rc_client.wait_for_interface_to_be_ready()
 
         self._task_mount_activity = create_periodic_task(
             self._worker_mount_activity,
@@ -114,17 +120,17 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
 
     async def stop_mount(self, *, skip_transfer_wait: bool = False) -> None:
         if not skip_transfer_wait:
-            await self._rc_http_client.wait_for_all_transfers_to_complete()
+            await self._rc_client.wait_for_all_transfers_to_complete()
 
         await self._container_manager.remove()
         if self._task_mount_activity is not None:
             await cancel_wait_task(self._task_mount_activity)
 
     async def wait_for_all_transfers_to_complete(self) -> None:
-        await self._rc_http_client.wait_for_all_transfers_to_complete()
+        await self._rc_client.wait_for_all_transfers_to_complete()
 
     async def is_healthy(self) -> bool:
-        if await self._rc_http_client.is_responsive():
+        if await self._rc_client.is_responsive():
             self._consecutive_unresponsive_count = 0
             return True
 
@@ -138,7 +144,18 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         return self._consecutive_unresponsive_count < _CONSECUTIVE_UNRESPONSIVE_THRESHOLD
 
     async def refresh_path(self, *, dir_to_refresh: str, recursive: bool) -> None:
-        await self._rc_http_client.post_vfs_refresh(dir_to_refresh, recursive=recursive)
+        if dir_to_refresh:
+            # Ensure VFS cache is aware of new directories created
+            # externally (e.g. uploaded directly to S3) by refreshing
+            # each parent segment top-down (non-recursive, cheap).
+            parents = list(Path(dir_to_refresh).parents)
+            # `parents` does not include `dir_to_refresh` itself. For example,
+            # Path("a/b/c").parents is [PosixPath('a/b'), PosixPath('a'), PosixPath('.')]
+            # We want root first, then deeper levels, before refreshing `dir_to_refresh`.
+            for parent in reversed(parents):
+                parent_str = "" if parent == Path() else f"{parent}"
+                await self._rc_client.post_vfs_refresh(parent_str, recursive=False)
+        await self._rc_client.post_vfs_refresh(dir_to_refresh, recursive=recursive)
 
 
 class RCloneMountManager:
@@ -177,16 +194,10 @@ class RCloneMountManager:
                 tracked_mount = self._tracked_mounts[mount_id]
                 raise MountAlreadyStartedError(local_mount_path=local_mount_path)
 
-            free_port = await asyncio.get_running_loop().run_in_executor(None, unused_port)
-
-            node_address = await self.delegate.get_node_address()
-
             tracked_mount = _TrackedMount(
                 node_id,
                 self.r_clone_settings,
                 remote_type,
-                rc_host=node_address,
-                rc_port=free_port,
                 remote_path=remote_path,
                 local_mount_path=local_mount_path,
                 index=index,
