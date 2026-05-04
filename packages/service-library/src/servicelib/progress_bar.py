@@ -106,15 +106,18 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         if self._parent is not None:
-            if exc_type is not None:
-                # On error exit, rollback partial progress so a retry does not
-                # over-count. Skip finish() to avoid a spurious 100% report.
-                await self._parent._on_child_error(  # noqa: SLF001
-                    self._compute_progress(self._current_steps)
-                )
-            else:
-                await self.finish()
-            self._parent._on_child_exit(self)  # noqa: SLF001
+            try:
+                if exc_type is not None:
+                    # On error exit, rollback partial progress so a retry does not
+                    # over-count. Skip finish() to avoid a spurious 100% report.
+                    await self._parent._on_child_error(  # noqa: SLF001
+                        self._compute_progress(self._current_steps)
+                    )
+                else:
+                    await self.finish()
+            finally:
+                # Always remove child even on cancellation, so the slot is freed.
+                self._parent._on_child_exit(self)  # noqa: SLF001
         else:
             await self.finish()
 
@@ -126,7 +129,12 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
 
     async def _reset_report_baseline_upwards(self) -> None:
         """Reset _last_report_value to match current progress, then propagate
-        up to all ancestors so deeply nested retries report correctly."""
+        up to all ancestors so deeply nested retries report correctly.
+
+        NOTE: with concurrent siblings this can cause non-monotonic reports,
+        but the class already documents concurrency as unsupported with weights.
+        The retry use case (our primary target) is sequential by definition.
+        """
         async with self._continuous_value_lock:
             self._last_report_value = self._compute_progress(self._current_steps)
         if self._parent is not None:
