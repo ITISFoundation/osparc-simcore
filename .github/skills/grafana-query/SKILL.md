@@ -21,7 +21,7 @@ argument-hint: "Describe what you want to investigate (e.g., 'errors in webserve
 
 Datasource UIDs differ per deployment. **Always discover them dynamically** at the start of a query session:
 
-1. Use `mcp_grafana_list_datasources` to list all datasources and their UIDs
+1. List all datasources and their UIDs
 2. Filter by type when needed: `type: "loki"`, `type: "prometheus"`, `type: "tempo"`
 
 Expected datasource types in a typical deployment:
@@ -38,9 +38,6 @@ Expected datasource types in a typical deployment:
 
 Dashboard UIDs differ per deployment. **Always discover them dynamically**:
 
-1. Use `mcp_grafana_search_dashboards` to find dashboards by name
-2. Use `mcp_grafana_get_dashboard_summary` with the UID to inspect a specific dashboard
-
 Typical dashboard folders and their contents:
 
 ### simcore folder
@@ -52,6 +49,8 @@ Typical dashboard folders and their contents:
 | autoscaling overview | Autoscaling status |
 | API server log streaming queues | API server queues |
 | s4l-lite admin overview | Sim4Life Lite admin |
+
+The Metrics dashboard contains panels for core simcore services. It contains metrics related to resources usage (e.g. RAM and CPU), HTTP request handling statistics and RPC request handling statistics. This is a very useful dashboard to investigate once it has been determined that an error happened within a specific simcore service.
 
 ### ops folder
 | Title | Purpose |
@@ -74,19 +73,12 @@ Typical dashboard folders and their contents:
 
 ### 0. Discover Datasources
 
-Before any query, resolve the datasource UIDs for this deployment:
-```
-mcp_grafana_list_datasources → note the UIDs for loki, prometheus, tempo
-```
+Before any query, resolve the datasource UIDs for this deployment.
 
 ### 1. Identify the Target
 
 Determine which service(s) to investigate. The simcore platform services use the naming pattern `<stack>_<prefix>_<service>` (e.g., `simcore_staging_webserver`). The exact stack/prefix varies by deployment.
-
-**Discover the naming pattern** by listing Loki label values:
-```
-mcp_grafana_list_loki_label_values(datasourceUid=<loki-uid>, labelName="service_name")
-```
+**Discover the naming pattern** by listing Loki label values.
 
 Common service name patterns:
 - **Core services**: `<stack>_<prefix>_<service>` (e.g., `*_webserver`, `*_api-server`, `*_director-v2`)
@@ -109,7 +101,7 @@ See [Log Structure Reference](./references/log-structure.md) for JSON field deta
 
 ### 3. Query Metrics (Prometheus)
 
-Use the Prometheus datasource UID discovered in step 0 (prefer the federation/default one). Common metric patterns:
+Use the `prometheus-federation` datasource UID discovered in step 0. Common metric patterns:
 - HTTP request metrics from gunicorn/aiohttp
 - Service-specific business metrics
 - Docker/container resource metrics
@@ -117,10 +109,6 @@ Use the Prometheus datasource UID discovered in step 0 (prefer the federation/de
 ### 4. Query Traces (Tempo)
 
 Use the Tempo datasource UID discovered in step 0. Traces are correlated with logs via `log_trace_id` and `log_span_id` fields in log entries.
-
-### 5. Check Alerts
-
-Use `mcp_grafana_alerting_manage_rules` with `operation: "list"` to view configured alert rules and their current states.
 
 ## Common Query Patterns
 

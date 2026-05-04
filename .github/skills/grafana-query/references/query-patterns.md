@@ -1,23 +1,19 @@
 # Common Query Patterns
 
-All queries below use `<LOKI_UID>` and `<PROM_UID>` as placeholders. Resolve these first via `mcp_grafana_list_datasources`.
+All queries below use `<LOKI_UID>` and `<PROM_UID>` as placeholders. Resolve these first by listing the available datasources.
 
-The service name prefix `<PREFIX>` (e.g., `simcore_staging`, `simcore_production`) varies by deployment. Discover it via `mcp_grafana_list_loki_label_values(labelName="service_name")` and look for the pattern used by core services like `*_webserver`.
+The service name prefix `<PREFIX>` (e.g., `simcore_staging`, `simcore_production`) varies by deployment. Discover it by listing the Loki label values and look for the pattern used by core services like `*_webserver`.
 
 ## LogQL (Loki)
 
-### Error Logs from All Simcore Services
+### Logs by specific log level from all Simcore Services
 
 ```logql
-{service_name=~"<PREFIX>_.*"} |~ "(?i)error|exception|traceback|critical"
+{service_name=~".*simcore.*"} | json | log_level = `ERROR`
 ```
+Replace `ERROR` by `WARNING`, `INFO`, `DEBUG` to change the log level.
 
-> **Note**: The broad regex filter is needed because non-Python services (traefik, redis) don't use structured `log_level`. Exclude noise with additional filters:
-> ```logql
-> {service_name=~"<PREFIX>_.*"} |~ "(?i)error|exception|traceback|critical" != "Health check failed" != "/metrics"
-> ```
-
-### Errors from a Specific Service
+### To get error logs from a specific simcore service
 
 ```logql
 {service_name="<PREFIX>_webserver"} | json | log_level = `ERROR`
@@ -25,35 +21,11 @@ The service name prefix `<PREFIX>` (e.g., `simcore_staging`, `simcore_production
 
 Replace `webserver` with: `api-server`, `director-v2`, `catalog`, `dynamic-schdlr`, `agent`, `autoscaling`, `wb-garbage-collector`, etc.
 
-### Warnings and Errors (Excluding INFO)
+
+### Logs from Simcore services with a Specific Trace ID
 
 ```logql
-{service_name=~"<PREFIX>_.*"} | json | log_level != `INFO`
-```
-
-### Logs for a Specific User
-
-```logql
-{service_name=~"<PREFIX>_.*"} | json | log_uid = `<user-id>`
-```
-
-### Logs with a Specific Trace ID
-
-```logql
-{service_name=~"<PREFIX>_.*"} | json | log_trace_id = `<trace-id>`
-```
-
-### Error Count per Service (Last Hour)
-
-```logql
-count_over_time({service_name=~"<PREFIX>_.*"} |~ "(?i)error|exception|traceback|critical" [1h])
-```
-Use with `queryType: "instant"` to get totals.
-
-### Rate of Errors (for alerting/dashboards)
-
-```logql
-sum by (service_name) (rate({service_name=~"<PREFIX>_.*"} |~ "(?i)error" [5m]))
+{service_name=~".*simcore.*"} | json | log_trace_id = `<trace-id>`
 ```
 
 ### Dynamic Service Logs (dy-proxy / dy-sidecar)
@@ -63,13 +35,13 @@ sum by (service_name) (rate({service_name=~"<PREFIX>_.*"} |~ "(?i)error" [5m]))
 {service_name=~"dy-sidecar_<node-uuid>"}
 ```
 
-### Traefik Errors (Connection Refused, 5xx, etc.)
+### Error logs from any services (not only Simcore services)
+
+Non-simcore services have a different logging format. Hence, in this case it is easiest to check if for loglines containing a regex
 
 ```logql
-{service_name=~".*_traefik"} |~ "(?i)error|ERR" != "Health check failed"
+{source="vector"} |~ "(?i)error|ERR"
 ```
-
-> The fallback health check warnings (`connection refused` on port `:0`) are **expected** and can be excluded. These are intentional fallback backends that return 503 when the primary is down.
 
 ## PromQL (Prometheus)
 
@@ -105,12 +77,23 @@ rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_
 
 ## Workflow: Investigating an Error
 
-1. **Start broad** — query errors across all services:
+1. **Start by checking for errors in simcore services** — query errors across all simcore services:
    ```logql
-   {service_name=~"<PREFIX>_.*"} |~ "(?i)error|exception|traceback|critical" != "Health check failed"
+   {service_name=".*simcore.*"} | json | log_level = `ERROR`
+   ```
+   Only if this doesn't return any results, search more broadly for errors among all services
+   ```logql
+   {source="vector"} |~ "(?i)error|ERR"
    ```
 
-2. **Narrow down** — filter to the specific service:
+2. **Narrow down**
+   If an error log is found and the log is emitted while handling a request, a simcore service log will have a `log_trace_id` field.
+   narrow down by investigating all simcore service logs from that trace
+   ```logql
+   {service_name=".*simcore.*"} | json | log_trace_id=<trace id>
+   ```
+
+  If the error log does not have a trace id it is typically because it was not emitted while handling a request. In that case filter to the specific service:
    ```logql
    {service_name="<PREFIX>_<service>"} | json | log_level = `ERROR`
    ```
