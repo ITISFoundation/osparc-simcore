@@ -228,6 +228,8 @@ qx.Class.define("osparc.form.Auto", {
     },
 
     __setupDateField: function(s) {
+      // capture numeric default before s.defaultValue gets mutated into a Date below
+      const defaultTimestamp = (s.defaultValue != null && /^\d+$/.test(String(s.defaultValue))) ? parseInt(s.defaultValue) : null;
       this.__formCtrl.addBindingOptions(s.key,
         { // model2target
           converter: function(data) {
@@ -240,8 +242,7 @@ qx.Class.define("osparc.form.Auto", {
             if (qx.lang.Type.isDate(data)) {
               return data;
             }
-            // this avoids the moustached template issue
-            return s.defaultValue != null ? new Date(s.defaultValue * 1000) : null;
+            return defaultTimestamp != null ? new Date(defaultTimestamp * 1000) : null;
           }
         },
         { // target2model
@@ -250,8 +251,7 @@ qx.Class.define("osparc.form.Auto", {
               let d = new Date(Date.UTC(data.getFullYear(), data.getMonth(), data.getDate(), 0, 0, 0, 0));
               return Math.round(d.getTime()/1000);
             }
-            // this avoids the moustached template issue
-            return s.defaultValue != null ? parseInt(s.defaultValue) : null;
+            return defaultTimestamp;
           }
         }
       );
@@ -297,13 +297,13 @@ qx.Class.define("osparc.form.Auto", {
       } else {
         s.set.value = String(0);
       }
+      const defaultNumber = qx.lang.Type.isNumber(s.defaultValue) ? s.defaultValue : 0;
       const model2target = {
         converter: function(data) {
           if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
             return String(data);
           }
-          // this avoids the moustached template issue
-          return s.defaultValue && !isNaN(parseFloat(s.defaultValue)) ? String(parseFloat(s.defaultValue)) : String(0);
+          return String(defaultNumber);
         }
       };
       const target2model = {
@@ -314,8 +314,7 @@ qx.Class.define("osparc.form.Auto", {
         },
         converter: function(data) {
           if (!data) {
-            // this avoids the moustached template issue
-            return s.defaultValue && !isNaN(parseFloat(s.defaultValue)) ? parseFloat(s.defaultValue) : 0;
+            return defaultNumber;
           }
           const tmp = data.split(" ");
           if (tmp.length > 1 && "x_unit" in this.myContext.s) {
@@ -328,7 +327,8 @@ qx.Class.define("osparc.form.Auto", {
               osparc.form.renderer.PropFormBase.updateUnitLabelPrefix(item);
             }
           }
-          return parseFloat(data);
+          const parsed = parseFloat(data);
+          return isNaN(parsed) ? defaultNumber : parsed;
         }
       };
       this.__formCtrl.addBindingOptions(key, model2target, target2model);
@@ -336,22 +336,23 @@ qx.Class.define("osparc.form.Auto", {
     __setupSpinner: function(s, key) {
       s.set.maximum = s.maximum ? parseInt(s.maximum) : 10000;
       s.set.minimum = s.minimum ? parseInt(s.minimum) : -10000;
-      s.set.value = s.defaultValue ? parseInt(String(s.defaultValue)) : 0;
+      const defaultInt = (s.defaultValue != null && !isNaN(parseInt(String(s.defaultValue)))) ? parseInt(String(s.defaultValue)) : 0;
+      s.set.value = defaultInt;
 
       this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter: function(data) {
             let d = String(data);
-            if (/^\d+$/.test(d)) {
+            if (/^-?\d+$/.test(d)) {
               return parseInt(d);
             }
-            // this avoids the moustached template issue
-            return s.defaultValue ? parseInt(String(s.defaultValue)) : 0;
+            return defaultInt;
           }
         },
         { // target2model
           converter: function(data) {
-            return parseInt(data);
+            const parsed = parseInt(data);
+            return isNaN(parsed) ? defaultInt : parsed;
           }
         }
       );
