@@ -50,8 +50,11 @@ async def add(
     project_id: ProjectID,
     node_id: NodeID,
     node: Node,
+    required_resources: dict | None = None,
 ) -> None:
     values = node.model_dump(mode="json", exclude_none=True)
+    if required_resources is not None:
+        values["required_resources"] = required_resources
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(projects_nodes.insert().values(project_uuid=f"{project_id}", node_id=f"{node_id}", **values))

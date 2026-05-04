@@ -366,13 +366,6 @@ class Node(BaseModel):
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
 
-    required_resources: Annotated[
-        dict[str, Any] | None,
-        Field(default_factory=dict),
-        # NOTE: requested_resources should be here! WARNING: this model is used both in database and rest api!
-        # Model for project_nodes table should NOT be Node but a different one !
-    ] = DEFAULT_FACTORY
-
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
         Field(

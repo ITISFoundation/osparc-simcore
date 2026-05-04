@@ -1011,8 +1011,8 @@ async def add_project_node(
             key=service_key,
             version=service_version,
             label=service_key.split("/")[-1],
-            required_resources=jsonable_encoder(default_resources),
         ),
+        required_resources=jsonable_encoder(default_resources),
     )
 
     await create_project_document_and_notify(
