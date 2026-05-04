@@ -676,12 +676,10 @@ async def update_project_node_resources_from_hardware_info(
             other_services_resources = collections.Counter({"RAM": 0, "CPUS": 0})
             for service_name, sub_service_resources in node_resources.items():
                 if service_name != scalable_service_name:
-                    other_services_resources.update(
-                        {
-                            "RAM": sub_service_resources.resources["RAM"].limit,
-                            "CPU": sub_service_resources.resources["CPU"].limit,
-                        }
-                    )
+                    other_services_resources.update({
+                        "RAM": sub_service_resources.resources["RAM"].limit,
+                        "CPU": sub_service_resources.resources["CPU"].limit,
+                    })
             new_cpus_value = max(
                 new_cpus_value - other_services_resources["CPU"],
                 DYNAMIC_SIDECAR_MIN_CPUS,
@@ -1281,10 +1279,10 @@ async def patch_project_node(
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
         for node_uuid in updated_project_with_states["workbench"]:
-            await notify_project_node_update(app, updated_project_with_states, node_uuid, errors=None)
+            await notify_project_node_update(app, updated_project_with_states, node_uuid)
         return
 
-    await notify_project_node_update(app, updated_project.model_dump(mode="json"), node_id, errors=None)
+    await notify_project_node_update(app, updated_project.model_dump(mode="json"), node_id)
 
 
 async def update_project_node_outputs(
@@ -1319,6 +1317,10 @@ async def update_project_node_outputs(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
+    # Fetch current outputs before updating to compute changed keys
+    current_node = await _projects_nodes_repository.get(app, project_id=project_id, node_id=node_id)
+    old_outputs = current_node.outputs or {}
+
     updated_node = await _projects_nodes_repository.update(
         app,
         project_id=project_id,
@@ -1347,7 +1349,8 @@ async def update_project_node_outputs(
         app=app,
     )
 
-    return updated_project_with_states, list(new_outputs.keys())
+    changed_keys = [k for k in new_outputs if new_outputs.get(k) != old_outputs.get(k)]
+    return updated_project_with_states, changed_keys
 
 
 async def list_node_ids_in_project(
@@ -1579,13 +1582,11 @@ async def try_open_project_for_user(  # noqa: C901
                     return True
                 # Enforce per-user open project limit
                 if max_number_of_opened_projects_per_user is not None and (
-                    len(
-                        {
-                            uuid
-                            for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
-                            if uuid != f"{project_uuid}"
-                        }
-                    )
+                    len({
+                        uuid
+                        for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
+                        if uuid != f"{project_uuid}"
+                    })
                     >= max_number_of_opened_projects_per_user
                 ):
                     raise ProjectTooManyProjectOpenedError(

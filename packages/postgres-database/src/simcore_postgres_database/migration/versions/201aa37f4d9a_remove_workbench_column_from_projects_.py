@@ -27,9 +27,7 @@ def _migrate_workbench_to_projects_nodes() -> None:
     connection = op.get_bind()
 
     # Fetch all projects with workbench data
-    projects_result = connection.execute(
-        sa.text("SELECT uuid, workbench FROM projects WHERE workbench IS NOT NULL")
-    )
+    projects_result = connection.execute(sa.text("SELECT uuid, workbench FROM projects WHERE workbench IS NOT NULL"))
 
     errors: list[str] = []
     updated_nodes_count = 0
@@ -40,11 +38,7 @@ def _migrate_workbench_to_projects_nodes() -> None:
             continue
 
         try:
-            workbench_data = (
-                workbench_json
-                if isinstance(workbench_json, dict)
-                else json.loads(workbench_json)
-            )
+            workbench_data = workbench_json if isinstance(workbench_json, dict) else json.loads(workbench_json)
         except (json.JSONDecodeError, TypeError) as e:
             errors.append(f"Project {project_uuid}: Invalid workbench JSON - {e}")
             continue
@@ -55,9 +49,7 @@ def _migrate_workbench_to_projects_nodes() -> None:
 
         for node_id, node_data in workbench_data.items():
             if not isinstance(node_data, dict):
-                errors.append(
-                    f"Project {project_uuid}, Node {node_id}: Node data is not a dictionary"
-                )
+                errors.append(f"Project {project_uuid}, Node {node_id}: Node data is not a dictionary")
                 continue
 
             # Validate required fields
@@ -93,48 +85,38 @@ def _migrate_workbench_to_projects_nodes() -> None:
                 "progress": node_data.get("progress"),
                 "thumbnail": node_data.get("thumbnail"),
                 "input_access": (
-                    json.dumps(node_data["input_access"])
-                    if node_data.get("input_access")
+                    json.dumps(node_data.get("inputAccess") or node_data.get("input_access"))
+                    if node_data.get("inputAccess") or node_data.get("input_access")
                     else None
                 ),
                 "input_nodes": (
-                    json.dumps(node_data["input_nodes"])
-                    if node_data.get("input_nodes")
+                    json.dumps(node_data.get("inputNodes") or node_data.get("input_nodes"))
+                    if node_data.get("inputNodes") or node_data.get("input_nodes")
                     else None
                 ),
-                "inputs": (
-                    json.dumps(node_data["inputs"]) if node_data.get("inputs") else None
-                ),
+                "inputs": (json.dumps(node_data["inputs"]) if node_data.get("inputs") else None),
                 "inputs_required": (
-                    json.dumps(node_data["inputs_required"])
-                    if node_data.get("inputs_required")
+                    json.dumps(node_data.get("inputsRequired") or node_data.get("inputs_required"))
+                    if node_data.get("inputsRequired") or node_data.get("inputs_required")
                     else None
                 ),
                 "inputs_units": (
-                    json.dumps(node_data["inputs_units"])
-                    if node_data.get("inputs_units")
+                    json.dumps(node_data.get("inputsUnits") or node_data.get("inputs_units"))
+                    if node_data.get("inputsUnits") or node_data.get("inputs_units")
                     else None
                 ),
                 "output_nodes": (
-                    json.dumps(node_data["output_nodes"])
-                    if node_data.get("output_nodes")
+                    json.dumps(node_data.get("outputNodes") or node_data.get("output_nodes"))
+                    if node_data.get("outputNodes") or node_data.get("output_nodes")
                     else None
                 ),
-                "outputs": (
-                    json.dumps(node_data["outputs"])
-                    if node_data.get("outputs")
-                    else None
-                ),
-                "run_hash": node_data.get(
-                    "run_hash", node_data.get("runHash")
-                ),  # Handle both camelCase and snake_case
-                "state": (
-                    json.dumps(node_data["state"]) if node_data.get("state") else None
-                ),
+                "outputs": (json.dumps(node_data["outputs"]) if node_data.get("outputs") else None),
+                "run_hash": node_data.get("runHash", node_data.get("run_hash")),
+                "state": (json.dumps(node_data["state"]) if node_data.get("state") else None),
                 "parent": node_data.get("parent"),
                 "boot_options": (
-                    json.dumps(node_data["boot_options"])
-                    if node_data.get("boot_options", node_data.get("bootOptions"))
+                    json.dumps(node_data.get("bootOptions") or node_data.get("boot_options"))
+                    if node_data.get("bootOptions") or node_data.get("boot_options")
                     else None
                 ),
             }
@@ -159,7 +141,7 @@ def _migrate_workbench_to_projects_nodes() -> None:
                         state = :state::jsonb,
                         parent = :parent,
                         boot_options = :boot_options::jsonb,
-                        modified_datetime = NOW()
+                        modified = NOW()
                     WHERE project_uuid = :project_uuid AND node_id = :node_id
                 """
                 connection.execute(sa.text(update_sql), node_values)
@@ -173,7 +155,7 @@ def _migrate_workbench_to_projects_nodes() -> None:
                         project_uuid, node_id, key, version, label, progress, thumbnail,
                         input_access, input_nodes, inputs, inputs_required, inputs_units,
                         output_nodes, outputs, run_hash, state, parent, boot_options,
-                        required_resources, created_datetime, modified_datetime
+                        required_resources, created, modified
                     ) VALUES (
                         :project_uuid, :node_id, :key, :version, :label, :progress, :thumbnail,
                         :input_access::jsonb, :input_nodes::jsonb, :inputs::jsonb,
@@ -185,14 +167,10 @@ def _migrate_workbench_to_projects_nodes() -> None:
                 connection.execute(sa.text(insert_sql), node_values)
                 inserted_nodes_count += 1
 
-    print(
-        f"Migration summary: {inserted_nodes_count} nodes inserted, {updated_nodes_count} nodes updated"
-    )
+    print(f"Migration summary: {inserted_nodes_count} nodes inserted, {updated_nodes_count} nodes updated")
 
     if errors:
-        error_message = f"Migration failed with {len(errors)} errors:\n" + "\n".join(
-            errors
-        )
+        error_message = f"Migration failed with {len(errors)} errors:\n" + "\n".join(errors)
         print(error_message)
         raise RuntimeError(error_message)
 
@@ -294,18 +272,12 @@ def _restore_workbench_from_projects_nodes() -> None:
                 restored_projects_count += 1
 
             except Exception as e:
-                errors.append(
-                    f"Project {project_uuid}: Failed to restore workbench data - {e}"
-                )
+                errors.append(f"Project {project_uuid}: Failed to restore workbench data - {e}")
 
-    print(
-        f"Downgrade summary: {restored_projects_count} projects restored with workbench data"
-    )
+    print(f"Downgrade summary: {restored_projects_count} projects restored with workbench data")
 
     if errors:
-        error_message = f"Downgrade failed with {len(errors)} errors:\n" + "\n".join(
-            errors
-        )
+        error_message = f"Downgrade failed with {len(errors)} errors:\n" + "\n".join(errors)
         print(error_message)
         raise RuntimeError(error_message)
 

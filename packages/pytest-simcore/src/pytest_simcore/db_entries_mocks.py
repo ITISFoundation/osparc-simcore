@@ -130,6 +130,7 @@ async def create_project(
                     "prj_owner": user["id"],
                     "access_rights": {"1": {"read": True, "write": True, "delete": True}},
                     "thumbnail": "",
+                    "product_name": product_name,
                     **project_overrides,
                 }
                 project_workbench = project_values.pop("workbench", {})
@@ -181,14 +182,6 @@ async def create_project(
                     await project_nodes_repo.add(
                         con,
                         nodes=nodes,
-                    )
-
-                    # link to product
-                    await con.execute(
-                        projects_to_products.insert().values(
-                            project_uuid=f"{inserted_project.uuid}",
-                            product_name=product_name,
-                        )
                     )
                 log_ctx.logger.info("Created project %s", inserted_project)
                 created_project_ids.append(f"{inserted_project.uuid}")
