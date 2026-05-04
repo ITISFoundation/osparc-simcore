@@ -359,3 +359,75 @@ async def test_delete_paths(
         expected_total_size=expected_total_size - len(selected_paths) * project_params.allowed_file_sizes[0],
         product_name=product_name,
     )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=5,
+        )
+    ],
+    ids=str,
+)
+async def test_delete_paths_with_node_level_directory(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    location_id: LocationID,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    project_params: ProjectWithFilesParams,
+    product_name: ProductName,
+):
+    """Test that delete_paths handles node-level directory paths (project_id/node_id)
+    which are not valid StorageFileID but should still be deletable."""
+    project, list_of_files = with_random_project_with_files
+
+    total_num_files = sum(len(files_in_node) for files_in_node in list_of_files.values())
+
+    # get size of a full project
+    expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
+    project_path = Path(project["uuid"])
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        user_id,
+        path=project_path,
+        expected_total_size=expected_total_size,
+        product_name=product_name,
+    )
+
+    # delete an entire node using a node-level directory path (project_id/node_id)
+    node_to_delete = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    node_file_count = len(list_of_files[node_to_delete])
+    node_path = Path(f"{project['uuid']}/{node_to_delete}")
+
+    await _assert_delete_paths(
+        task_manager,
+        location_id,
+        user_id,
+        product_name,
+        paths={node_path},
+    )
+
+    # verify the size is reduced by the amount of files in the deleted node
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        user_id,
+        path=project_path,
+        expected_total_size=expected_total_size - node_file_count * project_params.allowed_file_sizes[0],
+        product_name=product_name,
+    )
