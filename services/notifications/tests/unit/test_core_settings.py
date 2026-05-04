@@ -31,9 +31,13 @@ _SMTP_PAYLOAD = {
 }
 
 
-def test_per_domain_smtp_settings_rejects_invalid_domain_keys():
-    with pytest.raises(ValidationError):
-        _DomainToSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
+def test_per_domain_smtp_settings_normalizes_domain_keys():
+    per_domain = _DomainToSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
+
+    settings = per_domain.get_settings_for_email("user@osparc.io")
+
+    assert isinstance(settings, SMTPSettings)
+    assert settings.SMTP_HOST == "mailpit"
 
 
 def test_per_domain_smtp_settings_for_email_is_case_insensitive():
