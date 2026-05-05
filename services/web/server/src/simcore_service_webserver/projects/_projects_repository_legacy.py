@@ -279,11 +279,8 @@ class ProjectDBAPI(BaseProjectDB):
         workbench: dict[str, Any] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
 
-        # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
-        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
-
-        # Mapping from camelCase (workbench) to snake_case (ProjectNodeCreate)
-        field_mapping = {
+        # Mapping from camelCase (workbench JSON) to snake_case (DB columns)
+        _camel_to_snake = {
             "inputAccess": "input_access",
             "inputNodes": "input_nodes",
             "inputsRequired": "inputs_required",
@@ -292,26 +289,21 @@ class ProjectDBAPI(BaseProjectDB):
             "runHash": "run_hash",
             "bootOptions": "boot_options",
         }
+        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
-        # Build nodes from workbench, then let caller-provided project_nodes take precedence
-        workbench_nodes = {
-            NodeID(node_id): ProjectNodeCreate(
-                node_id=NodeID(node_id),
-                **{
-                    str(field_mapping.get(field, field)): value
-                    for field, value in Node.model_validate(project_workbench_node)
-                    .model_dump(mode="json", by_alias=True, exclude_unset=True)
-                    .items()
-                    if field_mapping.get(field, field) in valid_fields
-                },
-            )
-            for node_id, project_workbench_node in workbench.items()
-        }
-        # Caller-provided nodes override workbench-derived ones (e.g. richer metadata from cloning)
+        # Build ProjectNodeCreate from workbench JSON (camelCase → snake_case)
+        workbench_nodes: dict[NodeID, ProjectNodeCreate] = {}
+        for node_id_str, node_data in workbench.items():
+            create_kwargs = {
+                _camel_to_snake.get(k, k): v for k, v in node_data.items() if _camel_to_snake.get(k, k) in valid_fields
+            }
+            workbench_nodes[NodeID(node_id_str)] = ProjectNodeCreate(node_id=NodeID(node_id_str), **create_kwargs)
+
+        # Caller-provided nodes take precedence (e.g. richer metadata from cloning)
         workbench_nodes.update(project_nodes)
         project_nodes = workbench_nodes
 
-        # Move deprecated 'position' from workbench nodes into ui.workbench
+        # Preserve deprecated 'position' field by moving it to ui.workbench
         ui_workbench: dict[str, Any] = insert_values.setdefault("ui", {}).setdefault("workbench", {})
         for node_id_str, node_data in workbench.items():
             if "position" in node_data and node_id_str not in ui_workbench:

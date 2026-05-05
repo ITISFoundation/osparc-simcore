@@ -5,7 +5,6 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
-from simcore_postgres_database.utils_projects_nodes import ProjectNode
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -131,16 +130,7 @@ async def get_by_project(
 
         result: list[tuple[NodeID, Node]] = []
         async for row in stream:
-            # build Model only once on top of row
-            on = ProjectNode.model_validate(row, from_attributes=True)
-            node = Node.model_validate(
-                on.model_dump(
-                    exclude_none=True,
-                    exclude_unset=True,
-                    exclude={"node_id", "created", "modified"},
-                )
-            )
-            result.append((NodeID(row.node_id), node))
+            result.append((NodeID(row.node_id), Node.model_validate(row, from_attributes=True)))
 
         return result
 
@@ -161,19 +151,10 @@ async def get_by_projects(
         stream = await conn.stream(query)
         assert stream  # nosec
 
-        # Initialize dict with empty lists for all requested project_ids
         projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {pid: [] for pid in project_ids}
 
-        # Fill in the actual data
         async for row in stream:
-            node = Node.model_validate(
-                ProjectNode.model_validate(row, from_attributes=True).model_dump(
-                    exclude_none=True,
-                    exclude_unset=True,
-                    exclude={"node_id", "created", "modified"},
-                )
-            )
-
+            node = Node.model_validate(row, from_attributes=True)
             projects_to_nodes[ProjectID(row.project_uuid)].append((NodeID(row.node_id), node))
 
         return projects_to_nodes
