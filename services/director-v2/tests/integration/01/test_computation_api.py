@@ -197,15 +197,19 @@ async def test_start_empty_computation_returns_200(
 ):
     user = create_registered_user()
     empty_project = await create_project(user)
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project_uuid=empty_project.uuid,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # empty project has nothing to run, returns 200 (not 201)
+    computation = await create_pipeline(
+        async_client,
+        project_uuid=empty_project.uuid,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert computation is not None
+    assert computation.started is None
+    assert computation.state is RunningState.NOT_STARTED
+    assert computation.stopped is None
 
 
 @dataclass
@@ -484,21 +488,30 @@ async def test_run_partial_computation(
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project_uuid=sleepers_project.uuid,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-            expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            subgraph=[
-                str(node_id)
-                for index, node_id in enumerate(sleepers_project.workbench)
-                if index in params.subgraph_elements
-            ],
-        )
+    # pipeline is up-to-date, returns 200 (nothing started)
+    new_task_out = await create_pipeline(
+        async_client,
+        project_uuid=sleepers_project.uuid,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+        subgraph=[
+            str(node_id)
+            for index, node_id in enumerate(sleepers_project.workbench)
+            if index in params.subgraph_elements
+        ],
+    )
+    assert new_task_out is not None
+    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
+    # empty adjacency list, and state reflects the last completed run
+    assert new_task_out.stop_url is None
+    assert new_task_out.state is RunningState.SUCCESS
+    assert new_task_out.id == task_out.id
+    assert new_task_out.iteration == task_out.iteration
+    assert new_task_out.pipeline_details.adjacency_list == {}
+    assert new_task_out.started is None
+    assert new_task_out.stopped is None
 
     # force run it this time.
     # the task are up-to-date but we force run them
@@ -594,16 +607,25 @@ async def test_run_computation(
 
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
-    # run again should return a 422 cause everything is uptodate
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project_uuid=sleepers_project.uuid,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # run again should return a 200 cause everything is up-to-date (nothing started)
+    new_task_out = await create_pipeline(
+        async_client,
+        project_uuid=sleepers_project.uuid,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert new_task_out is not None
+    # pipeline is up-to-date: nothing to run, so no stop_url, no started/stopped timestamps,
+    # empty adjacency list, and state reflects the last completed run
+    assert new_task_out.stop_url is None
+    assert new_task_out.state is RunningState.SUCCESS
+    assert new_task_out.id == task_out.id
+    assert new_task_out.iteration == task_out.iteration
+    assert new_task_out.pipeline_details.adjacency_list == {}
+    assert new_task_out.started is None
+    assert new_task_out.stopped is None
 
     # now force run again
     # the task are up-to-date but we force run them
@@ -867,16 +889,19 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         },
     )
 
-    # this pipeline is not runnable as there are no computational services
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
-        await create_pipeline(
-            async_client,
-            project_uuid=project_with_dynamic_node.uuid,
-            user_id=user["id"],
-            start_pipeline=True,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-        )
+    # this pipeline has no computational services, returns 200 (nothing to start)
+    computation = await create_pipeline(
+        async_client,
+        project_uuid=project_with_dynamic_node.uuid,
+        user_id=user["id"],
+        start_pipeline=True,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+    )
+    assert computation is not None
+    assert computation.started is None
+    assert computation.state is RunningState.NOT_STARTED
+    assert computation.stopped is None
 
     # still this pipeline shall be creatable if we do not want to start it
     await create_pipeline(
