@@ -732,3 +732,31 @@ async def test_sub_progress_child_removed_on_cancellation(
     # Root completed successfully
     final_report = mocked_progress_bar_cb.call_args_list[-1].args[0]
     assert final_report.percent_value == 1.0
+
+
+async def test_sub_progress_cancellation_does_not_rollback(
+    mocked_progress_bar_cb: mock.Mock,
+):
+    """CancelledError must NOT trigger async rollback (_on_child_error).
+
+    Rollback involves multiple awaits (update + _reset_report_baseline_upwards)
+    which can be interrupted by a second cancellation if the callback is async,
+    leaving the parent progress in an inconsistent state.  Instead, cancellation
+    should only remove the child (synchronous) and leave parent progress as-is."""
+    async with ProgressBarData(
+        num_steps=2,
+        description="root",
+        progress_report_cb=mocked_progress_bar_cb,
+    ) as root:
+        # First child makes partial progress then gets cancelled
+        with pytest.raises(asyncio.CancelledError):  # noqa: PT012
+            async with root.sub_progress(steps=10, description="cancelled-child") as child:
+                await child.update(5)  # 50% of child = 0.5 parent steps
+                raise asyncio.CancelledError
+
+        # Parent progress should NOT be rolled back — the partial contribution stays
+        # (unlike error exit where we rollback for retry)
+        assert root._current_steps == pytest.approx(0.5)  # noqa: SLF001
+
+        # Child was removed
+        assert len(root._children) == 0  # noqa: SLF001

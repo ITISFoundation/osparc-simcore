@@ -107,9 +107,14 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     async def __aexit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: object
     ) -> None:
-        await self._finish(failed=exc_type is not None)
+        # Only rollback on non-cancellation errors (retryable failures).
+        # Cancellation means the task is being torn down — no retry will follow,
+        # and running async rollback risks interruption by a second cancellation.
+        cancelled = exc_type is not None and issubclass(exc_type, asyncio.CancelledError)
+        failed = exc_type is not None and not cancelled
+        await self._finish(failed=failed, cancelled=cancelled)
 
-    async def _finish(self, *, failed: bool = False) -> None:
+    async def _finish(self, *, failed: bool = False, cancelled: bool = False) -> None:
         _logger.debug("finishing %s", f"{self.num_steps} progress")
         if self._parent is None:
             await self.set_(self.num_steps)
@@ -118,6 +123,10 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         # Remove child first so stale state doesn't appear in progress reports
         # during rollback. Synchronous, so cancellation-safe.
         self._parent._children.remove(self)  # pylint: disable=protected-access # noqa: SLF001
+        if cancelled:
+            # On cancellation: child removed above, no rollback or completion.
+            # The partial progress stays in the parent as-is.
+            return
         if failed:
             # On error exit, rollback partial progress so a retry does not
             # over-count. Skip set_ to avoid a spurious 100% report.
