@@ -339,7 +339,11 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
                 projects_metadata_repo=projects_metadata_repo,
             )
             if not pipeline_started:
-                response.status_code = status.HTTP_200_OK
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Project {computation.project_id} has no computational "
+                    "services to run or all tasks are up-to-date",
+                )
 
         # get run details if any
         last_run: CompRunsAtDB | None = None
