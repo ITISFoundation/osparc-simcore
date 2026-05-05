@@ -133,20 +133,15 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         """Rollback a failed child's progress and reset the report baseline
         so a retry emits intermediate reports from the start."""
         await self.update(-child_progress_contribution)
-        await self._reset_report_baseline_upwards()
+        self._reset_report_baseline_upwards()
 
-    async def _reset_report_baseline_upwards(self) -> None:
-        """Reset _last_report_value to match current progress, then propagate
-        up to all ancestors so deeply nested retries report correctly.
-
-        NOTE: with concurrent siblings this can cause non-monotonic reports,
-        but the class already documents concurrency as unsupported with weights.
-        The retry use case (our primary target) is sequential by definition.
+    def _reset_report_baseline_upwards(self) -> None:
+        """Reset _last_report_value so subsequent reports are not suppressed,
+        then propagate up to all ancestors so deeply nested retries report correctly.
         """
-        async with self._continuous_value_lock:
-            self._last_report_value = self._compute_progress(self._current_steps)
+        self._last_report_value = _INITIAL_VALUE
         if self._parent is not None:
-            await self._parent._reset_report_baseline_upwards()  # pylint: disable=protected-access # noqa: SLF001
+            self._parent._reset_report_baseline_upwards()  # pylint: disable=protected-access # noqa: SLF001
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:
