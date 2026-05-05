@@ -698,3 +698,37 @@ async def test_sub_progress_deeply_nested_retry_emits_intermediate_reports(
         f"First retry report at {first_retry_report.percent_value:.0%} — "
         "ancestor _last_report_value was not reset after rollback"
     )
+
+
+async def test_sub_progress_child_removed_on_cancellation(
+    mocked_progress_bar_cb: mock.Mock,
+) -> None:
+    """When a task is cancelled inside a sub_progress context, the child must
+    still be removed from the parent so the slot is freed for a retry."""
+    async with ProgressBarData(
+        num_steps=2,
+        description="root",
+        progress_report_cb=mocked_progress_bar_cb,
+    ) as root:
+        # Simulate cancellation during first child
+        with pytest.raises(asyncio.CancelledError):  # noqa: PT012
+            async with root.sub_progress(steps=10, description="child-cancelled") as child:
+                await child.update(5)
+                raise asyncio.CancelledError
+
+        # Child must have been removed
+        assert len(root._children) == 0  # noqa: SLF001
+
+        # Parent is still usable — create a new child in the same slot
+        async with root.sub_progress(steps=10, description="child-retry") as child:
+            for _ in range(10):
+                await child.update()
+
+        # Second step proceeds normally
+        async with root.sub_progress(steps=5, description="child-2") as child:
+            for _ in range(5):
+                await child.update()
+
+    # Root completed successfully
+    final_report = mocked_progress_bar_cb.call_args_list[-1].args[0]
+    assert final_report.percent_value == 1.0
