@@ -311,6 +311,12 @@ class ProjectDBAPI(BaseProjectDB):
         workbench_nodes.update(project_nodes)
         project_nodes = workbench_nodes
 
+        # Move deprecated 'position' from workbench nodes into ui.workbench
+        ui_workbench: dict[str, Any] = insert_values.setdefault("ui", {}).setdefault("workbench", {})
+        for node_id_str, node_data in workbench.items():
+            if "position" in node_data and node_id_str not in ui_workbench:
+                ui_workbench[node_id_str] = {"position": node_data["position"]}
+
         if len(project_nodes) > self.MAX_NUMBER_OF_NODES_PER_PROJECT:
             raise ProjectTooManyNodesError(
                 max_num_nodes=self.MAX_NUMBER_OF_NODES_PER_PROJECT,
