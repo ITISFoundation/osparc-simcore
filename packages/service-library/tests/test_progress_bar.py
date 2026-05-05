@@ -702,7 +702,7 @@ async def test_sub_progress_deeply_nested_retry_emits_intermediate_reports(
 
 async def test_sub_progress_child_removed_on_cancellation(
     mocked_progress_bar_cb: mock.Mock,
-) -> None:
+):
     """When a task is cancelled inside a sub_progress context, the child must
     still be removed from the parent so the slot is freed for a retry."""
     async with ProgressBarData(
