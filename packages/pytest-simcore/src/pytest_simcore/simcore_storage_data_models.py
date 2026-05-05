@@ -85,26 +85,35 @@ async def create_project(
                             "version": node_data.get("version", "1.0.0"),
                             "label": node_data.get("label", "unknown"),
                         }
-                        # Copy optional fields that exist in projects_nodes
-                        _optional_fields = (
-                            "inputs",
-                            "outputs",
-                            "input_nodes",
-                            "output_nodes",
-                            "input_access",
-                            "inputs_required",
-                            "inputs_units",
-                            "progress",
-                            "thumbnail",
-                            "run_hash",
-                            "state",
-                            "parent",
-                            "boot_options",
-                            "required_resources",
-                        )
-                        for field in _optional_fields:
-                            if field in node_data:
-                                node_values[field] = node_data[field]
+                        # Copy optional fields that exist in projects_nodes.
+                        # Tests in this repository still commonly seed the public
+                        # camelCase workbench shape, while the DB columns are snake_case.
+                        # Accept both, preferring the explicit snake_case key if both
+                        # representations are provided.
+                        _optional_field_aliases: dict[str, tuple[str, ...]] = {
+                            "inputs": ("inputs",),
+                            "outputs": ("outputs",),
+                            "input_nodes": ("input_nodes", "inputNodes"),
+                            "output_nodes": ("output_nodes", "outputNodes"),
+                            "input_access": ("input_access", "inputAccess"),
+                            "inputs_required": ("inputs_required", "inputsRequired"),
+                            "inputs_units": ("inputs_units", "inputsUnits"),
+                            "progress": ("progress",),
+                            "thumbnail": ("thumbnail",),
+                            "run_hash": ("run_hash", "runHash"),
+                            "state": ("state",),
+                            "parent": ("parent",),
+                            "boot_options": ("boot_options", "bootOptions"),
+                            "required_resources": (
+                                "required_resources",
+                                "requiredResources",
+                            ),
+                        }
+                        for field, aliases in _optional_field_aliases.items():
+                            for alias in aliases:
+                                if alias in node_data:
+                                    node_values[field] = node_data[alias]
+                                    break
                         await conn.execute(sa.insert(projects_nodes).values(**node_values))
 
                 # Re-read the project row to get updated last_change_date
