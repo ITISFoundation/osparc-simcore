@@ -15,6 +15,12 @@ log = logging.getLogger(__name__)
 
 
 async def get_updated_project(sqlalchemy_async_engine: AsyncEngine, project_id: str) -> dict[str, Any]:
+    """Reads the project and its nodes from the DB.
+
+    NOTE: Node fields use DB column names (snake_case: input_nodes, run_hash, etc.)
+    rather than API/model aliases (camelCase: inputNodes, runHash). This is intentional
+    since the storage service operates on raw DB dicts, not on serialized API models.
+    """
     async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))
         row = result.one()
