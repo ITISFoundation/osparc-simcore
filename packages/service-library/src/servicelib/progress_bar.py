@@ -202,8 +202,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         async with self._continuous_value_lock:
             new_steps_value = self._current_steps + steps
             # NOTE: clamp to 0 because floating-point accumulation drift can
-            # produce tiny negatives (~ -1e-16) after __aexit__ rollback,
-            # and _compute_progress does not accept negative input.
+            # produce tiny negatives (~ -1e-16) after rollback.
             new_steps_value = max(new_steps_value, 0)
             if new_steps_value > self.num_steps:
                 new_steps_value = round(new_steps_value)
