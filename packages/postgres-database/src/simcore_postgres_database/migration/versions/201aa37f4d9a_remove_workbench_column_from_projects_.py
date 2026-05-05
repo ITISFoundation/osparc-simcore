@@ -397,7 +397,7 @@ def downgrade():
         sa.text(
             """
             UPDATE projects
-            SET workbench = '[]'::json
+            SET workbench = '{}'::json
             WHERE workbench IS NULL
             """
         )
