@@ -729,3 +729,62 @@ async def test_sub_progress_cancellation_rolls_back_and_allows_same_slot_retry(
     # Ends at exactly 1.0, not 1.5 (which would happen without rollback)
     final_report = mocked_progress_bar_cb.call_args_list[-1].args[0]
     assert final_report.percent_value == pytest.approx(1.0)
+
+
+async def test_sub_progress_real_task_cancellation_removes_child_and_rolls_back():
+    """Verify cleanup works with real task cancellation via task.cancel(),
+    not just a manually raised CancelledError."""
+
+    async def _worker(root: ProgressBarData) -> None:
+        async with root.sub_progress(steps=100, description="worker") as child:
+            for _ in range(50):
+                await child.update()
+            # Simulate a long await where cancellation arrives
+            await asyncio.sleep(10)
+
+    async with ProgressBarData(num_steps=1, description="root") as root:
+        task = asyncio.create_task(_worker(root))
+        # Let the worker make progress
+        await asyncio.sleep(0)
+        # Cancel the task for real
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+        # Child must have been removed and progress rolled back
+        assert len(root._children) == 0  # noqa: SLF001
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
+
+        # Same slot is reusable
+        async with root.sub_progress(steps=100, description="retry") as child:
+            for _ in range(100):
+                await child.update()
+
+    assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+
+async def test_sub_progress_nested_exception_does_not_double_rollback():
+    """When root -> mid -> leaf and leaf raises, the exception propagates
+    through both mid and leaf __aexit__. Verify that root's steps completed
+    BEFORE mid are preserved (no double subtraction)."""
+    async with ProgressBarData(num_steps=3, description="root") as root:
+        # Complete first step manually
+        await root.update()
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Second step via nested sub_progress that fails
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=1, description="mid") as mid:
+                async with mid.sub_progress(steps=100, description="leaf") as leaf:
+                    for _ in range(50):
+                        await leaf.update()
+                    msg = "boom"
+                    raise RuntimeError(msg)
+
+        # Root should be at exactly 1 — the first manual step is preserved,
+        # mid's partial contribution (from leaf) is fully rolled back.
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Third step works normally
+        await root.update()
+        assert root._current_steps == pytest.approx(2)  # noqa: SLF001
