@@ -585,7 +585,7 @@ async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_c
         # The failed attempt must NOT emit a spurious 1.0 (100%) report
         reports_after_error = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
         assert all(r.percent_value < 1.0 for r in reports_after_error), (
-            "finish() on error exit emitted a spurious 100% report before rollback"
+            "Error exit emitted a spurious 100% report before rollback"
         )
 
         mocked_progress_bar_cb.reset_mock()
