@@ -277,8 +277,8 @@ async def create_project_node(
                     sqlalchemy_async_engine,
                     table=projects_nodes,
                     values=node_values,
-                    pk_col=projects_nodes.c.node_id,
-                    pk_value=f"{new_node_id}",
+                    pk_col=(projects_nodes.c.project_uuid, projects_nodes.c.node_id),
+                    pk_value=(f"{project_id}", f"{new_node_id}"),
                 )
             )
 
