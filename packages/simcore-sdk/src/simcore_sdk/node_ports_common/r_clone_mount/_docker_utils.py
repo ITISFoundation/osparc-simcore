@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 _MEMORY_SAFETY_MARGIN: Final[float] = 0.7
 
 RC_PORT: Final[PortInt] = 8000
-_TARGET_PORT: Final[str] = f"{RC_PORT}/tcp"
+_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: Final[str] = f"{RC_PORT}/tcp"
 
 
 async def _get_config(
@@ -33,9 +33,9 @@ async def _get_config(
             # This causes more aggressive GC before hitting the container's hard memory limit.
             f"GOMEMLIMIT={int(memory_limit * _MEMORY_SAFETY_MARGIN)}",
         ],
-        "ExposedPorts": {_TARGET_PORT: {}},
+        "ExposedPorts": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: {}},
         "HostConfig": {
-            "PortBindings": {_TARGET_PORT: [{"HostPort": "0"}]},
+            "PortBindings": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: [{"HostPort": "0"}]},
             "Binds": [],
             "Mounts": await delegate.get_bind_paths(local_mount_path),
             "Devices": [{"PathOnHost": "/dev/fuse", "PathInContainer": "/dev/fuse", "CgroupPermissions": "rwm"}],
@@ -68,12 +68,12 @@ async def create_r_clone_container(
     )
 
     ports = container_inspect.get("NetworkSettings", {}).get("Ports", {})
-    port_bindings = ports.get(_TARGET_PORT)
+    port_bindings = ports.get(_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY)
     host_port = port_bindings[0].get("HostPort") if port_bindings else None
     if not host_port:
         raise PortNotAssignedError(
             container_name=container_name,
-            target_port=_TARGET_PORT,
+            target_port=_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY,
             ports=ports,
         )
 
