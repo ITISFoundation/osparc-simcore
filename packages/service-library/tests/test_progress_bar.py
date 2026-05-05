@@ -704,13 +704,13 @@ async def test_sub_progress_child_removed_on_cancellation(
     mocked_progress_bar_cb: mock.Mock,
 ):
     """When a task is cancelled inside a sub_progress context, the child must
-    still be removed from the parent so the slot is freed for a retry."""
+    still be removed and progress rolled back so the same slot can be retried."""
     async with ProgressBarData(
-        num_steps=2,
+        num_steps=1,
         description="root",
         progress_report_cb=mocked_progress_bar_cb,
     ) as root:
-        # Simulate cancellation during first child
+        # Simulate cancellation during child — same slot retry scenario
         with pytest.raises(asyncio.CancelledError):  # noqa: PT012
             async with root.sub_progress(steps=10, description="child-cancelled") as child:
                 await child.update(5)
@@ -718,33 +718,27 @@ async def test_sub_progress_child_removed_on_cancellation(
 
         # Child must have been removed
         assert len(root._children) == 0  # noqa: SLF001
+        # Progress rolled back so retry on same slot doesn't over-count
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
 
-        # Parent is still usable — create a new child in the same slot
+        # Retry the same slot — must succeed without over-counting
         async with root.sub_progress(steps=10, description="child-retry") as child:
             for _ in range(10):
                 await child.update()
 
-        # Second step proceeds normally
-        async with root.sub_progress(steps=5, description="child-2") as child:
-            for _ in range(5):
-                await child.update()
-
-    # Root completed successfully
+    # Root completed successfully at exactly 1.0
     final_report = mocked_progress_bar_cb.call_args_list[-1].args[0]
     assert final_report.percent_value == 1.0
 
 
-async def test_sub_progress_cancellation_does_not_rollback(
+async def test_sub_progress_cancellation_rollback_enables_same_slot_retry(
     mocked_progress_bar_cb: mock.Mock,
 ):
-    """CancelledError must NOT trigger async rollback (_on_child_error).
-
-    Rollback involves multiple awaits (update + _reset_report_baseline_upwards)
-    which can be interrupted by a second cancellation if the callback is async,
-    leaving the parent progress in an inconsistent state.  Instead, cancellation
-    should only remove the child (synchronous) and leave parent progress as-is."""
+    """CancelledError must rollback partial progress just like other exceptions,
+    so a caller that catches CancelledError and retries the same sub-step
+    does not over-count parent progress."""
     async with ProgressBarData(
-        num_steps=2,
+        num_steps=1,
         description="root",
         progress_report_cb=mocked_progress_bar_cb,
     ) as root:
@@ -754,9 +748,15 @@ async def test_sub_progress_cancellation_does_not_rollback(
                 await child.update(5)  # 50% of child = 0.5 parent steps
                 raise asyncio.CancelledError
 
-        # Parent progress should NOT be rolled back — the partial contribution stays
-        # (unlike error exit where we rollback for retry)
-        assert root._current_steps == pytest.approx(0.5)  # noqa: SLF001
-
-        # Child was removed
+        # Parent progress must be rolled back to 0
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
         assert len(root._children) == 0  # noqa: SLF001
+
+        # Retry on the same slot — completes fully
+        async with root.sub_progress(steps=10, description="retry-child") as child:
+            for _ in range(10):
+                await child.update()
+
+    # Ends at exactly 1.0, not 1.5 (which would happen without rollback)
+    final_report = mocked_progress_bar_cb.call_args_list[-1].args[0]
+    assert final_report.percent_value == pytest.approx(1.0)
