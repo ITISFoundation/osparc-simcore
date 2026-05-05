@@ -42,6 +42,24 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.boot_options,
 ]
 
+# Mapping from Node model alias (camelCase) to DB column name (snake_case)
+_ALIAS_TO_COLUMN: dict[str, str] = {
+    field_info.alias: field_name
+    for field_name, field_info in Node.model_fields.items()
+    if field_info.alias and field_info.alias != field_name
+}
+
+
+def _node_dump_for_db(node_model: Node | PartialNode, *, exclude_unset: bool) -> dict:
+    """Serializes a Node/PartialNode for DB storage.
+
+    Uses by_alias=True so nested JSONB values (inputs, outputs, state)
+    are serialized with camelCase keys (nodeUuid, currentStatus, etc.),
+    then maps top-level keys from camelCase aliases back to snake_case DB columns.
+    """
+    data = node_model.model_dump(mode="json", by_alias=True, exclude_unset=exclude_unset)
+    return {_ALIAS_TO_COLUMN.get(k, k): v for k, v in data.items()}
+
 
 async def add(
     app: web.Application,
@@ -52,7 +70,7 @@ async def add(
     node: Node,
     required_resources: dict | None = None,
 ) -> None:
-    values = node.model_dump(mode="json", exclude_unset=True)
+    values = _node_dump_for_db(node, exclude_unset=True)
     if required_resources is not None:
         values["required_resources"] = required_resources
 
@@ -169,7 +187,7 @@ async def update(
     node_id: NodeID,
     partial_node: PartialNode,
 ) -> Node:
-    values = partial_node.model_dump(mode="json", exclude_unset=True)
+    values = _node_dump_for_db(partial_node, exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
