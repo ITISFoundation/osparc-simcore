@@ -117,7 +117,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                     await self.finish()
             finally:
                 # Always remove child even on cancellation, so the slot is freed.
-                self._parent._on_child_exit(self)  # noqa: SLF001
+                self._parent._children.remove(self)  # noqa: SLF001
         else:
             await self.finish()
 
@@ -139,10 +139,6 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             self._last_report_value = self._compute_progress(self._current_steps)
         if self._parent is not None:
             await self._parent._reset_report_baseline_upwards()  # noqa: SLF001
-
-    def _on_child_exit(self, child: "ProgressBarData") -> None:
-        """Remove a child so its slot can be reused (e.g. on retry)."""
-        self._children.remove(child)
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:

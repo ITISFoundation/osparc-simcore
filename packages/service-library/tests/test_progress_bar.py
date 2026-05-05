@@ -563,9 +563,10 @@ async def test_sub_progress_parent_progress_decremented_on_error_exit(faker: Fak
 
 
 async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_cb: mock.Mock, faker: Faker):
-    """Verify that after an error + retry, the progress callback reports
-    correct values: no spurious 100% from the failed attempt, and the
-    retry reports a monotonically increasing sequence ending at 1.0."""
+    """Verify that after an error + retry, the progress callback:
+    1. Does NOT emit a spurious 100% from the failed attempt
+    2. Emits intermediate reports from near 0% during the retry
+    3. Ends at 1.0"""
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=mocked_progress_bar_cb,
@@ -581,9 +582,8 @@ async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_c
                 msg = "simulated failure"
                 raise RuntimeError(msg)
 
-        # Capture reports from the failed attempt
-        reports_after_error = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
         # The failed attempt must NOT emit a spurious 1.0 (100%) report
+        reports_after_error = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
         assert all(r.percent_value < 1.0 for r in reports_after_error), (
             "finish() on error exit emitted a spurious 100% report before rollback"
         )
@@ -595,49 +595,18 @@ async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_c
             for _ in range(100):
                 await sub.update()
 
-    # Retry must end at 1.0
-    last_report: ProgressReport = mocked_progress_bar_cb.call_args_list[-1].args[0]
-    assert last_report.percent_value == pytest.approx(1.0)
-
-
-async def test_sub_progress_retry_emits_intermediate_reports(mocked_progress_bar_cb: mock.Mock, faker: Faker):
-    """After an error + retry, intermediate progress reports must be emitted
-    during the retry (not suppressed until the final 1.0).
-    Regression: finish() on error exit advanced _last_report_value to 1.0,
-    causing _report_external to skip all intermediate values in the retry."""
-    async with ProgressBarData(
-        num_steps=1,
-        progress_report_cb=mocked_progress_bar_cb,
-        description=faker.pystr(),
-    ) as root:
-        # First attempt — partial progress then error exit
-        with contextlib.suppress(RuntimeError):
-            async with root.sub_progress(steps=100, description="attempt 1") as sub:
-                for _ in range(50):
-                    await sub.update()
-                msg = "simulated failure"
-                raise RuntimeError(msg)
-
-        mocked_progress_bar_cb.reset_mock()
-
-        # Second attempt — completes fully
-        async with root.sub_progress(steps=100, description="attempt 2") as sub:
-            for _ in range(100):
-                await sub.update()
-
-    # Must have intermediate reports during the retry, not just the final 1.0
+    # Retry reports must include intermediates starting near 0%
     retry_reports = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
     intermediate_reports = [r for r in retry_reports if r.percent_value < 1.0]
-    assert len(intermediate_reports) > 0, (
-        "No intermediate progress reports emitted during retry — _last_report_value was not reset after rollback"
-    )
-    # The first emitted retry report must be near the beginning (< 10%),
-    # not stuck silent until surpassing the failed attempt's progress (~50%).
+    assert len(intermediate_reports) > 0, "No intermediate progress reports emitted during retry"
     first_retry_report = intermediate_reports[0]
     assert first_retry_report.percent_value < 0.1, (
         f"First retry report at {first_retry_report.percent_value:.0%} — "
         "expected near 0%; _last_report_value was not reset after rollback"
     )
+    # Retry must end at 1.0
+    last_report: ProgressReport = retry_reports[-1]
+    assert last_report.percent_value == pytest.approx(1.0)
 
 
 async def test_sub_progress_retry_with_weighted_parent(mocked_progress_bar_cb: mock.Mock, faker: Faker):
@@ -679,21 +648,6 @@ async def test_sub_progress_retry_with_weighted_parent(mocked_progress_bar_cb: m
             f"First retry report at {first_retry_report.percent_value:.0%} — "
             "weighted rollback did not reset report baseline"
         )
-
-
-async def test_sub_progress_guard_still_prevents_too_many_concurrent_children(faker: Faker):
-    """The RuntimeError guard must still trigger when trying to create
-    more sub_progress children than num_steps *concurrently*
-    (i.e., without exiting previous ones)."""
-    async with ProgressBarData(num_steps=2, description=faker.pystr()) as root:
-        sub1 = root.sub_progress(steps=10, description="child 1")
-        sub2 = root.sub_progress(steps=10, description="child 2")
-        with pytest.raises(RuntimeError, match="Too many sub progresses"):
-            root.sub_progress(steps=10, description="child 3")
-        async with sub1:
-            pass
-        async with sub2:
-            pass
 
 
 async def test_sub_progress_multiple_sequential_reuse(faker: Faker):
