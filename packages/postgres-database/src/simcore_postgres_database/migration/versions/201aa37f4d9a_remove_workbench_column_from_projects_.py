@@ -390,6 +390,19 @@ def downgrade():
     # Restore workbench data from projects_nodes table
     _restore_workbench_from_projects_nodes()
 
+    # Projects that were empty before the upgrade do not have rows in
+    # projects_nodes, so restore them to the original empty workbench value
+    # before re-applying the NOT NULL constraint.
+    op.execute(
+        sa.text(
+            """
+            UPDATE projects
+            SET workbench = '[]'::json
+            WHERE workbench IS NULL
+            """
+        )
+    )
+
     # Now enforce NOT NULL after data has been restored
     op.alter_column("projects", "workbench", nullable=False)
     # ### end Alembic commands ###
