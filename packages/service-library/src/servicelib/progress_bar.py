@@ -111,21 +111,22 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
 
     async def _finish(self, *, failed: bool = False) -> None:
         _logger.debug("finishing %s", f"{self.num_steps} progress")
-        if self._parent is not None:
-            try:
-                if failed:
-                    # On error exit, rollback partial progress so a retry does not
-                    # over-count. Skip set_ to avoid a spurious 100% report.
-                    await self._parent._on_child_error(  # pylint: disable=protected-access # noqa: SLF001
-                        self._compute_progress(self._current_steps)
-                    )
-                else:
-                    await self.set_(self.num_steps)
-            finally:
-                # Always remove child even on cancellation, so the slot is freed.
-                self._parent._children.remove(self)  # pylint: disable=protected-access # noqa: SLF001
-        else:
+        if self._parent is None:
             await self.set_(self.num_steps)
+            return
+
+        try:
+            if failed:
+                # On error exit, rollback partial progress so a retry does not
+                # over-count. Skip set_ to avoid a spurious 100% report.
+                await self._parent._on_child_error(  # pylint: disable=protected-access # noqa: SLF001
+                    self._compute_progress(self._current_steps)
+                )
+            else:
+                await self.set_(self.num_steps)
+        finally:
+            # Always remove child even on cancellation, so the slot is freed.
+            self._parent._children.remove(self)  # pylint: disable=protected-access # noqa: SLF001
 
     async def _on_child_error(self, child_progress_contribution: float) -> None:
         """Rollback a failed child's progress and reset the report baseline
