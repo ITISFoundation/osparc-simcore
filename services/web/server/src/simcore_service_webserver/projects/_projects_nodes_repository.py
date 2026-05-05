@@ -52,7 +52,7 @@ async def add(
     node: Node,
     required_resources: dict | None = None,
 ) -> None:
-    values = node.model_dump(mode="json", exclude_none=True)
+    values = node.model_dump(mode="json", exclude_unset=True)
     if required_resources is not None:
         values["required_resources"] = required_resources
 

@@ -40,13 +40,25 @@ def clone_project_data(
             return uuidlib.uuid5(project_copy_uuid, f"{old}")
 
         nodes_map = {node_uuid: _new_node_uuid(node_uuid) for node_uuid in project_nodes}
-        project_nodes_copy = {
-            nodes_map[old_node_id]: {
-                **deepcopy(data),
-                "node_id": nodes_map[old_node_id],
-            }
-            for old_node_id, data in project_nodes.items()
-        }
+
+        # Build a string-based map for recursive UUID replacement
+        str_map: dict[str, str] = {f"{old}": f"{new}" for old, new in nodes_map.items()}
+
+        def _replace_refs(value: Any) -> Any:
+            """Recursively replace old node UUIDs in nested data structures."""
+            if isinstance(value, str):
+                return str_map.get(value, value)
+            if isinstance(value, list):
+                return [_replace_refs(item) for item in value]
+            if isinstance(value, dict):
+                return {_replace_refs(k): _replace_refs(v) for k, v in value.items()}
+            return value
+
+        project_nodes_copy = {}
+        for old_node_id, data in project_nodes.items():
+            new_data = _replace_refs(deepcopy(data))
+            new_data["node_id"] = nodes_map[old_node_id]
+            project_nodes_copy[nodes_map[old_node_id]] = new_data
 
         return project_copy, project_nodes_copy, nodes_map
 
