@@ -788,3 +788,40 @@ async def test_sub_progress_nested_exception_does_not_double_rollback():
         # Third step works normally
         await root.update()
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
+
+
+async def test_sub_progress_retry_with_async_callback(async_mocked_progress_bar_cb: mock.AsyncMock, faker: Faker):
+    """Exercise the retry/rollback path with an async progress_report_cb
+    to ensure awaitable callbacks don't break rollback or report behavior."""
+    async with ProgressBarData(
+        num_steps=1,
+        progress_report_cb=async_mocked_progress_bar_cb,
+        description=faker.pystr(),
+    ) as root:
+        async_mocked_progress_bar_cb.reset_mock()
+
+        # First attempt — partial progress then error
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        # No spurious 100% report
+        reports_after_error = [call.args[0] for call in async_mocked_progress_bar_cb.call_args_list]
+        assert all(r.percent_value < 1.0 for r in reports_after_error)
+
+        async_mocked_progress_bar_cb.reset_mock()
+
+        # Retry — completes fully
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+    # Retry reports include intermediates near 0% and end at 1.0
+    retry_reports = [call.args[0] for call in async_mocked_progress_bar_cb.call_args_list]
+    assert retry_reports[-1].percent_value == pytest.approx(1.0)
+    intermediate_reports = [r for r in retry_reports if r.percent_value < 1.0]
+    assert len(intermediate_reports) > 0
+    assert intermediate_reports[0].percent_value < 0.1
