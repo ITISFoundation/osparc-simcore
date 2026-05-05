@@ -284,13 +284,13 @@ qx.Class.define("osparc.info.ServiceLarge", {
         },
       };
 
-      if (canIWrite) {
+      if (canIWrite || this.getService()["releaseNotesUrl"]) {
         infoLayout["RELEASE_NOTES_URL"] = {
-          label: this.tr("Release Notes URL"),
+          label: this.tr("Release Notes"),
           view: this.__createReleaseNotesUrl(),
           action: {
             button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit release notes URL")),
-            callback: this.__openReleaseNotesUrlEditor,
+            callback: canIWrite ? this.__openReleaseNotesUrlEditor : null,
             ctx: this,
           },
         };
@@ -426,10 +426,14 @@ qx.Class.define("osparc.info.ServiceLarge", {
         const link = new osparc.ui.basic.LinkLabel(url, url).set({
           font: "link-label-14",
           toolTipText: url,
-          width: 220,
           maxWidth: 220,
-          wrap: false,
+          maxHeight: 20,
           allowGrowX: false,
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        link.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap",
         });
         return link;
       }
