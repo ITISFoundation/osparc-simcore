@@ -30,6 +30,7 @@ from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
+    include_from_version,
 )
 
 _logger = logging.getLogger(__name__)
@@ -84,7 +85,7 @@ async def list_solvers(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=include_from_version("0.10-rc1"),
 )
 async def list_all_solvers_paginated(
     page_params: Annotated[PaginationParams, Depends()],
@@ -228,7 +229,7 @@ async def list_solver_releases(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=include_from_version("0.10-rc1"),
 )
 async def list_solver_releases_paginated(
     solver_key: SolverKeyId,
