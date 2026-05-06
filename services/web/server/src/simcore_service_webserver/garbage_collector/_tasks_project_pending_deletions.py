@@ -19,7 +19,7 @@ from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 _logger = logging.getLogger(__name__)
 
 
-def create_background_task_to_retry_pending_deletions(
+def create_background_task_to_retry_project_pending_deletions(
     wait_s: float,
 ) -> CleanupContextFunc:
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
