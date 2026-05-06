@@ -246,6 +246,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           osparc.utils.Utils.setIdToWidget(control, "savingStudyIcon");
           this.getChildControl("left-items").add(control);
           break;
+        case "saving-study-files-icon":
+          control = new qx.ui.basic.Atom().set({
+            font: "text-12",
+            opacity: 0.8,
+            visibility: "excluded",
+          });
+          this.getChildControl("left-items").add(control);
+          break;
         case "read-only-info": {
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Read only"),
@@ -390,17 +398,42 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __applyStudy: function(study) {
       const savingStudyIcon = this.getChildControl("saving-study-icon");
+      const savingStudyFilesIcon = this.getChildControl("saving-study-files-icon");
       const readOnlyInfo = this.getChildControl("read-only-info");
       if (study) {
         this.getChildControl("study-title-options").setStudy(study);
         study.bind("savePending", savingStudyIcon, "visibility", {
           converter: value => value && ["workbench", "pipeline"].includes(study.getUi().getMode()) ? "visible" : "excluded"
         });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "visibility", {
+          converter: value => value && ["workbench", "pipeline"].includes(study.getUi().getMode()) ? "visible" : "excluded"
+        });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "label", {
+          converter: value => {
+            if (value === "Uploading") {
+              return this.tr("Uploading...");
+            } else if (value === "Queued") {
+              return this.tr("Queued...");
+            }
+            return "";
+          }
+        });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "icon", {
+          converter: value => {
+            if (value === "Uploading") {
+              return "@FontAwesome5Solid/file-alt/14";
+            } else if (value === "Queued") {
+              return "@FontAwesome5Solid/file-medical/14";
+            }
+            return "";
+          }
+        });
         study.bind("readOnly", readOnlyInfo, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
       } else {
         savingStudyIcon.exclude();
+        savingStudyFilesIcon.exclude();
         readOnlyInfo.exclude();
       }
 

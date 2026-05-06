@@ -358,10 +358,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         socket.on("statePaths", data => {
           console.log("Received statePaths update", data);
           if (data["project_id"] === this.getStudy().getUuid()) {
-            if (data["status"] === "FILES_UPLOAD_ONGOING") {
-              this.getStudy().setSavePending(true);
+            if (data["status"] === "FILES_UPLOAD_QUEUED") {
+              this.getStudy().setSaveFilesPending("Queued");
+            } else if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(data["status"])) {
+              this.getStudy().setSaveFilesPending("Uploading");
             } else if (data["status"] === "FILES_UPLOAD_ENDED") {
-              this.getStudy().setSavePending(false);
+              this.getStudy().setSaveFilesPending(null);
             }
           }
         }, this);

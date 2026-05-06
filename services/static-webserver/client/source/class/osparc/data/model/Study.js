@@ -255,6 +255,13 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeSavePending",
       init: false
     },
+
+    saveFilesPending: {
+      check: [null, "Uploading", "Queued"],
+      nullable: true,
+      event: "changeSaveFilesPending",
+      init: false
+    },
   },
 
   events: {
@@ -289,6 +296,7 @@ qx.Class.define("osparc.data.model.Study", {
       // "trashedAt", // backend sets it
       // "trashedBy", // backend sets it
       // "savePending", // frontend only
+      // "saveFilesPending", // frontend only
     ],
 
     // Properties of the Study class that should not be serialized
@@ -300,6 +308,7 @@ qx.Class.define("osparc.data.model.Study", {
       "readOnly",
       "trashedAt",
       "savePending",
+      "saveFilesPending",
     ],
 
     OwnPatch: [
