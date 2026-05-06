@@ -83,11 +83,10 @@ async def delete_project_simcore_s3(
     outbox retry loops; running it on the celery worker decouples the deletion
     from the originating HTTP request lifecycle and removes the HTTP timeout cap.
     """
-    assert task_key  # nosec
     with log_context(
         _logger,
         logging.INFO,
-        msg=f"deleting project {user_id=}, {project_id=}, {node_id=}",
+        msg=f"deleting project task ({task_key}) for ({user_id=}) with {project_id=}, {node_id=}",
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(SimcoreS3DataManager.get_location_id())
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
