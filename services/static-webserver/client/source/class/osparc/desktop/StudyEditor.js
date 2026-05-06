@@ -353,6 +353,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         }, this);
       }
+
+      if (!socket.slotExists("statePaths")) {
+        socket.on("statePaths", data => {
+          console.log("Received statePaths update", data);
+          if (data["project_id"] === this.getStudy().getUuid()) {
+            if (data["status"] === "FILES_UPLOAD_ONGOING") {
+              this.getStudy().setSavePending(true);
+            } else if (data["status"] === "FILES_UPLOADED") {
+              this.getStudy().setSavePending(false);
+            }
+          }
+        }, this);
+      }
     },
 
     __projectDocumentReceived: function(data) {
