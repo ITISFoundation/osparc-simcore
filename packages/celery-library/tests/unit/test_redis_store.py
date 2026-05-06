@@ -275,4 +275,4 @@ async def test_create_task_with_index_false_skips_owner_index(
     assert await redis_client_sdk.redis.exists(_build_redis_task_key(sub_task_id)) == 1
     # ...but only the indexed task appears in the owner listing.
     listed = await redis_task_store.list_tasks(owner=owner, user_id=user_id, product_name=product)
-    assert {t.uuid for t in listed} == {indexed_task_id}
+    assert {t.id for t in listed} == {indexed_task_id}
