@@ -5,11 +5,6 @@ from email.headerregistry import Address
 from typing import Any
 
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
-from notifications_library._email import (
-    add_attachments,
-    compose_email,
-    create_email_session,
-)
 from servicelib.celery.task_context import TaskContext
 from servicelib.logging_utils import log_context
 from settings_library.email import SMTPSettings
