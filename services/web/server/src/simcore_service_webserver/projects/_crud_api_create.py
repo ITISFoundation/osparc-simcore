@@ -229,20 +229,29 @@ async def _compose_project_data(
                 new_project[key] = non_null_value
     else:
         # when predefined_project is ProjectCreateNew
-        project_nodes = {
-            NodeID(node_id): ProjectNodeCreate(
-                node_id=NodeID(node_id),
-                required_resources=jsonable_encoder(
-                    await catalog_service.get_service_resources(
-                        app, user_id, node_data["key"], node_data["version"], product_name
-                    )
-                ),
-                key=node_data.get("key"),
-                version=node_data.get("version"),
-                label=node_data.get("label"),
-            )
-            for node_id, node_data in predefined_project.get("workbench", {}).items()
+        # Mapping from camelCase (workbench JSON) to snake_case (DB columns)
+        _camel_to_snake = {
+            "inputAccess": "input_access",
+            "inputNodes": "input_nodes",
+            "inputsRequired": "inputs_required",
+            "inputsUnits": "inputs_units",
+            "outputNodes": "output_nodes",
+            "runHash": "run_hash",
+            "bootOptions": "boot_options",
         }
+        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+        project_nodes = {}
+        for node_id, node_data in predefined_project.get("workbench", {}).items():
+            create_kwargs = {
+                _camel_to_snake.get(k, k): v for k, v in node_data.items() if _camel_to_snake.get(k, k) in valid_fields
+            }
+            create_kwargs["required_resources"] = jsonable_encoder(
+                await catalog_service.get_service_resources(
+                    app, user_id, node_data["key"], node_data["version"], product_name
+                )
+            )
+            project_nodes[NodeID(node_id)] = ProjectNodeCreate(node_id=NodeID(node_id), **create_kwargs)
 
         new_project = predefined_project
 
