@@ -4,7 +4,7 @@ import os
 
 import typer
 from asgi_lifespan import LifespanManager
-from servicelib.fastapi.tracing import TracingConfig
+from servicelib.tracing import TracingConfig
 from settings_library.postgres import PostgresSettings
 from settings_library.s3 import S3Settings
 from settings_library.utils_cli import (
