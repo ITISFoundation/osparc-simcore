@@ -56,7 +56,12 @@ def _migrate_position_to_projects_ui() -> None:
 
         # Merge into existing projects.ui
         try:
-            ui_data = ui_json if isinstance(ui_json, dict) else json.loads(ui_json) if ui_json else {}
+            if isinstance(ui_json, dict):
+                ui_data = ui_json
+            elif ui_json:
+                ui_data = json.loads(ui_json)
+            else:
+                ui_data = {}
         except (json.JSONDecodeError, TypeError):
             ui_data = {}
 
