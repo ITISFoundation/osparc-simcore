@@ -360,7 +360,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (data["project_id"] === this.getStudy().getUuid()) {
             if (data["status"] === "FILES_UPLOAD_ONGOING") {
               this.getStudy().setSavePending(true);
-            } else if (data["status"] === "FILES_UPLOADED") {
+            } else if (data["status"] === "FILES_UPLOAD_ENDED") {
               this.getStudy().setSavePending(false);
             }
           }
