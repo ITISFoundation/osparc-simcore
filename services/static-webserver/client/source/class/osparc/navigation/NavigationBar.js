@@ -418,12 +418,22 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             return "";
           }
         });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "toolTipText", {
+          converter: value => {
+            if (value === "Uploading") {
+              return this.tr("Files are being uploaded/synced");
+            } else if (value === "Queued") {
+              return this.tr("Files are queued for upload/syncing");
+            }
+            return "";
+          }
+        });
         study.bind("saveFilesPending", savingStudyFilesIcon, "icon", {
           converter: value => {
             if (value === "Uploading") {
-              return "@FontAwesome5Solid/file-alt/14";
+              return "@FontAwesome5Solid/upload/12";
             } else if (value === "Queued") {
-              return "@FontAwesome5Solid/file-medical/14";
+              return "@FontAwesome5Solid/file-medical/12";
             }
             return "";
           }
