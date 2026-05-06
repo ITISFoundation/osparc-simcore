@@ -103,9 +103,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             description=(
                 "Minimum age before a candidate is considered for reconciliation deletion."
-                " Protects in-flight uploads/deletes (especially long single-PUT or multipart"
-                " uploads where the fmd row is created before the S3 object is visible) from"
-                " being garbage-collected too eagerly."
+                " Must be >= STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS to avoid"
+                " deleting fmd rows whose uploads are still in flight (the computational"
+                " backend may upload for up to the full presigned-URL lifetime)."
             ),
         ),
     ] = timedelta(hours=24)
@@ -166,6 +166,16 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         if self.STORAGE_CLEANER_INTERVAL_S is not None and not self.STORAGE_REDIS:
             msg = "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! Please correct settings."
             raise ValueError(msg)
+
+        min_grace = timedelta(seconds=self.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS)
+        if min_grace > self.STORAGE_CLEANER_RECONCILE_GRACE_PERIOD:
+            msg = (
+                f"STORAGE_CLEANER_RECONCILE_GRACE_PERIOD ({self.STORAGE_CLEANER_RECONCILE_GRACE_PERIOD})"
+                f" must be >= STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS ({min_grace})."
+                " A shorter grace period risks deleting fmd rows for uploads still in flight."
+            )
+            raise ValueError(msg)
+
         return self
 
 

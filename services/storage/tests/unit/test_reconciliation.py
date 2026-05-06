@@ -54,6 +54,7 @@ def app_environment(
             "STORAGE_CLEANER_RECONCILE_DB_TO_S3_ENABLED": "true",
             "STORAGE_CLEANER_RECONCILE_MULTIPART_ENABLED": "true",
             "STORAGE_CLEANER_RECONCILE_GRACE_PERIOD": "PT0S",
+            "STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS": "0",
         },
     )
 
@@ -344,7 +345,7 @@ async def test_reconcile_multipart_keeps_upload_with_active_fmd_row(
         file_id=file_id,
         project_id=project_id,
         node_id=node_id,
-        upload_expires_at=datetime(2099, 1, 1, tzinfo=UTC),
+        upload_expires_at=datetime(2099, 1, 1),  # noqa: DTZ001
         upload_id=upload_id,
     )
 
