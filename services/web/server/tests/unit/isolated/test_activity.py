@@ -65,8 +65,6 @@ def app_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "False",
             "POSTGRES_DB": "simcoredb",
             "POSTGRES_HOST": "postgres",
-            "POSTGRES_MAXSIZE": "10",
-            "POSTGRES_MINSIZE": "10",
             "POSTGRES_MAX_POOLSIZE": "10",
             "POSTGRES_MAX_OVERFLOW": "20",
             "POSTGRES_PASSWORD": "simcore",

@@ -118,7 +118,7 @@ router = APIRouter()
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=True,
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],
