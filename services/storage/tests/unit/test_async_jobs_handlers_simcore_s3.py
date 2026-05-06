@@ -57,6 +57,7 @@ from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
 from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
+from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
@@ -677,3 +678,181 @@ async def test_start_export_invalid_export_format(
         )
 
     assert exc.value.exc_type == "NotRegistered"
+
+
+async def _request_delete_project_simcore_s3(
+    task_manager: TaskManager,
+    user_id: UserID,
+    product_name: ProductName,
+    project_id: str,
+    *,
+    node_id: NodeID | None = None,
+    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
+) -> None:
+    with log_context(
+        logging.INFO,
+        f"Deleting project {project_id=} {node_id=}",
+    ) as ctx:
+        owner_metadata = _TestOwnerMetadata(
+            user_id=user_id,
+            product_name=product_name,
+            owner="PYTEST_CLIENT_NAME",
+        )
+
+        async_job = await submit_job(
+            task_manager,
+            execution_metadata=TaskExecutionMetadata(name="delete_project_simcore_s3"),
+            owner_metadata=owner_metadata,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+        )
+
+        async for async_job_result in wait_and_get_job_result(
+            task_manager,
+            owner_metadata=owner_metadata,
+            job_id=async_job.job_id,
+            stop_after=stop_after,
+        ):
+            ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
+            if async_job_result.done:
+                result = await async_job_result.result()
+                assert isinstance(result, AsyncJobResult)
+                return
+
+    pytest.fail(reason="delete_project_simcore_s3 timed out")
+
+
+async def _count_fmd_rows_for_project(sqlalchemy_async_engine: AsyncEngine, project_id: str) -> int:
+    async with sqlalchemy_async_engine.connect() as conn:
+        return (
+            await conn.scalar(
+                sa.select(sa.func.count()).select_from(file_meta_data).where(file_meta_data.c.project_id == project_id)
+            )
+            or 0
+        )
+
+
+async def _count_fmd_rows_for_node(sqlalchemy_async_engine: AsyncEngine, project_id: str, node_id: NodeID) -> int:
+    async with sqlalchemy_async_engine.connect() as conn:
+        return (
+            await conn.scalar(
+                sa.select(sa.func.count())
+                .select_from(file_meta_data)
+                .where(file_meta_data.c.project_id == project_id)
+                .where(file_meta_data.c.node_id == f"{node_id}")
+            )
+            or 0
+        )
+
+
+async def _count_s3_objects_for_prefix(initialized_app: FastAPI, bucket: str, prefix: str) -> int:
+    s3_client = get_s3_client(initialized_app)
+    counted = 0
+    async for s3_objects in s3_client.list_objects_paginated(bucket=bucket, prefix=prefix):
+        counted += len(s3_objects)
+    return counted
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1Mib"),),
+            workspace_files_count=0,
+        )
+    ],
+)
+async def test_delete_project_simcore_s3_removes_all_files_and_db_rows(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    product_name: ProductName,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+    ],
+    sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_bucket: str,
+):
+    project, _ = with_random_project_with_files
+    project_id = project["uuid"]
+
+    # arrange: project has files in S3 + fmd rows in DB
+    assert await _count_fmd_rows_for_project(sqlalchemy_async_engine, project_id) > 0
+    assert await _count_s3_objects_for_prefix(initialized_app, storage_s3_bucket, project_id) > 0
+
+    # act
+    await _request_delete_project_simcore_s3(
+        task_manager,
+        user_id,
+        product_name,
+        project_id,
+    )
+
+    # assert: nothing left, neither in S3 nor in DB
+    assert await _count_fmd_rows_for_project(sqlalchemy_async_engine, project_id) == 0
+    assert await _count_s3_objects_for_prefix(initialized_app, storage_s3_bucket, project_id) == 0
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1Mib"),),
+            workspace_files_count=0,
+        )
+    ],
+)
+async def test_delete_project_simcore_s3_with_node_id_only_deletes_that_node(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    product_name: ProductName,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+    ],
+    sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_bucket: str,
+):
+    project, files_by_node = with_random_project_with_files
+    project_id = project["uuid"]
+    node_ids = list(files_by_node.keys())
+    assert len(node_ids) >= 2, "test needs at least 2 nodes to verify partial delete"
+    target_node = node_ids[0]
+    surviving_node = node_ids[1]
+
+    # arrange
+    assert await _count_fmd_rows_for_node(sqlalchemy_async_engine, project_id, target_node) > 0
+    assert await _count_fmd_rows_for_node(sqlalchemy_async_engine, project_id, surviving_node) > 0
+
+    # act
+    await _request_delete_project_simcore_s3(
+        task_manager,
+        user_id,
+        product_name,
+        project_id,
+        node_id=target_node,
+    )
+
+    # assert: only target node's content gone; the other node's stays
+    assert await _count_fmd_rows_for_node(sqlalchemy_async_engine, project_id, target_node) == 0
+    assert await _count_s3_objects_for_prefix(initialized_app, storage_s3_bucket, f"{project_id}/{target_node}") == 0
+    assert await _count_fmd_rows_for_node(sqlalchemy_async_engine, project_id, surviving_node) > 0

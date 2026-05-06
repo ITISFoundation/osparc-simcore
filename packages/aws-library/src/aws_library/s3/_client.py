@@ -4,7 +4,7 @@ import functools
 import logging
 import urllib.parse
 from collections import deque
-from collections.abc import AsyncGenerator, AsyncIterator, Sequence
+from collections.abc import AsyncGenerator, AsyncIterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Literal, Protocol, cast
@@ -27,11 +27,13 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.s3_utils import FileLikeReader
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
+from tenacity import retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity.asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2RequestTypeDef,
-    ObjectIdentifierTypeDef,
 )
 
 from ._constants import (
@@ -40,7 +42,7 @@ from ._constants import (
     S3_OBJECT_DELIMITER,
 )
 from ._error_handler import s3_exception_handler, s3_exception_handler_async_gen
-from ._errors import S3DestinationNotEmptyError, S3KeyNotFoundError
+from ._errors import S3DeletionError, S3DestinationNotEmptyError, S3KeyNotFoundError
 from ._models import (
     MultiPartUploadLinks,
     PathCursor,
@@ -59,6 +61,8 @@ _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
 _MAX_CONCURRENT_COPY: Final[int] = 4
 _AWS_MAX_ITEMS_PER_PAGE: Final[int] = 1000
+_DELETE_OBJECTS_MAX_ATTEMPTS: Final[int] = 3
+_DELETE_OBJECTS_RETRY_BACKOFF_S: Final[float] = 0.5
 
 
 ListAnyUrlTypeAdapter: Final[TypeAdapter[list[AnyUrl]]] = TypeAdapter(list[AnyUrl])
@@ -340,15 +344,60 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
     @s3_exception_handler(_logger)
     async def delete_objects_recursively(self, *, bucket: S3BucketName, prefix: str) -> None:
         # NOTE: deletion of objects is done in batches of max 1000 elements,
-        # the maximum accepted by the S3 API
+        # the maximum accepted by `delete_objects`. Per-object failures
+        # (reported in the response `Errors` field, not as an HTTP error) are
+        # retried via tenacity in `_delete_keys_with_retry`. Once all batches
+        # are processed we re-list the prefix to detect anything left behind
+        # (eg. eventual consistency or new uploads landing concurrently). The
+        # previous implementation ignored both signals so partial failures
+        # silently produced zombie objects.
         with log_context(_logger, logging.DEBUG, f"deleting objects in {prefix=}", log_duration=True):
             async for s3_objects in self.list_objects_paginated(bucket=bucket, prefix=prefix):
-                objects_to_delete: Sequence[ObjectIdentifierTypeDef] = [{"Key": f"{_.object_key}"} for _ in s3_objects]
-                if objects_to_delete:
-                    await self._client.delete_objects(
-                        Bucket=bucket,
-                        Delete={"Objects": objects_to_delete},
+                keys_to_delete: list[str] = [f"{_.object_key}" for _ in s3_objects]
+                if keys_to_delete:
+                    await self._delete_keys_with_retry(bucket=bucket, keys=keys_to_delete)
+
+            await self._raise_if_objects_still_exist(bucket=bucket, prefix=prefix)
+
+    async def _delete_keys_with_retry(self, *, bucket: S3BucketName, keys: list[str]) -> None:
+        # AWS `delete_objects` returns HTTP 200 even when individual keys fail
+        # (failures are reported in the `Errors` field). Each retry only
+        # resends the keys that failed in the previous attempt; tenacity
+        # reraises the last `S3DeletionError` once attempts are exhausted.
+        remaining: list[str] = list(keys)
+
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(_DELETE_OBJECTS_MAX_ATTEMPTS),
+            wait=wait_fixed(_DELETE_OBJECTS_RETRY_BACKOFF_S),
+            retry=retry_if_exception_type(S3DeletionError),
+            before_sleep=before_sleep_log(_logger, logging.WARNING),
+            reraise=True,
+        ):
+            with attempt:
+                response = await self._client.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": [{"Key": k} for k in remaining]},
+                )
+
+                if errors := response.get("Errors", []) or []:
+                    remaining = [err.get("Key", "") for err in errors if err.get("Key")]
+                    raise S3DeletionError(
+                        bucket=bucket,
+                        prefix="<batch>",
+                        failed_count=len(errors),
+                        failed_keys=[dict(err) for err in errors],
                     )
+
+    async def _raise_if_objects_still_exist(self, *, bucket: S3BucketName, prefix: str) -> None:
+        response = await self._client.list_objects_v2(Bucket=bucket, Prefix=prefix, MaxKeys=1)
+        if leftover := response.get("Contents", []) or []:
+            leftover_keys = [obj.get("Key", "") for obj in leftover]
+            raise S3DeletionError(
+                bucket=bucket,
+                prefix=prefix,
+                failed_count=len(leftover_keys),
+                failed_keys=leftover_keys,
+            )
 
     @s3_exception_handler(_logger)
     async def delete_object(self, *, bucket: S3BucketName, object_key: S3ObjectKey) -> None:

@@ -1,5 +1,7 @@
+from datetime import timedelta
 from typing import Annotated, Self
 
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from pydantic import AliasChoices, Field, PositiveInt, field_validator, model_validator
@@ -48,36 +50,86 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DATCORE_ADAPTER: Annotated[DatcoreAdapterSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     STORAGE_SYNC_METADATA_TIMEOUT: Annotated[
-        PositiveInt, Field(180, description="Timeout (seconds) for metadata sync task")
-    ]
+        PositiveInt, Field(description="Timeout (seconds) for metadata sync task")
+    ] = 180
 
     STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS: Annotated[
         int,
-        Field(3600, description="Default expiration time in seconds for presigned links"),
-    ]
+        Field(description="Default expiration time in seconds for presigned links"),
+    ] = 3600
 
     STORAGE_CLEANER_INTERVAL_S: Annotated[
         int | None,
         Field(
-            30,
             description=(
                 "Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner."
             ),
         ),
-    ]
+    ] = 30
+
+    STORAGE_CLEANER_RECONCILE_S3_TO_DB_ENABLED: Annotated[
+        bool,
+        Field(
+            description=(
+                "Reconciliation pass that lists each top-level <project_id>/ prefix in the bucket and deletes"
+                " the entire prefix when no row exists in `projects` AND no fmd row exists for it."
+                " Deletes legacy zombie projects. Disabled by default — enable per environment after dry-run."
+            ),
+        ),
+    ] = False
+
+    STORAGE_CLEANER_RECONCILE_DB_TO_S3_ENABLED: Annotated[
+        bool,
+        Field(
+            description=(
+                "Reconciliation pass that finds non-expiring fmd rows whose referenced S3 object is gone"
+                " and removes the dangling DB row after a grace period."
+            ),
+        ),
+    ] = False
+
+    STORAGE_CLEANER_RECONCILE_MULTIPART_ENABLED: Annotated[
+        bool,
+        Field(
+            description=(
+                "Reconciliation pass that lists ongoing multipart uploads on the bucket and aborts the ones"
+                " older than the grace period that have no matching active fmd row."
+            ),
+        ),
+    ] = False
+
+    STORAGE_CLEANER_RECONCILE_GRACE_PERIOD: Annotated[
+        timedelta,
+        Field(
+            description=(
+                "Minimum age before a candidate is considered for reconciliation deletion."
+                " Protects in-flight uploads/deletes (especially long single-PUT or multipart"
+                " uploads where the fmd row is created before the S3 object is visible) from"
+                " being garbage-collected too eagerly."
+            ),
+        ),
+    ] = timedelta(hours=24)
+
+    STORAGE_CLEANER_RECONCILE_BATCH_SIZE: Annotated[
+        PositiveInt,
+        Field(
+            description=(
+                "Maximum number of distinct project_ids processed per DB→S3 reconciliation"
+                " tick. Limits the blast radius and DB load of each periodic pass."
+            ),
+        ),
+    ] = 500
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
         int,
         Field(
-            4,
             description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
         ),
-    ]
+    ] = 4
 
     STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
-            default=False,
             validation_alias=AliasChoices(
                 "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -87,7 +139,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "if you want to have structured logs!"
             ),
         ),
-    ]
+    ] = False
 
     STORAGE_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
@@ -99,7 +151,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "to a list of _logger message patterns that should be filtered out."
             ),
         ),
-    ]
+    ] = DEFAULT_FACTORY
 
     STORAGE_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
 

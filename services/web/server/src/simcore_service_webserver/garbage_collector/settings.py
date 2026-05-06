@@ -36,6 +36,16 @@ class GarbageCollectorSettings(BaseCustomSettings):
         Field(description="Wait time between periodic pruning of documents"),
     ] = 30 * _MINUTE
 
+    GARBAGE_COLLECTOR_RETRY_PENDING_DELETIONS_INTERVAL_S: Annotated[
+        PositiveInt,
+        Field(description="Wait time between periodic retries of the projects_pending_deletion outbox"),
+    ] = 5 * _MINUTE
+
+    GARBAGE_COLLECTOR_RETRY_NODE_PENDING_DELETIONS_INTERVAL_S: Annotated[
+        PositiveInt,
+        Field(description="Wait time between periodic retries of the nodes_pending_deletion outbox"),
+    ] = 5 * _MINUTE
+
 
 def get_plugin_settings(app: web.Application) -> GarbageCollectorSettings:
     settings = app[APP_SETTINGS_APPKEY].WEBSERVER_GARBAGE_COLLECTOR

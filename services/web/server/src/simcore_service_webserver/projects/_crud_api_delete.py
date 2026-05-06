@@ -19,7 +19,7 @@ from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
 from ..users.exceptions import UserNotFoundError
-from . import _projects_repository
+from . import _pending_deletion_repository, _projects_repository
 from ._access_rights_service import check_user_project_permission
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
@@ -74,7 +74,7 @@ async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID,
     )
 
 
-async def delete_project(
+async def _delete_project(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
@@ -115,11 +115,32 @@ async def delete_project(
         # - raises DirectorServiceError
         await director_v2_service.delete_pipeline(app, user_id, project_uuid)
 
+        # outbox-first: record the pending deletion BEFORE attempting the
+        # storage cleanup so a crash/restart between here and the final
+        # `db.delete_project` cannot leave behind zombie S3 data with no
+        # trace. The periodic retry task picks up rows that stay behind.
+        await _pending_deletion_repository.upsert_pending_deletion(app, project_uuid=project_uuid, requested_by=user_id)
+
         # rm data from storage
-        await delete_data_folders_of_project(app, project_uuid, user_id)
+        try:
+            await delete_data_folders_of_project(app, project_uuid, user_id)
+        except Exception as exc:  # pylint: disable=broad-except
+            await _pending_deletion_repository.record_failed_attempt(
+                app, project_uuid=project_uuid, error_message=f"{exc}"
+            )
+            # leave the outbox row in place; the project row is NOT removed so
+            # the caller still sees the failure and the retry task will drive
+            # the cleanup to completion.
+            raise ProjectDeleteError(
+                project_uuid=project_uuid,
+                details=f"Storage cleanup failed, will retry: {exc}",
+            ) from exc
 
         # rm project from database
         await db.delete_project(user_id, f"{project_uuid}")
+
+        # storage + db are both gone; outbox row no longer needed
+        await _pending_deletion_repository.delete_pending_deletion(app, project_uuid=project_uuid)
 
     except ProjectLockError as err:
         raise ProjectDeleteError(project_uuid=project_uuid, details=f"Project currently in use {err}") from err
@@ -183,7 +204,7 @@ def schedule_task(
 
     # ------
     task = fire_and_forget_task(
-        delete_project(
+        _delete_project(
             app,
             project_uuid,
             user_id,

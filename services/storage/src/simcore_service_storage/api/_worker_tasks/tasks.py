@@ -17,6 +17,7 @@ from ._files import complete_upload_file
 from ._paths import compute_path_size, delete_paths
 from ._simcore_s3 import (
     deep_copy_files_from_project,
+    delete_project_simcore_s3,
     export_data,
     export_data_as_download_link,
     search,
@@ -40,4 +41,5 @@ def register_worker_tasks(app: Celery) -> None:
         register_task(app, complete_upload_file)
         register_task(app, delete_paths)
         register_task(app, deep_copy_files_from_project)
+        register_task(app, delete_project_simcore_s3)
         register_task(app, search, task_name=SEARCH_TASK_NAME)

@@ -7,6 +7,7 @@ from ._constants import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
 from ._errors import (
     S3AccessError,
     S3BucketInvalidError,
+    S3DeletionError,
     S3DestinationNotEmptyError,
     S3KeyNotFoundError,
     S3NotConnectedError,
@@ -28,6 +29,7 @@ __all__: tuple[str, ...] = (
     "MultiPartUploadLinks",
     "S3AccessError",
     "S3BucketInvalidError",
+    "S3DeletionError",
     "S3DestinationNotEmptyError",
     "S3DirectoryMetaData",
     "S3KeyNotFoundError",
@@ -41,4 +43,4 @@ __all__: tuple[str, ...] = (
     "UploadedBytesTransferredCallback",
 )
 
-# nopycln: file
+# nopycln: file  # noqa: ERA001
