@@ -145,7 +145,7 @@ async def reconcile_abandoned_multipart_uploads(app: FastAPI, *, force: bool = F
     bucket = _get_simcore_bucket_name(app)
     s3_client = get_s3_client(app)
 
-    ongoing = await s3_client.list_ongoing_multipart_uploads(bucket=bucket)  # type: ignore[arg-type]
+    ongoing = await s3_client.list_ongoing_multipart_uploads(bucket=bucket)
     if not ongoing:
         return 0
 
@@ -167,7 +167,7 @@ async def reconcile_abandoned_multipart_uploads(app: FastAPI, *, force: bool = F
             _logger.info("[DRY-RUN] Would abort multipart upload %s for key %s", upload_id, object_key)
         else:
             try:
-                await s3_client.abort_multipart_upload(bucket=bucket, object_key=object_key, upload_id=upload_id)  # type: ignore[arg-type]
+                await s3_client.abort_multipart_upload(bucket=bucket, object_key=object_key, upload_id=upload_id)
             except ClientError as err:
                 if err.response.get("Error", {}).get("Code") == "NoSuchUpload":
                     _logger.debug("Upload %s already gone, skipping", upload_id)
