@@ -44,6 +44,7 @@ async def complete_file_upload(
     uploaded_parts: list[UploadedPart],
     upload_completion_link: AnyUrl,
     client_session: ClientSession | None = None,
+    *,
     is_directory: bool = False,
 ) -> ETag | None:
     async with ClientSessionContextManager(client_session) as session:
@@ -179,7 +180,7 @@ async def download_path_from_s3(
 
         if file_meta_data.is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
             msg = f"Requested to download directory {s3_object}, but no rclone support was detected"
-            raise exceptions.NodeportsException(msg)
+            raise exceptions.NodeportsError(msg)
 
         # get the s3 link
         download_link = await get_download_link_from_s3(
@@ -272,7 +273,7 @@ class UploadedFile:
 class UploadedFolder: ...
 
 
-async def _generate_checksum(path_to_upload: Path | UploadableFileObject, is_directory: bool) -> SHA256Str | None:
+async def _generate_checksum(path_to_upload: Path | UploadableFileObject, *, is_directory: bool) -> SHA256Str | None:
     checksum: SHA256Str | None = None
     if is_directory:
         return checksum
@@ -357,9 +358,9 @@ async def _upload_path(  # pylint: disable=too-many-arguments
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
         msg = f"Requested to upload directory {path_to_upload}, but no rclone support was detected"
-        raise exceptions.NodeportsException(msg)
+        raise exceptions.NodeportsError(msg)
 
-    checksum: SHA256Str | None = await _generate_checksum(path_to_upload, is_directory)
+    checksum: SHA256Str | None = await _generate_checksum(path_to_upload, is_directory=is_directory)
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"uploading {path_to_upload}, please wait...")
 

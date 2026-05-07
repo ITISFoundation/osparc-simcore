@@ -6,14 +6,14 @@
 #
 
 
-class NodeportsException(Exception):
+class NodeportsError(Exception):
     """Basic exception for errors raised in nodeports"""
 
     def __init__(self, msg: str | None = None):
         super().__init__(msg or "An error occurred in simcore")
 
 
-class ReadOnlyError(NodeportsException):
+class ReadOnlyError(NodeportsError):
     """Trying to modify read-only object"""
 
     def __init__(self, obj):
@@ -21,23 +21,15 @@ class ReadOnlyError(NodeportsException):
         self.obj = obj
 
 
-class UnboundPortError(NodeportsException, IndexError):
+class UnboundPortError(NodeportsError, IndexError):
     """Accessed port is not configured"""
 
-    def __init__(self, port_index, msg: str | None = None):
+    def __init__(self, port_index):
         super().__init__(f"No port bound at index {port_index}")
         self.port_index = port_index
 
 
-class InvalidKeyError(NodeportsException):
-    """Accessed key does not exist"""
-
-    def __init__(self, item_key: str, msg: str | None = None):
-        super().__init__(f"No port bound with key {item_key}")
-        self.item_key = item_key
-
-
-class InvalidItemTypeError(NodeportsException):
+class InvalidItemTypeError(NodeportsError):
     """Item type incorrect"""
 
     def __init__(self, item_type: str, item_value: str, msg: str | None = None):
@@ -46,7 +38,7 @@ class InvalidItemTypeError(NodeportsException):
         self.item_value = item_value
 
 
-class InvalidProtocolError(NodeportsException):
+class InvalidProtocolError(NodeportsError):
     """Invalid protocol used"""
 
     def __init__(self, dct, msg: str | None = None):
@@ -54,22 +46,22 @@ class InvalidProtocolError(NodeportsException):
         self.dct = dct
 
 
-class StorageInvalidCall(NodeportsException):
+class StorageInvalidCall(NodeportsError):
     """Storage returned an error 400<=status<500"""
 
 
-class StorageServerIssue(NodeportsException):
+class StorageServerIssue(NodeportsError):
     """Storage returned an error status>=500"""
 
 
-class S3TransferError(NodeportsException):
+class S3TransferError(NodeportsError):
     """S3 transfer error"""
 
     def __init__(self, msg: str | None = None):
         super().__init__(msg or "Error while transferring to/from S3 storage")
 
 
-class AwsS3BadRequestRequestTimeoutError(NodeportsException):
+class AwsS3BadRequestRequestTimeoutError(NodeportsError):
     """Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
     reason in the body will be received. For details regarding the error
     see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
@@ -81,7 +73,7 @@ class AwsS3BadRequestRequestTimeoutError(NodeportsException):
         super().__init__(f"S3 replied with 400 RequestTimeout: {body=}")
 
 
-class S3InvalidPathError(NodeportsException):
+class S3InvalidPathError(NodeportsError):
     """S3 transfer error"""
 
     def __init__(self, s3_object_name):
@@ -89,7 +81,7 @@ class S3InvalidPathError(NodeportsException):
         self.object_name = s3_object_name
 
 
-class S3InvalidStore(NodeportsException):
+class S3InvalidStore(NodeportsError):
     """S3 transfer error"""
 
     def __init__(self, s3_store):
@@ -97,7 +89,7 @@ class S3InvalidStore(NodeportsException):
         self.store = s3_store
 
 
-class InvalidDownloadLinkError(NodeportsException):
+class InvalidDownloadLinkError(NodeportsError):
     """Download link is invalid"""
 
     def __init__(self, link):
@@ -105,7 +97,7 @@ class InvalidDownloadLinkError(NodeportsException):
         self.link = link
 
 
-class TransferError(NodeportsException):
+class TransferError(NodeportsError):
     """Download/Upload transfer error"""
 
     def __init__(self, link):
@@ -113,7 +105,7 @@ class TransferError(NodeportsException):
         self.link = link
 
 
-class StorageConnectionError(NodeportsException):
+class StorageConnectionError(NodeportsError):
     """S3 transfer error"""
 
     def __init__(self, s3_store, additional_msg=None):
@@ -121,19 +113,26 @@ class StorageConnectionError(NodeportsException):
         self.store = s3_store
 
 
-class PortNotFound(NodeportsException):
+class PortNotFoundError(NodeportsError):
     """Accessed key does not exist"""
 
 
-class NodeNotFound(NodeportsException):
-    """The given node_uuid was not found"""
+class NodeNotFoundError(NodeportsError):
+    """The given node_uuid was not found in the comp_tasks table"""
 
-    def __init__(self, node_uuid):
+    def __init__(self, node_uuid, *, project_id: str | None = None):
         self.node_uuid = node_uuid
-        super().__init__(f"the node id {node_uuid} was not found")
+        self.project_id = project_id
+        msg = (
+            f"the node id {node_uuid} was not found in comp_tasks"
+            f"{f' for project {project_id}' if project_id else ''}. "
+            f"This may indicate the service version is not registered in the catalog "
+            f"or has no valid pricing plan configured."
+        )
+        super().__init__(msg)
 
 
-class ProjectNotFoundError(NodeportsException):
+class ProjectNotFoundError(NodeportsError):
     """The given node_uuid was not found"""
 
     def __init__(self, project_id):
@@ -141,7 +140,7 @@ class ProjectNotFoundError(NodeportsException):
         super().__init__(f"the {project_id=} was not found")
 
 
-class SymlinkToSymlinkIsNotUploadableException(NodeportsException):
+class SymlinkToSymlinkIsNotUploadableError(NodeportsError):
     """Not possible to upload a symlink to a symlink"""
 
     def __init__(self, symlink, symlink_target_path):
@@ -153,7 +152,7 @@ class SymlinkToSymlinkIsNotUploadableException(NodeportsException):
         self.symlink_target_path = symlink_target_path
 
 
-class AbsoluteSymlinkIsNotUploadableException(NodeportsException):
+class AbsoluteSymlinkIsNotUploadableError(NodeportsError):
     """absolute symlink is not uploadable"""
 
     def __init__(self, symlink, symlink_target_path):

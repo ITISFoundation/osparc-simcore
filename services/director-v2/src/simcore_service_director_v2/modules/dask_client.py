@@ -60,7 +60,7 @@ from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
-from simcore_sdk.node_ports_common.exceptions import NodeportsException
+from simcore_sdk.node_ports_common.exceptions import NodeportsError
 from simcore_sdk.node_ports_v2 import FileLinkType
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -198,7 +198,8 @@ class DaskClient:
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.worker import (  # type: ignore[import-not-found] # this runs inside the dask-sidecar
+            # this runs inside the dask-sidecar
+            from simcore_service_dask_sidecar.worker import (  # type: ignore[import-not-found] # noqa: PLC0415
                 run_computational_sidecar,
             )
 
@@ -384,7 +385,7 @@ class DaskClient:
                         callback=callback,
                     )
                 )
-            except (NodeportsException, ValidationError, ClientResponseError) as exc:
+            except (NodeportsError, ValidationError, ClientResponseError) as exc:
                 raise TaskSchedulingError(project_id=project_id, node_id=node_id, msg=f"{exc}") from exc
 
         return list_of_node_id_to_job_id
@@ -471,7 +472,10 @@ class DaskClient:
                             f"Task {job_id} not found. State is UNKNOWN.",
                             error=exc,
                             error_context=log_error_context,
-                            tip="If the task is supposed to exist, the dask-schdeler has probably restarted. Check its status.",
+                            tip=(
+                                "If the task is supposed to exist, the dask-schdeler has probably restarted. "
+                                "Check its status."
+                            ),
                         ),
                     )
                     return RunningState.UNKNOWN

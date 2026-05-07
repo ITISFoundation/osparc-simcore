@@ -15,7 +15,7 @@ from simcore_postgres_database.utils_comp_run_snapshot_tasks import (
 from simcore_postgres_database.utils_comp_runs import get_latest_run_id_for_project
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .exceptions import NodeNotFound, ProjectNotFoundError
+from .exceptions import NodeNotFoundError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -40,8 +40,15 @@ async def _get_node_from_db(project_id: str, node_uuid: str, connection: AsyncCo
     )
     node = result.one_or_none()
     if not node:
-        _logger.error("the node id %s was not found", node_uuid)
-        raise NodeNotFound(node_uuid)
+        _logger.error(
+            "Node %s not found in comp_tasks table for project %s. "
+            "This typically means the node's comp_tasks entry was never created, "
+            "possibly because the service version is not registered in the catalog "
+            "or has no valid pricing plan.",
+            node_uuid,
+            project_id,
+        )
+        raise NodeNotFoundError(node_uuid, project_id=project_id)
     return node
 
 

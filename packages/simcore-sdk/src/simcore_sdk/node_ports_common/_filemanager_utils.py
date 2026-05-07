@@ -122,7 +122,7 @@ async def resolve_location_id(
 ) -> LocationID:
     if store_name is None and store_id is None:
         msg = f"both {store_name=} and {store_id=} are None"
-        raise exceptions.NodeportsException(msg)
+        raise exceptions.NodeportsError(msg)
 
     if store_name is not None:
         store_id = await _get_location_id_from_location_name(user_id, store_name, client_session)
