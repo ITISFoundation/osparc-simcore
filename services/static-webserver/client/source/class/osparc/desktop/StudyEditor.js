@@ -354,8 +354,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }, this);
       }
 
+      // Show real-time feedback in the navigation bar when the dynamic-sidecar backend is syncing/uploading files via rclone.
       if (!socket.slotExists("statePaths")) {
-        // rclone queues files for 30s (--vfs-write-back) before uploading.
+        // rclone queues files for 30s (--vfs-write-back) before uploading. The backend will push this value.
         // To avoid showing "Queued" for that long, we delay the first display
         // so it only appears briefly before uploading starts.
         // After the first upload cycle, subsequent queues are shown immediately.
@@ -365,21 +366,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
         let queuedTimerId = null;
         let isFirstCycle = true;
-
         const showQueued = () => {
           if (this.getStudy()) {
             this.getStudy().setSaveFilesPending("Queued");
           }
         };
-
         const showUploading = () => {
-          this.getStudy().setSaveFilesPending("Uploading");
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending("Uploading");
+          }
         };
-
         const clearStatus = () => {
-          this.getStudy().setSaveFilesPending(null);
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending(null);
+          }
         };
-
         const cancelTimer = () => {
           if (queuedTimerId !== null) {
             clearTimeout(queuedTimerId);
