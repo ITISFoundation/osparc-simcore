@@ -415,7 +415,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             } else if (value === "Queued") {
               return this.tr("Queued...");
             }
-            return "";
+            return null;
           }
         });
         study.bind("saveFilesPending", savingStudyFilesIcon, "toolTipText", {
@@ -425,7 +425,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             } else if (value === "Queued") {
               return this.tr("Files are queued for upload/syncing");
             }
-            return "";
+            return null;
           }
         });
         study.bind("saveFilesPending", savingStudyFilesIcon, "icon", {
@@ -435,7 +435,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             } else if (value === "Queued") {
               return "@FontAwesome5Solid/file-medical/12";
             }
-            return "";
+            return null;
           }
         });
         study.bind("readOnly", readOnlyInfo, "visibility", {

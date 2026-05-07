@@ -30,7 +30,7 @@ qx.Class.define("osparc.desktop.account.MyAccountWindow", {
       maxHeight,
     });
 
-    osparc.utils.Utils.setIdToWidget(closeBtn, "myAccountWindow");
+    osparc.utils.Utils.setIdToWidget(this, "myAccountWindow");
 
     const myAccount = this.__myAccount = new osparc.desktop.account.MyAccount();
     this._setTabbedView(myAccount);

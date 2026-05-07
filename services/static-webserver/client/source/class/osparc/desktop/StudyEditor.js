@@ -356,7 +356,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (!socket.slotExists("statePaths")) {
         socket.on("statePaths", data => {
-          console.log("Received statePaths update", data);
           if (data["project_id"] === this.getStudy().getUuid()) {
             if (data["status"] === "FILES_UPLOAD_QUEUED") {
               this.getStudy().setSaveFilesPending("Queued");

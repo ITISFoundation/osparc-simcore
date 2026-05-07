@@ -260,7 +260,7 @@ qx.Class.define("osparc.data.model.Study", {
       check: [null, "Uploading", "Queued"],
       nullable: true,
       event: "changeSaveFilesPending",
-      init: false
+      init: null,
     },
   },
 
