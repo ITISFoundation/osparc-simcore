@@ -70,7 +70,7 @@ async def get_download_link_from_s3(
     client_session: ClientSession | None = None,
 ) -> URL:
     """
-    :raises exceptions.NodeportsException
+    :raises exceptions.NodeportsError
     :raises exceptions.S3InvalidPathError
     :raises exceptions.StorageInvalidCall
     :raises exceptions.StorageServerIssue
@@ -156,7 +156,7 @@ async def download_path_from_s3(
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
     :type session: ClientSession, optional
-    :raises exceptions.NodeportsException
+    :raises exceptions.NodeportsError
     :raises exceptions.S3InvalidPathError
     :raises exceptions.StorageInvalidCall
     :return: path to downloaded file
@@ -304,7 +304,7 @@ async def upload_path(  # pylint: disable=too-many-arguments
     :type session: ClientSession, optional
     :raises exceptions.S3InvalidPathError
     :raises exceptions.S3TransferError
-    :raises exceptions.NodeportsException
+    :raises exceptions.NodeportsError
     :return: stored id, S3 entity_tag
     """
     async for attempt in AsyncRetrying(

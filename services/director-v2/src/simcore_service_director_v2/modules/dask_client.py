@@ -473,7 +473,7 @@ class DaskClient:
                             error=exc,
                             error_context=log_error_context,
                             tip=(
-                                "If the task is supposed to exist, the dask-schdeler has probably restarted. "
+                                "If the task is supposed to exist, the dask-scheduler has probably restarted. "
                                 "Check its status."
                             ),
                         ),

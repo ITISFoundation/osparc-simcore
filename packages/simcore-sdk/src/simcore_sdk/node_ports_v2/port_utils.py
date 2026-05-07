@@ -80,7 +80,7 @@ async def get_value_from_link(
 
 async def get_download_link_from_storage(user_id: UserID, value: FileLink, link_type: LinkType) -> AnyUrl:
     """
-    :raises exceptions.NodeportsException
+    :raises exceptions.NodeportsError
     :raises exceptions.S3InvalidPathError
     :raises exceptions.StorageInvalidCall
     :raises exceptions.StorageServerIssue
@@ -208,7 +208,7 @@ async def push_file_to_store(
     progress_bar: ProgressBarData,
 ) -> FileLink:
     """
-    :raises exceptions.NodeportsException
+    :raises exceptions.NodeportsError
     """
 
     log.debug("file path %s will be uploaded to s3", file)
