@@ -391,9 +391,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (!this.getStudy() || data["project_id"] !== this.getStudy().getUuid()) {
             return;
           }
-
           const status = data["status"];
-
           if (status === "FILES_UPLOAD_QUEUED") {
             if (!isFirstCycle) {
               showQueued();
