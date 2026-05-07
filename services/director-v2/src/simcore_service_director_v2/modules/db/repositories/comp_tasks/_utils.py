@@ -319,33 +319,15 @@ async def generate_tasks_list_from_project(
         for node in project.workbench.values()
     }
 
-    key_version_to_node_infos: dict[
-        ServiceKeyVersion,
-        tuple[
-            ServiceMetaDataPublished | None,
-            ServiceExtras | None,
-            SimcoreServiceLabels | None,
-        ],
-    ] = {}
-    for key_version in unique_service_key_versions:
-        try:
-            key_version_to_node_infos[key_version] = await _get_node_infos(
-                catalog_client,
-                user_id,
-                product_name,
-                key_version,
-            )
-        except Exception:  # pylint: disable=broad-exception-caught
-            _logger.warning(
-                "Failed to get node info from catalog for service %s:%s. "
-                "Nodes using this service will be skipped and will NOT have "
-                "a comp_tasks entry. This may be caused by a manually edited "
-                "service version in the project workbench or a missing pricing plan.",
-                key_version.key,
-                key_version.version,
-                exc_info=True,
-            )
-            key_version_to_node_infos[key_version] = (None, None, None)
+    key_version_to_node_infos = {
+        key_version: await _get_node_infos(
+            catalog_client,
+            user_id,
+            product_name,
+            key_version,
+        )
+        for key_version in unique_service_key_versions
+    }
 
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
