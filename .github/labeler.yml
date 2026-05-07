@@ -127,14 +127,6 @@
           - services/static-webserver/**
           - '!services/static-webserver/client/**'
 
-javascript:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.js"
-          - "**/*.mjs"
-          - "**/*.cjs"
-          - services/static-webserver/client/**
-
 # =====================================================================
 # Packages (packages/<name>/**)
 # =====================================================================
