@@ -239,6 +239,7 @@ async def batch_delete_paths(request: web.Request):
         ),
         owner=APP_NAME,
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         location_id=path_params.location_id,
         paths=body.paths,
     )

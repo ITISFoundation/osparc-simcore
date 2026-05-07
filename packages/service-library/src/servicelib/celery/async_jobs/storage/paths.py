@@ -37,6 +37,7 @@ async def submit_delete_paths_task(
     task_manager: TaskManager,
     owner: str,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     paths: set[Path],
 ) -> tuple[TaskID, TaskName]:
@@ -46,6 +47,7 @@ async def submit_delete_paths_task(
         ),
         owner=owner,
         user_id=user_id,
+        product_name=product_name,
         location_id=location_id,
         paths=paths,
     ), DELETE_PATHS_TASK_NAME

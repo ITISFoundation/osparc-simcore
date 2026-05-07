@@ -1,11 +1,9 @@
 import logging
-from typing import Any
 
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
 )
 from models_library.projects_nodes_io import LocationID, StorageFileID
-from models_library.users import UserID
 from servicelib.celery.task_context import TaskContext
 from servicelib.logging_utils import log_context
 
@@ -17,19 +15,18 @@ _logger = logging.getLogger(__name__)
 
 async def complete_upload_file(
     task: TaskContext,
-    user_id: UserID,
     location_id: LocationID,
     file_id: StorageFileID,
     body: FileUploadCompletionBody,
-    **_kwargs: Any,
 ) -> FileMetaData:
+    assert task.user_id is not None  # nosec
     with log_context(
         _logger,
         logging.INFO,
-        msg=f"completing upload of file {user_id=}, {location_id=}, {file_id=}",
+        msg=f"completing upload of file user_id={task.user_id}, {location_id=}, {file_id=}",
     ):
         dsm = get_dsm_provider(task.app_server.app).get(location_id)
         # NOTE: completing a multipart upload on AWS can take up to several minutes
         # if it returns slow we return a 202 - Accepted, the client will have to check later
         # for completeness
-        return await dsm.complete_file_upload(file_id, user_id, body.parts)
+        return await dsm.complete_file_upload(file_id, task.user_id, body.parts)

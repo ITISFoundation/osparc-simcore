@@ -100,6 +100,7 @@ async def _assert_delete_paths(
         execution_metadata=TaskExecutionMetadata(name="delete_paths"),
         owner="pytest_client_name",
         user_id=user_id,
+        product_name=product_name,
         location_id=location_id,
         paths=paths,
     )

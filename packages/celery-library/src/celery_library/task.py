@@ -52,6 +52,8 @@ def _async_task_wrapper(
                 id=TypeAdapter(TaskID).validate_python(task.request.id),
                 name=task.name,
                 app_server=app_server,
+                user_id=kwargs.pop("user_id", None),
+                product_name=kwargs.pop("product_name", None),
             )
 
             async def _run_task(task_context: TaskContext) -> R:
@@ -90,6 +92,11 @@ def _async_task_wrapper(
                 _run_task(task_context),
                 app_server.event_loop,
             ).result()
+
+        # Clear __wrapped__ so inspect.signature() uses the wrapper's
+        # (*args, **kwargs) signature rather than the original coro's.
+        # Celery uses signature introspection to bind task kwargs.
+        del wrapper.__wrapped__
 
         return wrapper
 

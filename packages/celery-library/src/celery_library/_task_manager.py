@@ -201,13 +201,12 @@ class CeleryTaskManager:
             task_id: TaskID = uuid4()
             expiry = self._get_task_expiry(execution_metadata)
 
-            # Merge owner fields into the worker payload. This avoids forcing
-            # every worker to declare them while still forwarding them to
-            # those that do.
+            # Inject context fields into kwargs so the wrapper can pop them
+            # and build a TaskContext. These are NOT business params.
             if user_id is not None:
-                task_params.setdefault("user_id", user_id)
+                task_params["user_id"] = user_id
             if product_name is not None:
-                task_params.setdefault("product_name", product_name)
+                task_params["product_name"] = product_name
 
             try:
                 await self._task_store.create_task(

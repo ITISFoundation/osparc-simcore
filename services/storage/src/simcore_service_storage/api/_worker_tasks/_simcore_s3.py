@@ -15,11 +15,9 @@ from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.celery import (
     TaskStreamItem,
 )
-from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
-from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.celery.task_context import TaskContext
 from servicelib.logging_utils import log_context
@@ -39,8 +37,9 @@ async def _task_progress_cb(task: TaskContext, report: ProgressReport) -> None:
 
 
 async def deep_copy_files_from_project(
-    task: TaskContext, user_id: UserID, body: FoldersBody, **_kwargs: Any
+    task: TaskContext, body: FoldersBody,
 ) -> dict[str, Any]:
+    assert task.user_id is not None  # nosec
     with log_context(
         _logger,
         logging.INFO,
@@ -54,7 +53,7 @@ async def deep_copy_files_from_project(
             progress_report_cb=functools.partial(_task_progress_cb, task),
         ) as task_progress:
             await dsm.deep_copy_project_simcore_s3(
-                user_id,
+                task.user_id,
                 body.source,
                 body.destination,
                 body.nodes_map,
@@ -67,19 +66,19 @@ async def deep_copy_files_from_project(
 async def export_data(
     task: TaskContext,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     paths_to_export: list[PathToExport],
 ) -> StorageFileID:
     """
     AccessRightError: in case user can't access project
     """
+    assert task.user_id is not None  # nosec
+    assert task.product_name is not None  # nosec
     with log_context(
         _logger,
         logging.INFO,
         "export data task (%s) (for user=%s) from selection: %s",
         task.id,
-        user_id,
+        task.user_id,
         paths_to_export,
     ):
         dsm = get_dsm_provider(task.app_server.app).get(SimcoreS3DataManager.get_location_id())
@@ -99,8 +98,8 @@ async def export_data(
             progress_report_cb=_progress_cb,
         ) as progress_bar:
             return await dsm.create_s3_export(
-                user_id,
-                product_name,
+                task.user_id,
+                task.product_name,
                 object_keys,
                 progress_bar=progress_bar,
             )
@@ -109,24 +108,21 @@ async def export_data(
 async def export_data_as_download_link(
     task: TaskContext,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     paths_to_export: list[PathToExport],
 ) -> PresignedLink:
     """
     AccessRightError: in case user can't access project
     """
+    assert task.user_id is not None  # nosec
     s3_object = await export_data(
         task=task,
-        user_id=user_id,
-        product_name=product_name,
         paths_to_export=paths_to_export,
     )
 
     dsm = get_dsm_provider(task.app_server.app).get(SimcoreS3DataManager.get_location_id())
 
     download_link = await dsm.create_file_download_link(
-        user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
+        user_id=task.user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
     )
     return PresignedLink(link=download_link)
 
@@ -134,12 +130,12 @@ async def export_data_as_download_link(
 async def search(
     task: TaskContext,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     project_id: ProjectID | None,
     name_pattern: str,
     modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
 ) -> None:
+    assert task.user_id is not None  # nosec
+    assert task.product_name is not None  # nosec
     with log_context(
         _logger,
         logging.INFO,
@@ -151,8 +147,8 @@ async def search(
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
         async for items in dsm.search(
-            user_id=user_id,
-            product_name=product_name,
+            user_id=task.user_id,
+            product_name=task.product_name,
             project_id=project_id,
             name_pattern=name_pattern,
             modified_at=modified_at,
