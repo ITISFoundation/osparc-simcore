@@ -356,13 +356,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // Show real-time feedback in the navigation bar when the dynamic-sidecar backend is syncing/uploading files via rclone.
       if (!socket.slotExists("statePaths")) {
-        // rclone queues files for 30s (--vfs-write-back) before uploading. The backend will push this value.
+        // rclone queues files for N seconds (--vfs-write-back) before uploading.
+        // The backend sends this value as `write_back_secs` in the socket message.
         // To avoid showing "Queued" for that long, we delay the first display
         // so it only appears briefly before uploading starts.
         // After the first upload cycle, subsequent queues are shown immediately.
-        const RCLONE_WRITE_BACK_SECS = 30;
         const SHOW_QUEUED_FOR_SECS = 5;
-        const FIRST_QUEUED_DELAY = (RCLONE_WRITE_BACK_SECS - SHOW_QUEUED_FOR_SECS) * 1000;
 
         let queuedTimerId = null;
         let isFirstCycle = true;
@@ -393,15 +392,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             return;
           }
           const status = data["status"];
+          const writeBackSecs = data["write_back_secs"] || 30;
           if (status === "FILES_UPLOAD_QUEUED") {
             if (!isFirstCycle) {
               showQueued();
             } else if (queuedTimerId === null) {
+              const firstQueuedDelay = Math.max(0, writeBackSecs - SHOW_QUEUED_FOR_SECS) * 1000;
               queuedTimerId = setTimeout(() => {
                 queuedTimerId = null;
                 isFirstCycle = false;
                 showQueued();
-              }, FIRST_QUEUED_DELAY);
+              }, firstQueuedDelay);
             }
           } else if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
             cancelTimer();
