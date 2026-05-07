@@ -355,14 +355,31 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       if (!socket.slotExists("statePaths")) {
+        // Delay showing the "Queued" state to avoid a long 30s wait
+        // caused by rclone's --vfs-write-back interval.
+        // If uploading starts or ends before the delay, the timer is cancelled.
+        const queuedDisplayDelay = 25 * 1000;
+        let queuedTimerId = null;
         socket.on("statePaths", data => {
           if (data["project_id"] === this.getStudy().getUuid()) {
-            if (data["status"] === "FILES_UPLOAD_QUEUED") {
-              this.getStudy().setSaveFilesPending("Queued");
-            } else if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(data["status"])) {
-              this.getStudy().setSaveFilesPending("Uploading");
-            } else if (data["status"] === "FILES_UPLOAD_ENDED") {
-              this.getStudy().setSaveFilesPending(null);
+            const status = data["status"];
+            if (status === "FILES_UPLOAD_QUEUED") {
+              if (queuedTimerId === null) {
+                queuedTimerId = setTimeout(() => {
+                  queuedTimerId = null;
+                  this.getStudy().setSaveFilesPending("Queued");
+                }, queuedDisplayDelay);
+              }
+            } else {
+              if (queuedTimerId !== null) {
+                clearTimeout(queuedTimerId);
+                queuedTimerId = null;
+              }
+              if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
+                this.getStudy().setSaveFilesPending("Uploading");
+              } else if (status === "FILES_UPLOAD_ENDED") {
+                this.getStudy().setSaveFilesPending(null);
+              }
             }
           }
         }, this);
