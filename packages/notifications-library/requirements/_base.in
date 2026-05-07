@@ -8,5 +8,4 @@
 --requirement ../../../packages/settings-library/requirements/_base.in
 
 aiofiles
-aiosmtplib
 Jinja2
