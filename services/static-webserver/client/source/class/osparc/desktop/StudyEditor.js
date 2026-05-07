@@ -358,7 +358,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // Delay showing the "Queued" state to avoid a long 30s wait
         // caused by rclone's --vfs-write-back interval.
         // If uploading starts or ends before the delay, the timer is cancelled.
-        const queuedDisplayDelay = 25 * 1000;
+        const rcloneQueuingTime = 30;
+        const displayMessageFor = 5;
+        const queuedDisplayDelay = (rcloneQueuingTime - displayMessageFor) * 1000;
         let queuedTimerId = null;
         socket.on("statePaths", data => {
           if (data["project_id"] === this.getStudy().getUuid()) {
