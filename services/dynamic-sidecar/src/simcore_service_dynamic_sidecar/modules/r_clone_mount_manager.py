@@ -54,6 +54,19 @@ class _MountActivitySummary:
     files_in_transfer: FilesInTransfer
 
 
+def resolve_mount_activity_status(summary: _MountActivitySummary) -> MountActivityStatus:
+    has_queued = summary.files_queued > 0
+    has_in_transfer = len(summary.files_in_transfer) > 0
+
+    if has_queued and has_in_transfer:
+        return MountActivityStatus.FILES_UPLOAD_QUEUED_AND_UPLOADING
+    if has_queued:
+        return MountActivityStatus.FILES_UPLOAD_QUEUED
+    if has_in_transfer:
+        return MountActivityStatus.FILES_UPLOAD_UPLOADING
+    return MountActivityStatus.FILES_UPLOAD_ENDED
+
+
 @asynccontextmanager
 async def _get_docker_client() -> AsyncIterator[Docker]:
     async with Docker() as client:
@@ -126,20 +139,8 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         summary = _MountActivitySummary(files_queued=len(activity.queued), files_in_transfer=activity.in_transfer)
         _logger.info("%s mount activity for  %s", state_path, summary)
 
-        if summary.files_queued == 0 and len(summary.files_in_transfer) == 0:
-            await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_ENDED)
-            return
-        if summary.files_queued > 0 and len(summary.files_in_transfer) == 0:
-            await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_QUEUED)
-            return
-        if summary.files_queued == 0 and len(summary.files_in_transfer) > 0:
-            await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_UPLOADING)
-            return
-        if summary.files_queued > 0 and len(summary.files_in_transfer) > 0:
-            await self.state_paths_notifier.send_state_paths_status(
-                MountActivityStatus.FILES_UPLOAD_QUEUED_AND_UPLOADING
-            )
-            return
+        status_ = resolve_mount_activity_status(summary)
+        await self.state_paths_notifier.send_state_paths_status(status_)
 
     async def request_shutdown(self) -> None:
         client = get_rabbitmq_rpc_client(self.app)
