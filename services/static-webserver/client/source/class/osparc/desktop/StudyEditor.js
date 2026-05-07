@@ -358,30 +358,42 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // Delay showing the "Queued" state to avoid a long 30s wait
         // caused by rclone's --vfs-write-back interval.
         // If uploading starts or ends before the delay, the timer is cancelled.
+        // If files are re-queued after an upload cycle, show "Queued" immediately.
         const rcloneQueuingTime = 30;
         const displayMessageFor = 5;
         const queuedDisplayDelay = (rcloneQueuingTime - displayMessageFor) * 1000;
         let queuedTimerId = null;
+        let hadActivity = false;
         socket.on("statePaths", data => {
-          if (data["project_id"] === this.getStudy().getUuid()) {
-            const status = data["status"];
-            if (status === "FILES_UPLOAD_QUEUED") {
-              if (queuedTimerId === null) {
-                queuedTimerId = setTimeout(() => {
-                  queuedTimerId = null;
-                  this.getStudy().setSaveFilesPending("Queued");
-                }, queuedDisplayDelay);
-              }
-            } else {
-              if (queuedTimerId !== null) {
-                clearTimeout(queuedTimerId);
+          if (!this.getStudy() || data["project_id"] !== this.getStudy().getUuid()) {
+            return;
+          }
+          const status = data["status"];
+          if (status === "FILES_UPLOAD_QUEUED") {
+            if (hadActivity) {
+              // Already shown activity before, show "Queued" immediately
+              this.getStudy().setSaveFilesPending("Queued");
+            } else if (queuedTimerId === null) {
+              queuedTimerId = setTimeout(() => {
                 queuedTimerId = null;
-              }
-              if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
-                this.getStudy().setSaveFilesPending("Uploading");
-              } else if (status === "FILES_UPLOAD_ENDED") {
-                this.getStudy().setSaveFilesPending(null);
-              }
+                if (!this.getStudy()) {
+                  return;
+                }
+                hadActivity = true;
+                this.getStudy().setSaveFilesPending("Queued");
+              }, queuedDisplayDelay);
+            }
+          } else {
+            if (queuedTimerId !== null) {
+              clearTimeout(queuedTimerId);
+              queuedTimerId = null;
+            }
+            if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
+              hadActivity = true;
+              this.getStudy().setSaveFilesPending("Uploading");
+            } else if (status === "FILES_UPLOAD_ENDED") {
+              hadActivity = false;
+              this.getStudy().setSaveFilesPending(null);
             }
           }
         }, this);
