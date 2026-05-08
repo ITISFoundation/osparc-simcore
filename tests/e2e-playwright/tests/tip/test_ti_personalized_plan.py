@@ -270,7 +270,7 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Run TI and generate report"):
         with log_context(logging.INFO, "Wait for UI to load"):
             load_button = ti_postpro_iframe.get_by_role("button", name="Load")
-            load_button.is_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
+            expect(load_button).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
 
         with log_context(logging.INFO, "Select Target tissue"):
             target_tissue_select = ti_postpro_iframe.get_by_label("Target tissue")
