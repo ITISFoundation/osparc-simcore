@@ -55,6 +55,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         self._last_mount_activity_update: datetime = datetime.fromtimestamp(0, UTC)
         self._task_mount_activity: asyncio.Task[None] | None = None
         self._consecutive_unresponsive_count: int = 0
+        self._vfs_write_back_s: NonNegativeInt = 0
 
         self._rc_user = f"{uuid4()}"
         self._rc_password = f"{uuid4()}"
@@ -96,10 +97,12 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
     async def _worker_mount_activity(self) -> None:
         with log_catch(logger=_logger, reraise=False):
             mount_activity = await self._rc_client.get_mount_activity()
+            mount_activity.vfs_write_back_s = self._vfs_write_back_s
             await self._update_and_notify_mount_activity(mount_activity)
 
     async def start_mount(self) -> None:
         assigned_port = await self._container_manager.create()
+        self._vfs_write_back_s = self._container_manager.vfs_write_back_s
         node_address = await self.delegate.get_node_address()
 
         self._rc_http_client = RemoteControlHttpClient(

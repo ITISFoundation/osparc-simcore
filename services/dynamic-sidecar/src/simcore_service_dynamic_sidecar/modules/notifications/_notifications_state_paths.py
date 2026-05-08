@@ -16,6 +16,12 @@ class StatePathsNotifier:
     project_id: ProjectID
     node_id: NodeID
 
-    async def send_state_paths_status(self, status: MountActivityStatus) -> None:
+    async def send_state_paths_status(self, status: MountActivityStatus, *, vfs_write_back_s: int) -> None:
         notifier: Notifier = Notifier.get_from_app_state(self.app)
-        await notifier.notify_state_paths_status(self.user_id, self.project_id, self.node_id, status)
+        await notifier.notify_state_paths_status(
+            self.user_id,
+            self.project_id,
+            self.node_id,
+            status,
+            vfs_write_back_s=vfs_write_back_s,
+        )
