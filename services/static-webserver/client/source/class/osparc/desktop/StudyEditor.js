@@ -354,35 +354,64 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }, this);
       }
 
+      // Show real-time feedback in the navigation bar when the dynamic-sidecar backend is syncing/uploading files via rclone.
       if (!socket.slotExists("statePaths")) {
-        // Delay showing the "Queued" state to avoid showing it during
-        // rclone's --vfs-write-back interval.
-        // If uploading starts or ends before the delay, the timer is cancelled.
-        const displayMessageFor = 5;
+        // rclone queues files for N seconds (--vfs-write-back) before uploading.
+        // The backend sends this value as `write_back_secs` in the socket message.
+        // To avoid showing "Queued" for that long, we delay the first display
+        // so it only appears briefly before uploading starts.
+        // After the first upload cycle, subsequent queues are shown immediately.
+        const SHOW_QUEUED_FOR_SECS = 5;
+
         let queuedTimerId = null;
+        let isFirstCycle = true;
+        const showQueued = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending("Queued");
+          }
+        };
+        const showUploading = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending("Uploading");
+          }
+        };
+        const clearStatus = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending(null);
+          }
+        };
+        const cancelTimer = () => {
+          if (queuedTimerId !== null) {
+            clearTimeout(queuedTimerId);
+            queuedTimerId = null;
+          }
+        };
+
         socket.on("statePaths", data => {
-          if (data["project_id"] === this.getStudy().getUuid()) {
-            const status = data["status"];
-            const vfsWriteBackS = data["vfs_write_back_s"];
-            const queuedDisplayDelay = (vfsWriteBackS - displayMessageFor) * 1000;
-            if (status === "FILES_UPLOAD_QUEUED") {
-              if (queuedTimerId === null) {
-                queuedTimerId = setTimeout(() => {
-                  queuedTimerId = null;
-                  this.getStudy().setSaveFilesPending("Queued");
-                }, queuedDisplayDelay);
-              }
-            } else {
-              if (queuedTimerId !== null) {
-                clearTimeout(queuedTimerId);
+          if (!this.getStudy() || data["project_id"] !== this.getStudy().getUuid()) {
+            return;
+          }
+          const status = data["status"];
+          const vfsWriteBackS = data["vfs_write_back_s"] || 30;
+          if (status === "FILES_UPLOAD_QUEUED") {
+            if (!isFirstCycle) {
+              showQueued();
+            } else if (queuedTimerId === null) {
+              const firstQueuedDelay = Math.max(0, vfsWriteBackS - SHOW_QUEUED_FOR_SECS) * 1000;
+              queuedTimerId = setTimeout(() => {
                 queuedTimerId = null;
-              }
-              if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
-                this.getStudy().setSaveFilesPending("Uploading");
-              } else if (status === "FILES_UPLOAD_ENDED") {
-                this.getStudy().setSaveFilesPending(null);
-              }
+                isFirstCycle = false;
+                showQueued();
+              }, firstQueuedDelay);
             }
+          } else if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
+            cancelTimer();
+            isFirstCycle = false;
+            showUploading();
+          } else if (status === "FILES_UPLOAD_ENDED") {
+            cancelTimer();
+            isFirstCycle = true;
+            clearStatus();
           }
         }, this);
       }
