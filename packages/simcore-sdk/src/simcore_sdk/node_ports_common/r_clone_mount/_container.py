@@ -23,7 +23,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from ..r_clone_utils import overwrite_command
+from ..r_clone_utils import get_effective_vfs_write_back_seconds, overwrite_command
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY
 from ._errors import (
@@ -101,7 +101,7 @@ async def _get_rclone_mount_command(
     index: NonNegativeInt,
     rc_user: str,
     rc_password: str,
-) -> str:
+) -> tuple[str, int]:
     escaped_remote_path = f"{remote_path}".lstrip("/")
     target_cache_path = get_vfs_cache_path(index)
 
@@ -164,20 +164,20 @@ async def _get_rclone_mount_command(
         "--allow-non-empty",
         "--allow-other",
     ]
-    r_clone_command = " ".join(
-        overwrite_command(
-            command_parts,
-            edit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS,
-            remove=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS,
-        )
+    resolved_parts = overwrite_command(
+        command_parts,
+        edit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS,
+        remove=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS,
     )
+    vfs_write_back_s = get_effective_vfs_write_back_seconds(resolved_parts)
+    r_clone_command = " ".join(resolved_parts)
     return _R_CLONE_MOUNT_TEMPLATE.format(
         r_clone_config_path=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH,
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
         local_mount_path=local_mount_path,
         target_cache_path=target_cache_path,
-    )
+    ), vfs_write_back_s
 
 
 class ContainerManager:  # pylint:disable=too-many-instance-attributes
@@ -207,35 +207,39 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
 
         self.delegate = delegate
 
+        self.vfs_write_back_s: NonNegativeInt = 0
+
     @cached_property
     def _r_clone_container_name(self) -> str:
         mount_id = get_mount_id(self.local_mount_path, self.index)
         return f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{self.node_id}-{mount_id}"[:63]
 
-    async def create(self):
+    async def create(self) -> None:
         # ensure nothing was left from previous runs
         await self.delegate.remove_container(self._r_clone_container_name)
 
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
+        command, vfs_write_back_s = await _get_rclone_mount_command(
+            self.delegate,
+            mount_settings=mount_settings,
+            r_clone_config_content=self.r_clone_config_content,
+            remote_path=self.remote_path,
+            local_mount_path=self.local_mount_path,
+            index=self.index,
+            rc_user=self.rc_user,
+            rc_password=self.rc_password,
+        )
         await _docker_utils.create_r_clone_container(
             self.delegate,
             self._r_clone_container_name,
-            command=await _get_rclone_mount_command(
-                self.delegate,
-                mount_settings=mount_settings,
-                r_clone_config_content=self.r_clone_config_content,
-                remote_path=self.remote_path,
-                local_mount_path=self.local_mount_path,
-                index=self.index,
-                rc_user=self.rc_user,
-                rc_password=self.rc_password,
-            ),
+            command=command,
             r_clone_version=await get_r_clone_version(),
             rc_port=self.rc_port,
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
             nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
         )
+        self.vfs_write_back_s = vfs_write_back_s
 
     async def remove(self):
         await self.delegate.remove_container(self._r_clone_container_name)

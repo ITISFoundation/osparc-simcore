@@ -1,7 +1,9 @@
+import contextlib
 import datetime
 import logging
+import re
 from copy import deepcopy
-from typing import Union
+from typing import Final, Union
 
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter, validate_call
@@ -146,3 +148,33 @@ def overwrite_command(source_command: list[str], *, edit: EditArguments, remove:
             )
 
     return new_command
+
+
+_VFS_WRITE_BACK_FLAG: Final[str] = "--vfs-write-back"
+
+
+def get_effective_vfs_write_back_seconds(resolved_command: list[str]) -> int:
+    """Extracts the effective --vfs-write-back value in seconds from a resolved rclone command."""
+    if _VFS_WRITE_BACK_FLAG not in resolved_command:
+        return 0
+    idx = resolved_command.index(_VFS_WRITE_BACK_FLAG)
+    value_str = resolved_command[idx + 1]
+    return _parse_rclone_duration_to_seconds(value_str)
+
+
+def _parse_rclone_duration_to_seconds(duration_str: str) -> int:
+    """Parse rclone-style duration strings like '30s', '1m', '1m30s', '2h' to seconds."""
+    total = 0
+    for match in re.finditer(r"(\d+)\s*(h|m|s)", duration_str):
+        value = int(match.group(1))
+        unit = match.group(2)
+        if unit == "h":
+            total += value * 3600
+        elif unit == "m":
+            total += value * 60
+        elif unit == "s":
+            total += value
+    if total == 0:
+        with contextlib.suppress(ValueError):
+            total = int(duration_str)
+    return total

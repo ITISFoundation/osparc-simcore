@@ -140,7 +140,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         _logger.info("%s mount activity for  %s", state_path, summary)
 
         status_ = resolve_mount_activity_status(summary)
-        await self.state_paths_notifier.send_state_paths_status(status_)
+        await self.state_paths_notifier.send_state_paths_status(status_, vfs_write_back_s=activity.vfs_write_back_s)
 
     async def request_shutdown(self) -> None:
         client = get_rabbitmq_rpc_client(self.app)

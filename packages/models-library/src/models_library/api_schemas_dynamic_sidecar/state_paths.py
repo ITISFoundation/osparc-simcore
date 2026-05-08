@@ -1,6 +1,6 @@
 from enum import auto
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -18,3 +18,6 @@ class StatePathsStatus(BaseModel):
     project_id: ProjectID
     node_id: NodeID
     status: MountActivityStatus
+    vfs_write_back_s: int = Field(
+        description="Effective --vfs-write-back value in seconds from rclone mount settings",
+    )
