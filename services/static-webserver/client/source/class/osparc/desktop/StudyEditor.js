@@ -353,6 +353,73 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         }, this);
       }
+
+      // Show real-time feedback in the navigation bar when the dynamic-sidecar backend
+      // is syncing/uploading files to S3 via rclone.
+      //
+      // The backend emits periodic "statePaths" socket events with these statuses:
+      //   - FILES_UPLOAD_QUEUED: rclone is waiting (--vfs-write-back) before uploading.
+      //     The field `vfs_write_back_s` contains the configured write-back delay in seconds.
+      //   - FILES_UPLOAD_UPLOADING / FILES_UPLOAD_QUEUED_AND_UPLOADING: rclone is actively uploading.
+      //   - FILES_UPLOAD_ENDED: the upload cycle is complete.
+      //
+      // UX goal: avoid showing "Queued" for the full write-back period (~30s) so the user
+      // doesn't feel they need to stop working. Instead, delay displaying "Queued" so it
+      // only appears briefly (~SHOW_QUEUED_LAST_SECS) right before the upload starts.
+      // Each new QUEUED event resets the timer, so continuous editing keeps the UI clean.
+      if (!socket.slotExists("statePaths")) {
+        const SHOW_QUEUED_LAST_SECS = 5;
+
+        let queuedTimerId = null;
+        const showQueued = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending("Queued");
+          }
+        };
+        const showUploading = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending("Uploading");
+          }
+        };
+        const clearStatus = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending(null);
+          }
+        };
+        const cancelQueuedTimer = () => {
+          if (queuedTimerId !== null) {
+            clearTimeout(queuedTimerId);
+            queuedTimerId = null;
+          }
+        };
+
+        socket.on("statePaths", data => {
+          if (!this.getStudy() || data["project_id"] !== this.getStudy().getUuid()) {
+            return;
+          }
+          const status = data["status"];
+          if (status === "FILES_UPLOAD_QUEUED") {
+            // Delay showing "Queued" so it only appears for the last ~SHOW_QUEUED_LAST_SECS
+            // before rclone starts uploading. Each new QUEUED resets the timer, so while
+            // the user keeps editing, the label never appears.
+            cancelQueuedTimer();
+            const vfsWriteBackS = data["vfs_write_back_s"];
+            const delay = Math.max(0, vfsWriteBackS - SHOW_QUEUED_LAST_SECS) * 1000;
+            queuedTimerId = setTimeout(() => {
+              queuedTimerId = null;
+              showQueued();
+            }, delay);
+          } else if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
+            cancelQueuedTimer();
+            showUploading();
+          } else if (status === "FILES_UPLOAD_ENDED") {
+            // Upload finished — clear any displayed status.
+            // "Queued" disappearing on its own signals the upload completed successfully.
+            cancelQueuedTimer();
+            clearStatus();
+          }
+        }, this);
+      }
     },
 
     __projectDocumentReceived: function(data) {

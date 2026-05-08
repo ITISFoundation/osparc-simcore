@@ -1288,7 +1288,8 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "tooltip": {
       style: state => ({
-        decorator: "tooltip",
+        decorator: "hint",
+        backgroundColor: "hint-background",
         padding: [5, 10],
         maxWidth: 400,
         // showTimeout is themeable so it can be tuned
