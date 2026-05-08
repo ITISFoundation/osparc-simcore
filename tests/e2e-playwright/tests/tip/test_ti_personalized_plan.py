@@ -239,7 +239,7 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
             load_button.is_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
 
         with log_context(logging.INFO, "Select Target tissue"):
-            target_tissue_select = ti_postpro_iframe.locator("select").first
+            target_tissue_select = ti_postpro_iframe.get_by_label("Target tissue")
             expect(target_tissue_select).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
             # Pick the first non-empty option
             options = target_tissue_select.locator("option").all()
