@@ -419,7 +419,7 @@ async def test_refresh_path_with_no_tracked_mount(
 @pytest.mark.parametrize("file_count", [10])
 @pytest.mark.parametrize("file_size", [TypeAdapter(ByteSize).validate_python("100kb")])
 @pytest.mark.parametrize("recursive", [True, False])
-@pytest.mark.parametrize("sub_path", ["", "sub-path"])
+@pytest.mark.parametrize("sub_path", ["", "sub-path", "sub-path/nested/deep"])
 async def test_refresh_path(
     docker_swarm: None,
     moto_server: None,
