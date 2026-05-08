@@ -392,12 +392,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             return;
           }
           const status = data["status"];
-          const writeBackSecs = data["write_back_secs"] || 30;
+          const vfsWriteBackS = data["vfs_write_back_s"];
           if (status === "FILES_UPLOAD_QUEUED") {
             if (!isFirstCycle) {
               showQueued();
             } else if (queuedTimerId === null) {
-              const firstQueuedDelay = Math.max(0, writeBackSecs - SHOW_QUEUED_FOR_SECS) * 1000;
+              const firstQueuedDelay = Math.max(0, vfsWriteBackS - SHOW_QUEUED_FOR_SECS) * 1000;
               queuedTimerId = setTimeout(() => {
                 queuedTimerId = null;
                 isFirstCycle = false;
