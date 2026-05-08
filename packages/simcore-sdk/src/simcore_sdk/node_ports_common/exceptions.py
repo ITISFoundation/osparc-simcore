@@ -46,11 +46,11 @@ class InvalidProtocolError(NodeportsError):
         self.dct = dct
 
 
-class StorageInvalidCall(NodeportsError):
+class StorageInvalidCallError(NodeportsError):
     """Storage returned an error 400<=status<500"""
 
 
-class StorageServerIssue(NodeportsError):
+class StorageServerIssueError(NodeportsError):
     """Storage returned an error status>=500"""
 
 
@@ -81,7 +81,7 @@ class S3InvalidPathError(NodeportsError):
         self.object_name = s3_object_name
 
 
-class S3InvalidStore(NodeportsError):
+class S3InvalidStoreError(NodeportsError):
     """S3 transfer error"""
 
     def __init__(self, s3_store):
@@ -125,9 +125,9 @@ class NodeNotFoundError(NodeportsError):
         self.project_id = project_id
         msg = (
             f"the node id {node_uuid} was not found in comp_tasks"
-            f"{f' for project {project_id}' if project_id else ''}. "
-            f"This may indicate the service version is not registered in the catalog "
-            f"or has no valid pricing plan configured."
+            f"for project_id={project_id}'. This may indicate the "
+            "service version is not registered in the catalog "
+            "or has no valid pricing plan configured."
         )
         super().__init__(msg)
 

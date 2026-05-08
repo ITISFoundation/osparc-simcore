@@ -34,7 +34,7 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
     NodeportsError,
     S3InvalidPathError,
-    StorageInvalidCall,
+    StorageInvalidCallError,
     UnboundPortError,
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
@@ -355,7 +355,7 @@ async def _get_service_log_file_download_link(
             link_type=file_link_type,
         )
         return value_link
-    except (S3InvalidPathError, StorageInvalidCall) as err:
+    except (S3InvalidPathError, StorageInvalidCallError) as err:
         _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
 

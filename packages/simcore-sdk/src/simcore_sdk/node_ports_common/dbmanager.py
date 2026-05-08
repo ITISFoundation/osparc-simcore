@@ -40,14 +40,6 @@ async def _get_node_from_db(project_id: str, node_uuid: str, connection: AsyncCo
     )
     node = result.one_or_none()
     if not node:
-        _logger.error(
-            "Node %s not found in comp_tasks table for project %s. "
-            "This typically means the node's comp_tasks entry was never created, "
-            "possibly because the service version is not registered in the catalog "
-            "or has no valid pricing plan.",
-            node_uuid,
-            project_id,
-        )
         raise NodeNotFoundError(node_uuid, project_id=project_id)
     return node
 

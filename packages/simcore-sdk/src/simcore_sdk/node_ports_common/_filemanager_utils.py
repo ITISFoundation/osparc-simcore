@@ -39,7 +39,7 @@ async def _get_location_id_from_location_name(
         if location.name == store:
             return cast(LocationID, location.id)  # mypy wants it
     # location id not found
-    raise exceptions.S3InvalidStore(store)
+    raise exceptions.S3InvalidStoreError(store)
 
 
 def _get_https_link_if_storage_secure(url: str) -> str:
