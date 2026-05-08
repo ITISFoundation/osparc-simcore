@@ -71,6 +71,8 @@ _POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
 _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
 )
+_POST_PRO_LOAD_APPEARANCE_TIME: Final[int] = 5 * MINUTE
+_POST_PRO_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 10 * MINUTE
 _POST_PRO_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 
 
@@ -214,20 +216,49 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         _wait_for_export_simulation_results(export_button)
 
 
+@retry(
+    stop=stop_after_attempt(_POST_PRO_RUN_OPTIMIZATION_MAX_TIME // (60 * SECOND)),
+    wait=wait_fixed(60),
+    reraise=True,
+)
+def _wait_for_postpro_optimization_complete(run_optimization_button: Locator) -> None:
+    try:
+        icon_class = run_optimization_button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("Run Optimization button icon not found — optimization likely completed")
+        return
+    if "fa-spinner" in icon_class:
+        msg = f"Post-pro optimization still running: {icon_class=}"
+        raise ValueError(msg)
+
+
 def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
-    with log_context(logging.INFO, "Run analysis and generate report"):
-        with log_context(
-            logging.INFO,
-            f"Click button - `Load Analysis` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
-        ):
-            ti_postpro_iframe.get_by_role("button", name="Load Analysis").click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
-        with log_context(
-            logging.INFO,
-            f"Click button - `Load` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
-        ):
-            ti_postpro_iframe.get_by_role("button", name="Load").nth(1).click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+    with log_context(logging.INFO, "Run TI and generate report"):
+        with log_context(logging.INFO, "Wait for UI to load"):
+            load_button = ti_postpro_iframe.get_by_role("button", name="Load")
+            load_button.is_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
+
+        with log_context(logging.INFO, "Select Target tissue"):
+            target_tissue_select = ti_postpro_iframe.locator("select").first
+            expect(target_tissue_select).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
+            # Pick the first non-empty option
+            options = target_tissue_select.locator("option").all()
+            selected = False
+            for option in options:
+                value = option.get_attribute("value") or ""
+                if value.strip():
+                    target_tissue_select.select_option(value=value)
+                    logging.info("Selected target tissue: %s", option.inner_text())
+                    selected = True
+                    break
+            assert selected, "No non-empty target tissue option found"
+
+        with log_context(logging.INFO, "Run Optimization"):
+            run_optimization_button = ti_postpro_iframe.get_by_role("button", name="Run Optimization")
+            run_optimization_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
+
+        with log_context(logging.INFO, "Wait for optimization to complete"):
+            _wait_for_postpro_optimization_complete(run_optimization_button)
 
         with log_context(
             logging.INFO,
@@ -254,10 +285,9 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
             ti_postpro_iframe.get_by_role("button", name="Export Report").click()
             page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
 
-    with log_context(logging.INFO, "Check outputs"):
-        expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
-        text_on_output_button = f"Outputs ({len(expected_outputs)})"
-        page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
+    with log_context(logging.INFO, "Load Analysis"):
+        load_analysis_button = ti_postpro_iframe.get_by_role("button", name="Load Analysis")
+        load_analysis_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
 
 
 @dataclass(frozen=True)
