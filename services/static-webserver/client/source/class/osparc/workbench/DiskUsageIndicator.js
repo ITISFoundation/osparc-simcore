@@ -104,9 +104,11 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       // Subscribe to disk usage data for the new node
       this._subscribe(node);
 
-      node.getStatus().bind("interactive", this, "visibility", {
-        converter: state => state === "ready" ? "visible" : "excluded"
-      });
+      // Re-evaluate visibility when the interactive state changes instead of
+      // binding directly so the widget stays hidden when there is no data.
+      node.getStatus().addListener("changeInteractive", () => this.__updateDiskIndicator(), this);
+      // trigger an initial check
+      this.__updateDiskIndicator();
     },
 
     _subscribe: function(node) {
@@ -135,7 +137,6 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     },
 
     __updateDiskIndicator: function(diskUsage) {
-      this.show();
       if (diskUsage && diskUsage["node_id"]) {
         this.__lastDiskUsage[diskUsage["node_id"]] = diskUsage;
       }
@@ -143,10 +144,9 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       const indicator = this.getChildControl("disk-indicator");
 
       const currentNode = this.getCurrentNode();
-      if (currentNode) {
-        indicator.setVisibility("visible");
-      } else {
-        indicator.setVisibility("exclude");
+      if (!currentNode || currentNode.getStatus().getInteractive() !== "ready") {
+        indicator.setVisibility("excluded");
+        this.exclude();
         return;
       }
 
@@ -156,8 +156,12 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         diskUsage = this.__lastDiskUsage[currentNodeId];
       }
       if (!diskUsage) {
+        this.exclude();
         return;
       }
+
+      indicator.setVisibility("visible");
+      this.show();
 
       const diskHostUsage = diskUsage["usage"]["HOST"]
       let color1 = this.__getIndicatorColor(diskHostUsage.free);
