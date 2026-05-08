@@ -154,12 +154,30 @@ _VFS_WRITE_BACK_FLAG: Final[str] = "--vfs-write-back"
 
 
 def get_effective_vfs_write_back_seconds(resolved_command: list[str]) -> int:
-    """Extracts the effective --vfs-write-back value in seconds from a resolved rclone command."""
+    """Extracts the effective --vfs-write-back value in seconds from a resolved rclone command.
+
+    Raises:
+        ValueError: If the flag is missing or has no value
+    """
     if _VFS_WRITE_BACK_FLAG not in resolved_command:
-        return 0
+        msg = f"'{_VFS_WRITE_BACK_FLAG}' not found in resolved command={resolved_command}"
+        raise ValueError(msg)
+
     idx = resolved_command.index(_VFS_WRITE_BACK_FLAG)
+    if idx + 1 >= len(resolved_command):
+        msg = f"'{_VFS_WRITE_BACK_FLAG}' is missing its value in resolved command={resolved_command}"
+        raise ValueError(msg)
+
     value_str = resolved_command[idx + 1]
-    return _parse_rclone_duration_to_seconds(value_str)
+    total = _parse_rclone_duration_to_seconds(value_str)
+    if total == 0 and value_str.strip() not in {"0", "0s", "0m", "0h"}:
+        _logger.warning(
+            "could not parse value '%s' for '%s' in resolved command='%s'",
+            value_str,
+            _VFS_WRITE_BACK_FLAG,
+            resolved_command,
+        )
+    return total
 
 
 def _parse_rclone_duration_to_seconds(duration_str: str) -> int:

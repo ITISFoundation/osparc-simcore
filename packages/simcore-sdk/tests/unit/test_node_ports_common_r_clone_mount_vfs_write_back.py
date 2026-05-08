@@ -60,4 +60,10 @@ def test_get_effective_vfs_write_back_seconds_with_removal():
         ]
     )
     resolved = _resolve(settings)
-    assert get_effective_vfs_write_back_seconds(resolved) == 0
+    with pytest.raises(ValueError, match="not found"):
+        get_effective_vfs_write_back_seconds(resolved)
+
+
+def test_get_effective_vfs_write_back_seconds_flag_without_value():
+    with pytest.raises(ValueError, match="missing its value"):
+        get_effective_vfs_write_back_seconds(["rclone", "mount", "--vfs-write-back"])
