@@ -255,7 +255,7 @@ def missing_node_uuid(faker: faker.Faker) -> str:
 @pytest.fixture
 def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
     async def _mocked(*args, **kwargs) -> None:
-        raise NodeNotFoundError(missing_node_uuid)
+        raise NodeNotFoundError(missing_node_uuid, project_id="fake-project-id")
 
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",

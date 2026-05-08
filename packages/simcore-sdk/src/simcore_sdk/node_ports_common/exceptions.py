@@ -120,12 +120,12 @@ class PortNotFoundError(NodeportsError):
 class NodeNotFoundError(NodeportsError):
     """The given node_uuid was not found in the comp_tasks table"""
 
-    def __init__(self, node_uuid, *, project_id: str | None = None):
+    def __init__(self, node_uuid: str, *, project_id: str):
         self.node_uuid = node_uuid
         self.project_id = project_id
         msg = (
-            f"the node id {node_uuid} was not found in comp_tasks"
-            f"for project_id={project_id}'. This may indicate the "
+            f"the node id {node_uuid} was not found in comp_tasks "
+            f"for project_id={project_id}. This may indicate the "
             "service version is not registered in the catalog "
             "or has no valid pricing plan configured."
         )
