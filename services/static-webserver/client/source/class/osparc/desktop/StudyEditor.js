@@ -392,7 +392,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             return;
           }
           const status = data["status"];
-          const vfsWriteBackS = data["vfs_write_back_s"] || 30;
+          const vfsWriteBackS = data["vfs_write_back_s"];
           if (status === "FILES_UPLOAD_QUEUED") {
             if (!isFirstCycle) {
               showQueued();
