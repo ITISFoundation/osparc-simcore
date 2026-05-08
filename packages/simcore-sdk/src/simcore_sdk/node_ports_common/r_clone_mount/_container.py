@@ -26,6 +26,7 @@ from tenacity import (
 from ..r_clone_utils import get_effective_vfs_write_back_seconds, overwrite_command
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY
+from ._docker_utils import RC_PORT
 from ._errors import (
     RefreshMountError,
     WaitingForQueueToBeEmptyError,
@@ -157,7 +158,7 @@ async def _get_rclone_mount_command(
         "0777",
         # REMOTE CONTROL
         "--rc",
-        "--rc-addr=0.0.0.0:8000",
+        f"--rc-addr=0.0.0.0:{RC_PORT}",
         "--rc-enable-metrics",
         f"--rc-user='{rc_user}'",
         f"--rc-pass='{rc_password}'",
@@ -185,7 +186,6 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         self,
         r_clone_settings: RCloneSettings,
         node_id: NodeID,
-        rc_port: PortInt,
         local_mount_path: Path,
         index: NonNegativeInt,
         r_clone_config_content: str,
@@ -197,7 +197,6 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
     ) -> None:
         self.r_clone_settings = r_clone_settings
         self.node_id = node_id
-        self.rc_port = rc_port
         self.local_mount_path = local_mount_path
         self.index = index
         self.r_clone_config_content = r_clone_config_content
@@ -214,7 +213,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         mount_id = get_mount_id(self.local_mount_path, self.index)
         return f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{self.node_id}-{mount_id}"[:63]
 
-    async def create(self) -> None:
+    async def create(self) -> PortInt:
         # ensure nothing was left from previous runs
         await self.delegate.remove_container(self._r_clone_container_name)
 
@@ -229,17 +228,17 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             rc_user=self.rc_user,
             rc_password=self.rc_password,
         )
-        await _docker_utils.create_r_clone_container(
+        assigned_port = await _docker_utils.create_r_clone_container(
             self.delegate,
             self._r_clone_container_name,
             command=command,
             r_clone_version=await get_r_clone_version(),
-            rc_port=self.rc_port,
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
             nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
         )
         self.vfs_write_back_s = vfs_write_back_s
+        return assigned_port
 
     async def remove(self):
         await self.delegate.remove_container(self._r_clone_container_name)
@@ -290,7 +289,7 @@ class RemoteControlHttpClient:
         return await self._request("POST", "rc/noopauth")
 
     async def post_vfs_refresh(self, dir_to_refresh: str, *, recursive: bool) -> None:
-        params = {}
+        params: dict[str, str] = {}
         if recursive:
             params["recursive"] = "true"
         if dir_to_refresh != "":
