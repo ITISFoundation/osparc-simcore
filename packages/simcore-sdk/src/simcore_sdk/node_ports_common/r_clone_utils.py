@@ -183,7 +183,7 @@ def get_effective_vfs_write_back_seconds(resolved_command: list[str]) -> int:
 def _parse_rclone_duration_to_seconds(duration_str: str) -> int:
     """Parse rclone-style duration strings like '30s', '1m', '1m30s', '2h' to seconds."""
     total = 0
-    for match in re.finditer(r"(\d+)\s*(h|m|s)", duration_str):
+    for match in re.finditer(r"(\d+)\s*([hms])", duration_str):
         value = int(match.group(1))
         unit = match.group(2)
         if unit == "h":
