@@ -477,9 +477,8 @@ def test_personalized_classic_ti_plan(
         page.get_by_test_id("userMenuBtn").click()
 
     # testing purposes
-    start_project_uuid = "313682b0-4a0f-11f1-adc2-0242ac170029"
-    # start_project_uuid = "a169f104-1df8-11f1-93c4-0242ac100552"
-    # start_project_uuid = None
+    # start_project_uuid = "313682b0-4a0f-11f1-adc2-0242ac170029"
+    start_project_uuid = None
     if start_project_uuid:
         project_data = _open_project_from_dashboard(page, start_project_uuid)
     else:
