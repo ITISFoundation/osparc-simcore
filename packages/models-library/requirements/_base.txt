@@ -10,7 +10,7 @@ dnspython==2.8.0
     # via email-validator
 email-validator==2.3.0
     # via pydantic
-idna==3.11
+idna==3.13
     # via email-validator
 jsonref==1.1.0
     # via -r requirements/_base.in
@@ -18,7 +18,7 @@ jsonschema==4.26.0
     # via -r requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
-orjson==3.11.7
+orjson==3.11.8
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -67,5 +67,5 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-tzdata==2025.3
+tzdata==2026.2
     # via arrow
