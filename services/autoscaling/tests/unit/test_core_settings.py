@@ -398,3 +398,48 @@ def test_settings_log_level(
     monkeypatch.setenv("AUTOSCALING_LOG_LEVEL", "DEBUG")
     settings = ApplicationSettings.create_from_envs()
     assert settings.log_level == settings.AUTOSCALING_LOGLEVEL
+
+
+@pytest.mark.parametrize(
+    "allowed_types_override",
+    [
+        pytest.param(
+            {
+                "t2.micro": {
+                    "ami_id": "${AMI_VARIABLE}",
+                }
+            },
+            id="unresolved_var_in_ami_id",
+        ),
+        pytest.param(
+            {
+                "t2.micro": {
+                    "ami_id": "ami-12345",
+                    "pre_pull_images": ["${REGISTRY_DOMAIN}/simcore/services/dynamic/my-service:1.0.0"],
+                }
+            },
+            id="unresolved_var_in_pre_pull_images",
+        ),
+    ],
+)
+def test_EC2_INSTANCES_ALLOWED_TYPES_rejects_unresolved_variable_substitution(  # noqa: N802
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    allowed_types_override: dict,
+    caplog: pytest.LogCaptureFixture,
+):
+    setenvs_from_dict(
+        monkeypatch,
+        {"EC2_INSTANCES_ALLOWED_TYPES": json.dumps(allowed_types_override)},
+    )
+
+    with caplog.at_level(logging.WARNING):
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
+            in caplog.text
+        )

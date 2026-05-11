@@ -20,6 +20,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     field_validator,
+    model_validator,
 )
 from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -268,6 +269,8 @@ class EC2InstanceConfig:
 type AMIIdStr = str
 type CommandStr = str
 
+_UNRESOLVED_VARIABLE_RE: Final[re.Pattern[str]] = re.compile(r"\$\{[^}]+\}")
+
 
 class EC2InstanceBootSpecific(BaseModel):
     ami_id: AMIIdStr
@@ -330,6 +333,26 @@ class EC2InstanceBootSpecific(BaseModel):
             raise ValueError(msg) from exc
 
         return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def _check_no_unresolved_variables(cls, data: dict) -> dict:
+        fields_to_check: dict[str, list[str]] = {}
+        if isinstance(ami_id := data.get("ami_id"), str):
+            fields_to_check["ami_id"] = [ami_id]
+        if isinstance(images := data.get("pre_pull_images"), list):
+            fields_to_check["pre_pull_images"] = [img for img in images if isinstance(img, str)]
+        for field_name, values in fields_to_check.items():
+            for value in values:
+                unresolved = _UNRESOLVED_VARIABLE_RE.findall(value)
+                if unresolved:
+                    msg = (
+                        f"Unresolved variable substitution in '{field_name}': "
+                        f"found {', '.join(unresolved)} in '{value}'. "
+                        f"Ensure all ${{...}} variables are substituted before deployment."
+                    )
+                    raise ValueError(msg)
+        return data
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

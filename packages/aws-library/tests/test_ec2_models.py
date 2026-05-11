@@ -385,3 +385,39 @@ def test_ec2_instance_boot_specific_with_invalid_custom_script(faker: Faker):
 
     with pytest.raises(ValueError, match="Invalid bash call"):
         EC2InstanceBootSpecific(**invalid_model)
+
+
+@pytest.mark.parametrize(
+    "field_name, field_override",
+    [
+        pytest.param(
+            "ami_id",
+            {"ami_id": "${AMI_VARIABLE}"},
+            id="unresolved_var_in_ami_id",
+        ),
+        pytest.param(
+            "pre_pull_images",
+            {"pre_pull_images": ["${REGISTRY_DOMAIN}/simcore/services/dynamic/my-service:1.0.0"]},
+            id="unresolved_var_in_pre_pull_images",
+        ),
+        pytest.param(
+            "pre_pull_images",
+            {
+                "pre_pull_images": [
+                    "nginx:latest",
+                    "${REGISTRY_DOMAIN}/simcore/services/dynamic/my-service:1.0.0",
+                ]
+            },
+            id="unresolved_var_mixed_with_valid_pre_pull_images",
+        ),
+    ],
+)
+def test_ec2_instance_boot_specific_rejects_unresolved_variables(
+    field_name: str,
+    field_override: dict,
+):
+    valid_model = EC2InstanceBootSpecific.model_json_schema()["examples"][0]
+    invalid_model = {**valid_model, **field_override}
+
+    with pytest.raises(ValueError, match="Unresolved variable substitution"):
+        EC2InstanceBootSpecific(**invalid_model)
