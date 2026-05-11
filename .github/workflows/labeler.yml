@@ -1,0 +1,34 @@
+# Automatically apply area / type labels to a PR based on which files
+# it changes. Uses .github/labeler.yml as the rule set.
+#
+# `pull_request_target` is required so that labels can also be applied to
+# PRs opened from forks (the workflow then runs with the base repo's
+# permissions). The job is read-only on the checkout side and only writes
+# labels through the GitHub API, so this is safe.
+name: PR auto-labeler
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: Apply area labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label PR based on changed files
+        uses: actions/labeler@v5
+        with:
+          configuration-path: .github/labeler.yml
+          # Keep previously-set labels so that manually added labels
+          # (e.g. priority, type) survive subsequent pushes.
+          sync-labels: false
+          dot: true
