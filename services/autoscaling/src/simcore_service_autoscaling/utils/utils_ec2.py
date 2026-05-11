@@ -36,6 +36,7 @@ from ..core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 _EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+)\..+$")
+_EC2_PRODUCT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("product")
 _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
     "io.simcore.autoscaling.version"
 )
@@ -220,6 +221,16 @@ def dump_task_required_node_labels_as_tags(
         filtered_labels,
         base_tag_key=_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
     )
+
+
+_PRODUCT_NAME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python("product-name")
+
+
+def get_product_tag(node_labels: dict[DockerLabelKey, str]) -> EC2Tags:
+    """Extract product-name from node labels and return it as a top-level EC2 tag for AWS Cost Explorer."""
+    if product_name := node_labels.get(_PRODUCT_NAME_LABEL_KEY):
+        return {_EC2_PRODUCT_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(product_name)}
+    return {}
 
 
 def load_task_required_docker_node_labels_from_tags(

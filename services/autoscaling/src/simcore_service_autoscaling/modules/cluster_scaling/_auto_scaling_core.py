@@ -867,6 +867,7 @@ async def _launch_instances(
                     type=instance_batch.instance_type,
                     tags=(
                         base_tags
+                        | utils_ec2.get_product_tag(instance_batch.node_labels)
                         | (
                             utils_ec2.dump_task_required_node_labels_as_tags(instance_batch.node_labels)
                             if instance_batch.node_labels

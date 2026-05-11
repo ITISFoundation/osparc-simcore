@@ -9,7 +9,10 @@ import pytest
 from aws_library.ec2 import AWSTagKey, EC2InstanceType, EC2Tags, Resources
 from aws_library.ec2._models import EC2InstanceData
 from faker import Faker
-from models_library.docker import OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
+    DockerLabelKey,
+)
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.core.errors import (
@@ -28,6 +31,7 @@ from simcore_service_autoscaling.utils.utils_ec2 import (
     find_best_fitting_ec2_instance,
     get_ec2_tags_computational,
     get_ec2_tags_dynamic,
+    get_product_tag,
     list_tag_keys,
     list_task_required_node_labels_tag_keys,
     load_from_ec2_tags,
@@ -312,3 +316,23 @@ def test_get_ec2_tags_computational(
 ):
     computational_tags = get_ec2_tags_computational(app_settings)
     assert computational_tags
+
+
+def test_get_product_tag_with_product_name():
+    product_label_key = TypeAdapter(DockerLabelKey).validate_python("product-name")
+    node_labels = {product_label_key: "osparc"}
+    tags = get_product_tag(node_labels)
+    assert tags == {TypeAdapter(AWSTagKey).validate_python("product"): "osparc"}
+
+
+def test_get_product_tag_without_product_name():
+    node_labels = {}
+    tags = get_product_tag(node_labels)
+    assert tags == {}
+
+
+def test_get_product_tag_with_other_labels_only():
+    user_label_key = TypeAdapter(DockerLabelKey).validate_python("user-id")
+    node_labels = {user_label_key: "123"}
+    tags = get_product_tag(node_labels)
+    assert tags == {}
