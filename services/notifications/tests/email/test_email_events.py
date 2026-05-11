@@ -23,7 +23,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
@@ -31,11 +31,6 @@ from jinja2 import StrictUndefined
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.products import ProductName
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from notifications_library._email import (
-    add_attachments,
-    compose_email,
-    create_email_session,
-)
 from notifications_library._email_render import (
     get_support_address,
     get_user_address,
@@ -50,6 +45,11 @@ from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
+from simcore_service_notifications.clients.smtp import create_session
+from simcore_service_notifications.services.email import (
+    add_attachments,
+    compose_email,
+)
 
 
 def _safe_json_dumps(obj: Any, **kwargs):
@@ -197,7 +197,7 @@ def template_attachments(
 async def test_email_event(
     app_environment: EnvVarsDict,
     with_smtp_extra_headers: dict[str, str],
-    smtp_mock_or_none: MagicMock | None,
+    smtp_mock_or_none: AsyncMock | None,
     user_data: UserData,
     user_email: EmailStr,
     sharer_data: SharerData | None,
@@ -259,18 +259,17 @@ async def test_email_event(
         p = dump_path.with_suffix(".txt")
         p.write_text(parts.text_content)
 
-    async with create_email_session(settings=settings) as smtp:
+    async with create_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
     if smtp_mock_or_none:
-        assert smtp_mock_or_none.called
-        assert isinstance(smtp, AsyncMock)
-        assert smtp.login.called
-        assert smtp.send_message.called
+        assert smtp is smtp_mock_or_none
+        assert smtp_mock_or_none.login.called
+        assert smtp_mock_or_none.send_message.called
 
         # Verify the message sent contains the extra headers
-        sent_message = smtp.send_message.call_args[0][0]
+        sent_message = smtp_mock_or_none.send_message.call_args[0][0]
         for header, value in with_smtp_extra_headers.items():
             assert header in sent_message
             assert sent_message[header] == value
@@ -285,7 +284,7 @@ async def test_email_event(
 async def test_email_with_reply_to(
     app_environment: EnvVarsDict,
     with_smtp_extra_headers: dict[str, str],
-    smtp_mock_or_none: MagicMock | None,
+    smtp_mock_or_none: AsyncMock | None,
     user_data: UserData,
     user_email: EmailStr,
     support_email: EmailStr,
@@ -335,17 +334,16 @@ async def test_email_with_reply_to(
     for header, value in with_smtp_extra_headers.items():
         assert msg[header] == value
 
-    async with create_email_session(settings=settings) as smtp:
+    async with create_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
     if smtp_mock_or_none:
-        assert smtp_mock_or_none.called
-        assert isinstance(smtp, AsyncMock)
-        assert smtp.login.called
-        assert smtp.send_message.called
+        assert smtp is smtp_mock_or_none
+        assert smtp_mock_or_none.login.called
+        assert smtp_mock_or_none.send_message.called
         # Verify the message sent contains the extra headers
-        sent_message = smtp.send_message.call_args[0][0]
+        sent_message = smtp_mock_or_none.send_message.call_args[0][0]
         for header, value in with_smtp_extra_headers.items():
             assert header in sent_message
             assert sent_message[header] == value

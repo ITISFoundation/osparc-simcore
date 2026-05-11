@@ -268,7 +268,13 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         with log_context(logging.INFO, "Rename project"):
             page.get_by_test_id("studyTitleRenamer").click()
             with page.expect_response(
-                lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}") and resp.request.method == "PATCH"
+                lambda resp: (
+                    resp.url.endswith(f"/projects/{jsonifier_prj_uuid}")
+                    and resp.request.method == "PATCH"
+                    and '"name"' in (resp.request.post_data or "")
+                    and _STUDY_FUNCTION_NAME in (resp.request.post_data or "")
+                ),
+                timeout=10 * SECOND,
             ) as patch_prj_rename_ctx:
                 renamer = page.get_by_test_id("studyTitleRenamer").locator("input")
                 renamer.fill(_STUDY_FUNCTION_NAME)
@@ -280,6 +286,19 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         # Wait until the rename save is finished
         with log_context(logging.INFO, "Wait until project is saved after rename"):
             page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=5 * SECOND)
+
+        with log_context(logging.INFO, "Verify project name was persisted on server"):
+            for _ in range(10):
+                get_prj_resp = api_request_context.get(f"{product_url}v0/projects/{jsonifier_prj_uuid}")
+                assert get_prj_resp.ok, f"Failed to GET project: {get_prj_resp.status} {get_prj_resp.text()}"
+                if get_prj_resp.json()["data"]["name"] == _STUDY_FUNCTION_NAME:
+                    break
+                page.wait_for_timeout(500)
+            else:
+                pytest.fail(
+                    f"Project name was not persisted as '{_STUDY_FUNCTION_NAME}', "
+                    f"server still reports '{get_prj_resp.json()['data']['name']}'"
+                )
 
     # 2. go back to dashboard
     with (

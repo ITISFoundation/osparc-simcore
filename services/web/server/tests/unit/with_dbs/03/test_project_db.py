@@ -73,7 +73,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     # improve speed by using more clients
     envs_plugins = setenvs_from_dict(
         monkeypatch,
-        {"POSTGRES_MAXSIZE": "80"},
+        {"POSTGRES_MAX_POOLSIZE": "30"},
     )
     return app_environment | envs_plugins
 
