@@ -10,11 +10,21 @@ from celery import Celery, Task  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from models_library.celery import TaskID
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import BaseModel, NonNegativeInt, TypeAdapter
 from servicelib.celery.task_context import TaskContext
 
 from .errors import encode_celery_transferable_error
 from .worker.app_server import get_app_server
+
+
+class _TaskContextKwargs(BaseModel, frozen=True):
+    """Context fields injected by the task manager and consumed by the async wrapper."""
+
+    user_id: int | None = None
+    product_name: str | None = None
+
+
+_TASK_CONTEXT_KWARG_KEY: Final[str] = "_task_context"
 
 _logger = logging.getLogger(__name__)
 
@@ -48,12 +58,16 @@ def _async_task_wrapper(
             # NOTE: task.request is a thread local object, so we need to capture it here
             assert task.request.id is not None  # nosec
             assert task.name is not None  # nosec
+            raw_ctx = kwargs.pop(_TASK_CONTEXT_KWARG_KEY, None)
+            ctx_kwargs = (
+                _TaskContextKwargs.model_validate_json(raw_ctx) if isinstance(raw_ctx, str) else _TaskContextKwargs()
+            )
             task_context = TaskContext(
                 id=TypeAdapter(TaskID).validate_python(task.request.id),
                 name=task.name,
                 app_server=app_server,
-                user_id=kwargs.pop("user_id", None),
-                product_name=kwargs.pop("product_name", None),
+                user_id=ctx_kwargs.user_id,
+                product_name=ctx_kwargs.product_name,
             )
 
             async def _run_task(task_context: TaskContext) -> R:

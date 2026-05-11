@@ -34,6 +34,7 @@ from .errors import (
     TaskSubmissionError,
     handle_celery_errors,
 )
+from .task import _TASK_CONTEXT_KWARG_KEY, _TaskContextKwargs
 
 _logger = logging.getLogger(__name__)
 
@@ -201,12 +202,12 @@ class CeleryTaskManager:
             task_id: TaskID = uuid4()
             expiry = self._get_task_expiry(execution_metadata)
 
-            # Inject context fields into kwargs so the wrapper can pop them
-            # and build a TaskContext. These are NOT business params.
-            if user_id is not None:
-                task_params["user_id"] = user_id
-            if product_name is not None:
-                task_params["product_name"] = product_name
+            # Inject context into a single validated kwarg so the async wrapper
+            # can deserialize it into TaskContext. This is NOT a business param.
+            task_params[_TASK_CONTEXT_KWARG_KEY] = _TaskContextKwargs(
+                user_id=user_id,
+                product_name=product_name,
+            ).model_dump_json()
 
             try:
                 await self._task_store.create_task(
