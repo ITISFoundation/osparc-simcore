@@ -167,6 +167,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         # Select the first jsonifier (it's the second "jsonifier" in the tree
         # because the study itself has "jsonifier" in its name)
         page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[1].click()
+        page.wait_for_timeout(3 * SECOND)
 
         with log_context(logging.INFO, "Create parameter on jsonifier_1.number_1"):
             page.get_by_test_id("connect_input_btn_number_1").click()
@@ -187,6 +188,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             assert patch_prj_param_resp.status == 204, f"Expected 204 from PATCH, got {patch_prj_param_resp.status}"
             create_param_resp = create_param_ctx.value
             assert create_param_resp.status == 201, f"Expected 201 from POST, got {create_param_resp.status}"
+            page.wait_for_timeout(3 * SECOND)
 
         with log_context(logging.INFO, "Add second jsonifier node via API"):
             add_node_response = api_request_context.post(
@@ -204,6 +206,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             )
             jsonifier_2_node_id = add_node_response.json()["data"]["node_id"]
             logging.info("Added second jsonifier node: %s", jsonifier_2_node_id)
+            page.wait_for_timeout(3 * SECOND)
 
         with log_context(logging.INFO, "Connect jsonifier_1.number_1 output -> jsonifier_2.number_1 input"):
             connect_response = api_request_context.patch(
@@ -224,6 +227,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             assert connect_response.status == 204, (
                 f"Failed to connect nodes: {connect_response.status} {connect_response.text()}"
             )
+            page.wait_for_timeout(3 * SECOND)
 
         with log_context(logging.INFO, "Add probe on jsonifier_2.number_1 via API"):
             add_probe_response = api_request_context.post(
@@ -259,6 +263,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             assert connect_probe_response.status == 204, (
                 f"Failed to connect probe: {connect_probe_response.status} {connect_probe_response.text()}"
             )
+            page.wait_for_timeout(3 * SECOND)
 
         # Wait for any pending auto-saves (from API node additions) to finish
         # before renaming, otherwise the auto-save may overwrite the new name
