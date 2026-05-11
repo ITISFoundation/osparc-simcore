@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, ParamSpec, TypeVar
+from typing import Any
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
@@ -40,9 +40,6 @@ _logger = logging.getLogger(__name__)
 type RequestContextManager = (
     aiohttp_client_module._RequestContextManager  # pylint: disable=protected-access # noqa: SLF001
 )
-
-P = ParamSpec("P")
-R = TypeVar("R")
 
 
 def handle_client_exception[**P, R](
