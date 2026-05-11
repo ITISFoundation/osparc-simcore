@@ -39,7 +39,7 @@ async def cancel_task(
     task_manager: TaskManager,
     *,
     task_id: TaskID,
-):
+) -> None:
     try:
         await task_manager.cancel(
             task_id=task_id,
