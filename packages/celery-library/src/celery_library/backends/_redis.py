@@ -125,6 +125,12 @@ class RedisTaskStore:
         as having infinite TTL for the purpose of the GT comparison, so it would
         leave the index key persistent on first creation. We instead read the
         current TTL and only extend it.
+
+        Note: there is a benign TOCTOU race — a concurrent create_task call may
+        set a longer TTL between our ttl() read and our expire() write, causing
+        the TTL to be slightly shortened. This is safe: stale index entries are
+        cleaned lazily by list_tasks, so a premature expiry only causes a brief
+        gap where list_tasks returns an empty result.
         """
         current_ttl = await self._redis_client_sdk.redis.ttl(index_key)
         # ttl returns: -2 (no key), -1 (no TTL), or remaining seconds.
