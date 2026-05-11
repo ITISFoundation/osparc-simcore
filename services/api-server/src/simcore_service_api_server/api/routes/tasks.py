@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Annotated, Any
 
@@ -46,7 +47,7 @@ _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 
 @contextmanager
-def _exception_mapper(task_id: TaskID):
+def _exception_mapper(task_id: TaskID) -> Iterator[None]:
     try:
         yield
     except TaskNotFoundError as exc:
