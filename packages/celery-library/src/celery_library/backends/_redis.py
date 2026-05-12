@@ -20,6 +20,7 @@ from models_library.celery import (
 )
 from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter, ValidationError
+from redis.asyncio.client import Pipeline
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
 _CELERY_TASK_DELIMTATOR: Final[str] = ":"
@@ -99,7 +100,7 @@ class RedisTaskStore:
 
     def _add_to_index(
         self,
-        pipe,
+        pipe: Pipeline,
         task_or_group_key: TaskKey | GroupKey,
         owner_metadata: OwnerMetadata | None,
     ) -> list[str]:

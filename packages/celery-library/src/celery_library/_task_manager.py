@@ -238,7 +238,7 @@ class CeleryTaskManager:
             if group_result is not None:
                 for async_result in group_result.results or []:
                     task_key: TaskKey = async_result.id
-                    await self._task_store.remove_task(task_key, owner_metadata=owner_metadata)
+                    await self._task_store.remove_task(task_key)  # sub-tasks are never indexed
                     await self._revoke_and_forget_task(task_key)
                 group_result.forget()
 

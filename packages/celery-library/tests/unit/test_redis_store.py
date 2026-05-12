@@ -244,7 +244,7 @@ async def test_index_key_has_ttl_and_only_grows(
     assert ttl_after_second_short >= int(long_expiry.total_seconds()) - 5
 
 
-async def test_create_task_with_index_false_skips_owner_index(
+async def test_create_task_without_owner_metadata_skips_owner_index(
     redis_task_store: RedisTaskStore,
     redis_client_sdk: RedisClientSDK,
 ):
