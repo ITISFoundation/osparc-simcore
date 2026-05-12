@@ -44,7 +44,7 @@ async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> 
     with log_context(
         _logger,
         logging.DEBUG,
-        msg=f"checking storage connection at {url=}",
+        msg=f"checking storage connection at {url=} {auth=}",
     ):
         async with AsyncClient(auth=auth, timeout=_LIVENESS_TIMEOUT.total_seconds()) as session:
             result = await session.get(url)
