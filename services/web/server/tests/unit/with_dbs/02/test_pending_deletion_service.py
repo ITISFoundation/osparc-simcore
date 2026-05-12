@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
@@ -14,9 +15,11 @@ from simcore_postgres_database.models.projects_pending_deletion import (
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects import (
+    _crud_api_delete,
     _pending_deletion_repository,
     _pending_deletion_service,
 )
+from simcore_service_webserver.projects.exceptions import ProjectDeleteError
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -188,3 +191,46 @@ async def test_retry_pending_deletions_dead_letters_after_max_attempts(
     row = await _outbox_row_for(app, project_id)
     assert row is not None, "dead-lettered row must remain for ops"
     assert row["attempts"] == 10
+
+
+async def test_initial_delete_db_failure_records_attempt_in_outbox(
+    app: web.Application,
+    project_id: ProjectID,
+    user_id: UserID,
+    clean_projects_pending_deletion_table: None,
+    mocker: MockerFixture,
+):
+    """When db.delete_project raises in the initial _delete_project path,
+    the outbox row must have attempts bumped and last_error set — not appear
+    as a never-attempted row.
+    """
+    # mock all dependencies of _delete_project
+    mocker.patch.object(_crud_api_delete, "mark_project_as_deleted", return_value=None)
+    mocker.patch.object(_crud_api_delete.director_v2_service, "delete_pipeline", return_value=None)
+    mocker.patch.object(_crud_api_delete, "delete_data_folders_of_project", return_value=None)
+
+    async def _noop_remove_services(*args, **kwargs):
+        pass
+
+    # make db.delete_project blow up
+    mocker.patch(
+        "simcore_service_webserver.projects._crud_api_delete.ProjectDBAPI.delete_project",
+        autospec=True,
+        side_effect=RuntimeError("db boom"),
+    )
+
+    with pytest.raises(ProjectDeleteError, match="DB delete failed"):
+        await _crud_api_delete._delete_project(  # noqa: SLF001
+            app,
+            project_uuid=project_id,
+            user_id=user_id,
+            simcore_user_agent="test",
+            product_name="osparc",
+            remove_project_dynamic_services=_noop_remove_services,
+        )
+
+    row = await _outbox_row_for(app, project_id)
+    assert row is not None, "outbox row must remain for retry"
+    assert row["attempts"] == 1, "attempts must be bumped"
+    assert row["last_error"] is not None
+    assert "db boom" in row["last_error"]

@@ -60,7 +60,7 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
 async def clean_projects_pending_deletion_table(
     client: TestClient,
 ) -> AsyncIterator[None]:
-    """Truncates the `projects_pending_deletion` outbox after the test."""
+    """Deletes all rows from the `projects_pending_deletion` outbox after the test."""
     yield
     engine = get_asyncpg_engine(client.app)
     async with engine.begin() as conn:
@@ -71,7 +71,7 @@ async def clean_projects_pending_deletion_table(
 async def clean_nodes_pending_deletion_table(
     client: TestClient,
 ) -> AsyncIterator[None]:
-    """Truncates the `nodes_pending_deletion` outbox after the test."""
+    """Deletes all rows from the `nodes_pending_deletion` outbox after the test."""
     yield
     engine = get_asyncpg_engine(client.app)
     async with engine.begin() as conn:

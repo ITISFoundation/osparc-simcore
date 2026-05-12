@@ -474,6 +474,50 @@ async def test_reconcile_db_to_s3_cursor_advances_across_invocations(
     assert rows == []
 
 
+async def test_reconcile_db_to_s3_null_project_id_does_not_stall_cursor(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    node_id: NodeID,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A NULL project_id fmd row must not prevent the cursor from advancing."""
+    real_settings = initialized_app.state.settings
+    stub = real_settings.model_copy(update={"STORAGE_CLEANER_RECONCILE_BATCH_SIZE": 1})
+    monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
+
+    engine = get_db_engine(initialized_app)
+    async with engine.begin() as conn:
+        await conn.execute(file_meta_data.delete())
+    redis = get_redis_client_manager(initialized_app).client(RedisDatabase.LOCKS).redis
+    await redis.delete(_CURSOR_REDIS_KEY)
+
+    # Create an fmd row via the fixture (needs an existing project for FK),
+    # then set its project_id to NULL
+    tmp_prj = await create_project()
+    null_file_id = await create_fmd_row(project_id=tmp_prj["uuid"], node_id=node_id)
+    async with engine.begin() as conn:
+        await conn.execute(
+            file_meta_data.update().where(file_meta_data.c.file_id == null_file_id).values(project_id=None)
+        )
+
+    # Also add a real project fmd row so we know the cursor completes
+    prj = await create_project()
+    await create_fmd_row(project_id=prj["uuid"], node_id=node_id)
+
+    # Run twice: first call should process the real project (skipping NULL);
+    # second call should reset (cycle complete), not stall.
+    removed_1 = await reconcile_db_to_s3(initialized_app)
+    removed_2 = await reconcile_db_to_s3(initialized_app)
+
+    assert removed_1 + removed_2 >= 1, "Real dangling row should be removed"
+
+    # After two calls the cursor must have reset (cycle done), not stuck
+    cursor_val = await redis.get(_CURSOR_REDIS_KEY)
+    assert cursor_val is None, "Cursor should reset after full sweep"
+
+
 async def test_reconcile_db_to_s3_force_skips_cursor(
     initialized_app: FastAPI,
     project_id: ProjectID,

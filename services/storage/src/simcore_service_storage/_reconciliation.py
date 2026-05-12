@@ -273,6 +273,8 @@ async def reconcile_db_to_s3(app: FastAPI, *, force: bool = False, dry_run: bool
             sa.select(sa.distinct(file_meta_data.c.project_id))
             .where(
                 file_meta_data.c.upload_expires_at.is_(None),
+                file_meta_data.c.project_id.is_not(None),
+                file_meta_data.c.project_id != "",
                 file_meta_data.c.project_id > cursor if cursor else sa.true(),
             )
             .order_by(file_meta_data.c.project_id)

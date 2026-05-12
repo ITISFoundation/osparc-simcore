@@ -137,7 +137,16 @@ async def _delete_project(
             ) from exc
 
         # rm project from database
-        await db.delete_project(user_id, f"{project_uuid}")
+        try:
+            await db.delete_project(user_id, f"{project_uuid}")
+        except Exception as exc:  # pylint: disable=broad-except
+            await _pending_deletion_repository.record_failed_attempt(
+                app, project_uuid=project_uuid, error_message=f"db.delete_project: {exc}"
+            )
+            raise ProjectDeleteError(
+                project_uuid=project_uuid,
+                details=f"DB delete failed after storage cleanup, will retry: {exc}",
+            ) from exc
 
         # storage + db are both gone; outbox row no longer needed
         await _pending_deletion_repository.delete_pending_deletion(app, project_uuid=project_uuid)
