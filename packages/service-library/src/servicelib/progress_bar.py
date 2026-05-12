@@ -107,15 +107,15 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     async def __aexit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: object
     ) -> None:
-        await self._finish(failed=exc_type is not None)
+        await self._finish(exited_with_exception=exc_type is not None)
 
-    async def _finish(self, *, failed: bool = False) -> None:
+    async def _finish(self, *, exited_with_exception: bool = False) -> None:
         _logger.debug("finishing %s", f"{self.num_steps} progress")
         if self._parent is None:
             await self.set_(self.num_steps)
             return
 
-        if failed:
+        if exited_with_exception:
             # Remove child first so stale state doesn't appear in progress
             # reports during rollback.
             self._parent._children.remove(self)  # pylint: disable=protected-access # noqa: SLF001
