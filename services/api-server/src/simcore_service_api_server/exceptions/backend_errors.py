@@ -88,6 +88,8 @@ class SolverOutputNotFoundError(BaseBackEndError):
     status_code = status.HTTP_404_NOT_FOUND
 
 
+
+
 class ConfigurationError(BaseBackEndError):
     msg_template = user_message("A configuration error occurred.", _version=1)
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
