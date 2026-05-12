@@ -628,3 +628,29 @@ async def test_reconcile_multipart_handles_no_such_upload(
     # Should not raise even though the upload is already gone
     aborted = await reconcile_abandoned_multipart_uploads(initialized_app)
     assert aborted >= 0
+
+
+async def test_reconcile_multipart_grace_period_protects_recent_uploads(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A non-zero grace period prevents aborting uploads that are still recent."""
+    # Override grace period to 1 hour so the just-created upload is protected
+    real_settings = initialized_app.state.settings
+    stub = real_settings.model_copy(update={"STORAGE_CLEANER_RECONCILE_GRACE_PERIOD": timedelta(hours=1)})
+    monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
+
+    orphan_key = f"{uuid4()}/{uuid4()}/recent-upload.bin"
+    create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key)
+    upload_id = create_resp["UploadId"]
+
+    # The upload was just created — it's younger than the 1h grace period
+    aborted = await reconcile_abandoned_multipart_uploads(initialized_app)
+    assert aborted == 0
+
+    # Verify the upload is still there
+    listing = await raw_s3_client.list_multipart_uploads(Bucket=storage_s3_bucket)
+    remaining_ids = {u.get("UploadId") for u in listing.get("Uploads", [])}
+    assert upload_id in remaining_ids

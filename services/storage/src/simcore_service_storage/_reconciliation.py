@@ -144,12 +144,20 @@ async def reconcile_abandoned_multipart_uploads(app: FastAPI, *, force: bool = F
 
     bucket = _get_simcore_bucket_name(app)
     s3_client = get_s3_client(app)
+    grace_cutoff = datetime.now(tz=UTC) - settings.STORAGE_CLEANER_RECONCILE_GRACE_PERIOD
 
     ongoing = await s3_client.list_ongoing_multipart_uploads(bucket=bucket)
     if not ongoing:
         return 0
 
-    keys = [object_key for _upload_id, object_key in ongoing]
+    # Filter by grace period: only consider uploads initiated before the cutoff
+    aged_uploads = [
+        (upload_id, object_key, initiated) for upload_id, object_key, initiated in ongoing if initiated < grace_cutoff
+    ]
+    if not aged_uploads:
+        return 0
+
+    keys = [object_key for _upload_id, object_key, _initiated in aged_uploads]
     async with pass_or_acquire_connection(get_db_engine(app)) as conn:
         rows = await conn.execute(
             sa.select(file_meta_data.c.file_id).where(
@@ -160,7 +168,7 @@ async def reconcile_abandoned_multipart_uploads(app: FastAPI, *, force: bool = F
         keys_with_active_upload = {row[0] for row in rows.fetchall()}
 
     aborted = 0
-    for upload_id, object_key in ongoing:
+    for upload_id, object_key, _initiated in aged_uploads:
         if object_key in keys_with_active_upload:
             continue
         if dry_run:
@@ -186,16 +194,20 @@ def _group_eligible_by_project(all_candidates: list, grace_cutoff: datetime) -> 
 
     Returns {project_id: [file_id, ...]}.
     Only non-directory rows are included — directory entries are never deleted.
+    Rows with missing/empty project_id are skipped to avoid full-bucket scans.
     """
     result: dict[str, list[str]] = {}
     for row in all_candidates:
         file_id, project_id, created_at_raw = row[0], row[1], row[2]
+        if not project_id:
+            _logger.warning("Skipping fmd row %s with NULL/empty project_id", file_id)
+            continue
         try:
             created_at = arrow.get(created_at_raw).datetime
         except (arrow.parser.ParserError, ValueError, TypeError):
             created_at = datetime.min.replace(tzinfo=UTC)
         if created_at < grace_cutoff:
-            result.setdefault(project_id or "", []).append(file_id)
+            result.setdefault(project_id, []).append(file_id)
     return result
 
 
