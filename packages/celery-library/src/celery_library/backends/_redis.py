@@ -2,6 +2,7 @@ import contextlib
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from itertools import combinations
 from typing import TYPE_CHECKING, Final
 
 from models_library.celery import (
@@ -85,18 +86,31 @@ class RedisTaskStore:
         if current_ttl < int(expiry.total_seconds()):
             await self._redis_client_sdk.redis.expire(index_key, expiry)
 
+    @staticmethod
+    def _all_subset_index_keys(owner: str, extras: dict[str, str | int]) -> list[str]:
+        """Return index keys for every subset of *extras* so that wildcard
+        queries (which strip some fields) can still find the task."""
+        items = sorted(extras.items())
+        return [
+            _build_redis_index_key(owner, dict(combo))
+            for r in range(len(items) + 1)
+            for combo in combinations(items, r)
+        ]
+
     def _add_to_index(
         self,
         pipe,
         task_or_group_key: TaskKey | GroupKey,
         owner_metadata: OwnerMetadata | None,
-    ) -> str | None:
+    ) -> list[str]:
         if owner_metadata is None:
-            return None
+            return []
         owner, extras = _owner_fields_from_metadata(owner_metadata)
-        index_key = _build_redis_index_key(owner, extras)
-        pipe.zadd(index_key, {task_or_group_key: datetime.now(tz=UTC).timestamp()})
-        return index_key
+        index_keys = self._all_subset_index_keys(owner, extras)
+        score = datetime.now(tz=UTC).timestamp()
+        for index_key in index_keys:
+            pipe.zadd(index_key, {task_or_group_key: score})
+        return index_keys
 
     async def create_group(
         self,
@@ -114,7 +128,7 @@ class RedisTaskStore:
             value=execution_metadata.model_dump_json(),
         )
 
-        index_key = self._add_to_index(pipe, group_key, owner_metadata)
+        index_keys = self._add_to_index(pipe, group_key, owner_metadata)
 
         # Sub-task hashes — NOT added to index (parent group is the listable unit)
         for task_key, (task_execution_metadata, _) in zip(task_keys, execution_metadata.tasks, strict=True):
@@ -125,7 +139,7 @@ class RedisTaskStore:
             )
         await pipe.execute()
         await self._redis_client_sdk.redis.expire(redis_group_key, expiry)
-        if index_key:
+        for index_key in index_keys:
             await self._refresh_index_key_ttl(index_key, expiry)
 
     async def create_task(
@@ -144,11 +158,11 @@ class RedisTaskStore:
             value=execution_metadata.model_dump_json(),
         )
 
-        index_key = self._add_to_index(pipe, task_key, owner_metadata)
+        index_keys = self._add_to_index(pipe, task_key, owner_metadata)
         await pipe.execute()
 
         await self._redis_client_sdk.redis.expire(redis_key, expiry)
-        if index_key:
+        for index_key in index_keys:
             await self._refresh_index_key_ttl(index_key, expiry)
 
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
@@ -239,7 +253,8 @@ class RedisTaskStore:
 
         if owner_metadata is not None:
             owner, extras = _owner_fields_from_metadata(owner_metadata)
-            pipe.zrem(_build_redis_index_key(owner, extras), task_key)
+            for index_key in self._all_subset_index_keys(owner, extras):
+                pipe.zrem(index_key, task_key)
 
         await pipe.execute()
 
