@@ -30,7 +30,7 @@ from models_library.api_schemas_webserver.storage import (
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
-from models_library.celery import TaskExecutionMetadata
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.change_case import camel_to_snake
@@ -57,11 +57,11 @@ from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
-from .._meta import API_VTAG, APP_NAME
+from .._meta import API_VTAG
 from ..celery import get_task_manager
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
-from ..models import AuthenticatedRequestContext
+from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..security.decorators import permission_required
 from ..tasks._controller._rest_exceptions import handle_rest_requests_exceptions
 from .schemas import StorageFileIDStr
@@ -211,7 +211,12 @@ async def compute_path_size(request: web.Request) -> web.Response:
         execution_metadata=TaskExecutionMetadata(
             name=COMPUTE_PATH_SIZE_TASK_NAME,
         ),
-        owner=APP_NAME,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
+        ),
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         location_id=path_params.location_id,
@@ -237,9 +242,13 @@ async def batch_delete_paths(request: web.Request):
         execution_metadata=TaskExecutionMetadata(
             name=DELETE_PATHS_TASK_NAME,
         ),
-        owner=APP_NAME,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
+        ),
         user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
         location_id=path_params.location_id,
         paths=body.paths,
     )
@@ -494,7 +503,12 @@ async def export_data(request: web.Request) -> web.Response:
 
     async_job_get = await submit_export_data(
         task_manager=get_task_manager(request.app),
-        owner=APP_NAME,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
+        ),
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         paths_to_export=body.paths,
@@ -531,7 +545,12 @@ async def search(request: web.Request) -> web.Response:
         execution_metadata=TaskExecutionMetadata(
             name=SEARCH_TASK_NAME,
         ),
-        owner=APP_NAME,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
+        ),
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         name_pattern=search_body.filters.name_pattern,

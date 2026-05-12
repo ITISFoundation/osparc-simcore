@@ -7,12 +7,13 @@ from uuid import UUID
 import pytest
 from celery_library.backends import RedisTaskStore
 from celery_library.backends._redis import (
-    _build_redis_index_key_for_owner,
-    _build_redis_task_key,
+    _build_redis_index_key_for_fields,
+    _build_redis_task_or_group_key,
+    _owner_fields_from_metadata,
 )
 from faker import Faker
 from models_library.celery import (
-    Task,
+    OwnerMetadata,
     TaskExecutionMetadata,
 )
 from servicelib.redis import RedisClientSDK
@@ -22,6 +23,11 @@ _faker = Faker()
 
 pytest_simcore_core_services_selection = ["redis"]
 pytest_simcore_ops_services_selection = []
+
+
+class _TestOwnerMetadata(OwnerMetadata):
+    user_id: int | None = None
+    product_name: str | None = None
 
 
 @pytest.fixture
@@ -51,15 +57,15 @@ async def test_list_tasks_uses_zset_index_not_scan(
     redis_client_sdk: RedisClientSDK,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    task_id = UUID(_faker.uuid4())
+    task_uuid = UUID(_faker.uuid4())
+    owner_metadata = _TestOwnerMetadata(owner="test-svc", user_id=10001, product_name="osparc")
+    task_key = owner_metadata.model_dump_key(task_or_group_uuid=task_uuid)
 
     await redis_task_store.create_task(
-        task_id,
+        task_key,
         TaskExecutionMetadata(name="my_task"),
-        owner="test-svc",
-        user_id=10001,
-        product_name="osparc",
         expiry=timedelta(minutes=5),
+        owner_metadata=owner_metadata,
     )
 
     def _forbid_scan_iter(*_args: object, **_kwargs: object) -> None:
@@ -72,9 +78,9 @@ async def test_list_tasks_uses_zset_index_not_scan(
         _forbid_scan_iter,
     )
 
-    tasks = await redis_task_store.list_tasks(owner="test-svc", user_id=10001, product_name="osparc")
+    tasks = await redis_task_store.list_tasks(owner_metadata)
     assert len(tasks) == 1
-    assert tasks[0].id == task_id
+    assert tasks[0].uuid == task_uuid
 
 
 async def test_list_tasks_filters_by_exact_owner_fields(
@@ -83,40 +89,40 @@ async def test_list_tasks_filters_by_exact_owner_fields(
     owner = "test-svc"
     product = "osparc"
     user_id = 42
-    expected_tasks: list[Task] = []
+    expected_uuids: set[UUID] = set()
 
     # 5 tasks with same owner + product_name + user_id
     for _ in range(5):
-        task_id = UUID(_faker.uuid4())
+        task_uuid = UUID(_faker.uuid4())
+        om = _TestOwnerMetadata(owner=owner, user_id=user_id, product_name=product)
+        task_key = om.model_dump_key(task_or_group_uuid=task_uuid)
         await redis_task_store.create_task(
-            task_id,
+            task_key,
             TaskExecutionMetadata(name="my_task"),
-            owner=owner,
-            user_id=user_id,
-            product_name=product,
             expiry=timedelta(minutes=5),
+            owner_metadata=om,
         )
-        expected_tasks.append(
-            Task(
-                id=task_id,
-                metadata=TaskExecutionMetadata(name="my_task"),
-            )
-        )
+        expected_uuids.add(task_uuid)
 
     # 3 tasks with a different user id
     for _ in range(3):
-        task_id = UUID(_faker.uuid4())
-        await redis_task_store.create_task(
-            task_id,
-            TaskExecutionMetadata(name="my_task"),
+        task_uuid = UUID(_faker.uuid4())
+        om = _TestOwnerMetadata(
             owner=owner,
             user_id=_faker.pyint(min_value=100, max_value=200),
             product_name=product,
+        )
+        task_key = om.model_dump_key(task_or_group_uuid=task_uuid)
+        await redis_task_store.create_task(
+            task_key,
+            TaskExecutionMetadata(name="my_task"),
             expiry=timedelta(minutes=5),
+            owner_metadata=om,
         )
 
-    tasks = await redis_task_store.list_tasks(owner=owner, user_id=user_id, product_name=product)
-    assert {t.id for t in tasks} == {t.id for t in expected_tasks}
+    query_om = _TestOwnerMetadata(owner=owner, user_id=user_id, product_name=product)
+    tasks = await redis_task_store.list_tasks(query_om)
+    assert {t.uuid for t in tasks} == expected_uuids
 
 
 async def test_list_tasks_with_no_user_id(
@@ -125,118 +131,114 @@ async def test_list_tasks_with_no_user_id(
     """Internal notifications have no user_id."""
     owner = "notifications-svc"
     product = "osparc"
+    task_uuid = UUID(_faker.uuid4())
 
-    task_id = UUID(_faker.uuid4())
+    om = _TestOwnerMetadata(owner=owner, user_id=None, product_name=product)
+    task_key = om.model_dump_key(task_or_group_uuid=task_uuid)
     await redis_task_store.create_task(
-        task_id,
+        task_key,
         TaskExecutionMetadata(name="send_notification"),
-        owner=owner,
-        user_id=None,
-        product_name=product,
         expiry=timedelta(minutes=5),
+        owner_metadata=om,
     )
 
     # Query without user_id matches
-    tasks = await redis_task_store.list_tasks(owner=owner, product_name=product)
+    query_no_uid = _TestOwnerMetadata(owner=owner, product_name=product)
+    tasks = await redis_task_store.list_tasks(query_no_uid)
     assert len(tasks) == 1
-    assert tasks[0].id == task_id
+    assert tasks[0].uuid == task_uuid
 
     # Query with a user_id does NOT match
-    tasks = await redis_task_store.list_tasks(owner=owner, user_id=1, product_name=product)
+    query_with_uid = _TestOwnerMetadata(owner=owner, user_id=1, product_name=product)
+    tasks = await redis_task_store.list_tasks(query_with_uid)
     assert len(tasks) == 0
 
 
 async def test_remove_task_cleans_up_zset_indexes(
     redis_task_store: RedisTaskStore,
 ):
-    task_id = UUID(_faker.uuid4())
+    task_uuid = UUID(_faker.uuid4())
+    om = _TestOwnerMetadata(owner="test-svc", user_id=10003, product_name="osparc")
+    task_key = om.model_dump_key(task_or_group_uuid=task_uuid)
 
     await redis_task_store.create_task(
-        task_id,
+        task_key,
         TaskExecutionMetadata(name="my_task"),
-        owner="test-svc",
-        user_id=10003,
-        product_name="osparc",
         expiry=timedelta(minutes=5),
+        owner_metadata=om,
     )
-    assert len(await redis_task_store.list_tasks(owner="test-svc", user_id=10003, product_name="osparc")) == 1
+    assert len(await redis_task_store.list_tasks(om)) == 1
 
-    await redis_task_store.remove_task(task_id, owner="test-svc", user_id=10003, product_name="osparc")
-    assert len(await redis_task_store.list_tasks(owner="test-svc", user_id=10003, product_name="osparc")) == 0
+    await redis_task_store.remove_task(task_key, owner_metadata=om)
+    assert len(await redis_task_store.list_tasks(om)) == 0
 
 
 async def test_stale_zset_entries_are_pruned_on_list(
     redis_task_store: RedisTaskStore,
     redis_client_sdk: RedisClientSDK,
 ):
-    task_id = UUID(_faker.uuid4())
+    task_uuid = UUID(_faker.uuid4())
+    om = _TestOwnerMetadata(owner="test-svc", user_id=10004, product_name="osparc")
+    task_key = om.model_dump_key(task_or_group_uuid=task_uuid)
 
     await redis_task_store.create_task(
-        task_id,
+        task_key,
         TaskExecutionMetadata(name="my_task"),
-        owner="test-svc",
-        user_id=10004,
-        product_name="osparc",
         expiry=timedelta(minutes=5),
+        owner_metadata=om,
     )
 
     # Simulate hash expiry by deleting the hash directly (bypass remove_task)
-    redis = redis_client_sdk.redis
-
-    await redis.delete(_build_redis_task_key(task_id))
+    await redis_client_sdk.redis.delete(_build_redis_task_or_group_key(task_key))
 
     # First list should return empty and prune the stale entry
-    assert await redis_task_store.list_tasks(owner="test-svc", user_id=10004, product_name="osparc") == []
+    assert await redis_task_store.list_tasks(om) == []
     # Second list confirms the ZSET is clean
-    assert await redis_task_store.list_tasks(owner="test-svc", user_id=10004, product_name="osparc") == []
+    assert await redis_task_store.list_tasks(om) == []
 
 
 async def test_index_key_has_ttl_and_only_grows(
     redis_task_store: RedisTaskStore,
     redis_client_sdk: RedisClientSDK,
 ):
-    """The ZSET index key must have a TTL bounded by the longest member expiry,
-    so it cannot grow unboundedly when ``list_tasks`` is never called.
-    """
-    owner, user_id, product = "test-svc", 10005, "osparc"
-    index_key = _build_redis_index_key_for_owner(owner, user_id, product)
+    """The ZSET index key must have a TTL bounded by the longest member expiry."""
+    om = _TestOwnerMetadata(owner="test-svc", user_id=10005, product_name="osparc")
+    owner, extras = _owner_fields_from_metadata(om)
+    index_key = _build_redis_index_key_for_fields(owner, extras)
     redis = redis_client_sdk.redis
 
     short_expiry = timedelta(minutes=1)
     long_expiry = timedelta(hours=1)
 
-    # First add with a short expiry: index key gets a TTL ~ short_expiry
+    # First add with a short expiry
+    task_key = om.model_dump_key(task_or_group_uuid=UUID(_faker.uuid4()))
     await redis_task_store.create_task(
-        UUID(_faker.uuid4()),
+        task_key,
         TaskExecutionMetadata(name="my_task"),
-        owner=owner,
-        user_id=user_id,
-        product_name=product,
         expiry=short_expiry,
+        owner_metadata=om,
     )
     ttl_after_short = await redis.ttl(index_key)
     assert 0 < ttl_after_short <= int(short_expiry.total_seconds())
 
-    # Add a longer-lived task: TTL must be extended to cover it
+    # Add a longer-lived task: TTL must be extended
+    task_key = om.model_dump_key(task_or_group_uuid=UUID(_faker.uuid4()))
     await redis_task_store.create_task(
-        UUID(_faker.uuid4()),
+        task_key,
         TaskExecutionMetadata(name="my_task"),
-        owner=owner,
-        user_id=user_id,
-        product_name=product,
         expiry=long_expiry,
+        owner_metadata=om,
     )
     ttl_after_long = await redis.ttl(index_key)
     assert ttl_after_long >= int(long_expiry.total_seconds()) - 1
 
-    # Add another short-lived task: TTL must NOT shrink below the long task's lifetime
+    # Add another short-lived task: TTL must NOT shrink
+    task_key = om.model_dump_key(task_or_group_uuid=UUID(_faker.uuid4()))
     await redis_task_store.create_task(
-        UUID(_faker.uuid4()),
+        task_key,
         TaskExecutionMetadata(name="my_task"),
-        owner=owner,
-        user_id=user_id,
-        product_name=product,
         expiry=short_expiry,
+        owner_metadata=om,
     )
     ttl_after_second_short = await redis.ttl(index_key)
     assert ttl_after_second_short >= int(long_expiry.total_seconds()) - 5
@@ -246,33 +248,30 @@ async def test_create_task_with_index_false_skips_owner_index(
     redis_task_store: RedisTaskStore,
     redis_client_sdk: RedisClientSDK,
 ):
-    """Group sub-tasks must not appear in the owner index (they are listed via
-    their parent group), so ``create_task(index=False)`` must skip the zadd.
-    """
-    owner, user_id, product = "test-svc", 10006, "osparc"
-    indexed_task_id = UUID(_faker.uuid4())
-    sub_task_id = UUID(_faker.uuid4())
+    """Group sub-tasks must not appear in the owner index."""
+    om = _TestOwnerMetadata(owner="test-svc", user_id=10006, product_name="osparc")
+    indexed_uuid = UUID(_faker.uuid4())
+    sub_task_uuid = UUID(_faker.uuid4())
+
+    indexed_key = om.model_dump_key(task_or_group_uuid=indexed_uuid)
+    sub_task_key = om.model_dump_key(task_or_group_uuid=sub_task_uuid)
 
     await redis_task_store.create_task(
-        indexed_task_id,
+        indexed_key,
         TaskExecutionMetadata(name="my_task"),
-        owner=owner,
-        user_id=user_id,
-        product_name=product,
         expiry=timedelta(minutes=5),
+        owner_metadata=om,
     )
     await redis_task_store.create_task(
-        sub_task_id,
+        sub_task_key,
         TaskExecutionMetadata(name="my_sub_task"),
-        owner=owner,
-        user_id=user_id,
-        product_name=product,
         expiry=timedelta(minutes=5),
+        owner_metadata=om,
         index=False,
     )
 
-    # Sub-task hash exists (so status/result lookups by UUID still work)...
-    assert await redis_client_sdk.redis.exists(_build_redis_task_key(sub_task_id)) == 1
-    # ...but only the indexed task appears in the owner listing.
-    listed = await redis_task_store.list_tasks(owner=owner, user_id=user_id, product_name=product)
-    assert {t.id for t in listed} == {indexed_task_id}
+    # Sub-task hash exists
+    assert await redis_client_sdk.redis.exists(_build_redis_task_or_group_key(sub_task_key)) == 1
+    # Only the indexed task appears in listing
+    listed = await redis_task_store.list_tasks(om)
+    assert {t.uuid for t in listed} == {indexed_uuid}

@@ -4,6 +4,7 @@ from typing import Final, Literal
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.celery import (
+    OwnerMetadata,
     TaskExecutionMetadata,
 )
 from models_library.products import ProductName
@@ -21,7 +22,7 @@ class TaskQueueNames(StrEnum):
 
 async def submit_export_data(
     task_manager: TaskManager,
-    owner: str,
+    owner_metadata: OwnerMetadata,
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
@@ -35,15 +36,15 @@ async def submit_export_data(
         case _:
             msg = f"Invalid export_as value: {export_as}"
             raise ValueError(msg)
-    task_id = await task_manager.submit_task(
+    task_uuid = await task_manager.submit_task(
         TaskExecutionMetadata(
             name=task_name,
             ephemeral=False,
             queue=TaskQueueNames.CPU_BOUND,
         ),
-        owner=owner,
+        owner_metadata=owner_metadata,
         user_id=user_id,
         product_name=product_name,
         paths_to_export=paths_to_export,
     )
-    return AsyncJobGet(job_id=task_id, job_name=task_name)
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)

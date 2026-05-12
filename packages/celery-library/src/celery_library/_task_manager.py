@@ -151,6 +151,8 @@ class CeleryTaskManager:
                             ephemeral=group_task_meta.ephemeral,
                         ),
                         expiry=expiry,
+                        owner_metadata=owner_metadata,
+                        index=False,
                     )
 
                 group_result: GroupResult = group(sigs).apply_async()
@@ -164,6 +166,7 @@ class CeleryTaskManager:
                     execution_metadata,
                     [task_key for task_key, _ in task_metadata_pairs],
                     expiry=group_expiry,
+                    owner_metadata=owner_metadata,
                 )
 
             except CeleryError as exc:
@@ -196,7 +199,9 @@ class CeleryTaskManager:
             expiry = self._get_task_expiry(execution_metadata)
 
             try:
-                await self._task_store.create_task(task_key, execution_metadata, expiry=expiry)
+                await self._task_store.create_task(
+                    task_key, execution_metadata, expiry=expiry, owner_metadata=owner_metadata
+                )
                 self._app.send_task(
                     execution_metadata.name,
                     task_id=task_key,
@@ -235,11 +240,11 @@ class CeleryTaskManager:
             if group_result is not None:
                 for async_result in group_result.results or []:
                     task_key: TaskKey = async_result.id
-                    await self._task_store.remove_task(task_key)
+                    await self._task_store.remove_task(task_key, owner_metadata=owner_metadata)
                     await self._revoke_and_forget_task(task_key)
                 group_result.forget()
 
-            await self._task_store.remove_task(group_key)
+            await self._task_store.remove_task(group_key, owner_metadata=owner_metadata)
 
     @handle_celery_errors
     async def _cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None:
@@ -252,7 +257,7 @@ class CeleryTaskManager:
             if not await self.task_or_group_exists(task_key):
                 raise TaskOrGroupNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
 
-            await self._task_store.remove_task(task_key)
+            await self._task_store.remove_task(task_key, owner_metadata=owner_metadata)
             await self._revoke_and_forget_task(task_key)
 
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool:

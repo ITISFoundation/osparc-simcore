@@ -10,6 +10,7 @@ from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobStatus,
 )
 from models_library.api_schemas_async_jobs.exceptions import BaseAsyncjobRpcError
+from models_library.celery import OwnerMetadata
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import validate_call
@@ -28,10 +29,12 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
+        owner_metadata: OwnerMetadata,
     ) -> None:
         assert rabbitmq_rpc_client
         assert rpc_namespace
         assert job_id
+        assert owner_metadata
 
         if self.exception is not None:
             raise self.exception
@@ -43,10 +46,12 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
+        owner_metadata: OwnerMetadata,
     ) -> AsyncJobStatus:
         assert rabbitmq_rpc_client
         assert rpc_namespace
         assert job_id
+        assert owner_metadata
 
         if self.exception is not None:
             raise self.exception
@@ -68,10 +73,12 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
+        owner_metadata: OwnerMetadata,
     ) -> AsyncJobResult:
         assert rabbitmq_rpc_client
         assert rpc_namespace
         assert job_id
+        assert owner_metadata
 
         if self.exception is not None:
             raise self.exception
@@ -83,16 +90,12 @@ class AsyncJobSideEffects:
         rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
         rpc_namespace: RPCNamespace,
-        owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
+        owner_metadata: OwnerMetadata,
         filter_: str = "",
     ) -> list[AsyncJobGet]:
         assert rabbitmq_rpc_client
         assert rpc_namespace
-        assert owner
-        assert user_id is None or isinstance(user_id, int)
-        assert product_name is None or isinstance(product_name, str)
+        assert owner_metadata
         assert filter_ is not None
 
         if self.exception is not None:

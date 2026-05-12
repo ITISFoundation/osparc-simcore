@@ -8831,7 +8831,7 @@
         ]
       }
     },
-    "/v0/tasks/{task_id}": {
+    "/v0/tasks/{task_uuid}": {
       "get": {
         "tags": [
           "tasks"
@@ -8846,7 +8846,7 @@
         ],
         "parameters": [
           {
-            "name": "task_id",
+            "name": "task_uuid",
             "in": "path",
             "required": true,
             "schema": {
@@ -8888,7 +8888,7 @@
         }
       }
     },
-    "/v0/tasks/{task_id}:cancel": {
+    "/v0/tasks/{task_uuid}:cancel": {
       "post": {
         "tags": [
           "tasks"
@@ -8903,7 +8903,7 @@
         ],
         "parameters": [
           {
-            "name": "task_id",
+            "name": "task_uuid",
             "in": "path",
             "required": true,
             "schema": {
@@ -8938,7 +8938,7 @@
         }
       }
     },
-    "/v0/tasks/{task_id}/result": {
+    "/v0/tasks/{task_uuid}/result": {
       "get": {
         "tags": [
           "tasks"
@@ -8953,7 +8953,7 @@
         ],
         "parameters": [
           {
-            "name": "task_id",
+            "name": "task_uuid",
             "in": "path",
             "required": true,
             "schema": {

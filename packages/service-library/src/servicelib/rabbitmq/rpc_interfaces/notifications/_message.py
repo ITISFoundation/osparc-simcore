@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from models_library.celery import OwnerMetadata
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
     Addressing,
@@ -25,18 +26,14 @@ async def send_message(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     message: Message,
-    owner: str | None = None,
-    user_id: int | None = None,
-    product_name: str | None = None,
+    owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("send_message"),
         request=SendMessageRequest(
             message=message,
-            owner=owner,
-            user_id=user_id,
-            product_name=product_name,
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec
@@ -51,9 +48,7 @@ async def send_message_from_template(
     addressing: Addressing,
     template_ref: TemplateRef,
     context: dict[str, Any],
-    owner: str | None = None,
-    user_id: int | None = None,
-    product_name: str | None = None,
+    owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
@@ -62,9 +57,7 @@ async def send_message_from_template(
             template_ref=template_ref,
             addressing=addressing,
             context=context,
-            owner=owner,
-            user_id=user_id,
-            product_name=product_name,
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec

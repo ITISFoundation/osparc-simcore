@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 from enum import auto
-from typing import Annotated, Any, Final, Literal, Protocol, TypeVar
+from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, TypeAdapter
+import orjson
+from common_library.json_serialization import json_dumps, json_loads
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, StringConstraints, TypeAdapter, model_validator
 from pydantic.config import JsonDict
 
 from .progress_bar import ProgressReport
@@ -13,15 +15,125 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 
 type Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
+type TaskKey = str
 type TaskName = Name
 type TaskParams = dict[str, Any]
-type TaskID = UUID
+type TaskUUID = UUID
 
+type GroupKey = str
 type GroupName = Name
+type GroupUUID = UUID
 
 DEFAULT_QUEUE: Final[str] = "default"
 
-_TASK_ID_ADAPTER: Final[TypeAdapter[TaskID]] = TypeAdapter(TaskID)
+
+_KEY_DELIMITATOR: Final[str] = ":"
+_FORBIDDEN_KEY_CHARS = ("*", _KEY_DELIMITATOR, "=")
+_FORBIDDEN_VALUE_CHARS = (_KEY_DELIMITATOR, "=")
+type AllowedTypes = int | float | bool | str | list[str] | list[int] | list[float] | list[bool] | None
+
+type Wildcard = Literal["*"]
+WILDCARD: Final[Wildcard] = "*"
+
+_UUID_KEY: Final[str] = "uuid"
+_TASK_UUID_ADAPTER: Final[TypeAdapter[TaskUUID]] = TypeAdapter(TaskUUID)
+
+
+class _TypeValidationModel(BaseModel):
+    filters: dict[str, AllowedTypes]
+
+
+class OwnerMetadata(BaseModel):
+    """
+    Class for associating metadata with a celery task.
+    The implementation is very flexible and allows the task owner to define their own metadata.
+    This could be metadata for validating if a user has access to a given task (e.g. user_id or product_name) or
+    metadata for keeping track of how to handle a task,
+    e.g. which schema will the result of the task have.
+
+    The class exposes a filtering mechanism to list tasks using wildcards.
+
+    Example usage:
+        class StorageOwnerMetadata(OwnerMetadata):
+            user_id: int | Wildcard
+            product_name: int | Wildcard
+            owner = APP_NAME
+
+        Where APP_NAME is the name of the service. Listing tasks using the filter
+        `StorageOwnerMetadata(user_id=123, product_name=WILDCARD)` will return all tasks with
+        user_id 123, any product_name submitted from the service.
+
+    If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model).
+    I.e. one can recover the metadata from the task:
+        metadata -> task_uuid -> metadata
+
+    """
+
+    model_config = ConfigDict(extra="allow", frozen=True)
+    owner: Annotated[
+        str,
+        StringConstraints(min_length=1, pattern=r"^[a-z_-]+$"),
+        Field(description='Identifies the service owning the task. Should be the "APP_NAME" of the service.'),
+    ]
+
+    @model_validator(mode="after")
+    def _check_valid_filters(self) -> Self:
+        def _validate_type() -> None:
+            try:
+                _TypeValidationModel.model_validate({"filters": self.model_dump()})
+            except ValueError as err:
+                msg = "Invalid filter type"
+                raise TypeError(msg) from err
+
+        for key, value in self.model_dump().items():
+            # forbidden key chars
+            if any(x in key for x in _FORBIDDEN_KEY_CHARS):
+                msg = f"Invalid filter key: '{key}'"
+                raise ValueError(msg)
+            # forbidden value chars
+            if any(x in json_dumps(value) for x in _FORBIDDEN_VALUE_CHARS):
+                msg = f"Invalid filter value for key '{key}': '{value}'"
+                raise ValueError(msg)
+
+        if _UUID_KEY in self.model_dump():
+            msg = f"'{_UUID_KEY}' is a reserved key"
+            raise ValueError(msg)
+
+        _validate_type()
+        return self
+
+    def model_dump_key(self, task_or_group_uuid: TaskUUID | GroupUUID | Wildcard) -> TaskKey | GroupKey:
+        data = self.model_dump(mode="json")
+        data.update({_UUID_KEY: f"{task_or_group_uuid}"})
+        return _KEY_DELIMITATOR.join([f"{k}={json_dumps(v)}" for k, v in sorted(data.items())])
+
+    @classmethod
+    def model_validate_key(cls, task_or_group_key: TaskKey | GroupKey) -> Self:
+        data = cls._deserialize_task_or_group_key(task_or_group_key)
+        data.pop(_UUID_KEY, None)
+        return cls.model_validate(data)
+
+    @classmethod
+    def _deserialize_task_or_group_key(cls, task_or_group_key: TaskKey | GroupKey) -> dict[str, AllowedTypes]:
+        key_value_pairs = [item.split("=") for item in task_or_group_key.split(_KEY_DELIMITATOR)]
+        try:
+            return {key: json_loads(value) for key, value in key_value_pairs}
+        except orjson.JSONDecodeError as err:
+            msg = f"Invalid key format: {task_or_group_key}"
+            raise ValueError(msg) from err
+
+    @classmethod
+    def get_task_or_group_uuid(cls, task_or_group_key: TaskKey | GroupKey) -> TaskUUID | GroupUUID:
+        data = cls._deserialize_task_or_group_key(task_or_group_key)
+        try:
+            uuid_string = data.get(_UUID_KEY)
+            if not isinstance(uuid_string, str):
+                msg = f"Invalid task_id format: {task_or_group_key}"
+                raise TypeError(msg)
+            return _TASK_UUID_ADAPTER.validate_python(uuid_string)
+        except ValueError as err:
+            msg = f"Invalid task_id format: {task_or_group_key}"
+            raise ValueError(msg) from err
 
 
 class TaskState(StrAutoEnum):
@@ -79,7 +191,7 @@ class TaskStreamItem(BaseModel):
 
 
 class Task(BaseModel):
-    id: TaskID
+    uuid: TaskUUID
     metadata: ExecutionMetadata
 
     @staticmethod
@@ -88,7 +200,7 @@ class Task(BaseModel):
             {
                 "examples": [
                     {
-                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "uuid": "123e4567-e89b-12d3-a456-426614174000",
                         "metadata": {
                             "name": "task1",
                             "type": "TASK",
@@ -97,7 +209,7 @@ class Task(BaseModel):
                         },
                     },
                     {
-                        "id": "223e4567-e89b-12d3-a456-426614174001",
+                        "uuid": "223e4567-e89b-12d3-a456-426614174001",
                         "metadata": {
                             "name": "task2",
                             "type": "GROUP_TASK",
@@ -106,7 +218,7 @@ class Task(BaseModel):
                         },
                     },
                     {
-                        "id": "323e4567-e89b-12d3-a456-426614174002",
+                        "uuid": "323e4567-e89b-12d3-a456-426614174002",
                         "metadata": {"name": "group1", "type": "GROUP", "tasks": []},
                     },
                 ]
@@ -119,87 +231,53 @@ class Task(BaseModel):
 class TaskStore(Protocol):
     async def create_group(
         self,
-        task_id: TaskID,
+        group_key: GroupKey,
         execution_metadata: GroupExecutionMetadata,
-        children_task_ids: list[TaskID],
-        *,
-        owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
+        task_keys: list[TaskKey],
         expiry: timedelta,
+        owner_metadata: OwnerMetadata | None = None,
     ) -> None: ...
 
     async def create_task(
         self,
-        task_id: TaskID,
+        task_key: TaskKey,
         execution_metadata: TaskExecutionMetadata,
-        *,
-        owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
         expiry: timedelta,
+        owner_metadata: OwnerMetadata | None = None,
         index: bool = True,
     ) -> None: ...
 
-    async def task_exists(self, task_id: TaskID) -> bool: ...
+    async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...
 
-    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None: ...
 
-    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
 
-    async def list_tasks(
-        self,
-        *,
-        owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
-    ) -> list[Task]: ...
+    async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
-    async def remove_task(
-        self,
-        task_id: TaskID,
-        *,
-        owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
-    ) -> None: ...
-
-    async def remove_task_hash(self, task_id: TaskID) -> None:
-        """Remove only the task hash from the store, without cleaning sorted-set indexes.
-
-        Stale index entries are cleaned lazily by ``list_tasks``.
-        Use this when the owner info is unavailable (e.g. cancel, ephemeral cleanup).
-        """
+    async def remove_task(self, task_key: TaskKey, owner_metadata: OwnerMetadata | None = None) -> None: ...
 
     async def set_task_progress(
         self,
-        task_id: TaskID,
+        task_key: TaskKey,
         report: ProgressReport,
     ) -> None: ...
 
-    async def set_task_stream_done(self, task_id: TaskID) -> None: ...
+    async def set_task_stream_done(self, task_key: TaskKey) -> None: ...
 
-    async def set_task_stream_last_update(self, task_id: TaskID) -> None: ...
+    async def set_task_stream_last_update(self, task_key: TaskKey) -> None: ...
 
-    async def push_task_stream_items(self, task_id: TaskID, *item: TaskStreamItem) -> None: ...
+    async def push_task_stream_items(self, task_key: TaskKey, *item: TaskStreamItem) -> None: ...
 
     async def pull_task_stream_items(
-        self, task_id: TaskID, limit: int
+        self, task_key: TaskKey, limit: int
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
 
 
 class TaskStatus(BaseModel):
-    task_id: TaskID
+    task_uuid: TaskUUID
     task_state: TaskState
     progress_report: ProgressReport
-    children: list[TaskID] = Field(
-        default_factory=list,
-        description=("Optional sub-task IDs. Populated only when the task is a celery group; empty for plain tasks."),
-    )
-    completed_count: int = Field(
-        default=0,
-        description="Number of completed sub-tasks. Populated only for groups; always 0 for plain tasks.",
-    )
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -207,7 +285,7 @@ class TaskStatus(BaseModel):
             {
                 "examples": [
                     {
-                        "task_id": "123e4567-e89b-12d3-a456-426614174000",
+                        "task_uuid": "123e4567-e89b-12d3-a456-426614174000",
                         "task_state": "SUCCESS",
                         "progress_report": {
                             "actual_value": 0.5,
@@ -220,22 +298,7 @@ class TaskStatus(BaseModel):
                                 "total": 123,
                             },
                         },
-                        "children": [],
-                    },
-                    {
-                        "task_id": "123e4567-e89b-12d3-a456-426614174000",
-                        "task_state": "STARTED",
-                        "progress_report": {
-                            "actual_value": 0.5,
-                            "total": 1.0,
-                            "attempts": 1,
-                            "unit": "Byte",
-                        },
-                        "children": [
-                            "223e4567-e89b-12d3-a456-426614174000",
-                            "323e4567-e89b-12d3-a456-426614174000",
-                        ],
-                    },
+                    }
                 ]
             }
         )
@@ -246,12 +309,45 @@ class TaskStatus(BaseModel):
     def is_done(self) -> bool:
         return self.task_state in TASK_DONE_STATES
 
-    @property
-    def total_count(self) -> int:
-        """Total number of sub-tasks (for groups). Equals 0 for plain tasks."""
-        return len(self.children)
 
-    @property
-    def is_successful(self) -> bool:
-        """``True`` iff the task (or group) reached the ``SUCCESS`` state."""
-        return self.task_state == TaskState.SUCCESS
+class GroupStatus(BaseModel):
+    group_uuid: GroupUUID
+    task_uuids: list[TaskUUID]
+    completed_count: NonNegativeInt
+    total_count: NonNegativeInt
+    is_done: bool
+    is_successful: bool
+    progress_report: ProgressReport
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "group_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        "task_uuids": [
+                            "223e4567-e89b-12d3-a456-426614174000",
+                            "323e4567-e89b-12d3-a456-426614174000",
+                        ],
+                        "completed_count": 1,
+                        "total_count": 2,
+                        "is_done": False,
+                        "is_successful": False,
+                        "progress_report": {
+                            "actual_value": 0.5,
+                            "total": 1.0,
+                            "attempts": 1,
+                            "unit": "Byte",
+                            "message": {
+                                "description": "some description",
+                                "current": 12.2,
+                                "total": 123,
+                            },
+                        },
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)

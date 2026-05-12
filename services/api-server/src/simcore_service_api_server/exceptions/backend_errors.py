@@ -161,7 +161,7 @@ class JobAssetsMissingError(BaseBackEndError):
 
 
 class CeleryTaskNotFoundError(BaseBackEndError):
-    msg_template = user_message("Task {task_id} could not be found.", _version=1)
+    msg_template = user_message("Task {task_uuid} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 

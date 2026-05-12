@@ -14,6 +14,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
+from models_library.celery import OwnerMetadata
 from servicelib.celery.task_manager import TaskManager
 
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -36,9 +37,10 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def cancel(self, *, job_id: AsyncJobId) -> None:
+    async def cancel(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> None:
         return await cancel_job(
             self._task_manager,
+            owner_metadata=owner_metadata,
             job_id=job_id,
         )
 
@@ -47,9 +49,10 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def status(self, *, job_id: AsyncJobId) -> AsyncJobStatus:
+    async def status(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobStatus:
         return await get_job_status(
             self._task_manager,
+            owner_metadata=owner_metadata,
             job_id=job_id,
         )
 
@@ -61,9 +64,10 @@ class AsyncJobClient:
             JobError: TaskError,
         }
     )
-    async def result(self, *, job_id: AsyncJobId) -> AsyncJobResult:
+    async def result(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobResult:
         return await get_job_result(
             self._task_manager,
+            owner_metadata=owner_metadata,
             job_id=job_id,
         )
 
@@ -72,16 +76,8 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def list_jobs(
-        self,
-        *,
-        owner: str,
-        user_id: int | None = None,
-        product_name: str | None = None,
-    ) -> list[AsyncJobGet]:
+    async def list_jobs(self, *, owner_metadata: OwnerMetadata) -> list[AsyncJobGet]:
         return await list_jobs(
             self._task_manager,
-            owner=owner,
-            user_id=user_id,
-            product_name=product_name,
+            owner_metadata=owner_metadata,
         )
