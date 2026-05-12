@@ -120,7 +120,7 @@ class PortNotFoundError(NodeportsError):
 class NodeNotFoundError(NodeportsError):
     """The given node_uuid was not found in the comp_tasks table"""
 
-    def __init__(self, node_uuid: str, *, project_id: str):
+    def __init__(self, node_uuid: str, project_id: str):
         self.node_uuid = node_uuid
         self.project_id = project_id
         msg = (
@@ -130,6 +130,9 @@ class NodeNotFoundError(NodeportsError):
             "or has no valid pricing plan configured."
         )
         super().__init__(msg)
+
+    def __reduce__(self):
+        return (self.__class__, (self.node_uuid, self.project_id))
 
 
 class ProjectNotFoundError(NodeportsError):
