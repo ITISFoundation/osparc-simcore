@@ -5,6 +5,7 @@ from datetime import timedelta
 from typing import Final
 
 from common_library.errors_classes import OsparcErrorMixin
+from common_library.network import redact_url
 from tenacity import AsyncRetrying, RetryCallState, TryAgain, stop_never
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -28,7 +29,7 @@ def _before_sleep_log(logger: logging.Logger, service_name: str, endpoint: str) 
             "Retrying (attempt %s) to contact '%s' at '%s' in %s seconds.",
             retry_state.attempt_number,
             service_name,
-            endpoint,
+            redact_url(endpoint),
             retry_state.next_action.sleep,
         )
 
@@ -99,7 +100,7 @@ async def wait_for_service_liveness(
         _logger.info(
             "Service '%s' found at '%s' after %.2f ms",
             service_name,
-            endpoint,
+            redact_url(endpoint),
             elapsed_ms,
         )
     except Exception as e:
