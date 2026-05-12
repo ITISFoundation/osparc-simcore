@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 from celery_library.backends import RedisTaskStore
 from celery_library.backends._redis import (
-    _build_redis_index_key_for_fields,
+    _build_redis_index_key,
     _build_redis_task_or_group_key,
     _owner_fields_from_metadata,
 )
@@ -204,7 +204,7 @@ async def test_index_key_has_ttl_and_only_grows(
     """The ZSET index key must have a TTL bounded by the longest member expiry."""
     om = _TestOwnerMetadata(owner="test-svc", user_id=10005, product_name="osparc")
     owner, extras = _owner_fields_from_metadata(om)
-    index_key = _build_redis_index_key_for_fields(owner, extras)
+    index_key = _build_redis_index_key(owner, extras)
     redis = redis_client_sdk.redis
 
     short_expiry = timedelta(minutes=1)
@@ -273,97 +273,3 @@ async def test_create_task_with_index_false_skips_owner_index(
     # Only the indexed task appears in listing
     listed = await redis_task_store.list_tasks(om)
     assert {t.uuid for t in listed} == {indexed_uuid}
-
-
-class _PartialIndexOwnerMetadata(OwnerMetadata):
-    """Owner metadata that opts-in to a partial index on product_name."""
-
-    user_id: int | None = None
-    product_name: str | None = None
-
-    @classmethod
-    def indexed_field_subsets(cls) -> list[frozenset[str]] | None:
-        return [frozenset({"product_name"})]
-
-
-async def test_default_owner_metadata_creates_only_full_key_index(
-    redis_task_store: RedisTaskStore,
-    redis_client_sdk: RedisClientSDK,
-):
-    """Without indexed_field_subsets override, only the full-field index exists."""
-    owner = "default-idx-svc"
-    om_full = _TestOwnerMetadata(owner=owner, user_id=1, product_name="osparc")
-    task_uuid = UUID(_faker.uuid4())
-    task_key = om_full.model_dump_key(task_or_group_uuid=task_uuid)
-
-    await redis_task_store.create_task(
-        task_key,
-        TaskExecutionMetadata(name="my_task"),
-        expiry=timedelta(minutes=5),
-        owner_metadata=om_full,
-    )
-
-    # Full-field query finds the task
-    assert len(await redis_task_store.list_tasks(om_full)) == 1
-
-    # Partial query (owner + product_name only) does NOT find it
-    om_partial = _TestOwnerMetadata(owner=owner, product_name="osparc")
-    assert len(await redis_task_store.list_tasks(om_partial)) == 0
-
-
-async def test_indexed_field_subsets_enables_partial_queries(
-    redis_task_store: RedisTaskStore,
-):
-    owner = "partial-idx-svc"
-    user_id = 42
-    product = "osparc"
-
-    om = _PartialIndexOwnerMetadata(owner=owner, user_id=user_id, product_name=product)
-    task_uuid = UUID(_faker.uuid4())
-    task_key = om.model_dump_key(task_or_group_uuid=task_uuid)
-
-    await redis_task_store.create_task(
-        task_key,
-        TaskExecutionMetadata(name="my_task"),
-        expiry=timedelta(minutes=5),
-        owner_metadata=om,
-    )
-
-    # Full-field query works
-    assert len(await redis_task_store.list_tasks(om)) == 1
-
-    # Partial query by product_name also works (opt-in index)
-    om_partial = _PartialIndexOwnerMetadata(owner=owner, product_name=product)
-    tasks = await redis_task_store.list_tasks(om_partial)
-    assert len(tasks) == 1
-    assert tasks[0].uuid == task_uuid
-
-    # A different product_name returns nothing
-    om_other_product = _PartialIndexOwnerMetadata(owner=owner, product_name="other")
-    assert len(await redis_task_store.list_tasks(om_other_product)) == 0
-
-
-async def test_indexed_field_subsets_remove_cleans_all_indexes(
-    redis_task_store: RedisTaskStore,
-):
-    owner = "partial-rm-svc"
-    om = _PartialIndexOwnerMetadata(owner=owner, user_id=99, product_name="osparc")
-    task_uuid = UUID(_faker.uuid4())
-    task_key = om.model_dump_key(task_or_group_uuid=task_uuid)
-
-    await redis_task_store.create_task(
-        task_key,
-        TaskExecutionMetadata(name="my_task"),
-        expiry=timedelta(minutes=5),
-        owner_metadata=om,
-    )
-
-    # Both full and partial queries find the task
-    assert len(await redis_task_store.list_tasks(om)) == 1
-    om_partial = _PartialIndexOwnerMetadata(owner=owner, product_name="osparc")
-    assert len(await redis_task_store.list_tasks(om_partial)) == 1
-
-    # Remove cleans up all indexes
-    await redis_task_store.remove_task(task_key, owner_metadata=om)
-    assert len(await redis_task_store.list_tasks(om)) == 0
-    assert len(await redis_task_store.list_tasks(om_partial)) == 0

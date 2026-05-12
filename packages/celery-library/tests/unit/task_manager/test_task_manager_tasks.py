@@ -122,10 +122,6 @@ async def test_filtering_listing_tasks(
         user_id: int
         product_name: str | Wildcard
 
-        @classmethod
-        def indexed_field_subsets(cls) -> list[frozenset[str]] | None:
-            return [frozenset({"user_id"})]
-
     user_id = 42
     owner = "filter-test-owner"
     expected_task_uuids: set[TaskUUID] = set()
