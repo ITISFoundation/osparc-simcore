@@ -99,7 +99,7 @@ class RedisClientSDK:
         )
 
     async def shutdown(self) -> None:
-        with log_context(_logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"):
+        with log_context(_logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self.client_name}"):
             if self._task_health_check:
                 assert self._started_event_task_health_check  # nosec
                 await self._started_event_task_health_check.wait()
