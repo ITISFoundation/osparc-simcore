@@ -88,7 +88,9 @@ def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> Iterable[None]:
     app.dependency_overrides.pop(get_resource_usage_tracker_client, None)
 
 
-@pytest.mark.xfail(reason="PACT broker server pending migration to AWS ZMT account")
+@pytest.mark.xfail(
+    reason="PACT broker server pending migration to AWS ZMT account (https://github.com/ITISFoundation/osparc-simcore/issues/9118)"
+)
 def test_osparc_api_server_checkout_release_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,
