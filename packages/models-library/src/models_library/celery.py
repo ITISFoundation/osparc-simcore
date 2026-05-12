@@ -102,6 +102,26 @@ class OwnerMetadata(BaseModel):
         _validate_type()
         return self
 
+    @classmethod
+    def indexed_field_subsets(cls) -> list[frozenset[str]] | None:
+        """Extra field subsets to maintain as secondary indexes.
+
+        By default returns ``None``, meaning only the full-field index is
+        maintained (owner + all non-None extra fields).  Override in
+        subclasses to enable partial-field queries.
+
+        Each :class:`frozenset` lists the extra field names (*not*
+        including ``owner``) that form one secondary index.  The
+        full-field index is always created automatically.
+
+        Example::
+
+            @classmethod
+            def indexed_field_subsets(cls) -> list[frozenset[str]] | None:
+                return [frozenset({"product_name"})]
+        """
+        return None
+
     def model_dump_key(self, task_or_group_uuid: TaskUUID | GroupUUID | Wildcard) -> TaskKey | GroupKey:
         data = self.model_dump(mode="json")
         data.update({_UUID_KEY: f"{task_or_group_uuid}"})
@@ -244,7 +264,6 @@ class TaskStore(Protocol):
         execution_metadata: TaskExecutionMetadata,
         expiry: timedelta,
         owner_metadata: OwnerMetadata | None = None,
-        index: bool = True,
     ) -> None: ...
 
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...

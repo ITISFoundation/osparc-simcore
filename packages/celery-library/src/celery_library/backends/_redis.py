@@ -1,5 +1,4 @@
 import contextlib
-import itertools
 import logging
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -7,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
 from models_library.celery import (
+    WILDCARD,
     ExecutionMetadata,
     ExecutorType,
     GroupExecutionMetadata,
@@ -71,8 +71,8 @@ def _owner_fields_from_metadata(
     """
     data = owner_metadata.model_dump(mode="json")
     owner: str = data.pop("owner")
-    # only keep non-None optional fields
-    extras = {k: v for k, v in sorted(data.items()) if v is not None}
+    # only keep non-None and non-wildcard optional fields
+    extras = {k: v for k, v in sorted(data.items()) if v is not None and v != WILDCARD}
     return owner, extras
 
 
@@ -90,19 +90,26 @@ def _build_redis_index_key_for_fields(
 def _iter_redis_index_keys(
     owner: str,
     extras: dict[str, str | int],
+    additional_subsets: list[frozenset[str]] | None = None,
 ) -> Iterator[str]:
-    """Yield one index key per subset of the extra fields.
+    """Yield index keys for a task/group.
 
-    ``owner`` is always part of every subset; the optional fields are
-    independently included or omitted, so a task is added to ``2 ** k``
-    secondary indexes (where ``k`` is the number of extra fields). This
-    lets ``list_tasks`` answer queries with any partial combination of
-    owner fields in ``O(log N)`` against a single sorted set.
+    Always yields the full-field index key (owner + all extras).  If
+    *additional_subsets* is provided, also yields keys for those field
+    subsets so that partial-field queries are supported.
+
+    ``additional_subsets`` should come from
+    :meth:`OwnerMetadata.indexed_field_subsets`.
     """
-    extra_items = sorted(extras.items())
-    for size in range(len(extra_items) + 1):
-        for combo in itertools.combinations(extra_items, size):
-            yield _build_redis_index_key_for_fields(owner, dict(combo))
+    # Always index the full key
+    yield _build_redis_index_key_for_fields(owner, extras)
+
+    if additional_subsets is not None:
+        full_fields = frozenset(extras.keys())
+        for subset in additional_subsets:
+            if subset != full_fields:
+                partial = {k: v for k, v in sorted(extras.items()) if k in subset}
+                yield _build_redis_index_key_for_fields(owner, partial)
 
 
 @dataclass(frozen=True)
@@ -118,6 +125,30 @@ class RedisTaskStore:
         current_ttl = await self._redis_client_sdk.redis.ttl(index_key)
         if current_ttl < int(expiry.total_seconds()):
             await self._redis_client_sdk.redis.expire(index_key, expiry)
+
+    def _add_to_indexes(
+        self,
+        pipe,
+        task_or_group_key: TaskKey | GroupKey,
+        owner_metadata: OwnerMetadata | None,
+    ) -> list[str]:
+        """Add a task/group key to all relevant ZSET secondary indexes.
+
+        Returns the list of index keys that were written (needed for TTL refresh).
+        """
+        if owner_metadata is None:
+            return []
+        owner, extras = _owner_fields_from_metadata(owner_metadata)
+        additional_subsets = type(owner_metadata).indexed_field_subsets()
+        index_keys = list(_iter_redis_index_keys(owner, extras, additional_subsets))
+        index_score = datetime.now(tz=UTC).timestamp()
+        for index_key in index_keys:
+            pipe.zadd(index_key, {task_or_group_key: index_score})
+        return index_keys
+
+    async def _set_index_ttls(self, index_keys: list[str], expiry: timedelta) -> None:
+        for index_key in index_keys:
+            await self._refresh_index_key_ttl(index_key, expiry)
 
     async def create_group(
         self,
@@ -135,15 +166,7 @@ class RedisTaskStore:
             value=execution_metadata.model_dump_json(),
         )
 
-        # Add to secondary indexes if owner_metadata is provided
-        index_keys: list[str] = []
-        if owner_metadata is not None:
-            owner, extras = _owner_fields_from_metadata(owner_metadata)
-            index_keys = list(_iter_redis_index_keys(owner, extras))
-            index_score = datetime.now(tz=UTC).timestamp()
-            task_or_group_uuid = OwnerMetadata.get_task_or_group_uuid(group_key)
-            for index_key in index_keys:
-                pipe.zadd(index_key, {f"{task_or_group_uuid}": index_score})
+        index_keys = self._add_to_indexes(pipe, group_key, owner_metadata)
 
         # Sub-task hashes — NOT added to index (parent group is the listable unit)
         for task_key, (task_execution_metadata, _) in zip(task_keys, execution_metadata.tasks, strict=True):
@@ -154,8 +177,7 @@ class RedisTaskStore:
             )
         await pipe.execute()
         await self._redis_client_sdk.redis.expire(redis_group_key, expiry)
-        for index_key in index_keys:
-            await self._refresh_index_key_ttl(index_key, expiry)
+        await self._set_index_ttls(index_keys, expiry)
 
     async def create_task(
         self,
@@ -163,7 +185,6 @@ class RedisTaskStore:
         execution_metadata: TaskExecutionMetadata,
         expiry: timedelta,
         owner_metadata: OwnerMetadata | None = None,
-        index: bool = True,
     ) -> None:
         redis_key = _build_redis_task_or_group_key(task_key)
 
@@ -174,19 +195,11 @@ class RedisTaskStore:
             value=execution_metadata.model_dump_json(),
         )
 
-        index_keys: list[str] = []
-        if index and owner_metadata is not None:
-            owner, extras = _owner_fields_from_metadata(owner_metadata)
-            index_keys = list(_iter_redis_index_keys(owner, extras))
-            index_score = datetime.now(tz=UTC).timestamp()
-            task_uuid = OwnerMetadata.get_task_or_group_uuid(task_key)
-            for index_key in index_keys:
-                pipe.zadd(index_key, {f"{task_uuid}": index_score})
+        index_keys = self._add_to_indexes(pipe, task_key, owner_metadata)
         await pipe.execute()
 
         await self._redis_client_sdk.redis.expire(redis_key, expiry)
-        for index_key in index_keys:
-            await self._refresh_index_key_ttl(index_key, expiry)
+        await self._set_index_ttls(index_keys, expiry)
 
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
         raw_result = await handle_redis_returns_union_types(
@@ -236,21 +249,20 @@ class RedisTaskStore:
         if not raw_members:
             return []
 
+        # Members are full task/group keys
         members = [m.decode(_CELERY_TASK_ID_KEY_ENCODING) if isinstance(m, bytes) else m for m in raw_members]
 
-        # Reconstruct TaskKeys from UUIDs to look up the hash
         pipe = self._redis_client_sdk.redis.pipeline()
-        for member in members:
-            task_key = owner_metadata.model_dump_key(task_or_group_uuid=member)
+        for task_key in members:
             pipe.hget(_build_redis_task_or_group_key(task_key), _CELERY_TASK_EXEC_METADATA_KEY)
 
         results = await pipe.execute()
 
         tasks = []
         stale_members: list[str] = []
-        for member, raw_metadata in zip(members, results, strict=True):
+        for task_key, raw_metadata in zip(members, results, strict=True):
             if raw_metadata is None:
-                stale_members.append(member)
+                stale_members.append(task_key)
                 continue
 
             with contextlib.suppress(ValidationError):
@@ -260,9 +272,7 @@ class RedisTaskStore:
 
                 tasks.append(
                     Task(
-                        uuid=OwnerMetadata.get_task_or_group_uuid(
-                            owner_metadata.model_dump_key(task_or_group_uuid=member)
-                        ),
+                        uuid=OwnerMetadata.get_task_or_group_uuid(task_key),
                         metadata=execution_metadata,
                     )
                 )
@@ -279,9 +289,9 @@ class RedisTaskStore:
 
         if owner_metadata is not None:
             owner, extras = _owner_fields_from_metadata(owner_metadata)
-            task_or_group_uuid = OwnerMetadata.get_task_or_group_uuid(task_key)
-            for index_key in _iter_redis_index_keys(owner, extras):
-                pipe.zrem(index_key, f"{task_or_group_uuid}")
+            additional_subsets = type(owner_metadata).indexed_field_subsets()
+            for index_key in _iter_redis_index_keys(owner, extras, additional_subsets):
+                pipe.zrem(index_key, task_key)
 
         await pipe.execute()
 

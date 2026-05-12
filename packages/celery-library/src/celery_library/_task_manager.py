@@ -151,8 +151,6 @@ class CeleryTaskManager:
                             ephemeral=group_task_meta.ephemeral,
                         ),
                         expiry=expiry,
-                        owner_metadata=owner_metadata,
-                        index=False,
                     )
 
                 group_result: GroupResult = group(sigs).apply_async()
