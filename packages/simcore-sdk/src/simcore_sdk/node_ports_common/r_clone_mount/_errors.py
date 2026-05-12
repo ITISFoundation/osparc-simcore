@@ -23,3 +23,7 @@ class MountAlreadyStartedError(_BaseRcloneMountError):
 
 class NoMountFoundForRemotePathError(_BaseRcloneMountError):
     msg_template: str = "Could not find tracked mount for remote path '{remote_path}'"
+
+
+class PortNotAssignedError(_BaseRcloneMountError):
+    msg_template: str = "Container '{container_name}' has no published port for {target_port}. Ports={ports}"
