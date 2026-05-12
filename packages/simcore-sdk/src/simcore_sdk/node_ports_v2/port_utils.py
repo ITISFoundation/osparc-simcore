@@ -18,7 +18,7 @@ from yarl import URL
 
 from ..node_ports_common import data_items_utils, filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
-from ..node_ports_common.exceptions import NodeportsException
+from ..node_ports_common.exceptions import NodeportsError
 from ..node_ports_common.file_io_utils import LogRedirectCB
 from ..node_ports_common.filemanager import UploadedFile, UploadedFolder
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
@@ -80,10 +80,10 @@ async def get_value_from_link(
 
 async def get_download_link_from_storage(user_id: UserID, value: FileLink, link_type: LinkType) -> AnyUrl:
     """
-    :raises exceptions.NodeportsException
+    :raises exceptions.NodeportsError
     :raises exceptions.S3InvalidPathError
-    :raises exceptions.StorageInvalidCall
-    :raises exceptions.StorageServerIssue
+    :raises exceptions.StorageInvalidCallError
+    :raises exceptions.StorageServerIssueError
     """
     log.debug("getting link to file from storage %s", value)
 
@@ -208,14 +208,14 @@ async def push_file_to_store(
     progress_bar: ProgressBarData,
 ) -> FileLink:
     """
-    :raises exceptions.NodeportsException
+    :raises exceptions.NodeportsError
     """
 
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.create_simcore_file_id(file, project_id, node_id, file_base_path=file_base_path)
     if not file.is_file():
         msg = f"Expected path={file} should be a file"
-        raise NodeportsException(msg)
+        raise NodeportsError(msg)
 
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,

@@ -90,7 +90,13 @@ class Notifier(SingletonInAppStateMixin):
         )
 
     async def notify_state_paths_status(
-        self, user_id: UserID, project_id: ProjectID, node_id: NodeID, status: MountActivityStatus
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        status: MountActivityStatus,
+        *,
+        vfs_write_back_s: int,
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_STATE_PATHS_EVENT,
@@ -99,6 +105,7 @@ class Notifier(SingletonInAppStateMixin):
                     project_id=project_id,
                     node_id=node_id,
                     status=status,
+                    vfs_write_back_s=vfs_write_back_s,
                 )
             ),
             room=SocketIORoomStr.from_user_id(user_id),

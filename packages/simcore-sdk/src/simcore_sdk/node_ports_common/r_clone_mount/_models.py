@@ -16,6 +16,7 @@ type FilesInTransfer = dict[FileName, ProgressReport]
 class MountActivity(BaseModel):
     in_transfer: FilesInTransfer
     queued: list[FileName]
+    vfs_write_back_s: int = 0
 
 
 class DelegateInterface(ABC):

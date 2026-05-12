@@ -358,7 +358,7 @@ async def test_errors_upon_invalid_file_identifiers(
     assert file_path.exists()
 
     store = s3_simcore_location
-    with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
+    with pytest.raises(exceptions.StorageInvalidCallError):  # noqa: PT012
         invalid_s3_path = ""
         await filemanager.upload_path(
             user_id=user_id,
@@ -369,7 +369,7 @@ async def test_errors_upon_invalid_file_identifiers(
             io_log_redirect_cb=None,
         )
 
-    with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
+    with pytest.raises(exceptions.StorageInvalidCallError):  # noqa: PT012
         invalid_file_id = "file_id"
         await filemanager.upload_path(
             user_id=user_id,
@@ -381,7 +381,7 @@ async def test_errors_upon_invalid_file_identifiers(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
+    with pytest.raises(exceptions.StorageInvalidCallError):  # noqa: PT012
         async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
             invalid_s3_path = ""
             await filemanager.download_path_from_s3(
@@ -423,7 +423,7 @@ async def test_invalid_store(
 
     file_id = create_valid_file_uuid("", file_path)
     store = "somefunkystore"
-    with pytest.raises(exceptions.S3InvalidStore):
+    with pytest.raises(exceptions.S3InvalidStoreError):
         await filemanager.upload_path(
             user_id=user_id,
             store_id=None,
@@ -434,7 +434,7 @@ async def test_invalid_store(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidStore):
+    with pytest.raises(exceptions.S3InvalidStoreError):
         async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -527,16 +527,16 @@ async def test_invalid_call_raises_exception(
     file_id = create_valid_file_uuid("", file_path)
     assert file_path.exists() is False
 
-    with pytest.raises(exceptions.StorageInvalidCall):
+    with pytest.raises(exceptions.StorageInvalidCallError):
         await fct(
             user_id=None,
             store_id=s3_simcore_location,
             s3_object=file_id,
             **extra_kwargs,  # type: ignore
         )
-    with pytest.raises(exceptions.StorageInvalidCall):
+    with pytest.raises(exceptions.StorageInvalidCallError):
         await fct(user_id=user_id, store_id=None, s3_object=file_id, **extra_kwargs)  # type: ignore
-    with pytest.raises(exceptions.StorageInvalidCall):
+    with pytest.raises(exceptions.StorageInvalidCallError):
         await fct(
             user_id=user_id,
             store_id=s3_simcore_location,
