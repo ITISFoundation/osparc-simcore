@@ -1,6 +1,6 @@
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
-from simcore_sdk.node_ports_common.exceptions import NodeNotFound
+from simcore_sdk.node_ports_common.exceptions import NodeNotFoundError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -14,7 +14,7 @@ async def http_error_handler(_: Request, exception: BaseDynamicSidecarError) -> 
     )
 
 
-async def node_not_found_error_handler(_: Request, exception: NodeNotFound) -> JSONResponse:
+async def node_not_found_error_handler(_: Request, exception: NodeNotFoundError) -> JSONResponse:
     error_fields = {
         "code": "dynamic_sidecar.nodeports.node_not_found",
         "message": f"{exception}",

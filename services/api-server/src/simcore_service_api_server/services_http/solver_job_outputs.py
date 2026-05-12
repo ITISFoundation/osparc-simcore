@@ -48,5 +48,5 @@ async def get_solver_output_results(
 
         return solver_output_results
 
-    except node_ports_v2.exceptions.NodeNotFound as err:
+    except node_ports_v2.exceptions.NodeNotFoundError as err:
         raise SolverOutputNotFoundError(project_uuid=project_uuid) from err
