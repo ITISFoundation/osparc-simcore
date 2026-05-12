@@ -104,4 +104,4 @@ async def wait_for_service_liveness(
             elapsed_ms,
         )
     except Exception as e:
-        raise CouldNotReachServiceError(service_name=service_name, endpoint=endpoint) from e
+        raise CouldNotReachServiceError(service_name=service_name, endpoint=redact_url(endpoint)) from e
