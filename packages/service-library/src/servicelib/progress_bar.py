@@ -133,7 +133,8 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     async def _on_child_error(self, child_progress_contribution: float) -> None:
         """Rollback a failed child's progress and reset the report baseline
         so a retry emits intermediate reports from the start."""
-        await self.update(-child_progress_contribution)
+        contribution_to_rollback = max(child_progress_contribution, 0.0)
+        await self.update(-contribution_to_rollback)
         self._reset_report_baseline_upwards()
 
     def _reset_report_baseline_upwards(self) -> None:
