@@ -151,8 +151,8 @@ async def get_download_file_link(
     link_type: LinkType,
 ) -> AnyUrl:
     """
-    :raises exceptions.StorageInvalidCall
-    :raises exceptions.StorageServerIssue
+    :raises exceptions.StorageInvalidCallError
+    :raises exceptions.StorageServerIssueError
     """
     async with retry_request(
         session,
@@ -182,7 +182,7 @@ async def get_upload_file_links(
     sha256_checksum: SHA256Str | None,
 ) -> FileUploadSchema:
     """
-    :raises exceptions.StorageServerIssue: _description_
+    :raises exceptions.StorageServerIssueError: _description_
     :raises ClientResponseError
     """
 

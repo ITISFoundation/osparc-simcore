@@ -72,8 +72,8 @@ async def get_download_link_from_s3(
     """
     :raises exceptions.NodeportsError
     :raises exceptions.S3InvalidPathError
-    :raises exceptions.StorageInvalidCall
-    :raises exceptions.StorageServerIssue
+    :raises exceptions.StorageInvalidCallError
+    :raises exceptions.StorageServerIssueError
     """
     async with ClientSessionContextManager(client_session) as session:
         store_id = await _filemanager_utils.resolve_location_id(session, user_id, store_name, store_id)
@@ -158,7 +158,7 @@ async def download_path_from_s3(
     :type session: ClientSession, optional
     :raises exceptions.NodeportsError
     :raises exceptions.S3InvalidPathError
-    :raises exceptions.StorageInvalidCall
+    :raises exceptions.StorageInvalidCallError
     :return: path to downloaded file
     """
     _logger.debug(

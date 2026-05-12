@@ -82,8 +82,8 @@ async def get_download_link_from_storage(user_id: UserID, value: FileLink, link_
     """
     :raises exceptions.NodeportsError
     :raises exceptions.S3InvalidPathError
-    :raises exceptions.StorageInvalidCall
-    :raises exceptions.StorageServerIssue
+    :raises exceptions.StorageInvalidCallError
+    :raises exceptions.StorageServerIssueError
     """
     log.debug("getting link to file from storage %s", value)
 
