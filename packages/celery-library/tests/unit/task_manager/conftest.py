@@ -6,8 +6,7 @@ import logging
 import time
 from collections.abc import Callable
 from random import randint
-from typing import Any, Final
-from uuid import UUID
+from typing import Final
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
@@ -16,13 +15,14 @@ from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.celery import (
     TASK_DONE_STATES,
-    TaskID,
+    OwnerMetadata,
+    TaskKey,
     TaskState,
     TaskStatus,
     TaskStreamItem,
+    TaskUUID,
 )
 from models_library.progress_bar import ProgressReport
-from servicelib.celery.task_context import TaskContext
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from tenacity import (
@@ -45,14 +45,14 @@ _TENACITY_RETRY_PARAMS: dict = {
 }
 
 
-async def _fake_file_processor(celery_app: Celery, task_name: str, task_id: TaskID, files: list[str]) -> str:
+async def _fake_file_processor(celery_app: Celery, task_name: str, task_key: str, files: list[str]) -> str:
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
             await get_app_server(celery_app).task_manager.set_task_progress(
-                task_id=task_id,
+                task_key=task_key,
                 report=ProgressReport(actual_value=n / len(files)),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
@@ -60,12 +60,12 @@ async def _fake_file_processor(celery_app: Celery, task_name: str, task_id: Task
     return "archive.zip"
 
 
-def fake_file_processor(task: Task, files: list[str], **_kwargs: Any) -> str:
-    assert task.request.id
+def fake_file_processor(task: Task, task_key: TaskKey, files: list[str]) -> str:
+    assert task_key
     assert task.name
     _logger.info("Calling _fake_file_processor")
     return asyncio.run_coroutine_threadsafe(
-        _fake_file_processor(task.app, task.name, UUID(task.request.id), files),
+        _fake_file_processor(task.app, task.name, task.request.id, files),
         get_app_server(task.app).event_loop,
     ).result()
 
@@ -74,13 +74,14 @@ class MyError(OsparcErrorMixin, Exception):
     msg_template = "Something strange happened: {msg}"
 
 
-def failure_task(task: Task, **_kwargs: Any) -> None:
+def failure_task(task: Task, task_key: TaskKey) -> None:
+    assert task_key
     assert task
     msg = "BOOM!"
     raise MyError(msg=msg)
 
 
-async def dreamer_task(task: TaskContext, **_kwargs: Any) -> list[int]:
+async def dreamer_task(task: Task, task_key: TaskKey) -> list[int]:
     numbers = []
     for _ in range(30):
         numbers.append(randint(1, 90))  # noqa: S311
@@ -88,8 +89,8 @@ async def dreamer_task(task: TaskContext, **_kwargs: Any) -> list[int]:
     return numbers
 
 
-def streaming_results_task(task: Task, num_results: int = 5, **_kwargs: Any) -> str:
-    task_id: TaskID = UUID(task.request.id)
+def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) -> str:
+    assert task_key
     assert task.name
 
     async def _stream_results(sleep_interval: float) -> None:
@@ -98,14 +99,14 @@ def streaming_results_task(task: Task, num_results: int = 5, **_kwargs: Any) -> 
             result_data = f"result-{i}"
             result_item = TaskStreamItem(data=result_data)
             await app_server.task_manager.push_task_stream_items(
-                task_id,
+                task_key,
                 result_item,
             )
             _logger.info("Pushed result %d: %s", i, result_data)
             await asyncio.sleep(sleep_interval)
 
         # Mark the stream as done
-        await app_server.task_manager.set_task_stream_done(task_id)
+        await app_server.task_manager.set_task_stream_done(task_key)
 
     # Run the streaming in the event loop
     asyncio.run_coroutine_threadsafe(_stream_results(0.5), get_app_server(task.app).event_loop).result()
@@ -117,8 +118,8 @@ _RATE_LIMITED_NOOP_TASK_NAME: Final[str] = "rate_limited_noop_task"
 _RATE_LIMITED_NOOP_RATE: Final[str] = "6/m"  # NOTE: 6 tasks per minute
 
 
-def noop_task(task: Task, **_kwargs: Any) -> str:
-    assert task.request.id
+def noop_task(task: Task, task_key: TaskKey) -> str:
+    assert task_key
     return "done"
 
 
@@ -142,35 +143,38 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 async def wait_for_task_success(
     task_manager: TaskManager,
-    task_id: TaskID,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
 ) -> None:
     """Wait for a task to reach SUCCESS state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_id)
+            status = await task_manager.get_status(owner_metadata, task_uuid)
             assert isinstance(status, TaskStatus)
             assert status.task_state == TaskState.SUCCESS
 
 
 async def wait_for_task_not_pending(
     task_manager: TaskManager,
-    task_id: TaskID,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
 ) -> None:
     """Wait for a task to leave PENDING state (i.e. the worker picked it up)."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_id)
+            status = await task_manager.get_status(owner_metadata, task_uuid)
             assert isinstance(status, TaskStatus)
             assert status.task_state != TaskState.PENDING
 
 
 async def wait_for_task_done(
     task_manager: TaskManager,
-    task_id: TaskID,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
 ) -> None:
     """Wait for a task to reach any DONE state."""
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_status(task_id)
+            status = await task_manager.get_status(owner_metadata, task_uuid)
             assert isinstance(status, TaskStatus)
             assert status.task_state in TASK_DONE_STATES

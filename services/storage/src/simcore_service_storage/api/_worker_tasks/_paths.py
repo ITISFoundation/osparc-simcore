@@ -1,10 +1,14 @@
 import logging
 from pathlib import Path
 
+from celery import Task  # type: ignore[import-untyped]
+from celery_library.worker.app_server import get_app_server
+from models_library.celery import TaskKey
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType
+from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from servicelib.celery.task_context import TaskContext
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
@@ -16,37 +20,41 @@ _logger = logging.getLogger(__name__)
 
 
 async def compute_path_size(
-    task: TaskContext,
+    task: Task,
+    task_key: TaskKey,
+    user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     path: Path,
 ) -> ByteSize:
-    assert task.user_id is not None  # nosec
-    assert task.product_name is not None  # nosec
+    assert task_key  # nosec
     with log_context(
         _logger,
         logging.INFO,
-        msg=f"computing path size user_id={task.user_id}, {location_id=}, {path=}",
+        msg=f"computing path size {user_id=}, {location_id=}, {path=}",
     ):
-        dsm = get_dsm_provider(task.app_server.app).get(location_id)
-        return await dsm.compute_path_size(task.user_id, task.product_name, path=Path(path))
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
+        return await dsm.compute_path_size(user_id, product_name, path=Path(path))
 
 
 async def delete_paths(
-    task: TaskContext,
+    task: Task,
+    task_key: TaskKey,
+    user_id: UserID,
     location_id: LocationID,
     paths: set[Path],
 ) -> None:
-    assert task.user_id is not None  # nosec
+    assert task_key  # nosec
     with log_context(
         _logger,
         logging.INFO,
-        msg=f"delete {paths=} in {location_id=} for user_id={task.user_id}",
+        msg=f"delete {paths=} in {location_id=} for {user_id=}",
     ):
-        app = task.app_server.app
+        app = get_app_server(task.app).app
         dsm = get_dsm_provider(app).get(location_id)
         files_ids: set[StorageFileID] = {TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths}
         await limited_gather(
-            *[dsm.delete_file(task.user_id, file_id) for file_id in files_ids],
+            *[dsm.delete_file(user_id, file_id) for file_id in files_ids],
             limit=MAX_CONCURRENT_S3_TASKS,
         )
         await limited_gather(
@@ -54,7 +62,7 @@ async def delete_paths(
                 post_file_notification(
                     app,
                     event_type=FileNotificationEventType.FILE_DELETED,
-                    user_id=task.user_id,
+                    user_id=user_id,
                     file_id=file_id,
                 )
                 for file_id in files_ids

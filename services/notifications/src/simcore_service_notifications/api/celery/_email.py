@@ -2,10 +2,12 @@
 
 import logging
 from email.headerregistry import Address
-from typing import Any
 
+from celery import (  # type: ignore[import-untyped]
+    Task,
+)
+from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
-from servicelib.celery.task_context import TaskContext
 from servicelib.logging_utils import log_context
 from settings_library.email import SMTPSettings
 
@@ -20,11 +22,12 @@ def _to_address(address: EmailContact) -> Address:
 
 
 async def send_email_message(
-    task: TaskContext,
+    task: Task,
+    task_key: TaskKey,
     message: EmailMessage,
-    **_kwargs: Any,
 ) -> None:
-    assert task.id  # nosec
+    assert task  # nosec
+    assert task_key  # nosec
 
     msg = EmailMessage(
         from_=EmailContact(**message.from_.model_dump()),

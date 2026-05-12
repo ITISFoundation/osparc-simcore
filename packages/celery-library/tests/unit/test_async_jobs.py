@@ -22,8 +22,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobError,
     JobMissingError,
 )
-from models_library.celery import TaskExecutionMetadata
-from servicelib.celery.task_context import TaskContext
+from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskKey
 from servicelib.celery.task_manager import TaskManager
 from tenacity import (
     AsyncRetrying,
@@ -38,13 +37,12 @@ class AccessRightError(OsparcErrorMixin, RuntimeError):
 
 
 @pytest.fixture
-def fake_owner() -> str:
-    return "pytest-client"
-
-
-@pytest.fixture
-def fake_user_id(faker: Faker) -> int:
-    return faker.pyint(min_value=1)
+def owner_metadata(faker: Faker) -> OwnerMetadata:
+    return OwnerMetadata(
+        user_id=faker.pyint(min_value=1),
+        product_name=faker.word(),
+        owner="pytest_client",
+    )
 
 
 class Action(str, Enum):
@@ -64,13 +62,15 @@ async def _process_action(action: str, payload: Any) -> Any:
     return None
 
 
-def sync_job(task: Task, action: Action, payload: Any, **_kwargs: Any) -> Any:
+def sync_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
     _ = task
+    _ = task_key
     return asyncio.run(_process_action(action, payload))
 
 
-async def async_job(task: TaskContext, action: Action, payload: Any, **_kwargs: Any) -> Any:
+async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
     _ = task
+    _ = task_key
     return await _process_action(action, payload)
 
 
@@ -101,6 +101,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 async def _wait_for_job(
     task_manager: TaskManager,
     *,
+    owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
     stop_after: timedelta = timedelta(seconds=5),
 ) -> None:
@@ -113,6 +114,7 @@ async def _wait_for_job(
         with attempt:
             status = await get_job_status(
                 task_manager,
+                owner_metadata=owner_metadata,
                 job_id=job_id,
             )
             assert status.done is True, "Please check logs above, something went wrong with task execution"
@@ -140,33 +142,32 @@ async def test_async_jobs_workflow(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
     execution_metadata: TaskExecutionMetadata,
-    fake_owner: str,
-    fake_user_id: int,
+    owner_metadata: OwnerMetadata,
     payload: Any,
 ):
     async_job = await submit_job(
         task_manager,
         execution_metadata=execution_metadata,
-        owner=fake_owner,
-        user_id=fake_user_id,
+        owner_metadata=owner_metadata,
         action=Action.ECHO,
         payload=payload,
     )
 
     jobs = await list_jobs(
         task_manager,
-        owner=fake_owner,
-        user_id=fake_user_id,
+        owner_metadata=owner_metadata,
     )
     assert len(jobs) > 0
 
     await _wait_for_job(
         task_manager,
+        owner_metadata=owner_metadata,
         job_id=async_job.job_id,
     )
 
     async_job_result = await get_job_result(
         task_manager,
+        owner_metadata=owner_metadata,
         job_id=async_job.job_id,
     )
     assert async_job_result.result == payload
@@ -182,39 +183,39 @@ async def test_async_jobs_cancel(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
     execution_metadata: TaskExecutionMetadata,
-    fake_owner: str,
-    fake_user_id: int,
+    owner_metadata: OwnerMetadata,
 ):
     async_job = await submit_job(
         task_manager,
         execution_metadata=execution_metadata,
-        owner=fake_owner,
-        user_id=fake_user_id,
+        owner_metadata=owner_metadata,
         action=Action.SLEEP,
         payload=60 * 10,  # test hangs if not cancelled properly
     )
 
     await cancel_job(
         task_manager,
+        owner_metadata=owner_metadata,
         job_id=async_job.job_id,
     )
 
     jobs = await list_jobs(
         task_manager,
-        owner=fake_owner,
-        user_id=fake_user_id,
+        owner_metadata=owner_metadata,
     )
     assert async_job.job_id not in [job.job_id for job in jobs]
 
     with pytest.raises(JobMissingError):
         await get_job_status(
             task_manager,
+            owner_metadata=owner_metadata,
             job_id=async_job.job_id,
         )
 
     with pytest.raises(JobMissingError):
         await get_job_result(
             task_manager,
+            owner_metadata=owner_metadata,
             job_id=async_job.job_id,
         )
 
@@ -240,21 +241,20 @@ async def test_async_jobs_raises(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
     execution_metadata: TaskExecutionMetadata,
-    fake_owner: str,
-    fake_user_id: int,
+    owner_metadata: OwnerMetadata,
     error: Exception,
 ):
     async_job = await submit_job(
         task_manager,
         execution_metadata=execution_metadata,
-        owner=fake_owner,
-        user_id=fake_user_id,
+        owner_metadata=owner_metadata,
         action=Action.RAISE,
         payload=pickle.dumps(error),
     )
 
     await _wait_for_job(
         task_manager,
+        owner_metadata=owner_metadata,
         job_id=async_job.job_id,
         stop_after=timedelta(minutes=1),
     )
@@ -262,6 +262,7 @@ async def test_async_jobs_raises(
     with pytest.raises(JobError) as exc:
         await get_job_result(
             task_manager,
+            owner_metadata=owner_metadata,
             job_id=async_job.job_id,
         )
     assert exc.value.exc_type == type(error).__name__

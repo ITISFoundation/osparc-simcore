@@ -15,7 +15,7 @@ from typing import Any
 import httpx
 import pytest
 import respx
-from celery import Celery  # type: ignore # pylint: disable=no-name-in-module
+from celery import Celery, Task  # type: ignore # pylint: disable=no-name-in-module
 from celery.contrib.testing.worker import TestWorkController  # type: ignore
 from celery_library.task import register_task
 from celery_library.types import register_pydantic_types
@@ -24,7 +24,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
-from models_library.celery import TaskExecutionMetadata
+from models_library.celery import TaskExecutionMetadata, TaskKey
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
@@ -53,18 +53,20 @@ from models_library.users import UserID
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
-from servicelib.celery.task_context import TaskContext
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
-from simcore_service_api_server._meta import API_VTAG, APP_NAME
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.api.dependencies.celery import (
     get_task_manager,
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.models.domain.celery_models import (
+    ApiServerOwnerMetadata,
+)
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
 )
@@ -118,7 +120,8 @@ async def _wait_for_task_result(
 
 def _register_fake_run_function_task() -> Callable[[Celery], None]:
     async def run_function(
-        task: TaskContext,
+        task: Task,
+        task_key: TaskKey,
         *,
         user_identity: Identity,
         function: RegisteredFunction,
@@ -127,7 +130,6 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
         job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
         x_simcore_parent_node_id: NodeID | None,
-        **_kwargs: Any,
     ) -> RegisteredFunctionJob:
         return RegisteredProjectFunctionJob(
             title=_faker.sentence(),
@@ -309,7 +311,8 @@ async def test_with_fake_run_function(
 
 def _register_exception_task(exception: Exception) -> Callable[[Celery], None]:
     async def exception_task(
-        task: TaskContext,
+        task: Task,
+        task_id: TaskKey,
     ):
         raise exception
 
@@ -335,16 +338,18 @@ async def test_celery_error_propagation(
     user_identity: Identity,
     with_api_server_celery_worker: TestWorkController,
 ):
-    task_manager = get_task_manager(app=app)
-    task_id = await task_manager.submit_task(
-        TaskExecutionMetadata(name="exception_task", queue=API_SERVER_CELERY_QUEUE_DEFAULT),
-        owner=APP_NAME,
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
     )
+    task_manager = get_task_manager(app=app)
+    task_uuid = await task_manager.submit_task(
+        TaskExecutionMetadata(name="exception_task", queue=API_SERVER_CELERY_QUEUE_DEFAULT),
+        owner_metadata=owner_metadata,
+    )
 
     with pytest.raises(HTTPStatusError) as exc_info:
-        await _wait_for_task_result(client, auth, f"{task_id}")
+        await _wait_for_task_result(client, auth, f"{task_uuid}")
 
     assert exc_info.value.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
