@@ -88,14 +88,15 @@ class RedisClientSDK:
 
         self._task_health_check = asyncio.create_task(
             _periodic_check_health(),
-            name=f"redis_service_health_check_{redact_url(self.redis_dsn)}__{uuid4()}",
+            name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
 
         await wait_till_redis_is_responsive(self._client)
 
         _logger.info(
-            "Connection to %s succeeded",
+            "Connection to %s succeeded with %s",
             f"Redis at dsn={redact_url(self.redis_dsn)}",
+            f"{self._client=}",
         )
 
     async def shutdown(self) -> None:
