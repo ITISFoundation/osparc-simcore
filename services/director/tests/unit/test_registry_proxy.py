@@ -6,6 +6,7 @@ import json
 import time
 from unittest import mock
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from pytest_benchmark.plugin import BenchmarkFixture
@@ -274,11 +275,266 @@ def test_list_services_performance(
         start_time = time.perf_counter()
         services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
         stop_time = time.perf_counter()
+        elapsed = stop_time - start_time
+        rate = elapsed / len(services or [1])
         print(
-            f"\nTime to list services: {stop_time - start_time:.3}s, {len(services)} services in {registry_settings.resolved_registry_url}, rate: {(stop_time - start_time) / len(services or [1]):.3}s/service"
+            f"\nTime to list services: {elapsed:.3}s, {len(services)} services"
+            f" in {registry_settings.resolved_registry_url}, rate: {rate:.3}s/service"
         )
 
     def run_async_test() -> None:
         asyncio.get_event_loop().run_until_complete(_list_services())
 
     benchmark.pedantic(run_async_test, rounds=5)
+
+
+async def test_get_image_labels_follows_blob_redirect(
+    configure_registry_access: EnvVarsDict,
+    app: FastAPI,
+):
+    """When REGISTRY_STORAGE_REDIRECT_DISABLE=false the registry returns HTTP 307
+    for blob requests, redirecting to an S3 pre-signed URL.  Verify that the
+    director follows the redirect and correctly parses the JSON config blob."""
+
+    image = "simcore/services/comp/test-redirect"
+    tag = "1.0.0"
+    config_digest = "sha256:abc123def456"
+    manifest_digest = "sha256:manifest_digest_789"
+    s3_presigned_url = (
+        "https://s3.amazonaws.com/registry-bucket/blobs/abc123?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=fake"
+    )
+
+    manifest_response = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+        "config": {
+            "mediaType": "application/vnd.docker.container.image.v1+json",
+            "digest": config_digest,
+            "size": 1234,
+        },
+        "layers": [],
+    }
+
+    expected_labels = {
+        "io.simcore.key": '{"key": "simcore/services/comp/test-redirect"}',
+        "io.simcore.version": '{"version": "1.0.0"}',
+        "io.simcore.type": '{"type": "computational"}',
+        "io.simcore.name": '{"name": "test-redirect"}',
+        "io.simcore.description": '{"description": "A test service"}',
+        "io.simcore.authors": '{"authors": [{"name": "test"}]}',
+        "io.simcore.contact": '{"contact": "test@test.com"}',
+        "io.simcore.inputs": '{"inputs": {}}',
+        "io.simcore.outputs": '{"outputs": {}}',
+    }
+    config_blob_response = {"config": {"Labels": expected_labels}}
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if f"{image}/manifests/{tag}" in url:
+            return httpx.Response(
+                200,
+                json=manifest_response,
+                headers={
+                    "Docker-Content-Digest": manifest_digest,
+                    "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+                },
+            )
+        if f"{image}/blobs/{config_digest}" in url:
+            # Simulate S3-backed registry with redirect enabled
+            return httpx.Response(307, headers={"Location": s3_presigned_url})
+        if "s3.amazonaws.com" in url:
+            # S3 pre-signed URL returns the config blob
+            assert "Authorization" not in request.headers
+            return httpx.Response(200, json=config_blob_response)
+        return httpx.Response(404)
+
+    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
+    original_client = app.state.aiohttp_client_session
+    app.state.aiohttp_client_session = mock_client
+    try:
+        labels, digest = await registry_proxy.get_image_labels(app, image, tag)
+
+        assert labels == expected_labels
+        assert digest == manifest_digest
+    finally:
+        app.state.aiohttp_client_session = original_client
+        await mock_client.aclose()
+
+
+@pytest.fixture
+def configure_authed_registry_access(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    docker_registry: str,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "REGISTRY_URL": docker_registry,
+            "REGISTRY_PATH": docker_registry,
+            "REGISTRY_AUTH": "true",
+            "REGISTRY_USER": "testuser",
+            "REGISTRY_PW": "testpassword",
+            "REGISTRY_SSL": "false",
+            "DIRECTOR_REGISTRY_CACHING": "false",
+        },
+    )
+
+
+async def test_get_image_labels_follows_blob_redirect_with_basic_auth(
+    configure_authed_registry_access: EnvVarsDict,
+    app: FastAPI,
+):
+    """Production-like scenario: REGISTRY_AUTH=true, basic auth accepted,
+    blob requests return 307 redirect to S3 pre-signed URL."""
+
+    image = "simcore/services/dynamic/test-auth-redirect"
+    tag = "2.0.0"
+    config_digest = "sha256:auth_cfg_digest_001"
+    manifest_digest = "sha256:auth_manifest_digest_002"
+    s3_presigned_url = (
+        "https://my-bucket.s3.us-east-1.amazonaws.com/docker/blobs/sha256/auth_cfg_digest_001"
+        "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=1200&X-Amz-Signature=abcdef"
+    )
+
+    manifest_response = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+        "config": {
+            "mediaType": "application/vnd.docker.container.image.v1+json",
+            "digest": config_digest,
+            "size": 5678,
+        },
+        "layers": [
+            {
+                "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+                "digest": "sha256:layer1",
+                "size": 100,
+            }
+        ],
+    }
+
+    expected_labels = {
+        "io.simcore.key": '{"key": "simcore/services/dynamic/test-auth-redirect"}',
+        "io.simcore.version": '{"version": "2.0.0"}',
+        "io.simcore.type": '{"type": "dynamic"}',
+        "io.simcore.name": '{"name": "test-auth-redirect"}',
+        "io.simcore.description": '{"description": "Auth redirect test"}',
+        "io.simcore.authors": '{"authors": [{"name": "test"}]}',
+        "io.simcore.contact": '{"contact": "test@test.com"}',
+        "io.simcore.inputs": '{"inputs": {}}',
+        "io.simcore.outputs": '{"outputs": {}}',
+        "simcore.service.settings": "[]",
+    }
+    config_blob_response = {"config": {"Labels": expected_labels}}
+
+    requests_log: list[tuple[str, str, bool]] = []
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        has_auth = "authorization" in {k.lower() for k in request.headers}
+        requests_log.append((request.method, str(request.url), has_auth))
+
+        url = str(request.url)
+        if f"{image}/manifests/{tag}" in url:
+            return httpx.Response(
+                200,
+                json=manifest_response,
+                headers={
+                    "Docker-Content-Digest": manifest_digest,
+                    "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+                },
+            )
+        if f"{image}/blobs/{config_digest}" in url:
+            return httpx.Response(307, headers={"Location": s3_presigned_url})
+        if "s3.us-east-1.amazonaws.com" in url:
+            # S3 pre-signed URL: auth must NOT be forwarded
+            assert not has_auth, "Authorization header leaked to S3 pre-signed URL"
+            return httpx.Response(200, json=config_blob_response)
+        return httpx.Response(404)
+
+    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
+    original_client = app.state.aiohttp_client_session
+    app.state.aiohttp_client_session = mock_client
+    try:
+        labels, digest = await registry_proxy.get_image_labels(app, image, tag)
+
+        assert labels == expected_labels
+        assert digest == manifest_digest
+
+        # Verify requests sequence: manifest, blob (307), S3 follow
+        assert len(requests_log) == 3
+        assert "manifests" in requests_log[0][1]
+        assert requests_log[0][2]  # manifest request has auth
+        assert "blobs" in requests_log[1][1]
+        assert requests_log[1][2]  # blob request has auth
+        assert "s3.us-east-1.amazonaws.com" in requests_log[2][1]
+        assert not requests_log[2][2]  # S3 request must NOT have auth
+    finally:
+        app.state.aiohttp_client_session = original_client
+        await mock_client.aclose()
+
+
+async def test_get_image_labels_no_redirect_still_works(
+    configure_registry_access: EnvVarsDict,
+    app: FastAPI,
+):
+    """Regression test: when REGISTRY_STORAGE_REDIRECT_DISABLE=true (default),
+    blob requests return 200 directly.  Verify follow_redirects=True does not
+    break the normal non-redirect path."""
+
+    image = "simcore/services/comp/test-no-redirect"
+    tag = "1.0.0"
+    config_digest = "sha256:noredir_cfg_001"
+    manifest_digest = "sha256:noredir_manifest_001"
+
+    manifest_response = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+        "config": {
+            "mediaType": "application/vnd.docker.container.image.v1+json",
+            "digest": config_digest,
+            "size": 1000,
+        },
+        "layers": [],
+    }
+
+    expected_labels = {
+        "io.simcore.key": '{"key": "simcore/services/comp/test-no-redirect"}',
+        "io.simcore.version": '{"version": "1.0.0"}',
+        "io.simcore.type": '{"type": "computational"}',
+        "io.simcore.name": '{"name": "test-no-redirect"}',
+        "io.simcore.description": '{"description": "No redirect test"}',
+        "io.simcore.authors": '{"authors": [{"name": "test"}]}',
+        "io.simcore.contact": '{"contact": "test@test.com"}',
+        "io.simcore.inputs": '{"inputs": {}}',
+        "io.simcore.outputs": '{"outputs": {}}',
+    }
+    config_blob_response = {"config": {"Labels": expected_labels}}
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if f"{image}/manifests/{tag}" in url:
+            return httpx.Response(
+                200,
+                json=manifest_response,
+                headers={
+                    "Docker-Content-Digest": manifest_digest,
+                    "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+                },
+            )
+        if f"{image}/blobs/{config_digest}" in url:
+            # No redirect — blob served directly (REGISTRY_STORAGE_REDIRECT_DISABLE=true)
+            return httpx.Response(200, json=config_blob_response)
+        return httpx.Response(404)
+
+    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
+    original_client = app.state.aiohttp_client_session
+    app.state.aiohttp_client_session = mock_client
+    try:
+        labels, digest = await registry_proxy.get_image_labels(app, image, tag)
+
+        assert labels == expected_labels
+        assert digest == manifest_digest
+    finally:
+        app.state.aiohttp_client_session = original_client
+        await mock_client.aclose()

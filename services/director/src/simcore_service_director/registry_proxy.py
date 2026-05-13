@@ -72,6 +72,7 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **s
         method.lower(),
         f"{request_url}",
         auth=auth,
+        follow_redirects=True,
         **session_kwargs,
     )
 
@@ -136,7 +137,7 @@ async def _auth_registry_request(  # noqa: C901
 
         bearer_code = (await token_resp.json())["token"]
         headers = {"Authorization": f"Bearer {bearer_code}"}
-        resp_wtoken = await getattr(session, method.lower())(url, headers=headers, **kwargs)
+        resp_wtoken = await getattr(session, method.lower())(url, headers=headers, follow_redirects=True, **kwargs)
         assert isinstance(resp_wtoken, httpx.Response)  # nosec
         if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
@@ -147,7 +148,7 @@ async def _auth_registry_request(  # noqa: C901
         return (resp_data, resp_headers)
     if auth_type == "Basic":
         # basic authentication should not be since we tried already...
-        resp_wbasic = await getattr(session, method.lower())(str(url), auth=auth, **kwargs)
+        resp_wbasic = await getattr(session, method.lower())(str(url), auth=auth, follow_redirects=True, **kwargs)
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
@@ -309,7 +310,8 @@ async def _list_repositories_gen(
 
 async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=False) -> AsyncGenerator[list[str]]:
     with log_context(_logger, logging.DEBUG, msg=f"listing image tags in {image_key}"):
-        path = f"{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        max_objects = get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS
+        path = f"{image_key}/tags/list?n={max_objects}"
         tags, headers = await registry_request(app, path=path, method="GET", use_cache=not update_cache)  # initial call
         assert "tags" in tags  # nosec
         while True:
