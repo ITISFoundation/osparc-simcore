@@ -252,6 +252,28 @@ async def test_reconcile_s3_to_db_keeps_prefix_when_fmd_row_exists(
     await assert_s3_prefix_has_objects(raw_s3_client, storage_s3_bucket, f"{pid}/")
 
 
+async def test_reconcile_s3_to_db_removes_all_files_recursively(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+):
+    """All objects under an orphan prefix are deleted, regardless of nesting depth."""
+    orphan_pid = ProjectID(f"{uuid4()}")
+    s3_keys = [
+        f"{orphan_pid}/node-a/file1.bin",
+        f"{orphan_pid}/node-a/sub/file2.bin",
+        f"{orphan_pid}/node-b/deep/nested/file3.dat",
+        f"{orphan_pid}/top-level.txt",
+    ]
+    for key in s3_keys:
+        await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=key, Body=b"zombie")
+
+    removed = await reconcile_s3_to_db(initialized_app)
+
+    assert removed == 1
+    await assert_s3_prefix_empty(raw_s3_client, storage_s3_bucket, f"{orphan_pid}/")
+
+
 async def test_reconcile_s3_to_db_preserves_files_under_directory(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
