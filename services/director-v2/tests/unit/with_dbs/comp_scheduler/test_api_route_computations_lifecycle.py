@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
 
 import datetime as dt
 from collections.abc import Awaitable, Callable
