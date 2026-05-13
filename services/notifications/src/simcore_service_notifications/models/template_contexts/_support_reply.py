@@ -7,7 +7,6 @@ from ..template import BaseTemplateContext, register_template_context
 
 @register_template_context(channel=Channel.email, template_name="support_reply")
 class SupportReplyTemplateContext(BaseTemplateContext):
-    host: str
     recipient_name: str
     sender_name: str
     conversation_name: str
