@@ -28,8 +28,7 @@ from uuid import UUID
 
 import arrow
 import sqlalchemy as sa
-from aws_library.s3 import S3DirectoryMetaData
-from botocore.exceptions import ClientError
+from aws_library.s3 import S3DirectoryMetaData, S3UploadNotFoundError
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from servicelib.utils import limited_gather
@@ -178,11 +177,9 @@ async def reconcile_abandoned_multipart_uploads(app: FastAPI, *, force: bool = F
             try:
                 await s3_client.abort_multipart_upload(bucket=bucket, object_key=object_key, upload_id=upload_id)
                 _logger.info("Aborted abandoned multipart upload %s for key %s", upload_id, object_key)
-            except ClientError as err:
-                if err.response.get("Error", {}).get("Code") == "NoSuchUpload":
-                    _logger.debug("Upload %s already gone, skipping", upload_id)
-                    continue
-                raise
+            except S3UploadNotFoundError:
+                _logger.debug("Upload %s already gone, skipping", upload_id)
+                continue
         aborted += 1
 
     return aborted

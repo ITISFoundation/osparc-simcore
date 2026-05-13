@@ -192,7 +192,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         await conn.execute(
             file_meta_data_table.update()
             .where(file_meta_data_table.c.file_id == file_or_directory_id)
-            .values(upload_expires_at=datetime.datetime.now(datetime.UTC))
+            .values(upload_expires_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None))
         )
     await asyncio.sleep(5)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -282,7 +282,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         await conn.execute(
             file_meta_data_table.update()
             .where(file_meta_data_table.c.file_id == file_id)
-            .values(upload_expires_at=datetime.datetime.now(datetime.UTC))
+            .values(upload_expires_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None))
         )
     await asyncio.sleep(1)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -321,7 +321,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     the cleaner in between to ensure the cleaner does not break the mechanism"""
 
     file_or_directory_id = simcore_directory_id if is_directory else simcore_file_id
-    later_than_now = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=5)
+    later_than_now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) + datetime.timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(
         user_id,
         file_or_directory_id,

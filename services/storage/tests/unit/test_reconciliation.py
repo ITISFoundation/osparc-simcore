@@ -50,6 +50,7 @@ def app_environment(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "STORAGE_CLEANER_INTERVAL_S": "null",
             "STORAGE_CLEANER_RECONCILE_S3_TO_DB_ENABLED": "true",
             "STORAGE_CLEANER_RECONCILE_DB_TO_S3_ENABLED": "true",
             "STORAGE_CLEANER_RECONCILE_MULTIPART_ENABLED": "true",
