@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import os
+import re
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
@@ -12,6 +13,8 @@ from simcore_service_storage._meta import API_VERSION
 from simcore_service_storage.cli import main
 from simcore_service_storage.core.settings import ApplicationSettings
 from typer.testing import CliRunner
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
 def test_cli_help_and_version(cli_runner: CliRunner):
@@ -41,11 +44,12 @@ def test_run(cli_runner: CliRunner):
 def test_reconcile_zombies_help(cli_runner: CliRunner):
     result = cli_runner.invoke(main, ["reconcile-zombies", "--help"])
     assert result.exit_code == os.EX_OK, result.output
-    assert "--s3-to-db" in result.output
-    assert "--db-to-s3" in result.output
-    assert "--multipart" in result.output
-    assert "--all" in result.output
-    assert "--dry-run" in result.output
+    plain = _ANSI_ESCAPE_RE.sub("", result.output)
+    assert "--s3-to-db" in plain
+    assert "--db-to-s3" in plain
+    assert "--multipart" in plain
+    assert "--all" in plain
+    assert "--dry-run" in plain
 
 
 def test_reconcile_zombies_no_pass_selected(cli_runner: CliRunner):
