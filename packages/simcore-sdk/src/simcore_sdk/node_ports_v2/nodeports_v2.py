@@ -18,7 +18,7 @@ from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
-from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
+from ..node_ports_common.exceptions import PortNotFoundError, UnboundPortError
 from ..node_ports_common.file_io_utils import LogRedirectCB
 from ..node_ports_v2.port import SetKWargs
 from .links import ItemConcreteValue, ItemValue
@@ -150,7 +150,7 @@ class Nodeports(BaseModel):
             ):
                 await output.set(item_value)
                 return
-        raise PortNotFound(msg=f"output port for item {item_value} not found")
+        raise PortNotFoundError(msg=f"output port for item {item_value} not found")
 
     async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type["Nodeports"]:
         return await self.node_port_creator_cb(self.db_manager, self.user_id, self.project_id, node_uuid)
