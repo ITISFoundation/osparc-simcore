@@ -362,8 +362,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
             ),
             iteration=last_run.iteration if last_run else None,
             result=None,
-            started=last_run.started if pipeline_started and last_run else None,
-            stopped=last_run.ended if pipeline_started and last_run else None,
+            started=last_run.started if last_run else None,
+            stopped=last_run.ended if last_run else None,
             submitted=last_run.created if last_run else None,
         )
 
