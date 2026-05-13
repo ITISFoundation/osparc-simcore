@@ -326,7 +326,11 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       // do not allow selecting workspace
       if (studyBrowserContext !== osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
-        this.fireDataEvent("folderSelected", this.getFolderId());
+        // pass workspace id and folder id to be able to select the folder in the study browser
+        this.fireDataEvent("folderSelected", {
+          workspaceId: this.getFolder().getWorkspaceId(),
+          folderId: this.getFolderId()
+        });
       }
     },
 

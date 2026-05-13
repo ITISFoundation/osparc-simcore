@@ -39,6 +39,7 @@ from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
 from ..modules.celery import setup_task_manager
 from ..modules.db import setup_db
+from ..modules.rabbitmq import setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from .settings import ApplicationSettings
@@ -74,6 +75,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     )
 
     setup_redis(app)
+    setup_rabbitmq(app)
 
     if settings.STORAGE_CELERY:
         setup_task_manager(app, settings=settings.STORAGE_CELERY)

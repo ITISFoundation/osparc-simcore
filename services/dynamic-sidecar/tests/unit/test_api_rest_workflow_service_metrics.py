@@ -199,11 +199,20 @@ async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient) -> T
     return task_id
 
 
+_RESOURCE_TRACKING_MESSAGE_TYPES = (
+    RabbitResourceTrackingStartedMessage,
+    RabbitResourceTrackingStoppedMessage,
+    RabbitResourceTrackingHeartbeatMessage,
+)
+
+
 def _get_resource_tracking_messages(
     mock_post_rabbit_message: AsyncMock,
 ) -> list[RabbitResourceTrackingMessages]:
     return [
-        x[0][1] for x in mock_post_rabbit_message.call_args_list if isinstance(x[0][1], RabbitResourceTrackingMessages)
+        x[0][1]
+        for x in mock_post_rabbit_message.call_args_list
+        if isinstance(x[0][1], _RESOURCE_TRACKING_MESSAGE_TYPES)
     ]
 
 
@@ -382,7 +391,7 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
                 if result:
                     result.oom_killed = True
                     result.status = ContainerStatus.exited
-                break
+                    break
             return results
 
         mocker.patch(

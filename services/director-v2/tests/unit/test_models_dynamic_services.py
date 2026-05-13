@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 import string
-from collections import namedtuple
+from typing import NamedTuple
 
 import pytest
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -56,7 +56,10 @@ ALL_CONTAINER_STATUSES: set[str] = {
 
 RANDOM_STRING_DATASET = string.ascii_letters + string.digits
 
-ExpectedStatus = namedtuple("ExpectedStatus", "containers_statuses, expected_state")
+
+class ExpectedStatus(NamedTuple):
+    containers_statuses: list[DockerContainerInspect]
+    expected_state: ServiceState
 
 
 @pytest.fixture
@@ -196,7 +199,7 @@ def test_extract_containers_minimum_statuses(
 def test_not_implemented_comparison() -> None:
     with pytest.raises(TypeError):
         # pylint: disable=pointless-statement
-        ServiceState.FAILED > {}  # type: ignore
+        ServiceState.FAILED > {}  # type: ignore  # noqa: B015
 
 
 def test_regression_legacy_service_compatibility() -> None:

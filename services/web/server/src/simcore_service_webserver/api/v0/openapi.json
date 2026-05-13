@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.81.1"
+    "version": "0.83.0"
   },
   "servers": [
     {
@@ -2671,6 +2671,22 @@
         "operationId": "list_users_accounts",
         "parameters": [
           {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -2708,6 +2724,22 @@
                 }
               ],
               "title": "Review Status"
+            }
+          },
+          {
+            "name": "registered",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Registered"
             }
           },
           {
@@ -12279,8 +12311,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12329,8 +12360,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -12378,8 +12408,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -12466,8 +12495,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12501,8 +12529,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12536,8 +12563,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12588,8 +12614,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -15016,6 +15041,20 @@
             "type": "object",
             "title": "Quality"
           },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
+          },
           "release": {
             "$ref": "#/components/schemas/ServiceRelease",
             "description": "release information of current (latest) service"
@@ -15338,6 +15377,20 @@
             "type": "object",
             "title": "Quality"
           },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
+          },
           "history": {
             "items": {
               "$ref": "#/components/schemas/ServiceRelease"
@@ -15564,8 +15617,7 @@
           "quality": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Quality",
-            "default": {}
+            "title": "Quality"
           },
           "accessRights": {
             "anyOf": [
@@ -15583,6 +15635,20 @@
               }
             ],
             "title": "Accessrights"
+          },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
           }
         },
         "type": "object",
@@ -27169,7 +27235,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {
@@ -28323,6 +28389,9 @@
           "top_tracemalloc"
         ],
         "title": "StatusDiagnosticsGet"
+      },
+      "StorageFileIDStr": {
+        "type": "string"
       },
       "Structure": {
         "properties": {

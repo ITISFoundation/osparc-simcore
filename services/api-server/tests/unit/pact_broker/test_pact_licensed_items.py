@@ -142,6 +142,9 @@ async def mock_wb_api_server_rpc(
     mock_handler_in_licenses_rpc_interface("get_licensed_items", return_value=EXPECTED_LICENSED_ITEMS_PAGE)
 
 
+@pytest.mark.xfail(
+    reason="PACT broker server pending migration to AWS ZMT account (https://github.com/ITISFoundation/osparc-simcore/issues/9118)"
+)
 def test_osparc_api_server_licensed_items_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,

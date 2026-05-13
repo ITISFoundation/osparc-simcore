@@ -338,6 +338,8 @@ class ServicesRepository(BaseRepository):
                 # tagging
                 classifiers=row.classifiers,
                 quality=row.quality,
+                # release notes
+                release_notes_url=row.release_notes_url,
                 # lifetime
                 created=row.created,
                 modified=row.modified,
@@ -470,6 +472,8 @@ class ServicesRepository(BaseRepository):
                 # tagging
                 classifiers=r.classifiers,
                 quality=r.quality,
+                # release notes
+                release_notes_url=r.release_notes_url,
                 # lifetime
                 created=r.created,
                 modified=r.modified,

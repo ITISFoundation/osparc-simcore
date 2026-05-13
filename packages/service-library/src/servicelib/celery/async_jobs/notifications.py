@@ -21,11 +21,13 @@ async def submit_send_message_task(
     *,
     owner_metadata: OwnerMetadata,
     message: dict[str, Any],  # NOTE: validated internally
+    description: str | None = None,
 ) -> tuple[TaskUUID, TaskName]:
     return await task_manager.submit_task(
         TaskExecutionMetadata(
             name=SEND_MESSAGE_TASK_NAME_TEMPLATE.format(message["channel"]),
             queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
+            description=description,
         ),
         owner_metadata=owner_metadata,
         message=message,
@@ -37,15 +39,18 @@ async def submit_send_messages_task(
     *,
     owner_metadata: OwnerMetadata,
     messages: list[dict[str, Any]],  # NOTE: validated internally
+    description: str | None = None,
 ) -> tuple[GroupUUID, list[TaskUUID], TaskName]:
     group_uuid, task_uuids = await task_manager.submit_group(
         GroupExecutionMetadata(
             name="send_messages",
+            description=description,
             tasks=[
                 (
                     GroupTaskExecutionMetadata(
                         name=SEND_MESSAGE_TASK_NAME_TEMPLATE.format(message["channel"]),
                         queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
+                        description=description,
                     ),
                     {"message": message},
                 )
