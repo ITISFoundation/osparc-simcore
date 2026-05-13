@@ -137,9 +137,9 @@ def reconcile_zombies(
                 db_to_s3_count = await recon.reconcile_db_to_s3(app, force=True, dry_run=dry_run)
         return s3_to_db_count, db_to_s3_count, multipart_count
 
-    s3_n, db_n, mp_n = asyncio.run(_run())
+    s3_to_db_removed, db_to_s3_removed, multipart_aborted = asyncio.run(_run())
     prefix = "[DRY-RUN] " if dry_run else ""
     typer.secho(f"{prefix}Reconciliation complete:", fg=typer.colors.GREEN)
-    typer.echo(f"  S3->DB orphan project prefixes {'found' if dry_run else 'removed'}: {s3_n}")
-    typer.echo(f"  DB->S3 dangling fmd rows {'found' if dry_run else 'removed'}:       {db_n}")
-    typer.echo(f"  Abandoned multipart uploads {'found' if dry_run else 'aborted'}:    {mp_n}")
+    typer.echo(f"  S3->DB orphan project prefixes {'found' if dry_run else 'removed'}: {s3_to_db_removed}")
+    typer.echo(f"  DB->S3 dangling fmd rows {'found' if dry_run else 'removed'}:       {db_to_s3_removed}")
+    typer.echo(f"  Abandoned multipart uploads {'found' if dry_run else 'aborted'}:    {multipart_aborted}")
