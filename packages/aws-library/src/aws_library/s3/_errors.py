@@ -27,3 +27,9 @@ class S3UploadNotFoundError(S3AccessError):
 
 class S3DestinationNotEmptyError(S3AccessError):
     msg_template: str = "The destination {dst_prefix} is not empty"
+
+
+class S3DeletionError(S3AccessError):
+    msg_template: str = (
+        "Failed to delete {failed_count} object(s) under prefix '{prefix}' in bucket '{bucket}': {failed_keys}"
+    )

@@ -39,7 +39,8 @@ from .settings import StorageSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-_TOTAL_TIMEOUT_TO_COPY_DATA_SECS: Final[int] = 60 * 60
+_TOTAL_TIMEOUT_TO_COPY_DATA: Final[datetime.timedelta] = datetime.timedelta(hours=1)
+_TOTAL_TIMEOUT_TO_DELETE_PROJECT: Final[datetime.timedelta] = datetime.timedelta(hours=1)
 _SIMCORE_LOCATION: Final[LocationID] = 0
 
 
@@ -120,7 +121,7 @@ async def copy_data_folders_from_project(
                     "nodes_map": nodes_map,
                 }
             ),
-            stop_after=datetime.timedelta(seconds=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
+            stop_after=_TOTAL_TIMEOUT_TO_COPY_DATA,
             user_id=user_id,
         ):
             yield job_composed_result
@@ -132,7 +133,10 @@ async def _delete(session, target_url):
             "delete_data_folders_of_project request responded with status %s",
             resp.status,
         )
-        # NOTE: context will automatically close connection
+        # NOTE: previously this swallowed any HTTP error from the storage service,
+        # silently leaving S3 objects behind while the webserver still proceeded to
+        # delete the project row. Surface failures so the caller can react.
+        resp.raise_for_status()
 
 
 async def delete_data_folders_of_project(app, project_id, user_id):
@@ -149,6 +153,52 @@ async def delete_data_folders_of_project_node(app, project_id: str, node_id: str
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id, node_id=node_id)
 
     await _delete(session, url)
+
+
+async def delete_project_via_celery(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    project_id: ProjectID,
+    node_id: NodeID | None = None,
+) -> None:
+    """Drives a project (or single-node) delete through the storage celery worker.
+
+    Decouples the deletion from the originating HTTP request lifecycle: the
+    worker can take as long as it needs (e.g. very large projects on slow S3),
+    survives webserver restarts, and runs out of the API process. The webserver
+    awaits the final result here so callers (e.g. the outbox retry loop) can
+    treat a successful return as "S3 + file_meta_data fully cleaned".
+    """
+    task_manager = get_task_manager(app)
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"celery delete project {project_id=} {node_id=} for {user_id=}",
+    ):
+        body: dict[str, Any] = {"user_id": user_id, "project_id": f"{project_id}"}
+        if node_id is not None:
+            body["node_id"] = f"{node_id}"
+
+        # NOTE: we don't care about per-poll progress for a delete, but we MUST
+        # await `.result()` on the terminal update so a worker-side `JobError`
+        # propagates here (otherwise the outbox row would be wrongly cleared).
+        async for job_composed_result in submit_job_and_wait(
+            task_manager,
+            execution_metadata=TaskExecutionMetadata(name="delete_project_simcore_s3"),
+            owner_metadata=OwnerMetadata.model_validate(
+                WebServerOwnerMetadata(
+                    user_id=user_id,
+                    product_name=product_name,
+                ).model_dump()
+            ),
+            body=body,
+            stop_after=_TOTAL_TIMEOUT_TO_DELETE_PROJECT,
+            user_id=user_id,
+        ):
+            if job_composed_result.done:
+                await job_composed_result.result()
 
 
 async def is_healthy(app: web.Application) -> bool:

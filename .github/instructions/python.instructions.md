@@ -148,6 +148,11 @@ When refactoring, move business logic from controllers to services (e.g., extrac
   EXISTS lets the planner stop at the first matching row and avoids materialising grouped results.
 * **Prefer `NOT EXISTS` over `LEFT JOIN ... IS NULL`** for anti-join patterns.
 * Comment complex SQL with rationale explaining **why** a particular query shape was chosen.
+* **DateTime timezone consistency**: Always match Python datetime objects to the SQLAlchemy column definition:
+  - `sa.DateTime()` (no `timezone=True`) expects **naive** datetimes — use `datetime.now(tz=UTC).replace(tzinfo=None)` or `datetime.utcnow()`.
+  - `sa.DateTime(timezone=True)` expects **aware** datetimes — use `datetime.now(tz=UTC)`.
+  - Mixing aware datetimes with naive columns (or vice-versa) causes `asyncpg.exceptions.DataError: can't subtract offset-naive and offset-aware datetimes`.
+  - When migrating from `datetime.utcnow()` to `datetime.now(tz=UTC)`, check the target column type first.
 * Use `sa.literal(1)` in EXISTS subqueries (not `sa.literal(True)` or column selections).
 * Use helper utilities like `create_ordering_clauses()` from `simcore_postgres_database.utils_ordering` for dynamic sort clauses.
 

@@ -192,7 +192,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         await conn.execute(
             file_meta_data_table.update()
             .where(file_meta_data_table.c.file_id == file_or_directory_id)
-            .values(upload_expires_at=datetime.datetime.utcnow())
+            .values(upload_expires_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None))
         )
     await asyncio.sleep(5)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -240,7 +240,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     """In this test we first upload a file to have a valid entry, then we trigger
     a new upload of the VERY SAME FILE, expire it, and make sure the cleaner reverts
     to the last known version of the file"""
-    file, file_id = await upload_file(
+    _, file_id = await upload_file(
         file_size=file_size,
         file_name=_faker.file_name(),
         file_id=None,
@@ -282,7 +282,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         await conn.execute(
             file_meta_data_table.update()
             .where(file_meta_data_table.c.file_id == file_id)
-            .values(upload_expires_at=datetime.datetime.utcnow())
+            .values(upload_expires_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None))
         )
     await asyncio.sleep(1)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -321,7 +321,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     the cleaner in between to ensure the cleaner does not break the mechanism"""
 
     file_or_directory_id = simcore_directory_id if is_directory else simcore_file_id
-    later_than_now = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+    later_than_now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) + datetime.timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(
         user_id,
         file_or_directory_id,
@@ -367,11 +367,11 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
 
     # ensure we have now an upload id
     all_ongoing_uploads: list[
-        tuple[UploadID, SimcoreS3FileID]
+        tuple[UploadID, SimcoreS3FileID, datetime.datetime]
     ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
     assert len(all_ongoing_uploads) == len(file_ids_to_upload)
 
-    for ongoing_upload_id, ongoing_file_id in all_ongoing_uploads:
+    for ongoing_upload_id, ongoing_file_id, _ in all_ongoing_uploads:
         assert ongoing_upload_id in started_multipart_uploads_upload_id
         assert urllib.parse.unquote(ongoing_file_id) in file_ids_to_upload
 

@@ -21,7 +21,7 @@ from models_library.celery import (
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import StorageFileID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
@@ -66,6 +66,31 @@ async def deep_copy_files_from_project(
             )
 
     return body.destination
+
+
+async def delete_project_simcore_s3(
+    task: Task,
+    task_key: TaskKey,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID | None = None,
+) -> None:
+    """Storage-celery task that deletes the S3 prefix of a project (or one of
+    its nodes) and clears the matching `file_meta_data` rows.
+
+    Driven by the webserver `projects_pending_deletion` / `nodes_pending_deletion`
+    outbox retry loops; running it on the celery worker decouples the deletion
+    from the originating HTTP request lifecycle and removes the HTTP timeout cap.
+    """
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"deleting project task ({task_key}) for ({user_id=}) with {project_id=}, {node_id=}",
+    ):
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(SimcoreS3DataManager.get_location_id())
+        assert isinstance(dsm, SimcoreS3DataManager)  # nosec
+        await dsm.delete_project_simcore_s3(user_id, project_id, node_id)
 
 
 async def export_data(

@@ -32,6 +32,7 @@ from aws_library.s3._constants import (
 )
 from aws_library.s3._errors import (
     S3BucketInvalidError,
+    S3DeletionError,
     S3DestinationNotEmptyError,
     S3KeyNotFoundError,
     S3UploadNotFoundError,
@@ -224,7 +225,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
         ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
         assert ongoing_multipart_uploads
         assert len(ongoing_multipart_uploads) == 1
-        ongoing_upload_id, ongoing_object_key = ongoing_multipart_uploads[0]
+        ongoing_upload_id, ongoing_object_key, _ = ongoing_multipart_uploads[0]
         assert ongoing_upload_id == upload_links.upload_id
         assert ongoing_object_key == object_key
 
@@ -243,7 +244,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
         ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
         assert ongoing_multipart_uploads
         assert len(ongoing_multipart_uploads) == 1
-        ongoing_upload_id, ongoing_object_key = ongoing_multipart_uploads[0]
+        ongoing_upload_id, ongoing_object_key, _ = ongoing_multipart_uploads[0]
         assert ongoing_upload_id == upload_links.upload_id
         assert ongoing_object_key == object_key
 
@@ -651,7 +652,7 @@ async def test_list_objects_pagination(
     assert len(first_level_files) == total_num_files
 
     # now we will fetch the file objects according to the given limit
-    num_fetch = int(round(total_num_files / limit + 0.5))
+    num_fetch = round(total_num_files / limit + 0.5)
     assert num_fetch >= 1
     start_after_key = None
     for i in range(num_fetch - 1):
@@ -1338,7 +1339,7 @@ async def test_break_completion_of_multipart_upload(
     ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
     assert ongoing_multipart_uploads
     assert len(ongoing_multipart_uploads) == 1
-    ongoing_upload_id, ongoing_file_id = ongoing_multipart_uploads[0]
+    ongoing_upload_id, ongoing_file_id, _ = ongoing_multipart_uploads[0]
     assert ongoing_upload_id == upload_links.upload_id
     assert ongoing_file_id == object_key
 
@@ -1623,6 +1624,134 @@ async def test_delete_file_recursively_raises(
     # and this files still exist
     some_file = next(iter(filter(lambda f: f.local_path.is_file(), with_uploaded_folder_on_s3)))
     await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=some_file.s3_key)
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("256Kib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("4Kib"),
+            None,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_delete_objects_recursively_retries_on_per_object_errors(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    mocker: MockerFixture,
+):
+    # Simulate AWS returning per-object errors on the first call, then succeeding
+    # on the retry. The previous implementation ignored the `Errors` field and
+    # silently produced zombie objects.
+    # NOTE: capture the unpatched coroutine method so the side_effect can fall
+    # through to the real S3 deletion on retries (and avoid recursing into the
+    # patched version).
+    real_delete_objects = simcore_s3_api._client.delete_objects  # noqa: SLF001
+
+    async def flaky_delete_objects(*args, **kwargs):
+        # On first call, pretend one of the keys fails; subsequent calls behave
+        # normally so the retry succeeds.
+        objects = kwargs["Delete"]["Objects"]
+        if mocked_delete_objects.call_count == 1 and len(objects) > 1:
+            response = await real_delete_objects(
+                Bucket=kwargs["Bucket"],
+                Delete={"Objects": objects[1:]},
+            )
+            response.setdefault("Errors", []).append(
+                {"Key": objects[0]["Key"], "Code": "InternalError", "Message": "boom"}
+            )
+            return response
+        return await real_delete_objects(*args, **kwargs)
+
+    mocked_delete_objects = mocker.patch.object(
+        simcore_s3_api._client,  # noqa: SLF001
+        "delete_objects",
+        side_effect=flaky_delete_objects,
+    )
+
+    prefix = Path(with_uploaded_folder_on_s3[0].s3_key).parts[0]
+    await simcore_s3_api.delete_objects_recursively(bucket=with_s3_bucket, prefix=prefix)
+    assert mocked_delete_objects.call_count >= 2, "expected at least one retry on per-object error"
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("128Kib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("4Kib"),
+            None,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_delete_objects_recursively_raises_when_per_object_errors_persist(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    mocker: MockerFixture,
+):
+    async def always_failing_delete_objects(*args, **kwargs):
+        objects = kwargs["Delete"]["Objects"]
+        return {
+            "Errors": [{"Key": obj["Key"], "Code": "InternalError", "Message": "boom"} for obj in objects],
+            "Deleted": [],
+            "ResponseMetadata": {"HTTPStatusCode": 200},
+        }
+
+    mocker.patch.object(
+        simcore_s3_api._client,  # noqa: SLF001
+        "delete_objects",
+        side_effect=always_failing_delete_objects,
+    )
+
+    prefix = Path(with_uploaded_folder_on_s3[0].s3_key).parts[0]
+    with pytest.raises(S3DeletionError):
+        await simcore_s3_api.delete_objects_recursively(bucket=with_s3_bucket, prefix=prefix)
+    # mocker auto-restores delete_objects at test teardown so the fixture cleanup works
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("128Kib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("4Kib"),
+            None,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_delete_objects_recursively_raises_when_leftover_after_delete(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    mocker: MockerFixture,
+):
+    # Simulate the case where delete reports success but list still finds
+    # leftover objects (eventual-consistency / concurrent upload landing
+    # mid-delete). Verify post-delete list-then-verify catches it.
+    async def fake_delete_objects(*args, **kwargs):
+        return {"Deleted": [], "ResponseMetadata": {"HTTPStatusCode": 200}}
+
+    mocker.patch.object(
+        simcore_s3_api._client,  # noqa: SLF001
+        "delete_objects",
+        side_effect=fake_delete_objects,
+    )
+
+    prefix = Path(with_uploaded_folder_on_s3[0].s3_key).parts[0]
+    with pytest.raises(S3DeletionError):
+        await simcore_s3_api.delete_objects_recursively(bucket=with_s3_bucket, prefix=prefix)
 
 
 @pytest.mark.parametrize(

@@ -152,6 +152,7 @@ from ..workspaces import _workspaces_repository as workspaces_workspaces_reposit
 from . import (
     _crud_api_delete,
     _groups_service,
+    _node_pending_deletion_repository,
     _nodes_service,
     _projects_nodes_repository,
     _projects_repository,
@@ -1067,8 +1068,31 @@ async def _remove_service_and_its_data_folders(
             ),
         )
 
+    # outbox-first: record the pending node deletion BEFORE attempting the
+    # storage cleanup so a crash/restart between here and a successful storage
+    # delete cannot leave behind zombie S3 data with no trace. The periodic
+    # retry task picks up rows that stay behind.
+    node_id = NodeID(node_uuid)
+    await _node_pending_deletion_repository.upsert_pending_deletion(
+        app, project_uuid=project_uuid, node_id=node_id, requested_by=user_id
+    )
+
     # remove the node's data if any
-    await storage_service.delete_data_folders_of_project_node(app, f"{project_uuid}", node_uuid, user_id)
+    try:
+        await storage_service.delete_data_folders_of_project_node(app, f"{project_uuid}", node_uuid, user_id)
+    except Exception as exc:  # pylint: disable=broad-except
+        await _node_pending_deletion_repository.record_failed_attempt(
+            app,
+            project_uuid=project_uuid,
+            node_id=node_id,
+            error_message=f"{exc}",
+        )
+        # leave the outbox row in place; the retry task will drive the cleanup
+        # to completion.
+        raise
+
+    # storage is gone; outbox row no longer needed
+    await _node_pending_deletion_repository.delete_pending_deletion(app, project_uuid=project_uuid, node_id=node_id)
 
 
 async def delete_project_node(

@@ -9,7 +9,15 @@ from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
 from ..redis import setup_redis
 from ..socketio.plugin import setup_socketio
-from . import _tasks_api_keys, _tasks_core, _tasks_documents, _tasks_trash, _tasks_users
+from . import (
+    _tasks_api_keys,
+    _tasks_core,
+    _tasks_documents,
+    _tasks_node_pending_deletions,
+    _tasks_project_pending_deletions,
+    _tasks_trash,
+    _tasks_users,
+)
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -58,3 +66,17 @@ def setup_garbage_collector(app: web.Application) -> None:
 
     wait_period_s = settings.GARBAGE_COLLECTOR_PRUNE_DOCUMENTS_INTERVAL_S
     app.cleanup_ctx.append(_tasks_documents.create_background_task_to_prune_documents(wait_period_s))
+
+    # Drives the `projects_pending_deletion` outbox: retries storage cleanup +
+    # `db.delete_project` for projects whose deletion did not finish in one go.
+    wait_period_s = settings.GARBAGE_COLLECTOR_RETRY_PENDING_DELETIONS_INTERVAL_S
+    app.cleanup_ctx.append(
+        _tasks_project_pending_deletions.create_background_task_to_retry_project_pending_deletions(wait_period_s)
+    )
+
+    # Drives the `nodes_pending_deletion` outbox: retries storage cleanup for
+    # nodes whose deletion did not finish in one go.
+    wait_period_s = settings.GARBAGE_COLLECTOR_RETRY_NODE_PENDING_DELETIONS_INTERVAL_S
+    app.cleanup_ctx.append(
+        _tasks_node_pending_deletions.create_background_task_to_retry_node_pending_deletions(wait_period_s)
+    )

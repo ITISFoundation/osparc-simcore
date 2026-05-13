@@ -280,7 +280,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         )
 
         # use-cases:
-        # 1. path is not a valid StorageFileID (e.g. a project or project/node) --> all entries are in the DB (files and folder)
+        # 1. path is not a valid StorageFileID (e.g. a project or project/node)
+        #    --> all entries are in the DB (files and folder)
         #   2. path is valid StorageFileID and not in the DB --> entries are only in S3
         #   3. path is valid StorageFileID and in the DB --> return directly from the DB
 
@@ -600,7 +601,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         """
         Cases:
         1. the file_id maps 1:1 to `file_meta_data` (e.g. it is not a file inside a directory)
-        2. the file_id represents a file inside a directory (its root path maps 1:1 to a `file_meta_data` defined as a directory)
+        2. the file_id represents a file inside a directory
+           (its root path maps 1:1 to a `file_meta_data` defined as a directory)
 
         3. Raises FileNotFoundError if the file does not exist
         4. Raises FileAccessRightError if the user does not have access to the file
@@ -710,17 +712,22 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         if not can.delete:
             raise ProjectAccessRightError(access_right="delete", project_id=project_id)
 
+        # NOTE: delete S3 BEFORE the file_meta_data rows. If S3 deletion fails the
+        # `file_meta_data` rows still describe what is in the bucket, so a retry
+        # (by the webserver outbox loop or a manual re-invocation) can reconcile
+        # the state. With the previous DB-first ordering, a failure on the S3 step
+        # left S3 objects with no DB record at all -> permanent zombies.
+        await get_s3_client(self.app).delete_objects_recursively(
+            bucket=self.simcore_bucket_name,
+            prefix=ensure_ends_with(f"{project_id}/{node_id}" if node_id else f"{project_id}", "/"),
+        )
+
         if not node_id:
             await FileMetaDataRepository.instance(get_db_engine(self.app)).delete_all_from_project(
                 project_id=project_id
             )
         else:
             await FileMetaDataRepository.instance(get_db_engine(self.app)).delete_all_from_node(node_id=node_id)
-
-        await get_s3_client(self.app).delete_objects_recursively(
-            bucket=self.simcore_bucket_name,
-            prefix=ensure_ends_with(f"{project_id}/{node_id}" if node_id else f"{project_id}", "/"),
-        )
 
     async def deep_copy_project_simcore_s3(
         self,
@@ -1142,7 +1149,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         1. will try to update the entry from S3 backend if exists
         2. will delete the entry if nothing exists in S3 backend.
         """
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
 
         list_of_expired_uploads = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
             expired_after=now
@@ -1167,7 +1174,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         list_of_fmds_to_delete = [
             expired_fmd
             for expired_fmd, updated_fmd in zip(list_of_expired_uploads, updated_fmds, strict=True)
-            if not isinstance(updated_fmd, FileMetaDataAtDB)
+            if not isinstance(updated_fmd, FileMetaDataAtDB) and not expired_fmd.is_directory
         ]
 
         # try to revert the files if they exist
@@ -1203,8 +1210,12 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
             for fmd in list_of_fmds_to_delete:
-                if fmd.user_id is not None:
-                    await self.delete_file(fmd.user_id, fmd.file_id)
+                # NOTE: bypass access rights and run even when user_id is None.
+                # In the cleaner context the user may have been removed; we must
+                # still remove the leftover S3 objects + DB row to avoid leaking
+                # zombie files.
+                effective_user_id = fmd.user_id if fmd.user_id is not None else 0
+                await self.delete_file(effective_user_id, fmd.file_id, enforce_access_rights=False)
 
             _logger.warning(
                 "pending/incomplete uploads of [%s] removed",
@@ -1364,7 +1375,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
         upload_expiration_date = now + datetime.timedelta(
             seconds=get_application_settings(self.app).STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )

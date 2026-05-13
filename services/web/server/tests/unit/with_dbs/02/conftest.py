@@ -36,8 +36,15 @@ from pytest_simcore.helpers.webserver_parametrizations import SocketHandlers
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
+from simcore_postgres_database.models.nodes_pending_deletion import (
+    nodes_pending_deletion,
+)
+from simcore_postgres_database.models.projects_pending_deletion import (
+    projects_pending_deletion,
+)
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 
@@ -47,6 +54,28 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
     # NOTE: overrides app_environment
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
+
+
+@pytest.fixture
+async def clean_projects_pending_deletion_table(
+    client: TestClient,
+) -> AsyncIterator[None]:
+    """Deletes all rows from the `projects_pending_deletion` outbox after the test."""
+    yield
+    engine = get_asyncpg_engine(client.app)
+    async with engine.begin() as conn:
+        await conn.execute(projects_pending_deletion.delete())
+
+
+@pytest.fixture
+async def clean_nodes_pending_deletion_table(
+    client: TestClient,
+) -> AsyncIterator[None]:
+    """Deletes all rows from the `nodes_pending_deletion` outbox after the test."""
+    yield
+    engine = get_asyncpg_engine(client.app)
+    async with engine.begin() as conn:
+        await conn.execute(nodes_pending_deletion.delete())
 
 
 @pytest.fixture
