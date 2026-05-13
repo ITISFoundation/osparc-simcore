@@ -538,3 +538,114 @@ async def test_get_image_labels_no_redirect_still_works(
     finally:
         app.state.aiohttp_client_session = original_client
         await mock_client.aclose()
+
+
+async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
+    configure_authed_registry_access: EnvVarsDict,
+    app: FastAPI,
+):
+    """Bearer token auth flow: initial request returns 401 with WWW-Authenticate
+    Bearer challenge, director fetches a token, then retries.  Blob requests
+    return 307 redirect to S3 pre-signed URL."""
+
+    image = "simcore/services/dynamic/test-bearer-redirect"
+    tag = "3.0.0"
+    config_digest = "sha256:bearer_cfg_001"
+    manifest_digest = "sha256:bearer_manifest_001"
+    s3_presigned_url = (
+        "https://my-bucket.s3.us-east-1.amazonaws.com"
+        "/docker/blobs/sha256/bearer_cfg_001"
+        "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=bearertest"
+    )
+    fake_token = "fake-bearer-token-12345"  # noqa: S105
+
+    manifest_response = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+        "config": {
+            "mediaType": "application/vnd.docker.container.image.v1+json",
+            "digest": config_digest,
+            "size": 2000,
+        },
+        "layers": [],
+    }
+
+    expected_labels = {
+        "io.simcore.key": ('{"key": "simcore/services/dynamic/test-bearer-redirect"}'),
+        "io.simcore.version": '{"version": "3.0.0"}',
+        "io.simcore.type": '{"type": "dynamic"}',
+        "io.simcore.name": '{"name": "test-bearer-redirect"}',
+        "io.simcore.description": '{"description": "Bearer redirect test"}',
+        "io.simcore.authors": '{"authors": [{"name": "test"}]}',
+        "io.simcore.contact": '{"contact": "test@test.com"}',
+        "io.simcore.inputs": '{"inputs": {}}',
+        "io.simcore.outputs": '{"outputs": {}}',
+        "simcore.service.settings": "[]",
+    }
+    config_blob_response = {"config": {"Labels": expected_labels}}
+
+    from simcore_service_director.core.settings import get_application_settings  # noqa: PLC0415
+
+    app_settings = get_application_settings(app)
+    realm_url = f"http://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}/v2/token"
+
+    requests_log: list[tuple[str, str]] = []
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        requests_log.append((request.method, url))
+
+        # Token endpoint
+        if "/v2/token" in url:
+            return httpx.Response(200, json={"token": fake_token})
+
+        # Registry — unauthenticated requests get 401 Bearer challenge
+        if f"{image}/manifests/{tag}" in url or f"{image}/blobs/{config_digest}" in url:
+            auth_header = request.headers.get("authorization", "")
+            if f"Bearer {fake_token}" not in auth_header:
+                return httpx.Response(
+                    401,
+                    headers={
+                        "WWW-Authenticate": (
+                            f'Bearer realm="{realm_url}",service="registry.example.com",scope="repository:{image}:pull"'
+                        )
+                    },
+                )
+            # Authenticated
+            if f"{image}/manifests/{tag}" in url:
+                return httpx.Response(
+                    200,
+                    json=manifest_response,
+                    headers={
+                        "Docker-Content-Digest": manifest_digest,
+                        "Content-Type": ("application/vnd.docker.distribution.manifest.v2+json"),
+                    },
+                )
+            if f"{image}/blobs/{config_digest}" in url:
+                return httpx.Response(307, headers={"Location": s3_presigned_url})
+
+        # S3 pre-signed URL — must NOT carry auth
+        if "s3.us-east-1.amazonaws.com" in url:
+            assert "authorization" not in {k.lower() for k in request.headers}, "Authorization header leaked to S3"
+            return httpx.Response(200, json=config_blob_response)
+
+        return httpx.Response(404)
+
+    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
+    original_client = app.state.aiohttp_client_session
+    app.state.aiohttp_client_session = mock_client
+    try:
+        labels, digest = await registry_proxy.get_image_labels(app, image, tag)
+
+        assert labels == expected_labels
+        assert digest == manifest_digest
+
+        # Verify Bearer flow: at least one 401→token→retry cycle happened
+        token_requests = [(m, u) for m, u in requests_log if "/v2/token" in u]
+        assert len(token_requests) >= 1, "Expected token exchange request"
+
+        s3_requests = [(m, u) for m, u in requests_log if "s3.us-east-1.amazonaws.com" in u]
+        assert len(s3_requests) == 1, "Expected exactly one S3 redirect follow"
+    finally:
+        app.state.aiohttp_client_session = original_client
+        await mock_client.aclose()

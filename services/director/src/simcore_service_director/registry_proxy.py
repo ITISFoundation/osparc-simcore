@@ -67,12 +67,17 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **s
 
     request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.api_url}").joinpath(path, encoded=True)
 
+    # Only follow redirects for blob requests — the registry returns 307 to
+    # S3 pre-signed URLs when REGISTRY_STORAGE_REDIRECT_DISABLE=false.
+    # Restricting to /blobs/ paths limits SSRF surface from a misconfigured registry.
+    follow_redirects = "/blobs/" in path
+
     session = get_client_session(app)
     response = await session.request(
         method.lower(),
         f"{request_url}",
         auth=auth,
-        follow_redirects=True,
+        follow_redirects=follow_redirects,
         **session_kwargs,
     )
 
@@ -84,6 +89,7 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **s
             method,
             response.headers,
             session,
+            follow_redirects=follow_redirects,
             **session_kwargs,
         )
 
@@ -108,6 +114,8 @@ async def _auth_registry_request(  # noqa: C901
     method: str,
     auth_headers: Mapping,
     session: httpx.AsyncClient,
+    *,
+    follow_redirects: bool = False,
     **kwargs,
 ) -> tuple[dict, Mapping]:
     # auth issue let's try some authentication get the auth type
@@ -135,26 +143,33 @@ async def _auth_registry_request(  # noqa: C901
             msg = f"Unknown error while authentifying with registry: {token_resp!s}"
             raise RegistryConnectionError(msg=msg)
 
-        bearer_code = (await token_resp.json())["token"]
-        headers = {"Authorization": f"Bearer {bearer_code}"}
-        resp_wtoken = await getattr(session, method.lower())(url, headers=headers, follow_redirects=True, **kwargs)
+        bearer_code = token_resp.json()["token"]
+        headers = {
+            **kwargs.pop("headers", {}),
+            "Authorization": f"Bearer {bearer_code}",
+        }
+        resp_wtoken = await getattr(session, method.lower())(
+            str(url), headers=headers, follow_redirects=follow_redirects, **kwargs
+        )
         assert isinstance(resp_wtoken, httpx.Response)  # nosec
         if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wtoken.status_code >= status.HTTP_400_BAD_REQUEST:
             raise RegistryConnectionError(msg=f"{resp_wtoken}")
-        resp_data = await resp_wtoken.json(content_type=None)
+        resp_data = resp_wtoken.json()
         resp_headers = resp_wtoken.headers
         return (resp_data, resp_headers)
     if auth_type == "Basic":
         # basic authentication should not be since we tried already...
-        resp_wbasic = await getattr(session, method.lower())(str(url), auth=auth, follow_redirects=True, **kwargs)
+        resp_wbasic = await getattr(session, method.lower())(
+            str(url), auth=auth, follow_redirects=follow_redirects, **kwargs
+        )
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
             raise RegistryConnectionError(msg=f"{resp_wbasic}: {resp_wbasic.text} for {url}")
-        resp_data = await resp_wbasic.json(content_type=None)
+        resp_data = resp_wbasic.json()
         resp_headers = resp_wbasic.headers
         return (resp_data, resp_headers)
     msg = f"Unknown registry authentication type: {url}"
