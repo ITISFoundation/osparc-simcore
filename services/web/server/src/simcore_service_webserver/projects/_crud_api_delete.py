@@ -167,7 +167,7 @@ def schedule_task(
     remove_project_dynamic_services: RemoveProjectServicesCallable,
     logger: logging.Logger,
 ) -> asyncio.Task:
-    """Wrap `delete_project` for a `project_uuid` and `user_id` into a Task
+    """Wrap `_delete_project` for a `project_uuid` and `user_id` into a Task
         and schedule its execution in the event loop.
 
     Return the scheduled Task

@@ -21,7 +21,6 @@ All passes are guarded by feature-flag settings and log structured events for
 ops observability. They are designed to be safe to run repeatedly.
 """
 
-import asyncio
 import logging
 from collections.abc import Iterable
 from datetime import UTC, datetime
@@ -33,6 +32,7 @@ from aws_library.s3 import S3DirectoryMetaData
 from botocore.exceptions import ClientError
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects
@@ -347,18 +347,17 @@ async def _delete_dangling_fmd_rows(
     if not candidates_by_project:
         return 0
 
-    sem = asyncio.Semaphore(50)
-
     async def _find_dangling_for_project(project_id: str, file_ids: list[str]) -> list[str]:
-        async with sem:
-            s3_keys: set[str] = set()
-            prefix = f"{project_id}/" if project_id else ""
-            async for page in s3_client.list_objects_paginated(bucket=bucket, prefix=prefix):
-                s3_keys.update(obj.object_key for obj in page)
-            return [fid for fid in file_ids if fid not in s3_keys]
+        s3_keys: set[str] = set()
+        prefix = f"{project_id}/" if project_id else ""
+        async for page in s3_client.list_objects_paginated(bucket=bucket, prefix=prefix):
+            s3_keys.update(obj.object_key for obj in page)
+        return [fid for fid in file_ids if fid not in s3_keys]
 
-    results = await asyncio.gather(
-        *(_find_dangling_for_project(pid, fids) for pid, fids in candidates_by_project.items())
+    results = await limited_gather(
+        *(_find_dangling_for_project(pid, fids) for pid, fids in candidates_by_project.items()),
+        reraise=True,
+        limit=50,
     )
     dangling_file_ids: list[str] = [fid for batch in results for fid in batch]
 
