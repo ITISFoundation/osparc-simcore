@@ -14,6 +14,7 @@ import logging
 import time
 from operator import attrgetter
 from pathlib import Path
+from typing import Final
 from urllib.parse import quote_plus
 from zipfile import ZipFile
 
@@ -26,6 +27,8 @@ assert osparc_VERSION >= (0, 4, 3)
 
 
 logger = logging.getLogger(__name__)
+
+_JOB_COMPLETION_TIMEOUT: Final = 120
 
 
 @pytest.fixture(scope="module")
@@ -211,8 +214,9 @@ def test_run_job(
     #    job.created_at < status.submitted_at < (job.created_at + timedelta(seconds=2))
     # )
 
-    # poll stop time-stamp
+    deadline = time.monotonic() + _JOB_COMPLETION_TIMEOUT
     while not status.stopped_at:
+        assert time.monotonic() < deadline, f"Timed out waiting for job {job.id}: {status=}"
         time.sleep(0.5)
         status: osparc.JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
         assert isinstance(status, osparc.JobStatus)
@@ -224,6 +228,7 @@ def test_run_job(
     # done, either successfully or with failures!
     assert status.progress == 100
     assert status.state == expected_outcome
+    assert status.stopped_at is not None
     # FIXME: assert status.submitted_at < status.started_at
     # FIXME: assert status.started_at < status.stopped_at
     assert status.submitted_at < status.stopped_at
