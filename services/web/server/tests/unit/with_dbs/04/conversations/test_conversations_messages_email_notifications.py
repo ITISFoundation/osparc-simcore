@@ -16,6 +16,7 @@ from models_library.conversations import (
     ConversationUserType,
 )
 from models_library.notifications import Channel
+from pydantic import HttpUrl
 from simcore_service_webserver.conversations._conversation_message_service import (
     _notify_support_reply_via_email,
 )
@@ -60,8 +61,7 @@ async def test_notify_support_reply_via_email_to_user(
     """When support/chatbot replies, the conversation creator (regular user) should be notified."""
     sender_user_id = 100
     mock_product = AsyncMock()
-    mock_product.base_url = "https://test.osparc.io/"
-    mock_product.base_url.host = "test.osparc.io"
+    mock_product.base_url = HttpUrl("https://test.osparc.io/")
     mock_product.support_standard_group_id = 5
 
     with (
@@ -117,8 +117,7 @@ async def test_notify_support_reply_via_email_to_support_group(
     """When a regular user replies, the support group should be notified."""
     sender_user_id = 200
     mock_product = AsyncMock()
-    mock_product.base_url = "https://test.osparc.io/"
-    mock_product.base_url.host = "test.osparc.io"
+    mock_product.base_url = HttpUrl("https://test.osparc.io/")
     mock_product.support_standard_group_id = 5
 
     with (
@@ -163,8 +162,7 @@ async def test_notify_support_reply_via_email_no_support_group(
     """When a regular user replies but no support group is configured, no email is sent."""
     sender_user_id = 200
     mock_product = AsyncMock()
-    mock_product.base_url = "https://test.osparc.io/"
-    mock_product.base_url.host = "test.osparc.io"
+    mock_product.base_url = HttpUrl("https://test.osparc.io/")
     mock_product.support_standard_group_id = None
 
     with (

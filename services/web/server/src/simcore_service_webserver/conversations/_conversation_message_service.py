@@ -92,7 +92,6 @@ async def _notify_support_reply_via_email(
     """
     product = products_service.get_product(app, product_name=product_name)
     conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
-    host = product.base_url.host or "unknown"
     sender_user = await users_service.get_user(app, sender_user_id)
     sender_name = (
         f"{sender_user.get('first_name', '')} {sender_user.get('last_name', '')}".strip() or sender_user["email"]
@@ -119,37 +118,37 @@ async def _notify_support_reply_via_email(
                 external_contacts=[EmailContact(name=recipient_name, email=recipient_user["email"])],
                 template_name="support_reply",
                 context={
-                    "host": host,
-                    "recipient_name": recipient_name,
-                    "sender_name": sender_name,
+                    "user": {
+                        "first_name": recipient_user.get("first_name"),
+                        "last_name": recipient_user.get("last_name"),
+                    },
                     "conversation_name": conversation.name,
-                    "message_content": message_content,
                     "conversation_url": conversation_url,
+                    "message_content": message_content,
                 },
             )
 
-        case ConversationUserType.REGULAR_USER:
-            # Notify the support group
-            if product.support_standard_group_id is None:
-                return
+        # case ConversationUserType.REGULAR_USER:
+        #     # Notify the support group
+        #     if product.support_standard_group_id is None:
+        #         return
 
-            await notifications_service.send_message_from_template(
-                app,
-                user_id=sender_user_id,
-                product_name=product_name,
-                channel=Channel.email,
-                group_ids=[product.support_standard_group_id],
-                external_contacts=None,
-                template_name="support_reply",
-                context={
-                    "host": host,
-                    "recipient_name": "Support Team",
-                    "sender_name": sender_name,
-                    "conversation_name": conversation.name,
-                    "message_content": message_content,
-                    "conversation_url": conversation_url,
-                },
-            )
+        #     await notifications_service.send_message_from_template(
+        #         app,
+        #         user_id=sender_user_id,
+        #         product_name=product_name,
+        #         channel=Channel.email,
+        #         group_ids=[product.support_standard_group_id],
+        #         external_contacts=None,
+        #         template_name="support_reply",
+        #         context={
+        #             "recipient_name": "Support Team",
+        #             "sender_name": sender_name,
+        #             "conversation_name": conversation.name,
+        #             "message_content": message_content,
+        #             "conversation_url": conversation_url,
+        #         },
+        #     )
 
 
 async def create_message_and_notify(

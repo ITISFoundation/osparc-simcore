@@ -1,7 +1,7 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/support_reply/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear {{ recipient_name }},</p>
+<p>Dear {{ user.first_name or user.user_name }},</p>
 
 <p>There is a new reply in the Support Center conversation <strong>"{{ conversation_name }}"</strong>.</p>
 

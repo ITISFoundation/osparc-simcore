@@ -16,3 +16,4 @@ class SupportReplyTemplateContext(BaseTemplateContext):
     user: User
     conversation_name: str
     conversation_url: HttpUrl
+    message_content: str
