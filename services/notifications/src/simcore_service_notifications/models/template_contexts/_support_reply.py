@@ -1,14 +1,18 @@
 """Context model for the 'support_reply' email template."""
 
 from models_library.notifications import Channel
+from pydantic import BaseModel, HttpUrl
 
 from ..template import BaseTemplateContext, register_template_context
 
 
+class User(BaseModel):
+    first_name: str | None = None
+    user_name: str
+
+
 @register_template_context(channel=Channel.email, template_name="support_reply")
 class SupportReplyTemplateContext(BaseTemplateContext):
-    recipient_name: str
-    sender_name: str
+    user: User
     conversation_name: str
-    message_content: str
-    conversation_url: str
+    conversation_url: HttpUrl
