@@ -117,14 +117,15 @@ async def reconcile_s3_to_db(app: FastAPI, *, force: bool = False, dry_run: bool
         if project_id_candidates:
             with_db_project = await _project_ids_existing_in_projects_table(app, project_id_candidates)
             with_fmd = await _project_ids_with_fmd_rows(app, project_id_candidates)
-            orphan_ids = [
-                pid for pid in project_id_candidates if f"{pid}" not in with_db_project and f"{pid}" not in with_fmd
+            orphans_project_ids = [
+                p for p in project_id_candidates if f"{p}" not in with_db_project and f"{p}" not in with_fmd
             ]
-            for pid in orphan_ids:
+            for project_id in orphans_project_ids:
                 if dry_run:
-                    _logger.info("[DRY-RUN] Would remove orphan S3 prefix %s/", pid)
+                    _logger.info("[DRY-RUN] Would remove orphan S3 prefix %s/", project_id)
                 else:
-                    await s3_client.delete_objects_recursively(bucket=bucket, prefix=f"{pid}/")
+                    await s3_client.delete_objects_recursively(bucket=bucket, prefix=f"{project_id}/")
+                    _logger.info("Removed orphan S3 prefix %s/ (no project or fmd rows)", project_id)
                 removed += 1
 
         if not next_cursor:
@@ -165,7 +166,7 @@ async def reconcile_abandoned_multipart_uploads(app: FastAPI, *, force: bool = F
                 file_meta_data.c.upload_id.is_not(None),
             )
         )
-        keys_with_active_upload = {row[0] for row in rows.fetchall()}
+        keys_with_active_upload: set[str] = {row[0] for row in rows.fetchall()}
 
     aborted = 0
     for upload_id, object_key, _initiated in aged_uploads:
@@ -176,6 +177,7 @@ async def reconcile_abandoned_multipart_uploads(app: FastAPI, *, force: bool = F
         else:
             try:
                 await s3_client.abort_multipart_upload(bucket=bucket, object_key=object_key, upload_id=upload_id)
+                _logger.info("Aborted abandoned multipart upload %s for key %s", upload_id, object_key)
             except ClientError as err:
                 if err.response.get("Error", {}).get("Code") == "NoSuchUpload":
                     _logger.debug("Upload %s already gone, skipping", upload_id)
@@ -370,6 +372,9 @@ async def _delete_dangling_fmd_rows(
     else:
         async with get_db_engine(app).begin() as conn:
             await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(dangling_file_ids)))
+        _logger.info(
+            "Removed %d dangling fmd rows with no backing S3 object: %s", len(dangling_file_ids), dangling_file_ids
+        )
 
     return len(dangling_file_ids)
 
