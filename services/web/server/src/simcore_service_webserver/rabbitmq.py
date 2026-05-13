@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Final
 
 from aiohttp import web
+from common_library.network import redact_url
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
@@ -30,10 +31,10 @@ async def _on_healthcheck_async_adapter(app: web.Application) -> None:
 
 async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     settings: RabbitSettings = get_plugin_settings(app)
-    with log_context(_logger, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"):
+    with log_context(_logger, logging.INFO, msg=f"Check RabbitMQ backend is ready on {redact_url(settings.dsn)}"):
         await wait_till_rabbitmq_responsive(f"{settings.dsn}")
 
-    with log_context(_logger, logging.INFO, msg=f"Connect RabbitMQ clients to {settings.dsn}"):
+    with log_context(_logger, logging.INFO, msg=f"Connect RabbitMQ clients to {redact_url(settings.dsn)}"):
         app[RABBITMQ_CLIENT_APPKEY] = RabbitMQClient("webserver", settings)
 
     # injects healthcheck
