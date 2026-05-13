@@ -1,0 +1,27 @@
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/support_reply/subject.j2' %} {% endblock %}
+{% block content %}
+<p>Dear {{ recipient_name }},</p>
+
+<p>There is a new reply in the Support Center conversation <strong>"{{ conversation_name }}"</strong> on <strong>{{ host }}</strong>.</p>
+
+<div style="border: 1px solid #ccc; padding: 16px; border-radius: 8px; background-color: #f9f9f9; margin-top: 20px; margin-bottom: 20px;">
+  <p style="margin-top: 0; font-weight: 600;">{{ sender_name }} wrote:</p>
+  <p style="margin-top: 8px; white-space: pre-wrap;">{{ message_content }}</p>
+</div>
+
+<!-- Bulletproof button: table-based for maximum email client compatibility -->
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 10px; margin-bottom: 10px;">
+  <tr>
+    <td style="{{ strong_button_td_style }}">
+      <a href="{{ conversation_url }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+        View Conversation
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+
+<p>Best Regards,<br>The {{ product.display_name }} Team</p>
+{% endblock %}

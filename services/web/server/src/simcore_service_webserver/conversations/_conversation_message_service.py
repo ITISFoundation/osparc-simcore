@@ -15,6 +15,7 @@ from models_library.conversations import (
     ConversationPatchDB,
     ConversationUserType,
 )
+from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
@@ -23,6 +24,8 @@ from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
 from ..application_keys import APP_SETTINGS_APPKEY
+from ..notifications import notifications_service
+from ..notifications._models import EmailContact
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
 from ..users import users_service
@@ -71,6 +74,82 @@ async def _notify_conversation_message_created(
             project_id=None,
             conversation_message=conversation_message,
         )
+
+
+async def _notify_support_reply_via_email(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    conversation: ConversationGetDB,
+    conversation_user_type: ConversationUserType,
+    message_content: str,
+    sender_user_id: UserID,
+) -> None:
+    """Send an email notification when a reply is posted in a support conversation.
+
+    - When a support user or chatbot replies -> notify the conversation creator (regular user)
+    - When a regular user replies -> notify the support group
+    """
+    product = products_service.get_product(app, product_name=product_name)
+    conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
+    host = product.base_url.host or "unknown"
+    sender_user = await users_service.get_user(app, sender_user_id)
+    sender_name = (
+        f"{sender_user.get('first_name', '')} {sender_user.get('last_name', '')}".strip() or sender_user["email"]
+    )
+
+    match conversation_user_type:
+        case ConversationUserType.SUPPORT_USER | ConversationUserType.CHATBOT_USER:
+            # Notify the conversation creator
+            conversation_creator_user_id = await users_service.get_user_id_from_gid(
+                app, primary_gid=conversation.user_group_id
+            )
+            recipient_user = await users_service.get_user(app, conversation_creator_user_id)
+            recipient_name = (
+                f"{recipient_user.get('first_name', '')} {recipient_user.get('last_name', '')}".strip()
+                or recipient_user["email"]
+            )
+
+            await notifications_service.send_message_from_template(
+                app,
+                user_id=sender_user_id,
+                product_name=product_name,
+                channel=Channel.email,
+                group_ids=None,
+                external_contacts=[EmailContact(name=recipient_name, email=recipient_user["email"])],
+                template_name="support_reply",
+                context={
+                    "host": host,
+                    "recipient_name": recipient_name,
+                    "sender_name": sender_name,
+                    "conversation_name": conversation.name,
+                    "message_content": message_content,
+                    "conversation_url": conversation_url,
+                },
+            )
+
+        case ConversationUserType.REGULAR_USER:
+            # Notify the support group
+            if product.support_standard_group_id is None:
+                return
+
+            await notifications_service.send_message_from_template(
+                app,
+                user_id=sender_user_id,
+                product_name=product_name,
+                channel=Channel.email,
+                group_ids=[product.support_standard_group_id],
+                external_contacts=None,
+                template_name="support_reply",
+                context={
+                    "host": host,
+                    "recipient_name": "Support Team",
+                    "sender_name": sender_name,
+                    "conversation_name": conversation.name,
+                    "message_content": message_content,
+                    "conversation_url": conversation_url,
+                },
+            )
 
 
 async def create_message_and_notify(
@@ -191,7 +270,32 @@ async def create_support_message(
         product_name=product_name,
     )
 
-    # 2. Create or reopen FogBugz case if applicable
+    # 2. Notify via email
+
+    try:
+        await _notify_support_reply_via_email(
+            app,
+            product_name=product_name,
+            conversation=conversation,
+            conversation_user_type=conversation_user_type,
+            message_content=message.content,
+            sender_user_id=user_id,
+        )
+    except Exception as err:  # pylint: disable=broad-except
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                f"Failed to send support reply email notification for conversation {conversation.conversation_id}.",
+                error=err,
+                error_context={
+                    "conversation_id": conversation.conversation_id,
+                    "user_id": user_id,
+                    "conversation_user_type": conversation_user_type,
+                },
+                tip="Check notification service availability and email configuration.",
+            )
+        )
+
+    # 3. Create or reopen FogBugz case if applicable
 
     product = products_service.get_product(app, product_name=product_name)
     fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
