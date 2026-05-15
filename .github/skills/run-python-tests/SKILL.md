@@ -13,17 +13,25 @@ description: 'Run Python tests and static analysis for any service or package in
 
 ## Procedure
 
-Follow these steps **in order**. Do not skip the install step — each project has its own dependencies that must be installed before tests can run.
+This procedure is divided into two phases: **Setup** (Steps 1–3) and **Testing** (Steps 4–5). Complete all Setup steps before running tests. Each step has a clear, independent goal.
 
-### Step 1: Activate the workspace virtual environment
+### Setup
+
+#### Step 1: Activate the workspace virtual environment
 
 ```bash
 source .venv/bin/activate
 ```
 
-All projects in this monorepo share a single workspace-level `.venv`, created once via `make devenv` at the repository root. It must be active before any install or test command.
+All projects in this monorepo share a single workspace-level `.venv`. It must be active before any install or test command.
 
-### Step 2: Change to the project directory
+> **If `.venv` does not exist or is corrupted**, create it from the repository root first:
+> ```bash
+> make devenv
+> ```
+> Then re-run `source .venv/bin/activate`.
+
+#### Step 2: Change to the project directory
 
 Navigate to the root of the specific service or package you want to test:
 
@@ -37,7 +45,7 @@ cd packages/<package-name>
 # e.g. cd packages/models-library, cd packages/pytest-simcore
 ```
 
-### Step 3: Install in development mode
+#### Step 3: Install in development mode
 
 ```bash
 make install-dev
@@ -47,7 +55,9 @@ This installs the package in editable mode along with all test dependencies into
 
 > **Note**: You only need to re-run `make install-dev` when switching to a different project or after dependency changes. If you already installed for this project in the current session, you can skip this step.
 
-### Step 4: Run tests
+### Testing
+
+#### Step 4: Run tests
 
 ```bash
 # Run all tests under the project's tests folder:
@@ -62,9 +72,9 @@ pytest tests/unit/test_<name>.py::test_function_name -v
 
 > **Warning**: Do **NOT** use `make test*` — these targets normally include `--pdb`, which drops into an interactive debugger on failure and will block execution.
 
-Use `--keep-docker-up` flag when running integration tests to keep docker containers up between sessions.
+Use the `--keep-docker-up` flag when running integration tests to prevent docker containers from being stopped between test sessions, which can save setup time by avoiding container restarts on subsequent runs.
 
-### Step 4b: Static analysis (optional but recommended)
+#### Step 4b: Static analysis (optional but recommended)
 
 Before or after running tests, verify the project passes static analysis from the project directory:
 
@@ -78,7 +88,7 @@ make pylint
 
 These are fast checks that can catch issues without running the full test suite. Run them after making code changes to confirm correctness.
 
-### Step 5: Troubleshooting
+#### Step 5: Troubleshooting
 
 If tests fail due to leftover docker state from previous runs:
 
