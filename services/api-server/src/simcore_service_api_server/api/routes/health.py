@@ -3,7 +3,7 @@ import datetime
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp import status
@@ -24,7 +24,10 @@ async def check_service_health(
     health_checker: Annotated[ApiServerHealthChecker, Depends(get_health_checker)],
 ):
     if not health_checker.healthy:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="unhealthy")
+        return PlainTextResponse(
+            "unhealthy",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     return f"{__name__}@{datetime.datetime.now(tz=datetime.UTC).isoformat()}"
 

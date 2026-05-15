@@ -36,11 +36,14 @@ async def healthcheck_liveness_probe(request: web.Request):
     try:
         # if slots append get too delayed, just timeout
         health_report = await healthcheck.run(request.app)
+        return web.json_response(data={"data": health_report})
     except HealthCheckError as err:
         _logger.warning("%s", err)
-        raise web.HTTPServiceUnavailable(text="unhealthy") from err
-
-    return web.json_response(data={"data": health_report})
+        # Return unhealthy status without raising exception to avoid noisy logs
+        return web.json_response(
+            data={"error": {"message": "unhealthy", "reason": f"{err}"}},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
 
 @routes.get(f"/{API_VTAG}/", name="healthcheck_readiness_probe")
@@ -93,9 +96,6 @@ async def get_scheduled_maintenance(request: web.Request):
 
     redis_client = get_redis_scheduled_maintenance_client(request.app)
     hash_key = "maintenance"
-    # Examples.
-    #  {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
-    #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
     # NOTE: datetime is UTC (Canary islands / UK)
 
     if maintenance_data := await redis_client.get(hash_key):

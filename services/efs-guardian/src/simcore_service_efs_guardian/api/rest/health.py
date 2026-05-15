@@ -7,7 +7,7 @@ for instance: service health-check (w/ different variants), diagnostics, debuggi
 import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG, REDIS_CLIENT_UNHEALTHY_MSG
 from servicelib.fastapi.dependencies import get_app
@@ -23,16 +23,16 @@ async def health_check(
     app: Annotated[FastAPI, Depends(get_app)],
 ):
     if not get_rabbitmq_client(app).healthy or not get_rabbitmq_rpc_client(app).healthy:
-        raise HTTPException(
+        return PlainTextResponse(
+            RABBITMQ_CLIENT_UNHEALTHY_MSG,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=RABBITMQ_CLIENT_UNHEALTHY_MSG,
         )
 
     if not get_redis_lock_client(app).is_healthy:
-        raise HTTPException(
+        return PlainTextResponse(
+            REDIS_CLIENT_UNHEALTHY_MSG,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=REDIS_CLIENT_UNHEALTHY_MSG,
         )
 
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
-    return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
+    return PlainTextResponse(f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}")
