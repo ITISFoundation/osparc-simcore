@@ -1,7 +1,8 @@
 from typing import Annotated
 
 import arrow
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
 from models_library.api_schemas__common.health import HealthCheckGet
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -14,11 +15,11 @@ router = APIRouter()
 @router.get("/health", response_model=HealthCheckGet)
 async def check_service_health(
     rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
-):
+) -> HealthCheckGet | JSONResponse:
     if not rabbitmq_rpc_client.healthy:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=RABBITMQ_CLIENT_UNHEALTHY_MSG,
+            content={"detail": RABBITMQ_CLIENT_UNHEALTHY_MSG},
         )
 
     return HealthCheckGet(timestamp=f"{__name__}@{arrow.utcnow().datetime.isoformat()}")
