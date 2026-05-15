@@ -119,6 +119,7 @@ async def _auth_registry_request(  # noqa: C901
     **kwargs,
 ) -> tuple[dict, Mapping]:
     # auth issue let's try some authentication get the auth type
+    resp_data: dict = {}
     auth_type = None
     auth_details: dict[str, str] = {}
     for key in auth_headers:
@@ -156,7 +157,8 @@ async def _auth_registry_request(  # noqa: C901
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wtoken.status_code >= status.HTTP_400_BAD_REQUEST:
             raise RegistryConnectionError(msg=f"{resp_wtoken}")
-        resp_data = resp_wtoken.json()
+        if method.lower() != "head":
+            resp_data = resp_wtoken.json()
         resp_headers = resp_wtoken.headers
         return (resp_data, resp_headers)
     if auth_type == "Basic":
@@ -169,7 +171,8 @@ async def _auth_registry_request(  # noqa: C901
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
             raise RegistryConnectionError(msg=f"{resp_wbasic}: {resp_wbasic.text} for {url}")
-        resp_data = resp_wbasic.json()
+        if method.lower() != "head":
+            resp_data = resp_wbasic.json()
         resp_headers = resp_wbasic.headers
         return (resp_data, resp_headers)
     msg = f"Unknown registry authentication type: {url}"
