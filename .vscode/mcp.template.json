@@ -13,7 +13,7 @@
     },
     {
       "type": "promptString",
-      "id": "github_mcp_pat",
+      "id": "github-mcp-pat",
       "description": "GitHub MCP Personal Access Token",
       "password": true
     }
@@ -36,7 +36,7 @@
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
       "headers": {
-        "Authorization": "Bearer ${input:github_mcp_pat}"
+        "Authorization": "Bearer ${input:github-mcp-pat}"
       }
     }
   }
