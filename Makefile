@@ -640,16 +640,16 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json: .vscode/settings.template.json
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+.vscode/settings.json:
+	@$(MAKE_C) .vscode settings.json
 
 
-.vscode/launch.json: .vscode/launch.template.json
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+.vscode/launch.json:
+	@$(MAKE_C) .vscode launch.json
+
+
+.vscode/mcp.json:
+	@$(MAKE_C) .vscode mcp.json
 
 
 
