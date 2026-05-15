@@ -336,7 +336,7 @@ async def test_get_image_labels_follows_blob_redirect(
     config_blob_response = {"config": {"Labels": expected_labels}}
 
     with respx.mock(assert_all_called=False) as respx_mock:
-        respx_mock.get(url__contains=f"{image}/manifests/{tag}").respond(
+        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
             status.HTTP_200_OK,
             json=manifest_response,
             headers={
@@ -344,11 +344,11 @@ async def test_get_image_labels_follows_blob_redirect(
                 "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
             },
         )
-        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").respond(
+        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
             headers={"Location": s3_presigned_url},
         )
-        respx_mock.get(url__contains="s3.amazonaws.com").respond(
+        respx_mock.get(url__regex=r".*s3\.amazonaws\.com.*").respond(
             status.HTTP_200_OK,
             json=config_blob_response,
         )
@@ -432,7 +432,7 @@ async def test_get_image_labels_follows_blob_redirect_with_basic_auth(
     config_blob_response = {"config": {"Labels": expected_labels}}
 
     with respx.mock(assert_all_called=False) as respx_mock:
-        respx_mock.get(url__contains=f"{image}/manifests/{tag}").respond(
+        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
             status.HTTP_200_OK,
             json=manifest_response,
             headers={
@@ -440,11 +440,11 @@ async def test_get_image_labels_follows_blob_redirect_with_basic_auth(
                 "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
             },
         )
-        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").respond(
+        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
             headers={"Location": s3_presigned_url},
         )
-        respx_mock.get(url__contains="s3.us-east-1.amazonaws.com").respond(
+        respx_mock.get(url__regex=r".*s3\.us-east-1\.amazonaws\.com.*").respond(
             status.HTTP_200_OK,
             json=config_blob_response,
         )
@@ -502,7 +502,7 @@ async def test_get_image_labels_no_redirect_still_works(
     config_blob_response = {"config": {"Labels": expected_labels}}
 
     with respx.mock(assert_all_called=False) as respx_mock:
-        respx_mock.get(url__contains=f"{image}/manifests/{tag}").respond(
+        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
             status.HTTP_200_OK,
             json=manifest_response,
             headers={
@@ -510,7 +510,7 @@ async def test_get_image_labels_no_redirect_still_works(
                 "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
             },
         )
-        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").respond(
+        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").respond(
             status.HTTP_200_OK,
             json=config_blob_response,
         )
@@ -603,10 +603,10 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
         )
 
     with respx.mock(assert_all_called=False) as respx_mock:
-        respx_mock.get(url__contains="/v2/token").respond(status.HTTP_200_OK, json={"token": fake_token})
-        respx_mock.get(url__contains=f"{image}/manifests/{tag}").mock(side_effect=_bearer_manifest_handler)
-        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").mock(side_effect=_bearer_blob_handler)
-        respx_mock.get(url__contains="s3.us-east-1.amazonaws.com").respond(
+        respx_mock.get(url__regex=r".*/v2/token.*").respond(status.HTTP_200_OK, json={"token": fake_token})
+        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").mock(side_effect=_bearer_manifest_handler)
+        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").mock(side_effect=_bearer_blob_handler)
+        respx_mock.get(url__regex=r".*s3\.us-east-1\.amazonaws\.com.*").respond(
             status.HTTP_200_OK, json=config_blob_response
         )
 

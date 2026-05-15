@@ -23,10 +23,10 @@ def setup_client_session(
         )
         if tracing_config:
             setup_httpx_client_tracing(session, tracing_config=tracing_config)
-        app.state.aiohttp_client_session = session
+        app.state.httpx_client_session = session
 
     async def on_shutdown() -> None:
-        session = app.state.aiohttp_client_session
+        session = app.state.httpx_client_session
         assert isinstance(session, httpx.AsyncClient)  # nosec
         await session.aclose()
 
@@ -35,6 +35,6 @@ def setup_client_session(
 
 
 def get_client_session(app: FastAPI) -> httpx.AsyncClient:
-    session = app.state.aiohttp_client_session
+    session = app.state.httpx_client_session
     assert isinstance(session, httpx.AsyncClient)  # nosec
     return session
