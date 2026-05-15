@@ -54,7 +54,9 @@ class RabbitMQClientBase:
         exc: BaseException | None,
     ) -> None:
         if exc:
-            if isinstance(exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed):
+            if isinstance(
+                exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed | aiormq.exceptions.ConnectionClosed
+            ):
                 _logger.info(
                     **create_troubleshooting_log_kwargs(
                         "RabbitMQ channel closed",

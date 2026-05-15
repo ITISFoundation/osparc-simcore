@@ -8,7 +8,7 @@ import logging
 from typing import Annotated
 
 from aws_library.s3 import S3AccessError
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from models_library.api_schemas_storage.storage_schemas import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.errors import REDIS_CLIENT_UNHEALTHY_MSG
@@ -33,10 +33,6 @@ router = APIRouter(
 )
 
 
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
-
-
 @router.get("/", include_in_schema=True, response_model=Envelope[HealthCheck])
 async def get_health(
     request: Request,
@@ -44,7 +40,10 @@ async def get_health(
 ) -> Envelope[HealthCheck]:
     # NOTE: celery uses rabbitmq internally and retry options have already been setup
     if not redis_client_manager.healthy:
-        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=REDIS_CLIENT_UNHEALTHY_MSG,
+        )
 
     assert request  # nosec
     return Envelope[HealthCheck](
