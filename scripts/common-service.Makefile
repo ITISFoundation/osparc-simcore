@@ -41,15 +41,32 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 
 
-.PHONY: test-%-unit test-%-integration test-dev test-ci
+.PHONY: test-dev test-ci FORCE
+
+# Always out-of-date sentinel used to force pattern test targets to run.
+FORCE:
+
+.PHONY: check-test-dispatch
+check-test-dispatch: ## validates test target dispatch and mode-specific pytest options via dry-runs
+	@tmp_file=$$(mktemp); \
+	trap 'rm -f "$$tmp_file"' EXIT; \
+	$(MAKE) --no-print-directory -n test-dev-unit > "$$tmp_file"; \
+	grep -q "_run-test-dev" "$$tmp_file" || (echo "ERROR: test-dev-unit does not dispatch to _run-test-dev"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n test-ci-integration > "$$tmp_file"; \
+	grep -q "_run-test-ci" "$$tmp_file" || (echo "ERROR: test-ci-integration does not dispatch to _run-test-ci"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n _run-test-dev target=/tmp/dispatch-check > "$$tmp_file"; \
+	grep -q -- "--pdb" "$$tmp_file" || (echo "ERROR: _run-test-dev is missing development pytest options"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n _run-test-ci target=/tmp/dispatch-check > "$$tmp_file"; \
+	grep -q -- "--cov-append" "$$tmp_file" || (echo "ERROR: _run-test-ci is missing CI pytest options"; cat "$$tmp_file"; exit 1); \
+	echo "OK: test dispatch checks passed"
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
 
-test-%-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
+test-%-unit: FORCE _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
 	# Targets tests/unit folder
 	@make --no-print-directory _run-test-$* target=$(CURDIR)/tests/unit$(TEST_PATH)
 
-test-%-integration: ## run app integration tests (specifying test-path can restrict to a folder)
+test-%-integration: FORCE ## run app integration tests (specifying test-path can restrict to a folder)
 	# Targets tests/integration folder using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
@@ -135,8 +152,6 @@ info: ## displays service info
 # SUBTASKS
 #
 
-.PHONY: _run-test-%
-
 TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
 
@@ -164,7 +179,7 @@ PYTEST_ARGS_ci = \
 	--verbose \
 	-m "not heavy_load"
 
-_run-test-%: _check_venv_active
+_run-test-%: FORCE _check_venv_active
 	# runs tests for development or CI mode
 	$(if $(filter $*,dev ci),,$(error unsupported test mode '$*', expected dev or ci))
 	pytest \
