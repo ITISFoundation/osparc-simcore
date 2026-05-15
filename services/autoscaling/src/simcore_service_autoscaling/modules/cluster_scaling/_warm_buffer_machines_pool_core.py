@@ -16,7 +16,7 @@ Open features:
 
 import logging
 from collections import defaultdict
-from typing import TypeAlias, cast
+from typing import cast
 
 import arrow
 from aws_library.ec2 import (
@@ -57,6 +57,7 @@ from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
 from ..ssm import get_ssm_client
 from ._provider_protocol import AutoscalingProvider
+from ._tracing import emit_instance_span, get_tracing_config
 
 _logger = logging.getLogger(__name__)
 
@@ -121,7 +122,9 @@ def _handle_unconnected_instance(app: FastAPI, *, buffer_pool: WarmBufferPool, i
 
     if is_broken:
         _logger.error(
-            "The machine does not connect to the SSM server after %s. It will be terminated. TIP: check the initialization phase for errors.",
+            "The machine does not connect to the SSM server after %s."
+            " It will be terminated."
+            " TIP: check the initialization phase for errors.",
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
         )
         buffer_pool.broken_instances.add(instance)
@@ -193,6 +196,16 @@ async def _terminate_unneeded_pools(
                     buffers_manager.buffer_pools[ec2_type].all_instances()
                 )
             await ec2_client.terminate_instances(instances_to_terminate)
+            tracing_config = get_tracing_config(app)
+            for instance in instances_to_terminate:
+                emit_instance_span(
+                    tracing_config,
+                    instance.id,
+                    "ec2_warm_buffer_pool_terminated",
+                    {
+                        "ec2.instance.type": instance.type,
+                    },
+                )
             for ec2_type in terminateable_warm_pool_types:
                 buffers_manager.buffer_pools.pop(ec2_type)
     return buffers_manager
@@ -306,8 +319,8 @@ async def _add_remove_buffer_instances(
     return buffers_manager
 
 
-InstancesToStop: TypeAlias = set[EC2InstanceData]
-InstancesToTerminate: TypeAlias = set[EC2InstanceData]
+type InstancesToStop = set[EC2InstanceData]
+type InstancesToTerminate = set[EC2InstanceData]
 
 
 async def _handle_pool_image_pulling(
@@ -322,6 +335,17 @@ async def _handle_pool_image_pulling(
             command=DOCKER_PULL_COMMAND,
             command_name=PREPULL_COMMAND_NAME,
         )
+        tracing_config = get_tracing_config(app)
+        for instance in pool.waiting_to_pull_instances:
+            emit_instance_span(
+                tracing_config,
+                instance.id,
+                "ec2_warm_buffer_prepull_sent",
+                {
+                    "ec2.instance.type": instance.type,
+                    "ssm.command.id": ssm_command.command_id,
+                },
+            )
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
@@ -398,9 +422,29 @@ async def _handle_image_pre_pulling(app: FastAPI, buffers_manager: WarmBufferPoo
                 tag_keys=tag_keys_to_remove,
             )
             await ec2_client.stop_instances(instances_to_stop)
+            tracing_config = get_tracing_config(app)
+            for instance in instances_to_stop:
+                emit_instance_span(
+                    tracing_config,
+                    instance.id,
+                    "ec2_warm_buffer_stopped",
+                    {
+                        "ec2.instance.type": instance.type,
+                    },
+                )
     if broken_instances_to_terminate:
         with log_context(_logger, logging.WARNING, "broken buffer instances, terminating them"):
             await ec2_client.terminate_instances(broken_instances_to_terminate)
+            tracing_config = get_tracing_config(app)
+            for instance in broken_instances_to_terminate:
+                emit_instance_span(
+                    tracing_config,
+                    instance.id,
+                    "ec2_warm_buffer_broken_terminated",
+                    {
+                        "ec2.instance.type": instance.type,
+                    },
+                )
 
 
 async def monitor_buffer_machines(app: FastAPI, *, auto_scaling_mode: AutoscalingProvider) -> None:

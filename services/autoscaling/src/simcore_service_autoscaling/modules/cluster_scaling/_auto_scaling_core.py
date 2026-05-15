@@ -27,6 +27,7 @@ from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import traced_operation
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -78,6 +79,7 @@ from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
 from ..ssm import get_ssm_client
 from ._provider_protocol import AutoscalingProvider
+from ._tracing import emit_instance_span, get_tracing_config
 
 _logger = logging.getLogger(__name__)
 
@@ -258,7 +260,18 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
 async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     broken_instances = [i.ec2_instance for i in cluster.broken_ec2s]
     if broken_instances:
+        tracing_config = get_tracing_config(app)
         with log_context(_logger, logging.WARNING, msg="terminate broken EC2 instances"):
+            for instance in broken_instances:
+                emit_instance_span(
+                    tracing_config,
+                    instance.id,
+                    "ec2_instance_broken_terminated",
+                    {
+                        "ec2.instance.type": instance.type,
+                        "ec2.instance.state": instance.state,
+                    },
+                )
             await get_ec2_client(app).terminate_instances(broken_instances)
 
     return dataclasses.replace(
@@ -279,6 +292,7 @@ async def _try_attach_pending_ec2s(
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_instances_to_remove_custom_label_tags: list[EC2InstanceData] = []
+    tracing_config = get_tracing_config(app)
 
     for instance_data in cluster.pending_ec2s:
         try:
@@ -307,6 +321,16 @@ async def _try_attach_pending_ec2s(
                         node=new_node,
                         ec2_instance=instance_data.ec2_instance,
                     )
+                )
+                elapsed_since_launch = datetime.datetime.now(datetime.UTC) - instance_data.ec2_instance.launch_time
+                emit_instance_span(
+                    tracing_config,
+                    instance_data.ec2_instance.id,
+                    "ec2_instance_attached_to_swarm",
+                    {
+                        "ec2.instance.type": instance_data.ec2_instance.type,
+                        "ec2.instance.time_to_attach_seconds": f"{elapsed_since_launch.total_seconds():.1f}",
+                    },
                 )
                 _logger.info(
                     "Attached new EC2 instance %s with custom placement labels: %s",
@@ -394,6 +418,15 @@ async def _activate_and_notify(
             progress_type=ProgressType.CLUSTER_UP_SCALING,
         ),
     )
+    emit_instance_span(
+        get_tracing_config(app),
+        drained_node.ec2_instance.id,
+        "ec2_node_activated",
+        {
+            "ec2.instance.type": drained_node.ec2_instance.type,
+            "task.count": str(len(drained_node.assigned_tasks)),
+        },
+    )
     return dataclasses.replace(drained_node, node=updated_node)
 
 
@@ -418,6 +451,15 @@ async def _cancel_previous_pulling_command_if_any(
             msg=f"cancelling previous pulling {command_id} on {instance.id}",
         ):
             await ssm_client.cancel_command(instance.id, command_id=command_id)
+        emit_instance_span(
+            get_tracing_config(app),
+            instance.id,
+            "ec2_prepull_cancelled",
+            {
+                "ec2.instance.type": instance.type,
+                "ssm.command.id": command_id,
+            },
+        )
         await ec2_client.remove_instances_tags(
             [instance],
             tag_keys=[
@@ -548,8 +590,18 @@ async def _try_start_warm_buffer_instances(
 
         # NOTE: first start the instance and then set the tags in case the instance cannot start
         # (e.g. InsufficientInstanceCapacity)  # noqa: ERA001
+        tracing_config = get_tracing_config(app)
         non_associated_instance_by_id = {i.ec2_instance.id: i for i in cluster.warm_buffer_ec2s}
         for instance in started_instances:
+            emit_instance_span(
+                tracing_config,
+                instance.id,
+                "ec2_warm_buffer_started",
+                {
+                    "ec2.instance.type": instance.type,
+                    "ec2.instance.state": instance.state,
+                },
+            )
             non_associated_instance = non_associated_instance_by_id[instance.id]
 
             activation_tags = get_activated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app))
@@ -898,6 +950,7 @@ async def _launch_instances(
     # parse results
     last_issue = ""
     new_pending_instances: list[EC2InstanceData] = []
+    tracing_config = get_tracing_config(app)
     for r in results:
         if isinstance(r, EC2TooManyInstancesError):
             await post_tasks_log_message(
@@ -910,8 +963,27 @@ async def _launch_instances(
             _logger.error("Unexpected error happened when starting EC2 instance: %s", r)
             last_issue = f"{r}"
         elif isinstance(r, list):
+            for instance in r:
+                emit_instance_span(
+                    tracing_config,
+                    instance.id,
+                    "ec2_instance_launched",
+                    {
+                        "ec2.instance.type": instance.type,
+                        "ec2.instance.state": instance.state,
+                    },
+                )
             new_pending_instances.extend(r)
         else:
+            emit_instance_span(
+                tracing_config,
+                r.id,
+                "ec2_instance_launched",
+                {
+                    "ec2.instance.type": r.type,
+                    "ec2.instance.state": r.state,
+                },
+            )
             new_pending_instances.append(r)
 
     log_message = (
@@ -998,6 +1070,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
                 "following nodes were deactivated: '%s'",
                 f"{[node.description.hostname for node in updated_nodes if node.description]}",
             )
+    tracing_config = get_tracing_config(app)
     newly_drained_instances = [
         AssociatedInstance(
             node=node,
@@ -1005,6 +1078,15 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
         )
         for instance, node in zip(active_empty_instances, updated_nodes, strict=True)
     ]
+    for instance in newly_drained_instances:
+        emit_instance_span(
+            tracing_config,
+            instance.ec2_instance.id,
+            "ec2_node_deactivated",
+            {
+                "ec2.instance.type": instance.ec2_instance.type,
+            },
+        )
     return dataclasses.replace(
         cluster,
         active_nodes=[n for n in cluster.active_nodes if n not in active_empty_instances],
@@ -1065,6 +1147,14 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
             log_catch(_logger, reraise=False),
         ):
             await utils_docker.set_node_begin_termination_process(get_docker_client(app), instance.node)
+            emit_instance_span(
+                get_tracing_config(app),
+                instance.ec2_instance.id,
+                "ec2_instance_termination_started",
+                {
+                    "ec2.instance.type": instance.ec2_instance.type,
+                },
+            )
             new_terminating_instances.append(instance)
     new_terminating_instance_ids = [i.ec2_instance.id for i in new_terminating_instances]
 
@@ -1085,6 +1175,17 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
             f"'{[i.node.description.hostname for i in instances_to_terminate if i.node.description]}'",
         ):
             await get_ec2_client(app).terminate_instances([i.ec2_instance for i in instances_to_terminate])
+
+        tracing_config = get_tracing_config(app)
+        for i in instances_to_terminate:
+            emit_instance_span(
+                tracing_config,
+                i.ec2_instance.id,
+                "ec2_instance_terminated",
+                {
+                    "ec2.instance.type": i.ec2_instance.type,
+                },
+            )
 
         # since these nodes are being terminated, remove them from the swarm
         await utils_docker.remove_nodes(
@@ -1181,6 +1282,16 @@ async def _drain_retired_nodes(
         )
         for instance, node in zip(cluster.retired_nodes, updated_nodes, strict=True)
     ]
+    tracing_config = get_tracing_config(app)
+    for instance in newly_drained_instances:
+        emit_instance_span(
+            tracing_config,
+            instance.ec2_instance.id,
+            "ec2_node_retired_drained",
+            {
+                "ec2.instance.type": instance.ec2_instance.type,
+            },
+        )
     return dataclasses.replace(
         cluster,
         retired_nodes=[],
@@ -1373,6 +1484,15 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
     match ssm_command.status:
         case "Success":
             _logger.info("%s finished pre-pulling images", node.ec2_instance.id)
+            emit_instance_span(
+                get_tracing_config(app),
+                node.ec2_instance.id,
+                "ec2_prepull_completed",
+                {
+                    "ec2.instance.type": node.ec2_instance.type,
+                    "ssm.command.status": ssm_command.status,
+                },
+            )
             return await _remove_tags_and_return(
                 node,
                 [
@@ -1385,6 +1505,15 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
                 "%s failed pre-pulling images, status is %s. this will be retried later",
                 node.ec2_instance.id,
                 ssm_command.status,
+            )
+            emit_instance_span(
+                get_tracing_config(app),
+                node.ec2_instance.id,
+                "ec2_prepull_failed",
+                {
+                    "ec2.instance.type": node.ec2_instance.type,
+                    "ssm.command.status": ssm_command.status,
+                },
             )
             return await _remove_tags_and_return(
                 node,
@@ -1468,6 +1597,16 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Clu
             command=change_docker_compose_and_pull_command,
             command_name=PREPULL_COMMAND_NAME,
         )
+        emit_instance_span(
+            get_tracing_config(app),
+            node.ec2_instance.id,
+            "ec2_prepull_command_sent",
+            {
+                "ec2.instance.type": node.ec2_instance.type,
+                "ssm.command.id": ssm_command.command_id,
+                "prepull.image_count": str(len(desired_pre_pulled_images)),
+            },
+        )
         await ec2_client.set_instances_tags(
             (node.ec2_instance,),
             tags={
@@ -1483,22 +1622,26 @@ async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProv
     If there are such tasks, this method will allocate new machines in AWS to cope with
     the additional load.
     """
-    # current state
-    allowed_instance_types = await _sorted_allowed_instance_types(app, auto_scaling_mode)
+    with traced_operation(
+        "autoscaling_cycle",
+        tracing_config=get_tracing_config(app),
+    ):
+        # current state
+        allowed_instance_types = await _sorted_allowed_instance_types(app, auto_scaling_mode)
 
-    cluster = await _analyze_current_cluster(app, auto_scaling_mode, allowed_instance_types)
+        cluster = await _analyze_current_cluster(app, auto_scaling_mode, allowed_instance_types)
 
-    # cleanup
-    cluster = await _cleanup_disconnected_nodes(app, cluster)
-    cluster = await _terminate_broken_ec2s(app, cluster)
-    cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode)
-    cluster = await _drain_retired_nodes(app, cluster)
+        # cleanup
+        cluster = await _cleanup_disconnected_nodes(app, cluster)
+        cluster = await _terminate_broken_ec2s(app, cluster)
+        cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode)
+        cluster = await _drain_retired_nodes(app, cluster)
 
-    # desired state
-    cluster = await _autoscale_cluster(app, cluster, auto_scaling_mode, allowed_instance_types)
+        # desired state
+        cluster = await _autoscale_cluster(app, cluster, auto_scaling_mode, allowed_instance_types)
 
-    # take care of hot buffer pre-pulling
-    await _pre_pull_docker_images_on_idle_hot_buffers(app, cluster)
-    # notify
-    await _notify_machine_creation_progress(app, cluster)
-    await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
+        # take care of hot buffer pre-pulling
+        await _pre_pull_docker_images_on_idle_hot_buffers(app, cluster)
+        # notify
+        await _notify_machine_creation_progress(app, cluster)
+        await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
