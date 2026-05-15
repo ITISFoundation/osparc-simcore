@@ -611,7 +611,7 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 	@echo "# upgrading tools to latest version in" && $@/bin/python --version
 	@uv pip list --python $@
 
-devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
+devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json .vscode/mcp.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
@@ -640,16 +640,8 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json:
-	@$(MAKE_C) .vscode settings.json
-
-
-.vscode/launch.json:
-	@$(MAKE_C) .vscode launch.json
-
-
-.vscode/mcp.json:
-	@$(MAKE_C) .vscode mcp.json
+.vscode/%.json:
+	@$(MAKE_C) .vscode $(notdir $@)
 
 
 

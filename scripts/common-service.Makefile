@@ -41,19 +41,19 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 
 
-.PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
+.PHONY: test-%-unit test-%-integration test-dev test-ci
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
 
-test-dev-unit test-ci-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
+test-%-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
 	# Targets tests/unit folder
-	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_PATH)
+	@make --no-print-directory _run-test-$* target=$(CURDIR)/tests/unit$(TEST_PATH)
 
-test-dev-integration test-ci-integration: ## run app integration tests (specifying test-path can restrict to a folder)
+test-%-integration: ## run app integration tests (specifying test-path can restrict to a folder)
 	# Targets tests/integration folder using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration$(TEST_PATH)
+	make --no-print-directory _run-test-$* target=$(CURDIR)/tests/integration$(TEST_PATH)
 
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
@@ -135,47 +135,41 @@ info: ## displays service info
 # SUBTASKS
 #
 
-.PHONY: _run-test-dev _run-test-ci
+.PHONY: _run-test-%
 
 TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
-_run-test-dev: _check_venv_active
-	# runs tests for development (e.g w/ pdb)
-	pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--keep-docker-up \
-		--pdb \
-		-vv \
-		$(PYTEST_ADDITIONAL_PARAMETERS) \
-		$(TEST_TARGET)
 
+PYTEST_BASE_ARGS = \
+	--asyncio-mode=auto \
+	--color=yes \
+	--cov-config=.coveragerc \
+	--cov-report=term-missing \
+	--cov-report=xml \
+	--cov=$(APP_PACKAGE_NAME) \
+	--durations=10 \
+	--junitxml=junit.xml -o junit_family=legacy \
+	--keep-docker-up
 
-_run-test-ci: _check_venv_active
-	# runs tests for CI (e.g. w/o pdb but w/ coverage)
+PYTEST_ARGS_dev = \
+	--exitfirst \
+	--failed-first \
+	--pdb \
+	-vv
+
+PYTEST_ARGS_ci = \
+	--cov-append \
+	--log-date-format="%Y-%m-%d %H:%M:%S" \
+	--log-format="%(asctime)s %(levelname)s %(message)s" \
+	--verbose \
+	-m "not heavy_load"
+
+_run-test-%: _check_venv_active
+	# runs tests for development or CI mode
+	$(if $(filter $*,dev ci),,$(error unsupported test mode '$*', expected dev or ci))
 	pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--keep-docker-up \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
-		-m "not heavy_load" \
+		$(PYTEST_BASE_ARGS) \
+		$(PYTEST_ARGS_$*) \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
 
