@@ -3,19 +3,23 @@
 
 import asyncio
 import json
+import logging
 import time
 from unittest import mock
 
 import httpx
 import pytest
-from fastapi import FastAPI
+import respx
+from fastapi import FastAPI, status
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_director import registry_proxy
-from simcore_service_director.core.settings import ApplicationSettings
+from simcore_service_director.core.settings import ApplicationSettings, get_application_settings
+
+_logger = logging.getLogger(__name__)
 
 
 async def test_list_no_services_available(
@@ -277,9 +281,12 @@ def test_list_services_performance(
         stop_time = time.perf_counter()
         elapsed = stop_time - start_time
         rate = elapsed / len(services or [1])
-        print(
-            f"\nTime to list services: {elapsed:.3}s, {len(services)} services"
-            f" in {registry_settings.resolved_registry_url}, rate: {rate:.3}s/service"
+        _logger.info(
+            "Time to list services: %.3fs, %d services in %s, rate: %.3fs/service",
+            elapsed,
+            len(services),
+            registry_settings.resolved_registry_url,
+            rate,
         )
 
     def run_async_test() -> None:
@@ -328,37 +335,33 @@ async def test_get_image_labels_follows_blob_redirect(
     }
     config_blob_response = {"config": {"Labels": expected_labels}}
 
-    def mock_handler(request: httpx.Request) -> httpx.Response:
-        url = str(request.url)
-        if f"{image}/manifests/{tag}" in url:
-            return httpx.Response(
-                200,
-                json=manifest_response,
-                headers={
-                    "Docker-Content-Digest": manifest_digest,
-                    "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
-                },
-            )
-        if f"{image}/blobs/{config_digest}" in url:
-            # Simulate S3-backed registry with redirect enabled
-            return httpx.Response(307, headers={"Location": s3_presigned_url})
-        if "s3.amazonaws.com" in url:
-            # S3 pre-signed URL returns the config blob
-            assert "Authorization" not in request.headers
-            return httpx.Response(200, json=config_blob_response)
-        return httpx.Response(404)
+    with respx.mock(assert_all_called=False) as respx_mock:
+        respx_mock.get(url__contains=f"{image}/manifests/{tag}").respond(
+            status.HTTP_200_OK,
+            json=manifest_response,
+            headers={
+                "Docker-Content-Digest": manifest_digest,
+                "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+            },
+        )
+        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").respond(
+            status.HTTP_307_TEMPORARY_REDIRECT,
+            headers={"Location": s3_presigned_url},
+        )
+        respx_mock.get(url__contains="s3.amazonaws.com").respond(
+            status.HTTP_200_OK,
+            json=config_blob_response,
+        )
 
-    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
-    original_client = app.state.aiohttp_client_session
-    app.state.aiohttp_client_session = mock_client
-    try:
         labels, digest = await registry_proxy.get_image_labels(app, image, tag)
 
         assert labels == expected_labels
         assert digest == manifest_digest
-    finally:
-        app.state.aiohttp_client_session = original_client
-        await mock_client.aclose()
+
+        # Verify no auth leaked to S3
+        s3_calls = [c for c in respx_mock.calls if "s3.amazonaws.com" in str(c.request.url)]
+        assert len(s3_calls) == 1
+        assert "authorization" not in {k.lower() for k in s3_calls[0].request.headers}
 
 
 @pytest.fixture
@@ -428,50 +431,37 @@ async def test_get_image_labels_follows_blob_redirect_with_basic_auth(
     }
     config_blob_response = {"config": {"Labels": expected_labels}}
 
-    requests_log: list[tuple[str, str, bool]] = []
+    with respx.mock(assert_all_called=False) as respx_mock:
+        respx_mock.get(url__contains=f"{image}/manifests/{tag}").respond(
+            status.HTTP_200_OK,
+            json=manifest_response,
+            headers={
+                "Docker-Content-Digest": manifest_digest,
+                "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+            },
+        )
+        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").respond(
+            status.HTTP_307_TEMPORARY_REDIRECT,
+            headers={"Location": s3_presigned_url},
+        )
+        respx_mock.get(url__contains="s3.us-east-1.amazonaws.com").respond(
+            status.HTTP_200_OK,
+            json=config_blob_response,
+        )
 
-    def mock_handler(request: httpx.Request) -> httpx.Response:
-        has_auth = "authorization" in {k.lower() for k in request.headers}
-        requests_log.append((request.method, str(request.url), has_auth))
-
-        url = str(request.url)
-        if f"{image}/manifests/{tag}" in url:
-            return httpx.Response(
-                200,
-                json=manifest_response,
-                headers={
-                    "Docker-Content-Digest": manifest_digest,
-                    "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
-                },
-            )
-        if f"{image}/blobs/{config_digest}" in url:
-            return httpx.Response(307, headers={"Location": s3_presigned_url})
-        if "s3.us-east-1.amazonaws.com" in url:
-            # S3 pre-signed URL: auth must NOT be forwarded
-            assert not has_auth, "Authorization header leaked to S3 pre-signed URL"
-            return httpx.Response(200, json=config_blob_response)
-        return httpx.Response(404)
-
-    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
-    original_client = app.state.aiohttp_client_session
-    app.state.aiohttp_client_session = mock_client
-    try:
         labels, digest = await registry_proxy.get_image_labels(app, image, tag)
 
         assert labels == expected_labels
         assert digest == manifest_digest
 
         # Verify requests sequence: manifest, blob (307), S3 follow
-        assert len(requests_log) == 3
-        assert "manifests" in requests_log[0][1]
-        assert requests_log[0][2]  # manifest request has auth
-        assert "blobs" in requests_log[1][1]
-        assert requests_log[1][2]  # blob request has auth
-        assert "s3.us-east-1.amazonaws.com" in requests_log[2][1]
-        assert not requests_log[2][2]  # S3 request must NOT have auth
-    finally:
-        app.state.aiohttp_client_session = original_client
-        await mock_client.aclose()
+        assert len(respx_mock.calls) == 3
+        assert "manifests" in str(respx_mock.calls[0].request.url)
+        assert respx_mock.calls[0].request.headers.get("authorization")  # manifest has auth
+        assert "blobs" in str(respx_mock.calls[1].request.url)
+        assert respx_mock.calls[1].request.headers.get("authorization")  # blob has auth
+        assert "s3.us-east-1.amazonaws.com" in str(respx_mock.calls[2].request.url)
+        assert not respx_mock.calls[2].request.headers.get("authorization")  # S3 must NOT have auth
 
 
 async def test_get_image_labels_no_redirect_still_works(
@@ -511,33 +501,24 @@ async def test_get_image_labels_no_redirect_still_works(
     }
     config_blob_response = {"config": {"Labels": expected_labels}}
 
-    def mock_handler(request: httpx.Request) -> httpx.Response:
-        url = str(request.url)
-        if f"{image}/manifests/{tag}" in url:
-            return httpx.Response(
-                200,
-                json=manifest_response,
-                headers={
-                    "Docker-Content-Digest": manifest_digest,
-                    "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
-                },
-            )
-        if f"{image}/blobs/{config_digest}" in url:
-            # No redirect — blob served directly (REGISTRY_STORAGE_REDIRECT_DISABLE=true)
-            return httpx.Response(200, json=config_blob_response)
-        return httpx.Response(404)
+    with respx.mock(assert_all_called=False) as respx_mock:
+        respx_mock.get(url__contains=f"{image}/manifests/{tag}").respond(
+            status.HTTP_200_OK,
+            json=manifest_response,
+            headers={
+                "Docker-Content-Digest": manifest_digest,
+                "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+            },
+        )
+        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").respond(
+            status.HTTP_200_OK,
+            json=config_blob_response,
+        )
 
-    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
-    original_client = app.state.aiohttp_client_session
-    app.state.aiohttp_client_session = mock_client
-    try:
         labels, digest = await registry_proxy.get_image_labels(app, image, tag)
 
         assert labels == expected_labels
         assert digest == manifest_digest
-    finally:
-        app.state.aiohttp_client_session = original_client
-        await mock_client.aclose()
 
 
 async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
@@ -584,68 +565,60 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
     }
     config_blob_response = {"config": {"Labels": expected_labels}}
 
-    from simcore_service_director.core.settings import get_application_settings  # noqa: PLC0415
-
     app_settings = get_application_settings(app)
     realm_url = f"http://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}/v2/token"
 
-    requests_log: list[tuple[str, str]] = []
+    def _bearer_manifest_handler(request: httpx.Request) -> httpx.Response:
+        if f"Bearer {fake_token}" not in request.headers.get("authorization", ""):
+            return httpx.Response(
+                status.HTTP_401_UNAUTHORIZED,
+                headers={
+                    "WWW-Authenticate": (
+                        f'Bearer realm="{realm_url}",service="registry.example.com",scope="repository:{image}:pull"'
+                    )
+                },
+            )
+        return httpx.Response(
+            status.HTTP_200_OK,
+            json=manifest_response,
+            headers={
+                "Docker-Content-Digest": manifest_digest,
+                "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+            },
+        )
 
-    def mock_handler(request: httpx.Request) -> httpx.Response:
-        url = str(request.url)
-        requests_log.append((request.method, url))
+    def _bearer_blob_handler(request: httpx.Request) -> httpx.Response:
+        if f"Bearer {fake_token}" not in request.headers.get("authorization", ""):
+            return httpx.Response(
+                status.HTTP_401_UNAUTHORIZED,
+                headers={
+                    "WWW-Authenticate": (
+                        f'Bearer realm="{realm_url}",service="registry.example.com",scope="repository:{image}:pull"'
+                    )
+                },
+            )
+        return httpx.Response(
+            status.HTTP_307_TEMPORARY_REDIRECT,
+            headers={"Location": s3_presigned_url},
+        )
 
-        # Token endpoint
-        if "/v2/token" in url:
-            return httpx.Response(200, json={"token": fake_token})
+    with respx.mock(assert_all_called=False) as respx_mock:
+        respx_mock.get(url__contains="/v2/token").respond(status.HTTP_200_OK, json={"token": fake_token})
+        respx_mock.get(url__contains=f"{image}/manifests/{tag}").mock(side_effect=_bearer_manifest_handler)
+        respx_mock.get(url__contains=f"{image}/blobs/{config_digest}").mock(side_effect=_bearer_blob_handler)
+        respx_mock.get(url__contains="s3.us-east-1.amazonaws.com").respond(
+            status.HTTP_200_OK, json=config_blob_response
+        )
 
-        # Registry — unauthenticated requests get 401 Bearer challenge
-        if f"{image}/manifests/{tag}" in url or f"{image}/blobs/{config_digest}" in url:
-            auth_header = request.headers.get("authorization", "")
-            if f"Bearer {fake_token}" not in auth_header:
-                return httpx.Response(
-                    401,
-                    headers={
-                        "WWW-Authenticate": (
-                            f'Bearer realm="{realm_url}",service="registry.example.com",scope="repository:{image}:pull"'
-                        )
-                    },
-                )
-            # Authenticated
-            if f"{image}/manifests/{tag}" in url:
-                return httpx.Response(
-                    200,
-                    json=manifest_response,
-                    headers={
-                        "Docker-Content-Digest": manifest_digest,
-                        "Content-Type": ("application/vnd.docker.distribution.manifest.v2+json"),
-                    },
-                )
-            if f"{image}/blobs/{config_digest}" in url:
-                return httpx.Response(307, headers={"Location": s3_presigned_url})
-
-        # S3 pre-signed URL — must NOT carry auth
-        if "s3.us-east-1.amazonaws.com" in url:
-            assert "authorization" not in {k.lower() for k in request.headers}, "Authorization header leaked to S3"
-            return httpx.Response(200, json=config_blob_response)
-
-        return httpx.Response(404)
-
-    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(mock_handler))
-    original_client = app.state.aiohttp_client_session
-    app.state.aiohttp_client_session = mock_client
-    try:
         labels, digest = await registry_proxy.get_image_labels(app, image, tag)
 
         assert labels == expected_labels
         assert digest == manifest_digest
 
         # Verify Bearer flow: at least one 401→token→retry cycle happened
-        token_requests = [(m, u) for m, u in requests_log if "/v2/token" in u]
-        assert len(token_requests) >= 1, "Expected token exchange request"
+        token_calls = [c for c in respx_mock.calls if "/v2/token" in str(c.request.url)]
+        assert len(token_calls) >= 1, "Expected token exchange request"
 
-        s3_requests = [(m, u) for m, u in requests_log if "s3.us-east-1.amazonaws.com" in u]
-        assert len(s3_requests) == 1, "Expected exactly one S3 redirect follow"
-    finally:
-        app.state.aiohttp_client_session = original_client
-        await mock_client.aclose()
+        s3_calls = [c for c in respx_mock.calls if "s3.us-east-1.amazonaws.com" in str(c.request.url)]
+        assert len(s3_calls) == 1, "Expected exactly one S3 redirect follow"
+        assert not s3_calls[0].request.headers.get("authorization"), "Authorization header leaked to S3"
