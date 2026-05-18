@@ -85,11 +85,7 @@ async def _notify_support_reply_via_email(
     message_content: str,
     sender_user_id: UserID,
 ) -> None:
-    """Send an email notification when a reply is posted in a support conversation.
-
-    - When a support user or chatbot replies -> notify the conversation creator (regular user)
-    - When a regular user replies -> notify the support group
-    """
+    """Send an email notification when a reply is posted in a support conversation."""
     product = products_service.get_product(app, product_name=product_name)
     conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
 
