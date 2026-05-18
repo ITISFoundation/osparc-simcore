@@ -7,6 +7,7 @@ from models_library.rpc.webserver.projects import (
     PageRpcProjectJobRpcGet,
     ProjectJobRpcGet,
 )
+from models_library.rpc_pagination import PageRpc
 from models_library.users import UserID
 from pydantic import ValidationError, validate_call
 from servicelib.rabbitmq import RPCRouter
@@ -101,7 +102,7 @@ async def list_projects_marked_as_jobs(
         for project in projects
     ]
 
-    page: PageRpcProjectJobRpcGet = PageRpcProjectJobRpcGet.create(
+    page: PageRpcProjectJobRpcGet = PageRpc[ProjectJobRpcGet].create(
         job_projects,
         total=total,
         limit=limit,
