@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Self
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -35,7 +35,7 @@ class ListProjectsMarkedAsJobRpcFilters(BaseModel):
     ] = None
 
     @model_validator(mode="after")
-    def _check_any_and_all_are_mutually_exclusive(self) -> "ListProjectsMarkedAsJobRpcFilters":
+    def _check_any_and_all_are_mutually_exclusive(self) -> Self:
         if self.any_custom_metadata and self.all_custom_metadata:
             msg = "any_custom_metadata and all_custom_metadata are mutually exclusive"
             raise ValueError(msg)

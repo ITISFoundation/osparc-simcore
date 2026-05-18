@@ -34,39 +34,28 @@ def _apply_job_parent_resource_name_filter(query: sa.sql.Select, prefix: str) ->
     return query.where(projects_to_jobs.c.job_parent_resource_name.like(f"{prefix}%"))
 
 
-def _apply_custom_metadata_filter(query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]) -> sa.sql.Select:
+def _apply_custom_metadata_filter(
+    query: sa.sql.Select,
+    metadata_fields: list[tuple[str, str]],
+    *,
+    match_all: bool = False,
+) -> sa.sql.Select:
     """Apply metadata filters to query.
 
-    For PostgreSQL JSONB fields, we need to extract the text value using ->> operator
+    For PostgreSQL JSONB fields, we extract the text value using ->> operator
     before applying string comparison operators like ILIKE.
+
+    When match_all=False (default), uses OR logic. When match_all=True, uses AND logic.
     """
-    assert any_metadata_fields  # nosec
+    assert metadata_fields  # nosec
 
     metadata_fields_ilike = []
-    for key, pattern in any_metadata_fields:
-        # Use ->> operator to extract the text value from JSONB
-        # Then apply ILIKE for case-insensitive pattern matching
+    for key, pattern in metadata_fields:
         sql_pattern = pattern.replace("*", "%")  # Convert glob-like pattern to SQL LIKE
         metadata_fields_ilike.append(projects_metadata.c.custom[key].astext.ilike(sql_pattern))
 
-    return query.where(sa.or_(*metadata_fields_ilike))
-
-
-def _apply_custom_metadata_all_filter(
-    query: sa.sql.Select, all_metadata_fields: list[tuple[str, str]]
-) -> sa.sql.Select:
-    """Apply metadata filters to query using AND logic.
-
-    All conditions must match for a project to be included.
-    """
-    assert all_metadata_fields  # nosec
-
-    metadata_fields_ilike = []
-    for key, pattern in all_metadata_fields:
-        sql_pattern = pattern.replace("*", "%")
-        metadata_fields_ilike.append(projects_metadata.c.custom[key].astext.ilike(sql_pattern))
-
-    return query.where(sa.and_(*metadata_fields_ilike))
+    combine = sa.and_ if match_all else sa.or_
+    return query.where(combine(*metadata_fields_ilike))
 
 
 class ProjectJobsRepository(BaseRepository):
@@ -168,7 +157,7 @@ class ProjectJobsRepository(BaseRepository):
             access_query = _apply_custom_metadata_filter(access_query, filter_any_custom_metadata)
 
         if filter_all_custom_metadata:
-            access_query = _apply_custom_metadata_all_filter(access_query, filter_all_custom_metadata)
+            access_query = _apply_custom_metadata_filter(access_query, filter_all_custom_metadata, match_all=True)
 
         # Step 4. Convert access_query to a subquery
         base_query = access_query.subquery()

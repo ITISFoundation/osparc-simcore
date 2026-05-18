@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from pydantic.config import JsonDict
@@ -28,7 +28,7 @@ class JobMetadataFilter(BaseModel):
     ] = None
 
     @model_validator(mode="after")
-    def _check_any_and_all_are_mutually_exclusive(self) -> "JobMetadataFilter":
+    def _check_any_and_all_are_mutually_exclusive(self) -> Self:
         if self.any and self.all:
             msg = "metadata.any and metadata.all are mutually exclusive"
             raise ValueError(msg)

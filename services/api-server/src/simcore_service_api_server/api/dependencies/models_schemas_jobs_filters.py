@@ -10,10 +10,12 @@ from ...models.schemas.jobs_filters import JobMetadataFilter, MetadataFilterItem
 def _parse_metadata_items(raw: list[str]) -> list[MetadataFilterItem]:
     items = []
     for item in raw:
-        try:
-            name, pattern = item.split(":", 1)
-        except ValueError:
-            continue
+        if ":" not in item:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid metadata filter format: '{item}'. Expected 'key:pattern'.",
+            )
+        name, pattern = item.split(":", 1)
         items.append(MetadataFilterItem(name=name, pattern=pattern))
     return items
 
