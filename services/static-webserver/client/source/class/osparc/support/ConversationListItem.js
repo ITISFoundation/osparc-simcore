@@ -89,9 +89,17 @@ qx.Class.define("osparc.support.ConversationListItem", {
           break;
         case "menu-button": {
           const buttonSize = 22;
-          const iconSize = 14;
-          control = osparc.utils.Utils.createThreeDotsMenuButton(buttonSize, iconSize).set({
-            backgroundColor: "background-main-3",
+          control = new qx.ui.form.MenuButton().set({
+            appearance: "form-button-outlined",
+            width: buttonSize,
+            height: buttonSize,
+            padding: [0, 6],
+            allowGrowX: false,
+            allowGrowY: false,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesome5Solid/ellipsis-v/12",
+            focusable: false,
           });
           this.getChildControl("bottom-right-layout").add(control);
           break;
