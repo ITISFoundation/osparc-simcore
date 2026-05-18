@@ -7,6 +7,7 @@ from typing import Any
 from aiohttp import web
 from pydantic import BaseModel
 from servicelib.aiohttp import status
+from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
 
 from .._meta import API_VTAG
 from ..application_keys import APP_SETTINGS_APPKEY
@@ -39,10 +40,14 @@ async def healthcheck_liveness_probe(request: web.Request):
         return web.json_response(data={"data": health_report})
     except HealthCheckError as err:
         _logger.warning("%s", err)
-        # Return unhealthy status without raising exception to avoid noisy logs
-        return web.json_response(
-            data={"error": {"message": "unhealthy", "reason": f"{err}"}},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        # Build the standard REST error envelope without raising to avoid noisy logs.
+        return exception_to_response(
+            create_http_error(
+                err,
+                error_message=f"{err}",
+                http_error_cls=web.HTTPServiceUnavailable,
+                status_reason="unhealthy",
+            )
         )
 
 
