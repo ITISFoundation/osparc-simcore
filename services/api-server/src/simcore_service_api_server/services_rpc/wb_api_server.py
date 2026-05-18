@@ -269,6 +269,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_limit: int = 50,
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
+        filter_all_custom_metadata: list[NameValueTuple] | None = None,
     ):
         pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 
@@ -277,6 +278,11 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             any_custom_metadata=(
                 [MetadataFilterItem(name=name, pattern=pattern) for name, pattern in filter_any_custom_metadata]
                 if filter_any_custom_metadata
+                else None
+            ),
+            all_custom_metadata=(
+                [MetadataFilterItem(name=name, pattern=pattern) for name, pattern in filter_all_custom_metadata]
+                if filter_all_custom_metadata
                 else None
             ),
         )
