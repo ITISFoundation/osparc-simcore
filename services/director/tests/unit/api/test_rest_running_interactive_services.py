@@ -211,6 +211,7 @@ async def test_running_interactive_services_list_get(  # noqa: PLR0915
                 params["service_key"] = service_description["key"]
                 params["service_tag"] = service_description["version"]
                 params["service_uuid"] = str(uuid.uuid4())
+                params["product_name"] = "osparc"
                 # start the service
                 resp = await client.post(
                     "/v0/running_interactive_services",
