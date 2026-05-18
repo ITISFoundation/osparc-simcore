@@ -14,6 +14,7 @@ import httpx
 import tenacity
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, status
+from models_library.products import ProductName
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
@@ -144,7 +145,7 @@ def _to_simcore_runtime_docker_label_key(key: str) -> str:
 
 
 # pylint: disable=too-many-branches
-async def _create_docker_service_params(
+async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR0915
     app: FastAPI,
     *,
     client: aiodocker.docker.Docker,
@@ -154,6 +155,7 @@ async def _create_docker_service_params(
     user_id: str,
     node_uuid: str,
     project_id: str,
+    product_name: ProductName,
     node_base_path: str,
     internal_network_id: str | None,
     request_simcore_user_agent: str,
@@ -167,7 +169,9 @@ async def _create_docker_service_params(
     _logger.debug("Converting labels to docker runtime parameters")
     service_default_envs = {
         # old services expect POSTGRES_ENDPOINT as hostname:port
-        "POSTGRES_ENDPOINT": f"{app_settings.DIRECTOR_POSTGRES.POSTGRES_HOST}:{app_settings.DIRECTOR_POSTGRES.POSTGRES_PORT}",
+        "POSTGRES_ENDPOINT": (
+            f"{app_settings.DIRECTOR_POSTGRES.POSTGRES_HOST}:{app_settings.DIRECTOR_POSTGRES.POSTGRES_PORT}"
+        ),
         "POSTGRES_USER": app_settings.DIRECTOR_POSTGRES.POSTGRES_USER,
         "POSTGRES_PASSWORD": app_settings.DIRECTOR_POSTGRES.POSTGRES_PASSWORD.get_secret_value(),
         "POSTGRES_DB": app_settings.DIRECTOR_POSTGRES.POSTGRES_DB,
@@ -190,9 +194,7 @@ async def _create_docker_service_params(
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key(
-                "product_name"
-            ): "osparc",  # fixed no legacy available in other products
+            _to_simcore_runtime_docker_label_key("product_name"): product_name,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
         }
@@ -236,9 +238,7 @@ async def _create_docker_service_params(
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key(
-                "product_name"
-            ): "osparc",  # fixed no legacy available in other products
+            _to_simcore_runtime_docker_label_key("product_name"): product_name,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
             _to_simcore_runtime_docker_label_key("type"): ("main" if main_service else "dependency"),
@@ -267,7 +267,7 @@ async def _create_docker_service_params(
     # add dynamic placement constraints based on custom templates from configuration
     if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
         label_values = {
-            "product_name": "osparc",
+            "product_name": product_name,
             "user_id": user_id,
             "project_id": project_id,
             "node_id": node_uuid,
@@ -563,7 +563,7 @@ async def _remove_overlay_network_of_swarm(client: aiodocker.docker.Docker, node
         raise GenericDockerError(err=msg) from err
 
 
-async def _get_service_state(
+async def _get_service_state(  # noqa: C901, PLR0912
     client: aiodocker.docker.Docker, service: dict, app_settings: ApplicationSettings
 ) -> tuple[ServiceState, str]:
     # some times one has to wait until the task info is filled
@@ -711,12 +711,13 @@ async def _find_service_tag(list_of_images: dict, service_key: str, service_tag:
     return tag
 
 
-async def _start_docker_service(
+async def _start_docker_service(  # noqa: PLR0913
     app: FastAPI,
     *,
     client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
+    product_name: ProductName,
     service_key: str,
     service_tag: str,
     main_service: bool,
@@ -735,6 +736,7 @@ async def _start_docker_service(
         user_id=user_id,
         node_uuid=node_uuid,
         project_id=project_id,
+        product_name=product_name,
         node_base_path=node_base_path,
         internal_network_id=internal_network_id,
         request_simcore_user_agent=request_simcore_user_agent,
@@ -794,6 +796,7 @@ async def _start_docker_service(
             "service_message": service_msg,
             "user_id": user_id,
             "project_id": project_id,
+            "product_name": product_name,
         }
 
     except ServiceStartTimeoutError:
@@ -816,6 +819,7 @@ async def _create_node(
     client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
+    product_name: ProductName,
     list_of_services: list[dict],
     node_uuid: str,
     node_base_path: str,
@@ -844,6 +848,7 @@ async def _create_node(
             client=client,
             user_id=user_id,
             project_id=project_id,
+            product_name=product_name,
             service_key=service["key"],
             service_tag=service["tag"],
             main_service=list_of_services.index(service) == 0,
@@ -887,6 +892,7 @@ async def start_service(
     app: FastAPI,
     user_id: str,
     project_id: str,
+    product_name: ProductName,
     service_key: str,
     service_tag: str | None,
     node_uuid: str,
@@ -919,6 +925,7 @@ async def start_service(
             client,
             user_id,
             project_id,
+            product_name,
             list_of_services_to_start,
             node_uuid,
             node_base_path,
@@ -959,6 +966,7 @@ async def _get_node_details(app: FastAPI, client: aiodocker.docker.Docker, servi
     service_uuid = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("node_id")]
     user_id = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("user_id")]
     project_id = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("project_id")]
+    product_name = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("product_name")]
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -975,6 +983,7 @@ async def _get_node_details(app: FastAPI, client: aiodocker.docker.Docker, servi
         "service_message": service_msg,
         "user_id": user_id,
         "project_id": project_id,
+        "product_name": product_name,
     }
 
 

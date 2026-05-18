@@ -46,7 +46,7 @@ def ensure_service_runs_in_ci(app_environment: EnvVarsDict, monkeypatch: pytest.
 
 
 @pytest.fixture
-async def run_services(
+async def run_services(  # noqa: PLR0915
     ensure_service_runs_in_ci: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
@@ -59,7 +59,7 @@ async def run_services(
 ) -> AsyncIterator[Callable[[int, int], Awaitable[list[dict[str, Any]]]]]:
     started_services = []
 
-    async def push_start_services(number_comp: int, number_dyn: int, dependant=False) -> list[dict[str, Any]]:
+    async def push_start_services(number_comp: int, number_dyn: int, dependant=False) -> list[dict[str, Any]]:  # noqa: FBT002
         pushed_services = await push_services(
             number_of_computational_services=number_comp,
             number_of_interactive_services=number_dyn,
@@ -81,6 +81,7 @@ async def run_services(
                 app,
                 f"{user_id}",
                 f"{project_id}",
+                "osparc",
                 service_key,
                 service_version,
                 service_uuid,
@@ -113,11 +114,14 @@ async def run_services(
             for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(max_time), reraise=True):
                 with attempt:
                     print(
-                        f"--> waiting for {started_service['service_key']}:{started_service['service_version']} to run..."
+                        f"--> waiting for {started_service['service_key']}:{started_service['service_version']} "
+                        "to run..."
                     )
                     node_details = await producer.get_service_details(app, service_uuid)
                     print(
-                        f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {app_settings.DIRECTOR_DEFAULT_MAX_MEMORY}Bytes, {app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS}nanocpus"
+                        f"<-- {started_service['service_key']}:{started_service['service_version']} state is "
+                        f"{node_details['service_state']} using {app_settings.DIRECTOR_DEFAULT_MAX_MEMORY}Bytes, "
+                        f"{app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS}nanocpus"
                     )
                     for service in docker_client.services.list():
                         tasks = service.tasks()
@@ -365,7 +369,10 @@ async def test_get_service_key_version_from_docker_service_except_invalid_keys(
         "Spec": {
             "TaskTemplate": {
                 "ContainerSpec": {
-                    "Image": f"{registry_settings.resolved_registry_url if fake_service_str.startswith('/') else ''}{fake_service_str}"
+                    "Image": (
+                        f"{registry_settings.resolved_registry_url if fake_service_str.startswith('/') else ''}"
+                        f"{fake_service_str}"
+                    )
                 }
             }
         }
