@@ -66,16 +66,17 @@ _SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
 _SIMULATION_EXPORT_MAX_TIME: Final[int] = 5 * MINUTE
 
 
-_POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
-_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_POST_PRO_MAX_STARTUP_TIME: Final[int] = 5 * MINUTE
+_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 15 * MINUTE
 _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
 )
+_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME: Final[int] = 10 * MINUTE
 _POST_PRO_LOAD_APPEARANCE_TIME: Final[int] = 5 * MINUTE
 _POST_PRO_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 10 * MINUTE
 _POST_PRO_LOAD_ANALYSIS_MAX_TIME: Final[int] = 5 * MINUTE
 _POST_PRO_LOAD_RESULT_MAX_TIME: Final[int] = 30 * SECOND
-_POST_PRO_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
+_POST_PRO_REPORTING_MAX_TIME: Final[int] = 30 * SECOND
 
 
 _SIM4LIFE_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
@@ -269,8 +270,8 @@ def _wait_for_postpro_result_load(load_result_button: Locator) -> None:
 def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Run TI and generate report"):
         with log_context(logging.INFO, "Wait for UI to load"):
-            load_button = ti_postpro_iframe.get_by_role("button", name="Load")
-            expect(load_button).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
+            target_tissue_label = ti_postpro_iframe.get_by_text("Target tissue:")
+            expect(target_tissue_label).to_be_visible(timeout=_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME)
 
         with log_context(logging.INFO, "Select Target tissue"):
             target_tissue_select = ti_postpro_iframe.get_by_label("Target tissue")
@@ -302,8 +303,8 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
             _wait_for_postpro_analysis_load(load_analysis_button)
 
         with log_context(logging.INFO, "Load first result"):
-            # nth(0) is the Settings "Load" button at the top; nth(1) is the first table row
-            load_result_button = ti_postpro_iframe.get_by_role("button", name="Load", exact=True).nth(1)
+            # nth(0) is the Settings "Load" button at the top; nth(1) might be Load Analysis, so go with nth(2)
+            load_result_button = ti_postpro_iframe.get_by_role("button", name="Load", exact=True).nth(2)
             load_result_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
 
         with log_context(logging.INFO, "Wait for result to load"):
