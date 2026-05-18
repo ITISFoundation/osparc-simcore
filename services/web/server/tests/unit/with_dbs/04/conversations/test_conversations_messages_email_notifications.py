@@ -73,7 +73,7 @@ async def test_notify_support_reply_via_email_to_user(
             "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user",
             new_callable=AsyncMock,
             # Recipient user (conversation creator)
-            return_value={"first_name": "John", "last_name": "Doe", "email": "john@test.io", "username": "johndoe"},
+            return_value={"first_name": "John", "last_name": "Doe", "email": "john@test.io", "name": "johndoe"},
         ),
         patch(
             "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user_id_from_gid",
