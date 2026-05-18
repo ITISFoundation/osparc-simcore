@@ -85,7 +85,7 @@ async def get_status(request: Request) -> Envelope[AppStatusCheck]:
     if app_settings.STORAGE_POSTGRES:
         postgres_state = "connected" if await check_postgres_liveness(get_engine(request.app)) else "failed"
 
-    status = AppStatusCheck.model_validate(
+    app_status_check = AppStatusCheck.model_validate(
         {
             "app_name": PROJECT_NAME,
             "version": f"{VERSION}",
@@ -98,4 +98,4 @@ async def get_status(request: Request) -> Envelope[AppStatusCheck]:
             },
         }
     )
-    return Envelope[AppStatusCheck](data=status)
+    return Envelope[AppStatusCheck](data=app_status_check)
