@@ -404,10 +404,8 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
 
         with log_context(logging.INFO, "Selected test function..."):
-            # Find the row containing our function by title, then click its Select button
-            function_row = service_iframe.locator(
-                f'div[role="row"]:has(div[role="gridcell"][data-field="title"]:has-text("{_STUDY_FUNCTION_NAME}"))'
-            )
+            # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
+            function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
             function_row.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
             select_btn.wait_for(state="visible", timeout=30 * SECOND)
