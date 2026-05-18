@@ -52,6 +52,23 @@ def _apply_custom_metadata_filter(query: sa.sql.Select, any_metadata_fields: lis
     return query.where(sa.or_(*metadata_fields_ilike))
 
 
+def _apply_custom_metadata_all_filter(
+    query: sa.sql.Select, all_metadata_fields: list[tuple[str, str]]
+) -> sa.sql.Select:
+    """Apply metadata filters to query using AND logic.
+
+    All conditions must match for a project to be included.
+    """
+    assert all_metadata_fields  # nosec
+
+    metadata_fields_ilike = []
+    for key, pattern in all_metadata_fields:
+        sql_pattern = pattern.replace("*", "%")
+        metadata_fields_ilike.append(projects_metadata.c.custom[key].astext.ilike(sql_pattern))
+
+    return query.where(sa.and_(*metadata_fields_ilike))
+
+
 class ProjectJobsRepository(BaseRepository):
     async def set_project_as_job(
         self,
@@ -90,6 +107,7 @@ class ProjectJobsRepository(BaseRepository):
         pagination_limit: int,
         filter_by_job_parent_resource_name_prefix: str | None = None,
         filter_any_custom_metadata: list[tuple[str, str]] | None = None,
+        filter_all_custom_metadata: list[tuple[str, str]] | None = None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 
@@ -148,6 +166,9 @@ class ProjectJobsRepository(BaseRepository):
 
         if filter_any_custom_metadata:
             access_query = _apply_custom_metadata_filter(access_query, filter_any_custom_metadata)
+
+        if filter_all_custom_metadata:
+            access_query = _apply_custom_metadata_all_filter(access_query, filter_all_custom_metadata)
 
         # Step 4. Convert access_query to a subquery
         base_query = access_query.subquery()

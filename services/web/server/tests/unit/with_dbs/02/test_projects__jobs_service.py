@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -365,14 +366,17 @@ async def test_filter_projects_by_metadata_all(
 
     project_uuids: dict[str, ProjectID] = {}
 
-    for job_parent_resource_name, custom_metadata in projects_metadata_map.items():
-        async with NewProject(
-            {"name": f"project-{job_parent_resource_name}"},
-            client.app,
-            user_id=user_id,
-            product_name=osparc_product_name,
-            tests_data_dir=tests_data_dir,
-        ) as project:
+    async with AsyncExitStack() as stack:
+        for job_parent_resource_name, custom_metadata in projects_metadata_map.items():
+            project = await stack.enter_async_context(
+                NewProject(
+                    {"name": f"project-{job_parent_resource_name}"},
+                    client.app,
+                    user_id=user_id,
+                    product_name=osparc_product_name,
+                    tests_data_dir=tests_data_dir,
+                )
+            )
             project_uuid = ProjectID(project["uuid"])
             project_uuids[job_parent_resource_name] = project_uuid
 
@@ -392,72 +396,72 @@ async def test_filter_projects_by_metadata_all(
                 value=custom_metadata,
             )
 
-    uuid_a = project_uuids["solvers/fem-solver/v1"]
-    uuid_b = project_uuids["solvers/fem-solver/v2"]
-    uuid_c = project_uuids["solvers/cfd-solver/v1"]
+        uuid_a = project_uuids["solvers/fem-solver/v1"]
+        uuid_b = project_uuids["solvers/fem-solver/v2"]
+        uuid_c = project_uuids["solvers/cfd-solver/v1"]
 
-    # --- AND filter: solver_type=FEM AND mesh_cells=1000 -> only Project A
-    total_count, result = await list_my_projects_marked_as_jobs(
-        app=client.app,
-        product_name=osparc_product_name,
-        user_id=user_id,
-        filter_all_custom_metadata=[("solver_type", "FEM"), ("mesh_cells", "1000")],
-    )
-    assert total_count == 1
-    assert result[0].uuid == uuid_a
+        # --- AND filter: solver_type=FEM AND mesh_cells=1000 -> only Project A
+        total_count, result = await list_my_projects_marked_as_jobs(
+            app=client.app,
+            product_name=osparc_product_name,
+            user_id=user_id,
+            filter_all_custom_metadata=[("solver_type", "FEM"), ("mesh_cells", "1000")],
+        )
+        assert total_count == 1
+        assert result[0].uuid == uuid_a
 
-    # --- AND filter: solver_type=FEM -> Projects A and B
-    total_count, result = await list_my_projects_marked_as_jobs(
-        app=client.app,
-        product_name=osparc_product_name,
-        user_id=user_id,
-        filter_all_custom_metadata=[("solver_type", "FEM")],
-    )
-    assert total_count == 2
-    result_uuids = {r.uuid for r in result}
-    assert result_uuids == {uuid_a, uuid_b}
+        # --- AND filter: solver_type=FEM -> Projects A and B
+        total_count, result = await list_my_projects_marked_as_jobs(
+            app=client.app,
+            product_name=osparc_product_name,
+            user_id=user_id,
+            filter_all_custom_metadata=[("solver_type", "FEM")],
+        )
+        assert total_count == 2
+        result_uuids = {r.uuid for r in result}
+        assert result_uuids == {uuid_a, uuid_b}
 
-    # --- AND filter: status=completed AND mesh_cells=1000 -> Projects A and C
-    total_count, result = await list_my_projects_marked_as_jobs(
-        app=client.app,
-        product_name=osparc_product_name,
-        user_id=user_id,
-        filter_all_custom_metadata=[("status", "completed"), ("mesh_cells", "1000")],
-    )
-    assert total_count == 2
-    result_uuids = {r.uuid for r in result}
-    assert result_uuids == {uuid_a, uuid_c}
+        # --- AND filter: status=completed AND mesh_cells=1000 -> Projects A and C
+        total_count, result = await list_my_projects_marked_as_jobs(
+            app=client.app,
+            product_name=osparc_product_name,
+            user_id=user_id,
+            filter_all_custom_metadata=[("status", "completed"), ("mesh_cells", "1000")],
+        )
+        assert total_count == 2
+        result_uuids = {r.uuid for r in result}
+        assert result_uuids == {uuid_a, uuid_c}
 
-    # --- AND filter: all 3 conditions that no single project matches -> empty
-    total_count, result = await list_my_projects_marked_as_jobs(
-        app=client.app,
-        product_name=osparc_product_name,
-        user_id=user_id,
-        filter_all_custom_metadata=[("solver_type", "FEM"), ("status", "pending"), ("mesh_cells", "999")],
-    )
-    assert total_count == 0
-    assert result == []
+        # --- AND filter: all 3 conditions that no single project matches -> empty
+        total_count, result = await list_my_projects_marked_as_jobs(
+            app=client.app,
+            product_name=osparc_product_name,
+            user_id=user_id,
+            filter_all_custom_metadata=[("solver_type", "FEM"), ("status", "pending"), ("mesh_cells", "999")],
+        )
+        assert total_count == 0
+        assert result == []
 
-    # --- AND filter with wildcards: solver_type=FEM AND mesh_cells=1* -> Project A only
-    total_count, result = await list_my_projects_marked_as_jobs(
-        app=client.app,
-        product_name=osparc_product_name,
-        user_id=user_id,
-        filter_all_custom_metadata=[("solver_type", "FEM"), ("mesh_cells", "1*")],
-    )
-    assert total_count == 1
-    assert result[0].uuid == uuid_a
+        # --- AND filter with wildcards: solver_type=FEM AND mesh_cells=1* -> Project A only
+        total_count, result = await list_my_projects_marked_as_jobs(
+            app=client.app,
+            product_name=osparc_product_name,
+            user_id=user_id,
+            filter_all_custom_metadata=[("solver_type", "FEM"), ("mesh_cells", "1*")],
+        )
+        assert total_count == 1
+        assert result[0].uuid == uuid_a
 
-    # --- Combining AND filter with job_parent_resource_name_prefix
-    total_count, result = await list_my_projects_marked_as_jobs(
-        app=client.app,
-        product_name=osparc_product_name,
-        user_id=user_id,
-        filter_by_job_parent_resource_name_prefix="solvers/fem-solver",
-        filter_all_custom_metadata=[("status", "completed")],
-    )
-    assert total_count == 1
-    assert result[0].uuid == uuid_a
+        # --- Combining AND filter with job_parent_resource_name_prefix
+        total_count, result = await list_my_projects_marked_as_jobs(
+            app=client.app,
+            product_name=osparc_product_name,
+            user_id=user_id,
+            filter_by_job_parent_resource_name_prefix="solvers/fem-solver",
+            filter_all_custom_metadata=[("status", "completed")],
+        )
+        assert total_count == 1
+        assert result[0].uuid == uuid_a
 
 
 async def test_filter_all_and_any_custom_metadata_are_mutually_exclusive():
