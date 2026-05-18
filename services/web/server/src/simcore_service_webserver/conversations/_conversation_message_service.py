@@ -39,7 +39,6 @@ from ._socketio import (
     notify_via_socket_conversation_message_created,
     notify_via_socket_conversation_message_deleted,
     notify_via_socket_conversation_message_updated,
-    notify_via_socket_support_reply,
 )
 from .errors import ConversationError
 
@@ -97,20 +96,14 @@ async def _notify_support_reply(
                 app, primary_gid=conversation.user_group_id
             )
 
-            # Check if user is online - if so, send socketio notification instead of email
+            # Check if user is online - if so, skip email (they already receive
+            # the conversation:message:created socketio notification)
             if await is_user_connected(app, conversation_creator_user_id):
-                _logger.debug(
-                    "User %s is online, sending socketio notification for conversation %s",
+                _logger.info(
+                    "User %s is online, skipping email notification for conversation %s "
+                    "(user receives real-time socketio notification)",
                     conversation_creator_user_id,
                     conversation.conversation_id,
-                )
-                await notify_via_socket_support_reply(
-                    app,
-                    user_id=conversation_creator_user_id,
-                    conversation_id=conversation.conversation_id,
-                    conversation_name=conversation.name,
-                    conversation_url=conversation_url,
-                    message_preview=message_content[:200],  # Limit preview length
                 )
                 return
 
