@@ -20,7 +20,7 @@ from zipfile import ZipFile
 import osparc
 import pytest
 from pytest_simcore.helpers.typing_public_api import ServiceInfoDict, ServiceNameStr
-from tenacity import Retrying, TryAgain, stop_after_delay, wait_fixed
+from tenacity import Retrying, TryAgain, retry_if_exception_type, stop_after_delay, wait_fixed
 
 osparc_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert osparc_VERSION >= (0, 4, 3)
@@ -217,6 +217,7 @@ def test_run_job(
     for attempt in Retrying(
         stop=stop_after_delay(_JOB_COMPLETION_TIMEOUT),
         wait=wait_fixed(0.5),
+        retry=retry_if_exception_type(TryAgain),
         reraise=True,
     ):
         with attempt:
