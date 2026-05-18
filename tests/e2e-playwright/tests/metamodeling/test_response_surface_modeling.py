@@ -571,9 +571,9 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
                 input_values = sorted(
                     [
-                        j["inputs"]["Number parameter"]
+                        j["inputs"]["Number Parameter"]
                         for j in all_jobs
-                        if j.get("inputs") and "Number parameter" in j["inputs"]
+                        if j.get("inputs") and "Number Parameter" in j["inputs"]
                     ]
                 )
 
