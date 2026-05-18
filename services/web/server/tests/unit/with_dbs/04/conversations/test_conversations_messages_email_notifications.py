@@ -72,12 +72,8 @@ async def test_notify_support_reply_via_email_to_user(
         patch(
             "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user",
             new_callable=AsyncMock,
-            side_effect=[
-                # First call: sender user
-                {"first_name": "Support", "last_name": "Agent", "email": "support@test.io"},
-                # Second call: recipient user (conversation creator)
-                {"first_name": "John", "last_name": "Doe", "email": "john@test.io"},
-            ],
+            # Recipient user (conversation creator)
+            return_value={"first_name": "John", "last_name": "Doe", "email": "john@test.io", "username": "johndoe"},
         ),
         patch(
             "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user_id_from_gid",
@@ -105,8 +101,8 @@ async def test_notify_support_reply_via_email_to_user(
         assert call_kwargs["group_ids"] is None
         assert len(call_kwargs["external_contacts"]) == 1
         assert call_kwargs["external_contacts"][0].email == "john@test.io"
-        assert call_kwargs["context"]["recipient_name"] == "John Doe"
-        assert call_kwargs["context"]["sender_name"] == "Support Agent"
+        assert call_kwargs["context"]["user"]["first_name"] == "John"
+        assert call_kwargs["context"]["user"]["user_name"] == "johndoe"
         assert call_kwargs["context"]["message_content"] == "Hello, here is the answer to your question."
 
 

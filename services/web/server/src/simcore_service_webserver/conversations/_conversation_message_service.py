@@ -92,10 +92,6 @@ async def _notify_support_reply_via_email(
     """
     product = products_service.get_product(app, product_name=product_name)
     conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
-    sender_user = await users_service.get_user(app, sender_user_id)
-    sender_name = (
-        f"{sender_user.get('first_name', '')} {sender_user.get('last_name', '')}".strip() or sender_user["email"]
-    )
 
     match conversation_user_type:
         case ConversationUserType.SUPPORT_USER | ConversationUserType.CHATBOT_USER:
@@ -120,7 +116,7 @@ async def _notify_support_reply_via_email(
                 context={
                     "user": {
                         "first_name": recipient_user.get("first_name"),
-                        "username": recipient_user.get("username"),
+                        "user_name": recipient_user.get("username"),
                     },
                     "conversation_name": conversation.name,
                     "conversation_url": conversation_url,
