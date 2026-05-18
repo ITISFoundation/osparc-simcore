@@ -169,6 +169,7 @@ qx.Class.define("osparc.support.Conversations", {
 
       this.__conversationListItems.forEach(conversationItem => {
         const conversation = conversationItem.getConversation();
+        // apply filters
         switch (filter) {
           case "all":
             conversationItem.show();
@@ -183,6 +184,8 @@ qx.Class.define("osparc.support.Conversations", {
             conversation.getArchived() ? conversationItem.show() : conversationItem.exclude();
             break;
         }
+        // show/hide badges
+        conversationItem.getChildControl("badges-layout").setVisibility(filter === "all" ? "visible" : "excluded");
       });
 
       const hasVisibleConversations = this.__conversationListItems.some(conversationItem => conversationItem.isVisible());

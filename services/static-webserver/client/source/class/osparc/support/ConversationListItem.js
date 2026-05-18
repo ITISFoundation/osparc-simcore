@@ -78,6 +78,13 @@ qx.Class.define("osparc.support.ConversationListItem", {
             flex: 1
           });
           break;
+        case "badges-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: "right",
+            alignY: "middle",
+          }));
+          this.getChildControl("bottom-right-layout").add(control);
+          break;
         case "unread-badge":
           control = new osparc.ui.basic.Chip(this.tr("Unread")).set({
             statusColor: "success",
@@ -85,7 +92,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
             allowGrowY: false,
             alignX: "right",
           });
-          this.getChildControl("bottom-right-layout").add(control);
+          this.getChildControl("badges-layout").add(control);
           break;
         case "archived-badge":
           control = new osparc.ui.basic.Chip(this.tr("Archived")).set({
@@ -94,7 +101,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
             allowGrowY: false,
             alignX: "right",
           });
-          this.getChildControl("bottom-right-layout").add(control);
+          this.getChildControl("badges-layout").add(control);
           break;
         case "menu-button": {
           const buttonSize = 22;
