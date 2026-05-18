@@ -28,6 +28,10 @@ qx.Class.define("osparc.support.Conversations", {
     this.__filterButtons = [];
     this.__filterButtons.push(this.getChildControl("filter-all-button"));
     this.__filterButtons.push(this.getChildControl("filter-unread-button"));
+    if (osparc.store.Groups.getInstance().amIASupportUser()) {
+      this.__filterButtons.push(this.getChildControl("filter-active-button"));
+      this.__filterButtons.push(this.getChildControl("filter-archived-button"));
+    }
 
     this.__fetchConversations();
 
@@ -40,7 +44,8 @@ qx.Class.define("osparc.support.Conversations", {
       check: [
         "all",
         "unread",
-        "open",
+        "active",
+        "archived",
       ],
       init: "all",
       event: "changeCurrentFilter",
@@ -95,6 +100,30 @@ qx.Class.define("osparc.support.Conversations", {
           });
           this.getChildControl("filters-layout").add(control);
           break;
+        case "filter-active-button":
+          control = new qx.ui.form.ToggleButton(this.tr("Active"));
+          control.set({
+            toolTipText: this.tr("Show only active (unarchived) conversations"),
+            ...this.self().FILTER_BUTTON_AESTHETIC,
+          });
+          control.addListener("execute", () => {
+            this.setCurrentFilter("active");
+            this.__applyCurrentFilter("active");
+          });
+          this.getChildControl("filters-layout").add(control);
+          break;
+        case "filter-archived-button":
+          control = new qx.ui.form.ToggleButton(this.tr("Archived"));
+          control.set({
+            toolTipText: this.tr("Show only archived conversations"),
+            ...this.self().FILTER_BUTTON_AESTHETIC,
+          });
+          control.addListener("execute", () => {
+            this.setCurrentFilter("archived");
+            this.__applyCurrentFilter("archived");
+          });
+          this.getChildControl("filters-layout").add(control);
+          break;
         case "loading-button":
           control = new osparc.ui.form.FetchButton();
           this._addAt(control, 1);
@@ -130,6 +159,12 @@ qx.Class.define("osparc.support.Conversations", {
         case "unread":
           this.getChildControl("filter-unread-button").setValue(true);
           break;
+        case "active":
+          this.getChildControl("filter-active-button").setValue(true);
+          break;
+        case "archived":
+          this.getChildControl("filter-archived-button").setValue(true);
+          break;
       }
 
       this.__conversationListItems.forEach(conversationItem => {
@@ -140,6 +175,12 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             conversation.getReadBy() ? conversationItem.exclude() : conversationItem.show();
+            break;
+          case "active":
+            conversation.getArchived() ? conversationItem.exclude() : conversationItem.show();
+            break;
+          case "archived":
+            conversation.getArchived() ? conversationItem.show() : conversationItem.exclude();
             break;
         }
       });
@@ -153,6 +194,12 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             msg = this.tr("No unread conversations");
+            break;
+          case "active":
+            msg = this.tr("No active conversations");
+            break;
+          case "archived":
+            msg = this.tr("No archived conversations");
             break;
         }
         this.getChildControl("no-messages-label").set({
@@ -214,6 +261,7 @@ qx.Class.define("osparc.support.Conversations", {
       const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
       conversation.addListener(eventName, () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       conversation.addListener("changeResolved", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
+      conversation.addListener("changeArchived", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       this.__conversationListItems.push(conversationListItem);
       return conversationListItem;
     },
