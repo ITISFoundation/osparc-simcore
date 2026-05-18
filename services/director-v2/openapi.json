@@ -3197,16 +3197,9 @@
             "description": "contains hardware information so we know on which hardware to run the service"
           },
           "product_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Product Name",
-            "description": "Current product upon which this service is scheduledIf set to None, the current product is undefined. Mostly for backwards compatibility"
+            "description": "Current product upon which this service is scheduled"
           },
           "product_api_base_url": {
             "anyOf": [
@@ -3239,7 +3232,8 @@
           "request_dns",
           "request_scheme",
           "request_simcore_user_agent",
-          "proxy_service_name"
+          "proxy_service_name",
+          "product_name"
         ],
         "title": "SchedulerData"
       },
