@@ -8,7 +8,13 @@ import logging
 from typing import Annotated
 
 from aws_library.s3 import S3AccessError
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    status,
+)
 from models_library.api_schemas_storage.storage_schemas import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.errors import REDIS_CLIENT_UNHEALTHY_MSG
