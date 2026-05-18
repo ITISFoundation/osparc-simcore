@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/", response_class=PlainTextResponse)
+@router.get("/", response_class=PlainTextResponse, response_model=None)
 async def healthcheck(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
     rabbitmq_rpc_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client_from_request)],
