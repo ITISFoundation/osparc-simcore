@@ -303,8 +303,8 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
             _wait_for_postpro_analysis_load(load_analysis_button)
 
         with log_context(logging.INFO, "Load first result"):
-            # nth(0) is the Settings "Load" button at the top; nth(1) is the first table row
-            load_result_button = ti_postpro_iframe.get_by_role("button", name="Load", exact=True).nth(1)
+            # nth(0) is the Settings "Load" button at the top; nth(1) might be Load Analysis, so go with nth(2)
+            load_result_button = ti_postpro_iframe.get_by_role("button", name="Load", exact=True).nth(2)
             load_result_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
 
         with log_context(logging.INFO, "Wait for result to load"):
