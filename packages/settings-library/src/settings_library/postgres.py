@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Annotated, Self
+from typing import Annotated
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from pydantic import (
@@ -8,7 +8,6 @@ from pydantic import (
     NonNegativeInt,
     PostgresDsn,
     SecretStr,
-    model_validator,
 )
 from pydantic.config import JsonDict
 from pydantic_settings import SettingsConfigDict
@@ -29,21 +28,7 @@ class PostgresSettings(BaseCustomSettings):
     # database
     POSTGRES_DB: Annotated[str, Field(description="Database name")]
 
-    # pool connection limits
-    POSTGRES_MINSIZE: Annotated[
-        int,
-        Field(
-            description="Minimum number of connections in the pool that are always created and kept",
-            ge=1,
-        ),
-    ] = 1
-    POSTGRES_MAXSIZE: Annotated[
-        int,
-        Field(
-            description="Maximum number of connections in the pool that are kept",
-            ge=1,
-        ),
-    ] = 50
+    # pool connection limits (asyncpg / sqlalchemy)
     POSTGRES_MAX_POOLSIZE: Annotated[
         int,
         Field(description="Maximal number of connection in asyncpg pool (without overflow), lazily created on demand"),
@@ -53,22 +38,17 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_CLIENT_NAME: Annotated[
         str | None,
         Field(
-            description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
+            description="Name of the application connecting the postgres database, "
+            "will default to use the host hostname (hostname on linux)",
             validation_alias=AliasChoices(
-                # This is useful when running inside a docker container, then the hostname is set each client gets a different name
+                # This is useful when running inside a docker container,
+                # then the hostname is set each client gets a different name
                 "POSTGRES_CLIENT_NAME",
                 "HOST",
                 "HOSTNAME",
             ),
         ),
     ] = None
-
-    @model_validator(mode="after")
-    def validate_postgres_sizes(self) -> Self:
-        if self.POSTGRES_MINSIZE > self.POSTGRES_MAXSIZE:
-            msg = f"assert POSTGRES_MINSIZE={self.POSTGRES_MINSIZE} <= POSTGRES_MAXSIZE={self.POSTGRES_MAXSIZE}"
-            raise ValueError(msg)
-        return self
 
     @cached_property
     def dsn(self) -> str:
@@ -100,7 +80,12 @@ class PostgresSettings(BaseCustomSettings):
         return self._update_query(dsn, application_name, suffix=suffix)
 
     def client_name(self, application_name: str, *, suffix: str | None) -> str:
-        return f"{application_name}{'-' if self.POSTGRES_CLIENT_NAME else ''}{self.POSTGRES_CLIENT_NAME or ''}{'-' + suffix if suffix else ''}"
+        parts = [application_name]
+        if self.POSTGRES_CLIENT_NAME:
+            parts.append(self.POSTGRES_CLIENT_NAME)
+        if suffix:
+            parts.append(suffix)
+        return "-".join(parts)
 
     def _update_query(self, uri: str, application_name: str, suffix: str | None) -> str:
         # SEE https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
@@ -136,8 +121,6 @@ class PostgresSettings(BaseCustomSettings):
                         "POSTGRES_USER": "usr",
                         "POSTGRES_PASSWORD": "secret",
                         "POSTGRES_DB": "db",
-                        "POSTGRES_MINSIZE": 1,
-                        "POSTGRES_MAXSIZE": 50,
                         "POSTGRES_MAX_POOLSIZE": 10,
                         "POSTGRES_MAX_OVERFLOW": 20,
                         "POSTGRES_CLIENT_NAME": "my_app",  # first-choice

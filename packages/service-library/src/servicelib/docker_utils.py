@@ -135,7 +135,14 @@ def get_image_complete_url(image: DockerGenericTag, registry_settings: RegistryS
         # NOTE: entries like nginx:latest or ngingx:1.3 will raise an exception here
         url = URL(f"https://{image}")
         assert url.host  # nosec
-        if not url.port or ("." not in f"{url.host}"):
+        # Treat as Dockerhub only when there is no explicit port AND the host has no dot
+        # (i.e. it cannot be a registry hostname like `registry:5000` or `quay.io/...`).
+        # NOTE: `url.port` returns the scheme default (443) when no port is given,
+        # so we MUST use `url.explicit_port` here. Using `url.port` previously made
+        # the port check a no-op and caused images like `registry:5000/foo/bar:tag`
+        # to be misclassified as Dockerhub images and fail with 404 against
+        # `registry-1.docker.io`.
+        if url.explicit_port is None and ("." not in f"{url.host}"):
             # this is Dockerhub + official images are in /library
             url = _create_docker_hub_complete_url(image)
     except ValueError:

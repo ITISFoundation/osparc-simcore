@@ -32,9 +32,9 @@ from models_library.wallets import WalletID
 from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
-    NodeportsException,
+    NodeportsError,
     S3InvalidPathError,
-    StorageInvalidCall,
+    StorageInvalidCallError,
     UnboundPortError,
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
@@ -139,10 +139,7 @@ async def parse_output_data(
     ports_errors = []
     for port_key, port_value in data.items():
         value_to_transfer: links.ItemValue | None = None
-        if isinstance(port_value, FileUrl):
-            value_to_transfer = port_value.url
-        else:
-            value_to_transfer = port_value
+        value_to_transfer = port_value.url if isinstance(port_value, FileUrl) else port_value
 
         try:
             await (await ports.outputs)[port_key].set_value(value_to_transfer)
@@ -358,7 +355,7 @@ async def _get_service_log_file_download_link(
             link_type=file_link_type,
         )
         return value_link
-    except (S3InvalidPathError, StorageInvalidCall) as err:
+    except (S3InvalidPathError, StorageInvalidCallError) as err:
         _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
 
@@ -369,7 +366,7 @@ async def get_task_log_file(user_id: UserID, project_id: ProjectID, node_id: Nod
             user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
         )
 
-    except NodeportsException as err:
+    except NodeportsError as err:
         # Unexpected error: Cannot determine the cause of failure
         # to get download link and cannot handle it automatically.
         # Will treat it as "not available" and log a warning

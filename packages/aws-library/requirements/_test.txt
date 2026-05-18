@@ -13,7 +13,7 @@ anyio==4.12.1
     #   -c requirements/_base.txt
     #   httpx
     #   starlette
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema

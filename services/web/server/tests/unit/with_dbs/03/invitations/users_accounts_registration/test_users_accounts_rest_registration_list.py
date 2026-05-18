@@ -343,3 +343,100 @@ async def test_list_products_for_user_accounts_marks_current_product(
 
     assert current_options
     assert any(option.name == product_name for option in current_options)
+
+
+async def test_list_users_accounts_default_sort_preserved(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    account_request_form: dict[str, Any],
+):
+    """Verify endpoint without sort params returns results (backwards compatible)."""
+    assert client.app
+
+    url = client.app.router["list_users_accounts"].url_for()
+    assert url.path == "/v0/admin/user-accounts"
+
+    # First, create some pre-registered users to sort
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    form_data = account_request_form.copy()
+    form_data["email"] = "test@example.com"
+    resp = await client.post(
+        f"{pre_register_url}",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # Query without order_by parameter - should use default sort
+    resp = await client.get(
+        f"{url}?limit=50&offset=0",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    # Should get 200 OK response (test backwards compatibility)
+    assert resp.status == status.HTTP_200_OK
+
+
+async def test_list_users_accounts_sorting_by_multiple_fields(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    account_request_form: dict[str, Any],
+):
+    """Demonstrate sorting by two different fields: email ascending and name ascending."""
+    assert client.app
+
+    # Create pre-registered users
+    pre_register_url = client.app.router["pre_register_user_account"].url_for()
+    test_users = [
+        {"firstName": "Alice", "lastName": "Smith", "email": "aalice@example.com"},
+        {"firstName": "Bob", "lastName": "Johnson", "email": "bbob@example.com"},
+        {"firstName": "Charlie", "lastName": "Brown", "email": "ccharlie@example.com"},
+        {"firstName": "Diana", "lastName": "Adams", "email": "ddiana@example.com"},
+    ]
+
+    for user_data in test_users:
+        form_data = account_request_form.copy()
+        form_data.update(user_data)
+        resp = await client.post(f"{pre_register_url}", json=form_data, headers={X_PRODUCT_NAME_HEADER: product_name})
+        await assert_status(resp, status.HTTP_200_OK)
+
+    url = client.app.router["list_users_accounts"].url_for()
+
+    # Test 1: Sort by email ascending
+    resp = await client.get(
+        f"{url}",
+        params={"order_by": "email", "limit": 50, "offset": 0},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    assert resp.status == status.HTTP_200_OK
+    page1 = Page[UserAccountGet].model_validate(await resp.json())
+    emails_sorted = [u.email for u in page1.data]
+
+    # Test 2: Sort by name ascending
+    resp = await client.get(
+        f"{url}",
+        params={"order_by": "name", "limit": 50, "offset": 0},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    assert resp.status == status.HTTP_200_OK
+    page2 = Page[UserAccountGet].model_validate(await resp.json())
+    names_sorted = [(u.first_name, u.last_name) for u in page2.data]
+
+    # Verify both sorting work and produce different results
+    assert len(emails_sorted) > 0, "Should have results when sorting by email"
+    assert len(names_sorted) > 0, "Should have results when sorting by name"
+
+    test_emails = [u["email"] for u in test_users]
+    test_names = [(u["firstName"], u["lastName"]) for u in test_users]
+
+    # Get our test users from both results
+    result_emails = [e for e in emails_sorted if e in test_emails]
+    result_names = [n for n in names_sorted if n in test_names]
+
+    # Verify the sorting order - emails should be sorted
+    assert result_emails == sorted(test_emails), f"Emails sorting failed: {result_emails} != {sorted(test_emails)}"
+    # Names (by firstName) should also be sorted
+    assert result_names == sorted(test_names), f"Names sorting failed: {result_names} != {sorted(test_names)}"

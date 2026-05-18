@@ -32,6 +32,7 @@ from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_job_service, get_program_service
+from ._constants import include_from_version
 
 _logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ router = APIRouter()
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10
+    include_in_schema=include_from_version("0.10"),
 )
 async def list_programs(
     program_service: Annotated[ProgramService, Depends(get_program_service)],
@@ -80,7 +81,7 @@ async def list_programs(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10
+    include_in_schema=include_from_version("0.10"),
 )
 async def list_program_history(
     program_key: ProgramKeyId,

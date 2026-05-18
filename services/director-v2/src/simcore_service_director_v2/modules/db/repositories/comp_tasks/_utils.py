@@ -338,6 +338,14 @@ async def generate_tasks_list_from_project(
         )
 
         if not node_details:
+            _logger.warning(
+                "Skipping node %s (%s:%s) in project %s: "
+                "service not found in catalog. No comp_tasks entry will be created.",
+                node_id,
+                node.key,
+                node.version,
+                project.uuid,
+            )
             continue
 
         assert node.state is not None  # nosec

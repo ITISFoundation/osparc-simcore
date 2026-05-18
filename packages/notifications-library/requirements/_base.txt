@@ -1,7 +1,5 @@
 aiofiles==25.1.0
     # via -r requirements/_base.in
-aiosmtplib==5.1.0
-    # via -r requirements/_base.in
 alembic==1.18.4
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 annotated-doc==0.0.4
@@ -12,7 +10,7 @@ arrow==1.4.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 asyncpg==0.31.0
     # via sqlalchemy
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   jsonschema
     #   referencing

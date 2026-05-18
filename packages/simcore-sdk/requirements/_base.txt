@@ -54,7 +54,7 @@ arrow==1.4.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 asyncpg==0.31.0
     # via sqlalchemy
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   aiohttp
     #   jsonschema

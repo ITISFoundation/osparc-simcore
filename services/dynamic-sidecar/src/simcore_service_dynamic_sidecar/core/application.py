@@ -10,7 +10,7 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.tracing import TracingConfig
-from simcore_sdk.node_ports_common.exceptions import NodeNotFound
+from simcore_sdk.node_ports_common.exceptions import NodeNotFoundError
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
 from ..models.schemas.application_health import ApplicationHealth
@@ -217,7 +217,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(
-        NodeNotFound,
+        NodeNotFoundError,
         node_not_found_error_handler,  # type: ignore[arg-type]
     )
     app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)  # type: ignore[arg-type]

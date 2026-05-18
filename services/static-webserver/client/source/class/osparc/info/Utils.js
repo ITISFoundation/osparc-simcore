@@ -113,6 +113,7 @@ qx.Class.define("osparc.info.Utils", {
         "CONTACT",
         "AUTHORS",
         "ACCESS_RIGHTS",
+        "RELEASE_NOTES_URL",
         "DESCRIPTION_ONLY",
       ];
 
