@@ -3991,6 +3991,27 @@
               "title": "Metadata.Any"
             },
             "description": "\nFilters jobs based on **any** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n"
+          },
+          {
+            "name": "metadata.all",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\nFilters jobs based on **all** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n",
+              "title": "Metadata.All"
+            },
+            "description": "\nFilters jobs based on **all** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n"
           }
         ],
         "responses": {
