@@ -1,6 +1,6 @@
 Dear {{ user.first_name or user.user_name }},
 
-There is a new reply in the Support Center conversation "{{ conversation_name }}".
+There is a new reply in the Support Center conversation{% if conversation_name %} "{{ conversation_name }}"{% endif %}.
 
 {{ message_content }}
 

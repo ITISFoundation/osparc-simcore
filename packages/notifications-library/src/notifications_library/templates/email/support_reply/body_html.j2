@@ -3,9 +3,9 @@
 {% block content %}
 <p>Dear {{ user.first_name or user.user_name }},</p>
 
-<p>There is a new reply in the Support Center conversation <strong>"{{ conversation_name }}"</strong>.</p>
+<p>There is a new reply in the Support Center conversation{% if conversation_name %} <i>"{{ conversation_name }}"</i>{% endif %}.</p>
 
-<p>{{ message_content }}</p>
+<p><i>{{ message_content }}</i></p>
 
 <!-- Bulletproof button: table-based for maximum email client compatibility -->
 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 10px; margin-bottom: 10px;">
