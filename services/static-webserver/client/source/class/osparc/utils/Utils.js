@@ -185,6 +185,22 @@ qx.Class.define("osparc.utils.Utils", {
       return new qx.ui.basic.Image().set(this.getThumbnailProps(size));
     },
 
+    createThreeDotsMenuButton: function(buttonSize = 22, iconSize = 14) {
+      return new qx.ui.form.MenuButton().set({
+        appearance: "form-button-outlined",
+        width: buttonSize,
+        height: buttonSize,
+        maxWidth: buttonSize,
+        maxHeight: buttonSize,
+        allowGrowX: false,
+        allowGrowY: false,
+        alignX: "center",
+        alignY: "middle",
+        icon: `@FontAwesome5Solid/ellipsis-v/${iconSize}`,
+        focusable: false,
+      });
+    },
+
     disableAutocomplete: function(control) {
       if (control && control.getContentElement()) {
         control.getContentElement().setAttribute("autocomplete", "off");
