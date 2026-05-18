@@ -93,10 +93,10 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
       this.getChildControl("rename-button");
 
       const openProjectButton = this.getChildControl("open-project-button");
-      openProjectButton.exclude();
-      if (conversation.getContextProjectId()) {
-        openProjectButton.setVisibility("visible");
-        osparc.store.Study.getInstance().getOne(conversation.getContextProjectId())
+      const projectId = conversation.getContextProjectId();
+      openProjectButton.setVisibility(projectId ? "visible" : "excluded");
+      if (projectId) {
+        osparc.store.Study.getInstance().getOne(projectId)
           .then(() => openProjectButton.setEnabled(true))
           .catch(() => openProjectButton.setEnabled(false));
       }
