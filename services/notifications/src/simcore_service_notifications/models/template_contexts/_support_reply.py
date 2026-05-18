@@ -8,7 +8,7 @@ from ..template import BaseTemplateContext, register_template_context
 
 class User(BaseModel):
     first_name: str | None = None
-    user_name: str
+    user_name: str | None = None
 
 
 @register_template_context(channel=Channel.email, template_name="support_reply")
