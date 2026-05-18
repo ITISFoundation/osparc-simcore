@@ -15,6 +15,12 @@ _DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S: Final[int] = 60
 
 _logger = logging.getLogger(__name__)
 
+# Constant for RabbitMQ maintenance mode message
+# This message is specific to Amazon MQ for RabbitMQ and occurs during scheduled maintenance windows.
+# Reference: https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/maintaining-brokers.html#rabbitmq-broker-architecture-cluster
+# During maintenance, Amazon MQ restarts a broker node. For cluster deployments, implement connection retry logic.
+_AWS_MAINTENANCE_MODE_MESSAGE: Final[str] = "Node was put into maintenance mode"
+
 
 @dataclass
 class RabbitMQClientBase:
@@ -54,12 +60,12 @@ class RabbitMQClientBase:
         exc: BaseException | None,
     ) -> None:
         if exc:
-            if isinstance(
-                exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed | aiormq.exceptions.ConnectionClosed
+            if isinstance(exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed) or (
+                isinstance(exc, aiormq.exceptions.ConnectionClosed) and _AWS_MAINTENANCE_MODE_MESSAGE in str(exc)
             ):
                 _logger.info(
                     **create_troubleshooting_log_kwargs(
-                        "RabbitMQ channel closed",
+                        "RabbitMQ channel closed gracefully (maintenance mode)",
                         error=exc,
                         error_context={"sender": sender},
                     )

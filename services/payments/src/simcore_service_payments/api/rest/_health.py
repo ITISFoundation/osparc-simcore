@@ -15,11 +15,11 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/", response_class=PlainTextResponse)
+@router.get("/", response_class=PlainTextResponse, response_model=None)
 async def healthcheck(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
     rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client_from_request)],
-) -> str | PlainTextResponse:
+) -> str:
     if not rabbitmq_client.healthy or not rabbitmq_rpc_client.healthy:
         return PlainTextResponse(
             RABBITMQ_CLIENT_UNHEALTHY_MSG,
