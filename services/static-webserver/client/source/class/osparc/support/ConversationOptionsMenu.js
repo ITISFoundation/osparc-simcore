@@ -44,7 +44,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
         case "rename-button":
           control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/i-cursor/12",
-            label: this.tr("Rename"),
+            label: this.tr("Rename..."),
           });
           control.addListener("execute", () => this.__renameConversation());
           this.add(control);

@@ -167,11 +167,11 @@ qx.Class.define("osparc.conversation.MessageUI", {
         });
         menuButton.setMenu(menu);
 
-        const editButton = new qx.ui.menu.Button(this.tr("Edit..."));
+        const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => this.__editMessage(), this);
         menu.add(editButton);
 
-        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."));
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."), "@FontAwesome5Solid/trash/12");
         deleteButton.addListener("execute", () => this.__deleteMessage(), this);
         menu.add(deleteButton);
       }
