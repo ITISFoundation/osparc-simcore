@@ -18,7 +18,7 @@ from models_library.conversations import (
 from models_library.notifications import Channel
 from pydantic import HttpUrl
 from simcore_service_webserver.conversations._conversation_message_service import (
-    _notify_support_reply_via_email,
+    _notify_support_reply,
 )
 
 
@@ -85,7 +85,7 @@ async def test_notify_support_reply_via_email_to_user(
             new_callable=AsyncMock,
         ) as mock_send,
     ):
-        await _notify_support_reply_via_email(
+        await _notify_support_reply(
             mock_app,
             product_name="osparc",
             conversation=sample_conversation,
@@ -131,7 +131,7 @@ async def test_notify_support_reply_via_email_to_support_group(
             new_callable=AsyncMock,
         ) as mock_send,
     ):
-        await _notify_support_reply_via_email(
+        await _notify_support_reply(
             mock_app,
             product_name="osparc",
             conversation=sample_conversation,
@@ -176,7 +176,7 @@ async def test_notify_support_reply_via_email_no_support_group(
             new_callable=AsyncMock,
         ) as mock_send,
     ):
-        await _notify_support_reply_via_email(
+        await _notify_support_reply(
             mock_app,
             product_name="osparc",
             conversation=sample_conversation,

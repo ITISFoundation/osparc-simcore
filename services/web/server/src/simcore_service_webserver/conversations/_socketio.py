@@ -32,6 +32,8 @@ SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT: Final[str] = "conversation:message
 SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT: Final[str] = "conversation:message:deleted"
 SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT: Final[str] = "conversation:message:updated"
 
+SOCKET_IO_SUPPORT_REPLY_EVENT: Final[str] = "support:reply"
+
 
 class BaseEvent(BaseModel):
     model_config = ConfigDict(
@@ -83,6 +85,15 @@ class ConversationMessageCreatedOrUpdatedEvent(BaseConversationMessageEvent):
 
 
 class ConversationMessageDeletedEvent(BaseConversationMessageEvent): ...
+
+
+class SupportReplyNotificationEvent(BaseEvent):
+    """Event sent to notify a user about a new support reply."""
+
+    conversation_id: ConversationID
+    conversation_name: ConversationName | None
+    conversation_url: str
+    message_preview: str
 
 
 async def _send_message_to_recipients(
@@ -226,3 +237,26 @@ async def notify_via_socket_conversation_message_deleted(
     )
 
     await _send_message_to_recipients(app, recipients, notification_message)
+
+
+async def notify_via_socket_support_reply(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    conversation_id: ConversationID,
+    conversation_name: ConversationName | None,
+    conversation_url: str,
+    message_preview: str,
+) -> None:
+    """Send a real-time notification to a user about a new support reply."""
+    notification_message = SocketMessageDict(
+        event_type=SOCKET_IO_SUPPORT_REPLY_EVENT,
+        data=SupportReplyNotificationEvent(
+            conversation_id=conversation_id,
+            conversation_name=conversation_name,
+            conversation_url=conversation_url,
+            message_preview=message_preview,
+        ).model_dump(mode="json", by_alias=True),
+    )
+
+    await _send_message_to_recipients(app, {user_id}, notification_message)

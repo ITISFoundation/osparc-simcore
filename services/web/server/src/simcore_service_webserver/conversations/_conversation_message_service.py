@@ -28,6 +28,7 @@ from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
+from ..resource_manager.user_sessions import is_user_connected
 from ..users import users_service
 from . import (
     _conversation_message_repository,
@@ -38,6 +39,7 @@ from ._socketio import (
     notify_via_socket_conversation_message_created,
     notify_via_socket_conversation_message_deleted,
     notify_via_socket_conversation_message_updated,
+    notify_via_socket_support_reply,
 )
 from .errors import ConversationError
 
@@ -76,7 +78,7 @@ async def _notify_conversation_message_created(
         )
 
 
-async def _notify_support_reply_via_email(
+async def _notify_support_reply(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -85,7 +87,6 @@ async def _notify_support_reply_via_email(
     message_content: str,
     sender_user_id: UserID,
 ) -> None:
-    """Send an email notification when a reply is posted in a support conversation."""
     product = products_service.get_product(app, product_name=product_name)
     conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
 
@@ -95,6 +96,24 @@ async def _notify_support_reply_via_email(
             conversation_creator_user_id = await users_service.get_user_id_from_gid(
                 app, primary_gid=conversation.user_group_id
             )
+
+            # Check if user is online - if so, send socketio notification instead of email
+            if await is_user_connected(app, conversation_creator_user_id):
+                _logger.debug(
+                    "User %s is online, sending socketio notification for conversation %s",
+                    conversation_creator_user_id,
+                    conversation.conversation_id,
+                )
+                await notify_via_socket_support_reply(
+                    app,
+                    user_id=conversation_creator_user_id,
+                    conversation_id=conversation.conversation_id,
+                    conversation_name=conversation.name,
+                    conversation_url=conversation_url,
+                    message_preview=message_content[:200],  # Limit preview length
+                )
+                return
+
             recipient_user = await users_service.get_user(app, conversation_creator_user_id)
             recipient_name = (
                 f"{recipient_user.get('first_name', '')} {recipient_user.get('last_name', '')}".strip()
@@ -242,7 +261,7 @@ async def create_support_message(
     # 2. Notify via email
 
     try:
-        await _notify_support_reply_via_email(
+        await _notify_support_reply(
             app,
             product_name=product_name,
             conversation=conversation,
