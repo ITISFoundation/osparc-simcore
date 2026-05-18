@@ -70,6 +70,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
       check: "Integer",
       init: 220,
       nullable: true,
+      apply: "__applyMeasurerMaxWidth",
     },
   },
 
@@ -151,6 +152,17 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
         // safety net; sometimes we miss an image load or so
         setTimeout(() => this.__scheduleResize(), 500);
       }).catch(error => console.error(error));
+    },
+
+    __applyMeasurerMaxWidth: function(value) {
+      const dom = this.__getDomElement();
+      if (dom) {
+        const meas = dom.querySelector("." + this.self().MD_MEASURE);
+        if (meas) {
+          meas.style.maxWidth = (value || 220) + "px";
+          this.__scheduleResize();
+        }
+      }
     },
 
     __getDomElement: function() {
