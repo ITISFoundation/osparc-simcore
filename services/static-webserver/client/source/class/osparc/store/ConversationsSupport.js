@@ -191,6 +191,13 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return this.__patchConversation(conversationId, patchData);
     },
 
+    archiveConversation: function(conversationId, archive) {
+      const patchData = {
+        isArchived: archive,
+      };
+      return this.__patchConversation(conversationId, patchData);
+    },
+
     fetchLastMessage: function(conversationId) {
       const params = {
         url: {
@@ -291,7 +298,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       const conversation = this.__conversationsCached[conversationId];
       if (conversation) {
         // Only the following properties can be updated:
-        // name, extraContext, readByUser, readBySupport
+        // name, extraContext, readByUser, readBySupport, isArchived
         if (conversationData["name"]) {
           conversation.setName(conversationData["name"]);
         }
@@ -303,6 +310,9 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         }
         if (typeof conversationData["isReadBySupport"] === "boolean") {
           conversation.setReadBySupport(conversationData["isReadBySupport"]);
+        }
+        if (typeof conversationData["isArchived"] === "boolean") {
+          conversation.setArchived(conversationData["isArchived"]);
         }
       }
     },
