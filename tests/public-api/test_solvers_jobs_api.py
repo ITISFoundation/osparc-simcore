@@ -11,7 +11,6 @@ might affect the others. E.g. files uploaded in one test can be listed in rext
 # pylint: disable=unused-variable
 
 import logging
-import time
 from operator import attrgetter
 from pathlib import Path
 from typing import Final
@@ -21,6 +20,7 @@ from zipfile import ZipFile
 import osparc
 import pytest
 from pytest_simcore.helpers.typing_public_api import ServiceInfoDict, ServiceNameStr
+from tenacity import Retrying, TryAgain, stop_after_delay, wait_fixed
 
 osparc_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert osparc_VERSION >= (0, 4, 3)
@@ -214,16 +214,20 @@ def test_run_job(
     #    job.created_at < status.submitted_at < (job.created_at + timedelta(seconds=2))
     # )
 
-    deadline = time.monotonic() + _JOB_COMPLETION_TIMEOUT
-    while not status.stopped_at:
-        assert time.monotonic() < deadline, f"Timed out waiting for job {job.id}: {status=}"
-        time.sleep(0.5)
-        status: osparc.JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
-        assert isinstance(status, osparc.JobStatus)
+    for attempt in Retrying(
+        stop=stop_after_delay(_JOB_COMPLETION_TIMEOUT),
+        wait=wait_fixed(0.5),
+        reraise=True,
+    ):
+        with attempt:
+            status = solvers_api.inspect_job(solver.id, solver.version, job.id)
+            assert isinstance(status, osparc.JobStatus)
+            assert 0 <= status.progress <= 100
 
-        assert 0 <= status.progress <= 100
+            print("Solver progress", f"{status.progress}/100", flush=True)
 
-        print("Solver progress", f"{status.progress}/100", flush=True)
+            if not status.stopped_at:
+                raise TryAgain
 
     # done, either successfully or with failures!
     assert status.progress == 100
