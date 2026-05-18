@@ -93,7 +93,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
             appearance: "form-button-outlined",
             width: buttonSize,
             height: buttonSize,
-            padding: [0, 6],
+            padding: [0, 7],
             allowGrowX: false,
             allowGrowY: false,
             alignX: "center",
