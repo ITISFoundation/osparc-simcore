@@ -70,10 +70,10 @@ qx.Class.define("osparc.support.ConversationListItem", {
           });
           break;
         case "bottom-right-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right",
             alignY: "middle",
-          });
+          }));
           this.getChildControl("third-column-layout").addAt(control, 1, {
             flex: 1
           });
