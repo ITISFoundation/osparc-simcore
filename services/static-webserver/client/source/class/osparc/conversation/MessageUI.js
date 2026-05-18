@@ -166,6 +166,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right",
+          appearance: "menu-wider",
         });
         menuButton.setMenu(menu);
 
