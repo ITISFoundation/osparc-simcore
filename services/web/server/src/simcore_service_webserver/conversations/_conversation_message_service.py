@@ -124,28 +124,6 @@ async def _notify_support_reply_via_email(
                 },
             )
 
-        # case ConversationUserType.REGULAR_USER:
-        #     # Notify the support group
-        #     if product.support_standard_group_id is None:
-        #         return
-
-        #     await notifications_service.send_message_from_template(
-        #         app,
-        #         user_id=sender_user_id,
-        #         product_name=product_name,
-        #         channel=Channel.email,
-        #         group_ids=[product.support_standard_group_id],
-        #         external_contacts=None,
-        #         template_name="support_reply",
-        #         context={
-        #             "recipient_name": "Support Team",
-        #             "sender_name": sender_name,
-        #             "conversation_name": conversation.name,
-        #             "message_content": message_content,
-        #             "conversation_url": conversation_url,
-        #         },
-        #     )
-
 
 async def create_message_and_notify(
     app: web.Application,
@@ -335,12 +313,14 @@ async def create_support_message(
                         "user_id": user_id,
                         "fogbugz_url": str(fogbugz_settings_or_none.FOGBUGZ_URL),
                     },
-                    tip="Check conversation in the database and inform support team (create Fogbugz case manually if needed).",
+                    tip="Check conversation in the database and inform support team "
+                    "(create Fogbugz case manually if needed).",
                 )
             )
     else:
         _logger.info(
-            "Support settings available, Fogbugz case exists but it is closed, so we need to reopen a FogBugz case. Conversation ID: %s",
+            "Support settings available, Fogbugz case exists but it is closed, so we need to reopen a FogBugz case. "
+            "Conversation ID: %s",
             conversation.conversation_id,
         )
         assert product.support_assigned_fogbugz_project_id  # nosec
@@ -384,7 +364,8 @@ async def trigger_chatbot_processing(
 
     if conversation_user_type != ConversationUserType.REGULAR_USER:
         _logger.warning(
-            "Chatbot processing can only be triggered by regular users. Conversation ID: %s, User ID: %s, Conversation User Type: %s",
+            "Chatbot processing can only be triggered by regular users. "
+            "Conversation ID: %s, User ID: %s, Conversation User Type: %s",
             conversation.conversation_id,
             user_id,
             conversation_user_type,
@@ -401,7 +382,8 @@ async def trigger_chatbot_processing(
     )
     if not messages or messages[0].message_id != message_id:
         _logger.warning(
-            "Chatbot processing can only be triggered for the last message in the conversation. Conversation ID: %s, Message ID: %s, Last Message ID: %s",
+            "Chatbot processing can only be triggered for the last message in the conversation. "
+            "Conversation ID: %s, Message ID: %s, Last Message ID: %s",
             conversation.conversation_id,
             message_id,
             messages[0].message_id if messages else "N/A",
