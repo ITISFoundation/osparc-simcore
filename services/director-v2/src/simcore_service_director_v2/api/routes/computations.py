@@ -72,7 +72,6 @@ from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
 from ...utils.computations_tasks import validate_pipeline
 from ...utils.dags import (
-    compute_pipeline_details,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
