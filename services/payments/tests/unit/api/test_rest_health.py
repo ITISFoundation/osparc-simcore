@@ -77,14 +77,14 @@ async def test_healthcheck_does_not_log_error_when_rabbitmq_unhealthy(
     with_disabled_postgres: None,
     client: httpx.AsyncClient,
     mocker: MockerFixture,
-    client_healthy: bool,
-    rpc_client_healthy: bool,
+    is_client_healthy: bool,
+    is_rpc_client_healthy: bool,
     caplog: pytest.LogCaptureFixture,
 ):
     """An unhealthy RabbitMQ connection must NOT produce ERROR-level log entries
     from the unhandled-exception handler (handle_errors_as_500). It is expected
     and should be handled as a clean 503, not a 500."""
-    _mock_rabbitmq_clients(mocker, client_healthy=client_healthy, rpc_client_healthy=rpc_client_healthy)
+    _mock_rabbitmq_clients(mocker, client_healthy=is_client_healthy, rpc_client_healthy=is_rpc_client_healthy)
 
     with caplog.at_level(logging.ERROR):
         response = await client.get("/")

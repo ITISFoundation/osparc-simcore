@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
 async def health_check(
     app: Annotated[FastAPI, Depends(get_app)],
-):
+) -> str | PlainTextResponse:
     if not get_rabbitmq_client(app).healthy or not get_rabbitmq_rpc_client(app).healthy:
         return PlainTextResponse(
             RABBITMQ_CLIENT_UNHEALTHY_MSG,
@@ -35,4 +35,4 @@ async def health_check(
         )
 
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
-    return PlainTextResponse(f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}")
+    return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
