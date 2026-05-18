@@ -94,7 +94,7 @@ async def _notify_support_reply_via_email(
     conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
 
     match conversation_user_type:
-        case ConversationUserType.SUPPORT_USER | ConversationUserType.CHATBOT_USER:
+        case ConversationUserType.SUPPORT_USER:
             # Notify the conversation creator
             conversation_creator_user_id = await users_service.get_user_id_from_gid(
                 app, primary_gid=conversation.user_group_id
