@@ -87,6 +87,15 @@ qx.Class.define("osparc.support.ConversationListItem", {
           });
           this.getChildControl("bottom-right-layout").add(control);
           break;
+        case "archived-badge":
+          control = new osparc.ui.basic.Chip(this.tr("Archived")).set({
+            statusColor: "success",
+            font: "text-12",
+            allowGrowY: false,
+            alignX: "right",
+          });
+          this.getChildControl("bottom-right-layout").add(control);
+          break;
         case "menu-button": {
           const buttonSize = 22;
           control = new qx.ui.form.MenuButton().set({
@@ -132,6 +141,11 @@ qx.Class.define("osparc.support.ConversationListItem", {
       const propName = osparc.store.Groups.getInstance().amIASupportUser() ? "readBySupport" : "readByUser";
       conversation.bind(propName, unreadBadge, "visibility", {
         converter: val => val === false ? "visible" : "excluded"
+      });
+
+      const archivedBadge = this.getChildControl("archived-badge");
+      conversation.bind("archived", archivedBadge, "visibility", {
+        converter: val => val === true ? "visible" : "excluded"
       });
 
       this.getChildControl("menu-button");
