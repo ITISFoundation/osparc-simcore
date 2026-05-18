@@ -1,9 +1,8 @@
 from typing import Annotated
 
 import pytest
-from fastapi import Depends, FastAPI, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.testclient import TestClient
-from pydantic import ValidationError
 from simcore_service_api_server.api.dependencies.models_schemas_jobs_filters import (
     get_job_metadata_filter,
 )
@@ -32,6 +31,7 @@ def test_get_metadata_filter():
     )
 
     assert result is not None
+    assert result.any is not None
     assert len(result.any) == 2
     assert result.any[0].name == "key1"
     assert result.any[0].pattern == "val*"
@@ -39,21 +39,17 @@ def test_get_metadata_filter():
     assert result.any[1].pattern == "exactval"
     assert result == expected
 
-    # Test with invalid input (missing colon)
+    # Test with invalid input (missing colon) - now raises HTTPException
     input_data = ["key1val", "key2:exactval"]
-    result = get_job_metadata_filter(input_data)
-
-    assert result is not None
-    assert len(result.any) == 1
-    assert result.any[0].name == "key2"
-    assert result.any[0].pattern == "exactval"
+    with pytest.raises(HTTPException) as exc_info:
+        get_job_metadata_filter(input_data)
+    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     # Test with empty pattern not allowed
     input_data = ["key1:", "key2:exactval"]
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         get_job_metadata_filter(input_data)
-
-    assert exc_info.value.errors()[0]["type"] == "string_too_short"
+    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_metadata_filter_in_api_route():
@@ -69,7 +65,13 @@ def test_metadata_filter_in_api_route():
             return {"filters": None}
 
         # Convert to dict for easier comparison in test
-        return {"filters": {"any": [{"name": item.name, "pattern": item.pattern} for item in metadata_filter.any]}}
+        return {
+            "filters": {
+                "any": [{"name": item.name, "pattern": item.pattern} for item in metadata_filter.any]
+                if metadata_filter.any
+                else None
+            }
+        }
 
     # Create a test client
     client = TestClient(app)
@@ -96,10 +98,9 @@ def test_metadata_filter_in_api_route():
         }
     }
 
-    # Test with invalid filter (should skip the invalid one)
+    # Test with invalid filter (should return 422)
     response = client.get("/test-filter?metadata.any=invalid&metadata.any=key2:exactval")
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"filters": {"any": [{"name": "key2", "pattern": "exactval"}]}}
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     # Test with URL-encoded characters
     # Use special characters that need encoding: space, &, =, +, /, ?
@@ -118,7 +119,7 @@ def test_metadata_filter_in_api_route():
     }
 
     # Test with Unicode characters
-    unicode_query = "/test-filter?metadata.any=emoji:%F0%9F%98%8A&metadata.any=international:caf%C3%A9"
+    unicode_query = "/test-filter?metadata.any=emoji:%F0%9F%98%8A&metadata.any=international:calf%C3%A9"
     response = client.get(unicode_query)
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
