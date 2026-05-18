@@ -116,7 +116,7 @@ async def _notify_support_reply_via_email(
                 context={
                     "user": {
                         "first_name": recipient_user.get("first_name"),
-                        "user_name": recipient_user.get("username") or recipient_user["email"],
+                        "user_name": recipient_user.get("name"),
                     },
                     "conversation_name": conversation.name,
                     "conversation_url": conversation_url,
