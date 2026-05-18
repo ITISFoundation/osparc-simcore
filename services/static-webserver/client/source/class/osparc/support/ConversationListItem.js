@@ -69,6 +69,15 @@ qx.Class.define("osparc.support.ConversationListItem", {
             column: 1
           });
           break;
+        case "bottom-right-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            alignX: "right",
+            alignY: "middle",
+          });
+          this.getChildControl("third-column-layout").addAt(control, 1, {
+            flex: 1
+          });
+          break;
         case "unread-badge":
           control = new osparc.ui.basic.Chip(this.tr("Unread")).set({
             statusColor: "success",
@@ -76,10 +85,22 @@ qx.Class.define("osparc.support.ConversationListItem", {
             allowGrowY: false,
             alignX: "right",
           });
-          this.getChildControl("third-column-layout").addAt(control, 1, {
-            flex: 1
-          });
+          this.getChildControl("bottom-right-layout").add(control);
           break;
+        case "menu-button": {
+          const buttonSize = 22;
+          const iconSize = 14;
+          control = osparc.utils.Utils.createThreeDotsMenuButton(buttonSize, iconSize).set({
+            backgroundColor: "background-main-3",
+          });
+          this.getChildControl("bottom-right-layout").add(control);
+          break;
+        }
+        case "options-menu": {
+          control = new osparc.support.ConversationOptionsMenu();
+          this.getChildControl("menu-button").setMenu(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -104,6 +125,9 @@ qx.Class.define("osparc.support.ConversationListItem", {
       conversation.bind(propName, unreadBadge, "visibility", {
         converter: val => val === false ? "visible" : "excluded"
       });
+
+      this.getChildControl("menu-button");
+      this.getChildControl("options-menu").setConversation(conversation);
     },
 
     __lastMessageChanged: function() {
