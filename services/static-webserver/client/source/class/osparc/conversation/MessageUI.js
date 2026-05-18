@@ -106,7 +106,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {
-          const buttonSize = 22;
+          const buttonSize = 20;
           control = new qx.ui.form.MenuButton().set({
             width: buttonSize,
             height: buttonSize,
