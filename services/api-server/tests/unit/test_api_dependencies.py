@@ -1,3 +1,4 @@
+# pylint: disable=unsubscriptable-object
 from typing import Annotated
 
 import pytest
