@@ -213,6 +213,8 @@ class JobService:
         # 2. list jobs under job_parent_resource_name
         return await self._list_jobs(
             job_parent_resource_name=job_parent_resource_name,
+            filter_any_custom_metadata=None,
+            filter_all_custom_metadata=None,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
         )
