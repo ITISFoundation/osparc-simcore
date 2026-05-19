@@ -295,23 +295,16 @@ def test_list_services_performance(
     benchmark.pedantic(run_async_test, rounds=5)
 
 
-async def test_get_image_labels_follows_blob_redirect(
-    configure_registry_access: EnvVarsDict,
-    app: FastAPI,
-):
-    """When REGISTRY_STORAGE_REDIRECT_DISABLE=false the registry returns HTTP 307
-    for blob requests, redirecting to an S3 pre-signed URL.  Verify that the
-    director follows the redirect and correctly parses the JSON config blob."""
+# --- Helpers & fixtures for registry redirect tests ---
 
-    image = "simcore/services/comp/test-redirect"
-    tag = "1.0.0"
-    config_digest = "sha256:abc123def456"
-    manifest_digest = "sha256:manifest_digest_789"
-    s3_presigned_url = (
-        "https://s3.amazonaws.com/registry-bucket/blobs/abc123?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=fake"
-    )
 
-    manifest_response = {
+def _make_manifest_response(
+    config_digest: str,
+    *,
+    layers: list[dict] | None = None,
+) -> dict:
+    """Create a Docker distribution manifest v2 response."""
+    return {
         "schemaVersion": 2,
         "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
         "config": {
@@ -319,49 +312,34 @@ async def test_get_image_labels_follows_blob_redirect(
             "digest": config_digest,
             "size": 1234,
         },
-        "layers": [],
+        "layers": layers or [],
     }
 
-    expected_labels = {
-        "io.simcore.key": '{"key": "simcore/services/comp/test-redirect"}',
-        "io.simcore.version": '{"version": "1.0.0"}',
-        "io.simcore.type": '{"type": "computational"}',
-        "io.simcore.name": '{"name": "test-redirect"}',
-        "io.simcore.description": '{"description": "A test service"}',
+
+def _make_labels(
+    image: str,
+    tag: str,
+    *,
+    service_type: str = "computational",
+    description: str = "A test service",
+    extra: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Create a standard set of simcore service labels."""
+    name = image.rsplit("/", 1)[-1]
+    labels = {
+        "io.simcore.key": json.dumps({"key": image}),
+        "io.simcore.version": json.dumps({"version": tag}),
+        "io.simcore.type": json.dumps({"type": service_type}),
+        "io.simcore.name": json.dumps({"name": name}),
+        "io.simcore.description": json.dumps({"description": description}),
         "io.simcore.authors": '{"authors": [{"name": "test"}]}',
         "io.simcore.contact": '{"contact": "test@test.com"}',
         "io.simcore.inputs": '{"inputs": {}}',
         "io.simcore.outputs": '{"outputs": {}}',
     }
-    config_blob_response = {"config": {"Labels": expected_labels}}
-
-    with respx.mock(assert_all_called=False) as respx_mock:
-        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
-            status.HTTP_200_OK,
-            json=manifest_response,
-            headers={
-                "Docker-Content-Digest": manifest_digest,
-                "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
-            },
-        )
-        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").respond(
-            status.HTTP_307_TEMPORARY_REDIRECT,
-            headers={"Location": s3_presigned_url},
-        )
-        respx_mock.get(url__regex=r".*s3\.amazonaws\.com.*").respond(
-            status.HTTP_200_OK,
-            json=config_blob_response,
-        )
-
-        labels, digest = await registry_proxy.get_image_labels(app, image, tag)
-
-        assert labels == expected_labels
-        assert digest == manifest_digest
-
-        # Verify no auth leaked to S3
-        s3_calls = [c for c in respx_mock.calls if "s3.amazonaws.com" in str(c.request.url)]
-        assert len(s3_calls) == 1
-        assert "authorization" not in {k.lower() for k in s3_calls[0].request.headers}
+    if extra:
+        labels.update(extra)
+    return labels
 
 
 @pytest.fixture
@@ -384,6 +362,50 @@ def configure_authed_registry_access(
     )
 
 
+async def test_get_image_labels_follows_blob_redirect(
+    configure_registry_access: EnvVarsDict,
+    app: FastAPI,
+):
+    """When REGISTRY_STORAGE_REDIRECT_DISABLE=false the registry returns HTTP 307
+    for blob requests, redirecting to an S3 pre-signed URL.  Verify that the
+    director follows the redirect and correctly parses the JSON config blob."""
+
+    image = "simcore/services/comp/test-redirect"
+    tag = "1.0.0"
+    config_digest = "sha256:abc123def456"
+    manifest_digest = "sha256:manifest_digest_789"
+    s3_presigned_url = "https://s3.amazonaws.com/registry-bucket/blobs/abc123?X-Amz-Algorithm=AWS4-HMAC-SHA256"
+    expected_labels = _make_labels(image, tag)
+
+    with respx.mock(assert_all_called=False) as respx_mock:
+        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
+            status.HTTP_200_OK,
+            json=_make_manifest_response(config_digest),
+            headers={
+                "Docker-Content-Digest": manifest_digest,
+                "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
+            },
+        )
+        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").respond(
+            status.HTTP_307_TEMPORARY_REDIRECT,
+            headers={"Location": s3_presigned_url},
+        )
+        respx_mock.get(url__regex=r".*s3\.amazonaws\.com.*").respond(
+            status.HTTP_200_OK,
+            json={"config": {"Labels": expected_labels}},
+        )
+
+        labels, digest = await registry_proxy.get_image_labels(app, image, tag)
+
+        assert labels == expected_labels
+        assert digest == manifest_digest
+
+        # Verify no auth leaked to S3
+        s3_calls = [c for c in respx_mock.calls if "s3.amazonaws.com" in str(c.request.url)]
+        assert len(s3_calls) == 1
+        assert "authorization" not in {k.lower() for k in s3_calls[0].request.headers}
+
+
 async def test_get_image_labels_follows_blob_redirect_with_basic_auth(
     configure_authed_registry_access: EnvVarsDict,
     app: FastAPI,
@@ -399,42 +421,23 @@ async def test_get_image_labels_follows_blob_redirect_with_basic_auth(
         "https://my-bucket.s3.us-east-1.amazonaws.com/docker/blobs/sha256/auth_cfg_digest_001"
         "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=1200&X-Amz-Signature=abcdef"
     )
-
-    manifest_response = {
-        "schemaVersion": 2,
-        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
-        "config": {
-            "mediaType": "application/vnd.docker.container.image.v1+json",
-            "digest": config_digest,
-            "size": 5678,
-        },
-        "layers": [
-            {
-                "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
-                "digest": "sha256:layer1",
-                "size": 100,
-            }
-        ],
-    }
-
-    expected_labels = {
-        "io.simcore.key": '{"key": "simcore/services/dynamic/test-auth-redirect"}',
-        "io.simcore.version": '{"version": "2.0.0"}',
-        "io.simcore.type": '{"type": "dynamic"}',
-        "io.simcore.name": '{"name": "test-auth-redirect"}',
-        "io.simcore.description": '{"description": "Auth redirect test"}',
-        "io.simcore.authors": '{"authors": [{"name": "test"}]}',
-        "io.simcore.contact": '{"contact": "test@test.com"}',
-        "io.simcore.inputs": '{"inputs": {}}',
-        "io.simcore.outputs": '{"outputs": {}}',
-        "simcore.service.settings": "[]",
-    }
-    config_blob_response = {"config": {"Labels": expected_labels}}
+    expected_labels = _make_labels(
+        image, tag, service_type="dynamic", description="Auth redirect test", extra={"simcore.service.settings": "[]"}
+    )
 
     with respx.mock(assert_all_called=False) as respx_mock:
         respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
             status.HTTP_200_OK,
-            json=manifest_response,
+            json=_make_manifest_response(
+                config_digest,
+                layers=[
+                    {
+                        "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+                        "digest": "sha256:layer1",
+                        "size": 100,
+                    }
+                ],
+            ),
             headers={
                 "Docker-Content-Digest": manifest_digest,
                 "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
@@ -446,7 +449,7 @@ async def test_get_image_labels_follows_blob_redirect_with_basic_auth(
         )
         respx_mock.get(url__regex=r".*s3\.us-east-1\.amazonaws\.com.*").respond(
             status.HTTP_200_OK,
-            json=config_blob_response,
+            json={"config": {"Labels": expected_labels}},
         )
 
         labels, digest = await registry_proxy.get_image_labels(app, image, tag)
@@ -476,35 +479,12 @@ async def test_get_image_labels_no_redirect_still_works(
     tag = "1.0.0"
     config_digest = "sha256:noredir_cfg_001"
     manifest_digest = "sha256:noredir_manifest_001"
-
-    manifest_response = {
-        "schemaVersion": 2,
-        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
-        "config": {
-            "mediaType": "application/vnd.docker.container.image.v1+json",
-            "digest": config_digest,
-            "size": 1000,
-        },
-        "layers": [],
-    }
-
-    expected_labels = {
-        "io.simcore.key": '{"key": "simcore/services/comp/test-no-redirect"}',
-        "io.simcore.version": '{"version": "1.0.0"}',
-        "io.simcore.type": '{"type": "computational"}',
-        "io.simcore.name": '{"name": "test-no-redirect"}',
-        "io.simcore.description": '{"description": "No redirect test"}',
-        "io.simcore.authors": '{"authors": [{"name": "test"}]}',
-        "io.simcore.contact": '{"contact": "test@test.com"}',
-        "io.simcore.inputs": '{"inputs": {}}',
-        "io.simcore.outputs": '{"outputs": {}}',
-    }
-    config_blob_response = {"config": {"Labels": expected_labels}}
+    expected_labels = _make_labels(image, tag, description="No redirect test")
 
     with respx.mock(assert_all_called=False) as respx_mock:
         respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
             status.HTTP_200_OK,
-            json=manifest_response,
+            json=_make_manifest_response(config_digest),
             headers={
                 "Docker-Content-Digest": manifest_digest,
                 "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
@@ -512,7 +492,7 @@ async def test_get_image_labels_no_redirect_still_works(
         )
         respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").respond(
             status.HTTP_200_OK,
-            json=config_blob_response,
+            json={"config": {"Labels": expected_labels}},
         )
 
         labels, digest = await registry_proxy.get_image_labels(app, image, tag)
@@ -539,30 +519,9 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
         "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=bearertest"
     )
     fake_token = "fake-bearer-token-12345"  # noqa: S105
-
-    manifest_response = {
-        "schemaVersion": 2,
-        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
-        "config": {
-            "mediaType": "application/vnd.docker.container.image.v1+json",
-            "digest": config_digest,
-            "size": 2000,
-        },
-        "layers": [],
-    }
-
-    expected_labels = {
-        "io.simcore.key": ('{"key": "simcore/services/dynamic/test-bearer-redirect"}'),
-        "io.simcore.version": '{"version": "3.0.0"}',
-        "io.simcore.type": '{"type": "dynamic"}',
-        "io.simcore.name": '{"name": "test-bearer-redirect"}',
-        "io.simcore.description": '{"description": "Bearer redirect test"}',
-        "io.simcore.authors": '{"authors": [{"name": "test"}]}',
-        "io.simcore.contact": '{"contact": "test@test.com"}',
-        "io.simcore.inputs": '{"inputs": {}}',
-        "io.simcore.outputs": '{"outputs": {}}',
-        "simcore.service.settings": "[]",
-    }
+    expected_labels = _make_labels(
+        image, tag, service_type="dynamic", description="Bearer redirect test", extra={"simcore.service.settings": "[]"}
+    )
     config_blob_response = {"config": {"Labels": expected_labels}}
 
     app_settings = get_application_settings(app)
@@ -580,7 +539,7 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
             )
         return httpx.Response(
             status.HTTP_200_OK,
-            json=manifest_response,
+            json=_make_manifest_response(config_digest),
             headers={
                 "Docker-Content-Digest": manifest_digest,
                 "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
