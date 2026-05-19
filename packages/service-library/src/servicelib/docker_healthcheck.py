@@ -40,7 +40,7 @@ def is_service_healthy() -> bool:
         return True
 
     with suppress(Exception), urlopen(f"{sys.argv[1]}{SIMCORE_NODE_BASEPATH}") as f:  # noqa: S310
-        return f.getcode() == HTTP_STATUS_OK
+        return bool(f.getcode() == HTTP_STATUS_OK)
     return False
 
 
