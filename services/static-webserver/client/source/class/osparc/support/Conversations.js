@@ -49,6 +49,7 @@ qx.Class.define("osparc.support.Conversations", {
       ],
       init: "all",
       event: "changeCurrentFilter",
+      apply: "__applyCurrentFilter",
     },
   },
 
@@ -82,10 +83,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show all conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("all");
-            this.__applyCurrentFilter("all");
-          });
+          control.addListener("execute", () => this.setCurrentFilter("all"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-unread-button":
@@ -94,10 +92,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only unread conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("unread");
-            this.__applyCurrentFilter("unread");
-          });
+          control.addListener("execute", () => this.setCurrentFilter("unread"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-active-button":
@@ -106,10 +101,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only active (unarchived) conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("active");
-            this.__applyCurrentFilter("active");
-          });
+          control.addListener("execute", () => this.setCurrentFilter("active"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-archived-button":
@@ -118,10 +110,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only archived conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("archived");
-            this.__applyCurrentFilter("archived");
-          });
+          control.addListener("execute", () => this.setCurrentFilter("archived"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "loading-button":
