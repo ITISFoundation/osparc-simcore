@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 
 from collections.abc import Callable
+from copy import deepcopy
 from datetime import timedelta
 from typing import Any, Final, NamedTuple
 from uuid import uuid4
@@ -185,7 +186,7 @@ def test__get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle, e
 
 
 def _get_node_get_from(service_state: ServiceState) -> NodeGet:
-    dict_data = NodeGet.model_json_schema()["examples"][0]
+    dict_data = deepcopy(NodeGet.model_json_schema()["examples"][0])
     assert "service_state" in dict_data
     dict_data["service_state"] = service_state
     return TypeAdapter(NodeGet).validate_python(dict_data)
@@ -194,7 +195,7 @@ def _get_node_get_from(service_state: ServiceState) -> NodeGet:
 def _get_dynamic_service_get_from(
     service_state: ServiceState,
 ) -> DynamicServiceGet:
-    dict_data = DynamicServiceGet.model_json_schema()["examples"][1]
+    dict_data = deepcopy(DynamicServiceGet.model_json_schema()["examples"][1])
     assert "service_state" in dict_data
     dict_data["service_state"] = service_state
     return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
