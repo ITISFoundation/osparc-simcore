@@ -124,7 +124,7 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
 async def _heartbeat_connected_clusters(
     app: FastAPI, connected_instances: set[EC2InstanceData]
 ) -> set[EC2InstanceData]:
-    """Update heartbeat for all connected clusters. Log busy ones.
+    """Check connected clusters and heartbeat the busy ones.
 
     Returns the set of instances that are currently busy (and were heartbeated).
     """
