@@ -1,10 +1,10 @@
 ---
-name: healthcheck-entrypoints
+name: healthcheck
 description: 'Single-service guide to add a FastAPI health endpoint and bind Docker HEALTHCHECK to it using servicelib.docker_healthcheck. Use when: implementing health route behavior (200/503), wiring HealthCheckError handler, updating one target service Dockerfile, and adding focused health tests.'
 argument-hint: target_service=<service-name>
 ---
 
-# Healthcheck Entrypoints
+# Service Healtcheck
 
 ## Input
 

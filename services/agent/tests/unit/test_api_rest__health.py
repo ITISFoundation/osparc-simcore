@@ -2,7 +2,7 @@
 # pylint: disable=redefined-outer-name
 
 
-from fastapi import status
+from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 from models_library.api_schemas__common.health import HealthCheckGet
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
@@ -18,8 +18,11 @@ def test_health_ok(test_client: TestClient):
     assert HealthCheckGet.model_validate(response.json())
 
 
-def test_health_returns_503_when_rabbitmq_unhealthy(test_client: TestClient):
-    test_client.app.state.rabbitmq_rpc_client._healthy_state = False  # noqa: SLF001
+def test_health_returns_503_when_rabbitmq_unhealthy(
+    initialized_app: FastAPI,
+    test_client: TestClient,
+):
+    initialized_app.state.rabbitmq_rpc_client._healthy_state = False  # noqa: SLF001
 
     response = test_client.get("/health")
 
