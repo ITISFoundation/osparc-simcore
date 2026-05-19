@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
 from models_library.functions_errors import FunctionBaseError
+from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -25,6 +26,7 @@ from ._validation_errors import http422_error_handler
 
 
 def setup(app: FastAPI, *, is_debug: bool = False):
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)  # type: ignore[arg-type]
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(HttpxException, handle_httpx_client_exceptions)
     app.add_exception_handler(RequestValidationError, http422_error_handler)

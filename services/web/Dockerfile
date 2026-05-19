@@ -175,7 +175,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
+  CMD ["python3", "-m", "servicelib.docker_healthcheck", "http://localhost:8080/v0/health"]
 
 # no need to rebuild everything if just these changed
 ARG BUILD_DATE
