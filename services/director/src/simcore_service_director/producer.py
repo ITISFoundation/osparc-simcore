@@ -18,7 +18,7 @@ from models_library.products import ProductName
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
@@ -160,7 +160,6 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
     internal_network_id: str | None,
     request_simcore_user_agent: str,
 ) -> dict:
-    # pylint: disable=too-many-statements
     app_settings = get_application_settings(app)
 
     service_parameters_labels = await _read_service_settings(app, service_key, service_tag, SERVICE_RUNTIME_SETTINGS)
@@ -490,7 +489,7 @@ async def _pass_port_to_service(
     service_name: str,
     port: str,
     service_boot_parameters_labels: list[Any],
-    session: httpx.AsyncClient,
+    client: httpx.AsyncClient,
     app_settings: ApplicationSettings,
 ) -> None:
     for param in service_boot_parameters_labels:
@@ -509,7 +508,7 @@ async def _pass_port_to_service(
                 "port": str(port),
             }
             _logger.debug("creating request %s and query %s", service_url, query_string)
-            response = await session.post(service_url, data=query_string)
+            response = await client.post(service_url, data=query_string)
             _logger.debug("query response: %s", response.text)
             return
     _logger.debug("service %s does not need to know its external port", service_name)
@@ -725,7 +724,7 @@ async def _start_docker_service(  # noqa: PLR0913
     node_base_path: str,
     internal_network_id: str | None,
     request_simcore_user_agent: str,
-) -> dict:  # pylint: disable=R0913
+) -> dict:
     app_settings = get_application_settings(app)
     service_parameters = await _create_docker_service_params(
         app,
@@ -774,12 +773,12 @@ async def _start_docker_service(  # noqa: PLR0913
         if isinstance(service_boot_parameters_labels, list):
             service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
             if published_port:
-                session = get_client_session(app)
+                httpx_client = get_httpx_client(app)
                 await _pass_port_to_service(
                     service_name,
                     published_port,
                     service_boot_parameters_labels,
-                    session,
+                    httpx_client,
                     app_settings=app_settings,
                 )
 
@@ -1040,9 +1039,9 @@ async def get_service_details(app: FastAPI, node_uuid: str) -> dict:
     reraise=True,
     retry=retry_if_exception_type(httpx.RequestError),
 )
-async def _save_service_state(service_host_name: str, session: httpx.AsyncClient) -> None:
+async def _save_service_state(service_host_name: str, client: httpx.AsyncClient) -> None:
     try:
-        response = await session.post(
+        response = await client.post(
             url=f"http://{service_host_name}/state",  # NOSONAR
             timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
         )
@@ -1114,7 +1113,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
         if save_state:
             _logger.debug("saving state of service %s...", service_host_name)
             try:
-                await _save_service_state(service_host_name, session=get_client_session(app))
+                await _save_service_state(service_host_name, client=get_httpx_client(app))
             except httpx.HTTPStatusError as err:
                 raise ServiceStateSaveError(
                     service_uuid=node_uuid,
