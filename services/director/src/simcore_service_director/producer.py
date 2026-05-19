@@ -772,12 +772,12 @@ async def _start_docker_service(  # noqa: PLR0913
         if isinstance(service_boot_parameters_labels, list):
             service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
             if published_port:
-                client = get_httpx_client(app)
+                httpx_client = get_httpx_client(app)
                 await _pass_port_to_service(
                     service_name,
                     published_port,
                     service_boot_parameters_labels,
-                    client,
+                    httpx_client,
                     app_settings=app_settings,
                 )
 
