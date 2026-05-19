@@ -375,8 +375,10 @@ qx.Class.define("osparc.utils.Utils", {
       return firstColumnWidth;
     },
 
-    makeButtonBlink: function(button, nTimes = 1) {
-      const baseColor = button.getBackgroundColor();
+    makeButtonBlink: function(button, nTimes = 1, colorProperty = "backgroundColor") {
+      const getter = "get" + qx.lang.String.firstUp(colorProperty);
+      const setter = "set" + qx.lang.String.firstUp(colorProperty);
+      const baseColor = button[getter]();
       const blinkColor = "strong-main";
       const interval = 500;
       let count = 0;
@@ -384,17 +386,17 @@ qx.Class.define("osparc.utils.Utils", {
       // If a blink is already in progress, cancel it
       if (button._blinkingIntervalId) {
         clearInterval(button._blinkingIntervalId);
-        button.setBackgroundColor(baseColor); // reset to base
+        button[setter](baseColor); // reset to base
       }
 
       const blinkInterval = setInterval(() => {
         if (button && button.getContentElement()) {
-          button.setBackgroundColor((count % 2 === 0) ? blinkColor : baseColor);
+          button[setter]((count % 2 === 0) ? blinkColor : baseColor);
           count++;
 
           if (count >= nTimes * 2) {
             clearInterval(blinkInterval);
-            button.setBackgroundColor(baseColor);
+            button[setter](baseColor);
             button._blinkingIntervalId = null; // cleanup
           }
         }

@@ -100,9 +100,7 @@ qx.Class.define("osparc.support.SupportButton", {
       cachedConversations.forEach(conversation => conversation.addListener(eventName, () => this.__updateButton(), this));
       conversationsStore.addListener("conversationAdded", e => {
         const conversation = e.getData();
-        conversation.addListener(eventName, e => {
-          this.__updateButton();
-        }, this);
+        conversation.addListener(eventName, e => this.__updateButton(), this);
         this.__updateButton();
       }, this);
     },
@@ -116,6 +114,10 @@ qx.Class.define("osparc.support.SupportButton", {
     },
 
     __applyUnreadMessages: function(unread) {
+      if (unread) {
+        // make it blink when a new message arrives
+        osparc.utils.Utils.makeButtonBlink(this.getChildControl("icon"), 2, "textColor");
+      }
       [
         this.getChildControl("is-active-icon-outline"),
         this.getChildControl("is-active-icon"),
