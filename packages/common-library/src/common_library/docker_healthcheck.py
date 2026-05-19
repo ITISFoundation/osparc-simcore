@@ -8,12 +8,12 @@ Example of usage in a Dockerfile:
                 --start-period=20s \
                 --start-interval=1s \
                 --retries=3 \
-                CMD ["python3", "-m", "servicelib.docker_healthcheck", "http://localhost:8080/v0/"]
+                CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/"]
 ```
 
 Alternative script invocation (same module):
 ```
-    CMD ["python3", "-c", "from servicelib.docker_healthcheck import main; raise SystemExit(main())", "http://localhost:8080/v0/"]
+    CMD ["python3", "-c", "from common_library.docker_healthcheck import main; raise SystemExit(main())", "http://localhost:8080/v0/"]
 ```
 
 Worker-mode (heartbeat) usage:
@@ -46,7 +46,7 @@ MIN_REQUIRED_ARGS = 2
 
 
 def _is_heartbeat_healthy() -> bool:
-    from common_library.heartbeat import is_healthy  # noqa: PLC0415
+    from .heartbeat import is_healthy  # noqa: PLC0415
 
     return is_healthy()
 

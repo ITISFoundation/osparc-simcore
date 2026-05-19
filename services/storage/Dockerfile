@@ -165,7 +165,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "servicelib.docker_healthcheck", "http://localhost:8080/v0/"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/"]
 
 
 ENTRYPOINT [ "/bin/sh", "services/storage/docker/entrypoint.sh" ]

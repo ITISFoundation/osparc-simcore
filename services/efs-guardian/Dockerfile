@@ -190,7 +190,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "servicelib.docker_healthcheck", "http://localhost:8000/"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/efs-guardian/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]

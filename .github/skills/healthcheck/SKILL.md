@@ -1,6 +1,6 @@
 ---
 name: healthcheck
-description: 'Single-service guide to add a FastAPI health endpoint and bind Docker HEALTHCHECK to it using servicelib.docker_healthcheck. Use when: implementing health route behavior (200/503), wiring HealthCheckError handler, updating one target service Dockerfile, and adding focused health tests.'
+description: 'Single-service guide to add a FastAPI health endpoint and bind Docker HEALTHCHECK to it using common_library.docker_healthcheck. Use when: implementing health route behavior (200/503), wiring HealthCheckError handler, updating one target service Dockerfile, and adding focused health tests.'
 argument-hint: target_service=<service-name>
 ---
 
@@ -18,7 +18,7 @@ For the given `target_service`, produce:
 
 1. A FastAPI health endpoint that returns `200` when healthy
 2. FastAPI error handling that returns `503` when dependencies are unhealthy
-3. A Dockerfile `HEALTHCHECK` command bound to that endpoint using existing `servicelib.docker_healthcheck`
+3. A Dockerfile `HEALTHCHECK` command bound to that endpoint using existing `common_library.docker_healthcheck`
 4. Tests proving healthcheck behavior works as expected
 
 ## Use This Skill When
@@ -42,7 +42,7 @@ For `target_service`, enforce these invariants:
 1. Locate REST health route implementation for `target_service`.
 2. Locate exception handler setup used by `target_service`.
 3. Locate Dockerfile `HEALTHCHECK CMD` and current target URL.
-4. Confirm service runtime includes `servicelib`.
+4. Confirm service runtime includes `common_library`.
 
 ### Step 2: Build/Update FastAPI Health Endpoint
 
@@ -76,7 +76,7 @@ Ordering rule: this registration must happen before `Exception`/catch-all handle
 In `target_service` Dockerfile, set healthcheck command to:
 
 ```dockerfile
-CMD ["python3", "-m", "servicelib.docker_healthcheck", "<url>"]
+CMD ["python3", "-m", "common_library.docker_healthcheck", "<url>"]
 ```
 
 Keep the service-specific URL unchanged. The script runtime changes, endpoint target should not.
@@ -95,7 +95,7 @@ Run these checks:
 
 1. Run `target_service` health tests.
 2. Confirm unhealthy path returns `503` (not `500`).
-3. Confirm Dockerfile uses `servicelib.docker_healthcheck` with correct endpoint URL.
+3. Confirm Dockerfile uses `common_library.docker_healthcheck` with correct endpoint URL.
 4. Build verification is mandatory: run `make build` (or equivalent service-targeted build).
 
 ## Completion Criteria
@@ -105,7 +105,7 @@ Implementation for `target_service` is complete when all are true:
 1. Health endpoint returns `200` when healthy.
 2. Health endpoint returns `503` when dependency checks fail.
 3. `HealthCheckError` is mapped to `503` in `target_service`.
-4. Dockerfile `HEALTHCHECK` is bound to `python -m servicelib.docker_healthcheck`.
+4. Dockerfile `HEALTHCHECK` is bound to `python -m common_library.docker_healthcheck`.
 5. Tests for healthy/unhealthy health endpoint behavior pass.
 6. Build verification succeeds for the touched service.
 

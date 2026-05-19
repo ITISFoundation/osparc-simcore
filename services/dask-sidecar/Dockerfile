@@ -159,7 +159,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "servicelib.docker_healthcheck", "http://127.0.0.1:8787/health"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://127.0.0.1:8787/health"]
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
