@@ -190,12 +190,16 @@ async def _check_wallet_credits_or_raise(
     computation: ComputationCreate,
     comp_tasks: list[CompTaskAtDB],
     rut_client: ResourceUsageTrackerClient,
+    *,
+    started_node_ids: set[NodeID],
 ) -> None:
     """Raises WalletNotEnoughCreditsError if wallet has insufficient credits for any paid node."""
     if not computation.wallet_info:
         return
     assert computation.product_name  # nosec
     for task in comp_tasks:
+        if task.node_id not in started_node_ids:
+            continue
         if task.pricing_info:
             pricing_unit_get = await rut_client.get_pricing_unit(
                 computation.product_name,
@@ -360,7 +364,12 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
 
         pipeline_started = False
         if computation.start_pipeline:
-            await _check_wallet_credits_or_raise(computation, comp_tasks, rut_client)
+            await _check_wallet_credits_or_raise(
+                computation,
+                comp_tasks,
+                rut_client,
+                started_node_ids={NodeID(n) for n in minimal_computational_dag.nodes()},
+            )
 
             pipeline_started = await _try_start_pipeline(
                 request.app,
