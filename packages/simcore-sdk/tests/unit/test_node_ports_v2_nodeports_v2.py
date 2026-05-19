@@ -205,7 +205,7 @@ async def test_node_ports_set_file_by_keymap(
 
     await node_ports.set_file_by_keymap(Path(__file__))
 
-    with pytest.raises(exceptions.PortNotFound):
+    with pytest.raises(exceptions.PortNotFoundError):
         await node_ports.set_file_by_keymap(Path("/whatever/file/that/is/invalid"))
 
 

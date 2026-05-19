@@ -5,6 +5,7 @@
 # pylint: disable=protected-access
 
 import asyncio
+import contextlib
 from unittest import mock
 
 import pytest
@@ -309,13 +310,11 @@ async def test_too_many_sub_progress_bars_raises(faker: Faker):
         async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
             for _ in range(50):
                 await sub.update()
-        async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
-            for _ in range(50):
-                await sub.update()
-
-        with pytest.raises(RuntimeError):
-            async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
-                ...
+            async with root.sub_progress(steps=50, description=faker.pystr()) as sub2:
+                for _ in range(50):
+                    await sub2.update()
+                with pytest.raises(RuntimeError):
+                    root.sub_progress(steps=50, description=faker.pystr())
 
 
 async def test_too_many_updates_does_not_raise_but_show_warning_with_stack(
@@ -503,3 +502,326 @@ async def test_concurrent_sub_progress_update_correct_sub_progress(mocked_progre
         assert sub_progress3._current_steps == 12  # noqa: SLF001
         assert mocked_progress_bar_cb.call_count == 2
         assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(2 / 6)
+
+
+# -------------------------------------------------------------------
+# Tests for sub_progress child cleanup on __aexit__ (retry support)
+# -------------------------------------------------------------------
+
+
+async def test_sub_progress_child_removed_from_parent_on_exit(faker: Faker):
+    """After a sub_progress context manager exits, the child should be
+    removed from the parent's _children list so a new sub_progress can
+    be created for the same step (e.g. on retry)."""
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as root:
+        async with root.sub_progress(steps=10, description=faker.pystr()) as sub:
+            for _ in range(10):
+                await sub.update()
+        assert len(root._children) == 0  # noqa: SLF001
+
+
+async def test_sub_progress_retry_creates_new_child_after_error_exit(faker: Faker):
+    """Simulates a retry scenario: first sub_progress exits via exception,
+    then a new sub_progress is created on the same parent with num_steps=1.
+    This should succeed (not raise RuntimeError)."""
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as root:
+        # First attempt — fails with an exception after partial progress
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated upload failure"
+                raise RuntimeError(msg)
+        # Second attempt (retry) — must NOT raise RuntimeError
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+
+async def test_sub_progress_parent_progress_decremented_on_error_exit(faker: Faker):
+    """When a child exits via exception, the parent's _current_steps
+    should be rolled back so a retry doesn't over-count progress."""
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as root:
+        await root.update()
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # First attempt via sub_progress — fails with exception
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=10, description="attempt 1") as sub:
+                for _ in range(5):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+        # Child exited via exception — parent progress rolled back
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Retry creates a new child for the same step
+        async with root.sub_progress(steps=10, description="attempt 2") as sub:
+            for _ in range(10):
+                await sub.update()
+        assert root._current_steps == pytest.approx(2)  # noqa: SLF001
+
+
+async def test_sub_progress_retry_reports_correct_progress(mocked_progress_bar_cb: mock.Mock, faker: Faker):
+    """Verify that after an error + retry, the progress callback:
+    1. Does NOT emit a spurious 100% from the failed attempt
+    2. Emits intermediate reports from near 0% during the retry
+    3. Ends at 1.0"""
+    async with ProgressBarData(
+        num_steps=1,
+        progress_report_cb=mocked_progress_bar_cb,
+        description=faker.pystr(),
+    ) as root:
+        mocked_progress_bar_cb.reset_mock()
+
+        # First attempt — partial progress then error exit
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        # The failed attempt must NOT emit a spurious 1.0 (100%) report
+        reports_after_error = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+        assert all(r.percent_value < 1.0 for r in reports_after_error), (
+            "Error exit emitted a spurious 100% report before rollback"
+        )
+
+        mocked_progress_bar_cb.reset_mock()
+
+        # Second attempt — completes fully
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+    # Retry reports must include intermediates starting near 0%
+    retry_reports = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+    intermediate_reports = [r for r in retry_reports if r.percent_value < 1.0]
+    assert len(intermediate_reports) > 0, "No intermediate progress reports emitted during retry"
+    first_retry_report = intermediate_reports[0]
+    assert first_retry_report.percent_value < 0.1, (
+        f"First retry report at {first_retry_report.percent_value:.0%} — "
+        "expected near 0%; _last_report_value was not reset after rollback"
+    )
+    # Retry must end at 1.0
+    last_report: ProgressReport = retry_reports[-1]
+    assert last_report.percent_value == pytest.approx(1.0)
+
+
+async def test_sub_progress_retry_with_weighted_parent(mocked_progress_bar_cb: mock.Mock, faker: Faker):
+    """Retry on a weighted parent must correctly rollback and re-report
+    progress using weighted _compute_progress (not just steps/num_steps)."""
+    async with ProgressBarData(
+        num_steps=2,
+        step_weights=[3, 1],
+        progress_report_cb=mocked_progress_bar_cb,
+        description=faker.pystr(),
+    ) as root:
+        # First step (weight=3/4 of total) — fails after partial progress
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        # Parent progress should be rolled back to 0
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
+
+        mocked_progress_bar_cb.reset_mock()
+
+        # Retry the first step — completes fully
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+        # Parent should have advanced by the first step's weight (3/4)
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Reports during retry should start near 0%, not at 37.5% (half of 3/4)
+        retry_reports = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+        intermediate_reports = [r for r in retry_reports if r.percent_value < 0.75]
+        assert len(intermediate_reports) > 0
+        first_retry_report = intermediate_reports[0]
+        assert first_retry_report.percent_value < 0.1, (
+            f"First retry report at {first_retry_report.percent_value:.0%} — "
+            "weighted rollback did not reset report baseline"
+        )
+
+
+async def test_sub_progress_multiple_sequential_reuse(faker: Faker):
+    """Create and exit more sub_progress children than num_steps,
+    but sequentially (one at a time). Should succeed after fix."""
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as root:
+        for i in range(5):
+            async with root.sub_progress(steps=10, description=f"attempt {i}") as sub:
+                for _ in range(10):
+                    await sub.update()
+        assert len(root._children) == 0  # noqa: SLF001
+
+
+async def test_sub_progress_deeply_nested_retry_emits_intermediate_reports(
+    mocked_progress_bar_cb: mock.Mock, faker: Faker
+):
+    """In a root -> mid -> leaf nesting, when the leaf fails and retries,
+    intermediate reports must be emitted at the root level (not suppressed
+    because an ancestor's _last_report_value was left at the old high-water mark)."""
+    async with (
+        ProgressBarData(
+            num_steps=1,
+            progress_report_cb=mocked_progress_bar_cb,
+            description=faker.pystr(),
+        ) as root,
+        root.sub_progress(steps=1, description="mid") as mid,
+    ):
+        # First attempt at leaf — fails after partial progress
+        with contextlib.suppress(RuntimeError):
+            async with mid.sub_progress(steps=100, description="leaf attempt 1") as leaf:
+                for _ in range(50):
+                    await leaf.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        mocked_progress_bar_cb.reset_mock()
+
+        # Retry leaf — should emit intermediate reports from near 0%
+        async with mid.sub_progress(steps=100, description="leaf attempt 2") as leaf:
+            for _ in range(100):
+                await leaf.update()
+
+    retry_reports = [call.args[0] for call in mocked_progress_bar_cb.call_args_list]
+    intermediate_reports = [r for r in retry_reports if r.percent_value < 1.0]
+    assert len(intermediate_reports) > 0, "No intermediate reports during deeply nested retry"
+    first_retry_report = intermediate_reports[0]
+    assert first_retry_report.percent_value < 0.1, (
+        f"First retry report at {first_retry_report.percent_value:.0%} — "
+        "ancestor _last_report_value was not reset after rollback"
+    )
+
+
+async def test_sub_progress_cancellation_rolls_back_and_allows_same_slot_retry(
+    mocked_progress_bar_cb: mock.Mock,
+):
+    """CancelledError must rollback partial progress and remove the child,
+    so a caller that catches CancelledError and retries the same sub-step
+    does not over-count parent progress."""
+    async with ProgressBarData(
+        num_steps=1,
+        description="root",
+        progress_report_cb=mocked_progress_bar_cb,
+    ) as root:
+        # Child makes partial progress then gets cancelled
+        with pytest.raises(asyncio.CancelledError):  # noqa: PT012
+            async with root.sub_progress(steps=10, description="cancelled-child") as child:
+                await child.update(5)  # 50% of child = 0.5 parent steps
+                raise asyncio.CancelledError
+
+        # Child removed and parent progress rolled back to 0
+        assert len(root._children) == 0  # noqa: SLF001
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
+
+        # Retry on the same slot — completes fully
+        async with root.sub_progress(steps=10, description="retry-child") as child:
+            for _ in range(10):
+                await child.update()
+
+    # Ends at exactly 1.0, not 1.5 (which would happen without rollback)
+    final_report = mocked_progress_bar_cb.call_args_list[-1].args[0]
+    assert final_report.percent_value == pytest.approx(1.0)
+
+
+async def test_sub_progress_real_task_cancellation_removes_child_and_rolls_back():
+    """Verify cleanup works with real task cancellation via task.cancel(),
+    not just a manually raised CancelledError."""
+
+    async def _worker(root: ProgressBarData) -> None:
+        async with root.sub_progress(steps=100, description="worker") as child:
+            for _ in range(50):
+                await child.update()
+            # Simulate a long await where cancellation arrives
+            await asyncio.sleep(10)
+
+    async with ProgressBarData(num_steps=1, description="root") as root:
+        task = asyncio.create_task(_worker(root))
+        # Let the worker make progress
+        await asyncio.sleep(0)
+        # Cancel the task for real
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+        # Child must have been removed and progress rolled back
+        assert len(root._children) == 0  # noqa: SLF001
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
+
+        # Same slot is reusable
+        async with root.sub_progress(steps=100, description="retry") as child:
+            for _ in range(100):
+                await child.update()
+
+    assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+
+async def test_sub_progress_nested_exception_does_not_double_rollback():
+    """When root -> mid -> leaf and leaf raises, the exception propagates
+    through both mid and leaf __aexit__. Verify that root's steps completed
+    BEFORE mid are preserved (no double subtraction)."""
+    async with ProgressBarData(num_steps=3, description="root") as root:
+        # Complete first step manually
+        await root.update()
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Second step via nested sub_progress that fails
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=1, description="mid") as mid:
+                async with mid.sub_progress(steps=100, description="leaf") as leaf:
+                    for _ in range(50):
+                        await leaf.update()
+                    msg = "boom"
+                    raise RuntimeError(msg)
+
+        # Root should be at exactly 1 — the first manual step is preserved,
+        # mid's partial contribution (from leaf) is fully rolled back.
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # Third step works normally
+        await root.update()
+        assert root._current_steps == pytest.approx(2)  # noqa: SLF001
+
+
+async def test_sub_progress_retry_with_async_callback(async_mocked_progress_bar_cb: mock.AsyncMock, faker: Faker):
+    """Exercise the retry/rollback path with an async progress_report_cb
+    to ensure awaitable callbacks don't break rollback or report behavior."""
+    async with ProgressBarData(
+        num_steps=1,
+        progress_report_cb=async_mocked_progress_bar_cb,
+        description=faker.pystr(),
+    ) as root:
+        async_mocked_progress_bar_cb.reset_mock()
+
+        # First attempt — partial progress then error
+        with contextlib.suppress(RuntimeError):
+            async with root.sub_progress(steps=100, description="attempt 1") as sub:
+                for _ in range(50):
+                    await sub.update()
+                msg = "simulated failure"
+                raise RuntimeError(msg)
+
+        # No spurious 100% report
+        reports_after_error = [call.args[0] for call in async_mocked_progress_bar_cb.call_args_list]
+        assert all(r.percent_value < 1.0 for r in reports_after_error)
+
+        async_mocked_progress_bar_cb.reset_mock()
+
+        # Retry — completes fully
+        async with root.sub_progress(steps=100, description="attempt 2") as sub:
+            for _ in range(100):
+                await sub.update()
+
+    # Retry reports include intermediates near 0% and end at 1.0
+    retry_reports = [call.args[0] for call in async_mocked_progress_bar_cb.call_args_list]
+    assert retry_reports[-1].percent_value == pytest.approx(1.0)
+    intermediate_reports = [r for r in retry_reports if r.percent_value < 1.0]
+    assert len(intermediate_reports) > 0
+    assert intermediate_reports[0].percent_value < 0.1

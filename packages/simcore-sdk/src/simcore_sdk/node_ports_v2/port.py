@@ -22,9 +22,9 @@ from pydantic import (
 from servicelib.progress_bar import ProgressBarData
 
 from ..node_ports_common.exceptions import (
-    AbsoluteSymlinkIsNotUploadableException,
+    AbsoluteSymlinkIsNotUploadableError,
     InvalidItemTypeError,
-    SymlinkToSymlinkIsNotUploadableException,
+    SymlinkToSymlinkIsNotUploadableError,
 )
 from . import port_utils
 from .links import (
@@ -54,10 +54,10 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
 
     symlink_target_path = Path(os.readlink(symlink))
     if symlink_target_path.is_symlink():
-        raise SymlinkToSymlinkIsNotUploadableException(symlink, symlink_target_path)
+        raise SymlinkToSymlinkIsNotUploadableError(symlink, symlink_target_path)
 
     if symlink_target_path.is_absolute():
-        raise AbsoluteSymlinkIsNotUploadableException(symlink, symlink_target_path)
+        raise AbsoluteSymlinkIsNotUploadableError(symlink, symlink_target_path)
 
 
 def can_parse_as(v, *types) -> bool:
