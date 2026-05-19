@@ -235,6 +235,7 @@ qx.Class.define("osparc.support.Conversations", {
         const conversation = e.getData();
         this.__addConversation(conversation);
         this.__sortConversations();
+        this.__applyCurrentFilter(this.getCurrentFilter());
       });
     },
 
