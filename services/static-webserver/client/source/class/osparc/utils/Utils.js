@@ -378,7 +378,7 @@ qx.Class.define("osparc.utils.Utils", {
     makeButtonBlink: function(button, nTimes = 1, colorProperty = "backgroundColor") {
       const getter = "get" + qx.lang.String.firstUp(colorProperty);
       const setter = "set" + qx.lang.String.firstUp(colorProperty);
-      const baseColor = button[getter]();
+      let baseColor = button[getter]();
       const blinkColor = "strong-main";
       const interval = 500;
       let count = 0;
@@ -391,6 +391,10 @@ qx.Class.define("osparc.utils.Utils", {
 
       const blinkInterval = setInterval(() => {
         if (button && button.getContentElement()) {
+          // Capture base color on first tick if it wasn't available at call time
+          if (baseColor === null || baseColor === undefined) {
+            baseColor = button[getter]();
+          }
           button[setter]((count % 2 === 0) ? blinkColor : baseColor);
           count++;
 
