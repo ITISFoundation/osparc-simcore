@@ -32,7 +32,7 @@ aiofiles==0.8.0
     #   -r requirements/_base.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -97,7 +97,7 @@ aiohttp-session==2.11.0
     # via -r requirements/_base.in
 aiormq==6.9.4
     # via aio-pika
-aiosignal==1.2.0
+aiosignal==1.4.0
     # via aiohttp
 aiosmtplib==1.1.6
     # via -r requirements/_base.in

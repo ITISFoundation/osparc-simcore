@@ -10,14 +10,14 @@ aiohappyeyeballs==2.5.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.12.12
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiobotocore
 aioitertools==0.13.0
     # via aiobotocore
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
