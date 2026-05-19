@@ -2,9 +2,10 @@ import logging
 from typing import Annotated
 
 import arrow
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
+from servicelib.fastapi.health import HealthCheckError
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 
 from ...services.rabbitmq import get_rabbitmq_client_from_request, get_rabbitmq_rpc_client_from_request
@@ -21,9 +22,6 @@ async def healthcheck(
     rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client_from_request)],
 ) -> str:
     if not rabbitmq_client.healthy or not rabbitmq_rpc_client.healthy:
-        return PlainTextResponse(
-            RABBITMQ_CLIENT_UNHEALTHY_MSG,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     return f"{__name__}@{arrow.utcnow().isoformat()}"

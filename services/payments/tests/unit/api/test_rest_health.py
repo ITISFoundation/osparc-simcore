@@ -69,7 +69,7 @@ async def test_healthcheck_returns_503_when_rabbitmq_unhealthy(
 
 
 @pytest.mark.parametrize(
-    "client_healthy, rpc_client_healthy",
+    "is_client_healthy, is_rpc_client_healthy",
     [(False, False), (False, True), (True, False)],
 )
 async def test_healthcheck_does_not_log_error_when_rabbitmq_unhealthy(

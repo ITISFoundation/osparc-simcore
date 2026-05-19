@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from models_library.app_diagnostics import AppStatusCheck
-from servicelib.aiohttp import status
+from servicelib.fastapi.health import HealthCheckError
 
 from ..._meta import API_VERSION, PROJECT_NAME
 from ...core.health_checker import ApiServerHealthChecker, get_health_checker
@@ -24,10 +24,8 @@ async def check_service_health(
     health_checker: Annotated[ApiServerHealthChecker, Depends(get_health_checker)],
 ):
     if not health_checker.healthy:
-        return PlainTextResponse(
-            "unhealthy",
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        msg = "unhealthy"
+        raise HealthCheckError(msg)
 
     return f"{__name__}@{datetime.datetime.now(tz=datetime.UTC).isoformat()}"
 

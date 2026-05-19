@@ -2,6 +2,7 @@ import logging
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
+from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
@@ -74,6 +75,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     setup_warm_buffer_machines_pool_task(app)
 
     # ERROR HANDLERS
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)  # type: ignore[arg-type]
 
     # EVENTS
     async def _on_startup() -> None:

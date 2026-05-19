@@ -7,13 +7,14 @@ for instance: service health-check (w/ different variants), diagnostics, debuggi
 import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
 from models_library.errors import (
     RABBITMQ_CLIENT_UNHEALTHY_MSG,
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
 from pydantic import BaseModel
+from servicelib.fastapi.health import HealthCheckError
 
 from ..modules.docker import get_docker_client
 from ..modules.ec2 import get_ec2_client
@@ -30,16 +31,10 @@ async def health_check(app: Annotated[FastAPI, Depends(get_app)]):
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
 
     if not get_rabbitmq_client(app).healthy:
-        return PlainTextResponse(
-            RABBITMQ_CLIENT_UNHEALTHY_MSG,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     if not get_redis_client(app).is_healthy:
-        return PlainTextResponse(
-            REDIS_CLIENT_UNHEALTHY_MSG,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
 
     return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
 
