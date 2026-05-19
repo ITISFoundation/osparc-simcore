@@ -30,19 +30,20 @@ Q&A:
 import os
 import sys
 from contextlib import suppress
+from typing import Final
 from urllib.request import urlopen
 
 # Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, debugpy, etc)
-SC_BOOT_MODE = os.environ.get("SC_BOOT_MODE", "")
+SC_BOOT_MODE: Final = os.environ.get("SC_BOOT_MODE", "")
 
 # Adds a base-path if defined in environ
-SIMCORE_NODE_BASEPATH = os.environ.get("SIMCORE_NODE_BASEPATH", "")
+SIMCORE_NODE_BASEPATH: Final = os.environ.get("SIMCORE_NODE_BASEPATH", "")
 
 # When set to "heartbeat", uses file-based heartbeat instead of HTTP
-HEALTHCHECK_MODE = os.environ.get("HEALTHCHECK_MODE", "")
+HEALTHCHECK_MODE: Final = os.environ.get("HEALTHCHECK_MODE", "")
 
-HTTP_STATUS_OK = 200
-MIN_REQUIRED_ARGS = 2
+HTTP_STATUS_OK: Final = 200
+MIN_REQUIRED_ARGS: Final = 2
 
 
 def _is_heartbeat_healthy() -> bool:
