@@ -11,7 +11,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi_pagination import add_pagination
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
-from servicelib.fastapi.client_session import setup_client_session
+from servicelib.fastapi.httpx_client import setup_httpx_client
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
@@ -69,7 +69,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
 
     setup_db(app)
     setup_s3(app)
-    setup_client_session(
+    setup_httpx_client(
         app,
         tracing_config=get_tracing_config(app),
     )
