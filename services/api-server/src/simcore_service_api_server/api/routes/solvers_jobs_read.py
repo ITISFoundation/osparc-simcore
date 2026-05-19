@@ -132,7 +132,15 @@ async def list_all_solvers_jobs(
                 NameValueTuple(filter_metadata.name, filter_metadata.pattern)
                 for filter_metadata in filter_job_metadata_params.any
             ]
-            if filter_job_metadata_params
+            if filter_job_metadata_params and filter_job_metadata_params.any
+            else None
+        ),
+        filter_all_custom_metadata=(
+            [
+                NameValueTuple(filter_metadata.name, filter_metadata.pattern)
+                for filter_metadata in filter_job_metadata_params.all
+            ]
+            if filter_job_metadata_params and filter_job_metadata_params.all
             else None
         ),
         pagination_offset=page_params.offset,
