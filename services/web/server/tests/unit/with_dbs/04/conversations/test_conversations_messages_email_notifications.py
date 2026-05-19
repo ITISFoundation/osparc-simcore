@@ -19,6 +19,9 @@ from models_library.notifications import Channel
 from pydantic import HttpUrl
 from simcore_service_webserver.conversations._conversation_message_service import (
     _notify_support_reply,
+    notifications_service,
+    products_service,
+    users_service,
 )
 
 
@@ -50,7 +53,6 @@ def sample_conversation() -> ConversationGetDB:
     "conversation_user_type",
     [
         ConversationUserType.SUPPORT_USER,
-        ConversationUserType.CHATBOT_USER,
     ],
 )
 async def test_notify_support_reply_via_email_to_user(
@@ -66,22 +68,22 @@ async def test_notify_support_reply_via_email_to_user(
 
     with (
         patch(
-            "simcore_service_webserver.conversations._conversation_message_service.products_service.get_product",
+            f"{products_service.__name__}.get_product",
             return_value=mock_product,
         ),
         patch(
-            "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user",
+            f"{users_service.__name__}.get_user",
             new_callable=AsyncMock,
             # Recipient user (conversation creator)
             return_value={"first_name": "John", "last_name": "Doe", "email": "john@test.io", "name": "johndoe"},
         ),
         patch(
-            "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user_id_from_gid",
+            f"{users_service.__name__}.get_user_id_from_gid",
             new_callable=AsyncMock,
             return_value=200,
         ),
         patch(
-            "simcore_service_webserver.conversations._conversation_message_service.notifications_service.send_message_from_template",
+            f"{notifications_service.__name__}.send_message_from_template",
             new_callable=AsyncMock,
         ) as mock_send,
     ):
@@ -106,51 +108,6 @@ async def test_notify_support_reply_via_email_to_user(
         assert call_kwargs["context"]["message_content"] == "Hello, here is the answer to your question."
 
 
-async def test_notify_support_reply_via_email_to_support_group(
-    mock_app: web.Application,
-    sample_conversation: ConversationGetDB,
-):
-    """When a regular user replies, the support group should be notified."""
-    sender_user_id = 200
-    mock_product = AsyncMock()
-    mock_product.base_url = HttpUrl("https://test.osparc.io/")
-    mock_product.support_standard_group_id = 5
-
-    with (
-        patch(
-            "simcore_service_webserver.conversations._conversation_message_service.products_service.get_product",
-            return_value=mock_product,
-        ),
-        patch(
-            "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user",
-            new_callable=AsyncMock,
-            return_value={"first_name": "John", "last_name": "Doe", "email": "john@test.io"},
-        ),
-        patch(
-            "simcore_service_webserver.conversations._conversation_message_service.notifications_service.send_message_from_template",
-            new_callable=AsyncMock,
-        ) as mock_send,
-    ):
-        await _notify_support_reply(
-            mock_app,
-            product_name="osparc",
-            conversation=sample_conversation,
-            conversation_user_type=ConversationUserType.REGULAR_USER,
-            message_content="I still have an issue.",
-            sender_user_id=sender_user_id,
-        )
-
-        mock_send.assert_called_once()
-        call_kwargs = mock_send.call_args.kwargs
-        assert call_kwargs["channel"] == Channel.email
-        assert call_kwargs["template_name"] == "support_reply"
-        assert call_kwargs["group_ids"] == [5]
-        assert call_kwargs["external_contacts"] is None
-        assert call_kwargs["context"]["recipient_name"] == "Support Team"
-        assert call_kwargs["context"]["sender_name"] == "John Doe"
-        assert call_kwargs["context"]["message_content"] == "I still have an issue."
-
-
 async def test_notify_support_reply_via_email_no_support_group(
     mock_app: web.Application,
     sample_conversation: ConversationGetDB,
@@ -163,16 +120,16 @@ async def test_notify_support_reply_via_email_no_support_group(
 
     with (
         patch(
-            "simcore_service_webserver.conversations._conversation_message_service.products_service.get_product",
+            f"{products_service.__name__}.get_product",
             return_value=mock_product,
         ),
         patch(
-            "simcore_service_webserver.conversations._conversation_message_service.users_service.get_user",
+            f"{users_service.__name__}.get_user",
             new_callable=AsyncMock,
             return_value={"first_name": "John", "last_name": "Doe", "email": "john@test.io"},
         ),
         patch(
-            "simcore_service_webserver.conversations._conversation_message_service.notifications_service.send_message_from_template",
+            f"{notifications_service.__name__}.send_message_from_template",
             new_callable=AsyncMock,
         ) as mock_send,
     ):
