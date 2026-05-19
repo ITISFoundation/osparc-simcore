@@ -24,7 +24,7 @@ def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
 
 
 async def download_to_file_or_raise(
-    session: httpx.AsyncClient,
+    client: httpx.AsyncClient,
     url: StrOrURL,
     destination_path: Path,
     *,
@@ -44,7 +44,7 @@ async def download_to_file_or_raise(
     dest_file = Path(destination_path)
 
     total_size = 0
-    response = await session.get(f"{url}")
+    response = await client.get(f"{url}")
     response.raise_for_status()
     dest_file.parent.mkdir(parents=True, exist_ok=True)
     async with aiofiles.open(dest_file, mode="wb") as fh:
@@ -66,7 +66,8 @@ def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
 
 
 def is_valid_managed_multipart_upload(upload_id: UploadID | None) -> bool:
-    """the upload ID is valid (created by storage service) AND internally managed by storage (e.g. PRESIGNED multipart upload)
+    """the upload ID is valid (created by storage service) AND internally managed
+    by storage (e.g. PRESIGNED multipart upload)
 
     :type upload_id: Optional[UploadID]
     :rtype: bool
