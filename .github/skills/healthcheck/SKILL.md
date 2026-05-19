@@ -4,7 +4,7 @@ description: 'Single-service guide to add a FastAPI health endpoint and bind Doc
 argument-hint: target_service=<service-name>
 ---
 
-# Service Healtcheck
+# Service Healthcheck
 
 ## Input
 
