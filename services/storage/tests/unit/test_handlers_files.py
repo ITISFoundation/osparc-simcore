@@ -13,6 +13,7 @@ import logging
 import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from random import choice
 from typing import Any, Literal
@@ -85,13 +86,13 @@ async def assert_multipart_uploads_in_progress(
     expected_upload_ids: list[str] | None,
 ):
     """if None is passed, then it checks that no uploads are in progress"""
-    list_uploads: list[tuple[UploadID, S3ObjectKey]] = await storage_s3_client.list_ongoing_multipart_uploads(
+    list_uploads: list[tuple[UploadID, S3ObjectKey, datetime]] = await storage_s3_client.list_ongoing_multipart_uploads(
         bucket=storage_s3_bucket
     )
     if expected_upload_ids is None:
         assert not list_uploads, f"expected NO multipart uploads in progress, got {list_uploads}"
     else:
-        for upload_id, _ in list_uploads:
+        for upload_id, _, _ in list_uploads:
             assert upload_id in expected_upload_ids, f"{upload_id=} is in progress but was not expected!"
 
 
