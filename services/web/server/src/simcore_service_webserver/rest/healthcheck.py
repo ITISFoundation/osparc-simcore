@@ -32,7 +32,7 @@ Taken from https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1f
     then again *interval* seconds after each previous check completes.
 
     If a single run of the check takes longer than *timeout* seconds
-    then the check is considered to have failed (SEE HealthCheckFailed).
+    then the check is considered to have failed (SEE HealthCheckError).
 
     It takes *retries* consecutive failures of the health check for the container to be considered **unhealthy**.
 
@@ -89,7 +89,7 @@ class HealthCheck:
 
     def register_on_healthcheck(self, slot: HealthCheckSlot) -> None:
         """Register an async healthcheck callback."""
-        self._on_healthcheck(slot)
+        self._on_healthcheck.append(slot)
 
     @staticmethod
     def get_app_info(app: web.Application) -> HealthInfoDict:
@@ -104,7 +104,7 @@ class HealthCheck:
     async def run(self, app: web.Application) -> HealthInfoDict:
         """Runs all registered checks to determine the service health.
 
-        can raise HealthCheckFailed
+        can raise HealthCheckError
         """
         # Ensures no more signals append after first run
         self._on_healthcheck.freeze()
