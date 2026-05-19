@@ -165,9 +165,6 @@ COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
 
 
-# healthcheck.
-# NOTE: do not forget to update variable
-ENV SC_HEALTHCHECK_TIMEOUT=120s
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \

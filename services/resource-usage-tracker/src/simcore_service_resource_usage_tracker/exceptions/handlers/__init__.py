@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, status
+from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 
 from ..errors import RutNotFoundError
 from ._http_error import (
@@ -9,6 +10,7 @@ from ._http_error import (
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RutNotFoundError, http404_error_handler)
 

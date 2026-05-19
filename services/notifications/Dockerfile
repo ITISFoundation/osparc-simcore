@@ -153,7 +153,7 @@ HEALTHCHECK \
   --start-period=90s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "services/notifications/docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["python3", "-m", "servicelib.docker_healthcheck", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/notifications/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/notifications/docker/boot.sh"]
@@ -162,7 +162,7 @@ EXPOSE 8000
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as my with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR

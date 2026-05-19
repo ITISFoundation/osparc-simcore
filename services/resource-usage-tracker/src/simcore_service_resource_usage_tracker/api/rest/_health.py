@@ -2,9 +2,10 @@ import datetime
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG, REDIS_CLIENT_UNHEALTHY_MSG
+from servicelib.fastapi.health import HealthCheckError
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 
@@ -25,17 +26,11 @@ async def healthcheck(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
     rabbitmq_rpc_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client_from_request)],
     redis_lock_client: Annotated[RedisClientSDK, Depends(get_redis_lock_client_from_request)],
-) -> str | PlainTextResponse:
+) -> str:
     if not rabbitmq_client.healthy or not rabbitmq_rpc_client.healthy:
-        return PlainTextResponse(
-            RABBITMQ_CLIENT_UNHEALTHY_MSG,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     if not redis_lock_client.is_healthy:
-        return PlainTextResponse(
-            REDIS_CLIENT_UNHEALTHY_MSG,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
 
     return f"{__name__}@{datetime.datetime.now(datetime.UTC).isoformat()}"
