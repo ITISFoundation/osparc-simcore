@@ -121,8 +121,14 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
     return terminateable_instances.union(worker_instances)
 
 
-async def _heartbeat_connected_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
-    """Update heartbeat for all connected clusters. Log busy ones."""
+async def _heartbeat_connected_clusters(
+    app: FastAPI, connected_instances: set[EC2InstanceData]
+) -> set[EC2InstanceData]:
+    """Update heartbeat for all connected clusters. Log busy ones.
+
+    Returns the set of instances that are currently busy (and were heartbeated).
+    """
+    busy_instances: set[EC2InstanceData] = set()
     for instance in connected_instances:
         with log_catch(_logger, reraise=False):
             # NOTE: a connected instance could break between these 2 calls;
@@ -130,6 +136,8 @@ async def _heartbeat_connected_clusters(app: FastAPI, connected_instances: set[E
             if await is_scheduler_busy(get_scheduler_url(instance), get_scheduler_auth(app)):
                 _logger.info("%s is running tasks", _log_instance(instance))
                 await set_instance_heartbeat(app, instance=instance)
+                busy_instances.add(instance)
+    return busy_instances
 
 
 async def _terminate_idle_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
@@ -247,8 +255,8 @@ async def check_clusters(app: FastAPI) -> None:
     connected = {i for i in primary_instances if await ping_scheduler(get_scheduler_url(i), get_scheduler_auth(app))}
     disconnected = primary_instances - connected
 
-    await _heartbeat_connected_clusters(app, connected)
-    await _terminate_idle_clusters(app, connected)
+    busy_instances = await _heartbeat_connected_clusters(app, connected)
+    await _terminate_idle_clusters(app, connected - busy_instances)
 
     starting = {i for i in disconnected if _get_instance_last_heartbeat(i) is None}
     await _handle_starting_clusters(app, starting)
