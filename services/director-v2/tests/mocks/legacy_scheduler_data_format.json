@@ -64,7 +64,7 @@
       "dynamic_sidecar_network_id": "kkgzgoc7afxvcyo9rhrl6heit",
       "swarm_network_id": "s3klppeez5k3nuhzie9wluauk",
       "swarm_network_name": "master-simcore_interactive_services_subnet",
-      "docker_node_id": "49the9well8fvztrjgx6o0d8br",
+      "docker_node_id": "49tje9wel8fvztrjgx6o0d8br",
       "inspect_error_handler": {
         "delay_for": 60.0
       }
