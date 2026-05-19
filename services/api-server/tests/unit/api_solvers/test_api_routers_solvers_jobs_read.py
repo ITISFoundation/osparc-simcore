@@ -233,6 +233,45 @@ async def test_list_all_solvers_jobs_with_all_metadata_filter(
     assert call_args.kwargs["filters"].any_custom_metadata is None
 
 
+async def test_list_all_solvers_jobs_with_all_metadata_filter_pagination(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    mocked_backend: MockBackendRouters,
+    user_id: UserID,
+    mock_dependency_get_celery_task_manager: MockType,
+):
+    """Tests that pagination works correctly with metadata.all filter."""
+
+    metadata_filters = ["solver_type:FEM", "mesh_cells:1*"]
+
+    # First request to get the total count
+    resp = await client.get(
+        f"/{API_VTAG}/solvers/-/releases/-/jobs",
+        auth=auth,
+        params={"limit": 10, "offset": 0, "metadata.all": metadata_filters},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    first_page = TypeAdapter(Page[Job]).validate_python(resp.json())
+    assert first_page.total > 0
+
+    # Request with offset = total - 1 should return exactly 1 item
+    resp = await client.get(
+        f"/{API_VTAG}/solvers/-/releases/-/jobs",
+        auth=auth,
+        params={
+            "limit": 10,
+            "offset": first_page.total - 1,
+            "metadata.all": metadata_filters,
+        },
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    last_page = TypeAdapter(Page[Job]).validate_python(resp.json())
+    assert last_page.total == first_page.total
+    assert last_page.offset == first_page.total - 1
+    assert len(last_page.items) == 1
+
+
 async def test_list_all_solvers_jobs_metadata_any_and_all_mutually_exclusive(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
