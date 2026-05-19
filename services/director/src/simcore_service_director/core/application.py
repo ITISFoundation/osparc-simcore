@@ -1,8 +1,8 @@
 import logging
 
 from fastapi import FastAPI
-from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
+from servicelib.fastapi.httpx_client import setup_httpx_client
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
@@ -47,7 +47,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
 
     setup_instrumentation(app)
 
-    setup_client_session(
+    setup_httpx_client(
         app,
         max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
