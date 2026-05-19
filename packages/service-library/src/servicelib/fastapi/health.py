@@ -40,7 +40,7 @@ class HealthCheckError(RuntimeError):
     """
 
 
-async def health_check_error_handler(_: Request, exc: Exception) -> PlainTextResponse:
+async def health_check_error_handler(_: Request, exc: Exception) -> PlainTextResponse:  # NOSONAR
     assert isinstance(exc, HealthCheckError)  # nosec
     return PlainTextResponse(
         f"{exc}",
