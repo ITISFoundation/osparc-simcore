@@ -272,7 +272,8 @@ qx.Class.define("osparc.widget.NodesTree", {
         const study = this.getStudy();
         const node = study.getWorkbench().getNode(nodeId);
         const oldLabel = nodeId === study.getUuid() ? study.getName() : node.getLabel();
-        const treeItemRenamer = new osparc.widget.Renamer(oldLabel);
+        const title = nodeId === study.getUuid() ? this.tr("Rename ") + osparc.product.Utils.getStudyAlias() : this.tr("Rename Node");
+        const treeItemRenamer = new osparc.widget.Renamer(oldLabel, null, title);
         treeItemRenamer.addListener("labelChanged", e => {
           const {
             newLabel
