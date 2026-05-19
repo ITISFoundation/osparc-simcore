@@ -7,7 +7,7 @@ for instance: service health-check (w/ different variants), diagnostics, debuggi
 import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi.responses import PlainTextResponse
 from models_library.errors import (
     RABBITMQ_CLIENT_UNHEALTHY_MSG,
@@ -25,19 +25,21 @@ from .dependencies.application import get_app
 router = APIRouter()
 
 
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
-
-
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
-async def health_check(app: Annotated[FastAPI, Depends(get_app)]) -> str:
+async def health_check(app: Annotated[FastAPI, Depends(get_app)]):
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
 
     if not get_rabbitmq_client(app).healthy:
-        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
+        return PlainTextResponse(
+            RABBITMQ_CLIENT_UNHEALTHY_MSG,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     if not get_redis_client(app).is_healthy:
-        raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
+        return PlainTextResponse(
+            REDIS_CLIENT_UNHEALTHY_MSG,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
 
