@@ -146,11 +146,12 @@ async def _auth_registry_request(  # noqa: C901
 
         bearer_code = token_resp.json()["token"]
         headers = {
+            # pop to avoid duplicate 'headers' kwarg in the request call below
             **kwargs.pop("headers", {}),
             "Authorization": f"Bearer {bearer_code}",
         }
         resp_wtoken = await getattr(session, method.lower())(
-            str(url), headers=headers, follow_redirects=follow_redirects, **kwargs
+            f"{url}", headers=headers, follow_redirects=follow_redirects, **kwargs
         )
         assert isinstance(resp_wtoken, httpx.Response)  # nosec
         if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
@@ -164,7 +165,7 @@ async def _auth_registry_request(  # noqa: C901
     if auth_type == "Basic":
         # basic authentication should not be since we tried already...
         resp_wbasic = await getattr(session, method.lower())(
-            str(url), auth=auth, follow_redirects=follow_redirects, **kwargs
+            f"{url}", auth=auth, follow_redirects=follow_redirects, **kwargs
         )
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
