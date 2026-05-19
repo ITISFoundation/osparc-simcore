@@ -152,8 +152,9 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
     mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
 
-    # after waiting the termination time, running the task shall remove the cluster
+    # after waiting the termination time, the cluster is now idle (not busy anymore)
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = False
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
@@ -184,8 +185,9 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
     # create some workers
     worker_instance_ids = await create_ec2_workers(10)
     await _assert_instances_state(ec2_client, instance_ids=worker_instance_ids, state="running")
-    # after waiting the termination time, running the task shall remove the cluster
+    # after waiting the termination time, the cluster is now idle
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = False
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
