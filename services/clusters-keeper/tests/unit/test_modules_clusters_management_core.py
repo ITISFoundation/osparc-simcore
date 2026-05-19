@@ -246,7 +246,6 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
 
 
-@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/issues/9138")
 async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stale_heartbeat(
     disable_clusters_management_background_task: None,
     _base_configuration: None,
@@ -255,8 +254,11 @@ async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stal
     wallet_id: WalletID | None,
     initialized_app: FastAPI,
     mocked_dask_ping_scheduler: MockedDaskModule,
+    app_settings: ApplicationSettings,
+    mocker: MockerFixture,
 ):
-    """Regression test: when clusters-keeper restarts and the heartbeat tag is stale,
+    """Regression test (https://github.com/ITISFoundation/osparc-simcore/issues/9138):
+    when clusters-keeper restarts and the heartbeat tag is stale,
     a busy cluster should NOT be terminated. The heartbeat written by
     _heartbeat_connected_clusters must protect the instance from termination within
     the same check_clusters cycle.
@@ -275,9 +277,22 @@ async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stal
     # Give the cluster an initial heartbeat so it is considered "connected" (has heartbeat tag)
     await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
 
-    # Simulate clusters-keeper being down: wait longer than the termination threshold
-    # so the heartbeat tag becomes stale
-    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
+    # Simulate a stale heartbeat (clusters-keeper was down) by mocking get_all_clusters
+    # to return an instance with an old heartbeat tag — avoids real-time sleep
+    the_cluster = created_clusters[0]
+    stale_heartbeat_time = (
+        arrow.utcnow().shift(seconds=-(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)).datetime.isoformat()
+    )
+    mocked_get_all_clusters = mocker.patch(
+        "simcore_service_clusters_keeper.modules.clusters_management_core.get_all_clusters",
+        autospec=True,
+        return_value={
+            dataclasses.replace(
+                the_cluster,
+                tags=the_cluster.tags | {"last_heartbeat": stale_heartbeat_time},
+            )
+        },
+    )
 
     # The scheduler is still busy (processing tasks)
     mocked_dask_ping_scheduler.ping_scheduler.return_value = True
@@ -287,6 +302,7 @@ async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stal
     await check_clusters(initialized_app)
 
     # The cluster MUST NOT be terminated because it is busy
+    mocked_get_all_clusters.assert_called_once()
     await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
 
 
