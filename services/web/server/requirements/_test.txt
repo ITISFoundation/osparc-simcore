@@ -2,14 +2,14 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.12.12
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aioresponses
 aioresponses==0.7.8
     # via -r requirements/_test.in
-aiosignal==1.2.0
+aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp

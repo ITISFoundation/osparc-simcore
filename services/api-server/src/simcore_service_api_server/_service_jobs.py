@@ -112,9 +112,10 @@ class JobService:
         self,
         job_parent_resource_name: str,
         *,
-        filter_any_custom_metadata: list[NameValueTuple] | None = None,
-        pagination_offset: PageOffsetInt | None = None,
-        pagination_limit: PageLimitInt | None = None,
+        filter_any_custom_metadata: list[NameValueTuple] | None,
+        filter_all_custom_metadata: list[NameValueTuple] | None,
+        pagination_offset: PageOffsetInt | None,
+        pagination_limit: PageLimitInt | None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
@@ -126,6 +127,7 @@ class JobService:
             user_id=self.user_id,
             filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
             filter_any_custom_metadata=filter_any_custom_metadata,
+            filter_all_custom_metadata=filter_all_custom_metadata,
             **pagination_kwargs,
         )
 
@@ -163,6 +165,7 @@ class JobService:
         filter_by_solver_key: SolverKeyId | None = None,
         filter_by_solver_version: VersionStr | None = None,
         filter_any_custom_metadata: list[NameValueTuple] | None = None,
+        filter_all_custom_metadata: list[NameValueTuple] | None = None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
@@ -184,6 +187,7 @@ class JobService:
         return await self._list_jobs(
             job_parent_resource_name=job_parent_resource_name,
             filter_any_custom_metadata=filter_any_custom_metadata,
+            filter_all_custom_metadata=filter_all_custom_metadata,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
         )
@@ -209,6 +213,8 @@ class JobService:
         # 2. list jobs under job_parent_resource_name
         return await self._list_jobs(
             job_parent_resource_name=job_parent_resource_name,
+            filter_any_custom_metadata=None,
+            filter_all_custom_metadata=None,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
         )
