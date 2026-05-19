@@ -148,10 +148,13 @@ qx.Class.define("osparc.support.Conversations", {
 
     __applyCurrentFilter: function(filter) {
       this.getChildControl("no-messages-label").exclude();
+      this.__highlightCurrentFilter(filter);
+      this.__filterConversations(filter);
+      this.__showNoMessagesLabelIfNeeded(filter);
+    },
 
-      this.__filterButtons.forEach(button => {
-        button.setValue(false);
-      });
+    __highlightCurrentFilter: function(filter) {
+      this.__filterButtons.forEach(button => button.setValue(false));
       switch (filter) {
         case "all":
           this.getChildControl("filter-all-button").setValue(true);
@@ -166,7 +169,9 @@ qx.Class.define("osparc.support.Conversations", {
           this.getChildControl("filter-archived-button").setValue(true);
           break;
       }
+    },
 
+    __filterConversations: function(filter) {
       this.__conversationListItems.forEach(conversationItem => {
         const conversation = conversationItem.getConversation();
         // apply filters
@@ -187,7 +192,9 @@ qx.Class.define("osparc.support.Conversations", {
         // show/hide badges
         conversationItem.getChildControl("badges-layout").setVisibility(filter === "all" ? "visible" : "excluded");
       });
+    },
 
+    __showNoMessagesLabelIfNeeded: function(filter) {
       const hasVisibleConversations = this.__conversationListItems.some(conversationItem => conversationItem.isVisible());
       if (!hasVisibleConversations) {
         let msg = "";
