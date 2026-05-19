@@ -1200,7 +1200,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     assert dynamic_node_id
     url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=dynamic_node_id)
 
-    node_sample = deepcopy(NodeGet.model_config["json_schema_extra"]["examples"][1])
+    node_sample = deepcopy(NodeGet.model_json_schema()["examples"][0])
     assert node_sample
     assert isinstance(node_sample, dict)
     mocked_dynamic_services_interface[

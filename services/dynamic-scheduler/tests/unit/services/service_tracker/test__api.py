@@ -161,7 +161,7 @@ async def test_set_service_status_task_uid(
     "status, expected_poll_interval",
     [
         (
-            TypeAdapter(NodeGet).validate_python(NodeGet.model_config["json_schema_extra"]["examples"][1]),
+            TypeAdapter(NodeGet).validate_python(NodeGet.model_json_schema()["examples"][0]),
             _LOW_RATE_POLL_INTERVAL,
         ),
         *[
@@ -185,7 +185,7 @@ def test__get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle, e
 
 
 def _get_node_get_from(service_state: ServiceState) -> NodeGet:
-    dict_data = NodeGet.model_config["json_schema_extra"]["examples"][1]
+    dict_data = NodeGet.model_json_schema()["examples"][0]
     assert "service_state" in dict_data
     dict_data["service_state"] = service_state
     return TypeAdapter(NodeGet).validate_python(dict_data)
