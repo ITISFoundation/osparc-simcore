@@ -81,13 +81,35 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       });
     },
 
-    fetchConversations: function() {
+    fetchConversations: function(filter) {
       const params = {
         url: {
           offset: 0,
           limit: 42,
         }
       };
+      let endpoint = "getConversationsPage";
+      switch (filter) {
+        case "unread":
+          if (osparc.store.Groups.getInstance().amIASupportUser()) {
+            endpoint = "getConversationsPageUnreadBySupport";
+          } else {
+            endpoint = "getConversationsPageUnreadByUser";
+          }
+          break;
+        case "active":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "active";
+          break;
+        case "archived":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "archived";
+          break;
+        case "all":
+        default:
+          endpoint = "getConversationsPage";
+          break;
+      }
       return osparc.data.Resources.fetch("conversationsSupport", "getConversationsPage", params)
         .then(conversationsData => {
           const conversations = [];
