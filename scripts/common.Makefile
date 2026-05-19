@@ -41,6 +41,7 @@ VCS_URL       := $(shell git config --get remote.origin.url)
 VCS_REF       := $(shell git rev-parse --short HEAD)
 NOW_TIMESTAMP := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+include $(REPO_BASE_DIR)/scripts/common-templates.Makefile
 
 # relevant repo folders
 SCRIPTS_DIR := $(abspath $(REPO_BASE_DIR)/scripts)
@@ -86,9 +87,7 @@ hel%:
 
 
 .env: .env-devel ## creates .env file from defaults in .env-devel
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+	$(clone_from_template)
 
 
 .PHONY: devenv

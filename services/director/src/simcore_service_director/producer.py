@@ -17,7 +17,7 @@ from fastapi import FastAPI, status
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
@@ -143,8 +143,7 @@ def _to_simcore_runtime_docker_label_key(key: str) -> str:
     return f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key.replace('_', '-').lower()}"
 
 
-# pylint: disable=too-many-branches
-async def _create_docker_service_params(
+async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR0915
     app: FastAPI,
     *,
     client: aiodocker.docker.Docker,
@@ -158,7 +157,6 @@ async def _create_docker_service_params(
     internal_network_id: str | None,
     request_simcore_user_agent: str,
 ) -> dict:
-    # pylint: disable=too-many-statements
     app_settings = get_application_settings(app)
 
     service_parameters_labels = await _read_service_settings(app, service_key, service_tag, SERVICE_RUNTIME_SETTINGS)
@@ -167,7 +165,9 @@ async def _create_docker_service_params(
     _logger.debug("Converting labels to docker runtime parameters")
     service_default_envs = {
         # old services expect POSTGRES_ENDPOINT as hostname:port
-        "POSTGRES_ENDPOINT": f"{app_settings.DIRECTOR_POSTGRES.POSTGRES_HOST}:{app_settings.DIRECTOR_POSTGRES.POSTGRES_PORT}",
+        "POSTGRES_ENDPOINT": (
+            f"{app_settings.DIRECTOR_POSTGRES.POSTGRES_HOST}:{app_settings.DIRECTOR_POSTGRES.POSTGRES_PORT}"
+        ),
         "POSTGRES_USER": app_settings.DIRECTOR_POSTGRES.POSTGRES_USER,
         "POSTGRES_PASSWORD": app_settings.DIRECTOR_POSTGRES.POSTGRES_PASSWORD.get_secret_value(),
         "POSTGRES_DB": app_settings.DIRECTOR_POSTGRES.POSTGRES_DB,
@@ -490,7 +490,7 @@ async def _pass_port_to_service(
     service_name: str,
     port: str,
     service_boot_parameters_labels: list[Any],
-    session: httpx.AsyncClient,
+    client: httpx.AsyncClient,
     app_settings: ApplicationSettings,
 ) -> None:
     for param in service_boot_parameters_labels:
@@ -509,7 +509,7 @@ async def _pass_port_to_service(
                 "port": str(port),
             }
             _logger.debug("creating request %s and query %s", service_url, query_string)
-            response = await session.post(service_url, data=query_string)
+            response = await client.post(service_url, data=query_string)
             _logger.debug("query response: %s", response.text)
             return
     _logger.debug("service %s does not need to know its external port", service_name)
@@ -563,7 +563,7 @@ async def _remove_overlay_network_of_swarm(client: aiodocker.docker.Docker, node
         raise GenericDockerError(err=msg) from err
 
 
-async def _get_service_state(
+async def _get_service_state(  # noqa: C901, PLR0912
     client: aiodocker.docker.Docker, service: dict, app_settings: ApplicationSettings
 ) -> tuple[ServiceState, str]:
     # some times one has to wait until the task info is filled
@@ -711,7 +711,7 @@ async def _find_service_tag(list_of_images: dict, service_key: str, service_tag:
     return tag
 
 
-async def _start_docker_service(
+async def _start_docker_service(  # noqa: PLR0913
     app: FastAPI,
     *,
     client: aiodocker.docker.Docker,
@@ -724,7 +724,7 @@ async def _start_docker_service(
     node_base_path: str,
     internal_network_id: str | None,
     request_simcore_user_agent: str,
-) -> dict:  # pylint: disable=R0913
+) -> dict:
     app_settings = get_application_settings(app)
     service_parameters = await _create_docker_service_params(
         app,
@@ -772,12 +772,12 @@ async def _start_docker_service(
         if isinstance(service_boot_parameters_labels, list):
             service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
             if published_port:
-                session = get_client_session(app)
+                httpx_client = get_httpx_client(app)
                 await _pass_port_to_service(
                     service_name,
                     published_port,
                     service_boot_parameters_labels,
-                    session,
+                    httpx_client,
                     app_settings=app_settings,
                 )
 
@@ -1031,9 +1031,9 @@ async def get_service_details(app: FastAPI, node_uuid: str) -> dict:
     reraise=True,
     retry=retry_if_exception_type(httpx.RequestError),
 )
-async def _save_service_state(service_host_name: str, session: httpx.AsyncClient) -> None:
+async def _save_service_state(service_host_name: str, client: httpx.AsyncClient) -> None:
     try:
-        response = await session.post(
+        response = await client.post(
             url=f"http://{service_host_name}/state",  # NOSONAR
             timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
         )
@@ -1105,7 +1105,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
         if save_state:
             _logger.debug("saving state of service %s...", service_host_name)
             try:
-                await _save_service_state(service_host_name, session=get_client_session(app))
+                await _save_service_state(service_host_name, client=get_httpx_client(app))
             except httpx.HTTPStatusError as err:
                 raise ServiceStateSaveError(
                     service_uuid=node_uuid,
