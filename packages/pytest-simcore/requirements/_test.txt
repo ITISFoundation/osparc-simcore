@@ -176,7 +176,7 @@ typing-inspection==0.4.2
     #   pydantic
 tzdata==2025.3
     # via arrow
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

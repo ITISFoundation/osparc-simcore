@@ -117,7 +117,7 @@ termcolor==3.3.0
     # via pytest-sugar
 typing-extensions==4.15.0
     # via openapi-core
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c ../../requirements/constraints.txt
     #   requests
