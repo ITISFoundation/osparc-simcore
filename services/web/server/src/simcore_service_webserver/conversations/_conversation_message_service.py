@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 import logging
+from datetime import datetime
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -84,6 +85,7 @@ async def _notify_support_reply(
     conversation: ConversationGetDB,
     conversation_user_type: ConversationUserType,
     message_content: str,
+    message_created_at: datetime,
     sender_user_id: UserID,
 ) -> None:
     product = products_service.get_product(app, product_name=product_name)
@@ -129,6 +131,7 @@ async def _notify_support_reply(
                     "conversation_name": conversation.name,
                     "conversation_url": conversation_url,
                     "message_content": message_content,
+                    "message_created_at": message_created_at,
                 },
             )
 
@@ -260,6 +263,7 @@ async def create_support_message(
             conversation=conversation,
             conversation_user_type=conversation_user_type,
             message_content=message.content,
+            message_created_at=message.created,
             sender_user_id=user_id,
         )
     except Exception as err:  # pylint: disable=broad-except

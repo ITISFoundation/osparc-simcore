@@ -65,6 +65,7 @@ async def test_notify_support_reply_via_email_to_user(
     mock_product = AsyncMock()
     mock_product.base_url = HttpUrl("https://test.osparc.io/")
     mock_product.support_standard_group_id = 5
+    message_created_at = datetime(2026, 5, 19, 14, 30, 0, tzinfo=UTC)
 
     with (
         patch(
@@ -93,6 +94,7 @@ async def test_notify_support_reply_via_email_to_user(
             conversation=sample_conversation,
             conversation_user_type=conversation_user_type,
             message_content="Hello, here is the answer to your question.",
+            message_created_at=message_created_at,
             sender_user_id=sender_user_id,
         )
 
@@ -106,6 +108,7 @@ async def test_notify_support_reply_via_email_to_user(
         assert call_kwargs["context"]["user"]["first_name"] == "John"
         assert call_kwargs["context"]["user"]["user_name"] == "johndoe"
         assert call_kwargs["context"]["message_content"] == "Hello, here is the answer to your question."
+        assert call_kwargs["context"]["message_created_at"] == message_created_at
 
 
 async def test_notify_support_reply_via_email_no_support_group(
@@ -117,6 +120,7 @@ async def test_notify_support_reply_via_email_no_support_group(
     mock_product = AsyncMock()
     mock_product.base_url = HttpUrl("https://test.osparc.io/")
     mock_product.support_standard_group_id = None
+    message_created_at = datetime(2026, 5, 19, 14, 30, 0, tzinfo=UTC)
 
     with (
         patch(
@@ -139,6 +143,7 @@ async def test_notify_support_reply_via_email_no_support_group(
             conversation=sample_conversation,
             conversation_user_type=ConversationUserType.REGULAR_USER,
             message_content="I still have an issue.",
+            message_created_at=message_created_at,
             sender_user_id=sender_user_id,
         )
 

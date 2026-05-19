@@ -1,5 +1,7 @@
 """Context model for the 'support_reply' email template."""
 
+from datetime import datetime
+
 from models_library.notifications import Channel
 from pydantic import BaseModel, HttpUrl
 
@@ -17,3 +19,4 @@ class SupportReplyTemplateContext(BaseTemplateContext):
     conversation_name: str
     conversation_url: HttpUrl
     message_content: str
+    message_created_at: datetime
