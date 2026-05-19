@@ -59,13 +59,18 @@ async def list_my_projects_marked_as_jobs(
     pagination_limit: int = 10,
     filter_by_job_parent_resource_name_prefix: str | None = None,
     filter_any_custom_metadata: list[tuple[str, str]] | None = None,
+    filter_all_custom_metadata: list[tuple[str, str]] | None = None,
 ) -> tuple[int, list[ProjectJobDBGet]]:
     """
     Lists paginated projects marked as jobs for the given user and product.
 
     Keyword Arguments:
-        filter_by_job_parent_resource_name_prefix -- Optionally filters by job_parent_resource_name using SQL-like wildcard patterns. (default: {None})
-        filter_any_custom_metadata -- is a list of dictionaries with key-pattern pairs for custom metadata fields (OR logic). (default: {None})
+        filter_by_job_parent_resource_name_prefix -- Optionally filters by
+            job_parent_resource_name using SQL-like wildcard patterns. (default: {None})
+        filter_any_custom_metadata -- is a list of key-pattern pairs
+            for custom metadata fields (OR logic). (default: {None})
+        filter_all_custom_metadata -- is a list of key-pattern pairs
+            for custom metadata fields (AND logic). (default: {None})
 
     Returns:
         A tuple containing the total number of projects and a list of ProjectJobDBGet objects for this page.
@@ -78,6 +83,7 @@ async def list_my_projects_marked_as_jobs(
         pagination_limit=pagination_limit,
         filter_by_job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
         filter_any_custom_metadata=filter_any_custom_metadata,
+        filter_all_custom_metadata=filter_all_custom_metadata,
     )
 
 

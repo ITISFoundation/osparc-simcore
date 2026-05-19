@@ -9,10 +9,12 @@
 
 
 import datetime
+from typing import Any
 from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -92,3 +94,31 @@ def with_short_max_wait_for_retrieving_results(
         {"COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS": f"{short_time}"},
     )
     return short_time
+
+
+@pytest.fixture()
+def minimal_configuration(
+    mock_env: EnvVarsDict,
+    postgres_host_config: dict[str, str],
+    rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    with_product: dict[str, Any],
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED": "false",
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "1",
+            "COMPUTATIONAL_BACKEND_ENABLED": "1",
+            "R_CLONE_PROVIDER": "MINIO",
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
+        },
+    )
