@@ -76,8 +76,6 @@ from ...utils import computations as utils
 from ...utils.computations_tasks import validate_pipeline
 from ...utils.dags import (
     compute_pipeline_details,
-    compute_pipeline_started_timestamp,
-    compute_pipeline_stopped_timestamp,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
@@ -397,8 +395,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
             ),
             iteration=last_run.iteration if last_run else None,
             result=None,
-            started=compute_pipeline_started_timestamp(minimal_computational_dag, comp_tasks),
-            stopped=compute_pipeline_stopped_timestamp(minimal_computational_dag, comp_tasks),
+            started=last_run.started if last_run and pipeline_started else None,
+            stopped=last_run.ended if last_run and pipeline_started else None,
             submitted=last_run.created if last_run else None,
         )
 
@@ -485,8 +483,8 @@ async def get_computation(
         ),
         iteration=last_run.iteration if last_run else None,
         result=None,
-        started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
-        stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
+        started=last_run.started if last_run else None,
+        stopped=last_run.ended if last_run else None,
         submitted=last_run.created if last_run else None,
     )
 
@@ -538,8 +536,8 @@ async def stop_computation(
             stop_url=None,
             iteration=last_run.iteration if last_run else None,
             result=None,
-            started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
-            stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
+            started=last_run.started if last_run else None,
+            stopped=last_run.ended if last_run else None,
             submitted=last_run.created if last_run else None,
         )
 
