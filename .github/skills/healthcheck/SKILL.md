@@ -1,6 +1,6 @@
 ---
 name: healthcheck
-description: 'Single-service guide to add a FastAPI health endpoint and bind Docker HEALTHCHECK to it using common_library.docker_healthcheck. Covers HTTP-mode (standard), heartbeat-mode (workers), HealthCheckError wiring, dependency checks, and tests. Use when: implementing health route behavior (200/503), wiring HealthCheckError handler, updating one target service Dockerfile, adding worker-mode healthchecks, and adding focused health tests.'
+description: 'Single-service guide to add a FastAPI health endpoint and bind Docker HEALTHCHECK to it using common_library.docker_healthcheck. Use when: implementing health route behavior (200/503), wiring HealthCheckError handler, updating one target service Dockerfile, adding worker-mode healthchecks, and adding focused health tests.'
 argument-hint: target_service=<service-name>
 ---
 
@@ -25,7 +25,7 @@ For the given `target_service`, produce:
 ## Use This Skill When
 
 - Implementing healthcheck for one service end-to-end
-- Docker daemon health status should follow the service health endpoint
+- Docker daemon health status should directly reflect the HTTP status of the service health endpoint
 - Adding a worker-mode (Celery/background) container that needs heartbeat-based healthcheck
 - Standardizing an existing service to the `HealthCheckError` pattern
 
@@ -60,7 +60,6 @@ HEALTHCHECK \
   CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/"]
 ```
 
-Exceptions to `start-period`: `dynamic-sidecar=64s`, `notifications=90s`, `migration=60s`.
 
 ### Dependency Check Patterns
 
@@ -80,11 +79,9 @@ Common dependencies to probe in health endpoints:
 
 Identify which mode applies to `target_service`:
 
-| Mode | When | Health Source |
-|---|---|---|
-| **HTTP-mode** (standard) | Service runs an HTTP server | Health endpoint returns `200`/`503` |
-| **Worker-mode** (heartbeat) | Service runs as Celery/background worker (no HTTP server) | `common_library.heartbeat.update_heartbeat()` in task loop; `HEALTHCHECK_MODE=heartbeat` env in compose |
-| **Both** | Same image serves HTTP + worker (e.g. api-server, storage, notifications) | Dockerfile uses HTTP-mode; compose overrides worker containers with `HEALTHCHECK_MODE=heartbeat` |
+- **HTTP-mode** (standard): Service runs an HTTP server → follow Steps 1–3, 5–7.
+- **Worker-mode** (heartbeat): Service runs as Celery/background worker with no HTTP server → follow Steps 1, 4, 5, 7.
+- **Both**: Same image serves HTTP + worker (e.g. api-server, storage, notifications) → follow ALL steps.
 
 ### Step 1: Inventory Current Healthcheck Setup
 
@@ -92,9 +89,9 @@ Identify which mode applies to `target_service`:
 2. Locate exception handler setup (look for `set_app_default_http_error_handlers` or explicit `app.add_exception_handler`).
 3. Locate Dockerfile `HEALTHCHECK CMD` and current target URL.
 4. Check if service has worker containers in `services/docker-compose.yml`.
-5. Confirm `common_library` is in the service's dependency chain.
+5. Confirm `common_library` is in the service's dependency chain. If not, STOP and query user.
 
-### Step 2: Build/Update Health Endpoint (HTTP-mode)
+### Step 2: Build/Update Health Endpoint (HTTP-mode only)
 
 In the target service health route module:
 
@@ -157,7 +154,9 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
 **Ordering rule**: `HealthCheckError` handler MUST be registered before any catch-all `Exception` handler.
 
-### Step 4: Worker-Mode Healthcheck (if applicable)
+### Step 4: Worker-Mode Healthcheck (worker-mode only)
+
+Skip this step if `target_service` does NOT have worker containers.
 
 If `target_service` has worker containers that share the same Docker image but don't run an HTTP server:
 
@@ -197,8 +196,7 @@ HEALTHCHECK \
 Rules:
 - Port and path must match the service's actual health endpoint.
 - Most FastAPI services use port `8000` with path `/`.
-- Exceptions: `storage` (8080, `/v0/`), `web` (8080, `/v0/health`), `director` (8000, `/v0/`), `dask-sidecar` (8787, `/health`).
-- Adjust `start-period` only if the service has known slow startup (Celery broker warmup, large model loading, etc.).
+- Adjust `start-period` only if the service has known slow startup i.e. >10s (Celery broker warmup, large model loading, etc.).
 
 ### Step 6: Add Tests
 
