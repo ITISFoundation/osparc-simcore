@@ -75,7 +75,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     setup_warm_buffer_machines_pool_task(app)
 
     # ERROR HANDLERS
-    app.add_exception_handler(HealthCheckError, health_check_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)
 
     # EVENTS
     async def _on_startup() -> None:

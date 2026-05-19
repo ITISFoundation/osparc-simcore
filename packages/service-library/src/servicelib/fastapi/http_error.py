@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
 
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI, HTTPException, status
@@ -23,8 +22,6 @@ validation_error_response_definition["properties"] = {
     },
 }
 
-
-TException = TypeVar("TException", bound=BaseException)
 
 _logger = logging.getLogger(__name__)
 

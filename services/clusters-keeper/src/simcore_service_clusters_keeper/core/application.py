@@ -68,7 +68,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     if tracing_config.tracing_enabled:
         initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
     # ERROR HANDLERS
-    app.add_exception_handler(HealthCheckError, health_check_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)
 
     # EVENTS
     async def _on_startup() -> None:
