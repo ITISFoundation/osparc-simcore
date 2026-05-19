@@ -10,12 +10,12 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
+    PageRpcProjectJobRpcGet,
     ProjectJobRpcGet,
 )
 from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     PageLimitInt,
-    PageRpc,
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
@@ -63,7 +63,7 @@ class WebserverRpcSideEffects:
         offset: PageOffsetInt = 0,
         limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filters: ListProjectsMarkedAsJobRpcFilters | None = None,
-    ) -> PageRpc[ProjectJobRpcGet]:
+    ) -> PageRpcProjectJobRpcGet:
         assert rpc_client
         assert product_name
         assert user_id
@@ -81,7 +81,7 @@ class WebserverRpcSideEffects:
             or item.get("job_parent_resource_name").startswith(filters.job_parent_resource_name_prefix)
         ]
 
-        return PageRpc[ProjectJobRpcGet].create(
+        return PageRpcProjectJobRpcGet.create(
             items[offset : offset + limit],
             total=len(items),
             limit=limit,
