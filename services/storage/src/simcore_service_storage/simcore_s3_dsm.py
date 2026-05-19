@@ -39,7 +39,7 @@ from models_library.projects_nodes_io import (
 )
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import ensure_ends_with, limited_gather
@@ -280,7 +280,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         )
 
         # use-cases:
-        # 1. path is not a valid StorageFileID (e.g. a project or project/node) --> all entries are in the DB (files and folder)
+        # 1. path is not a valid StorageFileID (e.g. a project or project/node)
+        #    --> all entries are in the DB (files and folder)
         #   2. path is valid StorageFileID and not in the DB --> entries are only in S3
         #   3. path is valid StorageFileID and in the DB --> return directly from the DB
 
@@ -599,8 +600,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
     async def create_file_download_link(self, user_id: UserID, file_id: StorageFileID, link_type: LinkType) -> AnyUrl:
         """
         Cases:
-        1. the file_id maps 1:1 to `file_meta_data` (e.g. it is not a file inside a directory)
-        2. the file_id represents a file inside a directory (its root path maps 1:1 to a `file_meta_data` defined as a directory)
+        1. the file_id maps 1:1 to `file_meta_data`
+           (e.g. it is not a file inside a directory)
+        2. the file_id represents a file inside a directory
+           (its root path maps 1:1 to a `file_meta_data` defined as a directory)
 
         3. Raises FileNotFoundError if the file does not exist
         4. Raises FileAccessRightError if the user does not have access to the file
@@ -1142,7 +1145,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         1. will try to update the entry from S3 backend if exists
         2. will delete the entry if nothing exists in S3 backend.
         """
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.UTC)
 
         list_of_expired_uploads = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
             expired_after=now
@@ -1271,7 +1274,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         file_storage_link: dict[str, Any],
         bytes_transferred_cb: UploadedBytesTransferredCallback,
     ) -> FileMetaData:
-        session = get_client_session(self.app)
+        client = get_httpx_client(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
         api_token, api_secret = await TokenRepository.instance(get_db_engine(self.app)).get_api_token_and_secret(
             user_id=user_id
@@ -1287,7 +1290,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         with tempfile.TemporaryDirectory() as tmpdir:
             local_file_path = Path(tmpdir) / filename
             # Downloads DATCore -> local
-            await download_to_file_or_raise(session, f"{dc_link}", local_file_path)
+            await download_to_file_or_raise(client, f"{dc_link}", local_file_path)
 
             # copying will happen using aioboto3, therefore multipart might happen
             new_fmd = await self._create_fmd_for_upload(
@@ -1364,7 +1367,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.UTC)
         upload_expiration_date = now + datetime.timedelta(
             seconds=get_application_settings(self.app).STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )

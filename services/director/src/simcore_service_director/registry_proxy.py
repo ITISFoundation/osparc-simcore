@@ -12,7 +12,7 @@ from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from servicelib.background_task import create_periodic_task
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
@@ -51,7 +51,7 @@ class ServiceType(enum.Enum):
     DYNAMIC = "dynamic"
 
 
-async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **session_kwargs) -> tuple[dict, Mapping]:
+async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
     app_settings = get_application_settings(app)
     # try the registry with basic authentication first, spare 1 call
     resp_data: dict = {}
@@ -72,13 +72,13 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **s
     # Restricting to /blobs/ paths limits SSRF surface from a misconfigured registry.
     follow_redirects = "/blobs/" in path
 
-    session = get_client_session(app)
-    response = await session.request(
+    client = get_httpx_client(app)
+    response = await client.request(
         method.lower(),
         f"{request_url}",
         auth=auth,
         follow_redirects=follow_redirects,
-        **session_kwargs,
+        **request_kwargs,
     )
 
     if response.status_code == status.HTTP_401_UNAUTHORIZED:
@@ -88,9 +88,9 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **s
             request_url,
             method,
             response.headers,
-            session,
+            client,
             follow_redirects=follow_redirects,
-            **session_kwargs,
+            **request_kwargs,
         )
 
     elif response.status_code == status.HTTP_404_NOT_FOUND:
@@ -113,7 +113,7 @@ async def _auth_registry_request(  # noqa: C901
     url: URL,
     method: str,
     auth_headers: Mapping,
-    session: httpx.AsyncClient,
+    client: httpx.AsyncClient,
     *,
     follow_redirects: bool = False,
     **kwargs,
@@ -139,7 +139,7 @@ async def _auth_registry_request(  # noqa: C901
     if auth_type == "Bearer":
         # get the token
         token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
-        token_resp = await session.get(f"{token_url}", auth=auth, **kwargs)
+        token_resp = await client.get(f"{token_url}", auth=auth, **kwargs)
         if token_resp.status_code != status.HTTP_200_OK:
             msg = f"Unknown error while authentifying with registry: {token_resp!s}"
             raise RegistryConnectionError(msg=msg)
@@ -150,7 +150,7 @@ async def _auth_registry_request(  # noqa: C901
             **kwargs.pop("headers", {}),
             "Authorization": f"Bearer {bearer_code}",
         }
-        resp_wtoken = await getattr(session, method.lower())(
+        resp_wtoken = await getattr(client, method.lower())(
             f"{url}", headers=headers, follow_redirects=follow_redirects, **kwargs
         )
         assert isinstance(resp_wtoken, httpx.Response)  # nosec
@@ -164,7 +164,7 @@ async def _auth_registry_request(  # noqa: C901
         return (resp_data, resp_headers)
     if auth_type == "Basic":
         # basic authentication should not be since we tried already...
-        resp_wbasic = await getattr(session, method.lower())(
+        resp_wbasic = await getattr(client, method.lower())(
             f"{url}", auth=auth, follow_redirects=follow_redirects, **kwargs
         )
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
@@ -187,8 +187,8 @@ async def _auth_registry_request(  # noqa: C901
     before_sleep=before_sleep_log(_logger, logging.WARNING),
     reraise=True,
 )
-async def _retried_request(app: FastAPI, path: str, method: str, **session_kwargs) -> tuple[dict, Mapping]:
-    return await _basic_auth_registry_request(app, path, method, **session_kwargs)
+async def _retried_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
+    return await _basic_auth_registry_request(app, path, method, **request_kwargs)
 
 
 async def registry_request(
@@ -197,7 +197,7 @@ async def registry_request(
     path: str,
     method: str,
     use_cache: bool,
-    **session_kwargs,
+    **request_kwargs,
 ) -> tuple[dict, Mapping]:
     cache: SimpleMemoryCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
@@ -206,7 +206,7 @@ async def registry_request(
         return cast(tuple[dict, Mapping], cached_response)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
     if "manifests/" in path and method.upper() == "GET":
-        headers = session_kwargs.get("headers", {})
+        headers = request_kwargs.get("headers", {})
         headers.update(
             {
                 "Accept": ", ".join(
@@ -222,10 +222,10 @@ async def registry_request(
                 )
             }
         )
-        session_kwargs["headers"] = headers
+        request_kwargs["headers"] = headers
     app_settings = get_application_settings(app)
     try:
-        response, response_headers = await _retried_request(app, path, method.upper(), **session_kwargs)
+        response, response_headers = await _retried_request(app, path, method.upper(), **request_kwargs)
     except httpx.RequestError as exc:
         msg = f"Unknown error while accessing registry: {exc!s} via {exc.request}"
         raise DirectorRuntimeError(msg=msg) from exc
