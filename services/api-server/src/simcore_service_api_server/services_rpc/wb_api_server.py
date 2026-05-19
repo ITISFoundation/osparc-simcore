@@ -269,7 +269,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_limit: int = 50,
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
-        filter_all_custom_metadata: list[NameValueTuple] | None = None,
+        filter_all_custom_metadata: list[NameValueTuple] | None,
     ):
         pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 

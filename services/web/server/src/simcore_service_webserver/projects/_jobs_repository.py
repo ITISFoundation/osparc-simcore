@@ -94,9 +94,9 @@ class ProjectJobsRepository(BaseRepository):
         user_id: UserID,
         pagination_offset: int,
         pagination_limit: int,
-        filter_by_job_parent_resource_name_prefix: str | None = None,
-        filter_any_custom_metadata: list[tuple[str, str]] | None = None,
-        filter_all_custom_metadata: list[tuple[str, str]] | None = None,
+        filter_by_job_parent_resource_name_prefix: str | None,
+        filter_any_custom_metadata: list[tuple[str, str]] | None,
+        filter_all_custom_metadata: list[tuple[str, str]] | None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 

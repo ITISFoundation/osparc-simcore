@@ -112,10 +112,10 @@ class JobService:
         self,
         job_parent_resource_name: str,
         *,
-        filter_any_custom_metadata: list[NameValueTuple] | None = None,
-        filter_all_custom_metadata: list[NameValueTuple] | None = None,
-        pagination_offset: PageOffsetInt | None = None,
-        pagination_limit: PageLimitInt | None = None,
+        filter_any_custom_metadata: list[NameValueTuple] | None,
+        filter_all_custom_metadata: list[NameValueTuple] | None,
+        pagination_offset: PageOffsetInt | None,
+        pagination_limit: PageLimitInt | None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
