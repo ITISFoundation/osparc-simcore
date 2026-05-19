@@ -260,7 +260,6 @@ qx.Class.define("osparc.support.Conversations", {
       conversation.addListener("changeLastMessageCreatedAt", () => this.__sortConversations(), this);
       const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
       conversation.addListener(eventName, () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
-      conversation.addListener("changeResolved", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       conversation.addListener("changeArchived", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       this.__conversationListItems.push(conversationListItem);
       return conversationListItem;
