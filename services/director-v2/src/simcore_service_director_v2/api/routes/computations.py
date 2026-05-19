@@ -18,6 +18,7 @@ Therefore,
 import contextlib
 import logging
 from datetime import timedelta
+from decimal import Decimal
 from typing import Annotated, Any, Final
 
 import networkx as nx
@@ -34,6 +35,7 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.wallets import ZERO_CREDITS
 from pydantic import AnyHttpUrl, TypeAdapter
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
@@ -60,6 +62,7 @@ from ...core.errors import (
     WalletNotEnoughCreditsError,
 )
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
+from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
@@ -181,6 +184,34 @@ async def _get_project_metadata(
         _logger.exception("Could not find parent project: %s", exc.error_context().get("project_id"))
 
     return {}
+
+
+async def _check_wallet_credits_or_raise(
+    computation: ComputationCreate,
+    comp_tasks: list[CompTaskAtDB],
+    rut_client: ResourceUsageTrackerClient,
+) -> None:
+    """Raises WalletNotEnoughCreditsError if wallet has insufficient credits for any paid node."""
+    if not computation.wallet_info:
+        return
+    assert computation.product_name  # nosec
+    for task in comp_tasks:
+        if task.pricing_info:
+            pricing_unit_get = await rut_client.get_pricing_unit(
+                computation.product_name,
+                task.pricing_info["pricing_plan_id"],
+                task.pricing_info["pricing_unit_id"],
+            )
+            if pricing_unit_get.current_cost_per_unit > Decimal(0):
+                if computation.wallet_info.wallet_credit_amount <= ZERO_CREDITS:
+                    raise WalletNotEnoughCreditsError(
+                        wallet_name=computation.wallet_info.wallet_name,
+                        wallet_credit_amount=computation.wallet_info.wallet_credit_amount,
+                        user_id=computation.user_id,
+                        product_name=computation.product_name,
+                        project_id=computation.project_id,
+                    )
+                break
 
 
 async def _try_start_pipeline(
@@ -329,6 +360,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
 
         pipeline_started = False
         if computation.start_pipeline:
+            await _check_wallet_credits_or_raise(computation, comp_tasks, rut_client)
+
             pipeline_started = await _try_start_pipeline(
                 request.app,
                 project_repo=project_repo,

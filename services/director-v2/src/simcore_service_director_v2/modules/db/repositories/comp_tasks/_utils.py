@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from decimal import Decimal
 from typing import Any, Final
 
 import arrow
@@ -37,7 +36,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from models_library.wallets import ZERO_CREDITS, WalletInfo
+from models_library.wallets import WalletInfo
 from pydantic import TypeAdapter
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
@@ -53,7 +52,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
     EC2InstanceTypeNotFoundError,
-    WalletNotEnoughCreditsError,
 )
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from .....models.pricing import PricingInfo
@@ -366,20 +364,6 @@ async def generate_tasks_list_from_project(
             node_key=node.key,
             node_version=node.version,
         )
-        # Check for zero credits (if pricing unit is greater than 0).
-        if (
-            wallet_info
-            and pricing_info
-            and pricing_info.pricing_unit_cost > Decimal(0)
-            and wallet_info.wallet_credit_amount <= ZERO_CREDITS
-        ):
-            raise WalletNotEnoughCreditsError(
-                wallet_name=wallet_info.wallet_name,
-                wallet_credit_amount=wallet_info.wallet_credit_amount,
-                user_id=user_id,
-                product_name=product_name,
-                project_id=project.uuid,
-            )
 
         assert rabbitmq_rpc_client  # nosec
         await _update_project_node_resources_from_hardware_info(
