@@ -244,6 +244,50 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
 
 
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/issues/9138")
+async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stale_heartbeat(
+    disable_clusters_management_background_task: None,
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+    initialized_app: FastAPI,
+    mocked_dask_ping_scheduler: MockedDaskModule,
+):
+    """Regression test: when clusters-keeper restarts and the heartbeat tag is stale,
+    a busy cluster should NOT be terminated. The heartbeat written by
+    _heartbeat_connected_clusters must protect the instance from termination within
+    the same check_clusters cycle.
+
+    Reproduces the scenario:
+    1. Cluster exists and was previously heartbeated
+    2. clusters-keeper goes down for a while (heartbeat becomes stale)
+    3. clusters-keeper starts back up and runs check_clusters
+    4. The scheduler IS busy (is_scheduler_busy returns True)
+    5. BUG: the cluster is terminated despite being busy because the in-memory
+       instance data has a stale heartbeat tag
+    """
+    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+    assert len(created_clusters) == 1
+
+    # Give the cluster an initial heartbeat so it is considered "connected" (has heartbeat tag)
+    await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
+
+    # Simulate clusters-keeper being down: wait longer than the termination threshold
+    # so the heartbeat tag becomes stale
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
+
+    # The scheduler is still busy (processing tasks)
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = True
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = True
+
+    # Run check_clusters — this simulates what happens right after clusters-keeper restarts
+    await check_clusters(initialized_app)
+
+    # The cluster MUST NOT be terminated because it is busy
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
+
+
 async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     disable_clusters_management_background_task: None,
     _base_configuration: None,
