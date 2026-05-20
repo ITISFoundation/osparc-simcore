@@ -216,7 +216,18 @@ qx.Class.define("osparc.support.Conversations", {
     __fetchConversationCounts: function() {
       osparc.store.ConversationsSupport.getInstance().fetchConversationCounts()
         .then(counts => {
-          console.log("Conversation counts:", counts);
+          if (counts.all !== undefined) {
+            this.getChildControl("filter-all-button").setLabel(this.tr("All") + ` (${counts.all})`);
+          }
+          if (counts.unread !== undefined) {
+            this.getChildControl("filter-unread-button").setLabel(this.tr("Unread") + ` (${counts.unread})`);
+          }
+          if (counts.active !== undefined) {
+            this.getChildControl("filter-active-button").setLabel(this.tr("Active") + ` (${counts.active})`);
+          }
+          if (counts.archived !== undefined) {
+            this.getChildControl("filter-archived-button").setLabel(this.tr("Archived") + ` (${counts.archived})`);
+          }
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
