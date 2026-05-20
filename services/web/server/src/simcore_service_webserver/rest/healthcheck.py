@@ -15,7 +15,8 @@ traffic leaves room for the target to repair itself.
 
 In Kubernetes health-checks are called *probes*:
 - The health check for reboots is called a *liveness probe*: "Check if the container is alive".
-- The health check for cutting traffic is called a *readiness probe*: "Check if the container is ready to receive traffic".
+- The health check for cutting traffic is called a *readiness probe*:
+  "Check if the container is ready to receive traffic".
 
 Taken from https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1fcf6e858e
 
@@ -30,14 +31,16 @@ Taken from https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1f
     The health check will first run *interval* seconds after the container is started, and
     then again *interval* seconds after each previous check completes.
 
-    If a single run of the check takes longer than *timeout* seconds then the check is considered to have failed (SEE HealthCheckFailed).
+    If a single run of the check takes longer than *timeout* seconds
+    then the check is considered to have failed (SEE HealthCheckError).
 
     It takes *retries* consecutive failures of the health check for the container to be considered **unhealthy**.
 
     *start period* provides initialization time for containers that need time to bootstrap. Probe failure during
     that period will not be counted towards the maximum number of retries.
 
-    However, if a health check succeeds during the *start period*, the container is considered started and all consecutive
+    However, if a health check succeeds during the *start period*,
+    the container is considered started and all consecutive
     failures will be counted towards the maximum number of retries.
 
 Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
@@ -46,9 +49,9 @@ Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (
     Final,
-    TypeAlias,
+    # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
 
@@ -57,9 +60,7 @@ from aiosignal import Signal
 
 from ..application_keys import APP_SETTINGS_APPKEY
 
-_HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
-
-_HealthCheckSignal: TypeAlias = Signal[_HealthCheckSlot]
+HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 
 
 class HealthCheckError(RuntimeError):
@@ -77,7 +78,7 @@ class HealthInfoDict(TypedDict, total=True):
 
 class HealthCheck:
     def __init__(self, app: web.Application):
-        self._on_healthcheck: _HealthCheckSignal = Signal(owner=self)
+        self._on_healthcheck: Signal[web.Application] = Signal(owner=self)
 
         # The docker engine healthcheck: If a single run of the check takes longer than *timeout* seconds
         # then the check is considered to have failed. Therefore there is no need to continue run
@@ -86,12 +87,9 @@ class HealthCheck:
     def __repr__(self):
         return f"<HealthCheck timeout={self._timeout}, #on_healthcheck-slots={len(self._on_healthcheck)}>"
 
-    @property
-    def on_healthcheck(self) -> _HealthCheckSignal:
-        """Signal to define a health check.
-        WARNING: can append **async** slot function. SEE _HealthCheckSlot
-        """
-        return self._on_healthcheck
+    def register_on_healthcheck(self, slot: HealthCheckSlot) -> None:
+        """Register an async healthcheck callback."""
+        self._on_healthcheck.append(slot)
 
     @staticmethod
     def get_app_info(app: web.Application) -> HealthInfoDict:
@@ -106,14 +104,14 @@ class HealthCheck:
     async def run(self, app: web.Application) -> HealthInfoDict:
         """Runs all registered checks to determine the service health.
 
-        can raise HealthCheckFailed
+        can raise HealthCheckError
         """
         # Ensures no more signals append after first run
         self._on_healthcheck.freeze()
 
         assert all(  # nosec
             inspect.iscoroutinefunction(fun) for fun in self._on_healthcheck
-        ), "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
+        ), "All Slot functions that append to on_healthcheck must be coroutines"
 
         try:
             await asyncio.wait_for(self._on_healthcheck.send(app), timeout=self._timeout)
