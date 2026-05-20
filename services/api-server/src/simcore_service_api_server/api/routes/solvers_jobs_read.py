@@ -7,7 +7,7 @@ from functools import partial
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
@@ -27,7 +27,7 @@ from ...models.api_resources import parse_resources_ids
 from ...models.basic_types import LogStreamingResponse, NameValueTuple, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.jobs import Job, JobID, JobLog, JobMetadata, JobOutputs
+from ...models.schemas.jobs import BatchGetJobMetadataResponse, Job, JobID, JobLog, JobMetadata, JobOutputs
 from ...models.schemas.jobs_filters import JobMetadataFilter
 from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
@@ -60,6 +60,8 @@ from .solvers_jobs import JOBS_STATUS_CODES, METADATA_STATUS_CODES
 from .wallets import WALLET_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
+
+_BATCH_GET_MAX_IDS = 500
 
 _OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_402_PAYMENT_REQUIRED: {
@@ -156,6 +158,32 @@ async def list_all_solvers_jobs(
         total=meta.total,
         params=page_params,
     )
+
+
+@router.get(
+    "/-/releases/-/jobs/metadata:batchGet",
+    response_model=BatchGetJobMetadataResponse,
+    responses=METADATA_STATUS_CODES,
+    description=create_route_description(
+        base="Gets custom metadata for multiple jobs in a single request",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")],
+    ),
+)
+async def batch_get_jobs_custom_metadata(
+    job_ids: Annotated[list[JobID], Query(min_length=1, max_length=_BATCH_GET_MAX_IDS)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    items: list[JobMetadata] = []
+    for job_id in job_ids:
+        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
+        items.append(
+            JobMetadata(
+                job_id=job_id,
+                metadata=project_metadata.custom,
+                url=None,
+            )
+        )
+    return BatchGetJobMetadataResponse(items=items)
 
 
 @router.get(
