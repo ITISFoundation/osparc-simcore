@@ -81,10 +81,10 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       });
     },
 
-    fetchConversations: function(filter) {
+    fetchConversations: function(filter, offset = 0) {
       const params = {
         url: {
-          offset: 0,
+          offset,
           limit: 9,
         }
       };
@@ -110,14 +110,21 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           endpoint = "getConversationsPage";
           break;
       }
-      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params)
-        .then(conversationsData => {
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params, options)
+        .then(resp => {
           const conversations = [];
-          conversationsData.forEach(conversationData => {
-            const conversation = this.__addToCache(conversationData);
-            conversations.push(conversation);
-          });
-          return conversations;
+          const conversationsData = resp["data"] || resp;
+          const total = resp["_meta"] ? resp["_meta"]["total"] : null;
+          if (Array.isArray(conversationsData)) {
+            conversationsData.forEach(conversationData => {
+              const conversation = this.__addToCache(conversationData);
+              conversations.push(conversation);
+            });
+          }
+          return { conversations, total };
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },

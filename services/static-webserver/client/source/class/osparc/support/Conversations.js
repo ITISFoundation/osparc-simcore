@@ -69,6 +69,8 @@ qx.Class.define("osparc.support.Conversations", {
 
   members: {
     __conversationListItems: null,
+    __totalConversations: null,
+    __isFetchingMore: false,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -125,11 +127,23 @@ qx.Class.define("osparc.support.Conversations", {
           });
           this._addAt(control, 2);
           break;
-        case "conversations-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+        case "scroll-container":
+          control = new qx.ui.container.Scroll();
+          control.getChildControl("pane").addListener("scrollY", () => this.__onScroll(), this);
           this._addAt(control, 3, {
             flex: 1
           });
+          break;
+        case "conversations-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this.getChildControl("scroll-container").add(control);
+          break;
+        case "loading-spinner":
+          control = new osparc.ui.form.FetchButton(this.tr("Loading more...")).set({
+            alignX: "center",
+            visibility: "excluded",
+          });
+          control.setFetching(true);
           break;
       }
 
@@ -237,17 +251,78 @@ qx.Class.define("osparc.support.Conversations", {
       loadMoreButton.setFetching(true);
 
       osparc.store.ConversationsSupport.getInstance().fetchConversations()
-        .then(conversations => {
-          if (conversations.length) {
-            conversations.forEach(conversation => this.__addConversation(conversation));
+        .then(resp => {
+          if (resp && resp.conversations && resp.conversations.length) {
+            resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
-          this.__sortConversations();
+          this.__totalConversations = resp ? resp.total : null;
+          this.__updateLoadingSpinner();
         })
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
           this.__applyCurrentFilter(this.getCurrentFilter());
         });
+    },
+
+    __fetchMoreConversations: function() {
+      if (this.__isFetchingMore) {
+        return;
+      }
+      this.__isFetchingMore = true;
+      this.__showLoadingSpinner(true);
+
+      const offset = this.__conversationListItems.length;
+      osparc.store.ConversationsSupport.getInstance().fetchConversations(this.getCurrentFilter(), offset)
+        .then(resp => {
+          if (resp && resp.conversations && resp.conversations.length) {
+            resp.conversations.forEach(conversation => this.__addConversation(conversation));
+          }
+          this.__totalConversations = resp ? resp.total : null;
+          this.__applyCurrentFilter(this.getCurrentFilter());
+          this.__updateLoadingSpinner();
+        })
+        .finally(() => {
+          this.__isFetchingMore = false;
+        });
+    },
+
+    __onScroll: function() {
+      if (!this.__hasMoreConversations()) {
+        return;
+      }
+      const scroll = this.getChildControl("scroll-container");
+      const pane = scroll.getChildControl("pane");
+      const scrollTop = pane.getScrollY();
+      const scrollHeight = pane.getScrollSize().height;
+      const clientHeight = pane.getBounds() ? pane.getBounds().height : 0;
+      if (scrollTop + clientHeight >= scrollHeight - 50) {
+        this.__fetchMoreConversations();
+      }
+    },
+
+    __hasMoreConversations: function() {
+      if (this.__totalConversations === null) {
+        return false;
+      }
+      return this.__conversationListItems.length < this.__totalConversations;
+    },
+
+    __updateLoadingSpinner: function() {
+      this.__showLoadingSpinner(this.__hasMoreConversations());
+    },
+
+    __showLoadingSpinner: function(show) {
+      const spinner = this.getChildControl("loading-spinner");
+      const conversationsLayout = this.getChildControl("conversations-layout");
+      if (show) {
+        if (conversationsLayout.indexOf(spinner) === -1) {
+          conversationsLayout.add(spinner);
+        }
+        spinner.show();
+      } else {
+        spinner.exclude();
+      }
     },
 
     __listenToNewConversations: function() {
