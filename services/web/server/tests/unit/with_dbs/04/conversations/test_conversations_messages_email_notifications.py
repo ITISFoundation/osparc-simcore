@@ -43,6 +43,7 @@ def sample_conversation() -> ConversationGetDB:
         fogbugz_case_id=None,
         is_read_by_user=True,
         is_read_by_support=False,
+        status="ACTIVE",
         last_message_created_at=datetime.now(tz=UTC),
         created=datetime.now(tz=UTC),
         modified=datetime.now(tz=UTC),
