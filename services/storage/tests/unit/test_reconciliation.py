@@ -66,6 +66,58 @@ def raw_s3_client(initialized_app: FastAPI) -> S3Client:
 
 
 @pytest.fixture
+async def clean_multipart_uploads(raw_s3_client: S3Client, storage_s3_bucket: str) -> None:
+    """Abort all existing multipart uploads left over from previous runs (--keep-docker-up)."""
+    listing = await raw_s3_client.list_multipart_uploads(Bucket=storage_s3_bucket)
+    for upload in listing.get("Uploads", []):
+        await raw_s3_client.abort_multipart_upload(
+            Bucket=storage_s3_bucket,
+            Key=upload["Key"],
+            UploadId=upload["UploadId"],
+        )
+
+
+@pytest.fixture
+def moto_s3_client_with_real_timestamps(
+    initialized_app: FastAPI,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Patch ``get_s3_client`` so ``list_ongoing_multipart_uploads`` returns real timestamps.
+
+    The moto standalone server returns a hardcoded fake ``Initiated`` timestamp
+    (year 2010) for multipart uploads instead of the real creation time.  This
+    makes every upload appear ancient regardless of when it was created.  This
+    fixture patches the S3 client so that ``Initiated`` is replaced with
+    ``datetime.now(tz=UTC)`` — matching real AWS behaviour.
+    """
+    real_s3_client = get_s3_client(initialized_app)
+
+    async def _list_with_real_initiated(*, bucket):
+        response = await real_s3_client._client.list_multipart_uploads(Bucket=bucket)  # noqa: SLF001
+        return [
+            (
+                u.get("UploadId", "undefined-uploadid"),
+                u.get("Key", "undefined-key"),
+                datetime.now(tz=UTC),
+            )
+            for u in response.get("Uploads", [])
+        ]
+
+    monkeypatch.setattr(
+        recon_mod,
+        "get_s3_client",
+        lambda _app: type(
+            "_MotoS3Proxy",
+            (),
+            {
+                "list_ongoing_multipart_uploads": staticmethod(_list_with_real_initiated),
+                "abort_multipart_upload": real_s3_client.abort_multipart_upload,
+            },
+        )(),
+    )
+
+
+@pytest.fixture
 async def create_fmd_row(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
@@ -701,23 +753,25 @@ async def test_reconcile_multipart_grace_period_protects_recent_uploads(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    clean_multipart_uploads: None,
+    moto_s3_client_with_real_timestamps: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
     """A non-zero grace period prevents aborting uploads that are still recent."""
-    # Override grace period to 1 hour so the just-created upload is protected
+    # --- settings override (same pattern as test_reconcile_db_to_s3_respects_grace_period) ---
     real_settings = initialized_app.state.settings
     stub = real_settings.model_copy(update={"STORAGE_CLEANER_RECONCILE_GRACE_PERIOD": timedelta(hours=1)})
     monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
 
+    # --- create a fresh multipart upload ---
     orphan_key = f"{uuid4()}/{uuid4()}/recent-upload.bin"
     create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key)
     upload_id = create_resp["UploadId"]
 
-    # The upload was just created — it's younger than the 1h grace period
+    # --- act & assert ---
     aborted = await reconcile_abandoned_multipart_uploads(initialized_app)
     assert aborted == 0
 
-    # Verify the upload is still there
     listing = await raw_s3_client.list_multipart_uploads(Bucket=storage_s3_bucket)
     remaining_ids = {u.get("UploadId") for u in listing.get("Uploads", [])}
     assert upload_id in remaining_ids

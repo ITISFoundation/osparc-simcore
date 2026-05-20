@@ -468,7 +468,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             (
                 upload.get("UploadId", "undefined-uploadid"),
                 S3ObjectKey(upload.get("Key", "undefined-key")),
-                upload.get("Initiated", datetime.min.replace(tzinfo=UTC)),
+                upload.get("Initiated", datetime.now(tz=UTC)),
             )
             for upload in response.get("Uploads", [])
         ]
