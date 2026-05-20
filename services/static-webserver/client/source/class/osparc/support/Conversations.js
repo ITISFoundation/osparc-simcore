@@ -256,6 +256,7 @@ qx.Class.define("osparc.support.Conversations", {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
           this.__totalConversations = resp ? resp.total : null;
+          this.__sortConversations();
           this.__updateLoadingSpinner();
         })
         .finally(() => {
@@ -279,6 +280,7 @@ qx.Class.define("osparc.support.Conversations", {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
           this.__totalConversations = resp ? resp.total : null;
+          this.__sortConversations();
           this.__applyCurrentFilter(this.getCurrentFilter());
           this.__updateLoadingSpinner();
         })
