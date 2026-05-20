@@ -379,7 +379,6 @@ async def generate_tasks_list_from_project(
             and pricing_info.pricing_unit_cost > Decimal(0)
             and wallet_info.wallet_credit_amount <= ZERO_CREDITS
         ):
-            task_state = RunningState.ABORTED
             insufficient_credits = True
 
         assert rabbitmq_rpc_client  # nosec
@@ -425,4 +424,11 @@ async def generate_tasks_list_from_project(
         )
 
         list_comp_tasks.append(task_db)
+
+    # If any published node had insufficient credits, abort ALL published nodes
+    if insufficient_credits:
+        for task in list_comp_tasks:
+            if task.state == RunningState.PUBLISHED:
+                task.state = RunningState.ABORTED
+
     return list_comp_tasks, insufficient_credits
