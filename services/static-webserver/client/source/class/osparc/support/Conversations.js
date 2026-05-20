@@ -33,6 +33,7 @@ qx.Class.define("osparc.support.Conversations", {
       this.__filterButtons.push(this.getChildControl("filter-archived-button"));
     }
 
+    this.__fetchConversationCounts();
     this.__fetchConversations();
 
     this.__listenToNewConversations();
@@ -210,6 +211,14 @@ qx.Class.define("osparc.support.Conversations", {
 
     __getConversationItem: function(conversationId) {
       return this.__conversationListItems.find(conversation => conversation.getConversation().getConversationId() === conversationId);
+    },
+
+    __fetchConversationCounts: function() {
+      osparc.store.ConversationsSupport.getInstance().fetchConversationCounts()
+        .then(counts => {
+          console.log("Conversation counts:", counts);
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __fetchConversations: function() {
