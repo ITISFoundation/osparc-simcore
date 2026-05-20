@@ -151,8 +151,9 @@ qx.Class.define("osparc.support.ConversationListItem", {
       });
 
       const archivedBadge = this.getChildControl("archived-badge");
+      const amIASupportUser = osparc.store.Groups.getInstance().amIASupportUser();
       conversation.bind("archived", archivedBadge, "visibility", {
-        converter: val => val === true ? "visible" : "excluded"
+        converter: val => val && amIASupportUser ? "visible" : "excluded"
       });
 
       this.getChildControl("menu-button");
