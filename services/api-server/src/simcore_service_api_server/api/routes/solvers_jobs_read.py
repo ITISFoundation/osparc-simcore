@@ -12,6 +12,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
@@ -44,13 +45,15 @@ from ...services_http.solver_job_models_converters import (
     create_job_from_project,
     get_solver_job_rest_interface_links,
 )
+from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
+from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
@@ -171,19 +174,26 @@ async def list_all_solvers_jobs(
 )
 async def batch_get_jobs_custom_metadata(
     job_ids: Annotated[list[JobID], Query(min_length=1, max_length=_BATCH_GET_MAX_IDS)],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
-    items: list[JobMetadata] = []
-    for job_id in job_ids:
-        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
-        items.append(
+    metadata_map = await wb_api_rpc.batch_get_project_custom_metadata(
+        product_name=product_name,
+        user_id=user_id,
+        project_uuids=job_ids,
+    )
+    return BatchGetJobMetadataResponse(
+        items=[
             JobMetadata(
                 job_id=job_id,
-                metadata=project_metadata.custom,
+                metadata=metadata_map[job_id],
                 url=None,
             )
-        )
-    return BatchGetJobMetadataResponse(items=items)
+            for job_id in job_ids
+            if job_id in metadata_map
+        ]
+    )
 
 
 @router.get(
