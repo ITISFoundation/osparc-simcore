@@ -29,7 +29,7 @@ router = RPCRouter()
 async def batch_get_project_custom_metadata(
     app: web.Application,
     *,
-    product_name: ProductName,  # noqa: ARG001
+    product_name: ProductName,  # noqa: ARG001 # pylint: disable=unused-argument
     user_id: UserID,
     project_uuids: list[ProjectID],
 ) -> dict[ProjectID, MetadataDict]:
