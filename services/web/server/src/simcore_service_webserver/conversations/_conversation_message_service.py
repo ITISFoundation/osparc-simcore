@@ -13,6 +13,7 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
     ConversationPatchDB,
+    ConversationStatus,
     ConversationUserType,
 )
 from models_library.products import ProductName
@@ -173,7 +174,7 @@ async def create_support_message(
         content=content,
         type_=type_,
     )
-    # NOTE: Update conversation last modified (for frontend listing) and read states
+    # NOTE: Update conversation last modified (for frontend listing), read states, and auto-unarchive
     await _conversation_repository.update(
         app,
         conversation_id=conversation.conversation_id,
@@ -181,6 +182,7 @@ async def create_support_message(
             is_read_by_user=_is_read_by_user,
             is_read_by_support=_is_read_by_support,
             last_message_created_at=message.created,
+            status=ConversationStatus.ACTIVE,
         ),
     )
 
