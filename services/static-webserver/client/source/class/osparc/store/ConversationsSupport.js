@@ -288,7 +288,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
 
     archiveConversation: function(conversationId, archive) {
       const patchData = {
-        isArchived: archive,
+        "status": archive ? "ARCHIVED" : "ACTIVE",
       };
       return this.__patchConversation(conversationId, patchData);
     },
