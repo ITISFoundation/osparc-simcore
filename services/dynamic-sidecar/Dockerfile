@@ -193,7 +193,7 @@ HEALTHCHECK \
   --start-period=64s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/health"]
 
 EXPOSE 8000
 
@@ -203,7 +203,7 @@ CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as my with same gid/uid as host
+# Runs as "scu" with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR
