@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Final
 
@@ -9,7 +8,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
-from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
 from . import _metadata_repository
@@ -36,17 +34,17 @@ async def batch_get_project_custom_metadata_for_user(
     """raises: ProjectNotFoundError, ProjectInvalidRightsError"""
     engine = get_asyncpg_engine(app)
 
-    async def _get(connection: AsyncConnection, project_uuid: ProjectID) -> tuple[ProjectID, MetadataDict]:
-        await validate_project_ownership(engine, user_id=user_id, project_uuid=project_uuid, connection=connection)
-        metadata = await _metadata_repository.get_project_custom_metadata(
-            engine=engine, connection=connection, project_uuid=project_uuid
-        )
-        return project_uuid, metadata
-
+    results: dict[ProjectID, MetadataDict] = {}
     async with pass_or_acquire_connection(engine) as connection:
-        results = await asyncio.gather(*[_get(connection, pid) for pid in project_uuids])
+        # N.B. A single connection doesn't support concurrent queries.
+        # For concurrency: implement the following directly as a single db query, don't use multiple connections.
+        for project_uuid in project_uuids:
+            await validate_project_ownership(engine, user_id=user_id, project_uuid=project_uuid, connection=connection)
+            results[project_uuid] = await _metadata_repository.get_project_custom_metadata(
+                engine=engine, connection=connection, project_uuid=project_uuid
+            )
 
-    return dict(results)
+    return results
 
 
 async def get_project_custom_metadata_or_empty_dict(app: web.Application, project_uuid: ProjectID) -> MetadataDict:

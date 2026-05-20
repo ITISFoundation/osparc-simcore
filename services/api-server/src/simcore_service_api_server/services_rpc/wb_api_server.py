@@ -22,6 +22,7 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
+from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
@@ -292,6 +293,25 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             filters=filters,
             **pagination_kwargs,
+        )
+
+    @_exception_mapper(
+        rpc_exception_map={
+            ProjectForbiddenRpcError: JobForbiddenAccessError,
+            ProjectNotFoundRpcError: JobNotFoundError,
+        }
+    )
+    async def batch_get_project_custom_metadata(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuids: list[ProjectID],
+    ) -> dict[ProjectID, MetadataDict]:
+        return await self._rpc_client.projects.batch_get_project_custom_metadata(
+            product_name=product_name,
+            user_id=user_id,
+            project_uuids=project_uuids,
         )
 
     async def register_function(

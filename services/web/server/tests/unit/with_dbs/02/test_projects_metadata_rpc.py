@@ -186,5 +186,5 @@ async def test_rpc_batch_get_project_custom_metadata_nonexistent_project(
         await webserver_rpc_client.projects.batch_get_project_custom_metadata(
             product_name=product_name,
             user_id=logged_user["id"],
-            project_uuids=[nonexistent_uuid],
+            project_uuids=[ProjectID(user_project["uuid"]), nonexistent_uuid],
         )
