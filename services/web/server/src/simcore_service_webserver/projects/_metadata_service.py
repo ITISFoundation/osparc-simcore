@@ -29,7 +29,7 @@ async def get_project_custom_metadata_for_user(
 
 
 async def batch_get_project_custom_metadata_for_user(
-    app: web.Application, user_id: UserID, project_uuids: list[ProjectID]
+    app: web.Application, *, user_id: UserID, project_uuids: list[ProjectID]
 ) -> dict[ProjectID, MetadataDict]:
     """raises: ProjectNotFoundError, ProjectInvalidRightsError"""
     engine = get_asyncpg_engine(app)

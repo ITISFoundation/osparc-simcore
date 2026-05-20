@@ -180,7 +180,7 @@ async def batch_get_jobs_custom_metadata(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-):
+) -> BatchGetJobMetadataResponse:
     metadata_map = await wb_api_rpc.batch_get_project_custom_metadata(
         product_name=product_name,
         user_id=user_id,
