@@ -24,6 +24,8 @@ from simcore_service_webserver.conversations._conversation_message_service impor
     users_service,
 )
 
+MODULE_UNDER_TEST = "simcore_service_webserver.conversations._conversation_message_service"
+
 
 @pytest.fixture
 def mock_app() -> web.Application:
@@ -85,6 +87,11 @@ async def test_notify_support_reply_via_email_to_user(
             return_value=200,
         ),
         patch(
+            f"{MODULE_UNDER_TEST}.is_user_connected",
+            new_callable=AsyncMock,
+            return_value=False,
+        ),
+        patch(
             f"{notifications_service.__name__}.send_message_from_template",
             new_callable=AsyncMock,
         ) as mock_send,
@@ -112,26 +119,18 @@ async def test_notify_support_reply_via_email_to_user(
         assert call_kwargs["context"]["message_created_at"] == message_created_at
 
 
-async def test_notify_support_reply_via_email_no_support_group(
+async def test_notify_support_reply_no_email_for_regular_user(
     mock_app: web.Application,
     sample_conversation: ConversationGetDB,
 ):
-    """When a regular user replies but no support group is configured, no email is sent."""
+    """When a regular user replies, no email notification is sent (only SUPPORT_USER triggers email)."""
     sender_user_id = 200
-    mock_product = AsyncMock()
-    mock_product.base_url = HttpUrl("https://test.osparc.io/")
-    mock_product.support_standard_group_id = None
     message_created_at = datetime(2026, 5, 19, 14, 30, 0, tzinfo=UTC)
 
     with (
         patch(
             f"{products_service.__name__}.get_product",
-            return_value=mock_product,
-        ),
-        patch(
-            f"{users_service.__name__}.get_user",
-            new_callable=AsyncMock,
-            return_value={"first_name": "John", "last_name": "Doe", "email": "john@test.io"},
+            return_value=AsyncMock(base_url=HttpUrl("https://test.osparc.io/")),
         ),
         patch(
             f"{notifications_service.__name__}.send_message_from_template",

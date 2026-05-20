@@ -101,7 +101,17 @@ async def _notify_support_reply(
 
             # Check if user is online - if so, skip email (they already receive
             # the conversation:message:created socketio notification)
-            if await is_user_connected(app, conversation_creator_user_id):
+            try:
+                user_is_online = await is_user_connected(app, conversation_creator_user_id)
+            except Exception:  # pylint: disable=broad-except
+                _logger.warning(
+                    "Failed to check if user %s is connected, defaulting to offline",
+                    conversation_creator_user_id,
+                    exc_info=True,
+                )
+                user_is_online = False
+
+            if user_is_online:
                 _logger.info(
                     "User %s is online, skipping email notification for conversation %s "
                     "(user receives real-time socketio notification)",
