@@ -97,6 +97,7 @@ class ProjectJobsRepository(BaseRepository):
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[tuple[str, str]] | None,
         filter_all_custom_metadata: list[tuple[str, str]] | None,
+        filter_by_project_uuids: list[ProjectID] | None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 
@@ -148,6 +149,11 @@ class ProjectJobsRepository(BaseRepository):
         )
 
         # Step 3: Apply filters
+        if filter_by_project_uuids:
+            access_query = access_query.where(
+                projects_to_jobs.c.project_uuid.in_([f"{pid}" for pid in filter_by_project_uuids])
+            )
+
         if filter_by_job_parent_resource_name_prefix:
             access_query = _apply_job_parent_resource_name_filter(
                 access_query, filter_by_job_parent_resource_name_prefix

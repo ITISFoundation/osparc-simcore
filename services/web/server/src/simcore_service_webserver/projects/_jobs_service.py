@@ -84,6 +84,7 @@ async def list_my_projects_marked_as_jobs(
         filter_by_job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
         filter_any_custom_metadata=filter_any_custom_metadata,
         filter_all_custom_metadata=filter_all_custom_metadata,
+        filter_by_project_uuids=None,
     )
 
 
