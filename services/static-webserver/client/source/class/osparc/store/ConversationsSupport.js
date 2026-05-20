@@ -85,7 +85,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       const params = {
         url: {
           offset: 0,
-          limit: 10,
+          limit: 9,
         }
       };
       let endpoint;
@@ -99,11 +99,11 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           break;
         case "active":
           endpoint = "getConversationsPageByStatus";
-          params.url["status"] = "active";
+          params.url["status"] = "ACTIVE";
           break;
         case "archived":
           endpoint = "getConversationsPageByStatus";
-          params.url["status"] = "archived";
+          params.url["status"] = "ARCHIVED";
           break;
         case "all":
         default:
@@ -113,10 +113,6 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return osparc.data.Resources.fetch("conversationsSupport", endpoint, params)
         .then(conversationsData => {
           const conversations = [];
-          if (conversationsData.length) {
-            // Sort conversations by created date, newest first (the new ones will be next to the plus button)
-            conversationsData.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
-          }
           conversationsData.forEach(conversationData => {
             const conversation = this.__addToCache(conversationData);
             conversations.push(conversation);
@@ -131,8 +127,10 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         url: {
           offset: 0,
           limit: 1,
-          resolveWResponse: true
         }
+      };
+      const options = {
+        resolveWResponse: true
       };
       let endpoint;
       switch (filter) {
@@ -145,18 +143,18 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           break;
         case "active":
           endpoint = "getConversationsPageByStatus";
-          params.url["status"] = "active";
+          params.url["status"] = "ACTIVE";
           break;
         case "archived":
           endpoint = "getConversationsPageByStatus";
-          params.url["status"] = "archived";
+          params.url["status"] = "ARCHIVED";
           break;
         case "all":
         default:
           endpoint = "getConversationsPage";
           break;
       }
-      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params)
+      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params, options)
         .then(resp => resp["_meta"]["total"])
         .catch(err => console.error(err));
     },
@@ -166,7 +164,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         "getConversationsPage",
       ];
       if (osparc.store.Groups.getInstance().amIASupportUser()) {
-        Promise.all([
+        return Promise.all([
           this.fetchConversationCount("all"),
           this.fetchConversationCount("unread"),
           this.fetchConversationCount("active"),
@@ -181,7 +179,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           return conversationCounts;
         });
       } else {
-        Promise.all([
+        return Promise.all([
           this.fetchConversationCount("all"),
           this.fetchConversationCount("unread"),
         ]).then(counts => {
