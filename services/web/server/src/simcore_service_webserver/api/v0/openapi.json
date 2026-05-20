@@ -883,6 +883,54 @@
             "schema": {
               "$ref": "#/components/schemas/ConversationType"
             }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "is_read_by_user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By User"
+            }
+          },
+          {
+            "name": "is_read_by_support",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By Support"
+            }
           }
         ],
         "responses": {
@@ -16389,6 +16437,16 @@
               }
             ],
             "title": "Isreadbysupport"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -16464,6 +16522,9 @@
             "type": "boolean",
             "title": "Isreadbysupport"
           },
+          "status": {
+            "$ref": "#/components/schemas/ConversationStatus"
+          },
           "lastMessageCreatedAt": {
             "type": "string",
             "format": "date-time",
@@ -16484,9 +16545,18 @@
           "extraContext",
           "isReadByUser",
           "isReadBySupport",
+          "status",
           "lastMessageCreatedAt"
         ],
         "title": "ConversationRestGet"
+      },
+      "ConversationStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "ARCHIVED"
+        ],
+        "title": "ConversationStatus"
       },
       "ConversationType": {
         "type": "string",
