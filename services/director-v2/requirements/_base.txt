@@ -25,7 +25,7 @@ aiofiles==25.1.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.2
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -1096,7 +1096,7 @@ typing-inspection==0.4.2
     # via pydantic
 tzdata==2025.2
     # via arrow
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

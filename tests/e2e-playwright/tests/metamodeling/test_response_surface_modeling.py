@@ -404,8 +404,11 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
 
         with log_context(logging.INFO, "Selected test function..."):
-            select_btn = service_iframe.locator('[mmux-testid="select-function-btn"]').first
-            select_btn.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
+            # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
+            function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
+            function_row.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
+            select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
+            select_btn.wait_for(state="visible", timeout=30 * SECOND)
             select_btn.click()
 
         with log_context(logging.INFO, "Filling the input parameters..."):
@@ -568,9 +571,9 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
                 input_values = sorted(
                     [
-                        j["inputs"]["Number parameter"]
+                        j["inputs"]["Number Parameter"]
                         for j in all_jobs
-                        if j.get("inputs") and "Number parameter" in j["inputs"]
+                        if j.get("inputs") and "Number Parameter" in j["inputs"]
                     ]
                 )
 

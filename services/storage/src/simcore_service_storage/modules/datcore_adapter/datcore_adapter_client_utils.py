@@ -1,11 +1,11 @@
 import logging
 from collections.abc import Callable
 from math import ceil
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 import httpx
 from fastapi import FastAPI
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 
 from ...core.settings import get_application_settings
 from .datcore_adapter_exceptions import (
@@ -30,12 +30,12 @@ async def request(
 ) -> dict[str, Any] | list[dict[str, Any]]:
     datcore_adapter_settings = get_application_settings(app).DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
-    session = get_client_session(app)
+    client = get_httpx_client(app)
 
     try:
         if request_kwargs is None:
             request_kwargs = {}
-        response = await session.request(
+        response = await client.request(
             method.upper(),
             url,
             headers={
@@ -63,17 +63,14 @@ async def request(
         raise DatcoreAdapterClientError(msg) from exc
 
 
-_T = TypeVar("_T")
-
-
-async def retrieve_all_pages(
+async def retrieve_all_pages[T](
     app: FastAPI,
     api_key: str,
     api_secret: str,
     method: str,
     path: str,
-    return_type_creator: Callable[..., _T],
-) -> list[_T]:
+    return_type_creator: Callable[..., T],
+) -> list[T]:
     page = 1
     objs = []
     while (

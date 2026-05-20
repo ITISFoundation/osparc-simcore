@@ -6,12 +6,12 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.12.13
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiodocker
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -328,7 +328,7 @@ typing-inspection==0.4.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
