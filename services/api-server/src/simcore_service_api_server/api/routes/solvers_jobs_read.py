@@ -24,7 +24,7 @@ from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
-from ...models.api_resources import parse_resources_ids
+from ...models.api_resources import parse_resources_ids, split_resource_name
 from ...models.basic_types import LogStreamingResponse, NameValueTuple, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -177,21 +177,60 @@ async def batch_get_jobs_custom_metadata(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     metadata_map = await wb_api_rpc.batch_get_project_custom_metadata(
         product_name=product_name,
         user_id=user_id,
         project_uuids=job_ids,
     )
+
+    # Fetch job_parent_resource_name for each job to build self-links
+    jobs_page = await wb_api_rpc.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filter_by_job_parent_resource_name_prefix=None,
+        filter_any_custom_metadata=None,
+        filter_all_custom_metadata=None,
+        filter_by_project_uuids=job_ids,
+        pagination_limit=_BATCH_GET_MAX_IDS,
+    )
+
+    # Validate all requested jobs exist and are solver jobs and their metadata can be retrieved.
+    missing_metadata_job_ids = set(job_ids) - set(metadata_map.keys())
+    missing_job_ids = set(job_ids) - {project_job.uuid for project_job in jobs_page.data}
+    if missing_job_ids or missing_metadata_job_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Jobs not found: {sorted(f'{j}' for j in missing_job_ids | missing_metadata_job_ids)}.",
+        )
+
+    # Map project_uuid -> URL from job_parent_resource_name
+    job_url_map: dict[JobID, str] = {}
+    for project_job in jobs_page.data:
+        resource_name = project_job.job_parent_resource_name
+        parts = split_resource_name(resource_name)
+        if not parts or parts[0] != "solvers":
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Job {project_job.uuid} is not a solver job",
+            )
+        solver_key, version = parse_resources_ids(resource_name)[:2]
+        job_url_map[project_job.uuid] = url_for(
+            "get_job_custom_metadata",
+            solver_key=solver_key,
+            version=version,
+            job_id=project_job.uuid,
+        )
+
     return BatchGetJobMetadataResponse(
         items=[
             JobMetadata(
                 job_id=job_id,
                 metadata=metadata_map[job_id],
-                url=None,
+                url=HttpUrl(job_url_map[job_id]),
             )
             for job_id in job_ids
-            if job_id in metadata_map
         ]
     )
 
