@@ -21,6 +21,7 @@ For the given `target_service`, produce:
 3. A Dockerfile `HEALTHCHECK` bound to that endpoint via `common_library.docker_healthcheck`
 4. If the service has worker containers (no HTTP server): heartbeat-mode healthcheck
 5. Tests proving healthcheck behavior works as expected
+6. If this is a new service healthcheck, update the healthcheck table in `services/README.md`
 
 ## Use This Skill When
 
@@ -229,6 +230,7 @@ async def test_healthcheck_unhealthy_rabbitmq(
 2. Confirm unhealthy path returns `503` (not `500`).
 3. Confirm Dockerfile uses `common_library.docker_healthcheck` with correct endpoint URL.
 4. If worker-mode: verify `HEALTHCHECK_MODE: heartbeat` is set in compose for worker services.
+5. If a new service healthcheck was added, update the per-service healthcheck table in `services/README.md`.
 
 ---
 
@@ -242,6 +244,7 @@ Implementation for `target_service` is complete when all are true:
 4. Dockerfile `HEALTHCHECK` is bound to `python3 -m common_library.docker_healthcheck`.
 5. If worker containers exist: `HEALTHCHECK_MODE=heartbeat` set in compose + `update_heartbeat()` called in task loop.
 6. Tests for healthy/unhealthy health endpoint behavior pass.
+7. If this introduces a new service healthcheck, the per-service table in `services/README.md` is updated.
 
 ---
 
