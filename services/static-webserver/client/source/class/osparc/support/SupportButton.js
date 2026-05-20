@@ -113,8 +113,8 @@ qx.Class.define("osparc.support.SupportButton", {
       this.setUnreadMessages(unread);
     },
 
-    __applyUnreadMessages: function(unread) {
-      if (unread) {
+    __applyUnreadMessages: function(unread, old) {
+      if (unread && old === false) {
         // make it blink when a new message arrives
         osparc.utils.Utils.makeButtonBlink(this.getChildControl("icon"), 2, "textColor");
       }
