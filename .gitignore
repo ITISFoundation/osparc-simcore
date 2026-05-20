@@ -111,6 +111,7 @@ node_modules/
 # IDEs config (except templates)
 .vscode/*
 !.vscode/*.template.json
+!.vscode/Makefile
 .idea/
 
 # manual overrides
