@@ -5,6 +5,7 @@ from aiohttp import web
 from models_library.conversations import (
     ConversationGetDB,
     ConversationID,
+    ConversationName,
     ConversationPatchDB,
     ConversationStatus,
     ConversationType,
@@ -40,7 +41,7 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    name: str | None,
+    name: ConversationName | None,
     project_uuid: ProjectID | None,
     user_group_id: GroupID,
     type_: ConversationType,

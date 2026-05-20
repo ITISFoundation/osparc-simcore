@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.conversations import (
     ConversationRestGet,
 )
 from models_library.conversations import (
+    ConversationName,
     ConversationPatchDB,
     ConversationStatus,
     ConversationType,
@@ -59,7 +60,7 @@ class _ListConversationsQueryParams(PageQueryParameters):
 
 
 class _ConversationsCreateBodyParams(InputSchema):
-    name: str | None = None
+    name: ConversationName | None = None
     type: ConversationType
     extra_context: dict[str, Any] | None = None
 
