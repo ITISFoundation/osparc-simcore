@@ -23,7 +23,7 @@ async def check_service_health(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client)],
     postgres_liveness: Annotated[PostgresLiveness, Depends(get_postgres_liveness)],
     redis_client_sdk: Annotated[RedisClientSDK, Depends(get_redis_client)],
-):
+) -> str:
     if not redis_client_sdk.is_healthy:
         raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
 

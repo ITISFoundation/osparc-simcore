@@ -39,6 +39,9 @@ class HealthCheckError(RuntimeError):
     503 Service Unavailable plain-text response.
     """
 
+    def __init__(self, message: str = "unhealthy"):
+        super().__init__(message)
+
 
 async def health_check_error_handler(_: Request, exc: Exception) -> PlainTextResponse:  # NOSONAR
     assert isinstance(exc, HealthCheckError)  # nosec
