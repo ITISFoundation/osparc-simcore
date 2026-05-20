@@ -10,16 +10,33 @@
       "id": "grafana-token",
       "description": "Grafana API Token (should only have read access)",
       "password": true
+    },
+    {
+      "type": "promptString",
+      "id": "github-mcp-pat",
+      "description": "GitHub MCP Personal Access Token",
+      "password": true
     }
   ],
   "servers": {
     "grafana": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-grafana", "-t", "stdio"],
+      "args": [
+        "mcp-grafana",
+        "-t",
+        "stdio"
+      ],
       "env": {
         "GRAFANA_URL": "${input:grafana-url}",
         "GRAFANA_SERVICE_ACCOUNT_TOKEN": "${input:grafana-token}"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${input:github-mcp-pat}"
       }
     }
   }
