@@ -85,6 +85,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
 
   members: {
     __loadMarked: null,
+    __resizeRAF: null,
 
     /**
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
@@ -176,44 +177,62 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
       return null;
     },
 
-    __scheduleResize: function() {
+    // Try to measure and apply size synchronously.
+    __doResize: function() {
       const dom = this.__getDomElement();
       if (!dom) {
+        return false;
+      }
+
+      const root = dom.querySelector("." + this.self().MD_ROOT);
+      if (!root) {
+        return false;
+      }
+      const meas = root.querySelector("." + this.self().MD_MEASURE) || root;
+
+      // Force reflow so measurements reflect the latest DOM changes
+      void meas.offsetHeight;
+
+      const rH = meas.scrollHeight;
+      const rW = meas.scrollWidth;
+
+      // include widget insets (decorator/padding/border)
+      const insets = this.getInsets ? this.getInsets() : { top: 0, right: 0, bottom: 0, left: 0 };
+      const totalH = Math.ceil(rH + (insets.top || 0) + (insets.bottom || 0));
+      const totalW = Math.ceil(rW + (insets.left || 0) + (insets.right || 0));
+
+      // Only update if size actually changed to avoid layout thrashing
+      if (this.getMinHeight() === totalH && this.getWidth() === totalW) {
+        return true;
+      }
+
+      this.setMinHeight(totalH);
+      this.setHeight(totalH);
+      this.setMaxWidth(null);
+      this.setMinWidth(1);
+      this.setWidth(totalW);
+
+      this.fireEvent("resized");
+      return true;
+    },
+
+    /**
+     * Schedule a deferred resize via RAF
+     * Used when DOM might not be ready yet or after async events like image loads
+     */
+    __scheduleResize: function() {
+      // Try synchronously first to avoid the flickering
+      if (this.__doResize()) {
         return;
       }
 
-      // collapse first so we don't re-measure an old minHeight
-      this.setHeight(null);
-      this.setMinHeight(0);
-      this.setWidth(null);
-      this.setMinWidth(0);
-
-      window.requestAnimationFrame(() => {
-        // force reflow
-        void dom.offsetHeight;
-
-        // measure the wrapper we injected (covers ALL children)
-        const root = dom.querySelector("."+this.self().MD_ROOT) || dom;
-        const meas = root.querySelector("."+this.self().MD_MEASURE) || root;
-
-        const rect = meas.getBoundingClientRect();
-        const rH = Math.ceil(rect.height || 0);
-        const rW = Math.ceil(rect.width || 0);
-
-        // include widget insets (decorator/padding/border)
-        const insets = this.getInsets ? this.getInsets() : { top:0, right:0, bottom:0, left:0 };
-        const totalH = Math.ceil((rH || 0) + (insets.top || 0) + (insets.bottom || 0));
-        const totalW = Math.ceil((rW || 0) + (insets.left || 0) + (insets.right || 0));
-
-        this.setMinHeight(totalH);
-        this.setHeight(totalH);
-
-        // width: shrink-to-fit, but cap at a max
-        this.setMaxWidth(null); // measurer already capped; we set exact width
-        this.setMinWidth(1); // avoid 0 when empty
-        this.setWidth(totalW);
-
-        this.fireEvent("resized");
+      // DOM not ready; defer to next frame
+      if (this.__resizeRAF) {
+        window.cancelAnimationFrame(this.__resizeRAF);
+      }
+      this.__resizeRAF = window.requestAnimationFrame(() => {
+        this.__resizeRAF = null;
+        this.__doResize();
       });
     },
   }
