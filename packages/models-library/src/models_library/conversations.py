@@ -12,7 +12,7 @@ from .products import ProductName
 from .utils.enums import StrAutoEnum
 
 type ConversationID = UUID
-type ConversationName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+type ConversationName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
 
 type ConversationMessageID = UUID
 

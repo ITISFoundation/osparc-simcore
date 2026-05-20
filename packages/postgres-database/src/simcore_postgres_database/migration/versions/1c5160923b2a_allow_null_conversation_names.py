@@ -20,12 +20,14 @@ def upgrade():
     # Must relax the constraint first before setting existing "null" strings to SQL NULL
     op.alter_column("conversations", "name", existing_type=sa.VARCHAR(), nullable=True)
 
-    # Data migration: convert literal "null" strings to SQL NULL
-    op.execute("UPDATE conversations SET name = NULL WHERE name = 'null'")
+    # Data migration: convert legacy placeholder strings to SQL NULL
+    # 'null'    — literal string stored when name was created as null
+    # 'no name' — placeholder stored by old update() when name was cleared
+    op.execute("UPDATE conversations SET name = NULL WHERE name IN ('null', 'no name')")
 
 
 def downgrade():
-    # Restore literal "null" strings for rows that were migrated to SQL NULL
-    op.execute("UPDATE conversations SET name = 'null' WHERE name IS NULL")
+    # Restore the old placeholder used by the repository when a name was cleared
+    op.execute("UPDATE conversations SET name = 'no name' WHERE name IS NULL")
 
     op.alter_column("conversations", "name", existing_type=sa.VARCHAR(), nullable=False)
