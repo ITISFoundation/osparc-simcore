@@ -85,10 +85,10 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       const params = {
         url: {
           offset: 0,
-          limit: 42,
+          limit: 10,
         }
       };
-      let endpoint = "getConversationsPage";
+      let endpoint;
       switch (filter) {
         case "unread":
           if (osparc.store.Groups.getInstance().amIASupportUser()) {
@@ -110,7 +110,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           endpoint = "getConversationsPage";
           break;
       }
-      return osparc.data.Resources.fetch("conversationsSupport", "getConversationsPage", params)
+      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params)
         .then(conversationsData => {
           const conversations = [];
           if (conversationsData.length) {
@@ -124,6 +124,55 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           return conversations;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    fetchConversationCount: function(filter) {
+      const params = {
+        url: {
+          offset: 0,
+          limit: 1,
+        }
+      };
+      let endpoint;
+      switch (filter) {
+        case "unread":
+          if (osparc.store.Groups.getInstance().amIASupportUser()) {
+            endpoint = "getConversationsPageUnreadBySupport";
+          } else {
+            endpoint = "getConversationsPageUnreadByUser";
+          }
+          break;
+        case "active":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "active";
+          break;
+        case "archived":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "archived";
+          break;
+        case "all":
+        default:
+          endpoint = "getConversationsPage";
+          break;
+      }
+      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params)
+        .then(conversationsData => {
+          return conversationsData["pagination"]["total"];
+        }
+      ;
+    },
+
+    fetchConversationCounts: function() {
+      const endpoints = [
+        "getConversationsPage",
+      ];
+      if (osparc.store.Groups.getInstance().amIASupportUser()) {
+        endpoints.push("getConversationsPageUnreadBySupport");
+        endpoints.push("getConversationsPageByStatus?status=active");
+        endpoints.push("getConversationsPageByStatus?status=archived");
+      } else {
+        endpoints.push("getConversationsPageUnreadByUser");
+      }
     },
 
     getConversation: function(conversationId) {
