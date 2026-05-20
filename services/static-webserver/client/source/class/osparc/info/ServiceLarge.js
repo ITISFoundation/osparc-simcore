@@ -463,7 +463,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __openTitleEditor: function() {
-      const titleEditor = new osparc.widget.Renamer(this.getService()["name"], null, this.tr("Edit Name"));
+      const titleEditor = new osparc.widget.Renamer(this.getService()["name"], null, this.tr("Rename Service"));
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
