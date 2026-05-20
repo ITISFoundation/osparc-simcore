@@ -38,6 +38,8 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
   },
 
   members: {
+    __archivedListenerId: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -85,7 +87,12 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
       return control || this.base(arguments, id);
     },
 
-    __applyConversation: function(conversation) {
+    __applyConversation: function(conversation, oldConversation) {
+      if (oldConversation && this.__archivedListenerId) {
+        oldConversation.removeListenerById(this.__archivedListenerId);
+        this.__archivedListenerId = null;
+      }
+
       if (!conversation) {
         return;
       }
@@ -107,7 +114,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
       if (amISupporter) {
         const archiveButton = this.getChildControl("archive-button");
         this.__updateArchiveButton(archiveButton, conversation.getArchived());
-        conversation.addListener("changeArchived", e => {
+        this.__archivedListenerId = conversation.addListener("changeArchived", e => {
           this.__updateArchiveButton(archiveButton, e.getData());
         });
       }
