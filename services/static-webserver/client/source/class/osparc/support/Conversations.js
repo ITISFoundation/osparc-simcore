@@ -34,7 +34,7 @@ qx.Class.define("osparc.support.Conversations", {
     }
 
     this.__fetchConversationCounts();
-    this.__fetchConversations();
+    this.__fetchConversations(this.getCurrentFilter());
 
     this.__listenToNewConversations();
     this.__listenToConversationDeleted();
@@ -153,8 +153,15 @@ qx.Class.define("osparc.support.Conversations", {
     __applyCurrentFilter: function(filter) {
       this.getChildControl("no-messages-label").exclude();
       this.__highlightCurrentFilter(filter);
-      this.__filterConversations(filter);
-      this.__showNoMessagesLabelIfNeeded(filter);
+      this.__clearConversationsList();
+      this.__fetchConversations(filter);
+    },
+
+    __clearConversationsList: function() {
+      this.__conversationListItems = [];
+      this.__totalConversations = null;
+      this.__isFetchingMore = false;
+      this.getChildControl("conversations-layout").removeAll();
     },
 
     __highlightCurrentFilter: function(filter) {
@@ -175,25 +182,8 @@ qx.Class.define("osparc.support.Conversations", {
       }
     },
 
-    __filterConversations: function(filter) {
+    __updateBadgesVisibility: function(filter) {
       this.__conversationListItems.forEach(conversationItem => {
-        const conversation = conversationItem.getConversation();
-        // apply filters
-        switch (filter) {
-          case "all":
-            conversationItem.show();
-            break;
-          case "unread":
-            conversation.getReadBy() ? conversationItem.exclude() : conversationItem.show();
-            break;
-          case "active":
-            conversation.getArchived() ? conversationItem.exclude() : conversationItem.show();
-            break;
-          case "archived":
-            conversation.getArchived() ? conversationItem.show() : conversationItem.exclude();
-            break;
-        }
-        // show/hide badges
         conversationItem.getChildControl("badges-layout").setVisibility(filter === "all" ? "visible" : "excluded");
       });
     },
@@ -246,23 +236,24 @@ qx.Class.define("osparc.support.Conversations", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __fetchConversations: function() {
+    __fetchConversations: function(filter) {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      osparc.store.ConversationsSupport.getInstance().fetchConversations()
+      osparc.store.ConversationsSupport.getInstance().fetchConversations(filter)
         .then(resp => {
           if (resp && resp.conversations && resp.conversations.length) {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
           this.__totalConversations = resp ? resp.total : null;
           this.__sortConversations();
+          this.__updateBadgesVisibility(filter);
           this.__updateLoadingSpinner();
         })
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
-          this.__applyCurrentFilter(this.getCurrentFilter());
+          this.__showNoMessagesLabelIfNeeded(filter);
         });
     },
 
@@ -273,15 +264,16 @@ qx.Class.define("osparc.support.Conversations", {
       this.__isFetchingMore = true;
       this.__showLoadingSpinner(true);
 
+      const filter = this.getCurrentFilter();
       const offset = this.__conversationListItems.length;
-      osparc.store.ConversationsSupport.getInstance().fetchConversations(this.getCurrentFilter(), offset)
+      osparc.store.ConversationsSupport.getInstance().fetchConversations(filter, offset)
         .then(resp => {
           if (resp && resp.conversations && resp.conversations.length) {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
           this.__totalConversations = resp ? resp.total : null;
           this.__sortConversations();
-          this.__applyCurrentFilter(this.getCurrentFilter());
+          this.__updateBadgesVisibility(filter);
           this.__updateLoadingSpinner();
         })
         .finally(() => {
