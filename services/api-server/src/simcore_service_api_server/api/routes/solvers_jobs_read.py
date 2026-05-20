@@ -13,6 +13,7 @@ from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.products import ProductName
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
@@ -64,7 +65,7 @@ from .wallets import WALLET_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
 
-_BATCH_GET_MAX_IDS = 500
+_BATCH_GET_MAX_IDS = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 
 _OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_402_PAYMENT_REQUIRED: {

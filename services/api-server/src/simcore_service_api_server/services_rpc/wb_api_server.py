@@ -79,6 +79,8 @@ from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ..core.settings import WebServerSettings
 from ..exceptions.backend_errors import (
+    BatchJobForbiddenAccessError,
+    BatchJobNotFoundError,
     CanNotCheckoutServiceIsNotRunningError,
     ConfigurationError,
     InsufficientNumberOfSeatsError,
@@ -299,8 +301,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
     @_exception_mapper(
         rpc_exception_map={
-            ProjectForbiddenRpcError: JobForbiddenAccessError,
-            ProjectNotFoundRpcError: JobNotFoundError,
+            ProjectForbiddenRpcError: BatchJobForbiddenAccessError,
+            ProjectNotFoundRpcError: BatchJobNotFoundError,
         }
     )
     async def batch_get_project_custom_metadata(
