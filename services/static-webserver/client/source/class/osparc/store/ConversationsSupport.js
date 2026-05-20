@@ -167,9 +167,6 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     },
 
     fetchConversationCounts: function() {
-      const endpoints = [
-        "getConversationsPage",
-      ];
       if (osparc.store.Groups.getInstance().amIASupportUser()) {
         return Promise.all([
           this.fetchConversationCount("all"),
