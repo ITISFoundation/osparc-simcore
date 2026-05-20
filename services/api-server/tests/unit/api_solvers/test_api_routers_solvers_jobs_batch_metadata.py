@@ -132,6 +132,8 @@ async def test_batch_get_jobs_custom_metadata_success(
         assert item.url is not None
         assert str(item.job_id) in str(item.url)
         assert "metadata" in str(item.url)
+        # Verify solver_key is URL-encoded in the URL (slashes become %2F)
+        assert "%2F" in str(item.url) or "%2f" in str(item.url)
 
 
 async def test_batch_get_jobs_custom_metadata_job_not_found(

@@ -1,6 +1,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
+import urllib.parse
 from collections import deque
 from collections.abc import Callable
 from functools import partial
@@ -219,7 +220,7 @@ async def batch_get_jobs_custom_metadata(
         solver_key, version = parse_resources_ids(resource_name)[:2]
         job_url_map[project_job.uuid] = url_for(
             "get_job_custom_metadata",
-            solver_key=solver_key,
+            solver_key=urllib.parse.quote_plus(solver_key),
             version=version,
             job_id=project_job.uuid,
         )
