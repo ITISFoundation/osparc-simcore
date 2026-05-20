@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from decimal import Decimal
 from typing import Any, Final
 
 import arrow
@@ -36,7 +37,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from models_library.wallets import WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletInfo
 from pydantic import TypeAdapter
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
@@ -309,8 +310,13 @@ async def generate_tasks_list_from_project(
     rut_client: ResourceUsageTrackerClient,
     wallet_info: WalletInfo | None,
     rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> list[CompTaskAtDB]:
+) -> tuple[list[CompTaskAtDB], bool]:
+    """Returns (tasks_list, insufficient_credits).
+
+    If insufficient_credits is True, affected published nodes were set to ABORTED.
+    """
     list_comp_tasks = []
+    insufficient_credits = False
 
     unique_service_key_versions: set[ServiceKeyVersion] = {
         ServiceKeyVersion(key=node.key, version=node.version)  # the service key version is frozen
@@ -365,6 +371,17 @@ async def generate_tasks_list_from_project(
             node_version=node.version,
         )
 
+        # Check credits for published nodes with non-zero cost
+        if (
+            task_state == RunningState.PUBLISHED
+            and wallet_info
+            and pricing_info
+            and pricing_info.pricing_unit_cost > Decimal(0)
+            and wallet_info.wallet_credit_amount <= ZERO_CREDITS
+        ):
+            task_state = RunningState.ABORTED
+            insufficient_credits = True
+
         assert rabbitmq_rpc_client  # nosec
         await _update_project_node_resources_from_hardware_info(
             connection,
@@ -408,4 +425,4 @@ async def generate_tasks_list_from_project(
         )
 
         list_comp_tasks.append(task_db)
-    return list_comp_tasks
+    return list_comp_tasks, insufficient_credits

@@ -18,7 +18,6 @@ Therefore,
 import contextlib
 import logging
 from datetime import timedelta
-from decimal import Decimal
 from typing import Annotated, Any, Final
 
 import networkx as nx
@@ -35,7 +34,6 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import ZERO_CREDITS
 from pydantic import AnyHttpUrl, TypeAdapter
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
@@ -62,7 +60,6 @@ from ...core.errors import (
     WalletNotEnoughCreditsError,
 )
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
-from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
@@ -184,36 +181,15 @@ async def _get_project_metadata(
     return {}
 
 
-async def _check_wallet_credits_or_raise(
-    computation: ComputationCreate,
-    comp_tasks: list[CompTaskAtDB],
-    rut_client: ResourceUsageTrackerClient,
-    *,
-    started_node_ids: set[NodeID],
-) -> None:
-    """Raises WalletNotEnoughCreditsError if wallet has insufficient credits for any paid node."""
-    if not computation.wallet_info:
-        return
-    assert computation.product_name  # nosec
-    for task in comp_tasks:
-        if task.node_id not in started_node_ids:
-            continue
-        if task.pricing_info:
-            pricing_unit_get = await rut_client.get_pricing_unit(
-                computation.product_name,
-                task.pricing_info["pricing_plan_id"],
-                task.pricing_info["pricing_unit_id"],
-            )
-            if pricing_unit_get.current_cost_per_unit > Decimal(0):
-                if computation.wallet_info.wallet_credit_amount <= ZERO_CREDITS:
-                    raise WalletNotEnoughCreditsError(
-                        wallet_name=computation.wallet_info.wallet_name,
-                        wallet_credit_amount=computation.wallet_info.wallet_credit_amount,
-                        user_id=computation.user_id,
-                        product_name=computation.product_name,
-                        project_id=computation.project_id,
-                    )
-                break
+def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
+    assert computation.wallet_info  # nosec
+    raise WalletNotEnoughCreditsError(
+        wallet_name=computation.wallet_info.wallet_name,
+        wallet_credit_amount=computation.wallet_info.wallet_credit_amount,
+        user_id=computation.user_id,
+        product_name=computation.product_name,
+        project_id=computation.project_id,
+    )
 
 
 async def _try_start_pipeline(
@@ -349,7 +325,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         )
         assert computation.product_name  # nosec
         min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
-        comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
+        comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
             catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
@@ -362,12 +338,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
 
         pipeline_started = False
         if computation.start_pipeline:
-            await _check_wallet_credits_or_raise(
-                computation,
-                comp_tasks,
-                rut_client,
-                started_node_ids={NodeID(n) for n in minimal_computational_dag.nodes()},
-            )
+            if insufficient_credits:
+                _raise_if_insufficient_credits(computation)
 
             pipeline_started = await _try_start_pipeline(
                 request.app,
