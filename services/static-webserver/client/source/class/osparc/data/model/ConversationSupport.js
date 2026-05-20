@@ -34,7 +34,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       fogbugzCaseId: conversationData["fogbugz_case_id"] || null,
       readByUser: Boolean(conversationData.isReadByUser),
       readBySupport: Boolean(conversationData.isReadBySupport),
-      archived: Boolean(conversationData.isArchived),
+      archived: Boolean(conversationData.status && conversationData.status === "ARCHIVED"),
     });
 
     this.__fetchFirstAndLastMessages();
