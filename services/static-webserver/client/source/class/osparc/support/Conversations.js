@@ -331,6 +331,7 @@ qx.Class.define("osparc.support.Conversations", {
         this.__addConversation(conversation);
         this.__sortConversations();
         this.__applyCurrentFilter(this.getCurrentFilter());
+        this.__fetchConversationCounts();
       });
     },
 
@@ -338,6 +339,7 @@ qx.Class.define("osparc.support.Conversations", {
       osparc.store.ConversationsSupport.getInstance().addListener("conversationDeleted", e => {
         const conversationId = e.getData()["conversationId"];
         this.__removeConversationPage(conversationId);
+        this.__fetchConversationCounts();
       });
     },
 
@@ -354,8 +356,14 @@ qx.Class.define("osparc.support.Conversations", {
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
       conversation.addListener("changeLastMessageCreatedAt", () => this.__sortConversations(), this);
       const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
-      conversation.addListener(eventName, () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
-      conversation.addListener("changeArchived", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
+      conversation.addListener(eventName, () => {
+        this.__applyCurrentFilter(this.getCurrentFilter());
+        this.__fetchConversationCounts();
+      }, this);
+      conversation.addListener("changeArchived", () => {
+        this.__applyCurrentFilter(this.getCurrentFilter());
+        this.__fetchConversationCounts();
+      }, this);
       this.__conversationListItems.push(conversationListItem);
       return conversationListItem;
     },
