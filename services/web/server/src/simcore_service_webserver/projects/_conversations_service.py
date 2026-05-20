@@ -35,7 +35,7 @@ async def create_project_conversation(
     user_id: UserID,
     project_uuid: ProjectID,
     # attributes
-    name: str | None,
+    name: ConversationName | None,
     conversation_type: ConversationType,
 ) -> ConversationGetDB:
     await check_user_project_permission(
