@@ -53,9 +53,11 @@ def test_channel_close_callback_with_connection_closed_stays_healthy(
     CONNECTION_FORCED), _channel_close_callback receives a ConnectionClosed
     exception. This must NOT mark the client unhealthy — aio_pika's
     RobustConnection handles reconnection automatically."""
-    exc = aiormq.exceptions.ConnectionClosed(
-        MagicMock(reply_code=320, reply_text="CONNECTION_FORCED - Node was put into maintenance mode")
-    )
+    # Create a mock with __str__ method that includes the maintenance mode message
+    reply_text = "CONNECTION_FORCED - Node was put into maintenance mode"
+    mock_reply = MagicMock(reply_code=320, reply_text=reply_text)
+    mock_reply.__str__.return_value = reply_text
+    exc = aiormq.exceptions.ConnectionClosed(mock_reply)
     client_base._channel_close_callback(sender="1", exc=exc)
     assert client_base.healthy is True
 
@@ -102,9 +104,10 @@ def test_channel_close_callback_with_no_exception_stays_healthy(
 def test_connection_close_callback_with_connection_closed_stays_healthy(
     client_base: RabbitMQClientBase,
 ):
-    exc = aiormq.exceptions.ConnectionClosed(
-        MagicMock(reply_code=320, reply_text="CONNECTION_FORCED - Node was put into maintenance mode")
-    )
+    # Create a mock with __str__ method that includes the maintenance mode message
+    mock_reply = MagicMock(reply_code=320, reply_text="CONNECTION_FORCED - Node was put into maintenance mode")
+    mock_reply.__str__.return_value = "CONNECTION_FORCED - Node was put into maintenance mode"
+    exc = aiormq.exceptions.ConnectionClosed(mock_reply)
     client_base._connection_close_callback(sender="1", exc=exc)
     assert client_base.healthy is True
 

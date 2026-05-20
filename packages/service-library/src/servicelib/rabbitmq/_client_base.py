@@ -61,7 +61,7 @@ class RabbitMQClientBase:
     ) -> None:
         if exc:
             if isinstance(exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed) or (
-                isinstance(exc, aiormq.exceptions.ConnectionClosed) and _AWS_MAINTENANCE_MODE_MESSAGE in str(exc)
+                isinstance(exc, aiormq.exceptions.ConnectionClosed) and _AWS_MAINTENANCE_MODE_MESSAGE in f"{exc}"
             ):
                 _logger.info(
                     **create_troubleshooting_log_kwargs(
