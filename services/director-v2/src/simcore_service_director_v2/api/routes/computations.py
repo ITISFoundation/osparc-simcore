@@ -181,6 +181,17 @@ async def _get_project_metadata(
     return {}
 
 
+def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
+    assert computation.wallet_info  # nosec
+    raise WalletNotEnoughCreditsError(
+        wallet_name=computation.wallet_info.wallet_name,
+        wallet_credit_amount=computation.wallet_info.wallet_credit_amount,
+        user_id=computation.user_id,
+        product_name=computation.product_name,
+        project_id=computation.project_id,
+    )
+
+
 async def _try_start_pipeline(
     app: FastAPI,
     *,
@@ -314,7 +325,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         )
         assert computation.product_name  # nosec
         min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
-        comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
+        comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
             catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
@@ -327,6 +338,9 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
 
         pipeline_started = False
         if computation.start_pipeline:
+            if insufficient_credits:
+                _raise_if_insufficient_credits(computation)
+
             pipeline_started = await _try_start_pipeline(
                 request.app,
                 project_repo=project_repo,
