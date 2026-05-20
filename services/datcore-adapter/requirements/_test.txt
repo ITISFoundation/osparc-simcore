@@ -111,7 +111,7 @@ types-awscrt==0.31.3
     # via botocore-stubs
 types-s3transfer==0.16.0
     # via boto3-stubs
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

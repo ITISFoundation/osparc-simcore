@@ -431,7 +431,7 @@ tzlocal==5.3.1
     # via
     #   -c requirements/_base.txt
     #   celery
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

@@ -152,8 +152,9 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
     mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
 
-    # after waiting the termination time, running the task shall remove the cluster
+    # after waiting the termination time, the cluster is now idle (not busy anymore)
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = False
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
@@ -184,8 +185,9 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
     # create some workers
     worker_instance_ids = await create_ec2_workers(10)
     await _assert_instances_state(ec2_client, instance_ids=worker_instance_ids, state="running")
-    # after waiting the termination time, running the task shall remove the cluster
+    # after waiting the termination time, the cluster is now idle
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = False
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
@@ -242,6 +244,66 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+
+
+async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stale_heartbeat(
+    disable_clusters_management_background_task: None,
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+    initialized_app: FastAPI,
+    mocked_dask_ping_scheduler: MockedDaskModule,
+    app_settings: ApplicationSettings,
+    mocker: MockerFixture,
+):
+    """Regression test (https://github.com/ITISFoundation/osparc-simcore/issues/9138):
+    when clusters-keeper restarts and the heartbeat tag is stale,
+    a busy cluster should NOT be terminated. The heartbeat written by
+    _heartbeat_connected_clusters must protect the instance from termination within
+    the same check_clusters cycle.
+
+    Reproduces the scenario:
+    1. Cluster exists and was previously heartbeated
+    2. clusters-keeper goes down for a while (heartbeat becomes stale)
+    3. clusters-keeper starts back up and runs check_clusters
+    4. The scheduler IS busy (is_scheduler_busy returns True)
+    5. BUG: the cluster is terminated despite being busy because the in-memory
+       instance data has a stale heartbeat tag
+    """
+    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+    assert len(created_clusters) == 1
+
+    # Give the cluster an initial heartbeat so it is considered "connected" (has heartbeat tag)
+    await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
+
+    # Simulate a stale heartbeat (clusters-keeper was down) by mocking get_all_clusters
+    # to return an instance with an old heartbeat tag — avoids real-time sleep
+    the_cluster = created_clusters[0]
+    stale_heartbeat_time = (
+        arrow.utcnow().shift(seconds=-(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)).datetime.isoformat()
+    )
+    mocked_get_all_clusters = mocker.patch(
+        "simcore_service_clusters_keeper.modules.clusters_management_core.get_all_clusters",
+        autospec=True,
+        return_value={
+            dataclasses.replace(
+                the_cluster,
+                tags=the_cluster.tags | {"last_heartbeat": stale_heartbeat_time},
+            )
+        },
+    )
+
+    # The scheduler is still busy (processing tasks)
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = True
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = True
+
+    # Run check_clusters — this simulates what happens right after clusters-keeper restarts
+    await check_clusters(initialized_app)
+
+    # The cluster MUST NOT be terminated because it is busy
+    mocked_get_all_clusters.assert_called_once()
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
 
 
 async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
