@@ -40,7 +40,7 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    name: str,
+    name: str | None,
     project_uuid: ProjectID | None,
     user_group_id: GroupID,
     type_: ConversationType,

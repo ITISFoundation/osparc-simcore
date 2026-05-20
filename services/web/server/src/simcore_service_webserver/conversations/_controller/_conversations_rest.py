@@ -59,7 +59,7 @@ class _ListConversationsQueryParams(PageQueryParameters):
 
 
 class _ConversationsCreateBodyParams(InputSchema):
-    name: str
+    name: str | None = None
     type: ConversationType
     extra_context: dict[str, Any] | None = None
 

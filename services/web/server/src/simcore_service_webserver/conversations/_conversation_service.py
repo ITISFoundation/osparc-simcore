@@ -59,7 +59,7 @@ async def create_conversation(
     user_id: UserID,
     project_uuid: ProjectID | None,
     # Creation attributes
-    name: str,
+    name: str | None,
     type_: ConversationType,
     extra_context: dict[str, Any],
 ) -> ConversationGetDB:
