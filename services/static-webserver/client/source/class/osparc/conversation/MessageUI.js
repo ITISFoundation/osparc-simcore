@@ -34,6 +34,8 @@ qx.Class.define("osparc.conversation.MessageUI", {
     this.set({
       message,
     });
+
+    this.addListener("resize", this.__updateMessageMaxWidth, this);
   },
 
   events: {
@@ -106,7 +108,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {
-          const buttonSize = 22;
+          const buttonSize = 20;
           control = new qx.ui.form.MenuButton().set({
             width: buttonSize,
             height: buttonSize,
@@ -164,16 +166,27 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right",
+          appearance: "menu-wider",
         });
         menuButton.setMenu(menu);
 
-        const editButton = new qx.ui.menu.Button(this.tr("Edit..."));
+        const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => this.__editMessage(), this);
         menu.add(editButton);
 
-        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."));
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."), "@FontAwesome5Solid/trash/12");
         deleteButton.addListener("execute", () => this.__deleteMessage(), this);
         menu.add(deleteButton);
+      }
+    },
+
+    __updateMessageMaxWidth: function() {
+      const bounds = this.getBounds();
+      if (bounds) {
+        // ~70% of available width, minus avatar+padding (~60px)
+        const maxWidth = Math.round((bounds.width - 60) * 0.7);
+        const messageContent = this.getChildControl("message-content");
+        messageContent.setMeasurerMaxWidth(Math.max(maxWidth, 150));
       }
     },
 

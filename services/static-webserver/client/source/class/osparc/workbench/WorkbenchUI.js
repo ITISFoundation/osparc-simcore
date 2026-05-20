@@ -1682,7 +1682,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __openNodeRenamer: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
-      const treeItemRenamer = new osparc.widget.Renamer(node.getLabel());
+      const title = this.tr("Rename Node");
+      const treeItemRenamer = new osparc.widget.Renamer(node.getLabel(), null, title);
       treeItemRenamer.addListener("labelChanged", e => {
         const {
           newLabel
