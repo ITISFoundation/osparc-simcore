@@ -701,9 +701,9 @@ services:
     networks:
       - default
 
-###############################
-### Group dependent simcore ###
-###############################
+  ###############################
+  ### Group dependent simcore ###
+  ###############################
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -765,6 +765,7 @@ services:
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 100
       CELERY_POOL: threads
     networks: *storage_networks
@@ -778,6 +779,7 @@ services:
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 1
       CELERY_QUEUES: cpu_bound
       CELERY_POOL: prefork
@@ -1461,6 +1463,7 @@ services:
       API_SERVER_TRACING: "null"
       API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       API_SERVER_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
       CELERY_POOL: threads
       CELERY_QUEUES: api_server
@@ -1518,6 +1521,7 @@ services:
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
       NOTIFICATIONS_EMAIL_RATE_LIMIT: ${NOTIFICATIONS_EMAIL_RATE_LIMIT}
       CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
