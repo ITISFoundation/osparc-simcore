@@ -271,6 +271,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
         filter_all_custom_metadata: list[NameValueTuple] | None,
+        filter_by_project_uuids: list[ProjectID] | None,
     ):
         pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 
@@ -286,6 +287,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
                 if filter_all_custom_metadata
                 else None
             ),
+            project_uuids=filter_by_project_uuids,
         )
 
         return await self._rpc_client.projects.list_projects_marked_as_jobs(

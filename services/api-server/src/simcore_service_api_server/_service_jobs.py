@@ -128,6 +128,7 @@ class JobService:
             filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
             filter_any_custom_metadata=filter_any_custom_metadata,
             filter_all_custom_metadata=filter_all_custom_metadata,
+            filter_by_project_uuids=None,
             **pagination_kwargs,
         )
 
