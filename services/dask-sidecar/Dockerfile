@@ -149,7 +149,7 @@ RUN chmod +x services/dask-sidecar/docker/*.sh
 
 
 # WARNING: This image is used for dask-scheduler and dask-worker.
-# In order to have the same healty entrypoint port
+# In order to have the same healthy entrypoint port
 # make sure dask worker is started as ``dask-worker --dashboard-address 8787``.
 # Otherwise the worker will take random ports to serve the /health entrypoint.
 # https://docs.docker.com/reference/dockerfile/#healthcheck
@@ -159,7 +159,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["curl", "-Lf", "http://127.0.0.1:8787/health"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://127.0.0.1:8787/health"]
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
