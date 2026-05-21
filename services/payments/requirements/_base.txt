@@ -465,7 +465,7 @@ python-engineio==4.12.2
     # via python-socketio
 python-jose==3.3.0
     # via -r requirements/_base.in
-python-multipart==0.0.20
+python-multipart==0.0.29
     # via
     #   -r requirements/_base.in
     #   fastapi
