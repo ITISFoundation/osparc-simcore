@@ -277,15 +277,6 @@ def test_classic_ti_plan(
         # click to open and expand
         page.get_by_test_id("userMenuBtn").click()
 
-        params = _ServiceStepParams(
-            page=page,
-            websocket=log_in_and_out,
-            is_autoscaled=is_autoscaled,
-            product_url=product_url,
-            is_service_legacy=is_service_legacy,
-            is_product_lite=is_product_lite,
-        )
-
         if is_product_lite:
             page.get_by_test_id("userMenuAccessTIPBtn").click()
             assert page.get_by_test_id("tipTeaserWindow").is_visible()
