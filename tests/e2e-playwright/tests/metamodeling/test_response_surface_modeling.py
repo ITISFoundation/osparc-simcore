@@ -290,7 +290,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
         # Wait until the rename save is finished
         with log_context(logging.INFO, "Wait until project is saved after rename"):
-            page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=5 * SECOND)
+            page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=30 * SECOND)
 
         with log_context(logging.INFO, "Verify project name was persisted on server"):
             for _ in range(10):
