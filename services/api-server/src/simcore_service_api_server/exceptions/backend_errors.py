@@ -70,8 +70,18 @@ class JobForbiddenAccessError(BaseBackEndError):
     status_code = status.HTTP_403_FORBIDDEN
 
 
+class BatchJobForbiddenAccessError(BaseBackEndError):
+    msg_template = user_message("You do not have permission to access jobs {project_uuids}.", _version=1)
+    status_code = status.HTTP_403_FORBIDDEN
+
+
 class JobNotFoundError(BaseBackEndError):
     msg_template = user_message("The solver or project job {project_id} could not be found.", _version=1)
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class BatchJobNotFoundError(BaseBackEndError):
+    msg_template = user_message("The solver or project jobs {project_uuids} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 
@@ -86,8 +96,6 @@ class LogFileNotFoundError(BaseBackEndError):
 class SolverOutputNotFoundError(BaseBackEndError):
     msg_template = user_message("The output for project {project_id} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
-
-
 
 
 class ConfigurationError(BaseBackEndError):
