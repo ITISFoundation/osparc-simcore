@@ -336,18 +336,6 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
 
       const vendor = osparc.store.VendorInfo.getVendor();
 
-      if (vendor && "url" in vendor && "name" in vendor) {
-        versionLinkLayout.add(new qx.ui.basic.Label("·").set({
-          textColor: "text-darker"
-        }));
-        const organizationLink = new osparc.ui.basic.LinkLabel().set({
-          value: vendor.name,
-          url: vendor.url,
-          textColor: "text-darker"
-        });
-        versionLinkLayout.add(organizationLink);
-      }
-
       if (vendor && "status_page_url" in vendor) {
         versionLinkLayout.add(new qx.ui.basic.Label("·").set({
           textColor: "text-darker"
@@ -358,6 +346,18 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
           textColor: "text-darker"
         });
         versionLinkLayout.add(statusPageLink);
+      }
+
+      if (vendor && "url" in vendor && "name" in vendor) {
+        versionLinkLayout.add(new qx.ui.basic.Label("·").set({
+          textColor: "text-darker"
+        }));
+        const organizationLink = new osparc.ui.basic.LinkLabel().set({
+          value: vendor.name,
+          url: vendor.url,
+          textColor: "text-darker"
+        });
+        versionLinkLayout.add(organizationLink);
       }
 
       return versionLinkLayout;
