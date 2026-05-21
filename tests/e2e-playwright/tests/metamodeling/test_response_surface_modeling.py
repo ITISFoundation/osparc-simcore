@@ -404,25 +404,41 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
 
         with log_context(logging.INFO, "Selected test function..."):
-            # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
-            # The DataGrid paginates (10 per page), so navigate pages to find our function
-            function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
+            # Retry the whole selection in case of transient websocket/iframe issues
+            for attempt in range(3):
+                try:
+                    # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
+                    # The DataGrid paginates (10 per page), so navigate pages to find our function
+                    function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
 
-            # Wait for the DataGrid to have at least one row rendered
-            service_iframe.locator('div[role="row"][data-id]').first.wait_for(
-                state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
-            )
+                    # Wait for the DataGrid to have at least one row rendered
+                    service_iframe.locator('div[role="row"][data-id]').first.wait_for(
+                        state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
+                    )
 
-            # Navigate through pages to find the function row
-            for _ in range(20):  # max 20 pages
-                if function_row.is_visible():
+                    # Navigate through pages to find the function row
+                    for _ in range(20):  # max 20 pages
+                        if function_row.is_visible():
+                            break
+                        next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
+                        if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
+                            break
+                        next_page_btn.click()
+                        service_iframe.locator('div[role="row"][data-id]').first.wait_for(
+                            state="visible", timeout=60 * SECOND
+                        )
+                    function_row.wait_for(state="visible", timeout=30 * SECOND)
                     break
-                next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
-                if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
-                    break
-                next_page_btn.click()
-                service_iframe.locator('div[role="row"][data-id]').first.wait_for(state="visible", timeout=60 * SECOND)
-            function_row.wait_for(state="visible", timeout=30 * SECOND)
+                except PlaywrightTimeoutError:
+                    if attempt == 2:
+                        raise
+                    logging.warning(
+                        "Attempt %d/3 failed to find function row, reloading page and retrying...",
+                        attempt + 1,
+                    )
+                    page.reload()
+                    service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
+
             select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
             select_btn.wait_for(state="visible", timeout=30 * SECOND)
             select_btn.click()
@@ -544,7 +560,12 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                 )
                 logging.info("⏳ Waiting for all status cells to be completed...")
                 page.wait_for_timeout(5000)
-                refresh_btn.click()
+                try:
+                    refresh_btn.click(timeout=30 * SECOND)
+                except PlaywrightTimeoutError:
+                    logging.warning("Refresh button click timed out, retrying after short wait...")
+                    page.wait_for_timeout(2 * SECOND)
+                    refresh_btn.click(timeout=60 * SECOND)
 
         with log_context(logging.INFO, "Selecting jobs and verifying graph..."):
             select_all_btn = service_iframe.get_by_role("button", name="Select all successful Jobs")
