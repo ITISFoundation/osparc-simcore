@@ -143,9 +143,7 @@ RUN \
 FROM base AS production
 
 ENV SC_BUILD_TARGET=production \
-  SC_BOOT_MODE=production \
-  SC_HEALTHCHECK_INTERVAL=30 \
-  SC_HEALTHCHECK_RETRY=3
+  SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
 
@@ -167,7 +165,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "/home/scu/services/storage/docker/healthcheck.py", "http://localhost:8080/v0/"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/"]
 
 
 ENTRYPOINT [ "/bin/sh", "services/storage/docker/entrypoint.sh" ]

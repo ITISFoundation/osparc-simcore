@@ -149,7 +149,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
     },
 
     __openTitleEditor: function() {
-      const title = this.tr("Edit Title");
+      const title = this.tr("Rename Function");
       const titleEditor = new osparc.widget.Renamer(this.getFunction().getTitle(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();

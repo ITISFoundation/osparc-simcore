@@ -635,7 +635,7 @@ python-dotenv==1.2.1
     # via
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.20
+python-multipart==0.0.29
     # via fastapi
 pyyaml==6.0.3
     # via
@@ -858,7 +858,7 @@ typing-inspection==0.4.2
     # via pydantic
 tzdata==2025.2
     # via arrow
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

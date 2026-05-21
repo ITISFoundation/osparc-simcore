@@ -9,6 +9,7 @@ from models_library.errors import (
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
 from servicelib.fastapi.docker import is_docker_api_proxy_ready
+from servicelib.fastapi.health import HealthCheckError
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
@@ -21,10 +22,6 @@ from ._dependencies import (
 )
 
 router = APIRouter()
-
-
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
 
 
 @router.get("/health", response_class=PlainTextResponse)

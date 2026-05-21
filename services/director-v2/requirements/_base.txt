@@ -791,7 +791,7 @@ python-dotenv==1.2.1
     #   uvicorn
 python-engineio==4.12.3
     # via python-socketio
-python-multipart==0.0.20
+python-multipart==0.0.29
     # via fastapi
 python-socketio==5.14.3
     # via -r requirements/_base.in
