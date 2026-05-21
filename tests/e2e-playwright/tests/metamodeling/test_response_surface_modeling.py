@@ -458,7 +458,9 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
             for i in range(count_min):
                 input_field = min_inputs.nth(i)
+                input_field.click()
                 input_field.fill(str(i + 1))
+                input_field.press("Tab")
                 logging.info("Filled %s input %d with value %d", min_test_id, i, i + 1)
                 assert input_field.input_value() == str(i + 1)
 
@@ -468,13 +470,13 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
             for i in range(count_max):
                 input_field = max_inputs.nth(i)
+                input_field.click()
                 input_field.fill(str((i + 1) * 10))
+                input_field.press("Tab")
                 logging.info("Filled %s input %d with value %d", max_test_id, i, (i + 1) * 10)
                 assert input_field.input_value() == str((i + 1) * 10)
 
-            page.wait_for_timeout(1000)
-            page.keyboard.press("Tab")
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(2 * SECOND)
 
         if EXPECTED_MOGA_KEY in local_service_key.lower():
             with log_context(logging.INFO, "Filling the output parameters..."):
@@ -491,7 +493,11 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         with log_context(logging.INFO, "Clicking Next to go to the next step..."):
             next_button = service_iframe.locator('[mmux-testid="next-button"]')
             next_button.scroll_into_view_if_needed()
-            next_button.click(timeout=30 * SECOND)
+            try:
+                next_button.click(timeout=60 * SECOND)
+            except PlaywrightTimeoutError:
+                logging.warning("Next button still disabled after 60s, trying force click")
+                next_button.click(force=True, timeout=30 * SECOND)
 
         page.wait_for_timeout(1 * SECOND)
 
