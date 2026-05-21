@@ -219,7 +219,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       extraContext["product"] = osparc.product.Utils.getProductName();
       const params = {
         data: {
-          name: "null",
+          name: null,
           type,
           extraContext,
         }
@@ -391,7 +391,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       if (conversation) {
         // Only the following properties can be updated:
         // name, extraContext, readByUser, readBySupport, isArchived
-        if (conversationData["name"]) {
+        if ("name" in conversationData) {
           conversation.setName(conversationData["name"]);
         }
         if (conversationData["extraContext"]) {
