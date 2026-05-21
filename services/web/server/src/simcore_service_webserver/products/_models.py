@@ -271,6 +271,7 @@ class Product(BaseModel):
                                 "logo_url": "https://acme.com/logo",
                                 "strong_color": "#123456",
                             },
+                            "status_page_url": "https://status.acme.com",
                         },
                         "issues": [
                             {
