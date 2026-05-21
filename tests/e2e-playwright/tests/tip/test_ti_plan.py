@@ -306,6 +306,10 @@ def test_classic_ti_plan(
     # 2. Exposure Analysis (sim4life-postpro) - only in full product
     expected_number_of_steps = 2 if not is_product_lite else 1
     assert len(node_ids) == expected_number_of_steps, f"Expected {expected_number_of_steps=} in the app-mode"
+    step_buttons_count = page.locator("[osparc-test-id^='AppMode_StepBtn_']").count()
+    assert step_buttons_count == expected_number_of_steps, (
+        f"Expected {expected_number_of_steps=} visible in the app-mode, got {step_buttons_count=}"
+    )
 
     params = _ServiceStepParams(
         page=page,
