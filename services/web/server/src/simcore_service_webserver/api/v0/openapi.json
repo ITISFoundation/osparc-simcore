@@ -16347,6 +16347,11 @@
         ],
         "title": "ConversationMessageType"
       },
+      "ConversationName": {
+        "type": "string",
+        "maxLength": 50,
+        "minLength": 1
+      },
       "ConversationPatch": {
         "properties": {
           "name": {
@@ -16420,14 +16425,12 @@
           "name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 50
+                "$ref": "#/components/schemas/ConversationName"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "projectUuid": {
             "anyOf": [
@@ -30751,13 +30754,12 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ConversationName"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "type": {
             "$ref": "#/components/schemas/ConversationType"
