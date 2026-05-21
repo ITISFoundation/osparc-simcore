@@ -320,6 +320,15 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
       });
 
       const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink();
+      let toolTipText = "";
+      if (!osparc.product.Utils.isProduct("osparc")) {
+        const displayName = osparc.store.StaticInfo.getDisplayName();
+        toolTipText = displayName + this.tr(" is powered by osparc.<br>");
+      }
+      toolTipText += this.tr("Click to see what's new in this release.");
+      createReleaseNotesLink.set({
+        toolTipText,
+      });
       createReleaseNotesLink.set({
         textColor: "text-darker"
       });
