@@ -25,7 +25,7 @@ def test_valid_application_settings(app_environment: EnvVarsDict):
         str(
             app_environment.get(
                 "DIRECTOR_DEFAULT_MAX_MEMORY",
-                ApplicationSettings.model_fields["DIRECTOR_DEFAULT_MAX_MEMORY"].default,
+                ApplicationSettings.model_fields["DIRECTOR_DEFAULT_MAX_MEMORY"].default,  # pylint: disable=unsubscriptable-object
             )
         )
         == f"{settings.DIRECTOR_DEFAULT_MAX_MEMORY}"
