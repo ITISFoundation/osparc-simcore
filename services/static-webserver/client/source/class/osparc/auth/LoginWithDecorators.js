@@ -313,14 +313,10 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
     },
 
     __getVersionLink: function() {
-      const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+      const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4).set({
         alignX: "center"
       })).set({
         margin: [10, 0]
-      });
-
-      versionLinkLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
       });
 
       const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink();
@@ -331,18 +327,22 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
 
       const vendor = osparc.store.VendorInfo.getVendor();
 
-      const organizationLink = new osparc.ui.basic.LinkLabel().set({
-        textColor: "text-darker"
-      });
       if (vendor && "url" in vendor && "name" in vendor) {
-        organizationLink.set({
+        versionLinkLayout.add(new qx.ui.basic.Label("·").set({
+          textColor: "text-darker"
+        }));
+        const organizationLink = new osparc.ui.basic.LinkLabel().set({
           value: vendor.name,
-          url: vendor.url
+          url: vendor.url,
+          textColor: "text-darker"
         });
+        versionLinkLayout.add(organizationLink);
       }
-      versionLinkLayout.add(organizationLink);
 
       if (vendor && "status_page_url" in vendor) {
+        versionLinkLayout.add(new qx.ui.basic.Label("·").set({
+          textColor: "text-darker"
+        }));
         const statusPageLink = new osparc.ui.basic.LinkLabel().set({
           value: "Status",
           url: vendor.status_page_url,
@@ -350,10 +350,6 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
         });
         versionLinkLayout.add(statusPageLink);
       }
-
-      versionLinkLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
 
       return versionLinkLayout;
     },
