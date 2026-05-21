@@ -34,6 +34,11 @@ class ListProjectsMarkedAsJobRpcFilters(BaseModel):
         Field(description="Searches for matches of all of the custom metadata fields"),
     ] = None
 
+    project_uuids: Annotated[
+        list[ProjectID] | None,
+        Field(description="Filters by a list of project UUIDs"),
+    ] = None
+
     @model_validator(mode="after")
     def _check_any_and_all_are_mutually_exclusive(self) -> Self:
         if self.any_custom_metadata and self.all_custom_metadata:
