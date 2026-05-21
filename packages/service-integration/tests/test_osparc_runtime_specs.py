@@ -130,3 +130,33 @@ def test_inactivity_service_not_in_compose_spec_rejected():
 
     with pytest.raises(ValidationError, match="not defined in compose-spec"):
         RuntimeConfig.model_validate(runtime_data)
+
+
+def test_inactivity_service_without_compose_spec_must_use_default_name():
+    """When compose-spec is omitted (single-service), callback services
+    must reference DEFAULT_SINGLE_SERVICE_NAME='container'."""
+
+    runtime_data = {
+        "paths-mapping": {
+            "inputs_path": "/inputs",
+            "outputs_path": "/outputs",
+            "state_paths": ["/workspace"],
+        },
+        "callbacks-mapping": {
+            "inactivity": {
+                "service": "wrong-name",
+                "command": "cat /tmp/inactivity.json",
+                "timeout": 1,
+            }
+        },
+    }
+
+    with pytest.raises(ValidationError, match=r"only.*container.*is allowed"):
+        RuntimeConfig.model_validate(runtime_data)
+
+    # Valid case: using "container" (default) should pass
+    runtime_data["callbacks-mapping"]["inactivity"]["service"] = "container"
+    instance = RuntimeConfig.model_validate(runtime_data)
+    assert instance.callbacks_mapping is not None
+    assert instance.callbacks_mapping.inactivity is not None
+    assert instance.callbacks_mapping.inactivity.service == "container"

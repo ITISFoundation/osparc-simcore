@@ -29,6 +29,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.service_settings_nat_rule import NATRule
 from models_library.services import BootOptions, ServiceMetaDataPublished
+from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.services_types import ServiceKey
 from models_library.utils.labels_annotations import (
     OSPARC_LABEL_PREFIXES,
@@ -243,10 +244,8 @@ class RuntimeConfig(BaseModel):
 
     @model_validator(mode="after")
     def _ensure_callbacks_mapping_services_in_compose_spec(self) -> Self:
-        if self.callbacks_mapping is None or self.compose_spec is None:
+        if self.callbacks_mapping is None:
             return self
-
-        compose_services = set(self.compose_spec.services.keys()) if self.compose_spec.services else set()
 
         defined_services: set[str] = {x.service for x in self.callbacks_mapping.before_shutdown}
         if self.callbacks_mapping.metrics:
@@ -254,14 +253,29 @@ class RuntimeConfig(BaseModel):
         if self.callbacks_mapping.inactivity:
             defined_services.add(self.callbacks_mapping.inactivity.service)
 
-        for service_name in defined_services:
-            if service_name not in compose_services:
+        if not defined_services:
+            return self
+
+        if self.compose_spec is None:
+            # Single-service compose (director generates it): callback services
+            # must reference DEFAULT_SINGLE_SERVICE_NAME
+            if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
                 msg = (
-                    f"callbacks_mapping references service '{service_name}' "
-                    f"which is not defined in compose-spec services: "
-                    f"{compose_services}"
+                    f"callbacks_mapping references services {defined_services} "
+                    f"but without a compose-spec only "
+                    f"'{DEFAULT_SINGLE_SERVICE_NAME}' is allowed"
                 )
                 raise ValueError(msg)
+        else:
+            compose_services = set(self.compose_spec.services.keys()) if self.compose_spec.services else set()
+            for service_name in defined_services:
+                if service_name not in compose_services:
+                    msg = (
+                        f"callbacks_mapping references service '{service_name}' "
+                        f"which is not defined in compose-spec services: "
+                        f"{compose_services}"
+                    )
+                    raise ValueError(msg)
 
         return self
 
