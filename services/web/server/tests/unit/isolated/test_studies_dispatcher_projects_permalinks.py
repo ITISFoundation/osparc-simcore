@@ -40,7 +40,6 @@ def app_environment(env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
             "WEBSERVER_CATALOG": "null",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR_V2": "null",
-            "WEBSERVER_EMAIL": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",

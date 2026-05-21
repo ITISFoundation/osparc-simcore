@@ -664,7 +664,10 @@ async def test_container_docker_error(
         # inspect container
         with pytest.raises(
             RPCServerError,
-            match=f"An unexpected Docker error occurred status_code={mock_aiodocker_containers_get}, message=aiodocker_mocked_error",
+            match=(
+                f"An unexpected Docker error occurred status_code={mock_aiodocker_containers_get}, "
+                "message=aiodocker_mocked_error"
+            ),
         ):
             await containers.inspect_container(
                 rpc_client,

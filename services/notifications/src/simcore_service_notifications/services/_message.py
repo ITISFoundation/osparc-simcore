@@ -8,6 +8,7 @@ from models_library.celery import (
     TaskName,
     TaskUUID,
 )
+from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTooManyRecipientsError,
 )
@@ -39,6 +40,14 @@ def _prepare_celery_messages(message: Message) -> list[dict[str, Any]]:
     return handler.prepare_messages(message)
 
 
+def _get_task_description(message: Message) -> str | None:
+    if message.channel == Channel.email:
+        if isinstance(message, EmailMessage):
+            return message.content.subject
+        return None
+    return None
+
+
 @dataclass(frozen=True)
 class MessageService:
     template_service: TemplateService
@@ -55,11 +64,14 @@ class MessageService:
         messages = _prepare_celery_messages(message)
 
         num_recipients = len(messages)
+        description = _get_task_description(message)
+
         if num_recipients == 1:
             task_uuid, task_name = await submit_send_message_task(
                 self.task_manager,
                 owner_metadata=resolved_owner,
                 message=messages[0],
+                description=description,
             )
             return task_uuid, task_name
 
@@ -74,6 +86,7 @@ class MessageService:
             self.task_manager,
             owner_metadata=resolved_owner,
             messages=messages,
+            description=description,
         )
         return group_uuid, task_name
 

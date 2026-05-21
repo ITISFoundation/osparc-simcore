@@ -10,7 +10,7 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.tracing import TracingConfig
-from simcore_sdk.node_ports_common.exceptions import NodeNotFound
+from simcore_sdk.node_ports_common.exceptions import NodeNotFoundError
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
 from ..models.schemas.application_health import ApplicationHealth
@@ -156,6 +156,9 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     from ..api.rpc.routes import setup_rpc_api_routes
     from ..models.shared_store import setup_shared_store
     from ..modules.attribute_monitor import setup_attribute_monitor
+    from ..modules.file_notification_subscriber import (
+        setup_file_notification_subscriber,
+    )
     from ..modules.inputs import setup_inputs
     from ..modules.long_running_tasks import setup_long_running_tasks
     from ..modules.mounted_fs import setup_mounted_fs
@@ -201,6 +204,8 @@ def create_app() -> FastAPI:  # noqa: PLR0915
 
     setup_r_clone_mount_manager(app)
 
+    setup_file_notification_subscriber(app)
+
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
 
@@ -212,7 +217,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(
-        NodeNotFound,
+        NodeNotFoundError,
         node_not_found_error_handler,  # type: ignore[arg-type]
     )
     app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)  # type: ignore[arg-type]

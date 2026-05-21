@@ -35,6 +35,11 @@ class ConversationType(StrAutoEnum):
         }
 
 
+class ConversationStatus(StrAutoEnum):
+    ACTIVE = auto()
+    ARCHIVED = auto()
+
+
 class ConversationMessageType(StrAutoEnum):
     MESSAGE = auto()
     NOTIFICATION = (
@@ -64,6 +69,7 @@ class ConversationGetDB(BaseModel):
     fogbugz_case_id: str | None
     is_read_by_user: bool
     is_read_by_support: bool
+    status: ConversationStatus
 
     # states
     created: datetime
@@ -86,6 +92,7 @@ class ConversationGetDB(BaseModel):
                     "fogbugz_case_id": None,
                     "is_read_by_user": False,
                     "is_read_by_support": False,
+                    "status": ConversationStatus.ACTIVE,
                     "created": "2024-01-01T12:00:00",
                     "modified": "2024-01-01T12:00:00",
                     "last_message_created_at": "2024-01-01T12:00:00",
@@ -116,6 +123,7 @@ class ConversationPatchDB(BaseModel):
     is_read_by_user: bool | None = None
     is_read_by_support: bool | None = None
     last_message_created_at: datetime | None = None
+    status: ConversationStatus | None = None
 
 
 class ConversationMessagePatchDB(BaseModel):

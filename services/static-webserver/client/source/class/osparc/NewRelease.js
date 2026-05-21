@@ -100,8 +100,8 @@ qx.Class.define("osparc.NewRelease", {
       const icon = osparc.product.Utils.getOsparcOImageSource();
       const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 360, 135, icon).set({
         clickAwayClose: false,
+        showClose: true,
         resizable: false,
-        showClose: true
       });
       win.getChildControl("icon").set({
         width: 24,
@@ -118,8 +118,7 @@ qx.Class.define("osparc.NewRelease", {
           width: winWidth,
           height: winHeight,
           minHeight,
-          maxHeight: winHeight,
-          resizable: true
+          resizable: true,
         });
         win.moveTo(
           Math.round((vpWidth - winWidth) / 2),
@@ -227,6 +226,19 @@ qx.Class.define("osparc.NewRelease", {
         prev = cleaned;
         cleaned = cleaned.replace(/<([a-zA-Z][^>\n]*)\n\s*/g, "<$1 ");
       } while (cleaned !== prev);
+      // Convert height="N" on <img> tags to max-height style so images
+      // scale down responsively but still respect their intended size cap.
+      cleaned = cleaned.replace(/<img\b([^>]*?)\bheight="(\d+)"([^>]*?)(\/?)>/gi, (match, before, h, after, slash) => {
+        const maxH = `max-height:${h}px`;
+        // Merge into existing style attribute if present, otherwise add a new one
+        let attrs = before + after;
+        if (/style\s*=\s*"/i.test(attrs)) {
+          attrs = attrs.replace(/style\s*=\s*"/i, `style="${maxH};`);
+        } else {
+          attrs += ` style="${maxH}"`;
+        }
+        return `<img${attrs}${slash}>`;
+      });
       return cleaned;
     },
 
@@ -251,13 +263,14 @@ qx.Class.define("osparc.NewRelease", {
     },
 
     /**
-     * Sets CSS custom properties (--rn-text-muted)
+     * Sets CSS custom properties (--rn-text-muted, --rn-border)
      * on the document root, resolved from the current qooxdoo theme colors.
      */
     __applyThemeCssVars: function() {
       const colorMgr = qx.theme.manager.Color.getInstance();
       const root = document.documentElement.style;
       root.setProperty("--rn-text-muted", colorMgr.resolve("text-opa70"));
+      root.setProperty("--rn-border", colorMgr.resolve("text-opa70"));
     },
 
     __addDetailsLink: function(releaseLink) {

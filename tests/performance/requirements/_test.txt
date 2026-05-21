@@ -1,6 +1,6 @@
 annotated-types==0.7.0
     # via pydantic
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
@@ -133,7 +133,7 @@ typing-inspection==0.4.2
     # via
     #   pydantic
     #   pydantic-settings
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   geventhttpclient
     #   requests

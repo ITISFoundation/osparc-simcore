@@ -32,6 +32,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
 )
+from simcore_service_webserver.projects import _metadata_service
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
@@ -202,8 +203,6 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     user_project: ProjectDict,
     client: TestClient,
 ):
-    from simcore_service_webserver.projects import _metadata_service
-
     project_uuid = ProjectID(user_project["uuid"])
     user_id = logged_user["id"]
 
@@ -434,3 +433,165 @@ async def test_mark_and_get_project_job_storage_assets_deleted(
         job_parent_resource_name=job_parent_resource_name,
     )
     assert project_job.storage_assets_deleted is False
+
+
+async def test_rpc_client_list_projects_marked_as_jobs_with_all_metadata_filter(
+    webserver_rpc_client: WebServerRpcClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    client: TestClient,
+):
+    """Test that list_projects_marked_as_jobs with all_custom_metadata uses AND logic via RPC."""
+
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+
+    # Mark the project as a job
+    await webserver_rpc_client.projects.mark_project_as_job(
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name="solvers/solver123/version/1.2.3",
+        storage_assets_deleted=False,
+    )
+
+    # Set custom metadata on the project
+    custom_metadata: MetadataDict = {
+        "solver_type": "FEM",
+        "mesh_cells": "10000",
+        "domain": "biomedical",
+    }
+
+    await _metadata_service.set_project_custom_metadata(
+        app=client.app,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        value=custom_metadata,
+    )
+
+    # Test AND filter: all conditions match -> found
+    page: PageRpcProjectJobRpcGet = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            all_custom_metadata=[
+                MetadataFilterItem(name="solver_type", pattern="FEM"),
+                MetadataFilterItem(name="domain", pattern="biomedical"),
+            ],
+        ),
+    )
+
+    assert page.meta.total == 1
+    assert len(page.data) == 1
+    assert page.data[0].uuid == project_uuid
+
+    # Test AND filter: one condition doesn't match -> not found
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            all_custom_metadata=[
+                MetadataFilterItem(name="solver_type", pattern="FEM"),
+                MetadataFilterItem(name="domain", pattern="aerospace"),  # No match
+            ],
+        ),
+    )
+
+    assert page.meta.total == 0
+    assert len(page.data) == 0
+
+    # Test AND filter with wildcard: both match -> found
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            all_custom_metadata=[
+                MetadataFilterItem(name="solver_type", pattern="F*"),
+                MetadataFilterItem(name="mesh_cells", pattern="1*"),
+            ],
+        ),
+    )
+
+    assert page.meta.total == 1
+    assert page.data[0].uuid == project_uuid
+
+    # Test mutual exclusivity: both any and all raises validation error
+    with pytest.raises(ValidationError):
+        ListProjectsMarkedAsJobRpcFilters(
+            any_custom_metadata=[MetadataFilterItem(name="solver_type", pattern="FEM")],
+            all_custom_metadata=[MetadataFilterItem(name="domain", pattern="biomedical")],
+        )
+
+
+async def test_rpc_client_list_projects_marked_as_jobs_with_project_uuids_filter(
+    webserver_rpc_client: WebServerRpcClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    """Test that list_projects_marked_as_jobs with project_uuids filter returns only matching projects."""
+
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+
+    # Mark the project as a job
+    await webserver_rpc_client.projects.mark_project_as_job(
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name="solvers/solver123/version/1.2.3",
+        storage_assets_deleted=False,
+    )
+
+    # Filter by the actual project UUID -> should find it
+    page: PageRpcProjectJobRpcGet = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            project_uuids=[project_uuid],
+        ),
+    )
+
+    assert page.meta.total == 1
+    assert len(page.data) == 1
+    assert page.data[0].uuid == project_uuid
+
+    # Filter by a non-existent UUID -> should find nothing
+    non_existent_uuid = ProjectID("00000000-0000-0000-0000-000000000099")
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            project_uuids=[non_existent_uuid],
+        ),
+    )
+
+    assert page.meta.total == 0
+    assert len(page.data) == 0
+
+    # Combine project_uuids with job_parent_resource_name_prefix -> both match
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            project_uuids=[project_uuid],
+            job_parent_resource_name_prefix="solvers/solver123",
+        ),
+    )
+
+    assert page.meta.total == 1
+    assert page.data[0].uuid == project_uuid
+
+    # Combine project_uuids with wrong prefix -> no match
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            project_uuids=[project_uuid],
+            job_parent_resource_name_prefix="wrong/prefix",
+        ),
+    )
+
+    assert page.meta.total == 0
+    assert len(page.data) == 0

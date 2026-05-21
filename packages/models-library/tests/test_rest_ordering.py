@@ -1,5 +1,5 @@
 import pickle
-from typing import Literal
+from typing import ClassVar, Literal
 
 import pytest
 from common_library.json_serialization import json_dumps
@@ -11,6 +11,7 @@ from models_library.rest_ordering import (
     OrderingQueryParams,
     create_ordering_query_model_class,
 )
+from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -30,7 +31,8 @@ class ReferenceOrderQueryParamsClass(BaseModel):
     # pylint: disable=unsubscriptable-object
     order_by: Json[OrderBy] = Field(
         default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
-        description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
+        description="Order by field (modified_at|name|description) and direction (asc|desc). "
+        "The default sorting order is ascending.",
         json_schema_extra={"examples": ['{"field": "name", "direction": "desc"}']},
     )
 
@@ -70,7 +72,7 @@ def test_pickle_ordering_query_model_class():
     # FAILURE: raises `AttributeError: Can't pickle local object 'create_ordering_query_model_class.<locals>._OrderBy'`
     data = pickle.dumps(expected)
 
-    loaded = pickle.loads(data)
+    loaded = pickle.loads(data)  # noqa: S301
     assert loaded == expected
 
 
@@ -272,3 +274,365 @@ def test_ordering_query_params_validation_error_with_invalid_fields():
     assert error["loc"] == ("order_by", 1, "field")
     assert error["type"] == "literal_error"
     assert error["input"] == "invalid_field"
+
+
+# ----- New tests: OrderingQueryParams as replacement for create_ordering_query_model_class -----
+
+
+def test_ordering_query_params_field_mapping_field_name_map_remaps_fields():
+    ValidField = Literal["modified_at", "name", "description"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified_column"}
+
+    params = MyOrdering.model_validate({"order_by": "-modified_at,name"})
+
+    assert len(params.order_by) == 2
+    assert params.order_by[0].field == "modified_column"
+    assert params.order_by[0].direction == OrderDirection.DESC
+    assert params.order_by[1].field == "name"
+    assert params.order_by[1].direction == OrderDirection.ASC
+
+
+def test_ordering_query_params_field_mapping_empty_by_default():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    params = MyOrdering.model_validate({"order_by": "name,-email"})
+
+    assert params.order_by[0].field == "name"
+    assert params.order_by[1].field == "email"
+
+
+def test_ordering_query_params_field_mapping_validates_before_mapping():
+    """Literal validation runs BEFORE field mapping, so invalid API names are rejected."""
+    ValidField = Literal["modified_at", "name"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified"}
+
+    with pytest.raises(ValidationError) as err_info:
+        MyOrdering.model_validate({"order_by": "INVALID"})
+
+    error = err_info.value.errors()[0]
+    assert error["loc"] == ("order_by", 0, "field")
+    assert error["type"] == "literal_error"
+
+
+def test_ordering_query_params_defaults_empty_default():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    params = MyOrdering()
+    assert params.order_by == []
+
+
+def test_ordering_query_params_defaults_custom_default_string():
+    ValidField = Literal["modified_at", "name"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _default_order_by: ClassVar[str] = "-modified_at"
+
+    params = MyOrdering()
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "modified_at"
+    assert params.order_by[0].direction == OrderDirection.DESC
+
+
+def test_ordering_query_params_defaults_custom_default_with_field_map():
+    ValidField = Literal["modified_at", "name"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified_column"}
+        _default_order_by: ClassVar[str] = "-modified_at"
+
+    params = MyOrdering()
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "modified_column"
+    assert params.order_by[0].direction == OrderDirection.DESC
+
+
+def test_ordering_query_params_defaults_explicit_value_overrides_default():
+    ValidField = Literal["modified_at", "name"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _default_order_by: ClassVar[str] = "-modified_at"
+
+    params = MyOrdering.model_validate({"order_by": "+name"})
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "name"
+    assert params.order_by[0].direction == OrderDirection.ASC
+
+
+def test_ordering_query_params_as_query_compatibility_no_default_factory_on_order_by():
+    """as_query() asserts `not field_info.default_factory`.
+    OrderingQueryParams must use a plain default, not default_factory.
+    """
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    field_info = MyOrdering.model_fields["order_by"]
+    assert field_info.default_factory is None, "default_factory must be None for as_query() compatibility"
+
+
+def test_ordering_query_params_as_query_compatibility_default_is_string():
+    """The default value should be a string so as_query() can pass it to Query(default=...)."""
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    field_info = MyOrdering.model_fields["order_by"]
+    assert isinstance(field_info.default, str)
+
+
+def test_ordering_query_params_as_query_compatibility_custom_default_is_string():
+    ValidField = Literal["modified_at", "name"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _default_order_by: ClassVar[str] = "-modified_at"
+
+    # Base field default is still "" (string), custom default is injected via model_validator
+    field_info = MyOrdering.model_fields["order_by"]
+    assert isinstance(field_info.default, str)
+
+
+def test_ordering_query_params_parse_request_simulation_from_query_dict():
+    ValidField = Literal["modified_at", "name", "description"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified_column"}
+
+    # Simulates dict(request.query) from aiohttp
+    data = {"order_by": "-modified_at,name"}
+    params = MyOrdering.model_validate(data)
+
+    assert len(params.order_by) == 2
+    assert params.order_by[0].field == "modified_column"
+    assert params.order_by[0].direction == OrderDirection.DESC
+    assert params.order_by[1].field == "name"
+    assert params.order_by[1].direction == OrderDirection.ASC
+
+
+def test_ordering_query_params_parse_request_simulation_empty_order_by_from_query():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    data = {"order_by": ""}
+    params = MyOrdering.model_validate(data)
+    assert params.order_by == []
+
+
+def test_ordering_query_params_parse_request_simulation_missing_order_by_uses_default():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _default_order_by: ClassVar[str] = "-email"
+
+    data: dict[str, str] = {}
+    params = MyOrdering.model_validate(data)
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "email"
+    assert params.order_by[0].direction == OrderDirection.DESC
+
+
+def test_ordering_query_params_composition_compose_with_page_query_parameters():
+    ValidField = Literal["modified_at", "name"]
+
+    class ListQueryParams(
+        PageQueryParameters,
+        OrderingQueryParams[ValidField],
+    ):
+        pass
+
+    data = {"order_by": "-modified_at", "limit": "10", "offset": "5"}
+    params = ListQueryParams.model_validate(data)
+
+    assert params.limit == 10
+    assert params.offset == 5
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "modified_at"
+    assert params.order_by[0].direction == OrderDirection.DESC
+
+
+def test_ordering_query_params_composition_compose_with_page_query_parameters_and_field_map():
+    ValidField = Literal["modified_at", "name"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified_column"}
+
+    class ListQueryParams(
+        PageQueryParameters,
+        MyOrdering,
+    ):
+        pass
+
+    data = {"order_by": "-modified_at,name", "limit": "20", "offset": "0"}
+    params = ListQueryParams.model_validate(data)
+
+    assert params.limit == 20
+    assert params.order_by[0].field == "modified_column"
+    assert params.order_by[1].field == "name"
+
+
+def test_ordering_query_params_composition_compose_with_extra_filter_fields():
+    ValidField = Literal["email", "name"]
+
+    class ListQueryParams(
+        PageQueryParameters,
+        OrderingQueryParams[ValidField],
+    ):
+        search: str = ""
+
+    data = {"order_by": "name,-email", "limit": "50", "offset": "0", "search": "john"}
+    params = ListQueryParams.model_validate(data)
+
+    assert params.search == "john"
+    assert params.limit == 50
+    assert len(params.order_by) == 2
+
+
+def test_ordering_query_params_equivalence_folders_pattern():
+    """Equivalent to folders ordering: modified_at→modified, name (default: -modified_at)"""
+    FolderField = Literal["modified_at", "name"]
+
+    class FolderOrdering(OrderingQueryParams[FolderField]):
+        _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified"}
+        _default_order_by: ClassVar[str] = "-modified_at"
+
+    # default
+    params = FolderOrdering()
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "modified"
+    assert params.order_by[0].direction == OrderDirection.DESC
+
+    # explicit
+    params = FolderOrdering.model_validate({"order_by": "name"})
+    assert params.order_by[0].field == "name"
+    assert params.order_by[0].direction == OrderDirection.ASC
+
+    # invalid
+    with pytest.raises(ValidationError):
+        FolderOrdering.model_validate({"order_by": "INVALID"})
+
+
+def test_ordering_query_params_equivalence_users_accounts_pattern():
+    """Equivalent to users accounts ordering with multiple API-to-column mappings."""
+    UserField = Literal["name", "email", "status", "accountRequestedReviewedAt", "preRegistrationCreated"]
+
+    class UserOrdering(OrderingQueryParams[UserField]):
+        _field_name_map: ClassVar[dict[str, str]] = {
+            "name": "first_name",
+            "accountRequestedReviewedAt": "account_request_reviewed_at",
+            "preRegistrationCreated": "created",
+        }
+        _default_order_by: ClassVar[str] = "email"
+
+    # default
+    params = UserOrdering()
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "email"
+
+    # multi-field with mapping
+    params = UserOrdering.model_validate({"order_by": "-name,email"})
+    assert params.order_by[0].field == "first_name"
+    assert params.order_by[0].direction == OrderDirection.DESC
+    assert params.order_by[1].field == "email"
+    assert params.order_by[1].direction == OrderDirection.ASC
+
+    # mapped fields
+    params = UserOrdering.model_validate({"order_by": "+preRegistrationCreated"})
+    assert params.order_by[0].field == "created"
+
+
+def test_ordering_query_params_equivalence_computation_runs_pattern():
+    """Equivalent to computation runs ordering with field mapping."""
+    RunField = Literal["submitted_at", "started_at", "ended_at", "state"]
+
+    class RunOrdering(OrderingQueryParams[RunField]):
+        _field_name_map: ClassVar[dict[str, str]] = {
+            "submitted_at": "created",
+            "started_at": "started",
+            "ended_at": "ended",
+        }
+        _default_order_by: ClassVar[str] = "submitted_at"
+
+    # default
+    params = RunOrdering()
+    assert params.order_by[0].field == "created"
+
+    # multi-field (not possible with old create_ordering_query_model_class!)
+    params = RunOrdering.model_validate({"order_by": "-submitted_at,+state"})
+    assert len(params.order_by) == 2
+    assert params.order_by[0].field == "created"
+    assert params.order_by[0].direction == OrderDirection.DESC
+    assert params.order_by[1].field == "state"
+    assert params.order_by[1].direction == OrderDirection.ASC
+
+
+def test_ordering_query_params_equivalence_workspaces_pattern():
+    """Equivalent to workspaces ordering."""
+    WsField = Literal["modified_at", "name"]
+
+    class WsOrdering(OrderingQueryParams[WsField]):
+        _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified"}
+        _default_order_by: ClassVar[str] = "-modified_at"
+
+    params = WsOrdering()
+    assert params.order_by[0].field == "modified"
+    assert params.order_by[0].direction == OrderDirection.DESC
+
+
+def test_ordering_query_params_edge_cases_pass_through_list_of_dicts():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    # Already-parsed data (e.g., from internal code)
+    data = {"order_by": [{"field": "name", "direction": "asc"}]}
+    params = MyOrdering.model_validate(data)
+    assert params.order_by[0].field == "name"
+
+
+def test_ordering_query_params_edge_cases_duplicate_fields_are_deduplicated():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    params = MyOrdering.model_validate({"order_by": "name,name"})
+    assert len(params.order_by) == 1
+    assert params.order_by[0].field == "name"
+
+
+def test_ordering_query_params_edge_cases_conflicting_directions_raise_error():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    with pytest.raises(ValidationError):
+        MyOrdering.model_validate({"order_by": "name,-name"})
+
+
+def test_ordering_query_params_edge_cases_order_by_model_dump_produces_serializable_output():
+    ValidField = Literal["name", "email"]
+
+    class MyOrdering(OrderingQueryParams[ValidField]):
+        pass
+
+    params = MyOrdering.model_validate({"order_by": "-email,name"})
+    dumped = [c.model_dump() for c in params.order_by]
+    assert dumped == [
+        {"field": "email", "direction": "desc"},
+        {"field": "name", "direction": "asc"},
+    ]

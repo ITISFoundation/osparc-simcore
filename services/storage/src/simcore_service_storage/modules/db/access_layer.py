@@ -27,8 +27,9 @@
         Access rights apply hierarchically, meaning that the access granted to a project applies
         to all nodes inside and stored data in nodes.
 
-        How do these two AR coexist?: Access to read, write or delete a project are defined in the project AR but execution
-        will depend on the service AR attached to nodes inside.
+        How do these two AR coexist?: Access to read, write or delete a project are
+        defined in the project AR but execution will depend on the service AR attached
+        to nodes inside.
 
         What about stored data?
         - data generated in nodes inherits the AR from the associated project
@@ -142,27 +143,39 @@ async def _list_user_projects_access_rights_with_read_access(
     """
 
     user_group_ids: list[GroupID] = await _get_user_groups_ids(connection, user_id)
-    _my_access_rights_subquery = my_private_workspace_access_rights_subquery(user_group_ids)
 
-    private_workspace_query = (
-        sa.select(
-            projects.c.uuid,
+    # Use EXISTS instead of JOIN with GROUP BY + jsonb_object_agg subquery.
+    # This function only needs to filter projects by read access, it never
+    # reads the aggregated access_rights JSON. EXISTS lets the planner stop
+    # at the first matching row and avoids materialising grouped results.
+    private_access_exists = sa.exists(
+        sa.select(sa.literal(1)).where(
+            (project_to_groups.c.project_uuid == projects.c.uuid)
+            & (project_to_groups.c.read)
+            & (project_to_groups.c.gid.in_(user_group_ids))
         )
-        .select_from(projects.join(_my_access_rights_subquery))
-        .where((projects.c.workspace_id.is_(None)) & (projects.c.product_name == product_name))
     )
 
-    _my_workspace_access_rights_subquery = my_shared_workspace_access_rights_subquery(user_group_ids)
+    private_workspace_query = (
+        sa.select(projects.c.uuid)
+        .select_from(projects)
+        .where((projects.c.workspace_id.is_(None)) & (projects.c.product_name == product_name) & private_access_exists)
+    )
+
+    shared_access_exists = sa.exists(
+        sa.select(sa.literal(1)).where(
+            (workspaces_access_rights.c.workspace_id == projects.c.workspace_id)
+            & (workspaces_access_rights.c.read)
+            & (workspaces_access_rights.c.gid.in_(user_group_ids))
+        )
+    )
 
     shared_workspace_query = (
         sa.select(projects.c.uuid)
-        .select_from(
-            projects.join(
-                _my_workspace_access_rights_subquery,
-                projects.c.workspace_id == _my_workspace_access_rights_subquery.c.workspace_id,
-            )
+        .select_from(projects)
+        .where(
+            (projects.c.workspace_id.is_not(None)) & (projects.c.product_name == product_name) & shared_access_exists
         )
-        .where((projects.c.workspace_id.is_not(None)) & (projects.c.product_name == product_name))
     )
 
     combined_query = sa.union_all(private_workspace_query, shared_workspace_query)

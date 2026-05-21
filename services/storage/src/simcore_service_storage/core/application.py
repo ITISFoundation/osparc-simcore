@@ -11,7 +11,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi_pagination import add_pagination
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
-from servicelib.fastapi.client_session import setup_client_session
+from servicelib.fastapi.httpx_client import setup_httpx_client
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
@@ -39,6 +39,7 @@ from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
 from ..modules.celery import setup_task_manager
 from ..modules.db import setup_db
+from ..modules.rabbitmq import setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from .settings import ApplicationSettings
@@ -68,12 +69,13 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
 
     setup_db(app)
     setup_s3(app)
-    setup_client_session(
+    setup_httpx_client(
         app,
         tracing_config=get_tracing_config(app),
     )
 
     setup_redis(app)
+    setup_rabbitmq(app)
 
     if settings.STORAGE_CELERY:
         setup_task_manager(app, settings=settings.STORAGE_CELERY)

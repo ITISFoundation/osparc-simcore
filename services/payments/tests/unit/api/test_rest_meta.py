@@ -11,7 +11,6 @@ from fastapi import status
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_payments._meta import API_VTAG
-from simcore_service_payments.api.rest._health import HealthCheckError
 from simcore_service_payments.models.schemas.meta import Meta
 
 
@@ -53,8 +52,8 @@ async def test_healthcheck__unhealthy(
     _mock_health_client(mocker, healthy=rabbit_client_healthy, target_function="get_rabbitmq_client")
     _mock_health_client(mocker, healthy=rabbitmq_rpc_client_healthy, target_function="get_rabbitmq_rpc_client")
 
-    with pytest.raises(HealthCheckError):
-        await client.get("/")
+    response = await client.get("/")
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 async def test_meta(

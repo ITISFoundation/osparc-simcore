@@ -22,3 +22,4 @@ pytest-cov
 pytest-mock
 pytest-runner
 python-dotenv
+types-aiofiles

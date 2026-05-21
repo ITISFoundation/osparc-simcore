@@ -7,6 +7,7 @@ from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
@@ -33,6 +34,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         PostgresSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
+
+    STORAGE_RABBITMQ: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     STORAGE_REDIS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 

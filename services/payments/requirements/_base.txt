@@ -10,7 +10,7 @@ aiofiles==24.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -29,10 +29,8 @@ aiohttp==3.12.12
     #   aiodocker
 aiormq==6.8.1
     # via aio-pika
-aiosignal==1.3.1
+aiosignal==1.4.0
     # via aiohttp
-aiosmtplib==3.0.2
-    # via -r requirements/_base.in
 alembic==1.14.0
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 annotated-types==0.7.0
@@ -201,7 +199,6 @@ jinja2==3.1.6
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_base.in
     #   fastapi
 jsonref==1.1.0
     # via
@@ -468,7 +465,7 @@ python-engineio==4.12.2
     # via python-socketio
 python-jose==3.3.0
     # via -r requirements/_base.in
-python-multipart==0.0.20
+python-multipart==0.0.29
     # via
     #   -r requirements/_base.in
     #   fastapi
@@ -648,7 +645,7 @@ typing-extensions==4.14.1
     #   typing-inspection
 typing-inspection==0.4.1
     # via pydantic
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

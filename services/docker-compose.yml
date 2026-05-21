@@ -27,8 +27,6 @@ x-tracing-open-telemetry: &tracing_open_telemetry_environments
 x-postgres-settings: &postgres_settings
   POSTGRES_DB: ${POSTGRES_DB}
   POSTGRES_HOST: ${POSTGRES_HOST}
-  POSTGRES_MAXSIZE: ${POSTGRES_MAXSIZE}
-  POSTGRES_MINSIZE: ${POSTGRES_MINSIZE}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
   POSTGRES_MAX_POOLSIZE: ${POSTGRES_MAX_POOLSIZE}
   POSTGRES_MAX_OVERFLOW: ${POSTGRES_MAX_OVERFLOW}
@@ -289,7 +287,7 @@ services:
       retries: 3
 
   traefik:
-    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
+    image: "traefik:v3.6.7@sha256:a9890c898f379c1905ee5b28342f6b408dc863f08db2dab20e46c267d1ff463a"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
@@ -703,9 +701,9 @@ services:
     networks:
       - default
 
-###############################
-### Group dependent simcore ###
-###############################
+  ###############################
+  ### Group dependent simcore ###
+  ###############################
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -767,6 +765,7 @@ services:
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 100
       CELERY_POOL: threads
     networks: *storage_networks
@@ -780,6 +779,7 @@ services:
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 1
       CELERY_QUEUES: cpu_bound
       CELERY_POOL: prefork
@@ -964,9 +964,6 @@ services:
       WEBSERVER_DIAGNOSTICS: ${WEBSERVER_DIAGNOSTICS}
 
       # WEBSERVER_DIRECTOR_V2
-
-      # WEBSERVER_EMAIL
-      WEBSERVER_EMAIL: ${WEBSERVER_EMAIL}
 
       WEBSERVER_EXPORTER: ${WEBSERVER_EXPORTER}
 
@@ -1160,7 +1157,6 @@ services:
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_GC_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_GC_DIAGNOSTICS}
-      WEBSERVER_EMAIL: ${WB_GC_EMAIL}
       WEBSERVER_EXPORTER: ${WB_GC_EXPORTER}
       WEBSERVER_FOGBUGZ: "null"
       WEBSERVER_FOLDERS: ${WB_GC_FOLDERS}
@@ -1256,7 +1252,6 @@ services:
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: 0
       WEBSERVER_DIRECTOR_V2: "null"
-      WEBSERVER_EMAIL: "null"
       WEBSERVER_EXPORTER: "null"
       WEBSERVER_FOGBUGZ: "null"
       WEBSERVER_FOLDERS: 0
@@ -1328,7 +1323,6 @@ services:
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_DB_EL_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_DB_EL_DIAGNOSTICS}
-      WEBSERVER_EMAIL: ${WB_DB_EL_EMAIL}
       WEBSERVER_EXPORTER: ${WB_DB_EL_EXPORTER}
       WEBSERVER_FOLDERS: ${WB_DB_EL_FOLDERS}
       WEBSERVER_FRONTEND: ${WB_DB_EL_FRONTEND}
@@ -1469,6 +1463,7 @@ services:
       API_SERVER_TRACING: "null"
       API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       API_SERVER_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
       CELERY_POOL: threads
       CELERY_QUEUES: api_server
@@ -1497,14 +1492,14 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment: &notifications_environment
+    environment:
       <<:
         - *common_logging_environments
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
         - *tracing_open_telemetry_environments
-
+      NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
       NOTIFICATIONS_WORKER_MODE: "false"
@@ -1518,11 +1513,15 @@ services:
     hostname: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<:
-        - *notifications_environment
+        - *common_logging_environments
+        - *postgres_settings
+        - *rabbit_settings
+        - *redis_settings
         - *smtp_settings
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
       NOTIFICATIONS_EMAIL_RATE_LIMIT: ${NOTIFICATIONS_EMAIL_RATE_LIMIT}
       CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
@@ -1552,7 +1551,6 @@ services:
       PAYMENTS_AUTORECHARGE_ENABLED: ${PAYMENTS_AUTORECHARGE_ENABLED}
       PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: ${PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS}
       PAYMENTS_BCC_EMAIL: ${PAYMENTS_BCC_EMAIL}
-      PAYMENTS_EMAIL: ${PAYMENTS_EMAIL}
       PAYMENTS_GATEWAY_API_SECRET: ${PAYMENTS_GATEWAY_API_SECRET}
       PAYMENTS_GATEWAY_URL: ${PAYMENTS_GATEWAY_URL}
       PAYMENTS_LOGLEVEL: ${PAYMENTS_LOGLEVEL}

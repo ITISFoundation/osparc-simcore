@@ -45,6 +45,10 @@ class ResponsesQueue {
         console.log("-- Queued response received", resp.url(), ":");
         that.__respPendingQueue[url]["end"] = new Date();
         console.log(resp.status());
+        if (resp.status() === 429) {
+          console.error("HTTP 429 Too Many Requests received from", resp.url());
+          process.exit(173); // 429 mod 256
+        }
         if (resp.status() === 204) {
           that.removeResponseListener(url, "ok", callback);
         }

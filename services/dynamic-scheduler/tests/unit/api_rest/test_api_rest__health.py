@@ -10,7 +10,6 @@ from fastapi import status
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_dynamic_scheduler.api.rest._health import HealthCheckError
 
 
 class MockHealth:
@@ -54,7 +53,6 @@ def mock_docker_api_proxy(mocker: MockerFixture, docker_api_proxy_ok: bool) -> N
 
 @pytest.fixture
 def app_environment(
-    disable_generic_scheduler_lifespan: None,
     mock_docker_api_proxy: None,
     mock_rabbitmq_clients: None,
     mock_redis_client: None,
@@ -74,10 +72,9 @@ def app_environment(
     ],
 )
 async def test_health(client: AsyncClient, is_ok: bool):
+    response = await client.get("/health")
     if is_ok:
-        response = await client.get("/health")
         assert response.status_code == status.HTTP_200_OK
         assert datetime.fromisoformat(response.text.split("@")[1])
     else:
-        with pytest.raises(HealthCheckError):
-            await client.get("/health")
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE

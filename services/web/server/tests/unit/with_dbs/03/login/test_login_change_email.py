@@ -71,7 +71,6 @@ async def test_change_and_confirm(
     login_options: LoginOptions,
     capsys: pytest.CaptureFixture,
     new_email: str,
-    mocked_email_core_remove_comments: None,
 ):
     assert client.app
 
@@ -94,7 +93,7 @@ async def test_change_and_confirm(
         await assert_status(response, status.HTTP_200_OK, MSG_CHANGE_EMAIL_REQUESTED)
 
         # email sent
-        out, err = capsys.readouterr()
+        out, _ = capsys.readouterr()
         link = parse_link(out)
 
         # try new email but logout first

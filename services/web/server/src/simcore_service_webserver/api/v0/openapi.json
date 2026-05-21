@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.81.1"
+    "version": "0.83.0"
   },
   "servers": [
     {
@@ -882,6 +882,54 @@
             "required": true,
             "schema": {
               "$ref": "#/components/schemas/ConversationType"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "is_read_by_user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By User"
+            }
+          },
+          {
+            "name": "is_read_by_support",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By Support"
             }
           }
         ],
@@ -2671,6 +2719,22 @@
         "operationId": "list_users_accounts",
         "parameters": [
           {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Order By",
+              "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending.",
+              "examples": [
+                "-name,email",
+                "email",
+                "-status"
+              ]
+            },
+            "description": "Comma-separated list of field names for sorting. Prefix with '-' for descending, '+' or no prefix for ascending."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -2708,6 +2772,22 @@
                 }
               ],
               "title": "Review Status"
+            }
+          },
+          {
+            "name": "registered",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Registered"
             }
           },
           {
@@ -12279,8 +12359,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12329,8 +12408,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -12378,8 +12456,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -12466,8 +12543,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12501,8 +12577,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12536,8 +12611,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           }
         ],
@@ -12588,8 +12662,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileIDStr"
             }
           },
           {
@@ -14165,55 +14238,6 @@
         }
       }
     },
-    "/v0/email:test": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Test Email",
-        "operationId": "test_email",
-        "parameters": [
-          {
-            "name": "x-simcore-products-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Simcore-Products-Name"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TestEmail"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/": {
       "get": {
         "tags": [
@@ -15065,6 +15089,20 @@
             "type": "object",
             "title": "Quality"
           },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
+          },
           "release": {
             "$ref": "#/components/schemas/ServiceRelease",
             "description": "release information of current (latest) service"
@@ -15387,6 +15425,20 @@
             "type": "object",
             "title": "Quality"
           },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
+          },
           "history": {
             "items": {
               "$ref": "#/components/schemas/ServiceRelease"
@@ -15613,8 +15665,7 @@
           "quality": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Quality",
-            "default": {}
+            "title": "Quality"
           },
           "accessRights": {
             "anyOf": [
@@ -15632,6 +15683,20 @@
               }
             ],
             "title": "Accessrights"
+          },
+          "releaseNotesUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Releasenotesurl"
           }
         },
         "type": "object",
@@ -16372,6 +16437,16 @@
               }
             ],
             "title": "Isreadbysupport"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -16447,6 +16522,9 @@
             "type": "boolean",
             "title": "Isreadbysupport"
           },
+          "status": {
+            "$ref": "#/components/schemas/ConversationStatus"
+          },
           "lastMessageCreatedAt": {
             "type": "string",
             "format": "date-time",
@@ -16467,9 +16545,18 @@
           "extraContext",
           "isReadByUser",
           "isReadBySupport",
+          "status",
           "lastMessageCreatedAt"
         ],
         "title": "ConversationRestGet"
+      },
+      "ConversationStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "ARCHIVED"
+        ],
+        "title": "ConversationStatus"
       },
       "ConversationType": {
         "type": "string",
@@ -16904,55 +16991,6 @@
         ],
         "title": "DownloadLink",
         "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
-      },
-      "EmailTestFailed": {
-        "properties": {
-          "test_name": {
-            "type": "string",
-            "title": "Test Name"
-          },
-          "error_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error Code"
-          },
-          "user_message": {
-            "type": "string",
-            "title": "User Message",
-            "default": "Email test failed"
-          }
-        },
-        "type": "object",
-        "required": [
-          "test_name"
-        ],
-        "title": "EmailTestFailed"
-      },
-      "EmailTestPassed": {
-        "properties": {
-          "fixtures": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Fixtures"
-          },
-          "info": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fixtures",
-          "info"
-        ],
-        "title": "EmailTestPassed"
       },
       "EmptyModel": {
         "properties": {},
@@ -18477,35 +18515,6 @@
         },
         "type": "object",
         "title": "Envelope[TemplatePreviewGet]"
-      },
-      "Envelope_Union_EmailTestFailed__EmailTestPassed__": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EmailTestFailed"
-              },
-              {
-                "$ref": "#/components/schemas/EmailTestPassed"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[Union[EmailTestFailed, EmailTestPassed]]"
       },
       "Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__": {
         "properties": {
@@ -27296,7 +27305,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {
@@ -28451,6 +28460,9 @@
         ],
         "title": "StatusDiagnosticsGet"
       },
+      "StorageFileIDStr": {
+        "type": "string"
+      },
       "Structure": {
         "properties": {
           "key": {
@@ -29153,47 +29165,6 @@
           "templateName"
         ],
         "title": "TemplateRefGet"
-      },
-      "TestEmail": {
-        "properties": {
-          "from_": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/LowerCaseEmailStr"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Email sender"
-          },
-          "to": {
-            "$ref": "#/components/schemas/LowerCaseEmailStr",
-            "description": "Email receiver"
-          },
-          "template_name": {
-            "type": "string",
-            "enum": [
-              "change_email_email.jinja2",
-              "new_2fa_code.jinja2",
-              "registration_email.jinja2",
-              "reset_password_email.jinja2"
-            ],
-            "title": "Template Name",
-            "default": "registration_email.jinja2"
-          },
-          "template_context": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Template Context",
-            "default": {}
-          }
-        },
-        "type": "object",
-        "required": [
-          "to"
-        ],
-        "title": "TestEmail"
       },
       "TextArea": {
         "properties": {

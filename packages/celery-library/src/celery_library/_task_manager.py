@@ -27,7 +27,7 @@ from models_library.celery import (
     TaskStreamItem,
     TaskUUID,
 )
-from models_library.progress_bar import ProgressReport
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from pydantic import TypeAdapter
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
@@ -236,7 +236,7 @@ class CeleryTaskManager:
                 for async_result in group_result.results or []:
                     task_key: TaskKey = async_result.id
                     await self._task_store.remove_task(task_key)
-                    await self._forget_task(task_key)
+                    await self._revoke_and_forget_task(task_key)
                 group_result.forget()
 
             await self._task_store.remove_task(group_key)
@@ -253,7 +253,7 @@ class CeleryTaskManager:
                 raise TaskOrGroupNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
 
             await self._task_store.remove_task(task_key)
-            await self._forget_task(task_key)
+            await self._revoke_and_forget_task(task_key)
 
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool:
         return await self._task_store.task_or_group_exists(task_or_group_key)
@@ -261,6 +261,12 @@ class CeleryTaskManager:
     @make_async()
     def _forget_task(self, task_key: TaskKey) -> None:
         self._app.AsyncResult(task_key).forget()
+
+    @make_async()
+    def _revoke_and_forget_task(self, task_key: TaskKey) -> None:
+        async_result = self._app.AsyncResult(task_key)
+        async_result.revoke()
+        async_result.forget()
 
     @handle_celery_errors
     async def _get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any:
@@ -286,13 +292,37 @@ class CeleryTaskManager:
         if task_state in {TaskState.STARTED, TaskState.RETRY}:
             progress = await self._task_store.get_task_progress(task_key)
             if progress is not None:
-                return progress
+                return await self._get_progress_with_description(task_key, progress)
 
         if task_state in TASK_DONE_STATES:
-            return ProgressReport(actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE)
+            return await self._get_progress_with_description(
+                task_key,
+                ProgressReport(actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE),
+            )
 
         # task is pending
-        return ProgressReport(actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE)
+        return await self._get_progress_with_description(
+            task_key,
+            ProgressReport(actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE),
+        )
+
+    async def _get_progress_with_description(
+        self, task_or_group_key: TaskKey | GroupKey, progress: ProgressReport
+    ) -> ProgressReport:
+        if progress.message is not None:
+            return progress
+        metadata = await self._task_store.get_task_metadata(task_or_group_key)
+        if metadata is not None and metadata.description is not None:
+            return progress.model_copy(
+                update={
+                    "message": ProgressStructuredMessage(
+                        description=metadata.description,
+                        current=progress.actual_value,
+                        total=int(progress.total),
+                    )
+                }
+            )
+        return progress
 
     @make_async()
     def _get_task_celery_state(self, task_key: TaskKey) -> TaskState:
@@ -348,6 +378,13 @@ class CeleryTaskManager:
             is_successful = group_result.successful() if is_done else False
 
             total_count = len(task_uuids)
+            progress_report = await self._get_progress_with_description(
+                group_key,
+                ProgressReport(
+                    actual_value=float(total_count) if is_done else float(completed_count),
+                    total=float(total_count),
+                ),
+            )
             return GroupStatus(
                 group_uuid=group_uuid,
                 task_uuids=task_uuids,
@@ -355,10 +392,7 @@ class CeleryTaskManager:
                 total_count=total_count,
                 is_done=is_done,
                 is_successful=is_successful,
-                progress_report=ProgressReport(
-                    actual_value=float(total_count) if is_done else float(completed_count),
-                    total=float(total_count),
-                ),
+                progress_report=progress_report,
             )
 
     async def _get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus:

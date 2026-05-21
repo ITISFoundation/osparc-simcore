@@ -172,7 +172,7 @@ async def send_email_code(
                     email=user_email,
                 )
             ],
-            template_name="new_code",
+            template_name="new_2fa_code",
             context={
                 "user": {
                     "first_name": first_name,

@@ -17,5 +17,6 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
+aiosmtplib
 packaging
 pydantic

@@ -34,7 +34,6 @@ from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics, setup_profiling_middleware
 from .director_v2.plugin import setup_director_v2
 from .dynamic_scheduler.plugin import setup_dynamic_scheduler
-from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .folders.plugin import setup_folders
 from .functions.plugin import setup_functions
@@ -144,7 +143,6 @@ def create_application(tracing_config: TracingConfig) -> web.Application:  # noq
     setup_profiling_middleware(app)
 
     # login
-    setup_email(app)
     setup_invitations(app)
     setup_login(app)
     setup_api_keys(app)

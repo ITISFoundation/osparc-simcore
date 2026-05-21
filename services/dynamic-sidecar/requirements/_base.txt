@@ -25,7 +25,7 @@ aiofiles==24.1.0
     #   -r requirements/_base.in
 aiohappyeyeballs==2.5.0
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -61,7 +61,7 @@ aioprocessing==2.0.1
     # via -r requirements/_base.in
 aiormq==6.8.1
     # via aio-pika
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 alembic==1.15.1
     # via
@@ -661,7 +661,7 @@ python-engineio==4.11.2
     # via python-socketio
 python-magic==0.4.27
     # via -r requirements/_base.in
-python-multipart==0.0.20
+python-multipart==0.0.29
     # via fastapi
 python-socketio==5.13.0
     # via -r requirements/_base.in
@@ -913,7 +913,7 @@ typing-inspection==0.4.1
     # via pydantic
 u-msgpack-python==2.8.0
     # via -r requirements/_base.in
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

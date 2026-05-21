@@ -336,7 +336,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __openTitleEditor: function() {
-      const title = this.tr("Edit Title");
+      const title = this.tr("Rename ") + osparc.product.Utils.getStudyAlias();
       const titleEditor = new osparc.widget.Renamer(this.getStudy().getName(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();

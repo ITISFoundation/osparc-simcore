@@ -9,6 +9,7 @@ from ..conversations import (
     ConversationMessageGetDB,
     ConversationMessageID,
     ConversationMessageType,
+    ConversationStatus,
     ConversationType,
 )
 from ..groups import GroupID
@@ -32,6 +33,7 @@ class ConversationRestGet(OutputSchema):
     extra_context: dict[str, str]
     is_read_by_user: bool
     is_read_by_support: bool
+    status: ConversationStatus
     last_message_created_at: datetime
 
     @classmethod
@@ -49,6 +51,7 @@ class ConversationRestGet(OutputSchema):
             extra_context=domain.extra_context,
             is_read_by_user=domain.is_read_by_user,
             is_read_by_support=domain.is_read_by_support,
+            status=domain.status,
             last_message_created_at=domain.last_message_created_at,
         )
 
@@ -58,6 +61,7 @@ class ConversationPatch(InputSchema):
     extra_context: dict[str, Any] | None = None
     is_read_by_user: bool | None = None
     is_read_by_support: bool | None = None
+    status: ConversationStatus | None = None
 
 
 ### CONVERSATION MESSAGES ---------------------------------------------------------------

@@ -326,6 +326,7 @@ class ProjectDBAPI(BaseProjectDB):
         product_name: ProductName,
         user_id: UserID,
         workspace_query: WorkspaceQuery,
+        folder_query: FolderQuery,
         is_search_by_multi_columns: bool,
         user_groups: list[GroupID],
     ) -> sql.Select | None:
@@ -336,40 +337,105 @@ class ProjectDBAPI(BaseProjectDB):
                 WorkspaceScope.ALL,
             )
 
-            my_access_rights_subquery = (
-                sa.select(project_to_groups.c.project_uuid)
-                .where(
-                    (project_to_groups.c.read)  # Filters out entries where "read" is False
-                    & (project_to_groups.c.gid.in_(user_groups))  # Filters gid to be in user_groups
+            # Access rights check: use EXISTS instead of a GROUP BY subquery
+            # joined via INNER JOIN. EXISTS lets the planner stop at the first
+            # matching row and avoids materialising a grouped intermediate result.
+            access_rights_exists = sa.exists(
+                sa.select(sa.literal(1)).where(
+                    (project_to_groups.c.project_uuid == projects.c.uuid)
+                    & (project_to_groups.c.read)
+                    & (project_to_groups.c.gid.in_(user_groups))
                 )
-                .group_by(project_to_groups.c.project_uuid)
-            ).subquery("my_access_rights_subquery")
+            )
 
-            private_workspace_query = (
-                sa.select(
-                    *PROJECT_DB_COLS,
-                    projects.c.workbench,
-                    projects_to_folders.c.folder_id,
-                )
-                .select_from(
-                    projects.join(my_access_rights_subquery).join(
-                        projects_to_folders,
-                        (
-                            (projects_to_folders.c.project_uuid == projects.c.uuid)
-                            & (projects_to_folders.c.user_id == user_id)
-                        ),
-                        isouter=True,
+            # Folder scope determines the join strategy to projects_to_folders.
+            # Each scope has different semantics and benefits from a different
+            # SQL shape:
+            #
+            # ROOT -- show projects NOT placed in any folder by this user.
+            #   No join needed; use NOT EXISTS to check absence.
+            #   Avoids the costly LEFT JOIN ... IS NULL anti-join pattern.
+            #
+            # SPECIFIC -- show projects placed in a particular folder.
+            #   INNER JOIN on the exact (user_id, folder_id); only
+            #   matching rows survive, which is a simple equi-join.
+            #
+            # ALL -- search across all projects regardless of folder.
+            #   LEFT OUTER JOIN to retrieve folder_id when present,
+            #   but no filtering; used by full-depth search.
+            if folder_query.folder_scope == FolderScope.ROOT:
+                folder_not_exists = ~sa.exists(
+                    sa.select(sa.literal(1)).where(
+                        (projects_to_folders.c.project_uuid == projects.c.uuid)
+                        & (projects_to_folders.c.user_id == user_id)
+                        & (projects_to_folders.c.folder_id.is_not(None))
                     )
                 )
-                .where(
-                    (projects.c.workspace_id.is_(None))  # <-- Private workspace
-                    & (projects.c.product_name == product_name)
+                private_workspace_query = (
+                    sa.select(
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        sa.literal(None).label("folder_id"),
+                    )
+                    .select_from(projects)
+                    .where(
+                        (projects.c.workspace_id.is_(None))
+                        & (projects.c.product_name == product_name)
+                        & access_rights_exists
+                        & folder_not_exists
+                    )
                 )
-            )
-
-            assert (  # nosec
-                my_access_rights_subquery.description == "my_access_rights_subquery"
-            )
+            elif folder_query.folder_scope == FolderScope.SPECIFIC:
+                # Specific folder: INNER JOIN ensures only projects assigned
+                # to this exact folder survive — simple equi-join, no filter needed.
+                private_workspace_query = (
+                    sa.select(
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        projects_to_folders.c.folder_id,
+                    )
+                    .select_from(
+                        projects.join(
+                            projects_to_folders,
+                            (
+                                (projects_to_folders.c.project_uuid == projects.c.uuid)
+                                & (projects_to_folders.c.user_id == user_id)
+                                & (projects_to_folders.c.folder_id == folder_query.folder_id)
+                            ),
+                        )
+                    )
+                    .where(
+                        (projects.c.workspace_id.is_(None))
+                        & (projects.c.product_name == product_name)
+                        & access_rights_exists
+                    )
+                )
+            else:
+                assert folder_query.folder_scope == FolderScope.ALL  # nosec
+                # ALL (full-depth search): LEFT OUTER JOIN only to retrieve
+                # the folder_id column when present; no rows are filtered out.
+                private_workspace_query = (
+                    sa.select(
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        projects_to_folders.c.folder_id,
+                    )
+                    .select_from(
+                        projects.join(
+                            projects_to_folders,
+                            (
+                                (projects_to_folders.c.project_uuid == projects.c.uuid)
+                                & (projects_to_folders.c.user_id == user_id)
+                            ),
+                            isouter=True,
+                        )
+                    )
+                    .where(
+                        (projects.c.workspace_id.is_(None))
+                        & (projects.c.product_name == product_name)
+                        & access_rights_exists
+                    )
+                )
 
             if is_search_by_multi_columns:
                 private_workspace_query = private_workspace_query.join(
@@ -383,6 +449,7 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         product_name: ProductName,
         workspace_query: WorkspaceQuery,
+        folder_query: FolderQuery,
         is_search_by_multi_columns: bool,
         user_groups: list[GroupID],
     ) -> sql.Select | None:
@@ -392,39 +459,79 @@ class ProjectDBAPI(BaseProjectDB):
                 WorkspaceScope.ALL,
             )
 
-            my_workspace_access_rights_subquery = (
-                sa.select(workspaces_access_rights.c.workspace_id)
-                .where(
-                    workspaces_access_rights.c.read,
-                    workspaces_access_rights.c.gid.in_(user_groups),
+            # Access rights check: use EXISTS instead of a GROUP BY subquery
+            # joined via INNER JOIN (same reasoning as in the private query).
+            workspace_access_exists = sa.exists(
+                sa.select(sa.literal(1)).where(
+                    (workspaces_access_rights.c.workspace_id == projects.c.workspace_id)
+                    & (workspaces_access_rights.c.read)
+                    & (workspaces_access_rights.c.gid.in_(user_groups))
                 )
-                .group_by(workspaces_access_rights.c.workspace_id)
-            ).subquery("my_workspace_access_rights_subquery")
+            )
 
-            shared_workspace_query = (
-                sa.select(
-                    *PROJECT_DB_COLS,
-                    projects.c.workbench,
-                    projects_to_folders.c.folder_id,
-                )
-                .select_from(
-                    projects.join(
-                        my_workspace_access_rights_subquery,
-                        projects.c.workspace_id == my_workspace_access_rights_subquery.c.workspace_id,
-                    ).join(
-                        projects_to_folders,
-                        (
-                            (projects_to_folders.c.project_uuid == projects.c.uuid)
-                            & (projects_to_folders.c.user_id.is_(None))
-                        ),
-                        isouter=True,
+            # Same folder-scope split as in the private workspace query.
+            # NOTE: shared workspaces store folder assignments with
+            # user_id IS NULL (folders are workspace-level, not per-user).
+            if folder_query.folder_scope == FolderScope.ROOT:
+                folder_not_exists = ~sa.exists(
+                    sa.select(sa.literal(1)).where(
+                        (projects_to_folders.c.project_uuid == projects.c.uuid)
+                        & (projects_to_folders.c.user_id.is_(None))
+                        & (projects_to_folders.c.folder_id.is_not(None))
                     )
                 )
-                .where(projects.c.product_name == product_name)
-            )
-            assert (  # nosec
-                my_workspace_access_rights_subquery.description == "my_workspace_access_rights_subquery"
-            )
+                shared_workspace_query = (
+                    sa.select(
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        sa.literal(None).label("folder_id"),
+                    )
+                    .select_from(projects)
+                    .where((projects.c.product_name == product_name) & workspace_access_exists & folder_not_exists)
+                )
+            elif folder_query.folder_scope == FolderScope.SPECIFIC:
+                # Specific folder: INNER JOIN ensures only projects assigned
+                # to this exact folder survive — simple equi-join, no filter needed.
+                shared_workspace_query = (
+                    sa.select(
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        projects_to_folders.c.folder_id,
+                    )
+                    .select_from(
+                        projects.join(
+                            projects_to_folders,
+                            (
+                                (projects_to_folders.c.project_uuid == projects.c.uuid)
+                                & (projects_to_folders.c.user_id.is_(None))
+                                & (projects_to_folders.c.folder_id == folder_query.folder_id)
+                            ),
+                        )
+                    )
+                    .where((projects.c.product_name == product_name) & workspace_access_exists)
+                )
+            else:
+                assert folder_query.folder_scope == FolderScope.ALL  # nosec
+                # ALL (full-depth search): LEFT OUTER JOIN only to retrieve
+                # the folder_id column when present; no rows are filtered out.
+                shared_workspace_query = (
+                    sa.select(
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        projects_to_folders.c.folder_id,
+                    )
+                    .select_from(
+                        projects.join(
+                            projects_to_folders,
+                            (
+                                (projects_to_folders.c.project_uuid == projects.c.uuid)
+                                & (projects_to_folders.c.user_id.is_(None))
+                            ),
+                            isouter=True,
+                        )
+                    )
+                    .where((projects.c.product_name == product_name) & workspace_access_exists)
+                )
 
             if workspace_query.workspace_scope == WorkspaceScope.ALL:
                 shared_workspace_query = shared_workspace_query.where(
@@ -447,7 +554,7 @@ class ProjectDBAPI(BaseProjectDB):
         return None
 
     @staticmethod
-    def _create_attributes_filters(  # pylint: disable=too-many-branches  # noqa: C901
+    def _create_attributes_filters(  # pylint: disable=too-many-branches
         *,
         filter_by_project_type: ProjectType | None,
         filter_by_template_type: ProjectTemplateType | None,
@@ -458,7 +565,6 @@ class ProjectDBAPI(BaseProjectDB):
         filter_guest_product_group_id: GroupID | None,
         search_by_multi_columns: str | None,
         search_by_project_name: str | None,
-        folder_query: FolderQuery,
     ) -> list[ColumnElement]:
         attributes_filters: list[ColumnElement] = []
 
@@ -505,13 +611,6 @@ class ProjectDBAPI(BaseProjectDB):
         if search_by_project_name is not None:
             attributes_filters.append(projects.c.name.like(f"%{search_by_project_name}%"))
 
-        if folder_query.folder_scope is not FolderScope.ALL:
-            if folder_query.folder_scope == FolderScope.SPECIFIC:
-                attributes_filters.append(projects_to_folders.c.folder_id == folder_query.folder_id)
-            else:
-                assert folder_query.folder_scope == FolderScope.ROOT  # nosec
-                attributes_filters.append(projects_to_folders.c.folder_id.is_(None))
-
         return attributes_filters
 
     async def list_projects_dicts(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches  # noqa: PLR0913
@@ -551,6 +650,7 @@ class ProjectDBAPI(BaseProjectDB):
                 product_name=product_name,
                 user_id=user_id,
                 workspace_query=workspace_query,
+                folder_query=folder_query,
                 is_search_by_multi_columns=search_by_multi_columns is not None,
                 user_groups=user_groups,
             )
@@ -561,6 +661,7 @@ class ProjectDBAPI(BaseProjectDB):
             shared_workspace_query = self._create_shared_workspace_query(
                 product_name=product_name,
                 workspace_query=workspace_query,
+                folder_query=folder_query,
                 is_search_by_multi_columns=search_by_multi_columns is not None,
                 user_groups=user_groups,
             )
@@ -579,7 +680,6 @@ class ProjectDBAPI(BaseProjectDB):
                 filter_guest_product_group_id=filter_guest_product_group_id,
                 search_by_multi_columns=search_by_multi_columns,
                 search_by_project_name=search_by_project_name,
-                folder_query=folder_query,
             )
 
             ###

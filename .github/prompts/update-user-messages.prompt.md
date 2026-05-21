@@ -1,7 +1,7 @@
 ---
-mode: 'edit'
+agent: agent
 description: 'Update user messages'
-model: Claude Sonnet 3.5
+model: Claude Haiku 4.5 (copilot)
 ---
 
 This prompt guide is for updating user-facing messages in ${file} or ${selection}

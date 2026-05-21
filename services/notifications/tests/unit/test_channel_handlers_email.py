@@ -2,8 +2,16 @@ import itertools
 from collections import Counter
 
 import pytest
-from models_library.notifications.rpc import EmailContact
+from models_library.notifications import Channel
+from models_library.notifications.rpc import (
+    EmailAddressing,
+    EmailAttachment,
+    EmailContact,
+    EmailContent,
+    EmailMessage,
+)
 from simcore_service_notifications.services.channel_handlers._email import (
+    EmailChannelHandler,
     _interleave_recipients_by_domain,
 )
 
@@ -81,3 +89,46 @@ def test_interleave_many_domains_one_each():
     domains = [r.email.split("@")[1] for r in result]
     consecutive_same = sum(1 for a, b in itertools.pairwise(domains) if a == b)
     assert consecutive_same == 0
+
+
+def _make_message(
+    *,
+    bcc: EmailContact | None = None,
+    attachments: list[EmailAttachment] | None = None,
+) -> EmailMessage:
+    return EmailMessage(
+        channel=Channel.email,
+        addressing=EmailAddressing(
+            from_=EmailContact(name="Sender", email="sender@example.com"),
+            to=[_contact("user@example.com")],
+            bcc=bcc,
+            attachments=attachments,
+        ),
+        content=EmailContent(subject="Test", body_text="body"),
+    )
+
+
+def test_prepare_messages_includes_bcc():
+    bcc = EmailContact(name="Billing", email="billing@example.com")
+    payloads = EmailChannelHandler.prepare_messages(_make_message(bcc=bcc))
+
+    assert len(payloads) == 1
+    assert payloads[0]["bcc"]["email"] == "billing@example.com"
+
+
+def test_prepare_messages_includes_attachments():
+    attachment = EmailAttachment(content=b"%PDF-1.4", filename="invoice.pdf")
+    payloads = EmailChannelHandler.prepare_messages(_make_message(attachments=[attachment]))
+
+    assert len(payloads) == 1
+    assert payloads[0]["attachments"] is not None
+    assert len(payloads[0]["attachments"]) == 1
+    assert payloads[0]["attachments"][0]["filename"] == "invoice.pdf"
+
+
+def test_prepare_messages_without_bcc_and_attachments():
+    payloads = EmailChannelHandler.prepare_messages(_make_message())
+
+    assert len(payloads) == 1
+    assert "bcc" not in payloads[0]
+    assert "attachments" not in payloads[0]

@@ -10,31 +10,21 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
-import respx
 from faker import Faker
-from fastapi import status
-from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.email import SMTPSettings
-from simcore_postgres_database.models.products import Vendor
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.models.db import PaymentsTransactionsDB
+from simcore_service_payments.services import notifier_email
 from simcore_service_payments.services.notifier_email import (
-    _PRODUCT_NOTIFICATIONS_TEMPLATES,
     EmailProvider,
-    _create_email_session,
-    _create_user_email,
-    _get_invoice_pdf,
-    _PaymentData,
-    _ProductData,
-    _UserData,
+    _download_invoice_pdf,
+    _extract_file_name,
 )
-from tenacity.wait import wait_none
 
 
 @pytest.fixture
@@ -53,110 +43,25 @@ def app_environment(
 
 
 @pytest.fixture
-def smtp_mock_or_none(
-    mocker: MockerFixture,
-    is_external_user_email: bool,
-    user_email: EmailStr,
-) -> MagicMock | None:
-    if not is_external_user_email:
-        return mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
-    print("🚨 Emails might be sent to", f"{user_email=}")
-    return None
-
-
-@pytest.fixture(params=["ok", "ko"])
-def mocked_get_invoice_pdf_response(
-    request: pytest.FixtureRequest,
-    respx_mock: respx.MockRouter,
-    transaction: PaymentsTransactionsDB,
-) -> respx.MockRouter:
-    if request.param == "ok":
-        file_name = "test-attachment.pdf"
-        file_content = b"%PDF-1.4 ... (file content here) ..."
-
-        response = httpx.Response(
-            status.HTTP_200_OK,
-            content=file_content,
-            headers={
-                "Content-Type": "application/pdf",
-                "Content-Disposition": f'attachment; filename="{file_name}"',
-            },
-        )
-    else:
-        assert request.param == "ko"
-        response = httpx.Response(
-            status.HTTP_404_NOT_FOUND,
-            text=f"{request.fixturename} is set to '{request.param}'",
-        )
-
-    respx_mock.get(f"{transaction.invoice_pdf_url}").mock(return_value=response)
-
-    return respx_mock
-
-
-@pytest.fixture
 def transaction(faker: Faker, successful_transaction: dict[str, Any]) -> PaymentsTransactionsDB:
     valid_keys = successful_transaction.keys() & PaymentsTransactionsDB.model_fields.keys()
     return PaymentsTransactionsDB(**{k: successful_transaction[k] for k in valid_keys})
 
 
-async def test_send_email_workflow(
-    app_environment: EnvVarsDict,
-    faker: Faker,
-    transaction: PaymentsTransactionsDB,
-    user_email: EmailStr,
-    product_name: ProductName,
-    product: dict[str, Any],
-    smtp_mock_or_none: MagicMock | None,
-    mocked_get_invoice_pdf_response: respx.MockRouter,
-):
-    """
-    Example of usage with external email and envfile
+@pytest.fixture
+def mock_rabbitmq_rpc_client() -> AsyncMock:
+    return AsyncMock()
 
-        > pytest --faker-user-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
-    """
 
-    settings = SMTPSettings.create_from_envs()
-    env = Environment(
-        loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
-        autoescape=select_autoescape(["html", "xml"]),
+@pytest.fixture
+def mock_send_message_from_template(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        f"{notifier_email.__name__}.send_message_from_template",
+        new_callable=AsyncMock,
     )
 
-    user_data = _UserData(
-        first_name=faker.first_name(),
-        last_name=faker.last_name(),
-        email=user_email,
-    )
 
-    vendor: Vendor = product["vendor"]
-
-    product_data = _ProductData(  # type: ignore
-        product_name=product_name,
-        display_name=product["display_name"],
-        vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
-        support_email=product["support_email"],
-    )
-
-    payment_data = _PaymentData(
-        price_dollars=f"{transaction.price_dollars:.2f}",
-        osparc_credits=f"{transaction.osparc_credits:.2f}",
-        invoice_url=str(transaction.invoice_url),
-        invoice_pdf_url=str(transaction.invoice_pdf_url),
-    )
-
-    msg = await _create_user_email(env, user_data, payment_data, product_data)
-
-    async with _create_email_session(settings) as smtp:
-        await smtp.send_message(msg)
-
-    if smtp_mock_or_none:
-        assert smtp_mock_or_none.called
-        assert isinstance(smtp, AsyncMock)
-        assert smtp.login.called
-        assert smtp.send_message.called
-
-
-async def test_email_provider(
+async def test_email_provider_sends_on_success(
     app_environment: EnvVarsDict,
     mocker: MockerFixture,
     user_id: UserID,
@@ -166,18 +71,16 @@ async def test_email_provider(
     product_name: ProductName,
     product: dict[str, Any],
     transaction: PaymentsTransactionsDB,
-    smtp_mock_or_none: MagicMock | None,
-    mocked_get_invoice_pdf_response: respx.MockRouter,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
 ):
-    settings = SMTPSettings.create_from_envs()
-
-    # mock access to db
     users_repo = PaymentsUsersRepo(MagicMock())
-    get_notification_data_mock = mocker.patch.object(
+    mocker.patch.object(
         users_repo,
         "get_notification_data",
         return_value=SimpleNamespace(
             payment_id=transaction.payment_id,
+            user_name="jdoe",
             first_name=user_first_name,
             last_name=user_last_name,
             email=user_email,
@@ -188,108 +91,292 @@ async def test_email_provider(
         ),
     )
 
-    provider = EmailProvider(settings, users_repo)
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
 
     await provider.notify_payment_completed(user_id=user_id, payment=transaction)
-    assert get_notification_data_mock.called
 
-    if smtp_mock_or_none:
-        assert smtp_mock_or_none.called
+    assert mock_send_message_from_template.called
+
+    call_kwargs = mock_send_message_from_template.call_args
+    assert call_kwargs.kwargs["template_ref"].template_name == "paid"
+    assert call_kwargs.kwargs["context"]["payment"]["price_dollars"] == f"{transaction.price_dollars:.2f}"
+    assert call_kwargs.kwargs["context"]["payment"]["osparc_credits"] == f"{transaction.osparc_credits:.2f}"
 
 
-async def test_create_user_email_logs_timeout_and_url_on_read_timeout(
+async def test_email_provider_skips_non_success(
     app_environment: EnvVarsDict,
     faker: Faker,
+    user_id: UserID,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+):
+    users_repo = PaymentsUsersRepo(MagicMock())
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
+
+    pending_transaction = PaymentsTransactionsDB(
+        payment_id=f"pt_{faker.pyint()}",
+        price_dollars=faker.pydecimal(left_digits=3, right_digits=2, positive=True),
+        osparc_credits=faker.pydecimal(left_digits=3, right_digits=2, positive=True),
+        product_name="osparc",
+        user_id=user_id,
+        user_email=faker.email(),
+        wallet_id=faker.pyint(),
+        comment=None,
+        invoice_url=None,
+        stripe_invoice_id=None,
+        invoice_pdf_url=None,
+        initiated_at=faker.date_time(),
+        completed_at=None,
+        state="PENDING",
+        state_message=None,
+    )
+
+    await provider.notify_payment_completed(user_id=user_id, payment=pending_transaction)
+
+    assert not mock_send_message_from_template.called
+
+
+async def test_email_provider_skips_when_invoice_url_missing(
+    app_environment: EnvVarsDict,
+    faker: Faker,
+    user_id: UserID,
     transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+    caplog: pytest.LogCaptureFixture,
+):
+    users_repo = PaymentsUsersRepo(MagicMock())
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
+
+    transaction_without_invoice = transaction.model_copy(update={"invoice_url": None})
+
+    with caplog.at_level(logging.WARNING):
+        await provider.notify_payment_completed(user_id=user_id, payment=transaction_without_invoice)
+
+    assert not mock_send_message_from_template.called
+    assert "No email sent for payment without invoice_url" in caplog.text
+
+
+async def test_email_provider_logs_on_rpc_failure(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
     user_email: EmailStr,
     product_name: ProductName,
     product: dict[str, Any],
-    mocker: MockerFixture,
+    transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
     caplog: pytest.LogCaptureFixture,
 ):
-    """When _get_invoice_pdf raises ReadTimeout, the log must include timeout value and URL."""
+    users_repo = PaymentsUsersRepo(MagicMock())
+    mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=SimpleNamespace(
+            payment_id=transaction.payment_id,
+            user_name="jdoe",
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+        ),
+    )
 
-    invoice_pdf_url = transaction.invoice_pdf_url
-    assert invoice_pdf_url
-
-    # Mock _get_invoice_pdf to raise ReadTimeout with request metadata
-    request = httpx.Request("GET", str(invoice_pdf_url))
-    request.extensions = {"timeout": {"read": 10.0, "write": 10.0, "connect": 10.0, "pool": 10.0}}
     mocker.patch(
-        "simcore_service_payments.services.notifier_email._get_invoice_pdf",
-        side_effect=httpx.ReadTimeout("Read timed out", request=request),
+        f"{notifier_email.__name__}.send_message_from_template",
+        new_callable=AsyncMock,
+        side_effect=RuntimeError("RPC connection failed"),
     )
 
-    env = Environment(
-        loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
-    user_data = _UserData(
-        first_name=faker.first_name(),
-        last_name=faker.last_name(),
-        email=user_email,
-    )
-    vendor: Vendor = product["vendor"]
-    product_data = _ProductData(  # type: ignore
-        product_name=product_name,
-        display_name=product["display_name"],
-        vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
-        support_email=product["support_email"],
-    )
-    payment_data = _PaymentData(
-        price_dollars=f"{transaction.price_dollars:.2f}",
-        osparc_credits=f"{transaction.osparc_credits:.2f}",
-        invoice_url=str(transaction.invoice_url),
-        invoice_pdf_url=str(transaction.invoice_pdf_url),
-    )
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
 
     with caplog.at_level(logging.ERROR):
-        msg = await _create_user_email(env, user_data, payment_data, product_data)
+        await provider.notify_payment_completed(user_id=user_id, payment=transaction)
 
-    # Email is still created (sent without attachment)
-    assert msg is not None
-    assert msg["Subject"]
-
-    # No attachment is added when fetching invoice PDF times out
-    attachments = (
-        list(msg.iter_attachments())
-        if hasattr(msg, "iter_attachments")
-        else [part for part in msg.walk() if part.get_content_disposition() == "attachment" or part.get_filename()]
-    )
-    assert attachments == []
-
-    # Log includes ReadTimeout-specific info
-    assert "ReadTimeout fetching invoice PDF" in caplog.text
-    assert str(invoice_pdf_url) in caplog.text
-    assert "timeout" in caplog.text.lower()
+    assert "Failed to send payment completed email notification" in caplog.text
 
 
-async def test_get_invoice_pdf_retries_on_retryable_http_status(
+async def test_email_provider_attaches_invoice_pdf(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
     transaction: PaymentsTransactionsDB,
-    respx_mock: respx.MockRouter,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+):
+    # transaction fixture has invoice_pdf_url set; stub the PDF download
+    pdf_bytes = b"%PDF-1.4 fake-pdf-content \x00\x01\xff"
+    pdf_filename = "Invoice-INV-001.pdf"
+    mocker.patch(
+        f"{notifier_email.__name__}._download_invoice_pdf",
+        new_callable=AsyncMock,
+        return_value=(pdf_bytes, pdf_filename),
+    )
+
+    users_repo = PaymentsUsersRepo(MagicMock())
+    mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=SimpleNamespace(
+            payment_id=transaction.payment_id,
+            user_name="jdoe",
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+        ),
+    )
+
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
+
+    await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+
+    assert mock_send_message_from_template.called
+    addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
+
+    # attachment is forwarded to the notifications service with the original bytes
+    assert addressing.attachments is not None
+    assert len(addressing.attachments) == 1
+    attachment = addressing.attachments[0]
+    assert attachment.content == pdf_bytes
+    assert attachment.filename == pdf_filename
+
+    # round-trip through model serialization preserves bytes
+    dumped = addressing.model_dump()
+    assert dumped["attachments"][0]["content"] == pdf_bytes
+    assert type(addressing).model_validate(dumped).attachments[0].content == pdf_bytes
+
+
+async def test_email_provider_propagates_bcc(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
+    transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+):
+    users_repo = PaymentsUsersRepo(MagicMock())
+    mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=SimpleNamespace(
+            payment_id=transaction.payment_id,
+            user_name="jdoe",
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+        ),
+    )
+
+    bcc = "billing@example.com"
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo, bcc_email=bcc)
+
+    await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+
+    assert mock_send_message_from_template.called
+    addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
+    assert addressing.bcc is not None
+    assert addressing.bcc.email == bcc
+
+
+@pytest.mark.parametrize(
+    "url, content_disposition, expected",
+    [
+        # Filename from Content-Disposition wins
+        (
+            "https://files.stripe.com/abc/xyz",
+            'attachment; filename="Invoice-INV-1234.pdf"',
+            "Invoice-INV-1234.pdf",
+        ),
+        # No header → fall back to URL last segment when it ends with .pdf
+        (
+            "https://example.com/path/MyInvoice.pdf",
+            "",
+            "MyInvoice.pdf",
+        ),
+        # Otherwise default
+        (
+            "https://example.com/abc/xyz",
+            "",
+            "invoice.pdf",
+        ),
+        (
+            "https://example.com/",
+            "",
+            "invoice.pdf",
+        ),
+    ],
+)
+def test_extract_file_name(url: str, content_disposition: str, expected: str):
+    headers = {"content-disposition": content_disposition} if content_disposition else {}
+    response = httpx.Response(status_code=200, headers=headers)
+    assert _extract_file_name(response, url) == expected
+
+
+async def test_download_invoice_pdf_returns_none_on_http_error(
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    mocker.patch.object(
+        notifier_email,
+        "_get_invoice_pdf",
+        new_callable=AsyncMock,
+        side_effect=httpx.ConnectError("boom"),
+    )
+    assert (
+        await _download_invoice_pdf(
+            faker.url(),
+            user_id=1,
+            payment_id="pt_test",
+            product_name="osparc",
+        )
+        is None
+    )
+
+
+async def test_download_invoice_pdf_returns_content_and_filename(
     mocker: MockerFixture,
 ):
-    invoice_pdf_url = transaction.invoice_pdf_url
-    assert invoice_pdf_url
-
-    request = httpx.Request("GET", str(invoice_pdf_url))
-    route = respx_mock.get(str(invoice_pdf_url)).mock(
-        side_effect=[
-            httpx.Response(status.HTTP_503_SERVICE_UNAVAILABLE, request=request),
-            httpx.Response(
-                status.HTTP_200_OK,
-                content=b"%PDF-1.4",
-                headers={
-                    "Content-Type": "application/pdf",
-                    "Content-Disposition": 'attachment; filename="test-attachment.pdf"',
-                },
-                request=request,
-            ),
-        ]
+    pdf_bytes = b"%PDF-1.4 ..."
+    response = httpx.Response(
+        status_code=200,
+        content=pdf_bytes,
+        headers={"content-disposition": 'attachment; filename="receipt.pdf"'},
     )
-    mocker.patch.object(_get_invoice_pdf.retry, "wait", new=wait_none())
+    mocker.patch.object(
+        notifier_email,
+        "_get_invoice_pdf",
+        new_callable=AsyncMock,
+        return_value=response,
+    )
 
-    response = await _get_invoice_pdf(str(invoice_pdf_url))
+    downloaded = await _download_invoice_pdf(
+        "https://example.com/x",
+        user_id=1,
+        payment_id="pt_test",
+        product_name="osparc",
+    )
 
-    assert response.status_code == status.HTTP_200_OK
-    assert route.call_count == 2
+    assert downloaded == (pdf_bytes, "receipt.pdf")

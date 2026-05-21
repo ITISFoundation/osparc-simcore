@@ -1256,6 +1256,140 @@
         }
       }
     },
+    "/v0/programs": {
+      "get": {
+        "tags": [
+          "programs"
+        ],
+        "summary": "List Programs",
+        "description": "Lists the latest of all available programs\n\nNew in *version 0.10*",
+        "operationId": "list_programs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Program_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/programs/{program_key}/releases": {
+      "get": {
+        "tags": [
+          "programs"
+        ],
+        "summary": "List Program History",
+        "description": "Lists the latest of all available programs\n\nNew in *version 0.10*",
+        "operationId": "list_program_history",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Program Key"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Program_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/programs/{program_key}/releases/{version}": {
       "get": {
         "tags": [
@@ -1506,6 +1640,106 @@
             "HTTPBasic": []
           }
         ]
+      }
+    },
+    "/v0/solvers/page": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List All Solvers Paginated",
+        "description": "Lists all available solvers (paginated)\n\nNew in *version 0.10-rc1*",
+        "operationId": "list_all_solvers_paginated",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "solver_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by solver ID pattern",
+              "title": "Solver Id"
+            },
+            "description": "Filter by solver ID pattern"
+          },
+          {
+            "name": "version_display",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by version display pattern",
+              "title": "Version Display"
+            },
+            "description": "Filter by version display pattern"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Solver_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v0/solvers/releases": {
@@ -1804,6 +2038,78 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/page": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Solver Releases Paginated",
+        "description": "Lists all releases of a give solver (paginated)\n\nNew in *version 0.10-rc1*",
+        "operationId": "list_solver_releases_paginated",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "solver_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Solver_"
                 }
               }
             }
@@ -2531,9 +2837,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -2661,9 +2965,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -2800,9 +3102,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -2935,9 +3235,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           },
           {
@@ -3123,9 +3421,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3262,9 +3558,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3401,9 +3695,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3538,9 +3830,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3551,6 +3841,223 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/JobMetadata"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metadata not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/-/releases/-/jobs": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List All Solvers Jobs",
+        "description": "List of all jobs created for any released solver (paginated)\n\nNew in *version 0.10-rc1*",
+        "operationId": "list_all_solvers_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "metadata.any",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\nFilters jobs based on **any** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n",
+              "title": "Metadata.Any"
+            },
+            "description": "\nFilters jobs based on **any** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n"
+          },
+          {
+            "name": "metadata.all",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\nFilters jobs based on **all** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n",
+              "title": "Metadata.All"
+            },
+            "description": "\nFilters jobs based on **all** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Job_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/-/releases/-/jobs/metadata:batchGet": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Batch Get Jobs Custom Metadata",
+        "description": "Gets custom metadata for multiple jobs in a single request\n\nNew in *version 0.7*",
+        "operationId": "batch_get_jobs_custom_metadata",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/JobID"
+              },
+              "minItems": 1,
+              "maxItems": 50,
+              "title": "Job Ids"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchGetJobMetadataResponse"
                 }
               }
             }
@@ -3818,9 +4325,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3967,9 +4472,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4104,9 +4607,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4243,9 +4744,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4371,9 +4870,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4762,6 +5259,76 @@
       }
     },
     "/v0/studies/{study_id}/jobs": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "List Study Jobs",
+        "description": "List of all jobs created for a given study (paginated)\n\nNew in *version 0.10-rc1*",
+        "operationId": "list_study_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Job_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "studies"
@@ -4865,6 +5432,56 @@
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Get Study Job",
+        "description": "Gets a jobs for a given study\n\nNew in *version 0.10-rc1*",
+        "operationId": "get_study_job",
+        "parameters": [
+          {
+            "name": "study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/JobID"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "tags": [
           "studies"
@@ -4893,9 +5510,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4955,9 +5570,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           },
           {
@@ -5124,9 +5737,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5182,9 +5793,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5240,9 +5849,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5298,9 +5905,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5357,9 +5962,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5414,9 +6017,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -8513,9 +9114,52 @@
         ],
         "title": "ApiServerEnvelope[list[TaskGet]]"
       },
+      "ArgumentTypes": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/File"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "items": {},
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "AsyncJobId": {
         "type": "string",
         "format": "uuid"
+      },
+      "BatchGetJobMetadataResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/JobMetadata"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "List of job metadata results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "BatchGetJobMetadataResponse"
       },
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {
@@ -9014,9 +9658,7 @@
       "Job": {
         "properties": {
           "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
+            "$ref": "#/components/schemas/JobID"
           },
           "name": {
             "type": "string",
@@ -9109,37 +9751,14 @@
           "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c"
         }
       },
+      "JobID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "JobInputs": {
         "properties": {
           "values": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/File"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "items": {},
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "object",
-            "title": "Values"
+            "$ref": "#/components/schemas/KeywordArguments-Input"
           }
         },
         "type": "object",
@@ -9226,9 +9845,7 @@
       "JobMetadata": {
         "properties": {
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
+            "$ref": "#/components/schemas/JobID",
             "description": "Parent Job"
           },
           "metadata": {
@@ -9298,40 +9915,11 @@
       "JobOutputs": {
         "properties": {
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
+            "$ref": "#/components/schemas/JobID",
             "description": "Job that produced this output"
           },
           "results": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/File"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "items": {},
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "object",
-            "title": "Results"
+            "$ref": "#/components/schemas/KeywordArguments-Output"
           }
         },
         "type": "object",
@@ -9357,9 +9945,7 @@
       "JobStatus": {
         "properties": {
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id"
+            "$ref": "#/components/schemas/JobID"
           },
           "state": {
             "$ref": "#/components/schemas/RunningState"
@@ -9430,6 +10016,18 @@
           "state": "STARTED",
           "submitted_at": "2021-04-01 07:15:54.631007"
         }
+      },
+      "KeywordArguments-Input": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ArgumentTypes"
+        },
+        "type": "object"
+      },
+      "KeywordArguments-Output": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ArgumentTypes"
+        },
+        "type": "object"
       },
       "LicensedItemCheckoutData": {
         "properties": {
@@ -10420,6 +11018,65 @@
         ],
         "title": "Page[LicensedItemGet]"
       },
+      "Page_Program_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Program"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[Program]"
+      },
       "Page_RegisteredFunctionJobCollection_": {
         "properties": {
           "items": {
@@ -10478,6 +11135,65 @@
           "links"
         ],
         "title": "Page[RegisteredFunctionJobCollection]"
+      },
+      "Page_Solver_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Solver"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[Solver]"
       },
       "Page_Study_": {
         "properties": {
@@ -12608,9 +13324,7 @@
             "description": "Program version"
           },
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
+            "$ref": "#/components/schemas/JobID",
             "description": "Job identifier"
           },
           "workspace_path": {

@@ -49,9 +49,6 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
 from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
@@ -77,29 +74,6 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
         "simcore_service_director_v2.core.application.rabbitmq.RabbitMQClient",
         autospec=True,
     )
-
-
-@pytest.fixture()
-def minimal_configuration(
-    mock_env: EnvVarsDict,
-    postgres_host_config: dict[str, str],
-    rabbit_service: RabbitSettings,
-    redis_service: RedisSettings,
-    monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-    with_disabled_auto_scheduling: mock.Mock,
-    with_disabled_scheduler_publisher: mock.Mock,
-    with_product: dict[str, Any],
-):
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", faker.url())
-    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
-    monkeypatch.setenv("S3_REGION", faker.pystr())
-    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
-    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
 @pytest.fixture(scope="session")

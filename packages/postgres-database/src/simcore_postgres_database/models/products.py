@@ -54,9 +54,9 @@ class Vendor(TypedDict, total=False):
         bool  # If True, it takes precedence over invitation_url and asks the FE to show the form (if defined)
     )
 
-    release_notes_url_template: (
-        str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
-    )
+    # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    # (used for the platform's release notes)
+    release_notes_url_template: str
 
     ui: VendorUI
 
@@ -65,6 +65,11 @@ class Vendor(TypedDict, total=False):
     company_name: str
     company_address: str
     company_links: list[tuple[str, str]]  # list of (link_name, link_url)
+    marketing_fallback_products_on_wrong_password: (
+        list[str]  # list of product names to check (in order); on wrong password, if the user has an account
+        # in any of these products, suggest using the password from the first matching product
+        # (accounts were merged/unified across platforms)
+    )
 
 
 class IssueTracker(TypedDict, total=True):

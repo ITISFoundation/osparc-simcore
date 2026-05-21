@@ -91,7 +91,8 @@ async def _assert_handler_not_called(handler: mock.Mock) -> None:
         ):
             with attempt:
                 print(
-                    f"--> checking no message reached webclient for {attempt.retry_state.attempt_number}/{_STABLE_DELAY_S}s..."
+                    f"--> checking no message reached webclient for {attempt.retry_state.attempt_number}"
+                    f"/{_STABLE_DELAY_S}s..."
                 )
                 handler.assert_not_called()
     print(f"no calls received for {_STABLE_DELAY_S}s. very good.")
@@ -385,7 +386,7 @@ async def test_instrumentation_workflow(
         project_id=user_project_id,
         node_id=random_node_id_in_user_project,
         metrics=metrics_name,
-        service_uuid=faker.uuid4(),
+        service_uuid=faker.uuid4(cast_to=None),
         service_key=faker.pystr(),
         service_tag=faker.pystr(),
         result=RunningState.STARTED,

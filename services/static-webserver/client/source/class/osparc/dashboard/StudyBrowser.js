@@ -669,8 +669,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
 
-    _folderSelected: function(folderId) {
-      this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, this.getCurrentWorkspaceId(), folderId);
+    _folderSelected: function(workspaceId, folderId) {
+      this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, workspaceId, folderId);
     },
 
     _folderUpdated: function() {
@@ -2033,7 +2033,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getRenameStudyMenuButton: function(studyData) {
       const renameButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
       renameButton.addListener("execute", () => {
-        const renamer = new osparc.widget.Renamer(studyData["name"]);
+        const title = this.tr("Rename ") + osparc.product.Utils.getStudyAlias();
+        const renamer = new osparc.widget.Renamer(studyData["name"], null, title);
         renamer.addListener("labelChanged", e => {
           renamer.close();
           const newLabel = e.getData()["newLabel"];

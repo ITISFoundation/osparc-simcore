@@ -355,6 +355,16 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
             return_value=None,
             autospec=True,
         ),
+        "subscribe": mocker.patch(
+            "servicelib.rabbitmq.RabbitMQClient.subscribe",
+            return_value=("mock_queue_name", "mock_consumer_tag"),
+            autospec=True,
+        ),
+        "unsubscribe": mocker.patch(
+            "servicelib.rabbitmq.RabbitMQClient.unsubscribe",
+            return_value=None,
+            autospec=True,
+        ),
     }
 
 

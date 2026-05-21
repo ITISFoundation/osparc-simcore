@@ -40,7 +40,7 @@ qx.Class.define("osparc.conversation.NotificationUI", {
       this.getChildControl("menu-button").hide();
       this.getChildControl("message-bubble").exclude();
 
-      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(message);
+      const isMyMessage = osparc.data.model.Message.isMyMessage(message);
 
       let msgContent = "🔔 ";
       const messageContent = this.getChildControl("notification-content");

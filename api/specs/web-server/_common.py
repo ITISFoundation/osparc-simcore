@@ -7,10 +7,8 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Generic,
     NamedTuple,
     Optional,
-    TypeVar,
     Union,
     get_args,
     get_origin,
@@ -72,6 +70,12 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
             new_type=Json,
         )
 
+        # list[Json] is not a valid query parameter type in FastAPI/OpenAPI.
+        # This happens when the original type is e.g. list[SomeModel] and needs
+        # to be serialized as a plain string (parsed by a BeforeValidator).
+        if get_origin(annotation) is list and get_args(annotation) == (Json,):
+            annotation = str
+
         if annotation != field_info.annotation:
             # Complex fields are transformed to Json
             field_default = json_dumps(field_default) if field_default else None
@@ -82,10 +86,7 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     return create_model(new_model_name, **fields)
 
 
-ErrorT = TypeVar("ErrorT")
-
-
-class EnvelopeE(BaseModel, Generic[ErrorT]):
+class EnvelopeE[ErrorT](BaseModel):
     """Complementary to models_library.generics.Envelope just for the generators"""
 
     error: ErrorT | None = None

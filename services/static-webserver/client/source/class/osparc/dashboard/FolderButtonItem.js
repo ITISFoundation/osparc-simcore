@@ -280,7 +280,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS
       ) {
         const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
-        editButton.addListener("execute", () => this.__editFolder(), this);
+        editButton.addListener("execute", () => this.__renameFolder(), this);
         menu.add(editButton);
 
         if (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) {
@@ -326,17 +326,21 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       // do not allow selecting workspace
       if (studyBrowserContext !== osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
-        this.fireDataEvent("folderSelected", this.getFolderId());
+        // pass workspace id and folder id to be able to select the folder in the study browser
+        this.fireDataEvent("folderSelected", {
+          workspaceId: this.getFolder().getWorkspaceId(),
+          folderId: this.getFolderId()
+        });
       }
     },
 
-    __editFolder: function() {
+    __renameFolder: function() {
       const folder = this.getFolder();
       const newFolder = false;
       const folderEditor = new osparc.editor.FolderEditor(newFolder).set({
         label: folder.getName(),
       });
-      const title = this.tr("Edit Folder");
+      const title = this.tr("Rename Folder");
       const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 120);
       folderEditor.addListener("updateFolder", () => {
         const newName = folderEditor.getLabel();

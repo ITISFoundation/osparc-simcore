@@ -79,7 +79,11 @@ class TutorialBase {
     console.log("Opening", this.__url);
     // Try to reach the website
     try {
-      await this.__page.goto(this.__url);
+      const response = await this.__page.goto(this.__url);
+      if (response && response.status() === 429) {
+        console.error("HTTP 429 Too Many Requests during navigation to", this.__url);
+        process.exit(173); // 429 mod 256
+      }
     }
     catch (err) {
       console.error("Error:", this.__url, "can't be reached", err);

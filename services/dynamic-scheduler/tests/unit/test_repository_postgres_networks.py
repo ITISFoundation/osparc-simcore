@@ -43,7 +43,6 @@ pytest_simcore_ops_services_selection = [
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
-    disable_generic_scheduler_lifespan: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     disable_rabbitmq_lifespan: None,

@@ -32,9 +32,9 @@
           "200": {
             "description": "Successful Response",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/HealthCheckGet"
+                  "type": "string"
                 }
               }
             }
@@ -2221,22 +2221,6 @@
         "title": "Health",
         "description": "Health stores information about the container's healthcheck results."
       },
-      "HealthCheckGet": {
-        "properties": {
-          "timestamp": {
-            "type": "string",
-            "title": "Timestamp"
-          }
-        },
-        "type": "object",
-        "required": [
-          "timestamp"
-        ],
-        "title": "HealthCheckGet",
-        "example": {
-          "timestamp": "simcore_service_directorv2.api.routes.health@2023-07-03T12:59:12.024551+00:00"
-        }
-      },
       "HealthcheckResult": {
         "properties": {
           "Start": {
@@ -2895,7 +2879,7 @@
               }
             ],
             "title": "Entry Point",
-            "description": "if empty the service entrypoint is on the root endpoint.",
+            "description": "if empty string the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {
