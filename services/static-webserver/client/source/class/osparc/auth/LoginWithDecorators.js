@@ -329,17 +329,27 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
       });
       versionLinkLayout.add(createReleaseNotesLink);
 
+      const vendor = osparc.store.VendorInfo.getVendor();
+
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      const vendor = osparc.store.VendorInfo.getVendor();
-      if (vendor && "url" in vendor && "copyright" in vendor) {
+      if (vendor && "url" in vendor && "name" in vendor) {
         organizationLink.set({
-          value: vendor.copyright,
+          value: vendor.name,
           url: vendor.url
         });
       }
       versionLinkLayout.add(organizationLink);
+
+      if (vendor && "status_page_url" in vendor) {
+        const statusPageLink = new osparc.ui.basic.LinkLabel().set({
+          value: "Status",
+          url: vendor.status_page_url,
+          textColor: "text-darker"
+        });
+        versionLinkLayout.add(statusPageLink);
+      }
 
       versionLinkLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
