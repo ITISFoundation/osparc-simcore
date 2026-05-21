@@ -168,7 +168,6 @@ async def list_all_solvers_jobs(
 
 @router.get(
     "/-/releases/-/jobs/metadata:batchGet",
-    response_model=BatchGetJobMetadataResponse,
     responses=METADATA_STATUS_CODES,
     description=create_route_description(
         base="Gets custom metadata for multiple jobs in a single request",
