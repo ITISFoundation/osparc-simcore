@@ -428,20 +428,24 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                             state="visible", timeout=60 * SECOND
                         )
                     function_row.wait_for(state="visible", timeout=30 * SECOND)
+
+                    # Wait for MUI DataGrid loading overlay to disappear before clicking
+                    overlay = service_iframe.locator(".MuiDataGrid-overlay")
+                    overlay.wait_for(state="hidden", timeout=30 * SECOND)
+
+                    select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
+                    select_btn.wait_for(state="visible", timeout=30 * SECOND)
+                    select_btn.click(timeout=30 * SECOND)
                     break
                 except PlaywrightTimeoutError:
                     if attempt == 2:
                         raise
                     logging.warning(
-                        "Attempt %d/3 failed to find function row, reloading page and retrying...",
+                        "Attempt %d/3 failed to find/select function row, reloading page and retrying...",
                         attempt + 1,
                     )
                     page.reload()
                     service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
-
-            select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
-            select_btn.wait_for(state="visible", timeout=30 * SECOND)
-            select_btn.click()
 
         with log_context(logging.INFO, "Filling the input parameters..."):
             min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
