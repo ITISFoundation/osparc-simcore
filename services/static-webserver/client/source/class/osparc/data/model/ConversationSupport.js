@@ -112,6 +112,8 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     _applyName: function(name) {
       if (name) {
         this.setNameAlias(name);
+      } else {
+        this.__applyLastMessage(this.getLastMessage());
       }
     },
 
