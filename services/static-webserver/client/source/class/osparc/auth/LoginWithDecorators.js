@@ -319,7 +319,7 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
         margin: [10, 0]
       });
 
-      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink();
+      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink(this.tr("Platform"));
       let toolTipText = "";
       if (!osparc.product.Utils.isProduct("osparc")) {
         const displayName = osparc.store.StaticInfo.getDisplayName();
