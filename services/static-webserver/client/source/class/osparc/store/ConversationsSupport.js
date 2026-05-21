@@ -261,7 +261,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
 
     renameConversation: function(conversationId, name) {
       const patchData = {
-        name,
+        name: name || null,
       };
       return this.__patchConversation(conversationId, patchData);
     },
