@@ -415,13 +415,13 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
             # Navigate through pages to find the function row
             for _ in range(20):  # max 20 pages
-                if function_row.count() > 0 and function_row.is_visible():
+                if function_row.is_visible():
                     break
                 next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
                 if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
                     break
                 next_page_btn.click()
-                page.wait_for_timeout(500)
+                service_iframe.locator('div[role="row"][data-id]').first.wait_for(state="visible", timeout=5 * SECOND)
             function_row.wait_for(state="visible", timeout=30 * SECOND)
             select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
             select_btn.wait_for(state="visible", timeout=30 * SECOND)
