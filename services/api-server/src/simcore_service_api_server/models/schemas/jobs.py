@@ -102,10 +102,7 @@ assert set(UserFile.model_fields.keys()).issubset(set(UserFileToProgramJob.model
 
 
 class JobInputs(BaseModel):
-    # NOTE: this is different from the resource JobInput (TBD)
     values: KeywordArguments
-
-    # TODO: gibt es platz fuer metadata?  # noqa: FIX002
 
     model_config = ConfigDict(
         frozen=True,
@@ -130,15 +127,8 @@ class JobInputs(BaseModel):
 
 
 class JobOutputs(BaseModel):
-    # TODO: JobOutputs is a resources!  # noqa: FIX002
-
     job_id: JobID = Field(..., description="Job that produced this output")
-
-    # TODO: an output could be computed before than the others? has a state? not-ready/ready?  # noqa: FIX002
     results: KeywordArguments
-
-    # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only  # noqa: FIX002
-    # on one specific output.
 
     model_config = ConfigDict(
         frozen=True,
