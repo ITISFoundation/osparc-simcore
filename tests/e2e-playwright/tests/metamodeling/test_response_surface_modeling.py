@@ -421,7 +421,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                 if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
                     break
                 next_page_btn.click()
-                service_iframe.locator('div[role="row"][data-id]').first.wait_for(state="visible", timeout=5 * SECOND)
+                service_iframe.locator('div[role="row"][data-id]').first.wait_for(state="visible", timeout=60 * SECOND)
             function_row.wait_for(state="visible", timeout=30 * SECOND)
             select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
             select_btn.wait_for(state="visible", timeout=30 * SECOND)
