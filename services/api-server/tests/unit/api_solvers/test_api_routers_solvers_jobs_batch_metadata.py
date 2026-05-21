@@ -144,7 +144,7 @@ async def test_batch_get_jobs_custom_metadata_job_not_found(
     solver_version: str,
     job_ids: list[ProjectID],
 ):
-    """Test 422 when a requested job_id is not found."""
+    """Test 404 when a requested job_id is not found."""
     # Only return metadata for the first job
     custom_metadata: dict[ProjectID, MetadataDict] = {
         job_ids[0]: {"key1": "value1"},
@@ -185,60 +185,7 @@ async def test_batch_get_jobs_custom_metadata_job_not_found(
         auth=auth,
         params={"job_ids": [str(j) for j in job_ids]},
     )
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert "Jobs not found" in resp.json()["errors"][0]
-
-
-async def test_batch_get_jobs_custom_metadata_non_solver_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
-    mock_handler_in_projects_rpc_interface: HandlerMockFactory,
-    solver_key: str,
-    solver_version: str,
-    job_ids: list[ProjectID],
-):
-    """Test 422 when a job is not a solver job (e.g. a study)."""
-    custom_metadata: dict[ProjectID, MetadataDict] = {
-        job_ids[0]: {"key1": "value1"},
-    }
-
-    # Use a study resource name instead of a solver resource name
-    study_resource_name = f"studies/{uuid4()}"
-
-    jobs_page = PageRpcProjectJobRpcGet.create(
-        chunk=[
-            ProjectJobRpcGet(
-                uuid=job_ids[0],
-                name="job-0",
-                description="Job 0",
-                workbench={},
-                created_at=_FAKE_DATETIME,
-                modified_at=_FAKE_DATETIME,
-                job_parent_resource_name=study_resource_name,
-                storage_assets_deleted=False,
-            )
-        ],
-        total=1,
-        limit=50,
-        offset=0,
-    )
-
-    mock_handler_in_projects_rpc_interface(
-        "batch_get_project_custom_metadata",
-        return_value=custom_metadata,
-    )
-    mock_handler_in_projects_rpc_interface(
-        "list_projects_marked_as_jobs",
-        return_value=jobs_page,
-    )
-
-    resp = await client.get(
-        f"/{API_VTAG}/solvers/-/releases/-/jobs/metadata:batchGet",
-        auth=auth,
-        params={"job_ids": [str(job_ids[0])]},
-    )
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert "not a solver job" in resp.json()["errors"][0]
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
 async def test_batch_get_jobs_custom_metadata_rpc_project_not_found(

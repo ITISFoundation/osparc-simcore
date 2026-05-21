@@ -24,9 +24,10 @@ from starlette.background import BackgroundTask
 
 from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ..._service_solvers import SolverService
+from ...exceptions.backend_errors import JobNotFoundError
 from ...exceptions.custom_errors import MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
-from ...models.api_resources import parse_resources_ids, split_resource_name
+from ...models.api_resources import parse_resources_ids
 from ...models.basic_types import LogStreamingResponse, NameValueTuple, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -202,21 +203,11 @@ async def batch_get_jobs_custom_metadata(
     missing_metadata_job_ids = set(job_ids) - set(metadata_map.keys())
     missing_job_ids = set(job_ids) - {project_job.uuid for project_job in jobs_page.data}
     if missing_job_ids or missing_metadata_job_ids:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Jobs not found: {sorted(f'{j}' for j in missing_job_ids | missing_metadata_job_ids)}.",
-        )
-
+        raise JobNotFoundError(project_id=sorted(f"{j}" for j in missing_job_ids | missing_metadata_job_ids))
     # Map project_uuid -> URL from job_parent_resource_name
     job_url_map: dict[JobID, str] = {}
     for project_job in jobs_page.data:
         resource_name = project_job.job_parent_resource_name
-        parts = split_resource_name(resource_name)
-        if not parts or parts[0] != "solvers":
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Job {project_job.uuid} is not a solver job",
-            )
         solver_key, version = parse_resources_ids(resource_name)[:2]
         job_url_map[project_job.uuid] = url_for(
             "get_job_custom_metadata",
