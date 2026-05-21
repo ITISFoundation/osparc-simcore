@@ -23,11 +23,11 @@ from ..db.plugin import get_asyncpg_engine
 from .exceptions import ProjectNotFoundError
 
 
-async def get_project_owner(engine: AsyncEngine, project_uuid: ProjectID) -> UserID:
-    async with pass_or_acquire_connection(engine) as connection:
+async def get_project_owner(engine: AsyncEngine, connection: AsyncConnection | None, project_uuid: ProjectID) -> UserID:
+    async with pass_or_acquire_connection(engine, connection) as connection_:
         stmt = sa.select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}")
 
-        owner_id = await connection.scalar(stmt)
+        owner_id = await connection_.scalar(stmt)
         if owner_id is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         assert isinstance(owner_id, int)
