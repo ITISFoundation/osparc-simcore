@@ -555,3 +555,47 @@ def test_user_preferences_path_is_part_of_exiting_volume():
     }
     with pytest.raises(ValidationError, match="user_preferences_path=/tmp/outputs"):
         assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))
+
+
+@pytest.mark.parametrize(
+    "inactivity_service,should_raise",
+    [
+        pytest.param("container", True, id="service_not_in_compose_spec"),
+        pytest.param("rt-web", False, id="service_in_compose_spec"),
+    ],
+)
+def test_inactivity_service_validated_against_compose_spec(inactivity_service: str, should_raise: bool):
+    """Regression: inactivity.service was not validated against the compose spec,
+    allowing a KeyError at runtime in the dynamic-sidecar."""
+    labels_data = {
+        "simcore.service.compose-spec": json.dumps(
+            {
+                "version": "2.3",
+                "services": {
+                    "rt-web": {
+                        "image": "registry/simcore/services/dynamic/sim4life:1.0.0",
+                    },
+                },
+            }
+        ),
+        "simcore.service.container-http-entrypoint": "rt-web",
+        "simcore.service.paths-mapping": json.dumps(PathMappingsLabel.model_json_schema()["examples"][0]),
+        "simcore.service.callbacks-mapping": json.dumps(
+            {
+                "inactivity": {
+                    "service": inactivity_service,
+                    "command": "cat /tmp/inactivity.json",
+                    "timeout": 5,
+                }
+            }
+        ),
+    }
+
+    if should_raise:
+        with pytest.raises(ValidationError, match="not found in"):
+            DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))
+    else:
+        instance = DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))
+        assert instance.callbacks_mapping is not None
+        assert instance.callbacks_mapping.inactivity is not None
+        assert instance.callbacks_mapping.inactivity.service == inactivity_service

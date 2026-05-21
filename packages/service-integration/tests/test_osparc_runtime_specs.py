@@ -2,13 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import random
+import secrets
 from pathlib import Path
 from uuid import uuid4
 
+import pytest
 import yaml
+from pydantic import ValidationError
 from service_integration.compose_spec_model import Service, ServiceVolume
-from service_integration.osparc_config import PathMappingsLabel, SettingsItem
+from service_integration.osparc_config import PathMappingsLabel, RuntimeConfig, SettingsItem
 
 
 def test_create_runtime_spec_impl(tests_data_dir: Path):
@@ -26,7 +28,7 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
         }
     )
 
-    pm_spec = random.choice([pm_spec1, pm_spec2])  # noqa: S311
+    pm_spec = secrets.choice([pm_spec1, pm_spec2])
 
     # A develop mode --
 
@@ -56,11 +58,11 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
         for workdir in pm_spec.state_paths
     ]
 
-    # FIXME: ensure all sources are different! (e.g. a/b/c  and z/c have the same name!)
+    # FIXME: ensure all sources are different! (e.g. a/b/c  and z/c have the same name!)  # noqa: FIX001
 
     print(Service(volumes=volumes).model_dump_json(exclude_unset=True, indent=2))
 
-    # TODO: _auto_map_to_service(osparc_spec["settings"])
+    # TODO: _auto_map_to_service(osparc_spec["settings"])  # noqa: FIX002
     data = {}
     for obj in osparc_spec["settings"]:
         item = SettingsItem.model_validate(obj)
@@ -96,3 +98,35 @@ def test_compatibility():
 
 def test_upgrade():
     pass
+
+
+def test_inactivity_service_not_in_compose_spec_rejected():
+    """Regression: inactivity.service='container' was not validated against
+    compose-spec services, causing KeyError at runtime in dynamic-sidecar."""
+
+    runtime_data = {
+        "paths-mapping": {
+            "inputs_path": "/inputs",
+            "outputs_path": "/outputs",
+            "state_paths": ["/workspace"],
+        },
+        "compose-spec": {
+            "version": "3.7",
+            "services": {
+                "jupyter-math": {
+                    "image": "local/jupyter-math:1.0.0",
+                }
+            },
+        },
+        "container-http-entrypoint": "jupyter-math",
+        "callbacks-mapping": {
+            "inactivity": {
+                "service": "container",
+                "command": "cat /tmp/inactivity.json",
+                "timeout": 1,
+            }
+        },
+    }
+
+    with pytest.raises(ValidationError, match="not defined in compose-spec"):
+        RuntimeConfig.model_validate(runtime_data)

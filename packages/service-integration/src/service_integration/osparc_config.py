@@ -1,9 +1,11 @@
 """'osparc config' is a set of standard file forms (yaml) that the user fills to describe how his/her service works and
 integrates with osparc.
 
-    - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github, .vscode, etc)
+    - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github,
+     .vscode, etc)
     - configs are parsed and validated into pydantic models
-    - models can be serialized/deserialized into label annotations on images. This way, the config is attached to the service
+    - models can be serialized/deserialized into label annotations on images. This way, the config is attached to
+      the service
     during it's entire lifetime.
     - config should provide enough information about that context to allow
         - build an image
@@ -133,7 +135,7 @@ class MetadataConfig(ServiceMetaDataPublished):
         service_path = self.key
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
-            # TODO: check thisname is compatible with REGEX
+            # TODO: check thisname is compatible with REGEX  # noqa: FIX002
             service_path = TypeAdapter(ServiceKey).validate_python(service_path.replace("/", "."))
 
         service_version = self.version
@@ -238,6 +240,30 @@ class RuntimeConfig(BaseModel):
             raise
 
         return v
+
+    @model_validator(mode="after")
+    def _ensure_callbacks_mapping_services_in_compose_spec(self) -> Self:
+        if self.callbacks_mapping is None or self.compose_spec is None:
+            return self
+
+        compose_services = set(self.compose_spec.services.keys()) if self.compose_spec.services else set()
+
+        defined_services: set[str] = {x.service for x in self.callbacks_mapping.before_shutdown}
+        if self.callbacks_mapping.metrics:
+            defined_services.add(self.callbacks_mapping.metrics.service)
+        if self.callbacks_mapping.inactivity:
+            defined_services.add(self.callbacks_mapping.inactivity.service)
+
+        for service_name in defined_services:
+            if service_name not in compose_services:
+                msg = (
+                    f"callbacks_mapping references service '{service_name}' "
+                    f"which is not defined in compose-spec services: "
+                    f"{compose_services}"
+                )
+                raise ValueError(msg)
+
+        return self
 
     model_config = ConfigDict(
         alias_generator=_underscore_as_minus,
