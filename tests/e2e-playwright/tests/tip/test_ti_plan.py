@@ -136,7 +136,7 @@ def _wait_for_optimization_complete(run_button):
         raise ValueError(msg)
 
 
-def _run_classic_ti_step(
+def _run_classic_ti_step(  # noqa: PLR0915
     params: _ServiceStepParams,
     node_id: str,
     log_ctx: SimpleNamespace,
@@ -161,6 +161,15 @@ def _run_classic_ti_step(
 
     assert not ws_info.value.is_closed()
     restartable_jlab_websocket = RobustWebSocket(params.page, ws_info.value)
+
+    if params.is_product_lite:
+        with log_context(logging.INFO, "Check species selector has only 2 options", logger=log_ctx.logger):
+            species_selector = ti_iframe.locator("select").first
+            options = species_selector.locator("option")
+            assert options.count() == 2, f"Expected 2 species options in lite product, got {options.count()}"
+            option_texts = [options.nth(i).inner_text() for i in range(options.count())]
+            assert "Human - MIDA anisotropic" in option_texts
+            assert "Mouse" in option_texts
 
     with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
         run_button = ti_iframe.get_by_role("button", name="Run Optimization")
