@@ -29,7 +29,6 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     MockedStorageSubsystem,
     standard_role_response,
 )
-from pytest_simcore.helpers.webserver_projects import delete_all_projects
 from servicelib.aiohttp import status
 from servicelib.long_running_tasks.models import TaskStatus
 from settings_library.rabbit import RabbitSettings
@@ -60,13 +59,6 @@ def app_environment(
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(monkeypatch, {})
     return app_environment | envs_plugins
-
-
-@pytest.fixture
-async def project_db_cleaner(client: TestClient):
-    assert client.app
-    yield
-    await delete_all_projects(client.app)
 
 
 async def _get_all_projects_in_db(client: TestClient) -> list[dict]:
