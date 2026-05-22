@@ -445,6 +445,14 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         _project_product_name = await _projects_repository_legacy.get_project_product(project_uuid=new_project["uuid"])
         if _project_product_name != product_name:
+            if project_uuid := new_project.get("uuid"):
+                await _projects_service.submit_delete_project_task(
+                    app=app,
+                    project_uuid=project_uuid,
+                    user_id=user_id,
+                    simcore_user_agent=simcore_user_agent,
+                    product_name=product_name,
+                )
             raise web.HTTPBadRequest(  # noqa: TRY301
                 text=f"Project product name mismatch {product_name=} {_project_product_name=}"
             )
