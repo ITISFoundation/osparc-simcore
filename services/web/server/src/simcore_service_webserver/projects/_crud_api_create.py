@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 from collections.abc import Coroutine
 from typing import Any
@@ -502,14 +501,13 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             f"{user_id=}",
         )
         if project_uuid := new_project.get("uuid"):
-            with contextlib.suppress(Exception):
-                await _projects_service.submit_delete_project_task(
-                    app=app,
-                    project_uuid=project_uuid,
-                    user_id=user_id,
-                    simcore_user_agent=simcore_user_agent,
-                    product_name=product_name,
-                )
+            await _projects_service.submit_delete_project_task(
+                app=app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                simcore_user_agent=simcore_user_agent,
+                product_name=product_name,
+            )
         raise
 
 
