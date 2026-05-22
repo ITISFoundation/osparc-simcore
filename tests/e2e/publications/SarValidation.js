@@ -10,20 +10,16 @@ const utils = require('../utils/utils');
 const args = process.argv.slice(2);
 const urlIdx = args.indexOf('--url'); // used in production only
 
-let anonURL, startTimeout, basicauthUsername, basicauthPassword, enableDemoMode;
+let anonURL, startTimeout, enableDemoMode;
 
 if (urlIdx > -1) {
   anonURL = args[urlIdx + 1];
   startTimeout = args[urlIdx + 2];
-  basicauthUsername = "";
-  basicauthPassword = "";
   enableDemoMode = args.includes("--demo");
 } else {
   const parsed = utils.parseCommandLineArgumentsAnonymous(args);
   anonURL = parsed.urlPrefix + parsed.templateUuid;
   startTimeout = parsed.startTimeout;
-  basicauthUsername = parsed.basicauthUsername;
-  basicauthPassword = parsed.basicauthPassword;
   enableDemoMode = parsed.enableDemoMode;
 }
 
@@ -31,7 +27,7 @@ const screenshotPrefix = "SarValidation";
 
 
 async function runTutorial () {
-  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, basicauthUsername, basicauthPassword, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, "", "", enableDemoMode);
 
   try {
     await tutorial.beforeScript();
