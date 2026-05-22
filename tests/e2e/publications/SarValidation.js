@@ -1,27 +1,33 @@
 // node SarValidation.js [url_prefix] [template_uuid] [timeout] [--demo]
+// node SarValidation.js --url [full_url] [timeout] [--demo]
 
 // master https://osparc-master.speag.com/study/2b7b88be-ea51-11ed-ade4-02420a000d13
-// prod https://osparc.io/study/ff72c36a-df81-11ed-9c9e-02420a0b755a
+// prod https://sarvalidation.site (redirects to https://osparc.io/study/ff72c36a-df81-11ed-9c9e-02420a0b755a)
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');
 
 const args = process.argv.slice(2);
-const {
-  urlPrefix,
-  templateUuid,
-  startTimeout,
-  basicauthUsername,
-  basicauthPassword,
-  enableDemoMode
-} = utils.parseCommandLineArgumentsAnonymous(args);
+const urlIdx = args.indexOf('--url'); // used in production only
 
-const anonURL = urlPrefix + templateUuid;
+let anonURL, startTimeout, enableDemoMode;
+
+if (urlIdx > -1) {
+  anonURL = args[urlIdx + 1];
+  startTimeout = args[urlIdx + 2];
+  enableDemoMode = args.includes("--demo");
+} else {
+  const parsed = utils.parseCommandLineArgumentsAnonymous(args);
+  anonURL = parsed.urlPrefix + parsed.templateUuid;
+  startTimeout = parsed.startTimeout;
+  enableDemoMode = parsed.enableDemoMode;
+}
+
 const screenshotPrefix = "SarValidation";
 
 
 async function runTutorial () {
-  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, basicauthUsername, basicauthPassword, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, "", "", enableDemoMode);
 
   try {
     await tutorial.beforeScript();
