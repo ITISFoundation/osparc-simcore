@@ -14,7 +14,7 @@ Verifies:
 """
 
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from urllib.parse import urlparse
 
 import pytest
@@ -183,7 +183,7 @@ async def test_create_project_cleans_up_on_unexpected_exception(
     # Spy on the cleanup function to verify it gets called
     delete_spy = mocker.patch(
         "simcore_service_webserver.projects._crud_api_create._projects_service.submit_delete_project_task",
-        wraps=None,  # don't call original (would fail since patch_project is mocked)
+        new_callable=AsyncMock,  # don't call original (would fail since patch_project is mocked)
     )
 
     # Attempt to create a project from template (with copy_data=True to trigger unhide)
@@ -245,7 +245,7 @@ async def test_create_project_cleans_up_on_product_name_mismatch(
     # Spy on the cleanup function — it SHOULD be called for post-insertion HTTP errors
     delete_spy = mocker.patch(
         "simcore_service_webserver.projects._crud_api_create._projects_service.submit_delete_project_task",
-        wraps=None,
+        new_callable=AsyncMock,
     )
 
     # Attempt to create a project from template
