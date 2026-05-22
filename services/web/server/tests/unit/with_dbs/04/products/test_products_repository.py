@@ -55,6 +55,7 @@ def products_raw_data() -> dict[ProductName, dict[str, Any]]:
             url="https://acme.com",
             license_url="http://docs.acme.app/#/license-terms",
             invitation_url="http://docs.acme.app/#/how-to-request-invitation",
+            status_page_url="https://status.acme.com",
         ),
         "issues": [
             IssueTracker(
