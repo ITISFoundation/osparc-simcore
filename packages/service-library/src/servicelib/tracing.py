@@ -232,6 +232,9 @@ def traced_operation(
         yield
 
 
+_AIOHTTP_TRACING_CONFIG_KEY: Final[str] = "tracing_config"
+
+
 def _resolve_tracing_config(
     func_name: str,
     tracing_config_getter: Callable[..., TracingConfig] | None,
@@ -242,17 +245,23 @@ def _resolve_tracing_config(
 ) -> TracingConfig | None:
     if tracing_config_getter:
         return tracing_config_getter(*args, **kwargs)
-    # Try to use some smart defaults for common patterns (e.g. FastAPI app as first arg with .state.tracing_config)
     app = kwargs.get("app") or args[0]
-    if not hasattr(app, "state") or not hasattr(app.state, "tracing_config"):
-        if not warned[0]:
-            warned[0] = True
-            _logger.warning(
-                "Tracing not configured for '%s'. Spans will not be recorded.",
-                func_name,
-            )
-        return None
-    return app.state.tracing_config
+    # The FastAPI way: app.state.tracing_config
+    if hasattr(app, "state") and hasattr(app.state, "tracing_config"):
+        return app.state.tracing_config
+    # The aiohttp way: app["tracing_config"]
+    if hasattr(app, "__getitem__"):
+        try:
+            return app[_AIOHTTP_TRACING_CONFIG_KEY]
+        except (KeyError, TypeError):
+            pass
+    if not warned[0]:
+        warned[0] = True
+        _logger.warning(
+            "Tracing not configured for '%s'. Spans will not be recorded.",
+            func_name,
+        )
+    return None
 
 
 @overload
