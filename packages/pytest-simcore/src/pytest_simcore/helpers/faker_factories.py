@@ -316,6 +316,7 @@ def random_product(
                 logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
                 strong_color=fake.color(),
             ),
+            status_page_url=fake.url(),
         ),
         "registration_email_template": registration_email_template,
         "created": fake.date_time_this_decade(),

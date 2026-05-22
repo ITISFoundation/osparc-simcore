@@ -7,6 +7,7 @@
 
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     Literal,
+    NotRequired,
     TypedDict,
 )
 
@@ -31,49 +32,48 @@ from .users import users
 #
 
 
-class VendorUI(TypedDict, total=True):
-    logo_url: str  # vendor logo url
-    strong_color: str  # vendor main color
+class VendorUI(TypedDict):
+    logo_url: str
+    strong_color: str
 
 
-class Vendor(TypedDict, total=False):
+class Vendor(TypedDict):
     """
-        Brand information about the vendor
+    Brand information about the vendor
     E.g. company name, address, copyright, etc.
     """
 
-    name: str  # e.g. IT'IS Foundation
-    address: str  # e.g. Zeughausstrasse 43, 8004 Zurich, Switzerland
-    copyright: str  # copyright message
+    name: NotRequired[str]  # e.g. IT'IS Foundation
+    address: NotRequired[str]  # e.g. Zeughausstrasse 43, 8004 Zurich, Switzerland
+    copyright: NotRequired[str]  # copyright message
 
-    url: str  # vendor website
-    license_url: str  # Which are the license terms? (if applies)
+    url: NotRequired[str]  # vendor website
+    license_url: NotRequired[str]  # Which are the license terms? (if applies)
 
-    invitation_url: str  # How to request a trial invitation? (if applies)
-    invitation_form: (
-        bool  # If True, it takes precedence over invitation_url and asks the FE to show the form (if defined)
-    )
+    invitation_url: NotRequired[str]  # How to request a trial invitation? (if applies)
+    invitation_form: NotRequired[bool]  # If True, takes precedence over invitation_url; asks FE to show the form
 
     # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
     # (used for the platform's release notes)
-    release_notes_url_template: str
+    release_notes_url_template: NotRequired[str]
 
-    ui: VendorUI
+    ui: NotRequired[VendorUI]
 
-    footer_social_links: list[tuple[str, str]]  # list of (social_media_name (youtube, linkedin), social_media_url)
-    footer_share_links: list[tuple[str, str, str]]  # list of (share_name, share_label, share_url)
-    company_name: str
-    company_address: str
-    company_links: list[tuple[str, str]]  # list of (link_name, link_url)
-    marketing_fallback_products_on_wrong_password: (
-        list[str]  # list of product names to check (in order); on wrong password, if the user has an account
-        # in any of these products, suggest using the password from the first matching product
-        # (accounts were merged/unified across platforms)
-    )
+    footer_social_links: NotRequired[list[tuple[str, str]]]  # list of (social_media_name, social_media_url)
+    footer_share_links: NotRequired[list[tuple[str, str, str]]]  # list of (share_name, share_label, share_url)
+    company_name: NotRequired[str]
+    company_address: NotRequired[str]
+    company_links: NotRequired[list[tuple[str, str]]]  # list of (link_name, link_url)
+    status_page_url: NotRequired[str]
+
+    # list of product names to check (in order); on wrong password, if the user has an account
+    # in any of these products, suggest using the password from the first matching product
+    # (accounts were merged/unified across platforms)
+    marketing_fallback_products_on_wrong_password: NotRequired[list[str]]
 
 
-class IssueTracker(TypedDict, total=True):
-    """Link to actions in an online issue tracker (e.g. in fogbugz, github, gitlab ...)
+class IssueTracker(TypedDict):
+    """Link to actions in an online issue tracker (e.g. fogbugz, github, gitlab ...)
 
     e.g. URL to create a new issue for this product
 
@@ -85,12 +85,12 @@ class IssueTracker(TypedDict, total=True):
     new_url: str
 
 
-class Manual(TypedDict, total=True):
+class Manual(TypedDict):
     label: str
     url: str
 
 
-class WebFeedback(TypedDict, total=True):
+class WebFeedback(TypedDict):
     """URL to a feedback form (e.g. google forms etc)"""
 
     kind: Literal["web"]
@@ -98,7 +98,7 @@ class WebFeedback(TypedDict, total=True):
     url: str
 
 
-class EmailFeedback(TypedDict, total=True):
+class EmailFeedback(TypedDict):
     """Give feedback via email"""
 
     kind: Literal["email"]
@@ -106,7 +106,7 @@ class EmailFeedback(TypedDict, total=True):
     email: str
 
 
-class Forum(TypedDict, total=True):
+class Forum(TypedDict):
     """Link to a forum"""
 
     kind: Literal["forum"]
@@ -114,7 +114,7 @@ class Forum(TypedDict, total=True):
     url: str
 
 
-class ProductLoginSettingsDict(TypedDict, total=False):
+class ProductLoginSettingsDict(TypedDict):
     """Login plugin settings customized for this product
 
     Overrides simcore_service_webserver.login.settings.LoginSettings
@@ -123,9 +123,9 @@ class ProductLoginSettingsDict(TypedDict, total=False):
     NOTE: These attributes need to match those of LoginSettings
     """
 
-    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool
-    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
-    LOGIN_2FA_REQUIRED: bool  # previously 'two_factor_enabled'
+    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: NotRequired[bool]
+    LOGIN_REGISTRATION_INVITATION_REQUIRED: NotRequired[bool]
+    LOGIN_2FA_REQUIRED: NotRequired[bool]  # previously 'two_factor_enabled'
 
 
 # NOTE: defaults affects migration!!
