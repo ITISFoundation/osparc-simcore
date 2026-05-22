@@ -1,7 +1,8 @@
 // node SarValidation.js [url_prefix] [template_uuid] [timeout] [--demo]
+// node SarValidation.js --url [full_url] [timeout] [--demo]
 
 // master https://osparc-master.speag.com/study/2b7b88be-ea51-11ed-ade4-02420a000d13
-// prod https://osparc.io/study/ff72c36a-df81-11ed-9c9e-02420a0b755a
+// prod https://sarvalidation.site (redirects to https://osparc.io/study/ff72c36a-df81-11ed-9c9e-02420a0b755a)
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');
@@ -16,7 +17,14 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArgumentsAnonymous(args);
 
-const anonURL = urlPrefix + templateUuid;
+const urlIdx = args.indexOf('--url');
+let anonURL;
+if (urlIdx > -1) {
+  anonURL = args[urlIdx + 1];
+} else {
+  anonURL = urlPrefix + templateUuid;
+}
+
 const screenshotPrefix = "SarValidation";
 
 
