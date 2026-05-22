@@ -27,6 +27,9 @@ _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_function_job_collections_for_functionid")
 
+# Delay after each input blur to let React process onBlur state update
+_REACT_BLUR_SETTLE_MS: Final[int] = 500
+
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
@@ -454,33 +457,47 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         with log_context(logging.INFO, "Filling the input parameters..."):
             min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
             min_inputs = service_iframe.locator(f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]')
+            min_inputs.first.wait_for(state="visible", timeout=30 * SECOND)
             count_min = min_inputs.count()
-
-            for i in range(count_min):
-                input_field = min_inputs.nth(i)
-                input_field.click()
-                input_field.fill(str(i + 1))
-                input_field.press("Tab")
-                # Wait for React to process onBlur state update before next input
-                page.wait_for_timeout(500)
-                logging.info("Filled %s input %d with value %d", min_test_id, i, i + 1)
-                assert input_field.input_value() == str(i + 1)
+            logging.info("Found %d %s inputs", count_min, min_test_id)
 
             max_test_id = "Standard Deviation" if "uq" in local_service_key.lower() else "Max"
             max_inputs = service_iframe.locator(f'[mmux-testid="input-block-{max_test_id}"] input[type="number"]')
+            max_inputs.first.wait_for(state="visible", timeout=30 * SECOND)
             count_max = max_inputs.count()
+            logging.info("Found %d %s inputs", count_max, max_test_id)
+
+            # Fill each pair of min/max together using native JS events to ensure
+            # React's controlled input and onBlur handler are properly triggered
+            for i in range(count_min):
+                input_field = min_inputs.nth(i)
+                value_str = str(i + 1)
+                input_field.click()
+                input_field.fill(value_str)
+                # Use evaluate to explicitly trigger blur via native DOM API
+                input_field.evaluate("el => el.blur()")
+                if i < count_min - 1:
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
+                logging.info("Filled %s input %d with value %s", min_test_id, i, value_str)
+                assert input_field.input_value() == value_str
 
             for i in range(count_max):
                 input_field = max_inputs.nth(i)
+                value_str = str((i + 1) * 10)
                 input_field.click()
-                input_field.fill(str((i + 1) * 10))
-                input_field.press("Tab")
-                # Wait for React to process onBlur state update before next input
-                page.wait_for_timeout(500)
-                logging.info("Filled %s input %d with value %d", max_test_id, i, (i + 1) * 10)
-                assert input_field.input_value() == str((i + 1) * 10)
+                input_field.fill(value_str)
+                # Use evaluate to explicitly trigger blur via native DOM API
+                input_field.evaluate("el => el.blur()")
+                if i < count_max - 1:
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
+                logging.info("Filled %s input %d with value %s", max_test_id, i, value_str)
+                assert input_field.input_value() == value_str
 
             page.wait_for_timeout(2 * SECOND)
+
+            # Log the Next button state for debugging
+            next_btn_disabled = service_iframe.locator('[mmux-testid="next-button"]').is_disabled()
+            logging.info("Next button disabled after filling: %s", next_btn_disabled)
 
         if EXPECTED_MOGA_KEY in local_service_key.lower():
             with log_context(logging.INFO, "Filling the output parameters..."):
@@ -500,17 +517,42 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             try:
                 next_button.click(timeout=60 * SECOND)
             except PlaywrightTimeoutError:
-                # Button still disabled - re-trigger blur on all inputs to flush React state
-                logging.warning("Next button still disabled after 60s, re-triggering input blur events...")
+                if next_button.is_disabled():
+                    logging.warning("Next button is disabled after 60s, re-filling inputs via JS events...")
+                else:
+                    logging.warning(
+                        "Next button is enabled but click timed out"
+                        " (possible overlay), re-filling inputs via JS events..."
+                    )
                 for i in range(count_min):
-                    min_inputs.nth(i).click()
-                    min_inputs.nth(i).press("Tab")
-                    page.wait_for_timeout(300)
+                    value_str = str(i + 1)
+                    min_inputs.nth(i).evaluate(
+                        """(el, val) => {
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                                window.HTMLInputElement.prototype, 'value').set;
+                            nativeInputValueSetter.call(el, val);
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                            el.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+                        }""",
+                        value_str,
+                    )
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
                 for i in range(count_max):
-                    max_inputs.nth(i).click()
-                    max_inputs.nth(i).press("Tab")
-                    page.wait_for_timeout(300)
-                page.wait_for_timeout(1 * SECOND)
+                    value_str = str((i + 1) * 10)
+                    max_inputs.nth(i).evaluate(
+                        """(el, val) => {
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                                window.HTMLInputElement.prototype, 'value').set;
+                            nativeInputValueSetter.call(el, val);
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                            el.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+                        }""",
+                        value_str,
+                    )
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
+                page.wait_for_timeout(2 * SECOND)
                 next_button.click(timeout=30 * SECOND)
 
         page.wait_for_timeout(1 * SECOND)
