@@ -874,23 +874,42 @@ async def test_traced_decorator_with_tracing_config_getter(
     ],
     indirect=True,
 )
-async def test_traced_decorator_assertion_on_missing_tracing_config(
+async def test_traced_decorator_noop_when_tracing_not_configured(
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     @traced
-    async def _needs_tracing(app: FastAPI) -> None:
-        pass
+    async def _needs_tracing(app: FastAPI) -> str:
+        return "executed"
 
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         # Do NOT set mocked_app.state.tracing_config
-        with pytest.raises(AssertionError, match="tracing_config not available"):
-            await _needs_tracing(mocked_app)
+        with caplog.at_level(logging.WARNING):
+            result = await _needs_tracing(mocked_app)
+            assert result == "executed"
+
+            # Warning logged once
+            warnings = [r for r in caplog.records if "Tracing not configured" in r.message]
+            assert len(warnings) == 1
+            assert "_needs_tracing" in warnings[0].message
+
+            # Second call should NOT warn again
+            caplog.clear()
+            result = await _needs_tracing(mocked_app)
+            assert result == "executed"
+            warnings = [r for r in caplog.records if "Tracing not configured" in r.message]
+            assert len(warnings) == 0
+
+        # No spans created
+        spans = mock_otel_collector.get_finished_spans()
+        matching = [s for s in spans if s.name == "_needs_tracing"]
+        assert len(matching) == 0

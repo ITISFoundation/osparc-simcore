@@ -1,10 +1,10 @@
-import asyncio
 import functools
+import inspect
 import logging
 from collections.abc import Callable, Coroutine
 from contextlib import contextmanager
 from contextvars import Token
-from typing import Any, Final, Self
+from typing import Any, Final, Self, overload
 
 import pyinstrument
 import pyinstrument.renderers
@@ -232,20 +232,57 @@ def traced_operation(
         yield
 
 
+def _resolve_tracing_config(
+    func_name: str,
+    tracing_config_getter: Callable[..., TracingConfig] | None,
+    args: tuple,
+    kwargs: dict,
+    *,
+    warned: list[bool],
+) -> TracingConfig | None:
+    if tracing_config_getter:
+        return tracing_config_getter(*args, **kwargs)
+    app = kwargs.get("app") or args[0]
+    if not hasattr(app, "state") or not hasattr(app.state, "tracing_config"):
+        if not warned[0]:
+            warned[0] = True
+            _logger.warning(
+                "Tracing not configured for '%s'. Spans will not be recorded.",
+                func_name,
+            )
+        return None
+    return app.state.tracing_config
+
+
+@overload
 def traced[**P, R](
-    _func: Callable[P, Coroutine[Any, Any, R]] | Callable[P, R] | None = None,
+    _func: Callable[P, Coroutine[Any, Any, R]],
+) -> Callable[P, Coroutine[Any, Any, R]]: ...
+
+
+@overload
+def traced[**P, R](
+    _func: Callable[P, R],
+) -> Callable[P, R]: ...
+
+
+@overload
+def traced(
+    *,
+    operation_name: str | None = ...,
+    tracing_config_getter: Callable[..., TracingConfig] | None = ...,
+    attributes: dict[str, str] | None = ...,
+    links: list[Link] | None = ...,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]: ...
+
+
+def traced(  # type: ignore[overload-implementation]
+    _func=None,
     *,
     operation_name: str | None = None,
     tracing_config_getter: Callable[..., TracingConfig] | None = None,
     attributes: dict[str, str] | None = None,
     links: list[Link] | None = None,
-) -> (
-    Callable[
-        [Callable[P, Coroutine[Any, Any, R]] | Callable[P, R]],
-        Callable[P, Coroutine[Any, Any, R]] | Callable[P, R],
-    ]
-    | Callable[P, Coroutine[Any, Any, R]]
-    | Callable[P, R]
 ):
     """Decorator to trace async and sync operations.
 
@@ -263,29 +300,19 @@ def traced[**P, R](
         def my_sync_func(app, ...): ...
     """
 
-    def decorator(
-        func: Callable[P, Coroutine[Any, Any, R]] | Callable[P, R],
-    ) -> Callable[P, Coroutine[Any, Any, R]] | Callable[P, R]:
+    def decorator(func):
         span_name = operation_name or func.__name__
+        warned: list[bool] = [False]
 
-        def _get_tracing_config(args, kwargs) -> TracingConfig:
-            if tracing_config_getter:
-                return tracing_config_getter(*args, **kwargs)
-            app = kwargs.get("app") or args[0]
-            assert hasattr(app, "state"), (  # nosec
-                f"app.state not available. Ensure tracing is initialized before calling '{func.__name__}'"
-            )
-            assert hasattr(app.state, "tracing_config"), (  # nosec
-                f"app.state.tracing_config not available. Ensure tracing is"
-                f" initialized before calling '{func.__name__}'"
-            )
-            return app.state.tracing_config
-
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
-            async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                tracing_config = _get_tracing_config(args, kwargs)
+            async def async_wrapper(*args, **kwargs):
+                tracing_config = _resolve_tracing_config(
+                    func.__name__, tracing_config_getter, args, kwargs, warned=warned
+                )
+                if tracing_config is None:
+                    return await func(*args, **kwargs)
                 with traced_operation(
                     span_name,
                     tracing_config=tracing_config,
@@ -294,11 +321,13 @@ def traced[**P, R](
                 ):
                     return await func(*args, **kwargs)
 
-            return async_wrapper  # type: ignore[return-value]
+            return async_wrapper
 
         @functools.wraps(func)
-        def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            tracing_config = _get_tracing_config(args, kwargs)
+        def sync_wrapper(*args, **kwargs):
+            tracing_config = _resolve_tracing_config(func.__name__, tracing_config_getter, args, kwargs, warned=warned)
+            if tracing_config is None:
+                return func(*args, **kwargs)
             with traced_operation(
                 span_name,
                 tracing_config=tracing_config,
@@ -307,7 +336,7 @@ def traced[**P, R](
             ):
                 return func(*args, **kwargs)
 
-        return sync_wrapper  # type: ignore[return-value]
+        return sync_wrapper
 
     if _func is not None:
         return decorator(_func)
