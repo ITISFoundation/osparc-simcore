@@ -7,6 +7,8 @@ Keeps functionality that couples with the following app modules
 """
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import NamedTuple
 
@@ -23,13 +25,12 @@ from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
 from ..director_v2.director_v2_service import create_or_update_pipeline
-from ..director_v2.exceptions import DirectorV2ServiceError
 from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ..projects._projects_service import get_project_for_user
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..utils import now_str
 from . import _service
-from ._errors import ProjectWorkbenchMismatchError
+from ._errors import ProjectCreationAbortedError, ProjectWorkbenchMismatchError
 from ._models import FileParams, ServiceInfo, ViewerInfo
 from ._users import UserInfo
 
@@ -188,6 +189,25 @@ def _create_project_with_filepicker_and_service(
     )
 
 
+@asynccontextmanager
+async def rollback_project_on_error(app: web.Application, user_id: int, project_uuid: ProjectID) -> AsyncIterator[None]:
+    """Deletes the project and raises ProjectCreationAbortedError if anything fails."""
+    try:
+        yield
+    except Exception as exc:
+        _logger.warning(
+            "Failed to complete project %s creation. Reverting project insertion.",
+            project_uuid,
+            exc_info=True,
+        )
+        try:
+            db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
+            await db.delete_project(user_id, f"{project_uuid}")
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception("Failed to rollback project %s during cleanup", project_uuid)
+        raise ProjectCreationAbortedError(project_uuid=project_uuid) from exc
+
+
 async def _add_new_project(
     app: web.Application,
     project: Project,
@@ -195,39 +215,29 @@ async def _add_new_project(
     *,
     product_name: str,
     product_api_base_url: str,
-):
-    # TODO: move this to projects_api  # noqa: FIX002
-    # TODO: this piece was taken from the end of projects.projects_handlers.create_projects  # noqa: FIX002
+) -> None:
+    async with rollback_project_on_error(app, user.id, project.uuid):
+        # TODO: move this to projects_api  # noqa: FIX002
+        # TODO: this piece was taken from the end of projects.projects_handlers.create_projects  # noqa: FIX002
 
-    db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
+        db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
-    # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json_loads(project.model_dump_json(exclude_none=True, by_alias=True))
-    # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
-    #       so I need to set the templateType here if it was removed.
-    project_in["templateType"] = project_in.get("templateType")
+        # validated project is transform in dict via json to use only primitive types
+        project_in: dict = json_loads(project.model_dump_json(exclude_none=True, by_alias=True))
+        # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
+        #       so I need to set the templateType here if it was removed.
+        project_in["templateType"] = project_in.get("templateType")
 
-    # update metadata (uuid, timestamps, ownership) and save
-    _project_db: dict = await db.insert_project(
-        project_in,
-        user.id,
-        product_name=product_name,
-        force_as_template=False,
-        project_nodes=None,
-    )
-    assert _project_db["uuid"] == str(project.uuid)  # nosec
-
-    # This is a new project and every new graph needs to be reflected in the pipeline db
-    #
-    # TODO: Ensure this user has access to these services!  # noqa: FIX002
-    #
-    try:
-        await create_or_update_pipeline(app, user.id, project.uuid, product_name, product_api_base_url)
-    except DirectorV2ServiceError:
-        _logger.warning(
-            "Failed to create pipeline for project %s, comp_tasks may be out of sync",
-            project.uuid,
+        # update metadata (uuid, timestamps, ownership) and save
+        _project_db: dict = await db.insert_project(
+            project_in,
+            user.id,
+            product_name=product_name,
+            force_as_template=False,
+            project_nodes=None,
         )
+        assert _project_db["uuid"] == f"{project.uuid}"  # nosec
+        await create_or_update_pipeline(app, user.id, project.uuid, product_name, product_api_base_url)
 
 
 async def _project_exists(
