@@ -91,7 +91,6 @@ def _run_electrode_selector_step(
         product_url=params.product_url,
         is_service_legacy=params.is_service_legacy,
     )
-    # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
     params.page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
 
     with log_context(logging.INFO, "Configure selector", logger=log_ctx.logger):
