@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from collections.abc import Coroutine
 from typing import Any
@@ -444,11 +445,10 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             }
 
         _project_product_name = await _projects_repository_legacy.get_project_product(project_uuid=new_project["uuid"])
-        assert (
-            _project_product_name == product_name  # nosec
-        ), "Project product name mismatch"
         if _project_product_name != product_name:
-            raise web.HTTPBadRequest(text=f"Project product name mismatch {product_name=} {_project_product_name=}")
+            raise web.HTTPBadRequest(  # noqa: TRY301
+                text=f"Project product name mismatch {product_name=} {_project_product_name=}"
+            )
 
         data = ProjectGet.from_domain_model(new_project).model_dump(**RESPONSE_MODEL_POLICY)
 
@@ -490,6 +490,26 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 simcore_user_agent=simcore_user_agent,
                 product_name=product_name,
             )
+        raise
+
+    except web.HTTPException:
+        # Intentional HTTP error responses (e.g. HTTPBadRequest) should not trigger cleanup
+        raise
+
+    except Exception:
+        _logger.exception(
+            "Unexpected error during create_project for user '%s'. Cleaning up",
+            f"{user_id=}",
+        )
+        if project_uuid := new_project.get("uuid"):
+            with contextlib.suppress(Exception):
+                await _projects_service.submit_delete_project_task(
+                    app=app,
+                    project_uuid=project_uuid,
+                    user_id=user_id,
+                    simcore_user_agent=simcore_user_agent,
+                    product_name=product_name,
+                )
         raise
 
 

@@ -51,7 +51,7 @@ async def create_or_update_pipeline(
     project_id: ProjectID,
     product_name: ProductName,
     product_api_base_url: str,
-) -> DataType | None:
+) -> DataType:
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
 
@@ -86,7 +86,7 @@ async def create_or_update_pipeline(
                 error_context={**body, "backend_url": backend_url},
             )
         )
-    return None
+        raise
 
 
 @log_decorator(logger=_logger)

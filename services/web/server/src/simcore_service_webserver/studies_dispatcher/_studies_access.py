@@ -15,6 +15,7 @@ SEE refactoring plan in https://github.com/ITISFoundation/osparc-simcore/issues/
 
 import functools
 import logging
+from contextlib import suppress
 from functools import lru_cache
 from uuid import UUID, uuid5
 
@@ -28,6 +29,7 @@ from servicelib.aiohttp.typing_extension import Handler
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2 import director_v2_service
+from ..director_v2.exceptions import DirectorV2ServiceError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..projects import _projects_repository
@@ -216,13 +218,14 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
             )
             if lr_task.done:
                 await lr_task.result()
-        await director_v2_service.create_or_update_pipeline(
-            request.app,
-            user["id"],
-            project["uuid"],
-            product_name,
-            get_api_base_url(request),
-        )
+        with suppress(DirectorV2ServiceError):
+            await director_v2_service.create_or_update_pipeline(
+                request.app,
+                user["id"],
+                project["uuid"],
+                product_name,
+                get_api_base_url(request),
+            )
         await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
 
         await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
