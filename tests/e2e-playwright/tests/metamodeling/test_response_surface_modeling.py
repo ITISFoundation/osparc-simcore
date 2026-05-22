@@ -461,6 +461,8 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                 input_field.click()
                 input_field.fill(str(i + 1))
                 input_field.press("Tab")
+                # Wait for React to process onBlur state update before next input
+                page.wait_for_timeout(500)
                 logging.info("Filled %s input %d with value %d", min_test_id, i, i + 1)
                 assert input_field.input_value() == str(i + 1)
 
@@ -473,6 +475,8 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                 input_field.click()
                 input_field.fill(str((i + 1) * 10))
                 input_field.press("Tab")
+                # Wait for React to process onBlur state update before next input
+                page.wait_for_timeout(500)
                 logging.info("Filled %s input %d with value %d", max_test_id, i, (i + 1) * 10)
                 assert input_field.input_value() == str((i + 1) * 10)
 
@@ -496,8 +500,18 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             try:
                 next_button.click(timeout=60 * SECOND)
             except PlaywrightTimeoutError:
-                logging.warning("Next button still disabled after 60s, trying force click")
-                next_button.click(force=True, timeout=30 * SECOND)
+                # Button still disabled - re-trigger blur on all inputs to flush React state
+                logging.warning("Next button still disabled after 60s, re-triggering input blur events...")
+                for i in range(count_min):
+                    min_inputs.nth(i).click()
+                    min_inputs.nth(i).press("Tab")
+                    page.wait_for_timeout(300)
+                for i in range(count_max):
+                    max_inputs.nth(i).click()
+                    max_inputs.nth(i).press("Tab")
+                    page.wait_for_timeout(300)
+                page.wait_for_timeout(1 * SECOND)
+                next_button.click(timeout=30 * SECOND)
 
         page.wait_for_timeout(1 * SECOND)
 
