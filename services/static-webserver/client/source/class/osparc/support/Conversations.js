@@ -71,6 +71,7 @@ qx.Class.define("osparc.support.Conversations", {
     __conversationListItems: null,
     __totalConversations: null,
     __isFetchingMore: false,
+    __fetchRequestId: 0,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -240,8 +241,12 @@ qx.Class.define("osparc.support.Conversations", {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
+      const requestId = ++this.__fetchRequestId;
       osparc.store.ConversationsSupport.getInstance().fetchConversations(filter)
         .then(resp => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
           if (resp && resp.conversations && resp.conversations.length) {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
@@ -251,6 +256,9 @@ qx.Class.define("osparc.support.Conversations", {
           this.__updateLoadingSpinner();
         })
         .finally(() => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
           this.__showNoMessagesLabelIfNeeded(filter);
