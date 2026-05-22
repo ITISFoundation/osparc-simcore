@@ -27,6 +27,7 @@ from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import traced, traced_operation
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -68,6 +69,11 @@ from ...utils.rabbitmq import (
     post_autoscaling_status_message,
     post_tasks_log_message,
     post_tasks_progress_message,
+)
+from ...utils.tracing import (
+    get_trace_carrier_ec2_tags,
+    get_tracing_config,
+    traced_instance_lifecycle,
 )
 from ...utils.warm_buffer_machines import (
     get_activated_warm_buffer_ec2_tags,
@@ -130,6 +136,7 @@ def _compute_hot_buffer_missing(app_settings: ApplicationSettings, cluster: Clus
     return missing
 
 
+@traced
 async def _analyze_current_cluster(
     app: FastAPI,
     auto_scaling_mode: AutoscalingProvider,
@@ -242,6 +249,7 @@ async def _analyze_current_cluster(
 _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S: Final[int] = 30
 
 
+@traced
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     utc_now = arrow.utcnow().datetime
     removable_nodes = [
@@ -255,11 +263,19 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
+@traced
 async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     broken_instances = [i.ec2_instance for i in cluster.broken_ec2s]
     if broken_instances:
         with log_context(_logger, logging.WARNING, msg="terminate broken EC2 instances"):
             await get_ec2_client(app).terminate_instances(broken_instances)
+        for instance in broken_instances:
+            with traced_instance_lifecycle(
+                "instance_terminate_broken",
+                app=app,
+                ec2_instance=instance,
+            ):
+                pass
 
     return dataclasses.replace(
         cluster,
@@ -268,6 +284,7 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     )
 
 
+@traced
 async def _try_attach_pending_ec2s(
     app: FastAPI,
     cluster: Cluster,
@@ -284,35 +301,41 @@ async def _try_attach_pending_ec2s(
         try:
             node_host_name = utils_ec2.node_host_name_from_ec2_private_dns(instance_data.ec2_instance)
             if new_node := await utils_docker.find_node_with_name(get_docker_client(app), node_host_name):
-                # Get base tags from provider
-                base_tags = auto_scaling_mode.get_new_node_docker_tags(app, instance_data.ec2_instance)
+                with traced_instance_lifecycle(
+                    "instance_attach",
+                    app=app,
+                    ec2_instance=instance_data.ec2_instance,
+                    hostname=node_host_name,
+                ):
+                    # Get base tags from provider
+                    base_tags = auto_scaling_mode.get_new_node_docker_tags(app, instance_data.ec2_instance)
 
-                # Merge base tags with custom labels
-                merged_tags = base_tags | instance_data.osparc_custom_node_labels
+                    # Merge base tags with custom labels
+                    merged_tags = base_tags | instance_data.osparc_custom_node_labels
 
-                # Attach node with merged tags
-                new_node = await utils_docker.attach_node(
-                    app_settings,
-                    get_docker_client(app),
-                    new_node,
-                    tags=merged_tags,
-                )
-
-                # Mark instance for EC2 tag cleanup if custom labels were applied
-                if instance_data.osparc_custom_node_labels:
-                    ec2_instances_to_remove_custom_label_tags.append(instance_data.ec2_instance)
-
-                new_found_instances.append(
-                    AssociatedInstance(
-                        node=new_node,
-                        ec2_instance=instance_data.ec2_instance,
+                    # Attach node with merged tags
+                    new_node = await utils_docker.attach_node(
+                        app_settings,
+                        get_docker_client(app),
+                        new_node,
+                        tags=merged_tags,
                     )
-                )
-                _logger.info(
-                    "Attached new EC2 instance %s with custom placement labels: %s",
-                    instance_data.ec2_instance.id,
-                    instance_data.osparc_custom_node_labels,
-                )
+
+                    # Mark instance for EC2 tag cleanup if custom labels were applied
+                    if instance_data.osparc_custom_node_labels:
+                        ec2_instances_to_remove_custom_label_tags.append(instance_data.ec2_instance)
+
+                    new_found_instances.append(
+                        AssociatedInstance(
+                            node=new_node,
+                            ec2_instance=instance_data.ec2_instance,
+                        )
+                    )
+                    _logger.info(
+                        "Attached new EC2 instance %s with custom placement labels: %s",
+                        instance_data.ec2_instance.id,
+                        instance_data.osparc_custom_node_labels,
+                    )
             else:
                 still_pending_ec2s.append(instance_data)
         except Ec2InvalidDnsNameError:
@@ -370,31 +393,39 @@ async def _activate_and_notify(
     app: FastAPI,
     drained_node: AssociatedInstance,
 ) -> AssociatedInstance:
-    app_settings = get_application_settings(app)
-    docker_client = get_docker_client(app)
-    pending_labels = drained_node.tasks_required_pending_labels()
-    updated_node, *_ = await asyncio.gather(
-        utils_docker.set_node_osparc_ready(
-            app_settings,
-            docker_client,
-            drained_node.node,
-            ready=True,
-            additional_labels=pending_labels if pending_labels else None,
-        ),
-        post_tasks_log_message(
-            app,
-            tasks=drained_node.assigned_tasks,
-            message="cluster adjusted, service should start shortly...",
-            level=logging.INFO,
-        ),
-        post_tasks_progress_message(
-            app,
-            tasks=drained_node.assigned_tasks,
-            progress=1.0,
-            progress_type=ProgressType.CLUSTER_UP_SCALING,
-        ),
-    )
-    return dataclasses.replace(drained_node, node=updated_node)
+    hostname = drained_node.node.description.hostname if drained_node.node.description else None
+    with traced_instance_lifecycle(
+        "instance_activate",
+        app=app,
+        ec2_instance=drained_node.ec2_instance,
+        hostname=hostname,
+        num_tasks=f"{len(drained_node.assigned_tasks)}",
+    ):
+        app_settings = get_application_settings(app)
+        docker_client = get_docker_client(app)
+        pending_labels = drained_node.tasks_required_pending_labels()
+        updated_node, *_ = await asyncio.gather(
+            utils_docker.set_node_osparc_ready(
+                app_settings,
+                docker_client,
+                drained_node.node,
+                ready=True,
+                additional_labels=pending_labels if pending_labels else None,
+            ),
+            post_tasks_log_message(
+                app,
+                tasks=drained_node.assigned_tasks,
+                message="cluster adjusted, service should start shortly...",
+                level=logging.INFO,
+            ),
+            post_tasks_progress_message(
+                app,
+                tasks=drained_node.assigned_tasks,
+                progress=1.0,
+                progress_type=ProgressType.CLUSTER_UP_SCALING,
+            ),
+        )
+        return dataclasses.replace(drained_node, node=updated_node)
 
 
 async def _cancel_previous_pulling_command_if_any(
@@ -859,42 +890,55 @@ async def _launch_instances(
         )
         return []
 
-    # Launch batched instances with their specific labels
-    results = await asyncio.gather(
-        *[
-            ec2_client.launch_instances(
-                EC2InstanceConfig(
-                    type=instance_batch.instance_type,
-                    tags=(
-                        base_tags
-                        | (
-                            utils_ec2.dump_task_required_node_labels_as_tags(instance_batch.node_labels)
-                            if instance_batch.node_labels
-                            else {}
-                        )
-                    ),
-                    startup_script=await ec2_startup_script(
-                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+    # Launch batched instances within a traced span so the traceparent
+    # stored in EC2 tags points to THIS launch span (giving it real duration
+    # and making span links from later lifecycle phases connect here).
+    tracing_config = get_tracing_config(app)
+    with traced_operation(
+        "instance_launch",
+        tracing_config=tracing_config,
+        attributes={"num_tasks": f"{len(tasks)}", "num_batches": f"{len(capped_instances)}"},
+    ):
+        # Capture traceparent from inside this span so EC2 tags link back here
+        trace_tags = get_trace_carrier_ec2_tags()
+
+        results = await asyncio.gather(
+            *[
+                ec2_client.launch_instances(
+                    EC2InstanceConfig(
+                        type=instance_batch.instance_type,
+                        tags=(
+                            base_tags
+                            | trace_tags
+                            | (
+                                utils_ec2.dump_task_required_node_labels_as_tags(instance_batch.node_labels)
+                                if instance_batch.node_labels
+                                else {}
+                            )
+                        ),
+                        startup_script=await ec2_startup_script(
+                            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                                instance_batch.instance_type.name
+                            ],
+                            app_settings,
+                        ),
+                        ami_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
                             instance_batch.instance_type.name
-                        ],
-                        app_settings,
+                        ].ami_id,
+                        key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+                        security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                        subnet_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS,
+                        iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
                     ),
-                    ami_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                        instance_batch.instance_type.name
-                    ].ami_id,
-                    key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
-                    security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
-                    subnet_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS,
-                    iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
-                ),
-                min_number_of_instances=1,  # NOTE: we want at least 1 if possible
-                number_of_instances=capped_count,  # Launch batch of instances with same type and labels
-                max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
-            )
-            for instance_batch, capped_count in capped_instances.items()
-        ],
-        return_exceptions=True,
-    )
+                    min_number_of_instances=1,  # NOTE: we want at least 1 if possible
+                    number_of_instances=capped_count,  # Launch batch of instances with same type and labels
+                    max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+                )
+                for instance_batch, capped_count in capped_instances.items()
+            ],
+            return_exceptions=True,
+        )
+
     # parse results
     last_issue = ""
     new_pending_instances: list[EC2InstanceData] = []
@@ -998,13 +1042,21 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
                 "following nodes were deactivated: '%s'",
                 f"{[node.description.hostname for node in updated_nodes if node.description]}",
             )
-    newly_drained_instances = [
-        AssociatedInstance(
-            node=node,
+    newly_drained_instances = []
+    for instance, node in zip(active_empty_instances, updated_nodes, strict=True):
+        hostname = node.description.hostname if node.description else None
+        with traced_instance_lifecycle(
+            "instance_drain",
+            app=app,
             ec2_instance=instance.ec2_instance,
-        )
-        for instance, node in zip(active_empty_instances, updated_nodes, strict=True)
-    ]
+            hostname=hostname,
+        ):
+            newly_drained_instances.append(
+                AssociatedInstance(
+                    node=node,
+                    ec2_instance=instance.ec2_instance,
+                )
+            )
     return dataclasses.replace(
         cluster,
         active_nodes=[n for n in cluster.active_nodes if n not in active_empty_instances],
@@ -1094,6 +1146,17 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         )
         terminated_instance_ids = [i.ec2_instance.id for i in instances_to_terminate]
 
+        # Trace each terminated instance
+        for instance in instances_to_terminate:
+            hostname = instance.node.description.hostname if instance.node.description else None
+            with traced_instance_lifecycle(
+                "instance_terminate",
+                app=app,
+                ec2_instance=instance.ec2_instance,
+                hostname=hostname,
+            ):
+                pass
+
     still_drained_nodes = [
         i
         for i in cluster.drained_nodes
@@ -1148,6 +1211,7 @@ async def _notify_machine_creation_progress(app: FastAPI, cluster: Cluster) -> N
     )
 
 
+@traced
 async def _drain_retired_nodes(
     app: FastAPI,
     cluster: Cluster,
@@ -1262,6 +1326,7 @@ async def _scale_up_cluster(
     return cluster
 
 
+@traced
 async def _autoscale_cluster(
     app: FastAPI,
     cluster: Cluster,
@@ -1404,6 +1469,7 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             return node
 
 
+@traced
 async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Cluster) -> None:
     if not cluster.hot_buffer_drained_nodes:
         return
@@ -1478,6 +1544,7 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Clu
         )
 
 
+@traced(operation_name="autoscaling_cycle")
 async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProvider) -> None:
     """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
     If there are such tasks, this method will allocate new machines in AWS to cope with
@@ -1485,7 +1552,6 @@ async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProv
     """
     # current state
     allowed_instance_types = await _sorted_allowed_instance_types(app, auto_scaling_mode)
-
     cluster = await _analyze_current_cluster(app, auto_scaling_mode, allowed_instance_types)
 
     # cleanup
@@ -1499,6 +1565,7 @@ async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProv
 
     # take care of hot buffer pre-pulling
     await _pre_pull_docker_images_on_idle_hot_buffers(app, cluster)
+
     # notify
     await _notify_machine_creation_progress(app, cluster)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
