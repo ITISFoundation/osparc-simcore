@@ -33,6 +33,14 @@ try:
     HAS_BOTOCORE = True
 except ImportError:
     HAS_BOTOCORE = False
+
+try:
+    from opentelemetry.instrumentation.threading import ThreadingInstrumentor
+
+    HAS_THREADING = True
+except ImportError:
+    HAS_THREADING = False
+
 try:
     from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
@@ -142,6 +150,14 @@ def _startup(
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
             AsyncPGInstrumentor().instrument(tracer_provider=tracer_provider)
+    if HAS_THREADING:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add threading opentelemetry autoinstrumentation...",
+        ):
+            ThreadingInstrumentor().instrument(tracer_provider=tracer_provider)
+
     if HAS_BOTOCORE:
         with log_context(
             _logger,
@@ -201,6 +217,9 @@ def _shutdown() -> None:
     if HAS_BOTOCORE:
         with log_catch(_logger, reraise=False):
             BotocoreInstrumentor().uninstrument()
+    if HAS_THREADING:
+        with log_catch(_logger, reraise=False):
+            ThreadingInstrumentor().uninstrument()
     if HAS_REQUESTS:
         with log_catch(_logger, reraise=False):
             RequestsInstrumentor().uninstrument()
