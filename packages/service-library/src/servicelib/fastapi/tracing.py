@@ -37,7 +37,7 @@ except ImportError:
     HAS_REDIS = False
 
 try:
-    from opentelemetry.instrumentation.botocore import (
+    from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]
         AioBotocoreInstrumentor,
         BotocoreInstrumentor,
     )
