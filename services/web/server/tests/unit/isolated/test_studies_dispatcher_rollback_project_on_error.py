@@ -36,7 +36,7 @@ async def test_cancelled_error_propagates_without_wrapping(
     mock_app,
     mock_delete_project_by_user: AsyncMock,
 ):
-    """CancelledError (BaseException in Python 3.9+) must NOT be caught by
+    """CancelledError (BaseException since Python 3.8) must NOT be caught by
     rollback_project_on_error. It should propagate directly without being
     wrapped in ProjectCreationAbortedError."""
     project_uuid = uuid4()
