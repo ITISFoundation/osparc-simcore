@@ -38,7 +38,7 @@ except ImportError:
 
 try:
     from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]
-        AioBotocoreInstrumentor,
+        AiobotocoreInstrumentor,
         BotocoreInstrumentor,
     )
 
@@ -147,7 +147,7 @@ def _startup(
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
             BotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
-            AioBotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
+            AiobotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REQUESTS:
         with log_context(
             _logger,
@@ -181,7 +181,7 @@ def _shutdown() -> None:
     if HAS_BOTOCORE:
         with log_catch(_logger, reraise=False):
             BotocoreInstrumentor().uninstrument()
-            AioBotocoreInstrumentor().uninstrument()
+            AiobotocoreInstrumentor().uninstrument()
     if HAS_THREADING:
         with log_catch(_logger, reraise=False):
             ThreadingInstrumentor().uninstrument()

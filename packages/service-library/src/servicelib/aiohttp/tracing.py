@@ -27,6 +27,7 @@ TRACING_CONFIG_KEY: Final[str] = "tracing_config"
 
 try:
     from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]
+        AiobotocoreInstrumentor,
         BotocoreInstrumentor,
     )
 
@@ -165,6 +166,7 @@ def _startup(
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
             BotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
+            AiobotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REQUESTS:
         with log_context(
             _logger,
@@ -217,6 +219,7 @@ def _shutdown() -> None:
     if HAS_BOTOCORE:
         with log_catch(_logger, reraise=False):
             BotocoreInstrumentor().uninstrument()
+            AiobotocoreInstrumentor().uninstrument()
     if HAS_THREADING:
         with log_catch(_logger, reraise=False):
             ThreadingInstrumentor().uninstrument()
