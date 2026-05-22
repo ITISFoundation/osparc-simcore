@@ -208,6 +208,7 @@ async def rollback_project_on_error(
                 project_uuid=project_uuid,
                 user_id=user_id,
                 product_name=product_name,
+                wait_until_completed=False,
             )
         except Exception:  # pylint: disable=broad-except
             _logger.exception("Failed to rollback project %s during cleanup", project_uuid)
