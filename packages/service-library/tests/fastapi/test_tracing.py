@@ -31,6 +31,7 @@ from servicelib.tracing import (
     create_standard_attributes,
     extract_span_link_from_trace_carrier,
     profiled_span,
+    traced,
     traced_operation,
 )
 from settings_library.tracing import TracingSettings
@@ -677,3 +678,219 @@ def test_create_standard_attributes():
         "product_name": "product123",
         "wallet_id": "wallet321",
     }
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_decorator_async(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    @traced
+    async def _my_async_operation(app: FastAPI) -> str:
+        return "async_result"
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        mocked_app.state.tracing_config = tracing_config
+        result = await _my_async_operation(mocked_app)
+        assert result == "async_result"
+
+        spans = mock_otel_collector.get_finished_spans()
+        matching = [s for s in spans if s.name == "_my_async_operation"]
+        assert len(matching) == 1
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_decorator_sync(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    @traced
+    def _my_sync_operation(app: FastAPI) -> str:
+        return "sync_result"
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        mocked_app.state.tracing_config = tracing_config
+        result = _my_sync_operation(mocked_app)
+        assert result == "sync_result"
+
+        spans = mock_otel_collector.get_finished_spans()
+        matching = [s for s in spans if s.name == "_my_sync_operation"]
+        assert len(matching) == 1
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_decorator_with_custom_operation_name(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    @traced(operation_name="custom_span_name")
+    async def _some_internal_func(app: FastAPI) -> int:
+        return 42
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        mocked_app.state.tracing_config = tracing_config
+        result = await _some_internal_func(mocked_app)
+        assert result == 42
+
+        spans = mock_otel_collector.get_finished_spans()
+        matching = [s for s in spans if s.name == "custom_span_name"]
+        assert len(matching) == 1
+        # Ensure original name is NOT used
+        assert not any(s.name == "_some_internal_func" for s in spans)
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_decorator_with_attributes_and_links(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    carrier = {"traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"}
+    link = extract_span_link_from_trace_carrier(carrier)
+    assert link is not None
+
+    @traced(
+        operation_name="linked_and_attributed",
+        attributes={"env": "test", "component": "autoscaling"},
+        links=[link],
+    )
+    async def _do_work(app: FastAPI) -> None:
+        pass
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        mocked_app.state.tracing_config = tracing_config
+        await _do_work(mocked_app)
+
+        spans = mock_otel_collector.get_finished_spans()
+        matching = [s for s in spans if s.name == "linked_and_attributed"]
+        assert len(matching) == 1
+        span = matching[0]
+
+        # Verify attributes
+        assert span.attributes is not None
+        assert span.attributes.get("env") == "test"
+        assert span.attributes.get("component") == "autoscaling"
+
+        # Verify link
+        assert span.links is not None
+        assert len(span.links) == 1
+        assert format(span.links[0].context.trace_id, "032x") == "0af7651916cd43dd8448eb211c80319c"
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_decorator_with_tracing_config_getter(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    def _custom_getter(cfg: TracingConfig, **kwargs) -> TracingConfig:
+        return cfg
+
+    @traced(tracing_config_getter=_custom_getter)
+    async def _func_with_custom_getter(cfg: TracingConfig) -> str:
+        return "custom"
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        result = await _func_with_custom_getter(tracing_config)
+        assert result == "custom"
+
+        spans = mock_otel_collector.get_finished_spans()
+        matching = [s for s in spans if s.name == "_func_with_custom_getter"]
+        assert len(matching) == 1
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_decorator_assertion_on_missing_tracing_config(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    @traced
+    async def _needs_tracing(app: FastAPI) -> None:
+        pass
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        # Do NOT set mocked_app.state.tracing_config
+        with pytest.raises(AssertionError, match="tracing_config not available"):
+            await _needs_tracing(mocked_app)

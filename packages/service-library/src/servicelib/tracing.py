@@ -1,7 +1,10 @@
+import asyncio
+import functools
 import logging
+from collections.abc import Callable, Coroutine
 from contextlib import contextmanager
 from contextvars import Token
-from typing import Final, Self
+from typing import Any, Final, Self
 
 import pyinstrument
 import pyinstrument.renderers
@@ -227,6 +230,88 @@ def traced_operation(
                 is_root_span,
             )
         yield
+
+
+def traced[**P, R](
+    _func: Callable[P, Coroutine[Any, Any, R]] | Callable[P, R] | None = None,
+    *,
+    operation_name: str | None = None,
+    tracing_config_getter: Callable[..., TracingConfig] | None = None,
+    attributes: dict[str, str] | None = None,
+    links: list[Link] | None = None,
+) -> (
+    Callable[
+        [Callable[P, Coroutine[Any, Any, R]] | Callable[P, R]],
+        Callable[P, Coroutine[Any, Any, R]] | Callable[P, R],
+    ]
+    | Callable[P, Coroutine[Any, Any, R]]
+    | Callable[P, R]
+):
+    """Decorator to trace async and sync operations.
+
+    Extracts TracingConfig via `tracing_config_getter` (called with the same
+    args/kwargs as the decorated function). If not provided, assumes the first
+    positional arg has a `.state.tracing_config` attribute (FastAPI app pattern).
+
+    Uses the function name as span name unless `operation_name` is provided.
+
+    Can be used with or without arguments:
+        @traced
+        async def my_func(app, ...): ...
+
+        @traced(operation_name="custom_name", attributes={"key": "val"})
+        def my_sync_func(app, ...): ...
+    """
+
+    def decorator(
+        func: Callable[P, Coroutine[Any, Any, R]] | Callable[P, R],
+    ) -> Callable[P, Coroutine[Any, Any, R]] | Callable[P, R]:
+        span_name = operation_name or func.__name__
+
+        def _get_tracing_config(args, kwargs) -> TracingConfig:
+            if tracing_config_getter:
+                return tracing_config_getter(*args, **kwargs)
+            app = kwargs.get("app") or args[0]
+            assert hasattr(app, "state"), (  # nosec
+                f"app.state not available. Ensure tracing is initialized before calling '{func.__name__}'"
+            )
+            assert hasattr(app.state, "tracing_config"), (  # nosec
+                f"app.state.tracing_config not available. Ensure tracing is"
+                f" initialized before calling '{func.__name__}'"
+            )
+            return app.state.tracing_config
+
+        if asyncio.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                tracing_config = _get_tracing_config(args, kwargs)
+                with traced_operation(
+                    span_name,
+                    tracing_config=tracing_config,
+                    attributes=attributes,
+                    links=links,
+                ):
+                    return await func(*args, **kwargs)
+
+            return async_wrapper  # type: ignore[return-value]
+
+        @functools.wraps(func)
+        def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            tracing_config = _get_tracing_config(args, kwargs)
+            with traced_operation(
+                span_name,
+                tracing_config=tracing_config,
+                attributes=attributes,
+                links=links,
+            ):
+                return func(*args, **kwargs)
+
+        return sync_wrapper  # type: ignore[return-value]
+
+    if _func is not None:
+        return decorator(_func)
+    return decorator
 
 
 @contextmanager
