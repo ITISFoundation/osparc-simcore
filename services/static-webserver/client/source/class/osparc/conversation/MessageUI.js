@@ -200,13 +200,22 @@ qx.Class.define("osparc.conversation.MessageUI", {
       });
       addMessage.getChildControl("notify-user-button").exclude();
       const title = this.tr("Edit message");
-      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 120).set({
+      // check if support center is open to decide where to open the edit message window
+      const width = this.__studyData ? 570 : osparc.support.SupportCenter.WINDOW_WIDTH - 10;
+      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, width, 120).set({
         clickAwayClose: false,
         resizable: true,
         showClose: true,
       });
+      if (!this.__studyData) {
+        // only if the message belong to the support center
+        const supportCenter = osparc.ui.window.SingletonWindow.getWindowById("support-center");
+        win.setCenterOnElement(supportCenter);
+        win.center();
+      }
       addMessage.addListener("updateMessage", e => {
         const content = e.getData();
+        let promise = null;
         if (this.__studyData) {
           promise = osparc.store.ConversationsProject.getInstance().editMessage(message, content, this.__studyData["uuid"]);
         } else {
