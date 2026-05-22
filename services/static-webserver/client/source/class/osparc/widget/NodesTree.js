@@ -285,7 +285,7 @@ qx.Class.define("osparc.widget.NodesTree", {
           }
           treeItemRenamer.close();
         }, this);
-        const bounds = treeItem ? treeItem.getLayoutParent().getContentLocation() : this.getLayoutParent().getContentLocation();
+        const bounds = treeItem ? treeItem.getContentLocation() : this.getLayoutParent().getContentLocation();
         treeItemRenamer.moveTo(bounds.left + 200, bounds.top - 20);
         treeItemRenamer.open();
       }
