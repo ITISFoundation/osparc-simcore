@@ -65,6 +65,26 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 
 _logger = logging.getLogger(__name__)
 
+
+async def _best_effort_cleanup(
+    app: web.Application,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    simcore_user_agent: str,
+    product_name: ProductName,
+) -> None:
+    try:
+        await _projects_service.submit_delete_project_task(
+            app=app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            simcore_user_agent=simcore_user_agent,
+            product_name=product_name,
+        )
+    except Exception:  # pylint: disable=broad-except
+        _logger.exception("Best-effort cleanup failed for project %s", project_uuid)
+
+
 type CopyFileCoro = Coroutine[Any, Any, None]
 type CopyProjectNodesCoro = Coroutine[Any, Any, dict[NodeID, ProjectNodeCreate]]
 
@@ -446,13 +466,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         _project_product_name = await _projects_repository_legacy.get_project_product(project_uuid=new_project["uuid"])
         if _project_product_name != product_name:
             if project_uuid := new_project.get("uuid"):
-                await _projects_service.submit_delete_project_task(
-                    app=app,
-                    project_uuid=project_uuid,
-                    user_id=user_id,
-                    simcore_user_agent=simcore_user_agent,
-                    product_name=_project_product_name,
-                )
+                await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, _project_product_name)
             raise web.HTTPBadRequest(  # noqa: TRY301
                 text=f"Project product name mismatch {product_name=} {_project_product_name=}"
             )
@@ -475,13 +489,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
         if project_uuid := new_project.get("uuid"):
-            await _projects_service.submit_delete_project_task(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                simcore_user_agent=simcore_user_agent,
-                product_name=product_name,
-            )
+            await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
         raise web.HTTPNotFound(text=f"{exc}") from exc
 
     except asyncio.CancelledError:
@@ -490,13 +498,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             f"{user_id=}",
         )
         if project_uuid := new_project.get("uuid"):
-            await _projects_service.submit_delete_project_task(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                simcore_user_agent=simcore_user_agent,
-                product_name=product_name,
-            )
+            await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
         raise
 
     except web.HTTPException:
@@ -510,13 +512,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             f"{user_id=}",
         )
         if project_uuid := new_project.get("uuid"):
-            await _projects_service.submit_delete_project_task(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                simcore_user_agent=simcore_user_agent,
-                product_name=product_name,
-            )
+            await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
         raise
 
 
