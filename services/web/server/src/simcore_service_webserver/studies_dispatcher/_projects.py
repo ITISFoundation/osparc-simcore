@@ -193,7 +193,10 @@ def _create_project_with_filepicker_and_service(
 async def rollback_project_on_error(
     app: web.Application, user_id: int, project_uuid: ProjectID, *, product_name: str
 ) -> AsyncIterator[None]:
-    """Deletes the project and raises ProjectCreationAbortedError on `Exception`.
+    """Schedules best-effort project cleanup and raises ProjectCreationAbortedError on `Exception`.
+
+    The rollback path submits project deletion asynchronously and does not wait
+    for cleanup completion before exiting the context manager.
 
     Task cancellations and other `BaseException` subclasses are propagated as-is
     and do not trigger rollback or wrapping.
