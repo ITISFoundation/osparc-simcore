@@ -451,7 +451,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                     project_uuid=project_uuid,
                     user_id=user_id,
                     simcore_user_agent=simcore_user_agent,
-                    product_name=product_name,
+                    product_name=_project_product_name,
                 )
             raise web.HTTPBadRequest(  # noqa: TRY301
                 text=f"Project product name mismatch {product_name=} {_project_product_name=}"
