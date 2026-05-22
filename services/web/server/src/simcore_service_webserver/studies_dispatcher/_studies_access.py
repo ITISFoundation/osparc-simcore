@@ -193,7 +193,9 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
             project = substitute_parameterized_inputs(project, template_parameters) or project
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = products_web.get_product_name(request)
-        async with rollback_project_on_error(request.app, user["id"], ProjectID(project["uuid"])):
+        async with rollback_project_on_error(
+            request.app, user["id"], ProjectID(project["uuid"]), product_name=product_name
+        ):
             await db.insert_project(
                 project,
                 user["id"],

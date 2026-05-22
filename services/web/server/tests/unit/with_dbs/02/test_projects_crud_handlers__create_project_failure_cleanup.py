@@ -140,10 +140,20 @@ async def test_create_project_cleans_up_on_director_v2_pipeline_failure(
     result = await client.get(urlparse(result_url).path)
     assert result.status >= 400
 
-    # CRITICAL: verify no orphan project remains in the DB
-    remaining_projects = await _get_all_projects_in_db(client)
-    user_project_uuids = [p["uuid"] for p in remaining_projects if p["uuid"] != template_project["uuid"]]
-    assert user_project_uuids == [], f"Orphan project(s) left behind after pipeline failure: {user_project_uuids}"
+    # CRITICAL: verify no orphan project remains in the DB.
+    # Cleanup is scheduled asynchronously; retry until the orphan project disappears.
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            remaining_projects = await _get_all_projects_in_db(client)
+            user_project_uuids = [p["uuid"] for p in remaining_projects if p["uuid"] != template_project["uuid"]]
+            assert user_project_uuids == [], (
+                f"Orphan project(s) left behind after pipeline failure: {user_project_uuids}"
+            )
 
 
 @pytest.mark.parametrize(*_standard_user_role_response())

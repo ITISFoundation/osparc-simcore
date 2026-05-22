@@ -42,6 +42,6 @@ class ProjectWorkbenchMismatchError(StudyDispatcherError):
 
 class ProjectCreationAbortedError(StudyDispatcherError):
     msg_template = user_message(
-        "Project {project_uuid} creation was aborted due to an unexpected error. The project has been removed.",
+        "Project {project_uuid} creation was aborted due to an unexpected error.",
         _version=1,
     )

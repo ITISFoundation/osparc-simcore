@@ -26,7 +26,7 @@ from servicelib.logging_utils import log_decorator
 
 from ..director_v2.director_v2_service import create_or_update_pipeline
 from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
-from ..projects._projects_service import get_project_for_user
+from ..projects._projects_service import delete_project_by_user, get_project_for_user
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..utils import now_str
 from . import _service
@@ -190,7 +190,9 @@ def _create_project_with_filepicker_and_service(
 
 
 @asynccontextmanager
-async def rollback_project_on_error(app: web.Application, user_id: int, project_uuid: ProjectID) -> AsyncIterator[None]:
+async def rollback_project_on_error(
+    app: web.Application, user_id: int, project_uuid: ProjectID, *, product_name: str
+) -> AsyncIterator[None]:
     """Deletes the project and raises ProjectCreationAbortedError if anything fails."""
     try:
         yield
@@ -201,8 +203,12 @@ async def rollback_project_on_error(app: web.Application, user_id: int, project_
             exc_info=True,
         )
         try:
-            db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
-            await db.delete_project(user_id, f"{project_uuid}")
+            await delete_project_by_user(
+                app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                product_name=product_name,
+            )
         except Exception:  # pylint: disable=broad-except
             _logger.exception("Failed to rollback project %s during cleanup", project_uuid)
         raise ProjectCreationAbortedError(project_uuid=project_uuid) from exc
@@ -216,7 +222,7 @@ async def _add_new_project(
     product_name: str,
     product_api_base_url: str,
 ) -> None:
-    async with rollback_project_on_error(app, user.id, project.uuid):
+    async with rollback_project_on_error(app, user.id, project.uuid, product_name=product_name):
         # TODO: move this to projects_api  # noqa: FIX002
         # TODO: this piece was taken from the end of projects.projects_handlers.create_projects  # noqa: FIX002
 
