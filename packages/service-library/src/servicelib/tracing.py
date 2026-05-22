@@ -242,6 +242,7 @@ def _resolve_tracing_config(
 ) -> TracingConfig | None:
     if tracing_config_getter:
         return tracing_config_getter(*args, **kwargs)
+    # Try to use some smart defaults for common patterns (e.g. FastAPI app as first arg with .state.tracing_config)
     app = kwargs.get("app") or args[0]
     if not hasattr(app, "state") or not hasattr(app.state, "tracing_config"):
         if not warned[0]:
