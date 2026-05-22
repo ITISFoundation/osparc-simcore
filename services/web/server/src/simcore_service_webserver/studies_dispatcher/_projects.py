@@ -193,7 +193,11 @@ def _create_project_with_filepicker_and_service(
 async def rollback_project_on_error(
     app: web.Application, user_id: int, project_uuid: ProjectID, *, product_name: str
 ) -> AsyncIterator[None]:
-    """Deletes the project and raises ProjectCreationAbortedError if anything fails."""
+    """Deletes the project and raises ProjectCreationAbortedError on `Exception`.
+
+    Task cancellations and other `BaseException` subclasses are propagated as-is
+    and do not trigger rollback or wrapping.
+    """
     try:
         yield
     except Exception as exc:
