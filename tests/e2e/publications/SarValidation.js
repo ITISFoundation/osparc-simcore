@@ -8,21 +8,23 @@ const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');
 
 const args = process.argv.slice(2);
-const {
-  urlPrefix,
-  templateUuid,
-  startTimeout,
-  basicauthUsername,
-  basicauthPassword,
-  enableDemoMode
-} = utils.parseCommandLineArgumentsAnonymous(args);
+const urlIdx = args.indexOf('--url'); // used in production only
 
-const urlIdx = args.indexOf('--url');
-let anonURL;
+let anonURL, startTimeout, basicauthUsername, basicauthPassword, enableDemoMode;
+
 if (urlIdx > -1) {
   anonURL = args[urlIdx + 1];
+  startTimeout = args[urlIdx + 2];
+  basicauthUsername = "";
+  basicauthPassword = "";
+  enableDemoMode = args.includes("--demo");
 } else {
-  anonURL = urlPrefix + templateUuid;
+  const parsed = utils.parseCommandLineArgumentsAnonymous(args);
+  anonURL = parsed.urlPrefix + parsed.templateUuid;
+  startTimeout = parsed.startTimeout;
+  basicauthUsername = parsed.basicauthUsername;
+  basicauthPassword = parsed.basicauthPassword;
+  enableDemoMode = parsed.enableDemoMode;
 }
 
 const screenshotPrefix = "SarValidation";
