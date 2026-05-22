@@ -547,11 +547,22 @@ async def _try_start_warm_buffer_instances(
     if not instances_to_start:
         return cluster, []
 
-    with log_context(
-        _logger,
-        logging.INFO,
-        f"start {len(instances_to_start)} warm buffer machines '{[i.id for i in instances_to_start]}'",
+    tracing_config = get_tracing_config(app)
+    with (
+        log_context(
+            _logger,
+            logging.INFO,
+            f"start {len(instances_to_start)} warm buffer machines '{[i.id for i in instances_to_start]}'",
+        ),
+        traced_operation(
+            "warm_buffer_start",
+            tracing_config=tracing_config,
+            attributes={"num_instances": f"{len(instances_to_start)}"},
+        ),
     ):
+        # Capture traceparent from inside this span so EC2 tags link back here
+        trace_tags = get_trace_carrier_ec2_tags()
+
         swarm_join_command = await utils_docker.get_docker_swarm_join_bash_command(
             join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED, idempotent=True
         )
@@ -584,6 +595,7 @@ async def _try_start_warm_buffer_instances(
             non_associated_instance = non_associated_instance_by_id[instance.id]
 
             activation_tags = get_activated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app))
+            activation_tags |= trace_tags
             if required_labels := non_associated_instance.tasks_required_pending_labels():
                 activation_tags |= utils_ec2.dump_task_required_node_labels_as_tags(required_labels)
             # update the instance tags to activate warm buffer
