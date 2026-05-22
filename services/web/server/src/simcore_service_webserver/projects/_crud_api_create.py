@@ -494,8 +494,8 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
     except asyncio.CancelledError:
         _logger.warning(
-            "cancelled create_project for '%s'. Cleaning up",
-            f"{user_id=}",
+            "cancelled create_project for user_id='%s'. Cleaning up",
+            user_id,
         )
         if project_uuid := new_project.get("uuid"):
             await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
@@ -508,8 +508,8 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
     except Exception:
         _logger.exception(
-            "Unexpected error during create_project for user '%s'. Cleaning up",
-            f"{user_id=}",
+            "Unexpected error during create_project for user_id='%s'. Cleaning up",
+            user_id,
         )
         if project_uuid := new_project.get("uuid"):
             await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
