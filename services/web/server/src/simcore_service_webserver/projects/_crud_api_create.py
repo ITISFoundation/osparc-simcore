@@ -500,7 +500,8 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         raise
 
     except web.HTTPException:
-        # Intentional HTTP error responses (e.g. HTTPBadRequest) should not trigger cleanup
+        # Pre-insertion validation HTTP errors (e.g. invalid data, not found, forbidden)
+        # do not need cleanup. Post-insertion cases handle their own cleanup before raising.
         raise
 
     except Exception:
