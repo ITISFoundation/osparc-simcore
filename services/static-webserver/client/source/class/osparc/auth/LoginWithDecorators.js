@@ -319,9 +319,10 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
         margin: [10, 0]
       });
 
-      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink(this.tr("Platform"));
+      const isOsparc = osparc.product.Utils.isProduct("osparc");
+      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink(isOsparc ? "osparc" : this.tr("Platform"));
       let toolTipText = "";
-      if (!osparc.product.Utils.isProduct("osparc")) {
+      if (!isOsparc) {
         const displayName = osparc.store.StaticInfo.getDisplayName();
         toolTipText = displayName + this.tr(" is powered by osparc.<br>");
       }
