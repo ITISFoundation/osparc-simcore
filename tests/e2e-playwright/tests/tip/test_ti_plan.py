@@ -145,7 +145,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
         timeout=_OUTER_EXPECT_TIMEOUT_RATIO
         * (_JLAB_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
     ) as ws_info:
-        with expected_service_running(
+        ti_iframe = wait_for_service_running(
             page=params.page,
             node_id=node_id,
             websocket=params.websocket,
@@ -153,9 +153,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
             press_start_button=False,
             product_url=params.product_url,
             is_service_legacy=params.is_service_legacy,
-        ) as service_running:
-            app_mode_trigger_next_app(params.page)
-        ti_iframe = service_running.iframe_locator
+        )
         assert ti_iframe
 
     assert not ws_info.value.is_closed()
