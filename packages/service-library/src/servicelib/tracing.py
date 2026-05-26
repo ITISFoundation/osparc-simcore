@@ -248,10 +248,14 @@ def _resolve_tracing_config(
     app = kwargs.get("app") or args[0]
     # The FastAPI way: app.state.tracing_config
     if hasattr(app, "state") and hasattr(app.state, "tracing_config"):
+        assert app.state  # nosec
+        assert app.state.tracing_config  # nosec
+        assert isinstance(app.state.tracing_config, TracingConfig)  # nosec
         return app.state.tracing_config
     # The aiohttp way: app["tracing_config"]
     if hasattr(app, "__getitem__"):
         try:
+            assert isinstance(app[_AIOHTTP_TRACING_CONFIG_KEY], TracingConfig)  # nosec
             return app[_AIOHTTP_TRACING_CONFIG_KEY]
         except (KeyError, TypeError):
             pass
@@ -286,7 +290,7 @@ def traced(
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]: ...
 
 
-def traced(  # type: ignore[overload-implementation]
+def traced(
     _func=None,
     *,
     operation_name: str | None = None,
