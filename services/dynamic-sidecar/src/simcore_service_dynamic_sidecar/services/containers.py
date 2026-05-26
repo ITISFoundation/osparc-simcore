@@ -128,9 +128,10 @@ async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
         DockerError,
     ):
         _logger.warning(
-            "Could not run inactivity command '%s' in container '%s'",
+            "Could not run inactivity command '%s' in container '%s' (resolved='%s')",
             inactivity_command.command,
             container_name,
+            resolved_container_name,
             exc_info=True,
         )
         return None
