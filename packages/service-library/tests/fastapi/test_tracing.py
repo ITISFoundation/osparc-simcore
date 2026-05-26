@@ -48,9 +48,7 @@ def tracing_settings_in(request: pytest.FixtureRequest) -> tuple[str, int | str,
 
 
 @pytest.fixture
-def set_and_clean_settings_env_vars(
-    monkeypatch: pytest.MonkeyPatch, tracing_settings_in: tuple[str, int | str, float]
-) -> None:
+def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_settings_in: tuple[str, int | str, float]):
     endpoint, port, sampling_probability = tracing_settings_in
     if endpoint:
         monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{endpoint}")
@@ -193,7 +191,7 @@ async def test_trace_id_in_response_header(
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     server_response: PlainTextResponse | HTTPException,
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -418,7 +416,7 @@ async def test_traced_operation_basic(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -476,7 +474,7 @@ async def test_traced_operation_nested_spans(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -545,7 +543,7 @@ async def test_traced_operation_with_exception(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -609,7 +607,7 @@ async def test_traced_operation_with_links(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     faker: Faker,
-) -> None:
+):
     # just to check
     carrier = {}
     assert extract_span_link_from_trace_carrier(carrier) is None
@@ -693,7 +691,7 @@ async def test_traced_decorator_async(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -726,7 +724,7 @@ async def test_traced_decorator_sync(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -759,7 +757,7 @@ async def test_traced_decorator_with_custom_operation_name(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -794,7 +792,7 @@ async def test_traced_decorator_with_attributes_and_links(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -807,7 +805,7 @@ async def test_traced_decorator_with_attributes_and_links(
         attributes={"env": "test", "component": "autoscaling"},
         links=[link],
     )
-    async def _do_work(app: FastAPI) -> None:
+    async def _do_work(app: FastAPI):
         pass
 
     async for _ in get_tracing_instrumentation_lifespan(
@@ -845,7 +843,7 @@ async def test_traced_decorator_with_tracing_config_getter(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -881,7 +879,7 @@ async def test_traced_decorator_noop_when_tracing_not_configured(
     tracing_settings_in: tuple[str, int | str, float],
     faker: Faker,
     caplog: pytest.LogCaptureFixture,
-) -> None:
+):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
