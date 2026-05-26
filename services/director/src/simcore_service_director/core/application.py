@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.httpx_client import setup_httpx_client
 from servicelib.fastapi.tracing import (
@@ -54,6 +55,8 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         tracing_config=tracing_config,
     )
     setup_registry(app)
+
+    app.add_middleware(RequestCancellationMiddleware)
 
     if tracing_config.tracing_enabled:
         initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
