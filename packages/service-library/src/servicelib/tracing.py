@@ -3,7 +3,7 @@ import functools
 import inspect
 import logging
 from collections.abc import Callable, Coroutine
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import Token
 from typing import Any, Final, Self, overload
 
@@ -255,21 +255,17 @@ def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR
         return None
 
     # Handle actual type objects
-    try:
+    with suppress(ImportError):
         from aiohttp.web import Application as AiohttpApp  # pyright: ignore[reportMissingImports] # noqa: PLC0415
 
         if annotation is AiohttpApp or (isinstance(annotation, type) and issubclass(annotation, AiohttpApp)):
             return _AppType.AIOHTTP
-    except ImportError:
-        pass
 
-    try:
+    with suppress(ImportError):
         from fastapi import FastAPI  # pyright: ignore[reportAttributeAccessIssue] # noqa: PLC0415
 
         if annotation is FastAPI or (isinstance(annotation, type) and issubclass(annotation, FastAPI)):
             return _AppType.FASTAPI
-    except ImportError:
-        pass
 
     return None
 
@@ -381,7 +377,7 @@ def traced(  # noqa: C901
         async def my_func(cfg: TracingConfig, ...): ...
     """
 
-    def decorator(func):
+    def _decorator(func):
         span_name = operation_name or func.__name__
         warned: list[bool] = [False]
 
@@ -437,8 +433,8 @@ def traced(  # noqa: C901
         return sync_wrapper
 
     if _func is not None:
-        return decorator(_func)
-    return decorator
+        return _decorator(_func)
+    return _decorator
 
 
 @contextmanager
