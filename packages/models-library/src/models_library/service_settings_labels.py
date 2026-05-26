@@ -1,5 +1,6 @@
 # pylint: disable=unsubscriptable-object
 
+import logging
 from enum import StrEnum
 from functools import cached_property
 from pathlib import Path
@@ -26,6 +27,8 @@ from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
 from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+
+_logger = logging.getLogger(__name__)
 
 _BaseConfig = ConfigDict(
     extra="forbid",
@@ -513,15 +516,13 @@ class DynamicSidecarServiceLabels(BaseModel):
         defined_services: set[str] = {x.service for x in v.before_shutdown}
         if v.metrics:
             defined_services.add(v.metrics.service)
-        if v.inactivity:
-            defined_services.add(v.inactivity.service)
 
-        if len(defined_services) == 0:
+        if len(defined_services) == 0 and v.inactivity is None:
             return v
 
         compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
-            if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
+            if defined_services and {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
                 err_msg = f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{defined_services}'"
                 raise ValueError(err_msg)
         else:
@@ -530,6 +531,20 @@ class DynamicSidecarServiceLabels(BaseModel):
                 if service_name not in containers_in_compose_spec:
                     err_msg = f"{service_name=} not found in {compose_spec=}"
                     raise ValueError(err_msg)
+
+        # Warn (not reject) if inactivity.service is misconfigured.
+        # Rejecting would break existing deployed services; ooil catches this at build time.
+        if v.inactivity:
+            inactivity_service = v.inactivity.service
+            expected = {DEFAULT_SINGLE_SERVICE_NAME} if compose_spec is None else containers_in_compose_spec
+            if inactivity_service not in expected:
+                _logger.warning(
+                    "callbacks_mapping.inactivity.service='%s' not found in "
+                    "expected services %s. Inactivity detection may fail at runtime.",
+                    inactivity_service,
+                    expected,
+                )
+
         return v
 
     @field_validator("user_preferences_path", mode="before")

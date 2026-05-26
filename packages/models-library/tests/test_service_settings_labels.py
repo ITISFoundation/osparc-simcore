@@ -558,15 +558,17 @@ def test_user_preferences_path_is_part_of_exiting_volume():
 
 
 @pytest.mark.parametrize(
-    "inactivity_service,should_raise",
+    "inactivity_service,expect_warning",
     [
         pytest.param("container", True, id="service_not_in_compose_spec"),
         pytest.param("rt-web", False, id="service_in_compose_spec"),
     ],
 )
-def test_inactivity_service_validated_against_compose_spec(inactivity_service: str, should_raise: bool):
-    """Regression: inactivity.service was not validated against the compose spec,
-    allowing a KeyError at runtime in the dynamic-sidecar."""
+def test_inactivity_service_validated_against_compose_spec(
+    inactivity_service: str, expect_warning: bool, caplog: pytest.LogCaptureFixture
+):
+    """Regression: inactivity.service misconfiguration is warned (not rejected)
+    to avoid breaking existing deployed services."""
     labels_data = {
         "simcore.service.compose-spec": json.dumps(
             {
@@ -591,11 +593,14 @@ def test_inactivity_service_validated_against_compose_spec(inactivity_service: s
         ),
     }
 
-    if should_raise:
-        with pytest.raises(ValidationError, match="not found in"):
-            DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))
-    else:
+    with caplog.at_level("WARNING"):
         instance = DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))
-        assert instance.callbacks_mapping is not None
-        assert instance.callbacks_mapping.inactivity is not None
-        assert instance.callbacks_mapping.inactivity.service == inactivity_service
+
+    assert instance.callbacks_mapping is not None
+    assert instance.callbacks_mapping.inactivity is not None
+    assert instance.callbacks_mapping.inactivity.service == inactivity_service
+
+    if expect_warning:
+        assert "inactivity.service" in caplog.text
+    else:
+        assert "inactivity.service" not in caplog.text
