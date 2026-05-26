@@ -197,7 +197,7 @@ qx.Class.define("osparc.widget.NodesTree", {
           const nodeTreeItem = new osparc.widget.NodeTreeItem();
           this.bind("simpleNodes", nodeTreeItem, "simpleNode");
           nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
-          nodeTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData()));
+          nodeTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData(), nodeTreeItem));
           nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));
           nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
           return nodeTreeItem;
@@ -264,7 +264,7 @@ qx.Class.define("osparc.widget.NodesTree", {
       }
     },
 
-    _openItemRenamer: function(nodeId) {
+    _openItemRenamer: function(nodeId, treeItem) {
       if (nodeId === undefined && this.__getSelection()) {
         nodeId = this.__getSelection().getId();
       }
@@ -285,8 +285,8 @@ qx.Class.define("osparc.widget.NodesTree", {
           }
           treeItemRenamer.close();
         }, this);
-        const bounds = this.getLayoutParent().getContentLocation();
-        treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
+        const bounds = treeItem ? treeItem.getContentLocation() : this.getLayoutParent().getContentLocation();
+        treeItemRenamer.moveTo(bounds.left + 200, bounds.top - 20);
         treeItemRenamer.open();
       }
     },

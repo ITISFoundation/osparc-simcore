@@ -146,7 +146,8 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
         oldName = "";
       }
       const title = this.tr("Rename Conversation");
-      const renamer = new osparc.widget.Renamer(oldName, null, title).set({
+      const supportCenter = osparc.ui.window.SingletonWindow.getWindowById("support-center");
+      const renamer = new osparc.widget.Renamer(oldName, null, title, supportCenter).set({
         maxChars: osparc.data.model.Conversation.MAX_TITLE_LENGTH,
       });
       renamer.addListener("labelChanged", e => {
