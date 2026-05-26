@@ -241,7 +241,7 @@ class _AppType(enum.Enum):
     AIOHTTP = "aiohttp"
 
 
-def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR0911
+def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR0911 # pylint: disable=too-many-return-statements
     """Check if an annotation corresponds to FastAPI or aiohttp Application."""
     if annotation is inspect.Parameter.empty:
         return None
