@@ -19,11 +19,11 @@ from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import TracingConfig, create_standard_attributes, get_trace_info_headers
+from ..tracing import AIOHTTP_TRACING_CONFIG_KEY, TracingConfig, create_standard_attributes, get_trace_info_headers
 
 _logger = logging.getLogger(__name__)
 
-TRACING_CONFIG_KEY: Final[str] = "tracing_config"
+TRACING_CONFIG_KEY: Final[str] = AIOHTTP_TRACING_CONFIG_KEY
 
 try:
     from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]

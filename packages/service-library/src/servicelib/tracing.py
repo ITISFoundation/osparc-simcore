@@ -233,7 +233,7 @@ def traced_operation(
         yield
 
 
-_AIOHTTP_TRACING_CONFIG_KEY: Final[str] = "tracing_config"
+AIOHTTP_TRACING_CONFIG_KEY: Final[str] = "tracing_config"
 
 
 class _AppType(enum.Enum):
@@ -297,7 +297,7 @@ def _resolve_tracing_config_fastapi(app: Any) -> TracingConfig | None:
 
 def _resolve_tracing_config_aiohttp(app: Any) -> TracingConfig | None:
     try:
-        config = app[_AIOHTTP_TRACING_CONFIG_KEY]
+        config = app[AIOHTTP_TRACING_CONFIG_KEY]
         assert isinstance(config, TracingConfig)  # nosec
         return config
     except (KeyError, TypeError):
