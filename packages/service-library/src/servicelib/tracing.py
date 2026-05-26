@@ -256,7 +256,7 @@ def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR
 
     # Handle actual type objects
     try:
-        from aiohttp.web import Application as AiohttpApp  # type: ignore # noqa: PLC0415
+        from aiohttp.web import Application as AiohttpApp  # pyright: ignore[reportMissingImports] # noqa: PLC0415
 
         if annotation is AiohttpApp or (isinstance(annotation, type) and issubclass(annotation, AiohttpApp)):
             return _AppType.AIOHTTP
@@ -264,7 +264,7 @@ def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR
         pass
 
     try:
-        from fastapi import FastAPI  # type: ignore # noqa: PLC0415
+        from fastapi import FastAPI  # pyright: ignore[reportAttributeAccessIssue] # noqa: PLC0415
 
         if annotation is FastAPI or (isinstance(annotation, type) and issubclass(annotation, FastAPI)):
             return _AppType.FASTAPI
@@ -404,7 +404,7 @@ def traced(  # noqa: C901
                     tracing_config = tracing_config_getter(*args, **kwargs)
                 else:
                     assert app_type is not None  # nosec
-                    tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)
+                    tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)  # type: ignore[assignment]
                 if tracing_config is None:
                     return await func(*args, **kwargs)
                 with traced_operation(
@@ -423,7 +423,7 @@ def traced(  # noqa: C901
                 tracing_config = tracing_config_getter(*args, **kwargs)
             else:
                 assert app_type is not None  # nosec
-                tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)
+                tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)  # type: ignore[assignment]
             if tracing_config is None:
                 return func(*args, **kwargs)
             with traced_operation(
