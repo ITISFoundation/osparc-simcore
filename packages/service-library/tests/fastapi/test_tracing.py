@@ -911,3 +911,43 @@ async def test_traced_decorator_noop_when_tracing_not_configured(
         spans = mock_otel_collector.get_finished_spans()
         matching = [s for s in spans if s.name == "_needs_tracing"]
         assert len(matching) == 0
+
+
+def test_traced_decorator_raises_on_missing_app_param():
+    with pytest.raises(TypeError, match="first parameter must be type-annotated"):
+
+        @traced
+        async def _no_app_param(x: int) -> None:
+            pass
+
+
+def test_traced_decorator_raises_on_wrong_app_type():
+    with pytest.raises(TypeError, match="first parameter must be type-annotated"):
+
+        @traced
+        async def _wrong_app_type(app: int) -> None:
+            pass
+
+
+def test_traced_decorator_accepts_positional_fastapi_app():
+    @traced
+    async def _positional(app: FastAPI) -> None:
+        pass
+
+
+def test_traced_decorator_accepts_keyword_only_fastapi_app():
+    @traced
+    async def _keyword_only(*, app: FastAPI, mode: str = "x") -> None:
+        pass
+
+
+def test_traced_decorator_accepts_app_not_first_param():
+    @traced
+    async def _app_second(something: int, app: FastAPI) -> None:
+        pass
+
+
+def test_traced_decorator_with_getter_skips_app_check():
+    @traced(tracing_config_getter=lambda *a, **kw: None)  # type: ignore  # noqa: ARG005
+    async def _no_app(cfg: object) -> None:
+        pass

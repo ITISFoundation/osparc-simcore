@@ -1,3 +1,4 @@
+import enum
 import functools
 import inspect
 import logging
@@ -235,30 +236,93 @@ def traced_operation(
 _AIOHTTP_TRACING_CONFIG_KEY: Final[str] = "tracing_config"
 
 
+class _AppType(enum.Enum):
+    FASTAPI = "fastapi"
+    AIOHTTP = "aiohttp"
+
+
+def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR0911
+    """Check if an annotation corresponds to FastAPI or aiohttp Application."""
+    if annotation is inspect.Parameter.empty:
+        return None
+
+    # Handle string annotations (forward references)
+    if isinstance(annotation, str):
+        if "FastAPI" in annotation:
+            return _AppType.FASTAPI
+        if "Application" in annotation:
+            return _AppType.AIOHTTP
+        return None
+
+    # Handle actual type objects
+    try:
+        from aiohttp.web import Application as AiohttpApp  # type: ignore # noqa: PLC0415
+
+        if annotation is AiohttpApp or (isinstance(annotation, type) and issubclass(annotation, AiohttpApp)):
+            return _AppType.AIOHTTP
+    except ImportError:
+        pass
+
+    try:
+        from fastapi import FastAPI  # type: ignore # noqa: PLC0415
+
+        if annotation is FastAPI or (isinstance(annotation, type) and issubclass(annotation, FastAPI)):
+            return _AppType.FASTAPI
+    except ImportError:
+        pass
+
+    return None
+
+
+def _detect_app_type(func: Callable) -> _AppType | None:
+    """Find a parameter named 'app' (positional or keyword) and determine its type.
+
+    Searches all parameters for one named 'app' with a type annotation
+    of FastAPI or aiohttp.web.Application.
+    """
+    sig = inspect.signature(func)
+    for param in sig.parameters.values():
+        if param.name == "app":
+            return _check_annotation_app_type(param.annotation)
+    return None
+
+
+def _resolve_tracing_config_fastapi(app: Any) -> TracingConfig | None:
+    if hasattr(app, "state") and hasattr(app.state, "tracing_config"):
+        config = app.state.tracing_config
+        assert isinstance(config, TracingConfig)  # nosec
+        return config
+    return None
+
+
+def _resolve_tracing_config_aiohttp(app: Any) -> TracingConfig | None:
+    try:
+        config = app[_AIOHTTP_TRACING_CONFIG_KEY]
+        assert isinstance(config, TracingConfig)  # nosec
+        return config
+    except (KeyError, TypeError):
+        return None
+
+
 def _resolve_tracing_config(
     func_name: str,
-    tracing_config_getter: Callable[..., TracingConfig] | None,
+    app_type: _AppType,
     args: tuple,
     kwargs: dict,
     *,
     warned: list[bool],
 ) -> TracingConfig | None:
-    if tracing_config_getter:
-        return tracing_config_getter(*args, **kwargs)
     app = kwargs.get("app") or args[0]
-    # The FastAPI way: app.state.tracing_config
-    if hasattr(app, "state") and hasattr(app.state, "tracing_config"):
-        assert app.state  # nosec
-        assert app.state.tracing_config  # nosec
-        assert isinstance(app.state.tracing_config, TracingConfig)  # nosec
-        return app.state.tracing_config
-    # The aiohttp way: app["tracing_config"]
-    if hasattr(app, "__getitem__"):
-        try:
-            assert isinstance(app[_AIOHTTP_TRACING_CONFIG_KEY], TracingConfig)  # nosec
-            return app[_AIOHTTP_TRACING_CONFIG_KEY]
-        except (KeyError, TypeError):
-            pass
+
+    config: TracingConfig | None = None
+    if app_type == _AppType.FASTAPI:
+        config = _resolve_tracing_config_fastapi(app)
+    elif app_type == _AppType.AIOHTTP:
+        config = _resolve_tracing_config_aiohttp(app)
+
+    if config is not None:
+        return config
+
     if not warned[0]:
         warned[0] = True
         _logger.warning(
@@ -290,7 +354,7 @@ def traced(
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]: ...
 
 
-def traced(
+def traced(  # noqa: C901
     _func=None,
     *,
     operation_name: str | None = None,
@@ -301,30 +365,46 @@ def traced(
     """Decorator to trace async and sync operations.
 
     Extracts TracingConfig via `tracing_config_getter` (called with the same
-    args/kwargs as the decorated function). If not provided, assumes the first
-    positional arg has a `.state.tracing_config` attribute (FastAPI app pattern).
+    args/kwargs as the decorated function). If not provided, the first positional
+    argument must be type-annotated as `FastAPI` or `aiohttp.web.Application`.
 
     Uses the function name as span name unless `operation_name` is provided.
 
     Can be used with or without arguments:
         @traced
-        async def my_func(app, ...): ...
+        async def my_func(app: FastAPI, ...): ...
 
         @traced(operation_name="custom_name", attributes={"key": "val"})
-        def my_sync_func(app, ...): ...
+        async def my_func(app: web.Application, ...): ...
+
+        @traced(tracing_config_getter=my_getter)
+        async def my_func(cfg: TracingConfig, ...): ...
     """
 
     def decorator(func):
         span_name = operation_name or func.__name__
         warned: list[bool] = [False]
 
+        # Validate at decoration time: first arg must be FastAPI or web.Application,
+        # unless a custom getter is provided
+        app_type = _detect_app_type(func)
+        if app_type is None and tracing_config_getter is None:
+            msg = (
+                f"Cannot apply @traced to '{func.__module__}.{func.__name__}': "
+                f"the first parameter must be type-annotated as 'FastAPI' or "
+                f"'aiohttp.web.Application', or provide a 'tracing_config_getter'."
+            )
+            raise TypeError(msg)
+
         if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def async_wrapper(*args, **kwargs):
-                tracing_config = _resolve_tracing_config(
-                    func.__name__, tracing_config_getter, args, kwargs, warned=warned
-                )
+                if tracing_config_getter:
+                    tracing_config = tracing_config_getter(*args, **kwargs)
+                else:
+                    assert app_type is not None  # nosec
+                    tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)
                 if tracing_config is None:
                     return await func(*args, **kwargs)
                 with traced_operation(
@@ -339,7 +419,11 @@ def traced(
 
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            tracing_config = _resolve_tracing_config(func.__name__, tracing_config_getter, args, kwargs, warned=warned)
+            if tracing_config_getter:
+                tracing_config = tracing_config_getter(*args, **kwargs)
+            else:
+                assert app_type is not None  # nosec
+                tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)
             if tracing_config is None:
                 return func(*args, **kwargs)
             with traced_operation(
