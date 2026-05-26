@@ -548,6 +548,41 @@ async def test_containers_activity_unexpected_response(
     assert containers_activity is None
 
 
+@pytest.fixture
+def define_inactivity_command_unknown_service(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(
+                {
+                    "inactivity": {
+                        "service": "non_existent_service",
+                        "command": "cat /tmp/inactivity.json",
+                        "timeout": 4,
+                    }
+                }
+            )
+        },
+    )
+
+
+async def test_containers_activity_service_not_in_container_names(
+    define_inactivity_command_unknown_service: None,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+):
+    """Regression: inactivity.service referencing a name not present in
+    original_to_container_names should return None, not crash with KeyError."""
+    shared_store: SharedStore = app.state.shared_store
+    shared_store.original_to_container_names.clear()
+
+    app_state = AppState(app)
+    containers_activity = await containers.get_containers_activity(
+        rpc_client, node_id=app_state.settings.DY_SIDECAR_NODE_ID
+    )
+    assert containers_activity is None
+
+
 def _get_entrypoint_container_name(app: FastAPI) -> str:
     parsed_spec = parse_compose_spec(app.state.shared_store.compose_spec)
     container_name = None

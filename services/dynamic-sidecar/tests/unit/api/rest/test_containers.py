@@ -728,3 +728,39 @@ async def test_containers_activity_unexpected_response(
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
     assert response.json() is None
+
+
+@pytest.fixture
+def define_inactivity_command_unknown_service(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(
+                {
+                    "inactivity": {
+                        "service": "non_existent_service",
+                        "command": "cat /tmp/inactivity.json",
+                        "timeout": 4,
+                    }
+                }
+            )
+        },
+    )
+
+
+async def test_containers_activity_service_not_in_container_names(
+    define_inactivity_command_unknown_service: None,
+    test_client: TestClient,
+    app: FastAPI,
+):
+    """Regression: inactivity.service referencing a name not present in
+    original_to_container_names should return None and log a warning,
+    not crash with KeyError."""
+    # shared_store has no entry for "non_existent_service"
+    shared_store: SharedStore = app.state.shared_store
+    shared_store.original_to_container_names.clear()
+
+    response = await test_client.get(f"/{API_VTAG}/containers/activity")
+
+    assert response.status_code == 200, response.text
+    assert response.json() is None
