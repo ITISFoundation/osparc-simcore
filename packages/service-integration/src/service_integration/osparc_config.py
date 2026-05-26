@@ -244,7 +244,7 @@ class RuntimeConfig(BaseModel):
 
     @model_validator(mode="after")
     def _ensure_callbacks_mapping_services_in_compose_spec(self) -> Self:
-        if self.callbacks_mapping is None:
+        if not isinstance(self.callbacks_mapping, CallbacksMapping):
             return self
 
         defined_services: set[str] = {x.service for x in self.callbacks_mapping.before_shutdown}
