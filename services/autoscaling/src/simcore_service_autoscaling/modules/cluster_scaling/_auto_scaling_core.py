@@ -27,6 +27,7 @@ from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import traced
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -130,6 +131,7 @@ def _compute_hot_buffer_missing(app_settings: ApplicationSettings, cluster: Clus
     return missing
 
 
+@traced
 async def _analyze_current_cluster(
     app: FastAPI,
     auto_scaling_mode: AutoscalingProvider,
@@ -242,6 +244,7 @@ async def _analyze_current_cluster(
 _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S: Final[int] = 30
 
 
+@traced
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     utc_now = arrow.utcnow().datetime
     removable_nodes = [
@@ -255,6 +258,7 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
+@traced
 async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     broken_instances = [i.ec2_instance for i in cluster.broken_ec2s]
     if broken_instances:
@@ -268,6 +272,7 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     )
 
 
+@traced
 async def _try_attach_pending_ec2s(
     app: FastAPI,
     cluster: Cluster,
@@ -1148,6 +1153,7 @@ async def _notify_machine_creation_progress(app: FastAPI, cluster: Cluster) -> N
     )
 
 
+@traced
 async def _drain_retired_nodes(
     app: FastAPI,
     cluster: Cluster,
@@ -1262,6 +1268,7 @@ async def _scale_up_cluster(
     return cluster
 
 
+@traced
 async def _autoscale_cluster(
     app: FastAPI,
     cluster: Cluster,
@@ -1404,6 +1411,7 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             return node
 
 
+@traced
 async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Cluster) -> None:
     if not cluster.hot_buffer_drained_nodes:
         return
@@ -1478,6 +1486,7 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Clu
         )
 
 
+@traced(operation_name="autoscaling_cycle")
 async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProvider) -> None:
     """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
     If there are such tasks, this method will allocate new machines in AWS to cope with
