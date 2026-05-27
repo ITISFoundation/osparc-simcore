@@ -128,7 +128,7 @@ def test_inactivity_service_not_in_compose_spec_rejected():
         },
     }
 
-    with pytest.raises(ValidationError, match="not defined in compose-spec"):
+    with pytest.raises(ValidationError, match="not found in compose-spec services"):
         RuntimeConfig.model_validate(runtime_data)
 
 
@@ -151,7 +151,7 @@ def test_inactivity_service_without_compose_spec_must_use_default_name():
         },
     }
 
-    with pytest.raises(ValidationError, match=r"only.*container.*is allowed"):
+    with pytest.raises(ValidationError, match=r"must be 'container' when no compose-spec"):
         RuntimeConfig.model_validate(runtime_data)
 
     # Valid case: using "container" (default) should pass

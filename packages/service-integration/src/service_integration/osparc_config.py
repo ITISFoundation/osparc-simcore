@@ -191,6 +191,16 @@ class SettingsItem(BaseModel):
 
 
 class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
+    """Re-validates service labels at publish time (ooil).
+
+    Runs the base DynamicSidecarServiceLabels validators (which reject invalid
+    metrics/before_shutdown and warn on inactivity mismatches).
+
+    NOTE: Inactivity-vs-compose-spec strict rejection is handled separately by
+    RuntimeConfig._ensure_inactivity_service_in_compose_spec because this class
+    cannot resolve compose-spec from the raw YAML data (alias mismatch).
+    """
+
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
@@ -250,15 +260,11 @@ class RuntimeConfig(BaseModel):
         defined_services: set[str] = {x.service for x in self.callbacks_mapping.before_shutdown}
         if self.callbacks_mapping.metrics:
             defined_services.add(self.callbacks_mapping.metrics.service)
-        if self.callbacks_mapping.inactivity:
-            defined_services.add(self.callbacks_mapping.inactivity.service)
 
         if not defined_services:
             return self
 
         if self.compose_spec is None:
-            # Single-service compose (director generates it): callback services
-            # must reference DEFAULT_SINGLE_SERVICE_NAME
             if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
                 msg = (
                     f"callbacks_mapping references services {defined_services} "
@@ -277,6 +283,29 @@ class RuntimeConfig(BaseModel):
                     )
                     raise ValueError(msg)
 
+        return self
+
+    @model_validator(mode="after")
+    def _ensure_inactivity_service_in_compose_spec(self) -> Self:
+        if not isinstance(self.callbacks_mapping, CallbacksMapping) or self.callbacks_mapping.inactivity is None:
+            return self
+
+        inactivity_service = self.callbacks_mapping.inactivity.service
+        if self.compose_spec is None:
+            if inactivity_service != DEFAULT_SINGLE_SERVICE_NAME:
+                err_msg = (
+                    f"inactivity.service must be '{DEFAULT_SINGLE_SERVICE_NAME}' "
+                    f"when no compose-spec is defined, got '{inactivity_service}'"
+                )
+                raise ValueError(err_msg)
+        else:
+            containers_in_compose_spec = set(self.compose_spec.services.keys()) if self.compose_spec.services else set()
+            if inactivity_service not in containers_in_compose_spec:
+                err_msg = (
+                    f"inactivity.service='{inactivity_service}' "
+                    f"not found in compose-spec services: {containers_in_compose_spec}"
+                )
+                raise ValueError(err_msg)
         return self
 
     model_config = ConfigDict(
