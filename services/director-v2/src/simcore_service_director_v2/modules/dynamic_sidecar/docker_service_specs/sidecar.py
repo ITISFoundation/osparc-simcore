@@ -195,6 +195,13 @@ def _get_environment_variables(
     }
     if r_clone_settings.R_CLONE_S3.S3_ENDPOINT is not None:
         envs["S3_ENDPOINT"] = f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}"
+
+    user_services_tracing = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
+    if user_services_tracing is not None:
+        envs["DYNAMIC_SIDECAR_USER_SERVICES_TRACING"] = json_dumps(
+            model_dump_with_secrets(user_services_tracing, show_secrets=True)
+        )
+
     return envs
 
 

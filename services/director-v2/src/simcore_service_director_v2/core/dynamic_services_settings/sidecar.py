@@ -158,6 +158,14 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         Field(description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]"),
     ] = DEFAULT_FASTAPI_PORT
 
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING: Annotated[
+        Json[dict] | None,
+        Field(
+            default=None,
+            description="JSON settings for collecting traces from user services via injected OTEL Collector. If set, enables user service tracing.",
+        ),
+    ]
+
     DYNAMIC_SIDECAR_EXPOSE_PORT: Annotated[
         bool,
         Field(

@@ -57,6 +57,59 @@ class SystemMonitorSettings(BaseApplicationSettings):
     ] = False
 
 
+class UserServiceTracingSettings(BaseApplicationSettings):
+    USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL_S: Annotated[
+        int,
+        Field(
+            default=10,
+            description="how often (seconds) the file exporter flushes buffered data to disk; "
+            "note: this does NOT trigger rotation, only ensures data reaches disk promptly for crash safety",
+        ),
+    ]
+    USER_SERVICES_TRACING_COLLECTOR_IMAGE: Annotated[
+        str,
+        Field(
+            default="otel/opentelemetry-collector:0.100.0",
+            description="pinned official OTEL Collector image",
+        ),
+    ]
+    USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS: Annotated[
+        int,
+        Field(default=5, description="max rotated trace files kept by collector"),
+    ]
+    USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB: Annotated[
+        int,
+        Field(default=10, description="file size in MB that triggers rotation"),
+    ]
+    USER_SERVICES_TRACING_COLLECTOR_ROTATION_INTERVAL_S: Annotated[
+        int,
+        Field(
+            default=30,
+            description="max seconds before the collector forces a file rotation, "
+            "ensuring the sidecar can pick up traces even under low throughput",
+        ),
+    ]
+    USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD_S: Annotated[
+        int,
+        Field(default=15, description="time collector gets to flush on SIGTERM"),
+    ]
+    USER_SERVICES_TRACING_DRAIN_TIMEOUT_S: Annotated[
+        float,
+        Field(default=30.0, description="max time for final drain on shutdown"),
+    ]
+    USER_SERVICES_TRACING_MAX_BATCH_SIZE: Annotated[
+        ByteSize,
+        Field(
+            default=TypeAdapter(ByteSize).validate_python("5MiB"),
+            description="max data forwarded to platform collector per scrape cycle",
+        ),
+    ]
+    USER_SERVICES_TRACING_SCRAPE_INTERVAL_S: Annotated[
+        float,
+        Field(default=10.0, description="how often to check for rotated trace files"),
+    ]
+
+
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Annotated[
         Path,
@@ -205,11 +258,23 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING: Annotated[
+        UserServiceTracingSettings | None,
+        Field(
+            default=None,
+            description="settings for collecting traces from user services via injected OTEL Collector",
+        ),
+    ]
+
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
         return (  # pylint: disable=no-member
             self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
         )
+
+    @property
+    def are_user_services_traces_enabled(self) -> bool:
+        return self.DYNAMIC_SIDECAR_USER_SERVICES_TRACING is not None
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
