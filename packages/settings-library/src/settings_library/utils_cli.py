@@ -254,7 +254,7 @@ def create_version_callback(application_version: str) -> Callable:
     def version(
         ctx: typer.Context,
         *,
-        version: bool = (  # pylint: disable=unused-argument
+        version: bool = (
             typer.Option(
                 None,
                 "--version",
