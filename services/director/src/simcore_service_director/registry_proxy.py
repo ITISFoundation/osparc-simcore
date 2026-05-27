@@ -14,6 +14,7 @@ from fastapi import FastAPI, status
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import traced
 from servicelib.utils import limited_as_completed
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -254,6 +255,7 @@ async def _setup_registry(app: FastAPI) -> None:
         await _wait_until_registry_responsive(app)
 
 
+@traced
 async def _list_all_services_task(*, app: FastAPI) -> None:
     with log_context(_logger, logging.INFO, msg="Updating cache with services"):
         await list_services(app, ServiceType.ALL, update_cache=True)
@@ -306,25 +308,32 @@ async def _list_repositories_gen(
             app, path=path, method="GET", use_cache=not update_cache
         )  # initial call
 
-        while True:
-            if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
-                prefetch_task = asyncio.create_task(
-                    registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
-                )
-            else:
-                prefetch_task = None
+        prefetch_task: asyncio.Task | None = None
+        try:
+            while True:
+                if "Link" in headers:
+                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                    prefetch_task = asyncio.create_task(
+                        registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
+                    )
+                else:
+                    prefetch_task = None
 
-            yield list(
-                filter(
-                    lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
-                    result["repositories"],
+                yield list(
+                    filter(
+                        lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
+                        result["repositories"],
+                    )
                 )
-            )
-            if prefetch_task:
-                result, headers = await prefetch_task
-            else:
-                return
+                if prefetch_task:
+                    result, headers = await prefetch_task
+                    prefetch_task = None
+                else:
+                    return
+        finally:
+            # Handle cancellation properly
+            if prefetch_task and not prefetch_task.done():
+                await cancel_wait_task(prefetch_task)
 
 
 async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=False) -> AsyncGenerator[list[str]]:
@@ -333,29 +342,36 @@ async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=Fals
         path = f"{image_key}/tags/list?n={max_objects}"
         tags, headers = await registry_request(app, path=path, method="GET", use_cache=not update_cache)  # initial call
         assert "tags" in tags  # nosec
-        while True:
-            if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
-                prefetch_task = asyncio.create_task(
-                    registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
-                )
-            else:
-                prefetch_task = None
-
-            yield (
-                list(
-                    filter(
-                        VERSION_REG.match,
-                        tags["tags"],
+        prefetch_task: asyncio.Task | None = None
+        try:
+            while True:
+                if "Link" in headers:
+                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                    prefetch_task = asyncio.create_task(
+                        registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
                     )
+                else:
+                    prefetch_task = None
+
+                yield (
+                    list(
+                        filter(
+                            VERSION_REG.match,
+                            tags["tags"],
+                        )
+                    )
+                    if tags["tags"] is not None
+                    else []
                 )
-                if tags["tags"] is not None
-                else []
-            )
-            if prefetch_task:
-                tags, headers = await prefetch_task
-            else:
-                return
+                if prefetch_task:
+                    tags, headers = await prefetch_task
+                    prefetch_task = None
+                else:
+                    return
+        finally:
+            # Handle cancellation properly
+            if prefetch_task and not prefetch_task.done():
+                await cancel_wait_task(prefetch_task)
 
 
 async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:

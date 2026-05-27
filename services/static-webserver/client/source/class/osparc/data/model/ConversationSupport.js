@@ -110,14 +110,16 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     __fetchingFirstAndLastMessage: null,
 
     _applyName: function(name) {
-      if (name && name !== "null") {
+      if (name) {
         this.setNameAlias(name);
+      } else {
+        this.__applyLastMessage(this.getLastMessage());
       }
     },
 
     __applyLastMessage: function(lastMessage) {
       const name = this.getName();
-      if (!name || name === "null") {
+      if (!name) {
         this.setNameAlias(lastMessage ? lastMessage.getContent() : "");
       }
     },
