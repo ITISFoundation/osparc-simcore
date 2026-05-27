@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 from pathlib import Path
 
 from common_library.json_serialization import json_dumps
@@ -8,6 +9,8 @@ import notifications_library
 
 _logger = logging.getLogger(__name__)
 
+_json_dumps_indented = partial(json_dumps, indent=2)
+
 
 def create_render_environment_from_notifications_library(**kwargs) -> Environment:
     env = Environment(
@@ -15,7 +18,7 @@ def create_render_environment_from_notifications_library(**kwargs) -> Environmen
         autoescape=select_autoescape(["html", "xml"]),
         **kwargs,
     )
-    env.globals["dumps"] = json_dumps
+    env.globals["dumps"] = _json_dumps_indented
     return env
 
 
@@ -28,5 +31,5 @@ def create_render_environment_from_folder(top_dir: Path) -> Environment:
             ["html", "xml"],
         ),
     )
-    env.globals["dumps"] = json_dumps
+    env.globals["dumps"] = _json_dumps_indented
     return env
