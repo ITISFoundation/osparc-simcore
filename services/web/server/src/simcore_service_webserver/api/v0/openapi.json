@@ -883,6 +883,54 @@
             "schema": {
               "$ref": "#/components/schemas/ConversationType"
             }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "is_read_by_user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By User"
+            }
+          },
+          {
+            "name": "is_read_by_support",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By Support"
+            }
           }
         ],
         "responses": {
@@ -912,9 +960,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -953,9 +999,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -977,9 +1021,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1010,9 +1052,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1051,9 +1091,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1104,9 +1142,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1114,9 +1150,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1155,9 +1189,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1165,9 +1197,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1189,9 +1219,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1199,9 +1227,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1232,9 +1258,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1242,9 +1266,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9405,9 +9427,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9457,9 +9477,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9492,9 +9510,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9536,9 +9552,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9588,9 +9602,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9655,9 +9667,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9665,9 +9675,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9717,9 +9725,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9727,9 +9733,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9762,9 +9766,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9772,9 +9774,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -16276,6 +16276,14 @@
         ],
         "title": "ConnectServiceToPricingPlanBodyParams"
       },
+      "ConversationID": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ConversationMessageID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "ConversationMessagePatch": {
         "properties": {
           "content": {
@@ -16296,14 +16304,10 @@
       "ConversationMessageRestGet": {
         "properties": {
           "messageId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Messageid"
+            "$ref": "#/components/schemas/ConversationMessageID"
           },
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "userGroupId": {
             "$ref": "#/components/schemas/GroupID"
@@ -16346,6 +16350,11 @@
           "NOTIFICATION"
         ],
         "title": "ConversationMessageType"
+      },
+      "ConversationName": {
+        "type": "string",
+        "maxLength": 50,
+        "minLength": 1
       },
       "ConversationPatch": {
         "properties": {
@@ -16393,6 +16402,16 @@
               }
             ],
             "title": "Isreadbysupport"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -16401,18 +16420,21 @@
       "ConversationRestGet": {
         "properties": {
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "productName": {
             "type": "string",
             "title": "Productname"
           },
           "name": {
-            "type": "string",
-            "maxLength": 50,
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "projectUuid": {
             "anyOf": [
@@ -16468,6 +16490,9 @@
             "type": "boolean",
             "title": "Isreadbysupport"
           },
+          "status": {
+            "$ref": "#/components/schemas/ConversationStatus"
+          },
           "lastMessageCreatedAt": {
             "type": "string",
             "format": "date-time",
@@ -16488,9 +16513,18 @@
           "extraContext",
           "isReadByUser",
           "isReadBySupport",
+          "status",
           "lastMessageCreatedAt"
         ],
         "title": "ConversationRestGet"
+      },
+      "ConversationStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "ARCHIVED"
+        ],
+        "title": "ConversationStatus"
       },
       "ConversationType": {
         "type": "string",
@@ -30731,8 +30765,14 @@
       "_ConversationsCreateBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "type": {
             "$ref": "#/components/schemas/ConversationType"
@@ -30752,7 +30792,6 @@
         },
         "type": "object",
         "required": [
-          "name",
           "type"
         ],
         "title": "_ConversationsCreateBodyParams"

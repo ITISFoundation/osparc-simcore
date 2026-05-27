@@ -67,7 +67,7 @@ qx.Class.define("osparc.data.model.Conversation", {
 
     name: {
       check: "String",
-      nullable: false,
+      nullable: true,
       init: null,
       event: "changeName",
       apply: "_applyName",

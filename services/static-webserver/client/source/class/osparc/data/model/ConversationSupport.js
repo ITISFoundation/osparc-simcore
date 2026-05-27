@@ -34,6 +34,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       fogbugzCaseId: conversationData["fogbugz_case_id"] || null,
       readByUser: Boolean(conversationData.isReadByUser),
       readBySupport: Boolean(conversationData.isReadBySupport),
+      archived: Boolean(conversationData.status && conversationData.status === "ARCHIVED"),
     });
 
     this.__fetchFirstAndLastMessages();
@@ -96,20 +97,29 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       init: null,
       event: "changeReadBySupport",
     },
+
+    archived: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeArchived",
+    },
   },
 
   members: {
     __fetchingFirstAndLastMessage: null,
 
     _applyName: function(name) {
-      if (name && name !== "null") {
+      if (name) {
         this.setNameAlias(name);
+      } else {
+        this.__applyLastMessage(this.getLastMessage());
       }
     },
 
     __applyLastMessage: function(lastMessage) {
       const name = this.getName();
-      if (!name || name === "null") {
+      if (!name) {
         this.setNameAlias(lastMessage ? lastMessage.getContent() : "");
       }
     },
@@ -166,7 +176,12 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
         .then(() => this.setReadBy(true));
     },
 
-    // overriden
+    archiveConversation: function(archive) {
+      osparc.store.ConversationsSupport.getInstance().archiveConversation(this.getConversationId(), archive)
+        .then(() => this.setArchived(archive));
+    },
+
+    // overridden
     _addMessage: function(messageData, markAsUnread = true) {
       const message = this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
@@ -178,13 +193,13 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       return message;
     },
 
-    // overriden
+    // overridden
     _updateMessage: function(messageData) {
       this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
     },
 
-    // overriden
+    // overridden
     _deleteMessage: function(messageData) {
       this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();

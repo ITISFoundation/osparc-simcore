@@ -27,6 +27,7 @@ from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
+from servicelib.tracing import traced
 from settings_library.redis import RedisDatabase
 
 from .core.settings import get_application_settings
@@ -39,6 +40,7 @@ _logger = logging.getLogger(__name__)
 _TASK_NAME_PERIODICALLY_CLEAN_DSM = "periodic_cleanup_of_dsm"
 
 
+@traced
 async def dsm_cleaner_task(app: FastAPI) -> None:
     with log_context(_logger, logging.INFO, "dsm cleaner task"):
         dsm = get_dsm_provider(app)

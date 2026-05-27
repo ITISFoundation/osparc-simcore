@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import auto
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
@@ -11,10 +11,10 @@ from models_library.projects import ProjectID
 from .products import ProductName
 from .utils.enums import StrAutoEnum
 
-ConversationID: TypeAlias = UUID
-ConversationName: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+type ConversationID = UUID
+type ConversationName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
 
-ConversationMessageID: TypeAlias = UUID
+type ConversationMessageID = UUID
 
 
 class ConversationType(StrAutoEnum):
@@ -33,6 +33,11 @@ class ConversationType(StrAutoEnum):
             ConversationType.PROJECT_STATIC,
             ConversationType.PROJECT_ANNOTATION,
         }
+
+
+class ConversationStatus(StrAutoEnum):
+    ACTIVE = auto()
+    ARCHIVED = auto()
 
 
 class ConversationMessageType(StrAutoEnum):
@@ -56,7 +61,7 @@ class ConversationUserType(StrAutoEnum):
 class ConversationGetDB(BaseModel):
     conversation_id: ConversationID
     product_name: ProductName
-    name: ConversationName
+    name: ConversationName | None
     project_uuid: ProjectID | None
     user_group_id: GroupID
     type: ConversationType
@@ -64,6 +69,7 @@ class ConversationGetDB(BaseModel):
     fogbugz_case_id: str | None
     is_read_by_user: bool
     is_read_by_support: bool
+    status: ConversationStatus
 
     # states
     created: datetime
@@ -86,6 +92,7 @@ class ConversationGetDB(BaseModel):
                     "fogbugz_case_id": None,
                     "is_read_by_user": False,
                     "is_read_by_support": False,
+                    "status": ConversationStatus.ACTIVE,
                     "created": "2024-01-01T12:00:00",
                     "modified": "2024-01-01T12:00:00",
                     "last_message_created_at": "2024-01-01T12:00:00",
@@ -116,6 +123,7 @@ class ConversationPatchDB(BaseModel):
     is_read_by_user: bool | None = None
     is_read_by_support: bool | None = None
     last_message_created_at: datetime | None = None
+    status: ConversationStatus | None = None
 
 
 class ConversationMessagePatchDB(BaseModel):

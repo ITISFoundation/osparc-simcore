@@ -25,6 +25,7 @@ opentelemetry-instrumentation-httpx
 opentelemetry-instrumentation-logging
 opentelemetry-instrumentation-redis
 opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-threading
 opentelemetry-sdk
 psutil
 pydantic

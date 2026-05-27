@@ -190,7 +190,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "services/efs-guardian/docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/efs-guardian/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]
@@ -198,7 +198,7 @@ CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as my with same gid/uid as host
+# Runs as "scu" with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR

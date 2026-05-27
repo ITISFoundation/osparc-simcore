@@ -158,8 +158,6 @@ idna==3.6
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==8.0.0
-    # via opentelemetry-api
 jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -199,7 +197,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.40.0
+opentelemetry-api==1.42.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -213,19 +211,20 @@ opentelemetry-api==1.40.0
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+    #   opentelemetry-instrumentation-threading
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.40.0
+opentelemetry-exporter-otlp==1.42.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.40.0
+opentelemetry-exporter-otlp-proto-common==1.42.1
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.40.0
+opentelemetry-exporter-otlp-proto-grpc==1.42.1
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.40.0
+opentelemetry-exporter-otlp-proto-http==1.42.1
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.61b0
+opentelemetry-instrumentation==0.63b1
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
@@ -235,43 +234,48 @@ opentelemetry-instrumentation==0.61b0
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-aio-pika==0.61b0
+    #   opentelemetry-instrumentation-threading
+opentelemetry-instrumentation-aio-pika==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-asgi==0.61b0
+opentelemetry-instrumentation-asgi==0.63b1
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-asyncpg==0.61b0
+opentelemetry-instrumentation-asyncpg==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-fastapi==0.61b0
+opentelemetry-instrumentation-fastapi==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-httpx==0.61b0
+opentelemetry-instrumentation-httpx==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-logging==0.61b0
+opentelemetry-instrumentation-logging==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-redis==0.61b0
+opentelemetry-instrumentation-redis==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.61b0
+opentelemetry-instrumentation-requests==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-proto==1.40.0
+opentelemetry-instrumentation-threading==0.63b1
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-proto==1.42.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.40.0
+opentelemetry-sdk==1.42.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.61b0
+opentelemetry-semantic-conventions==0.63b1
     # via
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.61b0
+opentelemetry-util-http==0.63b1
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
@@ -403,7 +407,7 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.20
+python-multipart==0.0.29
     # via
     #   -r requirements/_base.in
     #   fastapi
@@ -537,7 +541,7 @@ typing-extensions==4.14.1
     #   typing-inspection
 typing-inspection==0.4.1
     # via pydantic
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -571,11 +575,10 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
+    #   opentelemetry-instrumentation-threading
 yarl==1.20.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.20.1
-    # via importlib-metadata
