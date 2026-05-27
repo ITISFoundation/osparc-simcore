@@ -208,7 +208,8 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
       if (!templateHtml) return "";
 
       const wrapper = osparc.wrapper.HtmlEditor.getInstance();
-      const contentHtml = wrapper.getHTML(this.__quillInstance);
+      // Quill converts spaces to &nbsp; — restore normal spaces for proper word-wrap in email clients
+      const contentHtml = wrapper.getHTML(this.__quillInstance).replace(/&nbsp;/g, " ").replace(/&#160;/g, " ");
       const parser = new DOMParser();
       const doc = parser.parseFromString(templateHtml, "text/html");
 
