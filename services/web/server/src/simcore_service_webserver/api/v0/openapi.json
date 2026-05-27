@@ -960,7 +960,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -999,7 +1001,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -1021,7 +1025,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -1052,7 +1058,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -1091,7 +1099,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1142,7 +1152,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1150,7 +1162,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -1189,7 +1203,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1197,7 +1213,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -1219,7 +1237,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1227,7 +1247,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -1258,7 +1280,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1266,7 +1290,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -1343,7 +1369,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1373,7 +1401,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1413,7 +1443,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1439,7 +1471,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1470,7 +1504,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1506,7 +1542,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1547,7 +1585,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1598,7 +1638,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1632,7 +1674,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1952,7 +1996,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -2023,7 +2069,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -2094,7 +2142,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -4076,7 +4126,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -4126,7 +4178,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -4176,7 +4230,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -6443,7 +6499,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -6492,7 +6550,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -9159,7 +9219,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -9209,7 +9271,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -9259,7 +9323,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -9427,7 +9493,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9477,7 +9545,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9510,7 +9580,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9552,7 +9624,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9602,7 +9676,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9667,7 +9743,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9675,7 +9753,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -9725,7 +9805,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9733,7 +9815,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -9766,7 +9850,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9774,7 +9860,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -10437,7 +10525,9 @@
             "in": "query",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "For Gid"
             }
           }
         ],
@@ -12311,7 +12401,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12360,7 +12451,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -12408,7 +12500,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -12495,7 +12588,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12529,7 +12623,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12563,7 +12658,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12614,7 +12710,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -13885,7 +13982,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -13975,7 +14074,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -14065,7 +14166,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -28423,9 +28526,6 @@
           "top_tracemalloc"
         ],
         "title": "StatusDiagnosticsGet"
-      },
-      "StorageFileIDStr": {
-        "type": "string"
       },
       "Structure": {
         "properties": {
