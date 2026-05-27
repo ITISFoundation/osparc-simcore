@@ -5,6 +5,7 @@ from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import model_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
@@ -34,6 +35,16 @@ class EmailProtocol(StrEnum):
     STARTTLS = "STARTTLS"
 
 
+class SMTPLocals(BaseCustomSettings):
+    INFO: str = "info"
+    SUPPORT: str = "support"
+    NO_REPLY: str = "no-reply"
+
+    model_config = SettingsConfigDict(
+        extra="ignore",
+    )
+
+
 class SMTPSettings(BaseCustomSettings):
     """Settings for Simple Mail Transfer Protocol (SMTP)
 
@@ -58,6 +69,20 @@ class SMTPSettings(BaseCustomSettings):
         Field(
             default_factory=dict,
             description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
+        ),
+    ] = DEFAULT_FACTORY
+
+    SMTP_LOCALS: Annotated[
+        SMTPLocals,
+        Field(
+            description=("A mapping of local email identifiers to actual email addresses."),
+            examples=[
+                {
+                    "INFO": "info",
+                    "SUPPORT": "support",
+                    "NO_REPLY": "no-reply",
+                }
+            ],
         ),
     ] = DEFAULT_FACTORY
 
