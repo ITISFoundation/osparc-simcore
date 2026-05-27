@@ -1,7 +1,6 @@
-"""ruff noqa: FBT001, FBT002, FBT003, ARG001"""
+"""ruff noqa: C901, FBT001, FBT002, FBT003"""
 
-# ruff: noqa: FBT001, FBT002, FBT003, ARG001
-# pylint: disable=unused-argument
+# ruff: noqa: C901, FBT001, FBT002, FBT003
 import logging
 import os
 from collections.abc import Callable
