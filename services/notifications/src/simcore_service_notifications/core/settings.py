@@ -129,7 +129,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             examples=[
                 {
                     "osparc.io": {
-                        "SMTP_LOCALS": {
+                        "SMTP_LOCAL_PARTS": {
                             "INFO": "info",
                             "NO_REPLY": "no-reply",
                             "SUPPORT": "support",
@@ -138,7 +138,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                         "SMTP_PORT": 25,
                     },
                     "example.com": {
-                        "SMTP_LOCALS": {
+                        "SMTP_LOCAL_PARTS": {
                             "INFO": "info",
                             "NO_REPLY": "no-reply",
                             "SUPPORT": "support",

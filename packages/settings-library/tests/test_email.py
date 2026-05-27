@@ -341,61 +341,61 @@ def test_smtp_locals_ignores_unknown_keys():
 def test_smtp_settings_with_locals(
     all_env_devel_undefined: None,
 ):
-    """SMTPSettings correctly parses SMTP_LOCALS as a nested model."""
+    """SMTPSettings correctly parses SMTP_LOCAL_PARTS as a nested model."""
     cfg = {
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
-        "SMTP_LOCALS": {"INFO": "contact", "SUPPORT": "help"},
+        "SMTP_LOCAL_PARTS": {"INFO": "contact", "SUPPORT": "help"},
     }
     settings = SMTPSettings(**cfg)
-    assert settings.SMTP_LOCALS.INFO == "contact"
-    assert settings.SMTP_LOCALS.SUPPORT == "help"
-    assert settings.SMTP_LOCALS.NO_REPLY == "no-reply"
+    assert settings.SMTP_LOCAL_PARTS.INFO == "contact"
+    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "help"
+    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "no-reply"
 
 
 def test_smtp_settings_locals_defaults(
     all_env_devel_undefined: None,
 ):
-    """SMTPSettings uses SMTPLocals defaults when SMTP_LOCALS is not provided."""
+    """SMTPSettings uses SMTPLocals defaults when SMTP_LOCAL_PARTS is not provided."""
     cfg = {
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
     }
     settings = SMTPSettings(**cfg)
-    assert settings.SMTP_LOCALS.INFO == "info"
-    assert settings.SMTP_LOCALS.SUPPORT == "support"
-    assert settings.SMTP_LOCALS.NO_REPLY == "no-reply"
+    assert settings.SMTP_LOCAL_PARTS.INFO == "info"
+    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "support"
+    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "no-reply"
 
 
 def test_smtp_settings_locals_ignores_unknown_keys(
     all_env_devel_undefined: None,
 ):
-    """SMTPSettings SMTP_LOCALS ignores unrecognized keys from input."""
+    """SMTPSettings SMTP_LOCAL_PARTS ignores unrecognized keys from input."""
     cfg = {
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
-        "SMTP_LOCALS": {"INFO": "contact", "INVALID": "garbage"},
+        "SMTP_LOCAL_PARTS": {"INFO": "contact", "INVALID": "garbage"},
     }
     settings = SMTPSettings(**cfg)
-    assert settings.SMTP_LOCALS.INFO == "contact"
-    assert not hasattr(settings.SMTP_LOCALS, "INVALID")
+    assert settings.SMTP_LOCAL_PARTS.INFO == "contact"
+    assert not hasattr(settings.SMTP_LOCAL_PARTS, "INVALID")
 
 
 def test_smtp_settings_locals_with_envvars(
     all_env_devel_undefined: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """SMTP_LOCALS can be set via environment variables as JSON."""
+    """SMTP_LOCAL_PARTS can be set via environment variables as JSON."""
     setenvs_from_dict(
         monkeypatch,
         {
             "SMTP_HOST": "test",
             "SMTP_PORT": "113",
-            "SMTP_LOCALS": json.dumps({"INFO": "contact", "SUPPORT": "helpdesk", "EXTRA": "ignored"}),
+            "SMTP_LOCAL_PARTS": json.dumps({"INFO": "contact", "SUPPORT": "helpdesk", "EXTRA": "ignored"}),
         },
     )
     settings = SMTPSettings.create_from_envs()
-    assert settings.SMTP_LOCALS.INFO == "contact"
-    assert settings.SMTP_LOCALS.SUPPORT == "helpdesk"
-    assert settings.SMTP_LOCALS.NO_REPLY == "no-reply"
-    assert not hasattr(settings.SMTP_LOCALS, "EXTRA")
+    assert settings.SMTP_LOCAL_PARTS.INFO == "contact"
+    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "helpdesk"
+    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "no-reply"
+    assert not hasattr(settings.SMTP_LOCAL_PARTS, "EXTRA")

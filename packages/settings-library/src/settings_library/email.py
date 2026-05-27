@@ -72,7 +72,7 @@ class SMTPSettings(BaseCustomSettings):
         ),
     ] = DEFAULT_FACTORY
 
-    SMTP_LOCALS: Annotated[
+    SMTP_LOCAL_PARTS: Annotated[
         SMTPLocals,
         Field(
             default_factory=SMTPLocals,
