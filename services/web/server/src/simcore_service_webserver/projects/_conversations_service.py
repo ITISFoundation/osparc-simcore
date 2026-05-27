@@ -35,7 +35,7 @@ async def create_project_conversation(
     user_id: UserID,
     project_uuid: ProjectID,
     # attributes
-    name: str,
+    name: ConversationName | None,
     conversation_type: ConversationType,
 ) -> ConversationGetDB:
     await check_user_project_permission(
@@ -89,7 +89,7 @@ async def update_project_conversation(
     project_uuid: ProjectID,
     conversation_id: ConversationID,
     # attributes
-    name: ConversationName,
+    name: ConversationName | None,
 ) -> ConversationGetDB:
     await check_user_project_permission(
         app,

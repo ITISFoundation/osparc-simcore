@@ -14,6 +14,7 @@ from fastapi import FastAPI, status
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import traced
 from servicelib.utils import limited_as_completed
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -254,6 +255,7 @@ async def _setup_registry(app: FastAPI) -> None:
         await _wait_until_registry_responsive(app)
 
 
+@traced
 async def _list_all_services_task(*, app: FastAPI) -> None:
     with log_context(_logger, logging.INFO, msg="Updating cache with services"):
         await list_services(app, ServiceType.ALL, update_cache=True)

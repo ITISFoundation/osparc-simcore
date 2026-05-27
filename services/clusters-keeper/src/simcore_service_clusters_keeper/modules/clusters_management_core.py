@@ -11,6 +11,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch
+from servicelib.tracing import traced
 from servicelib.utils import limited_gather
 
 from ..constants import (
@@ -121,6 +122,7 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
     return terminateable_instances.union(worker_instances)
 
 
+@traced
 async def _heartbeat_connected_clusters(
     app: FastAPI, connected_instances: set[EC2InstanceData]
 ) -> set[EC2InstanceData]:
@@ -141,11 +143,13 @@ async def _heartbeat_connected_clusters(
     return busy_instances
 
 
+@traced
 async def _terminate_idle_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
     if terminateable_instances := await _find_terminateable_instances(app, connected_instances):
         await delete_clusters(app, instances=terminateable_instances)
 
 
+@traced
 async def _handle_starting_clusters(app: FastAPI, starting_instances: set[EC2InstanceData]) -> None:
     if not starting_instances:
         return
@@ -230,6 +234,7 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
             )
 
 
+@traced
 async def _handle_broken_clusters(app: FastAPI, broken_instances: set[EC2InstanceData]) -> None:
     if not broken_instances:
         return
@@ -251,6 +256,7 @@ async def _handle_broken_clusters(app: FastAPI, broken_instances: set[EC2Instanc
         await delete_clusters(app, instances=terminateable_instances)
 
 
+@traced
 async def check_clusters(app: FastAPI) -> None:
     primary_instances = await get_all_clusters(app)
     connected = {i for i in primary_instances if await ping_scheduler(get_scheduler_url(i), get_scheduler_auth(app))}
