@@ -165,9 +165,6 @@ COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
 
 
-# healthcheck.
-# NOTE: do not forget to update variable
-ENV SC_HEALTHCHECK_TIMEOUT=120s
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
@@ -175,7 +172,7 @@ HEALTHCHECK \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/health"]
 
 # no need to rebuild everything if just these changed
 ARG BUILD_DATE

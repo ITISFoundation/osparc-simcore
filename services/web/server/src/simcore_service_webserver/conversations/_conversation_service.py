@@ -10,7 +10,9 @@ from models_library.basic_types import IDStr
 from models_library.conversations import (
     ConversationGetDB,
     ConversationID,
+    ConversationName,
     ConversationPatchDB,
+    ConversationStatus,
     ConversationType,
     ConversationUserType,
 )
@@ -58,7 +60,7 @@ async def create_conversation(
     user_id: UserID,
     project_uuid: ProjectID | None,
     # Creation attributes
-    name: str,
+    name: ConversationName | None,
     type_: ConversationType,
     extra_context: dict[str, Any],
 ) -> ConversationGetDB:
@@ -262,6 +264,10 @@ async def list_support_conversations_for_user(
     *,
     user_id: UserID,
     product_name: ProductName,
+    # filters
+    filter_status: ConversationStatus | None = None,
+    filter_is_read_by_user: bool | None = None,
+    filter_is_read_by_support: bool | None = None,
     # pagination
     offset: int = 0,
     limit: int = 20,
@@ -276,6 +282,9 @@ async def list_support_conversations_for_user(
             return await _conversation_repository.list_all_support_conversations_for_support_user(
                 app,
                 product_name=product_name,
+                filter_status=filter_status,
+                filter_is_read_by_user=filter_is_read_by_user,
+                filter_is_read_by_support=filter_is_read_by_support,
                 offset=offset,
                 limit=limit,
                 order_by=OrderBy(
@@ -284,11 +293,15 @@ async def list_support_conversations_for_user(
                 ),
             )
 
+    # Regular user: no status filter (they see all their conversations)
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     return await _conversation_repository.list_support_conversations_for_user(
         app,
         user_group_id=_user_group_id,
         product_name=product_name,
+        filter_status=filter_status,
+        filter_is_read_by_user=filter_is_read_by_user,
+        filter_is_read_by_support=filter_is_read_by_support,
         offset=offset,
         limit=limit,
         order_by=OrderBy(field=IDStr("last_message_created_at"), direction=OrderDirection.DESC),

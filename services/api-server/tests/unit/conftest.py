@@ -378,9 +378,13 @@ def mocked_directorv2_rest_api_base(
         assert openapi
         assert openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
 
+        health_response_content = openapi["paths"]["/"]["get"]["responses"]["200"]["content"]
+        assert set(health_response_content) == {"text/plain"}
+        assert health_response_content["text/plain"]["schema"] == {"type": "string"}
+
         respx_mock.get(path="/", name="check_service_health__get").respond(
             status.HTTP_200_OK,
-            json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
+            text="healthy",
         )
 
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py

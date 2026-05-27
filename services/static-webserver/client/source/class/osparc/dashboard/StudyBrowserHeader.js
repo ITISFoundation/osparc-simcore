@@ -26,7 +26,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10));
+    this._setLayout(new qx.ui.layout.HBox(10).set({
+      alignY: "middle",
+    }));
 
     this.set({
       minHeight: this.self().HEIGHT,
@@ -113,7 +115,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: "text-16",
+            font: "text-14",
             alignY: "middle",
           });
           this._addAt(control, this.self().POS.TITLE);
@@ -288,7 +290,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             workspace.bind("accessRights", this, "accessRights");
             workspace.bind("myAccessRights", this, "myAccessRights");
           } else {
-            this.__setIcon("@FontAwesome5Solid/home/24");
+            this.__setIcon("@FontAwesome5Solid/home/18");
             title.setValue(this.tr("My Workspace"));
           }
           break;
@@ -298,22 +300,22 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           title.setValue(this.tr("Shared Workspaces"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES: {
-          this.__setIcon("@FontAwesome5Solid/copy/24");
+          this.__setIcon("@FontAwesome5Solid/copy/18");
           title.setValue(this.tr("Templates"));
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES: {
-          this.__setIcon("@FontAwesome5Solid/globe/24");
+          this.__setIcon("@FontAwesome5Solid/globe/18");
           title.setValue(this.tr("Public Projects"));
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS: {
-          this.__setIcon("@MaterialIcons/functions/26");
+          this.__setIcon("@MaterialIcons/functions/20");
           title.setValue(this.tr("Functions"));
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH: {
-          this.__setIcon("@FontAwesome5Solid/trash/24");
+          this.__setIcon("@FontAwesome5Solid/trash/18");
           title.setValue(this.tr("Recently Deleted"));
           const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
           description.set({
@@ -323,23 +325,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesome5Solid/search/18");
           title.setValue(this.tr("My Projects results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesome5Solid/search/18");
           title.setValue(this.tr("Templates results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesome5Solid/search/18");
           title.setValue(this.tr("Public Projects results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesome5Solid/search/18");
           title.setValue(this.tr("Functions results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesome5Solid/search/18");
           title.setValue(this.tr("Files results"));
           break;
       }

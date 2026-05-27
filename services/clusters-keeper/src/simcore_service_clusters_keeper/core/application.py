@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
@@ -67,6 +68,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     if tracing_config.tracing_enabled:
         initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
     # ERROR HANDLERS
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)
 
     # EVENTS
     async def _on_startup() -> None:

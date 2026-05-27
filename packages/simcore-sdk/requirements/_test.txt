@@ -10,7 +10,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.13.3
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -352,7 +352,7 @@ typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

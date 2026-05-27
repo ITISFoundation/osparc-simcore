@@ -31,6 +31,14 @@ qx.Class.define("osparc.support.ConversationPage", {
     const conversation = this.getChildControl("conversation-content");
     this.bind("conversation", conversation, "conversation");
     conversation.bind("conversation", this, "conversation");
+
+    osparc.store.ConversationsSupport.getInstance().addListener("conversationDeleted", e => {
+      const conversationId = e.getData()["conversationId"];
+      if (this.getConversation() && this.getConversation().getConversationId() === conversationId) {
+        this.setConversation(null);
+        this.fireEvent("backToConversations");
+      }
+    });
   },
 
   properties: {
@@ -111,46 +119,11 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("conversation-header-layout").addAt(control, 2);
           break;
         }
-        case "options-menu":
-          control = new qx.ui.menu.Menu().set({
-            appearance: "menu-wider",
-            position: "bottom-left",
-          });
+        case "options-menu": {
+          control = new osparc.support.ConversationOptionsMenu();
           this.getChildControl("menu-button").setMenu(control);
           break;
-        case "rename-button": {
-          control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/i-cursor/12",
-            label: this.tr("Rename"),
-          });
-          control.addListener("execute", () => this.__renameConversation());
-          this.getChildControl("options-menu").addAt(control, 0);
-          break;
         }
-        case "open-project-button":
-          control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/external-link-alt/12",
-            label: this.tr("Project details"),
-          });
-          control.addListener("execute", () => this.__openProjectDetails());
-          this.getChildControl("options-menu").addAt(control, 1);
-          break;
-        case "copy-ticket-id-button":
-          control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/copy/12",
-            label: this.tr("Copy Ticket ID"),
-          });
-          control.addListener("execute", () => this.__copyTicketId());
-          this.getChildControl("options-menu").addAt(control, 2);
-          break;
-        case "delete-button":
-          control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/trash-alt/12",
-            label: this.tr("Delete"),
-          });
-          control.addListener("execute", () => this.__deleteConversation(), this);
-          this.getChildControl("options-menu").addAt(control, 3);
-          break;
         case "main-stack":
           control = new qx.ui.container.Stack();
           this._add(control, {
@@ -273,91 +246,10 @@ qx.Class.define("osparc.support.ConversationPage", {
         updateExtraContext();
         conversation.addListener("changeExtraContext", () => updateExtraContext(), this);
 
-        const amIOwner = conversation.amIOwner();
-        this.getChildControl("rename-button").set({
-          enabled: amIOwner,
-        });
-
-        const openProjectButton = this.getChildControl("open-project-button");
-        openProjectButton.exclude();
-        if (conversation && conversation.getContextProjectId()) {
-          openProjectButton.setVisibility("visible");
-          osparc.store.Study.getInstance().getOne(conversation.getContextProjectId())
-            .then(() => openProjectButton.setEnabled(true))
-            .catch(() => openProjectButton.setEnabled(false));
-        } else {
-          openProjectButton.setVisibility("excluded");
-        }
-
-        this.getChildControl("copy-ticket-id-button");
-
-        this.getChildControl("delete-button").set({
-          enabled: amIOwner,
-        });
+        this.getChildControl("options-menu").setConversation(conversation);
       }
 
       this.getChildControl("menu-button").setVisibility(conversation ? "visible" : "excluded");
-    },
-
-    __openProjectDetails: function() {
-      const projectId = this.getConversation().getContextProjectId();
-      if (projectId) {
-        osparc.store.Study.getInstance().getOne(projectId)
-          .then(studyData => {
-            if (studyData) {
-              const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
-              studyDataCopy["resourceType"] = "study";
-              osparc.dashboard.ResourceDetails.popUpInWindow(studyDataCopy);
-            }
-          })
-          .catch(err => console.warn(err));
-      }
-    },
-
-    __copyTicketId: function() {
-      if (this.getConversation()) {
-        const conversationId = this.getConversation().getConversationId();
-        osparc.utils.Utils.copyTextToClipboard(conversationId);
-      }
-    },
-
-    __renameConversation: function() {
-      let oldName = this.getConversation().getName();
-      if (oldName === "null") {
-        oldName = "";
-      }
-      const renamer = new osparc.widget.Renamer(oldName).set({
-        maxChars: osparc.data.model.Conversation.MAX_TITLE_LENGTH,
-        centerOnElement: this,
-      });
-      renamer.addListener("labelChanged", e => {
-        renamer.close();
-        const newLabel = e.getData()["newLabel"];
-        this.getConversation().renameConversation(newLabel);
-      }, this);
-      renamer.center();
-      renamer.open();
-    },
-
-    __deleteConversation: function() {
-      const conversation = this.getConversation();
-      const win = new osparc.ui.window.Confirmation(this.tr("Delete conversation?")).set({
-        caption: this.tr("Delete"),
-        confirmText: this.tr("Delete"),
-        confirmAction: "delete",
-        centerOnElement: this,
-      });
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          osparc.store.ConversationsSupport.getInstance().deleteConversation(conversation.getConversationId())
-            .then(() => {
-              this.setConversation(null);
-              this.fireEvent("backToConversations");
-            })
-            .catch(err => osparc.FlashMessenger.logError(err));
-        }
-      });
     },
 
     __getAddMessageField: function() {

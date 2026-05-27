@@ -38,7 +38,7 @@ qx.Class.define("osparc.study.ConversationPage", {
 
 
     this.bind("conversation", this.getChildControl("button"), "label", {
-      converter: conversation => conversation ? conversation.getName() : this.tr("new")
+      converter: conversation => conversation ? (conversation.getName() || this.tr("new")) : this.tr("new")
     });
     this.getChildControl("button").set({
       font: "text-13",
@@ -111,7 +111,8 @@ qx.Class.define("osparc.study.ConversationPage", {
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       renameButton.addListener("execute", () => {
-        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel()).set({
+        const title = this.tr("Rename Conversation");
+        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel(), null, title).set({
           maxChars: osparc.data.model.Conversation.MAX_TITLE_LENGTH,
         });
         titleEditor.addListener("labelChanged", e => {
@@ -174,7 +175,7 @@ qx.Class.define("osparc.study.ConversationPage", {
     },
 
     renameConversation: function(newName) {
-      this.getChildControl("button").setLabel(newName);
+      this.getChildControl("button").setLabel(newName || this.tr("new"));
     },
 
     __updateMessagesNumber: function() {

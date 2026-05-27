@@ -8,6 +8,7 @@ from ._new_2fa_code import New2faCodeTemplateContext
 from ._paid import PaidTemplateContext
 from ._registered import RegisteredTemplateContext
 from ._reset_password import ResetPasswordTemplateContext
+from ._support_reply import SupportReplyTemplateContext
 from ._unregister import UnregisterTemplateContext
 
 __all__: tuple[str, ...] = (
@@ -21,5 +22,6 @@ __all__: tuple[str, ...] = (
     "PaidTemplateContext",
     "RegisteredTemplateContext",
     "ResetPasswordTemplateContext",
+    "SupportReplyTemplateContext",
     "UnregisterTemplateContext",
 )

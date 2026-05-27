@@ -19,6 +19,7 @@ from notifications_library._templates import (
         "registered",
         "reset_password",
         "share_project",
+        "support_reply",
         "unregister",
     ],
 )

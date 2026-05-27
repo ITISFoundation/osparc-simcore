@@ -12,8 +12,9 @@ from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from servicelib.background_task import create_periodic_task
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import traced
 from servicelib.utils import limited_as_completed
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -51,7 +52,7 @@ class ServiceType(enum.Enum):
     DYNAMIC = "dynamic"
 
 
-async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **session_kwargs) -> tuple[dict, Mapping]:
+async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
     app_settings = get_application_settings(app)
     # try the registry with basic authentication first, spare 1 call
     resp_data: dict = {}
@@ -67,12 +68,18 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **s
 
     request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.api_url}").joinpath(path, encoded=True)
 
-    session = get_client_session(app)
-    response = await session.request(
+    # Only follow redirects for blob requests — the registry returns 307 to
+    # S3 pre-signed URLs when REGISTRY_STORAGE_REDIRECT_DISABLE=false.
+    # Restricting to /blobs/ paths limits SSRF surface from a misconfigured registry.
+    follow_redirects = "/blobs/" in path
+
+    client = get_httpx_client(app)
+    response = await client.request(
         method.lower(),
         f"{request_url}",
         auth=auth,
-        **session_kwargs,
+        follow_redirects=follow_redirects,
+        **request_kwargs,
     )
 
     if response.status_code == status.HTTP_401_UNAUTHORIZED:
@@ -82,8 +89,9 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **s
             request_url,
             method,
             response.headers,
-            session,
-            **session_kwargs,
+            client,
+            follow_redirects=follow_redirects,
+            **request_kwargs,
         )
 
     elif response.status_code == status.HTTP_404_NOT_FOUND:
@@ -106,10 +114,13 @@ async def _auth_registry_request(  # noqa: C901
     url: URL,
     method: str,
     auth_headers: Mapping,
-    session: httpx.AsyncClient,
+    client: httpx.AsyncClient,
+    *,
+    follow_redirects: bool = False,
     **kwargs,
 ) -> tuple[dict, Mapping]:
     # auth issue let's try some authentication get the auth type
+    resp_data: dict = {}
     auth_type = None
     auth_details: dict[str, str] = {}
     for key in auth_headers:
@@ -129,31 +140,41 @@ async def _auth_registry_request(  # noqa: C901
     if auth_type == "Bearer":
         # get the token
         token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
-        token_resp = await session.get(f"{token_url}", auth=auth, **kwargs)
+        token_resp = await client.get(f"{token_url}", auth=auth, **kwargs)
         if token_resp.status_code != status.HTTP_200_OK:
             msg = f"Unknown error while authentifying with registry: {token_resp!s}"
             raise RegistryConnectionError(msg=msg)
 
-        bearer_code = (await token_resp.json())["token"]
-        headers = {"Authorization": f"Bearer {bearer_code}"}
-        resp_wtoken = await getattr(session, method.lower())(url, headers=headers, **kwargs)
+        bearer_code = token_resp.json()["token"]
+        headers = {
+            # pop to avoid duplicate 'headers' kwarg in the request call below
+            **kwargs.pop("headers", {}),
+            "Authorization": f"Bearer {bearer_code}",
+        }
+        resp_wtoken = await getattr(client, method.lower())(
+            f"{url}", headers=headers, follow_redirects=follow_redirects, **kwargs
+        )
         assert isinstance(resp_wtoken, httpx.Response)  # nosec
         if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wtoken.status_code >= status.HTTP_400_BAD_REQUEST:
             raise RegistryConnectionError(msg=f"{resp_wtoken}")
-        resp_data = await resp_wtoken.json(content_type=None)
+        if method.lower() != "head":
+            resp_data = resp_wtoken.json()
         resp_headers = resp_wtoken.headers
         return (resp_data, resp_headers)
     if auth_type == "Basic":
         # basic authentication should not be since we tried already...
-        resp_wbasic = await getattr(session, method.lower())(str(url), auth=auth, **kwargs)
+        resp_wbasic = await getattr(client, method.lower())(
+            f"{url}", auth=auth, follow_redirects=follow_redirects, **kwargs
+        )
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
             raise RegistryConnectionError(msg=f"{resp_wbasic}: {resp_wbasic.text} for {url}")
-        resp_data = await resp_wbasic.json(content_type=None)
+        if method.lower() != "head":
+            resp_data = resp_wbasic.json()
         resp_headers = resp_wbasic.headers
         return (resp_data, resp_headers)
     msg = f"Unknown registry authentication type: {url}"
@@ -167,8 +188,8 @@ async def _auth_registry_request(  # noqa: C901
     before_sleep=before_sleep_log(_logger, logging.WARNING),
     reraise=True,
 )
-async def _retried_request(app: FastAPI, path: str, method: str, **session_kwargs) -> tuple[dict, Mapping]:
-    return await _basic_auth_registry_request(app, path, method, **session_kwargs)
+async def _retried_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
+    return await _basic_auth_registry_request(app, path, method, **request_kwargs)
 
 
 async def registry_request(
@@ -177,7 +198,7 @@ async def registry_request(
     path: str,
     method: str,
     use_cache: bool,
-    **session_kwargs,
+    **request_kwargs,
 ) -> tuple[dict, Mapping]:
     cache: SimpleMemoryCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
@@ -186,7 +207,7 @@ async def registry_request(
         return cast(tuple[dict, Mapping], cached_response)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
     if "manifests/" in path and method.upper() == "GET":
-        headers = session_kwargs.get("headers", {})
+        headers = request_kwargs.get("headers", {})
         headers.update(
             {
                 "Accept": ", ".join(
@@ -202,10 +223,10 @@ async def registry_request(
                 )
             }
         )
-        session_kwargs["headers"] = headers
+        request_kwargs["headers"] = headers
     app_settings = get_application_settings(app)
     try:
-        response, response_headers = await _retried_request(app, path, method.upper(), **session_kwargs)
+        response, response_headers = await _retried_request(app, path, method.upper(), **request_kwargs)
     except httpx.RequestError as exc:
         msg = f"Unknown error while accessing registry: {exc!s} via {exc.request}"
         raise DirectorRuntimeError(msg=msg) from exc
@@ -234,6 +255,7 @@ async def _setup_registry(app: FastAPI) -> None:
         await _wait_until_registry_responsive(app)
 
 
+@traced
 async def _list_all_services_task(*, app: FastAPI) -> None:
     with log_context(_logger, logging.INFO, msg="Updating cache with services"):
         await list_services(app, ServiceType.ALL, update_cache=True)
@@ -286,55 +308,70 @@ async def _list_repositories_gen(
             app, path=path, method="GET", use_cache=not update_cache
         )  # initial call
 
-        while True:
-            if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
-                prefetch_task = asyncio.create_task(
-                    registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
-                )
-            else:
-                prefetch_task = None
+        prefetch_task: asyncio.Task | None = None
+        try:
+            while True:
+                if "Link" in headers:
+                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                    prefetch_task = asyncio.create_task(
+                        registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
+                    )
+                else:
+                    prefetch_task = None
 
-            yield list(
-                filter(
-                    lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
-                    result["repositories"],
+                yield list(
+                    filter(
+                        lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
+                        result["repositories"],
+                    )
                 )
-            )
-            if prefetch_task:
-                result, headers = await prefetch_task
-            else:
-                return
+                if prefetch_task:
+                    result, headers = await prefetch_task
+                    prefetch_task = None
+                else:
+                    return
+        finally:
+            # Handle cancellation properly
+            if prefetch_task and not prefetch_task.done():
+                await cancel_wait_task(prefetch_task)
 
 
 async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=False) -> AsyncGenerator[list[str]]:
     with log_context(_logger, logging.DEBUG, msg=f"listing image tags in {image_key}"):
-        path = f"{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        max_objects = get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS
+        path = f"{image_key}/tags/list?n={max_objects}"
         tags, headers = await registry_request(app, path=path, method="GET", use_cache=not update_cache)  # initial call
         assert "tags" in tags  # nosec
-        while True:
-            if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
-                prefetch_task = asyncio.create_task(
-                    registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
-                )
-            else:
-                prefetch_task = None
-
-            yield (
-                list(
-                    filter(
-                        VERSION_REG.match,
-                        tags["tags"],
+        prefetch_task: asyncio.Task | None = None
+        try:
+            while True:
+                if "Link" in headers:
+                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                    prefetch_task = asyncio.create_task(
+                        registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
                     )
+                else:
+                    prefetch_task = None
+
+                yield (
+                    list(
+                        filter(
+                            VERSION_REG.match,
+                            tags["tags"],
+                        )
+                    )
+                    if tags["tags"] is not None
+                    else []
                 )
-                if tags["tags"] is not None
-                else []
-            )
-            if prefetch_task:
-                tags, headers = await prefetch_task
-            else:
-                return
+                if prefetch_task:
+                    tags, headers = await prefetch_task
+                    prefetch_task = None
+                else:
+                    return
+        finally:
+            # Handle cancellation properly
+            if prefetch_task and not prefetch_task.done():
+                await cancel_wait_task(prefetch_task)
 
 
 async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:

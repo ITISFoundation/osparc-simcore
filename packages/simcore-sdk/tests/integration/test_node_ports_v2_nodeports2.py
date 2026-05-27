@@ -671,7 +671,7 @@ async def test_file_mapping(
 
     # now set
     invalid_alias = Path("invalid_alias.fjfj")
-    with pytest.raises(exceptions.PortNotFound):
+    with pytest.raises(exceptions.PortNotFoundError):
         await PORTS.set_file_by_keymap(invalid_alias)
     assert isinstance(file_path, Path)
     await PORTS.set_file_by_keymap(file_path)

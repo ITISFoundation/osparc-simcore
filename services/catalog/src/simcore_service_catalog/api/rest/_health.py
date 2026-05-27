@@ -2,19 +2,17 @@ import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
+from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.fastapi.dependencies import get_app
+from servicelib.fastapi.health import HealthCheckError
 
 from ...clients.rabbitmq import get_rabbitmq_rpc_client
 
 router = APIRouter()
 
 
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
-
-
-@router.get("/")
+@router.get("/", response_class=PlainTextResponse)
 async def check_service_health(
     app: Annotated[FastAPI, Depends(get_app)],
 ):
