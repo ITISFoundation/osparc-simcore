@@ -75,6 +75,7 @@ class SMTPSettings(BaseCustomSettings):
     SMTP_LOCALS: Annotated[
         SMTPLocals,
         Field(
+            default_factory=SMTPLocals,
             description=("A mapping of local email identifiers to actual email addresses."),
             examples=[
                 {

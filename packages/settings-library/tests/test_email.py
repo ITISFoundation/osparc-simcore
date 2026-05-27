@@ -11,7 +11,7 @@ import pytest
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.email import EmailProtocol, SMTPSettings
+from settings_library.email import EmailProtocol, SMTPLocals, SMTPSettings
 
 
 @pytest.fixture
@@ -302,3 +302,100 @@ def test_smtp_extra_headers_with_envvars(
     with pytest.raises(ValidationError) as err_info:
         SMTPSettings.create_from_envs()
     assert "non-permitted headers" in str(err_info.value)
+
+
+def test_smtp_locals_defaults():
+    """SMTPLocals provides sensible defaults for all local identifiers."""
+    locals_ = SMTPLocals()
+    assert locals_.INFO == "info"
+    assert locals_.SUPPORT == "support"
+    assert locals_.NO_REPLY == "no-reply"
+
+
+def test_smtp_locals_custom_values():
+    """SMTPLocals accepts custom local-part values."""
+    locals_ = SMTPLocals(INFO="contact", SUPPORT="help", NO_REPLY="noreply")
+    assert locals_.INFO == "contact"
+    assert locals_.SUPPORT == "help"
+    assert locals_.NO_REPLY == "noreply"
+
+
+def test_smtp_locals_partial_override():
+    """SMTPLocals allows overriding only some fields, keeping defaults for the rest."""
+    locals_ = SMTPLocals(SUPPORT="helpdesk")
+    assert locals_.INFO == "info"
+    assert locals_.SUPPORT == "helpdesk"
+    assert locals_.NO_REPLY == "no-reply"
+
+
+def test_smtp_locals_ignores_unknown_keys():
+    """SMTPLocals silently drops keys not defined as fields (extra='ignore')."""
+    locals_ = SMTPLocals.model_validate({"INFO": "contact", "UNKNOWN_KEY": "value", "ANOTHER": "x"})
+    assert locals_.INFO == "contact"
+    assert locals_.SUPPORT == "support"
+    assert locals_.NO_REPLY == "no-reply"
+    assert not hasattr(locals_, "UNKNOWN_KEY")
+    assert not hasattr(locals_, "ANOTHER")
+
+
+def test_smtp_settings_with_locals(
+    all_env_devel_undefined: None,
+):
+    """SMTPSettings correctly parses SMTP_LOCALS as a nested model."""
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+        "SMTP_LOCALS": {"INFO": "contact", "SUPPORT": "help"},
+    }
+    settings = SMTPSettings(**cfg)
+    assert settings.SMTP_LOCALS.INFO == "contact"
+    assert settings.SMTP_LOCALS.SUPPORT == "help"
+    assert settings.SMTP_LOCALS.NO_REPLY == "no-reply"
+
+
+def test_smtp_settings_locals_defaults(
+    all_env_devel_undefined: None,
+):
+    """SMTPSettings uses SMTPLocals defaults when SMTP_LOCALS is not provided."""
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+    }
+    settings = SMTPSettings(**cfg)
+    assert settings.SMTP_LOCALS.INFO == "info"
+    assert settings.SMTP_LOCALS.SUPPORT == "support"
+    assert settings.SMTP_LOCALS.NO_REPLY == "no-reply"
+
+
+def test_smtp_settings_locals_ignores_unknown_keys(
+    all_env_devel_undefined: None,
+):
+    """SMTPSettings SMTP_LOCALS ignores unrecognized keys from input."""
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+        "SMTP_LOCALS": {"INFO": "contact", "INVALID": "garbage"},
+    }
+    settings = SMTPSettings(**cfg)
+    assert settings.SMTP_LOCALS.INFO == "contact"
+    assert not hasattr(settings.SMTP_LOCALS, "INVALID")
+
+
+def test_smtp_settings_locals_with_envvars(
+    all_env_devel_undefined: None,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """SMTP_LOCALS can be set via environment variables as JSON."""
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": "113",
+            "SMTP_LOCALS": json.dumps({"INFO": "contact", "SUPPORT": "helpdesk", "EXTRA": "ignored"}),
+        },
+    )
+    settings = SMTPSettings.create_from_envs()
+    assert settings.SMTP_LOCALS.INFO == "contact"
+    assert settings.SMTP_LOCALS.SUPPORT == "helpdesk"
+    assert settings.SMTP_LOCALS.NO_REPLY == "no-reply"
+    assert not hasattr(settings.SMTP_LOCALS, "EXTRA")
