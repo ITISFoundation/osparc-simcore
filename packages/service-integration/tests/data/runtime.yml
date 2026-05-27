@@ -18,7 +18,7 @@ paths-mapping:
     - "/config"
 callbacks-mapping:
   inactivity:
-    service: jupyter-math
+    service: container
     command: ["python", "/usr/local/bin/service-monitor/activity.py"]
     timeout: 1
 compose-spec:
