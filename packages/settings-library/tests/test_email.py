@@ -169,7 +169,10 @@ def test_smtp_configuration_fails(
 
     setenvs_from_dict(
         monkeypatch,
-        {k: str(v.value if isinstance(v, Enum) else v) for k, v in cfg.items()},
+        {
+            k: (json.dumps(v) if isinstance(v, dict) else str(v.value if isinstance(v, Enum) else v))
+            for k, v in cfg.items()
+        },
     )
     with pytest.raises(ValidationError) as err_info:
         SMTPSettings.create_from_envs()
