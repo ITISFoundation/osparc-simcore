@@ -45,7 +45,11 @@ class UserServicesTraceForwarder:
 
     async def start(self) -> None:
         self._scrape_task = asyncio.create_task(self._scrape_loop(), name="user_services_trace_forwarder")
-        _logger.info("User services trace forwarder started")
+        _logger.info(
+            "User services trace forwarder started, scraping %s, forwarding to %s",
+            self._traces_directory,
+            self._otlp_endpoint,
+        )
 
     async def stop(self) -> None:
         if self._scrape_task is not None:
@@ -68,7 +72,14 @@ class UserServicesTraceForwarder:
         interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL_S
         while True:
             try:
-                await self._forward_rotated_files()
+                rotated_files = self._get_rotated_files()
+                if rotated_files:
+                    _logger.info(
+                        "Scrape cycle: found %d rotated trace file(s) to forward",
+                        len(rotated_files),
+                    )
+                for file_path in rotated_files:
+                    await self._forward_and_delete(file_path)
             except Exception:
                 _logger.exception("Error forwarding trace files")
             await asyncio.sleep(interval)
@@ -135,7 +146,7 @@ class UserServicesTraceForwarder:
                 return  # keep file for retry
 
         file_path.unlink(missing_ok=True)
-        _logger.debug("Forwarded and deleted %s", file_path.name)
+        _logger.info("Forwarded and deleted %s (%d bytes in %d chunk(s))", file_path.name, len(content), len(chunks))
 
 
 def setup_user_services_tracing(app: FastAPI) -> None:
@@ -156,6 +167,7 @@ def setup_user_services_tracing(app: FastAPI) -> None:
 
     async def on_shutdown() -> None:
         forwarder: UserServicesTraceForwarder = app.state.user_services_trace_forwarder
+        await forwarder.drain_remaining_traces()
         await forwarder.stop()
 
     app.add_event_handler("startup", on_startup)

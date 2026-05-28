@@ -81,14 +81,6 @@ class UserServiceTracingSettings(BaseApplicationSettings):
         int,
         Field(default=10, description="file size in MB that triggers rotation"),
     ]
-    USER_SERVICES_TRACING_COLLECTOR_ROTATION_INTERVAL_S: Annotated[
-        int,
-        Field(
-            default=30,
-            description="max seconds before the collector forces a file rotation, "
-            "ensuring the sidecar can pick up traces even under low throughput",
-        ),
-    ]
     USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD_S: Annotated[
         int,
         Field(default=15, description="time collector gets to flush on SIGTERM"),

@@ -224,6 +224,7 @@ async def _get_mounts(
     has_quota_support: bool,
     rpc_client: RabbitMQRPCClient,
     user_extra_properties: UserExtraProperties,
+    tracing_enabled: bool,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
@@ -350,6 +351,18 @@ async def _get_mounts(
                 has_quota_support=has_quota_support,
             )
         )
+
+    if tracing_enabled:
+        mounts.append(
+            DynamicSidecarVolumesPathsResolver.mount_traces(
+                swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                node_uuid=scheduler_data.node_uuid,
+                service_run_id=scheduler_data.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
+            )
+        )
+
     return mounts
 
 
@@ -413,6 +426,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         has_quota_support=has_quota_support,
         rpc_client=rpc_client,
         user_extra_properties=user_extra_properties,
+        tracing_enabled=app_settings.DIRECTOR_V2_TRACING is not None,
     )
 
     ports = _get_ports(dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings)

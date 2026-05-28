@@ -100,8 +100,7 @@ def test_generate_otel_collector_config_has_flush_interval(
     config = yaml.safe_load(config_yaml)
 
     assert config["exporters"]["file"]["flush_interval"] == "10s"
-    # max_elapsed triggers time-based rotation so the sidecar can pick up traces promptly
-    assert config["exporters"]["file"]["rotation"]["max_elapsed"] == "30s"
+    assert "max_elapsed" not in config["exporters"]["file"]["rotation"]
 
 
 def test_generate_otel_collector_config_structure(

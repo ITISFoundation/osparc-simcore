@@ -210,7 +210,6 @@ def _generate_otel_collector_config(
                 "rotation": {
                     "max_megabytes": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB,
                     "max_backups": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS,
-                    "max_elapsed": f"{tracing_settings.USER_SERVICES_TRACING_COLLECTOR_ROTATION_INTERVAL_S}s",
                 },
                 "flush_interval": f"{tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL_S}s",
             }
@@ -264,6 +263,7 @@ def _inject_otel_collector(
     collector_service: dict[str, Any] = {
         "image": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE,
         "container_name": collector_container_name,
+        "user": f"{os.getuid()}:{os.getgid()}",
         "command": ["--config=env:OTEL_COLLECTOR_CONFIG"],
         "environment": [
             f"OTEL_COLLECTOR_CONFIG={collector_config_yaml}",
