@@ -288,11 +288,11 @@ async def test_forwarder_start_stop_lifecycle(
     forwarder: UserServicesTraceForwarder,
 ):
     """Forwarder can be started and stopped cleanly."""
-    await forwarder.start()
+    await forwarder.setup()
     assert forwarder._scrape_task is not None  # noqa: SLF001
     assert not forwarder._scrape_task.done()  # noqa: SLF001
 
-    await forwarder.stop()
+    await forwarder.shutdown()
     assert forwarder._scrape_task is None  # noqa: SLF001
 
 

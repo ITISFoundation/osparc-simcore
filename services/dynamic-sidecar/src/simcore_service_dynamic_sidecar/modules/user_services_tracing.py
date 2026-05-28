@@ -40,15 +40,14 @@ class UserServicesTraceForwarder:
         self._scrape_task: asyncio.Task | None = None
         self._active_file_offset: int = 0
 
-        endpoint = f"{
+        self._otlp_endpoint = f"{
             URL(f'{platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}')
             .with_port(platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT)
             .with_path('/v1/traces')
         }"
-        self._otlp_endpoint = endpoint
-        self._client = httpx.AsyncClient(timeout=30.0)
+        self._client = httpx.AsyncClient(timeout=tracing_settings.USER_SERVICES_TRACING_FORWARD_TIMEOUT.total_seconds())
 
-    async def start(self) -> None:
+    async def setup(self) -> None:
         self._scrape_task = asyncio.create_task(self._scrape_loop(), name="user_services_trace_forwarder")
         _logger.info(
             "User services trace forwarder started, scraping %s, forwarding to %s",
@@ -56,7 +55,7 @@ class UserServicesTraceForwarder:
             self._otlp_endpoint,
         )
 
-    async def stop(self) -> None:
+    async def shutdown(self) -> None:
         if self._scrape_task is not None:
             self._scrape_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -205,15 +204,10 @@ class UserServicesTraceForwarder:
         for chunk in chunks:
             try:
                 response = await self._client.post(
-                    self._otlp_endpoint,
-                    content=chunk,
-                    headers={"Content-Type": "application/json"},
+                    self._otlp_endpoint, content=chunk, headers={"Content-Type": "application/json"}
                 )
                 if response.status_code >= status.HTTP_400_BAD_REQUEST:
-                    _logger.warning(
-                        "Failed to forward traces: HTTP %d",
-                        response.status_code,
-                    )
+                    _logger.warning("Failed to forward traces: HTTP %d", response.status_code)
                     return False
             except httpx.HTTPError:
                 _logger.warning("Failed to forward traces", exc_info=True)
@@ -236,12 +230,12 @@ def setup_user_services_tracing(app: FastAPI) -> None:
             tracing_settings=tracing_settings,
             platform_tracing_settings=platform_tracing_settings,
         )
-        await forwarder.start()
+        await forwarder.setup()
 
     async def on_shutdown() -> None:
         forwarder: UserServicesTraceForwarder = app.state.user_services_trace_forwarder
         await forwarder.drain_remaining_traces()
-        await forwarder.stop()
+        await forwarder.shutdown()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

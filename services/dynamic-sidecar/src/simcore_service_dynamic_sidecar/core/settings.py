@@ -92,6 +92,10 @@ class UserServiceTracingSettings(BaseApplicationSettings):
     USER_SERVICES_TRACING_SCRAPE_INTERVAL: Annotated[
         timedelta, Field(description="how often to check for rotated trace files")
     ] = timedelta(seconds=10)
+    USER_SERVICES_TRACING_FORWARD_TIMEOUT: Annotated[
+        timedelta,
+        Field(description="HTTP timeout when forwarding traces to the platform collector"),
+    ] = timedelta(seconds=30)
 
     _validate_flush_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL")
     _validate_stop_grace_period = validate_numeric_string_as_timedelta(
@@ -99,6 +103,7 @@ class UserServiceTracingSettings(BaseApplicationSettings):
     )
     _validate_drain_timeout = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_DRAIN_TIMEOUT")
     _validate_scrape_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_SCRAPE_INTERVAL")
+    _validate_forward_timeout = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_FORWARD_TIMEOUT")
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
