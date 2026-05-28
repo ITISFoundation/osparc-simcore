@@ -53,6 +53,7 @@ from pydantic import TypeAdapter
 from servicelib.rabbitmq import RPCRouter
 
 from ..groups.api import list_all_user_groups_ids
+from ..users import users_service
 from . import (
     _function_job_collections_repository,
     _function_jobs_repository,
@@ -72,6 +73,7 @@ async def register_function(
     function: Function,
 ) -> RegisteredFunction:
     user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     encoded_function = _encode_function(function)
     saved_function = await _functions_repository.create_function(
         app=app,
@@ -84,6 +86,7 @@ async def register_function(
         class_specific_data=encoded_function.class_specific_data,
         user_id=user_id,
         user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
     )
     return _decode_function(saved_function)
@@ -97,11 +100,13 @@ async def register_function_job(
     function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     encoded_function_jobs = _encode_functionjob(function_job)
     created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
         app=app,
         user_id=user_id,
         user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
         function_jobs=[encoded_function_jobs],
     )
@@ -118,12 +123,14 @@ async def batch_register_function_jobs(
     function_jobs: FunctionJobList,
 ) -> BatchCreateRegisteredFunctionJobs:
     user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     function_jobs = TypeAdapter(FunctionJobList).validate_python(function_jobs)
     encoded_function_jobs = [_encode_functionjob(job) for job in function_jobs]
     created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
         app=app,
         user_id=user_id,
         user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
         function_jobs=encoded_function_jobs,
     )
@@ -179,6 +186,7 @@ async def register_function_job_collection(
     function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
     user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     (
         registered_function_job_collection,
         registered_job_ids,
@@ -186,6 +194,7 @@ async def register_function_job_collection(
         app=app,
         user_id=user_id,
         user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
         title=function_job_collection.title,
         description=function_job_collection.description,
@@ -431,7 +440,7 @@ async def delete_function_job_collection(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_collection_id: FunctionJobID,
+    function_job_collection_id: FunctionJobCollectionID,
 ) -> None:
     user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     await _function_job_collections_repository.delete_function_job_collection(

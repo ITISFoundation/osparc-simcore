@@ -418,7 +418,7 @@ async def delete_function_job_collection(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_collection_id: FunctionJobID,
+    function_job_collection_id: FunctionJobCollectionID,
 ) -> None:
     return await _functions_service.delete_function_job_collection(
         app=app,

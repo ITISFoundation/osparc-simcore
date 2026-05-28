@@ -39,7 +39,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import ColumnElement, func
 
 from ..db.plugin import get_asyncpg_engine
-from ..users import users_service
 from ._functions_permissions_repository import (
     _internal_set_group_permissions,
     check_user_api_access_rights,
@@ -58,6 +57,7 @@ async def create_function(  # noqa: PLR0913
     *,
     user_id: UserID,
     user_groups: list[GroupID],
+    user_primary_group_id: GroupID,
     product_name: ProductName,
     function_class: FunctionClass,
     class_specific_data: dict,
@@ -94,7 +94,6 @@ async def create_function(  # noqa: PLR0913
 
         registered_function = RegisteredFunctionDB.model_validate(row)
 
-        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
         await _internal_set_group_permissions(
             app,
             connection=transaction,

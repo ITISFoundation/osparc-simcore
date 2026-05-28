@@ -43,7 +43,6 @@ from sqlalchemy import Text, cast, func
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ..users import users_service
 from ._functions_permissions_repository import (
     _internal_set_group_permissions,
     check_user_api_access_rights,
@@ -60,6 +59,7 @@ async def create_function_jobs(
     *,
     user_id: UserID,
     user_groups: list[GroupID],
+    user_primary_group_id: GroupID,
     product_name: ProductName,
     function_jobs: list[FunctionJobDB],
 ) -> BatchCreateRegisteredFunctionJobsDB:
@@ -100,8 +100,7 @@ async def create_function_jobs(
         # Get all created jobs
         created_jobs = TypeAdapter(list[RegisteredFunctionJobDB]).validate_python(list(result))
 
-        # Get user primary group and set permissions for all jobs
-        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+        # Set permissions for all jobs
         job_uuids = [job.uuid for job in created_jobs]
 
         await _internal_set_group_permissions(

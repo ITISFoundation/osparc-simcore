@@ -2,6 +2,7 @@ import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
     FunctionID,
+    FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionsApiAccessRights,
@@ -34,7 +35,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
-from ..users import users_service
 from ._functions_permissions_repository import (
     _internal_set_group_permissions,
     check_user_api_access_rights,
@@ -51,6 +51,7 @@ async def create_function_job_collection(
     *,
     user_id: UserID,
     user_groups: list[GroupID],
+    user_primary_group_id: GroupID,
     product_name: ProductName,
     title: str,
     description: str,
@@ -116,7 +117,6 @@ async def create_function_job_collection(
             )  # nosec
             job_collection_entries.append(entry)
 
-        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
         await _internal_set_group_permissions(
             app,
             connection=transaction,
@@ -233,7 +233,7 @@ async def get_function_job_collection(
     user_id: UserID,
     user_groups: list[GroupID],
     product_name: ProductName,
-    function_job_collection_id: FunctionID,
+    function_job_collection_id: FunctionJobCollectionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_permissions(
@@ -282,7 +282,7 @@ async def delete_function_job_collection(
     user_id: UserID,
     user_groups: list[GroupID],
     product_name: ProductName,
-    function_job_collection_id: FunctionID,
+    function_job_collection_id: FunctionJobCollectionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_permissions(
