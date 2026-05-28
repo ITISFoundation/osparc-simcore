@@ -20,14 +20,14 @@ from simcore_service_dynamic_sidecar.modules.user_services_tracing import (
 )
 
 _DEFAULT_TRACING_OVERRIDES: dict[str, Any] = {
-    "USER_SERVICES_TRACING_SCRAPE_INTERVAL_S": 0.1,
+    "USER_SERVICES_TRACING_SCRAPE_INTERVAL": 0.1,
     "USER_SERVICES_TRACING_MAX_BATCH_SIZE": TypeAdapter(ByteSize).validate_python("1MiB"),
     "USER_SERVICES_TRACING_COLLECTOR_IMAGE": "otel/opentelemetry-collector:0.100.0",
     "USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB": 10,
     "USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS": 5,
-    "USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL_S": 10,
-    "USER_SERVICES_TRACING_DRAIN_TIMEOUT_S": 5.0,
-    "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD_S": 15,
+    "USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL": 10,
+    "USER_SERVICES_TRACING_DRAIN_TIMEOUT": 5.0,
+    "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD": 15,
 }
 
 
@@ -215,7 +215,7 @@ async def test_forwarder_drain_respects_timeout(
 ):
     """Drain should stop after timeout even if files remain."""
     short_timeout_settings = tracing_settings_factory(
-        USER_SERVICES_TRACING_DRAIN_TIMEOUT_S=0.1,
+        USER_SERVICES_TRACING_DRAIN_TIMEOUT=0.1,
     )
     timeout_forwarder = UserServicesTraceForwarder(
         traces_directory=traces_directory,

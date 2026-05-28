@@ -66,7 +66,7 @@ class UserServicesTraceForwarder:
 
     async def drain_remaining_traces(self) -> None:
         """Drains all remaining trace files after user services have stopped."""
-        timeout = self._tracing_settings.USER_SERVICES_TRACING_DRAIN_TIMEOUT_S
+        timeout = self._tracing_settings.USER_SERVICES_TRACING_DRAIN_TIMEOUT.total_seconds()
         _logger.info("Draining remaining trace files (timeout=%.1fs)", timeout)
         try:
             await asyncio.wait_for(self._forward_all_files(), timeout=timeout)
@@ -74,7 +74,7 @@ class UserServicesTraceForwarder:
             _logger.warning("Drain timeout reached, some traces may be lost")
 
     async def _scrape_loop(self) -> None:
-        interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL_S
+        interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL.total_seconds()
         while True:
             with log_catch(_logger, reraise=False):
                 # Forward completed rotated files first

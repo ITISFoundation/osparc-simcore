@@ -58,48 +58,52 @@ class SystemMonitorSettings(BaseApplicationSettings):
 
 
 class UserServiceTracingSettings(BaseApplicationSettings):
-    USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL_S: Annotated[
-        int,
+    USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL: Annotated[
+        timedelta,
         Field(
-            default=10,
-            description="how often (seconds) the file exporter flushes buffered data to disk; "
+            description="how often the file exporter flushes buffered data to disk; "
             "note: this does NOT trigger rotation, only ensures data reaches disk promptly for crash safety",
         ),
-    ]
+    ] = timedelta(seconds=10)
     USER_SERVICES_TRACING_COLLECTOR_IMAGE: Annotated[
         str,
         Field(
-            default="otel/opentelemetry-collector:0.100.0",
             description="pinned official OTEL Collector image",
         ),
-    ]
+    ] = "otel/opentelemetry-collector:0.100.0"
     USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS: Annotated[
         int,
-        Field(default=5, description="max rotated trace files kept by collector"),
-    ]
+        Field(description="max rotated trace files kept by collector"),
+    ] = 5
     USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB: Annotated[
         int,
-        Field(default=10, description="file size in MB that triggers rotation"),
-    ]
-    USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD_S: Annotated[
-        int,
-        Field(default=15, description="time collector gets to flush on SIGTERM"),
-    ]
-    USER_SERVICES_TRACING_DRAIN_TIMEOUT_S: Annotated[
-        float,
-        Field(default=30.0, description="max time for final drain on shutdown"),
-    ]
+        Field(description="file size in MB that triggers rotation"),
+    ] = 10
+    USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD: Annotated[
+        timedelta,
+        Field(description="time collector gets to flush on SIGTERM"),
+    ] = timedelta(seconds=15)
+    USER_SERVICES_TRACING_DRAIN_TIMEOUT: Annotated[
+        timedelta,
+        Field(description="max time for final drain on shutdown"),
+    ] = timedelta(seconds=30)
     USER_SERVICES_TRACING_MAX_BATCH_SIZE: Annotated[
         ByteSize,
         Field(
-            default=TypeAdapter(ByteSize).validate_python("5MiB"),
             description="max data forwarded to platform collector per scrape cycle",
         ),
-    ]
-    USER_SERVICES_TRACING_SCRAPE_INTERVAL_S: Annotated[
-        float,
-        Field(default=10.0, description="how often to check for rotated trace files"),
-    ]
+    ] = TypeAdapter(ByteSize).validate_python("5MiB")
+    USER_SERVICES_TRACING_SCRAPE_INTERVAL: Annotated[
+        timedelta,
+        Field(description="how often to check for rotated trace files"),
+    ] = timedelta(seconds=10)
+
+    _validate_flush_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL")
+    _validate_stop_grace_period = validate_numeric_string_as_timedelta(
+        "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD"
+    )
+    _validate_drain_timeout = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_DRAIN_TIMEOUT")
+    _validate_scrape_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_SCRAPE_INTERVAL")
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):

@@ -211,7 +211,9 @@ def _generate_otel_collector_config(
                     "max_megabytes": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB,
                     "max_backups": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS,
                 },
-                "flush_interval": f"{tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL_S}s",
+                "flush_interval": (
+                    f"{int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL.total_seconds())}s"
+                ),
             }
         },
         "service": {
@@ -271,7 +273,9 @@ def _inject_otel_collector(
         "volumes": [
             traces_volume_mount,
         ],
-        "stop_grace_period": f"{tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD_S}s",
+        "stop_grace_period": (
+            f"{int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD.total_seconds())}s"
+        ),
     }
 
     parsed_compose_spec["services"][_OTEL_COLLECTOR_SERVICE_NAME] = collector_service
