@@ -254,7 +254,7 @@ async def get_function_job_collection(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_collection_id: FunctionJobID,
+    function_job_collection_id: FunctionJobCollectionID,
 ) -> RegisteredFunctionJobCollection:
     user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     (
