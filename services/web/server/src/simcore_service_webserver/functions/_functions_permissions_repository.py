@@ -306,7 +306,7 @@ async def _internal_set_group_permissions(
         return access_rights_list
 
 
-async def set_group_permissions(  # noqa: PLR0913
+async def set_group_permissions(  # pylint: disable=too-many-arguments # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
