@@ -67,9 +67,7 @@ class UserServiceTracingSettings(BaseApplicationSettings):
     ] = timedelta(seconds=10)
     USER_SERVICES_TRACING_COLLECTOR_IMAGE: Annotated[
         str,
-        Field(
-            description="pinned official OTEL Collector image",
-        ),
+        Field(description="pinned official OTEL Collector image"),
         # NOTE: don't use the `otel/opentelemetry-collector-contrib`` image as it has a much
         # larger attack surface and we only need the file exporter
         # Keep in sync with
@@ -92,13 +90,10 @@ class UserServiceTracingSettings(BaseApplicationSettings):
     ] = timedelta(seconds=30)
     USER_SERVICES_TRACING_MAX_BATCH_SIZE: Annotated[
         ByteSize,
-        Field(
-            description="max data forwarded to platform collector per scrape cycle",
-        ),
+        Field(description="max data forwarded to platform collector per scrape cycle"),
     ] = TypeAdapter(ByteSize).validate_python("5MiB")
     USER_SERVICES_TRACING_SCRAPE_INTERVAL: Annotated[
-        timedelta,
-        Field(description="how often to check for rotated trace files"),
+        timedelta, Field(description="how often to check for rotated trace files")
     ] = timedelta(seconds=10)
 
     _validate_flush_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL")
