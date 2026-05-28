@@ -11,8 +11,11 @@ import contextlib
 import logging
 from pathlib import Path
 
+import aiofiles
+import aiofiles.os
 import httpx
 from fastapi import FastAPI, status
+from servicelib.logging_utils import log_catch
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
@@ -34,6 +37,7 @@ class UserServicesTraceForwarder:
         self._traces_directory = traces_directory
         self._tracing_settings = tracing_settings
         self._scrape_task: asyncio.Task | None = None
+        self._active_file_offset: int = 0
 
         endpoint = f"{
             URL(f'{platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}')
@@ -71,41 +75,115 @@ class UserServicesTraceForwarder:
     async def _scrape_loop(self) -> None:
         interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL_S
         while True:
-            try:
-                rotated_files = self._get_rotated_files()
+            with log_catch(_logger, reraise=False):
+                # Forward completed rotated files first
+                rotated_files = await self._get_rotated_files()
                 if rotated_files:
                     _logger.info(
                         "Scrape cycle: found %d rotated trace file(s) to forward",
                         len(rotated_files),
                     )
                 for file_path in rotated_files:
-                    await self._forward_and_delete(file_path)
-            except Exception:
-                _logger.exception("Error forwarding trace files")
+                    await self._forward_rotated_file(file_path)
+
+                # Also forward new data from the active file
+                await self._forward_active_file_tail()
             await asyncio.sleep(interval)
+
+    async def _forward_active_file_tail(self) -> None:
+        """Reads new bytes appended to the active file since last scrape and forwards them."""
+        active_file = self._traces_directory / _ACTIVE_FILE_NAME
+        if not await aiofiles.os.path.exists(active_file):
+            return
+
+        stat_result = await aiofiles.os.stat(active_file)
+        if stat_result.st_size <= self._active_file_offset:
+            return
+
+        async with aiofiles.open(active_file, "rb") as f:
+            await f.seek(self._active_file_offset)
+            new_content = await f.read()
+
+        if not new_content:
+            return
+
+        # Only forward complete lines (the last line might be partially written)
+        last_newline = new_content.rfind(b"\n")
+        if last_newline == -1:
+            return  # no complete lines yet
+
+        content_to_send = new_content[: last_newline + 1]
+        if not content_to_send.strip():
+            return
+
+        success = await self._forward_content(content_to_send)
+        if success:
+            self._active_file_offset += len(content_to_send)
+            _logger.info(
+                "Forwarded %d bytes from active file (offset now %d)",
+                len(content_to_send),
+                self._active_file_offset,
+            )
+
+    async def _forward_rotated_file(self, file_path: Path) -> None:
+        """Forwards only the un-tailed portion of a rotated file and deletes it.
+
+        When the active file rotates, we may have already forwarded some bytes
+        via _forward_active_file_tail. Only send the remainder to avoid duplicates.
+        """
+        async with aiofiles.open(file_path, "rb") as f:
+            content = await f.read()
+        if not content:
+            await aiofiles.os.remove(file_path)
+            self._active_file_offset = 0
+            return
+
+        # Only send bytes beyond what we already tailed
+        unsent_content = content[self._active_file_offset :]
+        if unsent_content and not await self._forward_content(unsent_content):
+            return  # keep file for retry
+
+        await aiofiles.os.remove(file_path)
+        _logger.info(
+            "Forwarded and deleted %s (sent %d of %d bytes, skipped %d already-tailed)",
+            file_path.name,
+            len(unsent_content),
+            len(content),
+            self._active_file_offset,
+        )
+        # Reset offset for the new active file
+        self._active_file_offset = 0
 
     async def _forward_rotated_files(self) -> None:
         """Forwards only rotated (immutable) files, skipping the active file."""
-        for file_path in self._get_rotated_files():
+        for file_path in await self._get_rotated_files():
             await self._forward_and_delete(file_path)
 
     async def _forward_all_files(self) -> None:
         """Forwards ALL files including the active one (used during drain)."""
-        for file_path in sorted(self._traces_directory.glob("spans*.jsonl")):
+        for file_path in sorted(await asyncio.to_thread(list, self._traces_directory.glob("spans*.jsonl"))):
             await self._forward_and_delete(file_path)
 
-    def _get_rotated_files(self) -> list[Path]:
+    async def _get_rotated_files(self) -> list[Path]:
         """Returns rotated span files (not the active one)."""
-        return sorted(f for f in self._traces_directory.glob("spans*.jsonl") if f.name != _ACTIVE_FILE_NAME)
+        all_files = await asyncio.to_thread(list, self._traces_directory.glob("spans*.jsonl"))
+        return sorted(f for f in all_files if f.name != _ACTIVE_FILE_NAME)
 
     async def _forward_and_delete(self, file_path: Path) -> None:
-        max_batch_size = self._tracing_settings.USER_SERVICES_TRACING_MAX_BATCH_SIZE
-        content = file_path.read_bytes()
+        async with aiofiles.open(file_path, "rb") as f:
+            content = await f.read()
         if not content:
-            file_path.unlink(missing_ok=True)
+            await aiofiles.os.remove(file_path)
             return
 
-        # Split into chunks if file exceeds max batch size
+        if await self._forward_content(content):
+            await aiofiles.os.remove(file_path)
+            _logger.info("Forwarded and deleted %s (%d bytes)", file_path.name, len(content))
+
+    async def _forward_content(self, content: bytes) -> bool:
+        """Forwards content to the platform OTLP endpoint. Returns True on success."""
+        max_batch_size = self._tracing_settings.USER_SERVICES_TRACING_MAX_BATCH_SIZE
+
         if len(content) <= max_batch_size:
             chunks = [content]
         else:
@@ -132,21 +210,15 @@ class UserServicesTraceForwarder:
                 )
                 if response.status_code >= status.HTTP_400_BAD_REQUEST:
                     _logger.warning(
-                        "Failed to forward traces from %s: HTTP %d",
-                        file_path.name,
+                        "Failed to forward traces: HTTP %d",
                         response.status_code,
                     )
-                    return  # keep file for retry
+                    return False
             except httpx.HTTPError:
-                _logger.warning(
-                    "Failed to forward traces from %s",
-                    file_path.name,
-                    exc_info=True,
-                )
-                return  # keep file for retry
+                _logger.warning("Failed to forward traces", exc_info=True)
+                return False
 
-        file_path.unlink(missing_ok=True)
-        _logger.info("Forwarded and deleted %s (%d bytes in %d chunk(s))", file_path.name, len(content), len(chunks))
+        return True
 
 
 def setup_user_services_tracing(app: FastAPI) -> None:
