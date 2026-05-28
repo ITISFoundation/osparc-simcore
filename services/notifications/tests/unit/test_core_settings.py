@@ -28,6 +28,7 @@ _SMTP_PAYLOAD = {
     "SMTP_HOST": "mailpit",
     "SMTP_PORT": 1025,
     "SMTP_PROTOCOL": "UNENCRYPTED",
+    "SMTP_LOCAL_PARTS": {"SUPPORT": "support", "NO_REPLY": "no-reply"},
 }
 
 

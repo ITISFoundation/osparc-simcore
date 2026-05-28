@@ -69,7 +69,13 @@ def mock_environment(
             "LOGLEVEL": "DEBUG",
             "SC_BOOT_MODE": BootModeEnum.DEBUG,
             "NOTIFICATIONS_EMAIL": (
-                '{"test-domain.com": {"SMTP_HOST": "mailpit", "SMTP_PORT": 1025, "SMTP_PROTOCOL": "UNENCRYPTED"}}'
+                "{"
+                '"test-domain.com": '
+                '{"SMTP_HOST": "mailpit", '
+                '"SMTP_PORT": 1025, '
+                '"SMTP_PROTOCOL": "UNENCRYPTED", '
+                '"SMTP_LOCAL_PARTS": {"SUPPORT": "support", "NO_REPLY": "no-reply"}}'
+                "}"
             ),
         },
     )
