@@ -53,7 +53,7 @@ def _dump_with_secrets_as_json(value: Any, ctx: _RenderContext) -> str:
 
 
 @_register_field_renderer
-def _render_base_settings(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:
+def _render_base_settings(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:  # pylint: disable=unused-argument
     if not isinstance(value, BaseSettings):
         return False
     if ctx.compact:
@@ -73,7 +73,7 @@ def _render_base_settings(name: str, value: Any, field: FieldInfo, ctx: _RenderC
 
 
 @_register_field_renderer
-def _render_root_model(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:
+def _render_root_model(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:  # pylint: disable=unused-argument
     if not isinstance(value, RootModel):
         return False
     # Serialize as JSON so it round-trips through env vars back into the RootModel
@@ -83,7 +83,7 @@ def _render_root_model(name: str, value: Any, field: FieldInfo, ctx: _RenderCont
 
 
 @_register_field_renderer
-def _render_collection(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:
+def _render_collection(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:  # pylint: disable=unused-argument
     if not isinstance(value, dict | list):
         return False
     # Serialize complex objects as JSON to ensure they can be parsed correctly.
@@ -92,7 +92,7 @@ def _render_collection(name: str, value: Any, field: FieldInfo, ctx: _RenderCont
     return True
 
 
-def _render_default(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:
+def _render_default(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:  # pylint: disable=unused-argument
     if ctx.show_secrets and hasattr(value, "get_secret_value"):
         value = value.get_secret_value()
     if isinstance(value, Enum):
@@ -254,7 +254,7 @@ def create_version_callback(application_version: str) -> Callable:
     def version(
         ctx: typer.Context,
         *,
-        version: bool = (
+        version: bool = (  # pylint: disable=unused-argument
             typer.Option(
                 None,
                 "--version",
