@@ -249,3 +249,11 @@ async def test_validate_compose_spec_without_tracing_no_otel(
         else:
             env_str = "\n".join(f"{k}={v}" for k, v in env_list.items())
         assert "OTEL_EXPORTER_OTLP_ENDPOINT" not in env_str
+
+
+def test_no_contrib_collector_image_used():
+    image = UserServiceTracingSettings().USER_SERVICES_TRACING_COLLECTOR_IMAGE
+    assert "otel/opentelemetry-collector-contrib" not in image, (
+        "otel/opentelemetry-collector-contrib image must NOT be used for tracing. "
+        "Use the minimal otel/opentelemetry-collector image only. See the security note in settings."
+    )
