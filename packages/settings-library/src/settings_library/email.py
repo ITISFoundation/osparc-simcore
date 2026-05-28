@@ -36,9 +36,8 @@ class EmailProtocol(StrEnum):
 
 
 class SMTPLocals(BaseCustomSettings):
-    INFO: str = "info"
-    SUPPORT: str = "support"
-    NO_REPLY: str = "no-reply"
+    SUPPORT: str
+    NO_REPLY: str
 
     model_config = SettingsConfigDict(
         extra="ignore",
@@ -79,7 +78,6 @@ class SMTPSettings(BaseCustomSettings):
             description=("A mapping of local email identifiers to actual email addresses."),
             examples=[
                 {
-                    "INFO": "info",
                     "SUPPORT": "support",
                     "NO_REPLY": "no-reply",
                 }
