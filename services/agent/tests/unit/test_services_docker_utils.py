@@ -43,6 +43,7 @@ def test__reverse_string():
     [
         ("inputs", False),
         ("shared-store", False),
+        ("traces", False),
         ("outputs", True),
         ("workdir", True),
     ],

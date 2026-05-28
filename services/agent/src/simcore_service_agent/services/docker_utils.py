@@ -37,6 +37,7 @@ def _is_transport_endpoint_not_connected_error(exc: DockerError) -> bool:
 _VOLUMES_NOT_TO_BACKUP: Final[tuple[str, ...]] = (
     _reverse_string("inputs"),
     _reverse_string("shared-store"),
+    _reverse_string("traces"),
 )
 
 
