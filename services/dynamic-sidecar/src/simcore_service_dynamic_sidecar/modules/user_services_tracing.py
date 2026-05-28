@@ -184,11 +184,12 @@ class UserServicesTraceForwarder:
         """Forwards content to the platform OTLP endpoint. Returns True on success."""
         max_batch_size = self._tracing_settings.USER_SERVICES_TRACING_MAX_BATCH_SIZE
 
+        chunks: list[bytes]
         if len(content) <= max_batch_size:
             chunks = [content]
         else:
             lines = content.split(b"\n")
-            chunks: list[bytes] = []
+            chunks = []
             current_chunk = b""
             for line in lines:
                 if not line:
@@ -242,7 +243,7 @@ def setup_user_services_tracing(app: FastAPI) -> None:
 
 
 def get_user_services_trace_forwarder(app: FastAPI) -> UserServicesTraceForwarder:
-    assert hasattr(app.state, "user_services_trace_forwarder"), "Tracing not set up yet"
+    assert isinstance(app.state.user_services_trace_forwarder, UserServicesTraceForwarder)  # nosec
     return app.state.user_services_trace_forwarder
 
 
