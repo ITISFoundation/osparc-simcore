@@ -1560,6 +1560,18 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/conversations?type=SUPPORT&offset={offset}&limit={limit}"
           },
+          getConversationsPageUnreadByUser: {
+            method: "GET",
+            url: statics.API + "/conversations?type=SUPPORT&offset={offset}&limit={limit}&is_read_by_user=false"
+          },
+          getConversationsPageUnreadBySupport: {
+            method: "GET",
+            url: statics.API + "/conversations?type=SUPPORT&offset={offset}&limit={limit}&is_read_by_support=false"
+          },
+          getConversationsPageByStatus: {
+            method: "GET",
+            url: statics.API + "/conversations?type=SUPPORT&offset={offset}&limit={limit}&status={status}"
+          },
           getConversation: {
             method: "GET",
             url: statics.API + "/conversations/{conversationId}"

@@ -8,8 +8,11 @@ from models_library.api_schemas_webserver.conversations import (
     ConversationRestGet,
 )
 from models_library.conversations import (
+    ConversationName,
     ConversationPatchDB,
+    ConversationStatus,
     ConversationType,
+    ConversationUserType,
 )
 from models_library.rest_pagination import (
     Page,
@@ -42,6 +45,9 @@ routes = web.RouteTableDef()
 
 class _ListConversationsQueryParams(PageQueryParameters):
     type: ConversationType
+    status: ConversationStatus | None = None
+    is_read_by_user: bool | None = None
+    is_read_by_support: bool | None = None
     model_config = ConfigDict(extra="forbid")
 
     @field_validator("type")
@@ -54,7 +60,7 @@ class _ListConversationsQueryParams(PageQueryParameters):
 
 
 class _ConversationsCreateBodyParams(InputSchema):
-    name: str
+    name: ConversationName | None = None
     type: ConversationType
     extra_context: dict[str, Any] | None = None
 
@@ -106,6 +112,9 @@ async def list_conversations(request: web.Request):
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        filter_status=query_params.status,
+        filter_is_read_by_user=query_params.is_read_by_user,
+        filter_is_read_by_support=query_params.is_read_by_support,
         offset=query_params.offset,
         limit=query_params.limit,
     )
@@ -171,12 +180,16 @@ async def update_conversation(request: web.Request):
     if conversation.type.is_support_type() is False:
         raise_unsupported_type(conversation.type)
 
-    await _conversation_service.get_support_conversation_for_user(
+    _, user_type = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
     )
+
+    # Only support group members can change the conversation status
+    if body_params.status is not None and user_type == ConversationUserType.REGULAR_USER:
+        raise web.HTTPForbidden(reason="Only support group members can change conversation status")
 
     conversation = await conversations_service.update_conversation(
         app=request.app,

@@ -883,6 +883,54 @@
             "schema": {
               "$ref": "#/components/schemas/ConversationType"
             }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "is_read_by_user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By User"
+            }
+          },
+          {
+            "name": "is_read_by_support",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By Support"
+            }
           }
         ],
         "responses": {
@@ -1321,7 +1369,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1351,7 +1401,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1391,7 +1443,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1417,7 +1471,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1448,7 +1504,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           }
         ],
@@ -1484,7 +1542,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1525,7 +1585,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1576,7 +1638,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1610,7 +1674,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Gid"
             }
           },
           {
@@ -1930,7 +1996,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -2001,7 +2069,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -2072,7 +2142,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -4054,7 +4126,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -4104,7 +4178,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -4154,7 +4230,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -6421,7 +6499,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -6470,7 +6550,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -9137,7 +9219,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -9187,7 +9271,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -9237,7 +9323,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -10437,7 +10525,9 @@
             "in": "query",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "For Gid"
             }
           }
         ],
@@ -12311,7 +12401,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12360,7 +12451,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -12408,7 +12500,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -12495,7 +12588,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12529,7 +12623,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12563,7 +12658,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12614,7 +12710,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -13885,7 +13982,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -13975,7 +14074,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -14065,7 +14166,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Group Id"
             }
           }
         ],
@@ -16272,6 +16375,14 @@
         ],
         "title": "ConnectServiceToPricingPlanBodyParams"
       },
+      "ConversationID": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ConversationMessageID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "ConversationMessagePatch": {
         "properties": {
           "content": {
@@ -16292,14 +16403,10 @@
       "ConversationMessageRestGet": {
         "properties": {
           "messageId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Messageid"
+            "$ref": "#/components/schemas/ConversationMessageID"
           },
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "userGroupId": {
             "$ref": "#/components/schemas/GroupID"
@@ -16342,6 +16449,11 @@
           "NOTIFICATION"
         ],
         "title": "ConversationMessageType"
+      },
+      "ConversationName": {
+        "type": "string",
+        "maxLength": 50,
+        "minLength": 1
       },
       "ConversationPatch": {
         "properties": {
@@ -16389,6 +16501,16 @@
               }
             ],
             "title": "Isreadbysupport"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -16397,18 +16519,21 @@
       "ConversationRestGet": {
         "properties": {
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "productName": {
             "type": "string",
             "title": "Productname"
           },
           "name": {
-            "type": "string",
-            "maxLength": 50,
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "projectUuid": {
             "anyOf": [
@@ -16464,6 +16589,9 @@
             "type": "boolean",
             "title": "Isreadbysupport"
           },
+          "status": {
+            "$ref": "#/components/schemas/ConversationStatus"
+          },
           "lastMessageCreatedAt": {
             "type": "string",
             "format": "date-time",
@@ -16484,9 +16612,18 @@
           "extraContext",
           "isReadByUser",
           "isReadBySupport",
+          "status",
           "lastMessageCreatedAt"
         ],
         "title": "ConversationRestGet"
+      },
+      "ConversationStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "ARCHIVED"
+        ],
+        "title": "ConversationStatus"
       },
       "ConversationType": {
         "type": "string",
@@ -28390,9 +28527,6 @@
         ],
         "title": "StatusDiagnosticsGet"
       },
-      "StorageFileIDStr": {
-        "type": "string"
-      },
       "Structure": {
         "properties": {
           "key": {
@@ -30718,8 +30852,14 @@
       "_ConversationsCreateBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "type": {
             "$ref": "#/components/schemas/ConversationType"
@@ -30739,7 +30879,6 @@
         },
         "type": "object",
         "required": [
-          "name",
           "type"
         ],
         "title": "_ConversationsCreateBodyParams"

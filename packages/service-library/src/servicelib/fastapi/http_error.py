@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
 
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI, HTTPException, status
@@ -13,6 +12,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from ..status_codes_utils import is_5xx_server_error
+from .health import HealthCheckError, health_check_error_handler
 
 validation_error_response_definition["properties"] = {
     "errors": {
@@ -23,12 +23,10 @@ validation_error_response_definition["properties"] = {
 }
 
 
-TException = TypeVar("TException", bound=BaseException)
-
 _logger = logging.getLogger(__name__)
 
 
-def make_http_error_handler_for_exception(
+def make_http_error_handler_for_exception[TException: BaseException](
     status_code: int,
     exception_cls: type[TException],
     *,
@@ -54,7 +52,8 @@ def make_http_error_handler_for_exception(
         if is_5xx_server_error(status_code):
             _logger.exception(
                 create_troubleshooting_log_kwargs(
-                    f"A 5XX server error happened in current service. Responding with {error_content} and {status_code} status code",
+                    "A 5XX server error happened in current service. "
+                    f"Responding with {error_content} and {status_code} status code",
                     error=exc,
                     error_context={
                         "request": request,
@@ -98,6 +97,8 @@ def _make_default_http_error_handler(
 
 
 def set_app_default_http_error_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)
+
     app.add_exception_handler(HTTPException, _make_default_http_error_handler(envelope_error=True))
 
     app.add_exception_handler(

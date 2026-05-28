@@ -142,10 +142,14 @@ class CompTasksRepository(BaseRepository):
         rut_client: ResourceUsageTrackerClient,
         wallet_info: WalletInfo | None,
         rabbitmq_rpc_client: RabbitMQRPCClient,
-    ) -> list[CompTaskAtDB]:
+    ) -> tuple[list[CompTaskAtDB], bool]:
+        """Returns (comp_tasks, insufficient_credits).
+
+        If insufficient_credits is True, affected published nodes were set to ABORTED.
+        """
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with self.db_engine.begin() as conn:
-            list_of_comp_tasks_in_project: list[CompTaskAtDB] = (
+            list_of_comp_tasks_in_project, insufficient_credits = (
                 # WARNING: this is NOT a real repository method, it is a utility function
                 # that calls backend services to generate the tasks list!! Refactoring needed!!
                 await _utils.generate_tasks_list_from_project(
@@ -204,7 +208,7 @@ class CompTasksRepository(BaseRepository):
                     "inserted the following tasks in comp_tasks: %s",
                     f"{inserted_comp_tasks_db=}",
                 )
-            return inserted_comp_tasks_db
+            return inserted_comp_tasks_db, insufficient_credits
 
     async def _update_task(
         self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, **task_kwargs

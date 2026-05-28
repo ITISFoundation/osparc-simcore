@@ -33,9 +33,9 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     AlreadyPreRegisteredError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "An account for the email {email} has been submitted. "
+            "An account for the email {email} was already submitted. "
             "If you haven't received any updates, please contact support.",
-            _version=1,
+            _version=2,
         ),
     ),
     SendingVerificationSmsError: HttpErrorInfo(
