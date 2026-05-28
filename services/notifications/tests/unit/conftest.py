@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
+import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import asdict
 from typing import Any
@@ -94,8 +95,18 @@ def app_environment(
             **mock_environment,
             **mock_env_devel_environment,
             "NOTIFICATIONS_TRACING": "null",
-            "NOTIFICATIONS_EMAIL": (
-                '{"test-domain.com": {"SMTP_HOST": "mailpit", "SMTP_PORT": 1025, "SMTP_PROTOCOL": "UNENCRYPTED"}}'
+            "NOTIFICATIONS_EMAIL": json.dumps(
+                {
+                    "test-domain.com": {
+                        "SMTP_HOST": "mailpit",
+                        "SMTP_PORT": 1025,
+                        "SMTP_PROTOCOL": "UNENCRYPTED",
+                        "SMTP_LOCAL_PARTS": {
+                            "SUPPORT": "support",
+                            "NO_REPLY": "no-reply",
+                        },
+                    }
+                }
             ),
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
