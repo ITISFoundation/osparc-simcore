@@ -921,7 +921,6 @@ services:
         - *rabbit_settings
         - *redis_settings
         - *resource_usage_tracker_settings
-        - *smtp_settings
         - *storage_settings
         - *tracing_open_telemetry_environments
         - *webserver_diagnostics_environments
