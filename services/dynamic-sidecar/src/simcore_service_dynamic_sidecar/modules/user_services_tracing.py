@@ -15,6 +15,7 @@ import aiofiles
 import aiofiles.os
 import httpx
 from fastapi import FastAPI, status
+from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_catch
 from settings_library.tracing import TracingSettings
@@ -48,7 +49,12 @@ class UserServicesTraceForwarder:
         self._client = httpx.AsyncClient(timeout=tracing_settings.USER_SERVICES_TRACING_FORWARD_TIMEOUT.total_seconds())
 
     async def setup(self) -> None:
-        self._scrape_task = asyncio.create_task(self._scrape_loop(), name="user_services_trace_forwarder")
+        interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL
+        self._scrape_task = create_periodic_task(
+            self._scrape_once,
+            interval=interval,
+            task_name="user_services_trace_forwarder",
+        )
         _logger.info(
             "User services trace forwarder started, scraping %s, forwarding to %s",
             self._traces_directory,
@@ -72,23 +78,20 @@ class UserServicesTraceForwarder:
         except TimeoutError:
             _logger.warning("Drain timeout reached, some traces may be lost")
 
-    async def _scrape_loop(self) -> None:
-        interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL.total_seconds()
-        while True:
-            with log_catch(_logger, reraise=False):
-                # Forward completed rotated files first
-                rotated_files = await self._get_rotated_files()
-                if rotated_files:
-                    _logger.info(
-                        "Scrape cycle: found %d rotated trace file(s) to forward",
-                        len(rotated_files),
-                    )
-                for file_path in rotated_files:
-                    await self._forward_rotated_file(file_path)
+    async def _scrape_once(self) -> None:
+        with log_catch(_logger, reraise=False):
+            # Forward completed rotated files first
+            rotated_files = await self._get_rotated_files()
+            if rotated_files:
+                _logger.info(
+                    "Scrape cycle: found %d rotated trace file(s) to forward",
+                    len(rotated_files),
+                )
+            for file_path in rotated_files:
+                await self._forward_rotated_file(file_path)
 
-                # Also forward new data from the active file
-                await self._forward_active_file_tail()
-            await asyncio.sleep(interval)
+            # Also forward new data from the active file
+            await self._forward_active_file_tail()
 
     async def _forward_active_file_tail(self) -> None:
         """Reads new bytes appended to the active file since last scrape and forwards them."""
@@ -207,7 +210,7 @@ class UserServicesTraceForwarder:
                 response = await self._client.post(
                     self._otlp_endpoint, content=chunk, headers={"Content-Type": "application/json"}
                 )
-                if response.status_code >= status.HTTP_400_BAD_REQUEST:
+                if response.status_code != status.HTTP_200_OK:
                     _logger.warning("Failed to forward traces: HTTP %d", response.status_code)
                     return False
             except httpx.HTTPError:
@@ -218,23 +221,22 @@ class UserServicesTraceForwarder:
 
 
 def setup_user_services_tracing(app: FastAPI) -> None:
+    settings: ApplicationSettings = app.state.settings
+    platform_tracing_settings = settings.DYNAMIC_SIDECAR_TRACING
+    assert platform_tracing_settings is not None  # nosec
+
+    mounted_volumes: MountedVolumes = app.state.mounted_volumes
+
+    app.state.user_services_trace_forwarder = forwarder = UserServicesTraceForwarder(
+        traces_directory=mounted_volumes.disk_traces_path,
+        tracing_settings=settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING,
+        platform_tracing_settings=platform_tracing_settings,
+    )
+
     async def on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
-        tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
-        platform_tracing_settings = settings.DYNAMIC_SIDECAR_TRACING
-        assert platform_tracing_settings is not None  # nosec
-
-        mounted_volumes: MountedVolumes = app.state.mounted_volumes
-
-        app.state.user_services_trace_forwarder = forwarder = UserServicesTraceForwarder(
-            traces_directory=mounted_volumes.disk_traces_path,
-            tracing_settings=tracing_settings,
-            platform_tracing_settings=platform_tracing_settings,
-        )
         await forwarder.setup()
 
     async def on_shutdown() -> None:
-        forwarder: UserServicesTraceForwarder = app.state.user_services_trace_forwarder
         await forwarder.drain_remaining_traces()
         await forwarder.shutdown()
 
