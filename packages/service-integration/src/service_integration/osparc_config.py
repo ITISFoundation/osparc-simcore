@@ -220,6 +220,8 @@ class RuntimeConfig(BaseModel):
 
     containers_allowed_outgoing_internet: set[str] | None = None
 
+    tracing: bool = False
+
     settings: Annotated[list[SettingsItem], Field(default_factory=list)] = DEFAULT_FACTORY
 
     @model_validator(mode="before")
