@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 
+import json
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -68,14 +69,18 @@ def mock_environment(
             **docker_compose_service_environment_dict,
             "LOGLEVEL": "DEBUG",
             "SC_BOOT_MODE": BootModeEnum.DEBUG,
-            "NOTIFICATIONS_EMAIL": (
-                "{"
-                '"test-domain.com": '
-                '{"SMTP_HOST": "mailpit", '
-                '"SMTP_PORT": 1025, '
-                '"SMTP_PROTOCOL": "UNENCRYPTED", '
-                '"SMTP_LOCAL_PARTS": {"SUPPORT": "support", "NO_REPLY": "no-reply"}}'
-                "}"
+            "NOTIFICATIONS_EMAIL": json.dumps(
+                {
+                    "test-domain.com": {
+                        "SMTP_HOST": "mailpit",
+                        "SMTP_PORT": 1025,
+                        "SMTP_PROTOCOL": "UNENCRYPTED",
+                        "SMTP_LOCAL_PARTS": {
+                            "SUPPORT": "support",
+                            "NO_REPLY": "no-reply",
+                        },
+                    }
+                }
             ),
         },
     )
