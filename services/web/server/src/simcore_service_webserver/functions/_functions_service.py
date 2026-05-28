@@ -561,7 +561,6 @@ async def get_function_user_permissions(
     user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     user_permissions = await _functions_permissions_repository.get_user_permissions(
         app=app,
-        user_id=user_id,
         user_groups=user_groups,
         product_name=product_name,
         object_id=function_id,
