@@ -69,6 +69,7 @@ x-smtp-settings: &smtp_settings
   SMTP_PASSWORD: ${SMTP_PASSWORD}
   SMTP_PROTOCOL: ${SMTP_PROTOCOL}
   SMTP_EXTRA_HEADERS: ${SMTP_EXTRA_HEADERS}
+  SMTP_LOCAL_PARTS: ${SMTP_LOCAL_PARTS}
 
 ## simcore stack services
 
