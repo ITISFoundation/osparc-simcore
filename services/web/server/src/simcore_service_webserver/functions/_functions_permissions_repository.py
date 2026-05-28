@@ -417,7 +417,7 @@ async def get_user_api_access_rights(
     product_name: ProductName,
 ) -> FunctionUserApiAccessRights:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
 
         # Initialize combined permissions with False values
         combined_permissions = FunctionUserApiAccessRights(
@@ -516,7 +516,7 @@ async def get_user_permissions(
             cols = _FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS
         assert access_rights_table is not None  # nosec
 
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
 
         # Initialize combined permissions with False values
         combined_permissions = FunctionAccessRightsDB(read=False, write=False, execute=False)

@@ -14,6 +14,7 @@ from models_library.groups import (
 from models_library.products import ProductName
 from models_library.users import UserID, UserNameID
 from pydantic import EmailStr
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..products.models import Product
 from ..users import _users_service
@@ -52,8 +53,10 @@ async def list_user_groups_ids_with_read_access(app: web.Application, *, user_id
     return await _groups_repository.get_ids_of_all_user_groups_with_read_access(app, user_id=user_id)
 
 
-async def list_all_user_groups_ids(app: web.Application, *, user_id: UserID) -> list[GroupID]:
-    return await _groups_repository.get_ids_of_all_user_groups(app, user_id=user_id)
+async def list_all_user_groups_ids(
+    app: web.Application, connection: AsyncConnection | None = None, *, user_id: UserID
+) -> list[GroupID]:
+    return await _groups_repository.get_ids_of_all_user_groups(app, connection=connection, user_id=user_id)
 
 
 async def get_product_group_for_user(

@@ -144,7 +144,8 @@ async def list_function_job_collections(
 ]:
     """
     Returns a list of function job collections and their associated job ids.
-    Filters the collections to include only those that have function jobs with the specified function id if filters.has_function_id is provided.
+    Filters the collections to include only those that have function jobs with the specified function id
+    if filters.has_function_id is provided.
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_api_access_rights(
@@ -173,7 +174,7 @@ async def list_function_job_collections(
                 .where(function_jobs_table.c.function_uuid == function_id)
             )
             filter_condition = function_job_collections_table.c.uuid.in_(subquery)
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
 
         access_subquery = (
             function_job_collections_access_rights_table.select()

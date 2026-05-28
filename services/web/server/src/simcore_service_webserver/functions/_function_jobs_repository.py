@@ -189,7 +189,7 @@ async def list_function_jobs_with_status(
             product_name=product_name,
             api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
         )
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
 
         access_subquery = (
             function_jobs_access_rights_table.select()
@@ -296,7 +296,7 @@ async def find_cached_function_jobs(
 ) -> list[RegisteredFunctionJobDB | None]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # Get user groups for access check
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
 
         # Create access subquery
         access_subquery = (

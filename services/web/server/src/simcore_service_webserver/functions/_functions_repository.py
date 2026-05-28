@@ -180,7 +180,7 @@ async def list_functions(
             product_name=product_name,
             api_access_rights=[FunctionsApiAccessRights.READ_FUNCTIONS],
         )
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
         attributes_filters = _create_list_functions_attributes_filters(
             filter_by_function_class=filter_by_function_class,
             search_by_multi_columns=search_by_multi_columns,
