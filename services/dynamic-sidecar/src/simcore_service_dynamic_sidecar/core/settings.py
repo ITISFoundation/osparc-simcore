@@ -259,11 +259,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     DYNAMIC_SIDECAR_USER_SERVICES_TRACING: Annotated[
-        UserServiceTracingSettings | None,
-        Field(
-            default=None,
-            description="settings for collecting traces from user services via injected OTEL Collector",
-        ),
+        UserServiceTracingSettings,
+        Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
     @property
@@ -273,8 +270,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         )
 
     @property
-    def are_user_services_traces_enabled(self) -> bool:
-        return self.DYNAMIC_SIDECAR_USER_SERVICES_TRACING is not None
+    def is_tracing_enabled(self) -> bool:
+        return self.DYNAMIC_SIDECAR_TRACING is not None
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod

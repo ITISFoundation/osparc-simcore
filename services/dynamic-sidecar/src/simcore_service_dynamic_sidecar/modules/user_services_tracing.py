@@ -7,11 +7,12 @@ then deletes the processed files.
 """
 
 import asyncio
+import contextlib
 import logging
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
@@ -49,10 +50,8 @@ class UserServicesTraceForwarder:
     async def stop(self) -> None:
         if self._scrape_task is not None:
             self._scrape_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._scrape_task
-            except asyncio.CancelledError:
-                pass
             self._scrape_task = None
         await self._client.aclose()
 
@@ -120,7 +119,7 @@ class UserServicesTraceForwarder:
                     content=chunk,
                     headers={"Content-Type": "application/json"},
                 )
-                if response.status_code >= 400:
+                if response.status_code >= status.HTTP_400_BAD_REQUEST:
                     _logger.warning(
                         "Failed to forward traces from %s: HTTP %d",
                         file_path.name,
@@ -144,7 +143,6 @@ def setup_user_services_tracing(app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
         tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
         platform_tracing_settings = settings.DYNAMIC_SIDECAR_TRACING
-        assert tracing_settings is not None  # nosec
         assert platform_tracing_settings is not None  # nosec
 
         mounted_volumes: MountedVolumes = app.state.mounted_volumes

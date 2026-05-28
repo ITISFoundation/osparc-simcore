@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import json
 from pathlib import Path
 
 import pytest
@@ -11,6 +10,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import (
     ApplicationSettings,
     UserServiceTracingSettings,
@@ -39,20 +39,13 @@ def mock_environment_with_tracing(
     mock_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    tracing_envs = {
-        "USER_SERVICES_TRACING_SCRAPE_INTERVAL_S": "10.0",
-        "USER_SERVICES_TRACING_MAX_BATCH_SIZE": "5MiB",
-        "USER_SERVICES_TRACING_COLLECTOR_IMAGE": "otel/opentelemetry-collector:0.100.0",
-        "USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB": "10",
-        "USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS": "5",
-        "USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL_S": "10",
-        "USER_SERVICES_TRACING_COLLECTOR_ROTATION_INTERVAL_S": "30",
-        "USER_SERVICES_TRACING_DRAIN_TIMEOUT_S": "30.0",
-        "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD_S": "15",
-    }
     return setenvs_from_dict(
         monkeypatch,
-        {"DYNAMIC_SIDECAR_USER_SERVICES_TRACING": json.dumps(tracing_envs)},
+        {
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://otel-collector.internal",
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
+            "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": "1.0",
+        },
     )
 
 
@@ -60,8 +53,6 @@ def mock_environment_with_tracing(
 def app_settings_with_tracing(
     mock_environment_with_tracing: EnvVarsDict,
 ) -> ApplicationSettings:
-    from simcore_service_dynamic_sidecar.core.application import create_app
-
     return create_app().state.settings
 
 
@@ -69,9 +60,7 @@ def app_settings_with_tracing(
 def user_tracing_settings(
     app_settings_with_tracing: ApplicationSettings,
 ) -> UserServiceTracingSettings:
-    tracing = app_settings_with_tracing.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
-    assert tracing is not None
-    return tracing
+    return app_settings_with_tracing.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
 
 
 @pytest.fixture
@@ -191,7 +180,7 @@ async def test_validate_compose_spec_with_tracing_injects_otel(
     simple_compose_spec: str,
     fake_mounted_volumes: MountedVolumes,
 ):
-    assert app_settings_with_tracing.are_user_services_traces_enabled
+    assert app_settings_with_tracing.is_tracing_enabled
 
     result = await get_and_validate_compose_spec(app_settings_with_tracing, simple_compose_spec, fake_mounted_volumes)
 
@@ -225,7 +214,7 @@ async def test_validate_compose_spec_without_tracing_no_otel(
 ):
     """Without tracing settings, no OTEL collector should be injected."""
     settings = app.state.settings
-    assert not settings.are_user_services_traces_enabled
+    assert not settings.is_tracing_enabled
 
     result = await get_and_validate_compose_spec(settings, simple_compose_spec, fake_mounted_volumes)
 
@@ -235,7 +224,7 @@ async def test_validate_compose_spec_without_tracing_no_otel(
     collector_found = any("otel-collector" in name for name in services)
     assert not collector_found
 
-    for _svc_name, svc_data in services.items():
+    for svc_data in services.values():
         env_list = svc_data.get("environment", {})
         if isinstance(env_list, list):
             env_str = "\n".join(env_list)

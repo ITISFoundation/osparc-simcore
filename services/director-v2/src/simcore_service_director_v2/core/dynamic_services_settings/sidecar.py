@@ -42,7 +42,11 @@ class PlacementSettings(BaseCustomSettings):
         dict[str, DockerPlacementConstraint],
         Field(
             default_factory=dict,
-            description="Use placement constraints in place of generic resources, for details see https://github.com/ITISFoundation/osparc-simcore/issues/5250 When `None` (default), uses generic resources",
+            description=(
+                "Use placement constraints in place of generic resources, for details see "
+                "https://github.com/ITISFoundation/osparc-simcore/issues/5250 When `None` (default), "
+                "uses generic resources"
+            ),
             examples=['{"AIRAM": "node.labels.custom==true"}'],
         ),
     ] = DEFAULT_FACTORY
@@ -51,9 +55,15 @@ class PlacementSettings(BaseCustomSettings):
         Json[dict[DockerLabelKey, str]],
         Field(
             default_factory=lambda: "{}",
-            description="Dynamic sidecar custom placement labels for flexible node targeting. Keys must be from: "
-            + ", ".join(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
-            + ". Values are template strings supporting: {user_id}, {project_id}, {product_name}, {node_id}, {group_id}, {wallet_id}. Missing template values cause the label to be skipped.",
+            description=(
+                "Dynamic sidecar custom placement labels for flexible node targeting. Keys must be from: "
+                + ", ".join(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
+                + (
+                    ". Values are template strings supporting: "
+                    "{user_id}, {project_id}, {product_name}, {node_id}, {group_id}, {wallet_id}. "
+                    "Missing template values cause the label to be skipped."
+                )
+            ),
             examples=['{{"product-name": "platform", "user-id": "user_{user_id}"}}'],
         ),
     ] = DEFAULT_FACTORY
@@ -103,7 +113,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_SC_BOOT_MODE: Annotated[
         BootModeEnum,
         Field(
-            description="Boot mode used for the dynamic-sidecar services By defaults, it uses the same boot mode set for the director-v2",
+            description=(
+                "Boot mode used for the dynamic-sidecar services By defaults, it uses the same boot mode set for "
+                "the director-v2"
+            ),
             validation_alias=AliasChoices("DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"),
         ),
     ]
@@ -111,7 +124,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_LOG_LEVEL: Annotated[
         str,
         Field(
-            description="log level of the dynamic sidecar If defined, it captures global env vars LOG_LEVEL and LOGLEVEL from the director-v2 service",
+            description=(
+                "log level of the dynamic sidecar If defined, it captures global env vars LOG_LEVEL and LOGLEVEL "
+                "from the director-v2 service"
+            ),
             validation_alias=AliasChoices("DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = "WARNING"
@@ -148,7 +164,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Annotated[
         Path | None,
         Field(
-            description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
+            description=(
+                "Host path to the dynamic-sidecar project. Used as source path to mount to the "
+                "dynamic-sidecar [DEVELOPMENT ONLY]"
+            ),
             examples=["osparc-simcore/services/dynamic-sidecar"],
         ),
     ] = None
@@ -158,18 +177,13 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         Field(description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]"),
     ] = DEFAULT_FASTAPI_PORT
 
-    DYNAMIC_SIDECAR_USER_SERVICES_TRACING: Annotated[
-        Json[dict] | None,
-        Field(
-            default=None,
-            description="JSON settings for collecting traces from user services via injected OTEL Collector. If set, enables user service tracing.",
-        ),
-    ]
-
     DYNAMIC_SIDECAR_EXPOSE_PORT: Annotated[
         bool,
         Field(
-            description="Publishes the service on localhost for debugging and testing [DEVELOPMENT ONLY] Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc where 30023 is the host published port",
+            description=(
+                "Publishes the service on localhost for debugging and testing [DEVELOPMENT ONLY] Can be used to access"
+                "swagger doc from the host as http://127.0.0.1:30023/dev/doc where 30023 is the host published port"
+            ),
             validate_default=True,
         ),
     ] = False

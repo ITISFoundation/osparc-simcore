@@ -266,7 +266,7 @@ async def remove_user_services(
         _raise_for_errors(result, "down")
 
         # drain remaining traces after containers have stopped
-        if settings.are_user_services_traces_enabled:
+        if settings.is_tracing_enabled:
             forwarder: UserServicesTraceForwarder = app.state.user_services_trace_forwarder
             await forwarder.drain_remaining_traces()
 

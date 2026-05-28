@@ -210,10 +210,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
 
-    if (
-        application_settings.are_user_services_traces_enabled
-        and application_settings.DYNAMIC_SIDECAR_TRACING is not None
-    ):
+    if application_settings.is_tracing_enabled:
         setup_user_services_tracing(app)
 
     if tracing_config.tracing_enabled:

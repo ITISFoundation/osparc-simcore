@@ -18,6 +18,7 @@ from .settings import ApplicationSettings, UserServiceTracingSettings
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
 _OTEL_COLLECTOR_SERVICE_NAME: Final[str] = "dy-otel-collector"
+_TEMPLATE_DIRECTIVE_NUM_PARTS: Final[int] = 2
 
 _logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ def _apply_templating_directives(
     for match in matches:
         parts = match.split(".")
 
-        if len(parts) != 2:
+        if len(parts) != _TEMPLATE_DIRECTIVE_NUM_PARTS:
             continue  # templating will be skipped
 
         target_property = parts[0]
@@ -121,12 +122,12 @@ def _merge_env_vars(
             yield from env_vars.items()
 
     # pylint: disable=unnecessary-comprehension
-    dict_spec_env_vars = {k: v for k, v in _gen_parts_env_vars(compose_spec_env_vars)}
-    dict_settings_env_vars = {k: v for k, v in _gen_parts_env_vars(settings_env_vars)}
+    dict_spec_env_vars = dict(_gen_parts_env_vars(compose_spec_env_vars))
+    dict_settings_env_vars = dict(_gen_parts_env_vars(settings_env_vars))
 
     # overwrite spec vars with vars from settings
     for key, value in dict_settings_env_vars.items():
-        dict_spec_env_vars[key] = value
+        dict_spec_env_vars[key] = value  # noqa: PERF403
 
     # returns a single list of vars
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
@@ -296,7 +297,7 @@ class ComposeSpecValidation(NamedTuple):
     original_to_current_container_names: dict[str, str]
 
 
-async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
+async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements  # noqa: C901, PLR0915
     settings: ApplicationSettings,
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
@@ -353,7 +354,7 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
             settings_env_vars=service_settings_env_vars,
         )
 
-        # FIXME: tmp to comply with
+        # FIXME: tmp to comply with  # noqa: FIX001
         #  https://github.com/linuxserver/docker-baseimage-ubuntu/blob/bionic/root/etc/cont-init.d/10-adduser
         service_content["environment"].append(f"PUID={os.getuid()}")
         service_content["environment"].append(f"PGID={os.getgid()}")
@@ -378,9 +379,8 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
         service_content["volumes"] = service_volumes
 
     # inject OTEL Collector for user service tracing
-    if settings.are_user_services_traces_enabled:
+    if settings.is_tracing_enabled:
         tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
-        assert tracing_settings is not None  # nosec
 
         traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
         user_service_keys = list(spec_services.keys())
