@@ -40,11 +40,8 @@ from settings_library.utils_logging import MixinLoggingSettings
 class ResourceTrackingSettings(BaseApplicationSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: Annotated[
         timedelta,
-        Field(
-            default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
-            description="each time the status of the service is propagated",
-        ),
-    ]
+        Field(description="each time the status of the service is propagated"),
+    ] = DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL
 
     _validate_resource_tracking_heartbeat_interval = validate_numeric_string_as_timedelta(
         "RESOURCE_TRACKING_HEARTBEAT_INTERVAL"
@@ -260,13 +257,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DY_SIDECAR_USER_SERVICES_TRACING_ENABLED: Annotated[
         bool,
         Field(
-            default=False,
             description=(
                 "per-service opt-in flag for OTEL trace collection "
                 "(set by director-v2 from simcore.service.tracing label)"
             ),
         ),
-    ]
+    ] = False
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
