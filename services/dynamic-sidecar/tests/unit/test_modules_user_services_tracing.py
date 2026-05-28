@@ -56,10 +56,12 @@ def tracing_settings(
 
 @pytest.fixture
 def platform_tracing_settings() -> TracingSettings:
-    return TracingSettings(
-        TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT="http://otel-collector.internal",
-        TRACING_OPENTELEMETRY_COLLECTOR_PORT=4318,
-        TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=1.0,
+    return TypeAdapter(TracingSettings).validate_python(
+        {
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://otel-collector.internal",
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT": 4318,
+            "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": 1.0,
+        }
     )
 
 

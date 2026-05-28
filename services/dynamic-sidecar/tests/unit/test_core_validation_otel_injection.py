@@ -101,6 +101,17 @@ version: '3.7'
     """
 
 
+def _get_env_str(svc_data: dict) -> str:
+    env_list = svc_data.get("environment", {})
+    if isinstance(env_list, list):
+        return "\n".join(env_list)
+    return "\n".join(f"{k}={v}" for k, v in env_list.items())
+
+
+def _has_otel_collector(services: dict) -> bool:
+    return any("otel" in name for name in services)
+
+
 def test_generate_otel_collector_config_has_flush_interval(
     app_settings_with_tracing: ApplicationSettings,
     user_tracing_settings: UserServiceTracingSettings,
@@ -202,19 +213,14 @@ async def test_validate_compose_spec_with_tracing_injects_otel(
     services = parsed["services"]
 
     # Collector should be present (with remapped container name, possibly truncated)
-    collector_found = any("otel" in name for name in services)
+    collector_found = _has_otel_collector(services)
     assert collector_found, f"Collector not found in services: {list(services.keys())}"
 
     # Each user service should have OTEL env vars
     for svc_name, svc_data in services.items():
         if "otel" in svc_name:
             continue
-        env_list = svc_data.get("environment", {})
-        if isinstance(env_list, list):
-            env_str = "\n".join(env_list)
-        else:
-            env_str = "\n".join(f"{k}={v}" for k, v in env_list.items())
-
+        env_str = _get_env_str(svc_data)
         assert "OTEL_EXPORTER_OTLP_ENDPOINT" in env_str, f"Missing OTEL endpoint in {svc_name}"
         assert "OTEL_SERVICE_NAME" in env_str, f"Missing OTEL service name in {svc_name}"
         assert "OTEL_RESOURCE_ATTRIBUTES" in env_str, f"Missing OTEL resource attrs in {svc_name}"
@@ -243,11 +249,7 @@ async def test_validate_compose_spec_without_tracing_no_otel(
     assert not collector_found
 
     for svc_data in services.values():
-        env_list = svc_data.get("environment", {})
-        if isinstance(env_list, list):
-            env_str = "\n".join(env_list)
-        else:
-            env_str = "\n".join(f"{k}={v}" for k, v in env_list.items())
+        env_str = _get_env_str(svc_data)
         assert "OTEL_EXPORTER_OTLP_ENDPOINT" not in env_str
 
 
