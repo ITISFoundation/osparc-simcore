@@ -15,6 +15,7 @@ import aiofiles
 import aiofiles.os
 import httpx
 from fastapi import FastAPI, status
+from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_catch
 from settings_library.tracing import TracingSettings
 from yarl import URL
@@ -244,3 +245,9 @@ def setup_user_services_tracing(app: FastAPI) -> None:
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+
+def is_user_services_tracing_enabled(app: FastAPI) -> bool:
+    settings: ApplicationSettings = app.state.settings
+    tracing_config = get_tracing_config(app)
+    return tracing_config.tracing_enabled and settings.DY_SIDECAR_USER_SERVICES_TRACING_ENABLED

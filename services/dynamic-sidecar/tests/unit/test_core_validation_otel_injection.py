@@ -23,6 +23,7 @@ from simcore_service_dynamic_sidecar.core.validation import (
     get_and_validate_compose_spec,
 )
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.modules.user_services_tracing import is_user_services_tracing_enabled
 
 
 @pytest.fixture
@@ -45,15 +46,23 @@ def mock_environment_with_tracing(
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://otel-collector.internal",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
             "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": "1.0",
+            "DY_SIDECAR_USER_SERVICES_TRACING_ENABLED": "True",
         },
     )
 
 
 @pytest.fixture
-def app_settings_with_tracing(
+def app_with_tracing(
     mock_environment_with_tracing: EnvVarsDict,
+) -> FastAPI:
+    return create_app()
+
+
+@pytest.fixture
+def app_settings_with_tracing(
+    app_with_tracing: FastAPI,
 ) -> ApplicationSettings:
-    return create_app().state.settings
+    return app_with_tracing.state.settings
 
 
 @pytest.fixture
@@ -175,13 +184,19 @@ def test_inject_otel_collector_adds_service(
 
 async def test_validate_compose_spec_with_tracing_injects_otel(
     mock_get_volume_by_label: None,
+    app_with_tracing: FastAPI,
     app_settings_with_tracing: ApplicationSettings,
     simple_compose_spec: str,
     fake_mounted_volumes: MountedVolumes,
 ):
-    assert app_settings_with_tracing.is_tracing_enabled
+    assert app_settings_with_tracing.DY_SIDECAR_USER_SERVICES_TRACING_ENABLED
 
-    result = await get_and_validate_compose_spec(app_settings_with_tracing, simple_compose_spec, fake_mounted_volumes)
+    result = await get_and_validate_compose_spec(
+        app_settings_with_tracing,
+        simple_compose_spec,
+        fake_mounted_volumes,
+        is_user_services_tracing_enabled=is_user_services_tracing_enabled(app_with_tracing),
+    )
 
     parsed = yaml.safe_load(result.compose_spec)
     services = parsed["services"]
@@ -213,9 +228,13 @@ async def test_validate_compose_spec_without_tracing_no_otel(
 ):
     """Without tracing settings, no OTEL collector should be injected."""
     settings = app.state.settings
-    assert not settings.is_tracing_enabled
 
-    result = await get_and_validate_compose_spec(settings, simple_compose_spec, fake_mounted_volumes)
+    result = await get_and_validate_compose_spec(
+        settings,
+        simple_compose_spec,
+        fake_mounted_volumes,
+        is_user_services_tracing_enabled=is_user_services_tracing_enabled(app),
+    )
 
     parsed = yaml.safe_load(result.compose_spec)
     services = parsed["services"]

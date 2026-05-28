@@ -157,10 +157,17 @@ def fake_mounted_volumes() -> MountedVolumes:
     )
 
 
+@pytest.mark.parametrize("is_user_services_tracing_enabled", [True, False])
 async def test_regression_validate_compose_spec(
     mock_get_volume_by_label: None,
     app: FastAPI,
     no_internet_spec: str,
     fake_mounted_volumes: MountedVolumes,
+    is_user_services_tracing_enabled: bool,
 ):
-    await get_and_validate_compose_spec(app.state.settings, no_internet_spec, fake_mounted_volumes)
+    await get_and_validate_compose_spec(
+        app.state.settings,
+        no_internet_spec,
+        fake_mounted_volumes,
+        is_user_services_tracing_enabled=is_user_services_tracing_enabled,
+    )

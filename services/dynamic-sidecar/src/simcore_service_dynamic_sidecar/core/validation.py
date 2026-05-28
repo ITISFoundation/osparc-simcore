@@ -301,6 +301,8 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements 
     settings: ApplicationSettings,
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
+    *,
+    is_user_services_tracing_enabled: bool,
 ) -> ComposeSpecValidation:
     """
     Validates what looks like a docker compose spec and injects
@@ -379,7 +381,7 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements 
         service_content["volumes"] = service_volumes
 
     # inject OTEL Collector for user service tracing
-    if settings.is_tracing_enabled:
+    if is_user_services_tracing_enabled:
         tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
 
         traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)

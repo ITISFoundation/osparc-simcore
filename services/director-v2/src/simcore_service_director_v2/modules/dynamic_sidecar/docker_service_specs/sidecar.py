@@ -179,6 +179,7 @@ def _get_environment_variables(
         "DYNAMIC_SIDECAR_TRACING": (
             app_settings.DIRECTOR_V2_TRACING.json() if app_settings.DIRECTOR_V2_TRACING else "null"
         ),
+        "DY_SIDECAR_USER_SERVICES_TRACING_ENABLED": f"{scheduler_data.tracing}",
         # For background info on this special env-var above, see
         # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
@@ -426,7 +427,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         has_quota_support=has_quota_support,
         rpc_client=rpc_client,
         user_extra_properties=user_extra_properties,
-        tracing_enabled=app_settings.DIRECTOR_V2_TRACING is not None,
+        tracing_enabled=app_settings.DIRECTOR_V2_TRACING is not None and scheduler_data.tracing,
     )
 
     ports = _get_ports(dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings)

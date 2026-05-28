@@ -255,15 +255,22 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
+    DY_SIDECAR_USER_SERVICES_TRACING_ENABLED: Annotated[
+        bool,
+        Field(
+            default=False,
+            description=(
+                "per-service opt-in flag for OTEL trace collection "
+                "(set by director-v2 from simcore.service.tracing label)"
+            ),
+        ),
+    ]
+
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
         return (  # pylint: disable=no-member
             self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
         )
-
-    @property
-    def is_tracing_enabled(self) -> bool:
-        return self.DYNAMIC_SIDECAR_TRACING is not None
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod

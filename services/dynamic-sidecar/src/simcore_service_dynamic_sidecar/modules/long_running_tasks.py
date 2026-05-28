@@ -62,7 +62,7 @@ from .long_running_tasks_utils import (
     run_before_shutdown_actions,
 )
 from .resource_tracking import send_service_started, send_service_stopped
-from .user_services_tracing import UserServicesTraceForwarder
+from .user_services_tracing import UserServicesTraceForwarder, is_user_services_tracing_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -266,7 +266,7 @@ async def remove_user_services(
         _raise_for_errors(result, "down")
 
         # drain remaining traces after containers have stopped
-        if settings.is_tracing_enabled:
+        if is_user_services_tracing_enabled(app):
             forwarder: UserServicesTraceForwarder = app.state.user_services_trace_forwarder
             await forwarder.drain_remaining_traces()
 

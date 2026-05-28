@@ -1,9 +1,9 @@
 # pylint: disable=unsubscriptable-object
 
-from enum import Enum
+from enum import StrEnum
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.json_serialization import json_dumps
@@ -173,7 +173,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     },
                     # environments
                     {"name": "env", "type": "string", "value": ["DISPLAY=:0"]},
-                    # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5
+                    # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5  # noqa: E501
                     {"name": "ports", "type": "int", "value": 8888},
                     {
                         "name": "resources",
@@ -278,7 +278,10 @@ class PathMappingsLabel(BaseModel):
             state_paths: list[Path] | None = info.data.get("state_paths")
             path = Path(path_str)
             if not (path in (inputs_path, outputs_path) or (state_paths is not None and path in state_paths)):
-                msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
+                msg = (
+                    f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, "
+                    f"state_paths={state_paths!r}"
+                )
                 raise ValueError(msg)
         output: str | None = v
         return output
@@ -338,10 +341,10 @@ class PathMappingsLabel(BaseModel):
     model_config = _BaseConfig | ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-ComposeSpecLabelDict: TypeAlias = dict[str, Any]
+type ComposeSpecLabelDict = dict[str, Any]
 
 
-class RestartPolicy(str, Enum):
+class RestartPolicy(StrEnum):
     """Content of "simcore.service.restart-policy" label"""
 
     NO_RESTART = "no-restart"
@@ -440,6 +443,14 @@ class DynamicSidecarServiceLabels(BaseModel):
             default_factory=CallbacksMapping,
         ),
     ] = DEFAULT_FACTORY
+
+    tracing: Annotated[
+        bool,
+        Field(
+            alias="simcore.service.tracing",
+            description="if True, enables OTEL trace collection for this service",
+        ),
+    ] = False
 
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
@@ -655,13 +666,17 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                                 "version": "2.3",
                                 "services": {
                                     "rt-web": {
-                                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
+                                        "image": (
+                                            "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}"
+                                        ),
                                         "init": True,
                                         "depends_on": ["s4l-core"],
                                         "storage_opt": {"size": "10M"},
                                     },
                                     "s4l-core": {
-                                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
+                                        "image": (
+                                            "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}"
+                                        ),
                                         "runtime": "nvidia",
                                         "storage_opt": {"size": "5G"},
                                         "init": True,
