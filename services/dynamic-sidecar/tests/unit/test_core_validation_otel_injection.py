@@ -171,7 +171,7 @@ def test_inject_otel_collector_adds_service(
 
     assert _OTEL_COLLECTOR_SERVICE_NAME in parsed_spec["services"]
     collector = parsed_spec["services"][_OTEL_COLLECTOR_SERVICE_NAME]
-    assert collector["image"] == "otel/opentelemetry-collector:0.100.0"
+    assert collector["image"] == "otel/opentelemetry-collector:0.144.0"
     assert collector["stop_grace_period"] == "15s"
     assert "depends_on" not in collector
     assert "/fake/mount:/traces" in collector["volumes"]

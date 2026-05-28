@@ -22,7 +22,7 @@ from simcore_service_dynamic_sidecar.modules.user_services_tracing import (
 _DEFAULT_TRACING_OVERRIDES: dict[str, Any] = {
     "USER_SERVICES_TRACING_SCRAPE_INTERVAL": 0.1,
     "USER_SERVICES_TRACING_MAX_BATCH_SIZE": TypeAdapter(ByteSize).validate_python("1MiB"),
-    "USER_SERVICES_TRACING_COLLECTOR_IMAGE": "otel/opentelemetry-collector:0.100.0",
+    "USER_SERVICES_TRACING_COLLECTOR_IMAGE": "otel/opentelemetry-collector:0.144.0",
     "USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB": 10,
     "USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS": 5,
     "USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL": 10,
