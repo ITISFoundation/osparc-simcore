@@ -18,6 +18,7 @@ from models_library.functions_errors import (
     FunctionHasJobsCannotDeleteError,
     FunctionIDNotFoundError,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -38,7 +39,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import ColumnElement, func
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups.api import list_all_user_groups_ids
 from ..users import users_service
 from ._functions_permissions_repository import (
     _internal_set_group_permissions,
@@ -57,6 +57,7 @@ async def create_function(  # noqa: PLR0913
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_class: FunctionClass,
     class_specific_data: dict,
@@ -71,6 +72,7 @@ async def create_function(  # noqa: PLR0913
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTIONS],
         )
@@ -113,6 +115,7 @@ async def get_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
@@ -121,6 +124,7 @@ async def get_function(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_id,
             object_type="function",
@@ -159,11 +163,12 @@ def _create_list_functions_attributes_filters(
     return attributes_filters
 
 
-async def list_functions(
+async def list_functions(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
@@ -177,10 +182,10 @@ async def list_functions(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[FunctionsApiAccessRights.READ_FUNCTIONS],
         )
-        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
         attributes_filters = _create_list_functions_attributes_filters(
             filter_by_function_class=filter_by_function_class,
             search_by_multi_columns=search_by_multi_columns,
@@ -240,6 +245,7 @@ async def delete_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_id: FunctionID,
     force: bool = False,
@@ -249,6 +255,7 @@ async def delete_function(
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_id,
             object_type="function",
@@ -283,6 +290,7 @@ async def update_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_id: FunctionID,
     function: FunctionUpdate,
@@ -292,6 +300,7 @@ async def update_function(
             app,
             transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_id,
             object_type="function",

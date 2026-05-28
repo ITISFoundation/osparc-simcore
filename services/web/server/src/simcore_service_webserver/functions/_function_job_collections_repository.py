@@ -8,6 +8,7 @@ from models_library.functions import (
     RegisteredFunctionJobCollectionDB,
 )
 from models_library.functions_errors import FunctionJobCollectionIDNotFoundError
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
@@ -33,7 +34,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups.api import list_all_user_groups_ids
 from ..users import users_service
 from ._functions_permissions_repository import (
     _internal_set_group_permissions,
@@ -50,6 +50,7 @@ async def create_function_job_collection(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     title: str,
     description: str,
@@ -60,6 +61,7 @@ async def create_function_job_collection(
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOB_COLLECTIONS,
@@ -70,6 +72,7 @@ async def create_function_job_collection(
                 app,
                 connection=transaction,
                 user_id=user_id,
+                user_groups=user_groups,
                 product_name=product_name,
                 object_type="function_job",
                 object_id=job_id,
@@ -134,6 +137,7 @@ async def list_function_job_collections(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
@@ -152,6 +156,7 @@ async def list_function_job_collections(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[
                 FunctionsApiAccessRights.READ_FUNCTION_JOB_COLLECTIONS,
@@ -174,7 +179,6 @@ async def list_function_job_collections(
                 .where(function_jobs_table.c.function_uuid == function_id)
             )
             filter_condition = function_job_collections_table.c.uuid.in_(subquery)
-        user_groups = await list_all_user_groups_ids(app, conn, user_id=user_id)
 
         access_subquery = (
             function_job_collections_access_rights_table.select()
@@ -227,6 +231,7 @@ async def get_function_job_collection(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
@@ -235,6 +240,7 @@ async def get_function_job_collection(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_job_collection_id,
             object_type="function_job_collection",
@@ -274,6 +280,7 @@ async def delete_function_job_collection(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_job_collection_id: FunctionID,
 ) -> None:
@@ -282,6 +289,7 @@ async def delete_function_job_collection(
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_job_collection_id,
             object_type="function_job_collection",
