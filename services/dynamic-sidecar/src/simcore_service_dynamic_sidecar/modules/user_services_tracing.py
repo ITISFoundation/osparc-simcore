@@ -247,6 +247,11 @@ def setup_user_services_tracing(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+def get_user_services_trace_forwarder(app: FastAPI) -> UserServicesTraceForwarder:
+    assert hasattr(app.state, "user_services_trace_forwarder"), "Tracing not set up yet"
+    return app.state.user_services_trace_forwarder
+
+
 def is_user_services_tracing_enabled(app: FastAPI) -> bool:
     settings: ApplicationSettings = app.state.settings
     tracing_config = get_tracing_config(app)
