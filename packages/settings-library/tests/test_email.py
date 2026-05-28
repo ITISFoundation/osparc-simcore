@@ -345,26 +345,23 @@ def test_smtp_settings_with_locals(
     cfg = {
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
-        "SMTP_LOCAL_PARTS": {"INFO": "contact", "SUPPORT": "help"},
+        "SMTP_LOCAL_PARTS": {"SUPPORT": "help", "NO_REPLY": "noreply"},
     }
     settings = SMTPSettings(**cfg)
-    assert settings.SMTP_LOCAL_PARTS.INFO == "contact"
     assert settings.SMTP_LOCAL_PARTS.SUPPORT == "help"
-    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "no-reply"
+    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "noreply"
 
 
-def test_smtp_settings_locals_defaults(
+def test_smtp_settings_locals_required(
     all_env_devel_undefined: None,
 ):
-    """SMTPSettings uses SMTPLocals defaults when SMTP_LOCAL_PARTS is not provided."""
+    """SMTPSettings fails when SMTP_LOCAL_PARTS is not provided."""
     cfg = {
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
     }
-    settings = SMTPSettings(**cfg)
-    assert settings.SMTP_LOCAL_PARTS.INFO == "info"
-    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "support"
-    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "no-reply"
+    with pytest.raises(ValidationError):
+        SMTPSettings(**cfg)
 
 
 def test_smtp_settings_locals_ignores_unknown_keys(
@@ -374,10 +371,10 @@ def test_smtp_settings_locals_ignores_unknown_keys(
     cfg = {
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
-        "SMTP_LOCAL_PARTS": {"INFO": "contact", "INVALID": "garbage"},
+        "SMTP_LOCAL_PARTS": {"SUPPORT": "help", "NO_REPLY": "noreply", "INVALID": "garbage"},
     }
     settings = SMTPSettings(**cfg)
-    assert settings.SMTP_LOCAL_PARTS.INFO == "contact"
+    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "help"
     assert not hasattr(settings.SMTP_LOCAL_PARTS, "INVALID")
 
 
@@ -391,11 +388,10 @@ def test_smtp_settings_locals_with_envvars(
         {
             "SMTP_HOST": "test",
             "SMTP_PORT": "113",
-            "SMTP_LOCAL_PARTS": json.dumps({"INFO": "contact", "SUPPORT": "helpdesk", "EXTRA": "ignored"}),
+            "SMTP_LOCAL_PARTS": json.dumps({"SUPPORT": "helpdesk", "NO_REPLY": "noreply", "EXTRA": "ignored"}),
         },
     )
     settings = SMTPSettings.create_from_envs()
-    assert settings.SMTP_LOCAL_PARTS.INFO == "contact"
     assert settings.SMTP_LOCAL_PARTS.SUPPORT == "helpdesk"
-    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "no-reply"
+    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "noreply"
     assert not hasattr(settings.SMTP_LOCAL_PARTS, "EXTRA")
