@@ -301,26 +301,8 @@ class ComposeSpecValidation(NamedTuple):
     original_to_current_container_names: dict[str, str]
 
 
-async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements  # noqa: C901, PLR0915
-    settings: ApplicationSettings,
-    compose_file_content: str,
-    mounted_volumes: MountedVolumes,
-    *,
-    is_user_services_tracing_enabled: bool,
-) -> ComposeSpecValidation:
-    """
-    Validates what looks like a docker compose spec and injects
-    additional data to mainly make sure:
-    - no collisions occur between container names
-    - containers are located on the same docker network
-    - properly target environment variables formwarded via
-        settings on the service
-
-    Finally runs docker compose config to properly validate the result
-    """
-    _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
-    parsed_compose_spec = parse_compose_spec(compose_file_content)
-
+def _validate_compose_structure(parsed_compose_spec: Any, compose_file_content: str) -> None:
+    """Validates basic structure of parsed compose spec."""
     if parsed_compose_spec is None or not isinstance(parsed_compose_spec, dict):
         msg = f"{compose_file_content}\nProvided yaml is not valid!"
         raise InvalidComposeSpecError(msg)
@@ -334,12 +316,18 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements 
         msg = f"Provided spec version '{version}' is not supported"
         raise InvalidComposeSpecError(msg)
 
+
+async def _process_service_entries(
+    settings: ApplicationSettings,
+    spec_services: dict[str, Any],
+    mounted_volumes: MountedVolumes,
+) -> dict[str, str]:
+    """Processes each service: assigns container names, injects env vars and volumes.
+
+    Returns a mapping from service key to assigned container name.
+    """
     spec_services_to_container_name: dict[str, str] = {}
 
-    current_container_names: list[str] = []
-    original_to_current_container_names: dict[str, str] = {}
-
-    spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):
         service_content = spec_services[service]
 
@@ -348,9 +336,6 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements 
         container_name = _assemble_container_name(settings, service, user_given_container_name, index)
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
-
-        current_container_names.append(container_name)
-        original_to_current_container_names[service] = container_name
 
         # inject forwarded environment variables
         environment_entries = service_content.get("environment", [])
@@ -384,61 +369,102 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements 
 
         service_content["volumes"] = service_volumes
 
-    # inject OTEL Collector for user service tracing
-    if is_user_services_tracing_enabled:
-        tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
+    return spec_services_to_container_name
 
-        traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
-        user_service_keys = list(spec_services.keys())
 
-        collector_container_name = _inject_otel_collector(
-            parsed_compose_spec,
-            settings,
-            tracing_settings,
-            traces_volume_mount,
-            user_service_keys,
-        )
+async def _inject_tracing(
+    parsed_compose_spec: dict[str, Any],
+    settings: ApplicationSettings,
+    mounted_volumes: MountedVolumes,
+    spec_services_to_container_name: dict[str, str],
+) -> None:
+    """Injects OTEL collector and env vars into user services when tracing is enabled."""
+    tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
+    spec_services = parsed_compose_spec["services"]
 
-        # inject OTEL env vars into each user service
-        # NOTE: uses collector_container_name because service keys are remapped
-        # to container names below, and Docker Compose resolves DNS by service key
-        resource_attributes = _build_otel_resource_attributes(settings)
-        for service_key in user_service_keys:
-            service_env = spec_services[service_key].get("environment", [])
-            otel_env_vars = [
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{collector_container_name}:4318",
-                f"OTEL_SERVICE_NAME={spec_services_to_container_name[service_key]}",
-                f"OTEL_RESOURCE_ATTRIBUTES={resource_attributes}",
-            ]
-            service_env.extend(otel_env_vars)
+    traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
+    user_service_keys = list(spec_services.keys())
 
-        # track the collector in container names
-        spec_services_to_container_name[_OTEL_COLLECTOR_SERVICE_NAME] = collector_container_name
-        current_container_names.append(collector_container_name)
-        original_to_current_container_names[_OTEL_COLLECTOR_SERVICE_NAME] = collector_container_name
-
-    _connect_user_services(
+    collector_container_name = _inject_otel_collector(
         parsed_compose_spec,
-        allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
+        settings,
+        tracing_settings,
+        traces_volume_mount,
+        user_service_keys,
     )
 
-    # replace service_key with the container_name int the dict
+    # inject OTEL env vars into each user service
+    resource_attributes = _build_otel_resource_attributes(settings)
+    for service_key in user_service_keys:
+        service_env = spec_services[service_key].get("environment", [])
+        otel_env_vars = [
+            f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{collector_container_name}:4318",
+            f"OTEL_SERVICE_NAME={spec_services_to_container_name[service_key]}",
+            f"OTEL_RESOURCE_ATTRIBUTES={resource_attributes}",
+        ]
+        service_env.extend(otel_env_vars)
+
+    # track the collector in container names
+    spec_services_to_container_name[_OTEL_COLLECTOR_SERVICE_NAME] = collector_container_name
+
+
+def _remap_service_keys(
+    spec_services: dict[str, Any],
+    spec_services_to_container_name: dict[str, str],
+) -> None:
+    """Replaces service keys with container names in the services dict (in-place)."""
     for service_key in list(spec_services.keys()):
         container_name_service_key = spec_services_to_container_name[service_key]
         service_data = spec_services.pop(service_key)
 
         depends_on = service_data.get("depends_on", None)
         if depends_on is not None:
-            service_data["depends_on"] = [
-                # replaces with the container name
-                # if not found it leaves the old value
-                spec_services_to_container_name.get(x, x)
-                for x in depends_on
-            ]
+            service_data["depends_on"] = [spec_services_to_container_name.get(x, x) for x in depends_on]
 
         spec_services[container_name_service_key] = service_data
 
-    # transform back to string and return
+
+async def get_and_validate_compose_spec(
+    settings: ApplicationSettings,
+    compose_file_content: str,
+    mounted_volumes: MountedVolumes,
+    *,
+    is_user_services_tracing_enabled: bool,
+) -> ComposeSpecValidation:
+    """
+    Validates what looks like a docker compose spec and injects
+    additional data to mainly make sure:
+    - no collisions occur between container names
+    - containers are located on the same docker network
+    - properly target environment variables formwarded via
+        settings on the service
+
+    Finally runs docker compose config to properly validate the result
+    """
+    _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
+    parsed_compose_spec = parse_compose_spec(compose_file_content)
+
+    _validate_compose_structure(parsed_compose_spec, compose_file_content)
+
+    spec_services = parsed_compose_spec["services"]
+
+    # Phase 1: Process each service (container names, env vars, volumes)
+    spec_services_to_container_name = await _process_service_entries(settings, spec_services, mounted_volumes)
+
+    # Phase 2: Inject OTEL collector if tracing enabled
+    if is_user_services_tracing_enabled:
+        await _inject_tracing(parsed_compose_spec, settings, mounted_volumes, spec_services_to_container_name)
+
+    # Phase 3: Connect all user services to the shared network
+    _connect_user_services(
+        parsed_compose_spec,
+        allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
+    )
+
+    # Phase 4: Remap service keys → container names
+    _remap_service_keys(spec_services, spec_services_to_container_name)
+
+    # Phase 5: Apply templating and validate with docker compose
     validated_compose_file_content = yaml.safe_dump(parsed_compose_spec)
 
     compose_spec = _apply_templating_directives(
@@ -447,7 +473,6 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements 
         spec_services_to_container_name=spec_services_to_container_name,
     )
 
-    # validate against docker compose config
     result = await docker_compose_config(compose_spec)
 
     if not result.success:
@@ -459,8 +484,10 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements 
         msg = f"Invalid compose-specs:\n{result.message}"
         raise InvalidComposeSpecError(msg)
 
+    current_container_names = list(spec_services_to_container_name.values())
+
     return ComposeSpecValidation(
         compose_spec=compose_spec,
         current_container_names=current_container_names,
-        original_to_current_container_names=original_to_current_container_names,
+        original_to_current_container_names=dict(spec_services_to_container_name),
     )
