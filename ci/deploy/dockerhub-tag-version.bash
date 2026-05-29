@@ -5,70 +5,58 @@ set -o nounset   # abort on unbound variable
 set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
-my_dir="$(dirname "$0")"
+repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+
 # shellcheck source=/dev/null
-source "$my_dir/../../scripts/helpers/logger.bash"
+source "$repo_root/scripts/helpers/logger.bash"
 
 # check script needed variables
-if [ ! -v FROM_TAG_PREFIX ] || [ ! -v TO_TAG_PREFIX ] || [ ! -v GIT_TAG ]; then
-    error_exit "$LINENO" "incorrect use of script. FROM_TAG_PREFIX/TO_TAG_PREFIX (e.g. master, staging), and/or GIT_TAG not defined!"
+if [ ! -v FROM_DOCKER_TAG_PREFIX ] || [ ! -v TO_DOCKER_TAG_PREFIX ] || [ ! -v GIT_TAG ]; then
+    error_exit "$LINENO" "incorrect use of script. FROM_DOCKER_TAG_PREFIX/TO_DOCKER_TAG_PREFIX (e.g. master-github, staging-github), and/or GIT_TAG not defined!"
 fi
+
+cd "$repo_root"
 
 log_info "logging in dockerhub..."
 bash ci/helpers/dockerhub_login.bash
 
-log_info "finding the version in the docker hub registry..."
-# find and pull the tagged build
-# find the docker image tag
-export ORG=${DOCKER_REGISTRY}
+log_info "finding the source image tag in the registry..."
+export ORG="${DOCKER_REGISTRY}"
 export REPO="webserver"
-# FROM_TAG_PREFIX-DATE.GIT_SHA
-export TAG_PATTERN="^${FROM_TAG_PREFIX}-.+\..+"
-DOCKER_IMAGE_TAG=$(./ci/helpers/find_docker_image_tag_from_git_sha.bash | awk 'END{print}') || exit $?
-log_info "found image ${DOCKER_IMAGE_TAG}"
-export DOCKER_IMAGE_TAG
-log_info "pulling images ${DOCKER_IMAGE_TAG} from ${DOCKER_REGISTRY}"
-make pull-version tag-local
+# FROM_DOCKER_TAG_PREFIX-DATE.GIT_SHA
+export TAG_PATTERN="^${FROM_DOCKER_TAG_PREFIX}-.+\..+"
+source_tag="$(./ci/helpers/find_docker_image_tag_from_git_sha.bash | awk 'END{print}')" || exit $?
+log_info "found source image tag ${source_tag}"
 
-# show current images on system
-log_info "Before push"
-make info-images
+promote_registry_tag() {
+    local source_image="$1"
+    local destination_image="$2"
 
-# re-tag images to ${TO_TAG_PREFIX}-{GIT_TAG}-DATE.GIT_SHA
-readonly GIT_COMMIT_SHA=$(git show-ref -s "${GIT_TAG}")
-DOCKER_IMAGE_TAG="${TO_TAG_PREFIX}-${GIT_TAG}"-$(date --utc +"%Y-%m-%d--%H-%M")."${GIT_COMMIT_SHA}"
-export DOCKER_IMAGE_TAG
-log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
-make push-version
+    log_info "promoting ${source_image} -> ${destination_image}"
+    docker buildx imagetools create --tag "${destination_image}" "${source_image}"
+}
 
-# push latest image ${TO_TAG_PREFIX}-latest
-DOCKER_IMAGE_TAG="${TO_TAG_PREFIX}-latest"
-export DOCKER_IMAGE_TAG
-log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
-make push-version
+services="$(docker compose --file services/docker-compose-deploy.yml config --services)"
+readonly git_commit_sha="$(git show-ref -s "${GIT_TAG}")"
+versioned_image_tag="${TO_DOCKER_TAG_PREFIX}-${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").${git_commit_sha}"
+latest_image_tag="${TO_DOCKER_TAG_PREFIX}-latest"
 
-# push latest image to matching git tag if on git tag
-#
-# Explanation on how checking if a variable is set works with `set -o nounset`:
-#
-# - `${MY_ENV_VAR}`   : This would normally return the value of `MY_ENV_VAR`.
-#                       If `MY_ENV_VAR` is not set and `set -o nounset` is active, using this causes an error and the script would exit.
-# - `${MY_ENV_VAR+x}` : This is a form of parameter expansion. If `MY_ENV_VAR` is unset or null, this expands to nothing (i.e., it's an empty string).
-#                       If `MY_ENV_VAR` is set, this expands to `x`. Importantly, even if `MY_ENV_VAR` is unset, this will not cause an error even with `set -o nounset` active,
-#                       because you're not actually trying to use the value of an unset variable - you're just checking if it is set or not.
-# The `if [ ! -z ${MY_ENV_VAR+x} ]` line checks if `${MY_ENV_VAR+x}` is not an empty string (`! -z` checks for a non-empty string).
-# If `MY_ENV_VAR` is set, `${MY_ENV_VAR+x}` will be `x`, and the condition will be true. If `MY_ENV_VAR` is unset, `${MY_ENV_VAR+x}` will be an empty string, and the condition will be false.
-# `MY_ENV_VAR` is unset, this will not cause an error even with `set -o nounset` active.
+for service in ${services}; do
+    source_image="${DOCKER_REGISTRY}/${service}:${source_tag}"
 
-if [ ! -z ${GIT_TAG+x} ]; then
-    echo "GIT_TAG is '$GIT_TAG'"
-    DOCKER_IMAGE_TAG=${GIT_TAG}
-    export DOCKER_IMAGE_TAG
-    log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
-    make push-version
-else
-    echo "GIT_TAG is not set, we assume we are on the master branch."
-fi
+    promote_registry_tag "${source_image}" "${DOCKER_REGISTRY}/${service}:${versioned_image_tag}"
+done
 
+for service in ${services}; do
+    source_image="${DOCKER_REGISTRY}/${service}:${source_tag}"
+
+    promote_registry_tag "${source_image}" "${DOCKER_REGISTRY}/${service}:${latest_image_tag}"
+done
+
+for service in ${services}; do
+    source_image="${DOCKER_REGISTRY}/${service}:${source_tag}"
+
+    promote_registry_tag "${source_image}" "${DOCKER_REGISTRY}/${service}:${GIT_TAG}"
+done
 
 log_info "complete!"
