@@ -5,7 +5,7 @@ set -o nounset   # abort on unbound variable
 set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
-repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+repo_root="$(git rev-parse --show-toplevel)"
 
 # shellcheck source=/dev/null
 source "$repo_root/scripts/helpers/logger.bash"
