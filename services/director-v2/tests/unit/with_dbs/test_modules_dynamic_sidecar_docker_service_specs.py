@@ -243,6 +243,7 @@ def expected_dynamic_sidecar_spec(
                     ),
                     "DY_SIDECAR_USER_ID": "234",
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
+                    "DY_SIDECAR_USER_SERVICES_TRACING_ENABLED": "False",
                     "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": "True",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
