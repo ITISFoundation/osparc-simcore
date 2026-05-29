@@ -119,7 +119,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
     ] = "1/s"
 
-    NOTIFICATIONS_EMAIL: Annotated[
+    NOTIFICATIONS_SMTP_SETTINGS: Annotated[
         _DomainToSMTPSettings | None,
         Field(
             description=(
@@ -159,10 +159,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return LogLevel(cls.validate_log_level(value))
 
     @model_validator(mode="after")
-    def _worker_requires_email_settings(self) -> "ApplicationSettings":
-        if self.NOTIFICATIONS_WORKER_MODE and self.NOTIFICATIONS_EMAIL is None:
+    def _worker_requires_smtp_settings(self) -> "ApplicationSettings":
+        if self.NOTIFICATIONS_WORKER_MODE and self.NOTIFICATIONS_SMTP_SETTINGS is None:
             msg = (
-                "NOTIFICATIONS_EMAIL must be configured when "
+                "NOTIFICATIONS_SMTP_SETTINGS must be configured when "
                 "NOTIFICATIONS_WORKER_MODE is enabled "
                 "(per-domain SMTP settings are required by the worker)."
             )

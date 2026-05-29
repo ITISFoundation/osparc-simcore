@@ -1508,7 +1508,7 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
-      NOTIFICATIONS_EMAIL: ${SMTP_SETTINGS}
+      NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"

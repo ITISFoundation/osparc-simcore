@@ -95,7 +95,7 @@ def app_environment(
             **mock_environment,
             **mock_env_devel_environment,
             "NOTIFICATIONS_TRACING": "null",
-            "NOTIFICATIONS_EMAIL": json.dumps(
+            "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
                 {
                     "test-domain.com": {
                         "SMTP_HOST": "mailpit",

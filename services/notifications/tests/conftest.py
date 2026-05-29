@@ -69,7 +69,7 @@ def mock_environment(
             **docker_compose_service_environment_dict,
             "LOGLEVEL": "DEBUG",
             "SC_BOOT_MODE": BootModeEnum.DEBUG,
-            "NOTIFICATIONS_EMAIL": json.dumps(
+            "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
                 {
                     "test-domain.com": {
                         "SMTP_HOST": "mailpit",
