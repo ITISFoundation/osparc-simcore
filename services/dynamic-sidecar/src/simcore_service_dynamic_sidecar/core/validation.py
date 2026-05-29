@@ -345,8 +345,8 @@ async def _process_service_entries(
             settings_env_vars=service_settings_env_vars,
         )
 
-        # FIXME: tmp to comply with  # noqa: FIX001
-        #  https://github.com/linuxserver/docker-baseimage-ubuntu/blob/bionic/root/etc/cont-init.d/10-adduser
+        # LinuxServer.io base images use PUID/PGID to create a user with the host's UID/GID
+        # SEE https://github.com/linuxserver/docker-baseimage-ubuntu/blob/noble/root/etc/s6-overlay/s6-rc.d/init-adduser/run
         service_content["environment"].append(f"PUID={os.getuid()}")
         service_content["environment"].append(f"PGID={os.getgid()}")
 
