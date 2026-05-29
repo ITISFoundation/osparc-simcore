@@ -280,13 +280,6 @@ def _run_exposure_analysis_step(
     s4l_postpro_iframe = service_running.iframe_locator
     assert s4l_postpro_iframe
 
-    with log_context(logging.INFO, "Post process", logger=log_ctx.logger):
-        # click on the postpro mode button
-        s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
-        # click on the surface viewer
-        s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
-        s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()
-
 
 def test_classic_ti_plan(
     page: Page,
