@@ -591,7 +591,7 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 
 .PHONY: promote-version
-promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-GIT_TAG ## Promotes registry images from one docker tag family to another without loading images locally
+promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-GIT_TAG guard-DOCKER_USERNAME guard-DOCKER_PASSWORD guard-DOCKER_REGISTRY guard-OWNER ## Promotes registry images from one docker tag family to another without loading images locally
 	# Delegates implementation to ci/deploy/dockerhub-tag-version.bash
 	@bash ci/deploy/dockerhub-tag-version.bash
 

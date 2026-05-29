@@ -28,14 +28,6 @@ export TAG_PATTERN="^${FROM_DOCKER_TAG_PREFIX}-.+\..+"
 source_tag="$(./ci/helpers/find_docker_image_tag_from_git_sha.bash | awk 'END{print}')" || exit $?
 log_info "found source image tag ${source_tag}"
 
-promote_registry_tag() {
-    local source_image="$1"
-    local destination_image="$2"
-
-    log_info "promoting ${source_image} -> ${destination_image}"
-    docker buildx imagetools create --tag "${destination_image}" "${source_image}"
-}
-
 services="$(docker compose --file services/docker-compose-deploy.yml config --services)"
 readonly git_commit_sha="$(git show-ref -s "${GIT_TAG}")"
 versioned_image_tag="${TO_DOCKER_TAG_PREFIX}-${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").${git_commit_sha}"
@@ -43,20 +35,16 @@ latest_image_tag="${TO_DOCKER_TAG_PREFIX}-latest"
 
 for service in ${services}; do
     source_image="${DOCKER_REGISTRY}/${service}:${source_tag}"
+    service_versioned_tag="${DOCKER_REGISTRY}/${service}:${versioned_image_tag}"
+    service_latest_tag="${DOCKER_REGISTRY}/${service}:${latest_image_tag}"
+    service_git_tag="${DOCKER_REGISTRY}/${service}:${GIT_TAG}"
 
-    promote_registry_tag "${source_image}" "${DOCKER_REGISTRY}/${service}:${versioned_image_tag}"
-done
-
-for service in ${services}; do
-    source_image="${DOCKER_REGISTRY}/${service}:${source_tag}"
-
-    promote_registry_tag "${source_image}" "${DOCKER_REGISTRY}/${service}:${latest_image_tag}"
-done
-
-for service in ${services}; do
-    source_image="${DOCKER_REGISTRY}/${service}:${source_tag}"
-
-    promote_registry_tag "${source_image}" "${DOCKER_REGISTRY}/${service}:${GIT_TAG}"
+    log_info "promoting ${source_image} -> ${service_versioned_tag} ${service_latest_tag} ${service_git_tag}"
+    docker buildx imagetools create \
+        --tag "${service_versioned_tag}" \
+        --tag "${service_latest_tag}" \
+        --tag "${service_git_tag}" \
+        "${source_image}"
 done
 
 log_info "complete!"
