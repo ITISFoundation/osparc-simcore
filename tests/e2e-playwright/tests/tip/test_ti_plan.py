@@ -182,9 +182,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
             species_selector = ti_iframe.locator("select").first
             options = species_selector.locator("option")
             assert options.count() == 2, f"Expected 2 species options in lite product, got {options.count()}"
-            option_texts = [options.nth(i).inner_text() for i in range(options.count())]
-            assert "Human - MIDA anisotropic" in option_texts
-            assert "Mouse" in option_texts
+            expect(options).to_have_values(["Human - MIDA anisotropic", "Mouse"])
 
     with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
         run_button = ti_iframe.get_by_role("button", name="Run Optimization")
