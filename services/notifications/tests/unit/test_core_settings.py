@@ -53,28 +53,28 @@ def test_per_domain_smtp_settings_for_email_unknown_domain_raises():
         per_domain.get_settings_for_email("user@unknown.example")
 
 
-def test_worker_mode_requires_email_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("NOTIFICATIONS_WORKER_MODE", "true")
-    monkeypatch.delenv("NOTIFICATIONS_EMAIL", raising=False)
+    monkeypatch.delenv("NOTIFICATIONS_SMTP_SETTINGS", raising=False)
 
-    with pytest.raises(ValidationError, match="NOTIFICATIONS_EMAIL must be configured"):
+    with pytest.raises(ValidationError, match="NOTIFICATIONS_SMTP_SETTINGS must be configured"):
         ApplicationSettings.create_from_envs()
 
 
-def test_worker_mode_with_email_settings_is_valid(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+def test_worker_mode_with_smtp_settings_is_valid(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("NOTIFICATIONS_WORKER_MODE", "true")
 
     settings = ApplicationSettings.create_from_envs()
 
     assert settings.NOTIFICATIONS_WORKER_MODE is True
-    assert settings.NOTIFICATIONS_EMAIL is not None
+    assert settings.NOTIFICATIONS_SMTP_SETTINGS is not None
 
 
-def test_non_worker_mode_allows_missing_email_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+def test_non_worker_mode_allows_missing_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("NOTIFICATIONS_WORKER_MODE", "false")
-    monkeypatch.delenv("NOTIFICATIONS_EMAIL", raising=False)
+    monkeypatch.delenv("NOTIFICATIONS_SMTP_SETTINGS", raising=False)
 
     settings = ApplicationSettings.create_from_envs()
 
     assert settings.NOTIFICATIONS_WORKER_MODE is False
-    assert settings.NOTIFICATIONS_EMAIL is None
+    assert settings.NOTIFICATIONS_SMTP_SETTINGS is None
