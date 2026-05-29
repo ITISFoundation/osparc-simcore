@@ -15,6 +15,10 @@ if [ ! -v FROM_DOCKER_TAG_PREFIX ] || [ ! -v TO_DOCKER_TAG_PREFIX ] || [ ! -v GI
     error_exit "$LINENO" "incorrect use of script. FROM_DOCKER_TAG_PREFIX/TO_DOCKER_TAG_PREFIX (e.g. master-github, staging-github), and/or GIT_TAG not defined!"
 fi
 
+if [ -z "${FROM_DOCKER_TAG_PREFIX:-}" ] || [ -z "${TO_DOCKER_TAG_PREFIX:-}" ] || [ -z "${GIT_TAG:-}" ]; then
+    error_exit "$LINENO" "incorrect use of script. FROM_DOCKER_TAG_PREFIX/TO_DOCKER_TAG_PREFIX/GIT_TAG must be non-empty!"
+fi
+
 cd "$repo_root"
 
 log_info "logging in dockerhub..."
