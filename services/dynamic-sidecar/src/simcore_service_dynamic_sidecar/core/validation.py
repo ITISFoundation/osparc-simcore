@@ -283,13 +283,14 @@ def _inject_otel_collector(
     # Make user services depend on collector so Docker Compose stops them FIRST
     # (reverse dependency order), giving the collector time to receive final spans
     # before it gets SIGTERM.
+    # NOTE: _remap_service_keys always flattens depends_on to a list (dropping
+    # long-form conditions), so we normalise to list here unconditionally.
     for svc_name in user_service_names:
         svc_data = parsed_compose_spec["services"][svc_name]
         depends_on = svc_data.get("depends_on", [])
-        if isinstance(depends_on, list):
-            depends_on.append(_OTEL_COLLECTOR_SERVICE_NAME)
-        else:
-            depends_on = [_OTEL_COLLECTOR_SERVICE_NAME]
+        if isinstance(depends_on, dict):
+            depends_on = list(depends_on)
+        depends_on.append(_OTEL_COLLECTOR_SERVICE_NAME)
         svc_data["depends_on"] = depends_on
 
     return collector_container_name

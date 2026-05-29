@@ -193,6 +193,41 @@ def test_inject_otel_collector_adds_service(
         assert parsed_spec["services"][svc_key]["depends_on"] == [_OTEL_COLLECTOR_SERVICE_NAME]
 
 
+def test_inject_otel_collector_normalises_long_form_depends_on_to_list(
+    app_settings_with_tracing: ApplicationSettings,
+    user_tracing_settings: UserServiceTracingSettings,
+):
+    """Long-form depends_on mapping is normalised to a list (conditions are dropped
+    downstream by _remap_service_keys anyway)."""
+    parsed_spec = {
+        "version": "3.7",
+        "services": {
+            "web-app": {
+                "image": "test:1.0",
+                "environment": [],
+                "depends_on": {
+                    "db": {"condition": "service_healthy"},
+                    "redis": {"condition": "service_started"},
+                },
+            },
+        },
+    }
+
+    _inject_otel_collector(
+        parsed_spec,
+        app_settings_with_tracing,
+        user_tracing_settings,
+        "/fake/mount:/traces",
+        ["web-app"],
+    )
+
+    depends_on = parsed_spec["services"]["web-app"]["depends_on"]
+    assert isinstance(depends_on, list)
+    assert "db" in depends_on
+    assert "redis" in depends_on
+    assert _OTEL_COLLECTOR_SERVICE_NAME in depends_on
+
+
 async def test_validate_compose_spec_with_tracing_injects_otel(
     mock_get_volume_by_label: None,
     app_with_tracing: FastAPI,
