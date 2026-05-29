@@ -5,8 +5,8 @@ from inspect import signature
 from pathlib import Path
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI
-from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
@@ -143,10 +143,10 @@ def no_internet_spec(project_tests_dir: Path) -> str:
 
 
 @pytest.fixture
-def fake_mounted_volumes() -> MountedVolumes:
+def fake_mounted_volumes(faker: Faker) -> MountedVolumes:
     return MountedVolumes(
         service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
-        node_id=NodeID("a019b83f-7cce-46bf-90cf-d02f7f0f089a"),
+        node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/"),
         outputs_path=Path("/"),
         user_preferences_path=None,

@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 import yaml
+from faker import Faker
 from fastapi import FastAPI
-from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -73,12 +73,12 @@ def user_tracing_settings(
 
 
 @pytest.fixture
-def fake_mounted_volumes(tmp_path: Path) -> MountedVolumes:
+def fake_mounted_volumes(tmp_path: Path, faker: Faker) -> MountedVolumes:
     dy_volumes = tmp_path / "dy-volumes"
     dy_volumes.mkdir(exist_ok=True)
     return MountedVolumes(
         service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
-        node_id=NodeID("a019b83f-7cce-46bf-90cf-d02f7f0f089a"),
+        node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/inputs"),
         outputs_path=Path("/outputs"),
         user_preferences_path=None,
