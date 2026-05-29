@@ -16,6 +16,7 @@ from settings_library.tracing import TracingSettings
 from simcore_service_dynamic_sidecar.core.settings import UserServiceTracingSettings
 from simcore_service_dynamic_sidecar.modules.user_services_tracing import (
     _ACTIVE_FILE_NAME,
+    _CHECKPOINT_FILE_NAME,
     UserServicesTraceForwarder,
 )
 
@@ -115,6 +116,38 @@ def mock_successful_post() -> AsyncMock:
     mock_response = AsyncMock(spec=httpx.Response)
     mock_response.status_code = 200
     return AsyncMock(return_value=mock_response)
+
+
+@pytest.fixture
+def capture_post() -> tuple[list[bytes], Callable]:
+    """Returns (sent_list, post_handler) — use post_handler as mock_client.post."""
+    all_sent: list[bytes] = []
+
+    async def _post(*args, **kwargs):
+        all_sent.append(kwargs.get("content", args[1] if len(args) > 1 else b""))
+        mock_resp = AsyncMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        return mock_resp
+
+    return all_sent, _post
+
+
+@pytest.fixture
+def forwarder_factory(
+    traces_directory: Path,
+    tracing_settings: UserServiceTracingSettings,
+    platform_tracing_settings: TracingSettings,
+) -> Callable[..., UserServicesTraceForwarder]:
+    """Creates a new forwarder instance (simulates restart scenarios)."""
+
+    def _factory(**settings_overrides: Any) -> UserServicesTraceForwarder:
+        return UserServicesTraceForwarder(
+            traces_directory=traces_directory,
+            tracing_settings=tracing_settings,
+            platform_tracing_settings=platform_tracing_settings,
+        )
+
+    return _factory
 
 
 async def test_forwarder_ignores_active_file(
@@ -408,25 +441,18 @@ async def test_forwarder_no_duplicate_data_on_rotation(
     forwarder: UserServicesTraceForwarder,
     traces_directory: Path,
     sample_span_line: bytes,
-    mock_successful_post: AsyncMock,
+    capture_post: tuple[list[bytes], Callable],
 ):
     """Full rotation cycle: tail → rotate → process rotated should not send duplicates."""
+    all_sent, post_handler = capture_post
     active_file = traces_directory / _ACTIVE_FILE_NAME
     line1 = sample_span_line + b"\n"
     line2 = b'{"resource":"span2"}\n'
     active_file.write_bytes(line1 + line2)
 
-    all_sent: list[bytes] = []
-
-    async def capture_post(*args, **kwargs):
-        all_sent.append(kwargs.get("content", args[1] if len(args) > 1 else b""))
-        mock_resp = AsyncMock(spec=httpx.Response)
-        mock_resp.status_code = 200
-        return mock_resp
-
     # Step 1: Tail the active file
     with patch.object(forwarder, "_client") as mock_client:
-        mock_client.post = capture_post
+        mock_client.post = post_handler
         await forwarder._forward_active_file_tail()  # noqa: SLF001
 
     # Step 2: Simulate rotation
@@ -435,10 +461,263 @@ async def test_forwarder_no_duplicate_data_on_rotation(
 
     # Step 3: Process the rotated file
     with patch.object(forwarder, "_client") as mock_client:
-        mock_client.post = capture_post
+        mock_client.post = post_handler
         await forwarder._forward_rotated_file(rotated_file)  # noqa: SLF001
 
     # Verify: the combined sent data equals exactly the original content
     combined = b"".join(all_sent)
     assert combined == line1 + line2
     assert not rotated_file.exists()
+
+
+async def test_checkpoint_persisted_after_scrape(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+    sample_span_line: bytes,
+    mock_successful_post: AsyncMock,
+):
+    """Checkpoint file should be written after each scrape cycle."""
+    active_file = traces_directory / _ACTIVE_FILE_NAME
+    active_file.write_bytes(sample_span_line + b"\n")
+
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = mock_successful_post
+        await forwarder._scrape_once()  # noqa: SLF001
+
+    checkpoint = traces_directory / _CHECKPOINT_FILE_NAME
+    assert checkpoint.exists()
+    assert int(checkpoint.read_text()) == len(sample_span_line) + 1
+
+
+async def test_checkpoint_reset_after_rotated_file_processed(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+    sample_span_line: bytes,
+    mock_successful_post: AsyncMock,
+):
+    """Checkpoint should be reset to 0 when a rotated file is fully processed."""
+    # Set a non-zero offset (simulates prior tailing)
+    forwarder._active_file_offset = 50  # noqa: SLF001
+
+    rotated_file = traces_directory / "spans-20250101T000000.jsonl"
+    rotated_file.write_bytes(b"x" * 50 + sample_span_line)
+
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = mock_successful_post
+        await forwarder._forward_rotated_file(rotated_file)  # noqa: SLF001
+
+    checkpoint = traces_directory / _CHECKPOINT_FILE_NAME
+    assert checkpoint.exists()
+    assert int(checkpoint.read_text()) == 0
+    assert forwarder._active_file_offset == 0  # noqa: SLF001
+
+
+async def test_restart_recovery_from_checkpoint(
+    traces_directory: Path,
+    forwarder_factory: Callable[..., UserServicesTraceForwarder],
+):
+    """A new forwarder instance should resume from persisted checkpoint offset."""
+    checkpoint = traces_directory / _CHECKPOINT_FILE_NAME
+    checkpoint.write_text("100")
+
+    new_forwarder = forwarder_factory()
+    await new_forwarder.setup()
+    try:
+        assert new_forwarder._active_file_offset == 100  # noqa: SLF001
+    finally:
+        await new_forwarder.shutdown()
+
+
+async def test_restart_with_missing_checkpoint(
+    forwarder_factory: Callable[..., UserServicesTraceForwarder],
+):
+    """Without a checkpoint file, forwarder should start from offset 0."""
+    new_forwarder = forwarder_factory()
+    await new_forwarder.setup()
+    try:
+        assert new_forwarder._active_file_offset == 0  # noqa: SLF001
+    finally:
+        await new_forwarder.shutdown()
+
+
+async def test_drain_does_not_duplicate_tailed_data(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+    sample_span_line: bytes,
+    capture_post: tuple[list[bytes], Callable],
+):
+    """Drain after partial tail should not re-send already-forwarded bytes."""
+    all_sent, post_handler = capture_post
+    active_file = traces_directory / _ACTIVE_FILE_NAME
+    line1 = sample_span_line + b"\n"
+    line2 = b'{"resource":"span2"}\n'
+    active_file.write_bytes(line1 + line2)
+
+    # Step 1: Tail the active file (forwards both lines)
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = post_handler
+        await forwarder._forward_active_file_tail()  # noqa: SLF001
+
+    # Step 2: Drain remaining traces (should NOT re-send the already-tailed data)
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = post_handler
+        await forwarder.drain_remaining_traces()
+
+    # All data should appear exactly once
+    combined = b"".join(all_sent)
+    assert combined == line1 + line2
+
+
+async def test_multiple_rotations_offset_applied_to_first_only(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+    capture_post: tuple[list[bytes], Callable],
+):
+    """When 2+ rotations happen between scrapes, offset applies to the oldest file only."""
+    all_sent, post_handler = capture_post
+    # Simulate: tailed 50 bytes from active file, then 2 rotations happened
+    forwarder._active_file_offset = 50  # noqa: SLF001
+
+    first_content = b"x" * 50 + b"UNSENT_FROM_FIRST\n"
+    second_content = b"FULL_SECOND_FILE\n"
+
+    first_rotated = traces_directory / "spans-20250101T000000.jsonl"
+    second_rotated = traces_directory / "spans-20250101T000001.jsonl"
+    first_rotated.write_bytes(first_content)
+    second_rotated.write_bytes(second_content)
+
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = post_handler
+        await forwarder._scrape_once()  # noqa: SLF001
+
+    # First file: only unsent portion (skipped 50 bytes)
+    # Second file: full content (offset was reset after first file)
+    assert b"UNSENT_FROM_FIRST\n" in all_sent[0]
+    assert b"FULL_SECOND_FILE\n" in all_sent[1]
+    assert not first_rotated.exists()
+    assert not second_rotated.exists()
+    assert forwarder._active_file_offset == 0  # noqa: SLF001
+
+
+async def test_rotated_file_smaller_than_offset(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+    mock_successful_post: AsyncMock,
+):
+    """If offset exceeds rotated file size, file should be deleted (all content was tailed)."""
+    forwarder._active_file_offset = 1000  # noqa: SLF001
+
+    rotated_file = traces_directory / "spans-20250101T000000.jsonl"
+    rotated_file.write_bytes(b"small content")  # 13 bytes < 1000 offset
+
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = mock_successful_post
+        await forwarder._forward_rotated_file(rotated_file)  # noqa: SLF001
+
+    # File should be deleted — all its content was already tailed
+    assert not rotated_file.exists()
+    # Offset reset for new active file
+    assert forwarder._active_file_offset == 0  # noqa: SLF001
+    # No HTTP calls needed since unsent_content is empty
+    mock_client.post.assert_not_called()
+
+
+async def test_active_file_truncated_below_offset(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+):
+    """If active file is smaller than offset (truncated/replaced), tail should be a no-op."""
+    forwarder._active_file_offset = 500  # noqa: SLF001
+
+    active_file = traces_directory / _ACTIVE_FILE_NAME
+    active_file.write_bytes(b"short")  # 5 bytes < 500 offset
+
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = AsyncMock()
+        await forwarder._forward_active_file_tail()  # noqa: SLF001
+
+    mock_client.post.assert_not_called()
+    # Offset remains unchanged — we don't corrupt it
+    assert forwarder._active_file_offset == 500  # noqa: SLF001
+
+
+async def test_checkpoint_corrupted_content(
+    traces_directory: Path,
+    forwarder_factory: Callable[..., UserServicesTraceForwarder],
+):
+    """Corrupted checkpoint file should reset offset to 0."""
+    checkpoint = traces_directory / _CHECKPOINT_FILE_NAME
+    checkpoint.write_text("not-a-number")
+
+    new_forwarder = forwarder_factory()
+    await new_forwarder.setup()
+    try:
+        assert new_forwarder._active_file_offset == 0  # noqa: SLF001
+    finally:
+        await new_forwarder.shutdown()
+
+
+async def test_http_failure_on_second_rotated_file_preserves_it(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+    sample_span_line: bytes,
+):
+    """If HTTP fails on second rotated file, first is gone but second is retained."""
+    first_rotated = traces_directory / "spans-20250101T000000.jsonl"
+    second_rotated = traces_directory / "spans-20250101T000001.jsonl"
+    first_rotated.write_bytes(sample_span_line)
+    second_rotated.write_bytes(sample_span_line)
+
+    call_count = 0
+
+    async def fail_on_second(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        mock_resp = AsyncMock(spec=httpx.Response)
+        if call_count == 1:
+            mock_resp.status_code = 200
+        else:
+            mock_resp.status_code = 503
+        return mock_resp
+
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = fail_on_second
+        await forwarder._scrape_once()  # noqa: SLF001
+
+    # First file forwarded and deleted
+    assert not first_rotated.exists()
+    # Second file kept for retry
+    assert second_rotated.exists()
+
+
+async def test_drain_with_rotated_and_active_after_partial_tail(
+    forwarder: UserServicesTraceForwarder,
+    traces_directory: Path,
+    capture_post: tuple[list[bytes], Callable],
+):
+    """Drain with both rotated files and a partially-tailed active file sends no duplicates."""
+    all_sent, post_handler = capture_post
+    # Simulate: tailed 30 bytes from active, then it rotated, new active has fresh data
+    forwarder._active_file_offset = 30  # noqa: SLF001
+
+    rotated_content = b"x" * 30 + b"ROTATED_UNSENT\n"
+    active_content = b"FRESH_ACTIVE_DATA\n"
+
+    rotated_file = traces_directory / "spans-20250101T000000.jsonl"
+    rotated_file.write_bytes(rotated_content)
+
+    active_file = traces_directory / _ACTIVE_FILE_NAME
+    active_file.write_bytes(active_content)
+
+    with patch.object(forwarder, "_client") as mock_client:
+        mock_client.post = post_handler
+        await forwarder.drain_remaining_traces()
+
+    # Rotated file: skipped first 30 bytes
+    assert b"ROTATED_UNSENT\n" in all_sent[0]
+    assert b"x" * 30 not in all_sent[0]
+    # Active file: sent fully (offset was reset after rotated file)
+    assert b"FRESH_ACTIVE_DATA\n" in all_sent[1]
+    # Both files deleted
+    assert not rotated_file.exists()
+    assert not active_file.exists()

@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import logging
 from pathlib import Path
+from uuid import uuid4
 
 import aiofiles
 import aiofiles.os
@@ -27,6 +28,7 @@ from .mounted_fs import MountedVolumes
 _logger = logging.getLogger(__name__)
 
 _ACTIVE_FILE_NAME = "spans.jsonl"
+_CHECKPOINT_FILE_NAME = "_trace_offset"
 
 
 class UserServicesTraceForwarder:
@@ -48,7 +50,36 @@ class UserServicesTraceForwarder:
         }"
         self._client = httpx.AsyncClient(timeout=tracing_settings.USER_SERVICES_TRACING_FORWARD_TIMEOUT.total_seconds())
 
+    @property
+    def _checkpoint_path(self) -> Path:
+        return self._traces_directory / _CHECKPOINT_FILE_NAME
+
+    async def _read_checkpoint(self) -> int:
+        """Reads persisted offset from checkpoint file. Returns 0 if missing or invalid."""
+        if not await aiofiles.os.path.exists(self._checkpoint_path):
+            return 0
+        try:
+            async with aiofiles.open(self._checkpoint_path) as f:
+                content = await f.read()
+            return int(content.strip())
+        except (ValueError, OSError):
+            _logger.warning("Invalid checkpoint file, resetting offset to 0")
+            return 0
+
+    async def _write_checkpoint(self, offset: int) -> None:
+        """Atomically persists offset to checkpoint file (tmp + rename)."""
+        tmp_path = self._checkpoint_path.with_suffix(f".{uuid4().hex[:8]}.tmp")
+        async with aiofiles.open(tmp_path, "w") as f:
+            await f.write(f"{offset}")
+        await aiofiles.os.rename(tmp_path, self._checkpoint_path)
+
     async def setup(self) -> None:
+        self._active_file_offset = await self._read_checkpoint()
+        _logger.info(
+            "Restored trace forwarder offset from checkpoint: %d",
+            self._active_file_offset,
+        )
+
         interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL
         self._scrape_task = create_periodic_task(
             self._scrape_once,
@@ -92,6 +123,9 @@ class UserServicesTraceForwarder:
 
             # Also forward new data from the active file
             await self._forward_active_file_tail()
+
+            # Persist current offset for crash recovery
+            await self._write_checkpoint(self._active_file_offset)
 
     async def _forward_active_file_tail(self) -> None:
         """Reads new bytes appended to the active file since last scrape and forwards them."""
@@ -143,45 +177,53 @@ class UserServicesTraceForwarder:
 
         # Only send bytes beyond what we already tailed
         unsent_content = content[self._active_file_offset :]
+        skipped_bytes = self._active_file_offset
         if unsent_content and not await self._forward_content(unsent_content):
             return  # keep file for retry
 
         await aiofiles.os.remove(file_path)
+        # Reset offset for the new active file and persist
+        self._active_file_offset = 0
+        await self._write_checkpoint(0)
         _logger.info(
             "Forwarded and deleted %s (sent %d of %d bytes, skipped %d already-tailed)",
             file_path.name,
             len(unsent_content),
             len(content),
-            self._active_file_offset,
+            skipped_bytes,
         )
-        # Reset offset for the new active file
-        self._active_file_offset = 0
 
     async def _forward_rotated_files(self) -> None:
         """Forwards only rotated (immutable) files, skipping the active file."""
         for file_path in await self._get_rotated_files():
-            await self._forward_and_delete(file_path)
+            await self._forward_rotated_file(file_path)
 
     async def _forward_all_files(self) -> None:
-        """Forwards ALL files including the active one (used during drain)."""
-        for file_path in sorted(await asyncio.to_thread(list, self._traces_directory.glob("spans*.jsonl"))):
-            await self._forward_and_delete(file_path)
+        """Forwards ALL files including the active one (used during drain).
+
+        Offset-aware: skips already-tailed bytes to avoid duplicates.
+        Processes rotated files first (oldest→newest), then the active file.
+        """
+        rotated_files = await self._get_rotated_files()
+        for file_path in rotated_files:
+            await self._forward_rotated_file(file_path)
+
+        # Forward remaining content from the active file
+        active_file = self._traces_directory / _ACTIVE_FILE_NAME
+        if await aiofiles.os.path.exists(active_file):
+            async with aiofiles.open(active_file, "rb") as f:
+                content = await f.read()
+            unsent = content[self._active_file_offset :]
+            if unsent and not await self._forward_content(unsent):
+                return
+            await aiofiles.os.remove(active_file)
+            self._active_file_offset = 0
+            await self._write_checkpoint(0)
 
     async def _get_rotated_files(self) -> list[Path]:
         """Returns rotated span files (not the active one)."""
         all_files = await asyncio.to_thread(list, self._traces_directory.glob("spans*.jsonl"))
         return sorted(f for f in all_files if f.name != _ACTIVE_FILE_NAME)
-
-    async def _forward_and_delete(self, file_path: Path) -> None:
-        async with aiofiles.open(file_path, "rb") as f:
-            content = await f.read()
-        if not content:
-            await aiofiles.os.remove(file_path)
-            return
-
-        if await self._forward_content(content):
-            await aiofiles.os.remove(file_path)
-            _logger.info("Forwarded and deleted %s (%d bytes)", file_path.name, len(content))
 
     async def _forward_content(self, content: bytes) -> bool:
         """Forwards content to the platform OTLP endpoint. Returns True on success."""
