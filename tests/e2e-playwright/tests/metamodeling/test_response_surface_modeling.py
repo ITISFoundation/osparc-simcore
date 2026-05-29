@@ -147,7 +147,6 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
-    service_key: str,
     service_version: str | None,
     product_url: AnyUrl,
     is_service_legacy: bool,

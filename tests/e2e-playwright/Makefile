@@ -222,13 +222,6 @@ $(ALL_INPUT_FILES):
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
 	elif [ "$@" = "$(RSM_INPUT_FILE)" ]; then \
-		read -p "Enter the service key (default to mmux-vite-app-sumo-write): " SERVICE_KEY; \
-		if [ -z "$$SERVICE_KEY" ]; then \
-			echo "No service key specified, using default."; \
-			echo "--service-key=mmux-vite-app-sumo-write" >> $@; \
-		else \
-			echo "--service-key=$$SERVICE_KEY" >> $@; \
-		fi; \
 		read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
 		if [ -z "$$SERVICE_VERSION" ]; then \
 			echo "No service version specified, using default."; \
