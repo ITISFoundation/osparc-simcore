@@ -10,10 +10,10 @@ from models_library.services import ServiceRunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
-_TRACES_PATH: Final[Path] = Path("/traces")
-
 from ..core.docker_utils import get_volume_by_label
 from ..core.settings import ApplicationSettings
+
+_TRACES_PATH: Final[Path] = Path("/traces")
 
 
 def _ensure_path(path: Path) -> Path:
