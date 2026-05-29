@@ -26,12 +26,17 @@ export REPO="webserver"
 # FROM_DOCKER_TAG_PREFIX-DATE.GIT_SHA
 export TAG_PATTERN="^${FROM_DOCKER_TAG_PREFIX}-.+\..+"
 source_tag="$(./ci/helpers/find_docker_image_tag_from_git_sha.bash | awk 'END{print}')" || exit $?
+readonly source_tag
 log_info "found source image tag ${source_tag}"
 
 services="$(docker compose --file services/docker-compose-deploy.yml config --services)"
-readonly git_commit_sha="$(git show-ref -s "${GIT_TAG}")"
+readonly services
+git_commit_sha="$(git show-ref -s "${GIT_TAG}")" || exit $?
+readonly git_commit_sha
 versioned_image_tag="${TO_DOCKER_TAG_PREFIX}-${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").${git_commit_sha}"
+readonly versioned_image_tag
 latest_image_tag="${TO_DOCKER_TAG_PREFIX}-latest"
+readonly latest_image_tag
 
 for service in ${services}; do
     source_image="${DOCKER_REGISTRY}/${service}:${source_tag}"
