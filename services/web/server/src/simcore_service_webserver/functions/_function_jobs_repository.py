@@ -28,6 +28,7 @@ from models_library.functions_errors import (
     FunctionJobPatchModelIncompatibleError,
     UnsupportedFunctionJobClassError,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
@@ -42,8 +43,6 @@ from sqlalchemy import Text, cast, func
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups.api import list_all_user_groups_ids
-from ..users import users_service
 from ._functions_permissions_repository import (
     _internal_set_group_permissions,
     check_user_api_access_rights,
@@ -59,6 +58,8 @@ async def create_function_jobs(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
+    user_primary_group_id: GroupID,
     product_name: ProductName,
     function_jobs: list[FunctionJobDB],
 ) -> BatchCreateRegisteredFunctionJobsDB:
@@ -69,6 +70,7 @@ async def create_function_jobs(
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
@@ -98,8 +100,7 @@ async def create_function_jobs(
         # Get all created jobs
         created_jobs = TypeAdapter(list[RegisteredFunctionJobDB]).validate_python(list(result))
 
-        # Get user primary group and set permissions for all jobs
-        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+        # Set permissions for all jobs
         job_uuids = [job.uuid for job in created_jobs]
 
         await _internal_set_group_permissions(
@@ -122,6 +123,7 @@ async def patch_function_jobs(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_job_patch_requests: list[FunctionJobPatchRequest],
 ) -> BatchUpdateRegisteredFunctionJobsDB:
@@ -130,6 +132,7 @@ async def patch_function_jobs(
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
@@ -141,6 +144,7 @@ async def patch_function_jobs(
                 app,
                 connection=transaction,
                 user_id=user_id,
+                user_groups=user_groups,
                 product_name=product_name,
                 function_job_id=patch_request.uid,
             )
@@ -174,6 +178,7 @@ async def list_function_jobs_with_status(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
@@ -186,10 +191,10 @@ async def list_function_jobs_with_status(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
         )
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
         access_subquery = (
             function_jobs_access_rights_table.select()
@@ -258,6 +263,7 @@ async def delete_function_job(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_job_id: FunctionID,
 ) -> None:
@@ -266,6 +272,7 @@ async def delete_function_job(
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_job_id,
             object_type="function_job",
@@ -288,16 +295,13 @@ async def find_cached_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    user_id: UserID,
+    user_groups: list[GroupID],
     function_id: FunctionID,
     product_name: ProductName,
     inputs: FunctionInputsList,
     cached_job_statuses: list[FunctionJobStatus] | None = None,
 ) -> list[RegisteredFunctionJobDB | None]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        # Get user groups for access check
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
-
         # Create access subquery
         access_subquery = (
             function_jobs_access_rights_table.select()
@@ -351,6 +355,7 @@ async def get_function_job_status(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> FunctionJobStatus:
@@ -359,6 +364,7 @@ async def get_function_job_status(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_type="function_job",
             object_id=function_job_id,
@@ -379,6 +385,7 @@ async def get_function_job_outputs(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> FunctionOutputs:
@@ -387,6 +394,7 @@ async def get_function_job_outputs(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_type="function_job",
             object_id=function_job_id,
@@ -407,6 +415,7 @@ async def get_function_job(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_job_id: FunctionID,
 ) -> RegisteredFunctionJobDB:
@@ -415,6 +424,7 @@ async def get_function_job(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_job_id,
             object_type="function_job",

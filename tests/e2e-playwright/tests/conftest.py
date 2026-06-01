@@ -618,12 +618,13 @@ def create_new_project_and_delete(
             logging.INFO,
             f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
-            for attempt in range(10):
+            _max_delete_attempts = 24
+            for attempt in range(_max_delete_attempts):
                 response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
                 if response.status == 204:
                     break
-                if response.status == 409 and attempt < 9:
-                    time.sleep(3)
+                if response.status == 409 and attempt < _max_delete_attempts - 1:
+                    time.sleep(5)
                     continue
                 assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 

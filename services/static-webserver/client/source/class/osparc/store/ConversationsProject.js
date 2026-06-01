@@ -99,7 +99,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           conversationId,
         },
         data: {
-          name,
+          name: name || null,
         }
       };
       return osparc.data.Resources.fetch("conversationsStudies", "renameConversation", params)

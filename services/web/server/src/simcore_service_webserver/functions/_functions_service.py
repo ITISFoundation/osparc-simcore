@@ -52,6 +52,8 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.rabbitmq import RPCRouter
 
+from ..groups.api import list_all_user_groups_ids
+from ..users import users_service
 from . import (
     _function_job_collections_repository,
     _function_jobs_repository,
@@ -70,6 +72,8 @@ async def register_function(
     product_name: ProductName,
     function: Function,
 ) -> RegisteredFunction:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     encoded_function = _encode_function(function)
     saved_function = await _functions_repository.create_function(
         app=app,
@@ -81,6 +85,8 @@ async def register_function(
         default_inputs=encoded_function.default_inputs,
         class_specific_data=encoded_function.class_specific_data,
         user_id=user_id,
+        user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
     )
     return _decode_function(saved_function)
@@ -93,10 +99,14 @@ async def register_function_job(
     product_name: ProductName,
     function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     encoded_function_jobs = _encode_functionjob(function_job)
     created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
         function_jobs=[encoded_function_jobs],
     )
@@ -112,11 +122,15 @@ async def batch_register_function_jobs(
     product_name: ProductName,
     function_jobs: FunctionJobList,
 ) -> BatchCreateRegisteredFunctionJobs:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     function_jobs = TypeAdapter(FunctionJobList).validate_python(function_jobs)
     encoded_function_jobs = [_encode_functionjob(job) for job in function_jobs]
     created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
         function_jobs=encoded_function_jobs,
     )
@@ -132,9 +146,11 @@ async def patch_registered_function_job(
     product_name: ProductName,
     function_job_patch_request: FunctionJobPatchRequest,
 ) -> RegisteredFunctionJob:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     result = await _function_jobs_repository.patch_function_jobs(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_patch_requests=[function_job_patch_request],
     )
@@ -149,11 +165,13 @@ async def batch_patch_registered_function_jobs(
     product_name: ProductName,
     function_job_patch_requests: FunctionJobPatchRequestList,
 ) -> BatchUpdateRegisteredFunctionJobs:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     TypeAdapter(FunctionJobPatchRequestList).validate_python(function_job_patch_requests)
 
     result = await _function_jobs_repository.patch_function_jobs(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_patch_requests=function_job_patch_requests,
     )
@@ -167,12 +185,16 @@ async def register_function_job_collection(
     product_name: ProductName,
     function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     (
         registered_function_job_collection,
         registered_job_ids,
     ) = await _function_job_collections_repository.create_function_job_collection(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
+        user_primary_group_id=user_primary_group_id,
         product_name=product_name,
         title=function_job_collection.title,
         description=function_job_collection.description,
@@ -194,9 +216,11 @@ async def get_function(
     product_name: ProductName,
     function_id: FunctionID,
 ) -> RegisteredFunction:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     returned_function = await _functions_repository.get_function(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_id=function_id,
     )
@@ -212,9 +236,11 @@ async def get_function_job(
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> RegisteredFunctionJob:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     returned_function_job = await _function_jobs_repository.get_function_job(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_id=function_job_id,
     )
@@ -228,14 +254,16 @@ async def get_function_job_collection(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_collection_id: FunctionJobID,
+    function_job_collection_id: FunctionJobCollectionID,
 ) -> RegisteredFunctionJobCollection:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     (
         returned_function_job_collection,
         returned_job_ids,
     ) = await _function_job_collections_repository.get_function_job_collection(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_collection_id=function_job_collection_id,
     )
@@ -260,9 +288,11 @@ async def list_functions(
     search_by_function_title: str | None = None,
     search_by_multi_columns: str | None = None,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     returned_functions, page = await _functions_repository.list_functions(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
@@ -292,9 +322,11 @@ async def list_function_jobs(
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     returned_function_jobs, page = await _function_jobs_repository.list_function_jobs_with_status(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
@@ -319,9 +351,11 @@ async def list_function_jobs_with_status(
     list[RegisteredFunctionJobWithStatus],
     PageMetaInfoLimitOffset,
 ]:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     returned_function_jobs_wso, page = await _function_jobs_repository.list_function_jobs_with_status(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
@@ -343,9 +377,11 @@ async def list_function_job_collections(
     pagination_offset: int,
     filters: FunctionJobCollectionsListFilters | None = None,
 ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     returned_function_job_collections, page = await _function_job_collections_repository.list_function_job_collections(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
@@ -371,9 +407,11 @@ async def delete_function(
     function_id: FunctionID,
     force: bool = False,
 ) -> None:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     await _functions_repository.delete_function(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_id=function_id,
         force=force,
@@ -387,9 +425,11 @@ async def delete_function_job(
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> None:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     await _function_jobs_repository.delete_function_job(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_id=function_job_id,
     )
@@ -400,11 +440,13 @@ async def delete_function_job_collection(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_collection_id: FunctionJobID,
+    function_job_collection_id: FunctionJobCollectionID,
 ) -> None:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     await _function_job_collections_repository.delete_function_job_collection(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_collection_id=function_job_collection_id,
     )
@@ -418,9 +460,11 @@ async def update_function(
     function_id: FunctionID,
     function: FunctionUpdate,
 ) -> RegisteredFunction:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     updated_function = await _functions_repository.update_function(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_id=function_id,
         function=function,
@@ -437,9 +481,10 @@ async def find_cached_function_jobs(
     inputs: FunctionInputsList,
     cached_job_statuses: list[FunctionJobStatus] | None = None,
 ) -> list[RegisteredFunctionJob | None]:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     returned_function_jobs = await _function_jobs_repository.find_cached_function_jobs(
         app=app,
-        user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
@@ -491,6 +536,7 @@ async def get_function_input_schema(
     returned_function = await _functions_repository.get_function(
         app=app,
         user_id=user_id,
+        user_groups=await list_all_user_groups_ids(app, user_id=user_id),
         product_name=product_name,
         function_id=function_id,
     )
@@ -507,6 +553,7 @@ async def get_function_output_schema(
     returned_function = await _functions_repository.get_function(
         app=app,
         user_id=user_id,
+        user_groups=await list_all_user_groups_ids(app, user_id=user_id),
         product_name=product_name,
         function_id=function_id,
     )
@@ -520,9 +567,10 @@ async def get_function_user_permissions(
     product_name: ProductName,
     function_id: FunctionID,
 ) -> FunctionUserAccessRights:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     user_permissions = await _functions_permissions_repository.get_user_permissions(
         app=app,
-        user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_id=function_id,
         object_type="function",
@@ -551,9 +599,11 @@ async def list_function_group_permissions(
     product_name: ProductName,
     function_id: FunctionID,
 ) -> list[FunctionGroupAccessRights]:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     access_rights_list = await _functions_permissions_repository.get_group_permissions(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_ids=[function_id],
         object_type="function",
@@ -577,9 +627,11 @@ async def set_function_group_permissions(
     function_id: FunctionID,
     permissions: FunctionGroupAccessRights,
 ) -> FunctionGroupAccessRights:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     access_rights_list = await _functions_permissions_repository.set_group_permissions(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_ids=[function_id],
         object_type="function",
@@ -606,9 +658,11 @@ async def remove_function_group_permissions(
     function_id: FunctionID,
     permission_group_id: GroupID,
 ) -> None:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     await _functions_permissions_repository.remove_group_permissions(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_ids=[function_id],
         object_type="function",
@@ -628,9 +682,11 @@ async def set_group_permissions(
     write: bool | None = None,
     execute: bool | None = None,
 ) -> list[tuple[FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights]]:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     return await _functions_permissions_repository.set_group_permissions(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_type=object_type,
         object_ids=object_ids,
@@ -648,9 +704,11 @@ async def get_function_job_status(
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> FunctionJobStatus:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     return await _function_jobs_repository.get_function_job_status(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_id=function_job_id,
     )
@@ -663,9 +721,11 @@ async def get_function_job_outputs(
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> FunctionOutputs:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     return await _function_jobs_repository.get_function_job_outputs(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         function_job_id=function_job_id,
     )
@@ -680,12 +740,14 @@ async def update_function_job_outputs(
     outputs: FunctionOutputs,
     check_write_permissions: bool = True,
 ) -> FunctionOutputs:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
     if check_write_permissions:
         checked_permissions.append("write")
     await _functions_permissions_repository.check_user_permissions(
         app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_type="function_job",
         object_id=function_job_id,
@@ -708,6 +770,7 @@ async def update_function_job_status(
     job_status: FunctionJobStatus,
     check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
 
     if check_write_permissions:
@@ -715,6 +778,7 @@ async def update_function_job_status(
     await _functions_permissions_repository.check_user_permissions(
         app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_type="function_job",
         object_id=function_job_id,
@@ -733,9 +797,11 @@ async def get_functions_user_api_access_rights(
     user_id: UserID,
     product_name: ProductName,
 ) -> FunctionUserApiAccessRights:
+    user_groups = await list_all_user_groups_ids(app, user_id=user_id)
     return await _functions_permissions_repository.get_user_api_access_rights(
         app=app,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
     )
 

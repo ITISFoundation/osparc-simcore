@@ -613,3 +613,69 @@ async def test_conversations_archive_by_support_user(
     resp = await client.patch(f"{update_url}", json={"status": "ACTIVE"})
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["status"] == "ACTIVE"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_conversations_create_with_null_name(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mock_functions_factory: Callable[[Iterable[tuple[object, str]]], SimpleNamespace],
+):
+    """Test creating a conversation without a name (omitted or explicitly null)"""
+    mock_functions_factory(
+        [
+            (_conversation_service, "notify_via_socket_conversation_created"),
+        ]
+    )
+
+    assert client.app
+    base_url = client.app.router["list_conversations"].url_for()
+
+    # Create with name omitted
+    resp = await client.post(f"{base_url}", json={"type": "SUPPORT"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert ConversationRestGet.model_validate(data)
+    assert data["name"] is None
+
+    # Create with name explicitly null
+    resp = await client.post(f"{base_url}", json={"name": None, "type": "SUPPORT"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert ConversationRestGet.model_validate(data)
+    assert data["name"] is None
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_conversations_clear_name_via_patch(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mock_functions_factory: Callable[[Iterable[tuple[object, str]]], SimpleNamespace],
+):
+    """Test clearing a conversation name by PATCHing with name=null"""
+    mock_functions_factory(
+        [
+            (_conversation_service, "notify_via_socket_conversation_created"),
+            (_conversation_service, "notify_via_socket_conversation_updated"),
+        ]
+    )
+
+    assert client.app
+    base_url = client.app.router["list_conversations"].url_for()
+
+    # Create a named conversation
+    resp = await client.post(f"{base_url}", json={"name": "My Support Request", "type": "SUPPORT"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    conversation_id = data["conversationId"]
+    assert data["name"] == "My Support Request"
+
+    # Clear the name via PATCH
+    update_url = client.app.router["update_conversation"].url_for(conversation_id=conversation_id)
+    resp = await client.patch(f"{update_url}", json={"name": None})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert ConversationRestGet.model_validate(data)
+    assert data["name"] is None
+
+    # Verify the cleared name persists
+    get_url = client.app.router["get_conversation"].url_for(conversation_id=conversation_id)
+    resp = await client.get(f"{get_url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["name"] is None

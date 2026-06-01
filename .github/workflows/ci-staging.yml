@@ -25,7 +25,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     env:
-      TO_TAG_PREFIX: staging-github
+      TO_DOCKER_TAG_PREFIX: staging-github
     steps:
       - uses: actions/checkout@v6
         with:
@@ -44,9 +44,9 @@ jobs:
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: source image is master
-        run: echo "FROM_TAG_PREFIX=master-github" >> $GITHUB_ENV
+        run: echo "FROM_DOCKER_TAG_PREFIX=master-github" >> $GITHUB_ENV
       - if: contains(env.BRANCH_NAME, 'remotes/origin/hotfix_staging_')
         name: source image is hotfix-staging (instead of master)
-        run: echo "FROM_TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
+        run: echo "FROM_DOCKER_TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
       - name: deploy
         run: ./ci/deploy/dockerhub-tag-version.bash
