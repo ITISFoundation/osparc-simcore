@@ -22,22 +22,24 @@
 qx.Class.define("osparc.ui.form.renderer.DoubleV", {
   extend: qx.ui.form.renderer.AbstractRenderer,
 
-  construct: function(form, doubleSpacedItems) {
+  construct: function(form, fullWidthItems, inlineItems) {
     const layout = new qx.ui.layout.Grid();
-    layout.setSpacing(15);
+    layout.setSpacingX(15);
     layout.setColumnAlign(0, "left", "bottom");
     layout.setColumnAlign(1, "left", "bottom");
     layout.setColumnFlex(0, 1);
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
 
-    this.__doubleSpacedItems = doubleSpacedItems || [];
+    this.__fullWidthItems = fullWidthItems || [];
+    this.__inlineItems = inlineItems || [];
 
     this.base(arguments, form);
   },
 
   members: {
-    __doubleSpacedItems: null,
+    __fullWidthItems: null,
+    __inlineItems: null,
     __row: 0,
     __buttonRow: null,
 
@@ -78,21 +80,29 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
       for (i = 0; i < items.length; i++) {
         const name = names[i];
         const item = items[i];
-        const takeDouble = this.__doubleSpacedItems.includes(item);
+        const takeDouble = this.__fullWidthItems.includes(item);
         if (takeDouble && col === 1) {
           col = 0;
           this.__row++;
         }
 
-        const itemLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+        const inline = this.__inlineItems.includes(item);
+        const itemLayout = new qx.ui.container.Composite(inline ? new qx.ui.layout.HBox(5) : new qx.ui.layout.VBox());
+        itemLayout.setMarginTop(this.__row > 0 ? 15 : 0);
         const label = this._createLabel(name, item).set({
           font: "text-12",
-          allowGrowX: true
+          allowGrowX: true,
+          rich: true
         });
         label.setBuddy(item);
-        itemLayout.add(label);
         item.setBackgroundColor("transparent");
-        itemLayout.add(item);
+        if (inline) {
+          itemLayout.add(label, {flex: 1});
+          itemLayout.add(item);
+        } else {
+          itemLayout.add(label);
+          itemLayout.add(item);
+        }
         this._add(itemLayout, {
           row: this.__row,
           column: takeDouble ? 0 : col,
@@ -100,6 +110,7 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
         });
 
         this._connectVisibility(item, label);
+        item.bind("visibility", itemLayout, "visibility");
 
         if (takeDouble || col === 1) {
           col = 0;
