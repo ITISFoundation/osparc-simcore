@@ -62,7 +62,9 @@ qx.Class.define("osparc.po.UsersRegistered", {
           break;
         case "registered-users-container":
           control = new qx.ui.container.Scroll();
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "registered-users-layout": {
           const grid = new qx.ui.layout.Grid(20, 5);
