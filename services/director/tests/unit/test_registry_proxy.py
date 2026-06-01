@@ -235,10 +235,10 @@ def configure_registry_caching(app_environment: EnvVarsDict, monkeypatch: pytest
 
 @pytest.fixture
 def configure_registry_redis_backend(
-    configure_registry_caching: EnvVarsDict,
+    app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    return configure_registry_caching | setenvs_from_dict(
+    return app_environment | setenvs_from_dict(
         monkeypatch,
         {"DIRECTOR_REDIS_CACHE_BACKEND": "redis"},
     )
@@ -255,7 +255,6 @@ def configure_registry_cache_backend(
 ) -> EnvVarsDict:
     if request.param == "redis":
         request.getfixturevalue("fakeredis_aiocache_client")
-        monkeypatch.setattr("simcore_service_director.core.application.setup_redis", lambda app: None)  # noqa: ARG005
         return request.getfixturevalue("configure_registry_redis_backend")
     return configure_registry_caching
 
