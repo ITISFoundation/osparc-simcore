@@ -164,14 +164,12 @@ qx.Class.define("osparc.po.UsersRegistered", {
     __addHeader: function() {
       const layout = this.getChildControl("registered-users-layout");
 
-      layout.add(new qx.ui.basic.Label(this.tr("Name")).set({
-        font: "text-14"
-      }), {
+      layout.add(this.__createSortableHeader(this.tr("Name"), "name"), {
         row: 0,
         column: this.self().COLUMNS.NAME,
       });
 
-      layout.add(this.__createSortableHeader(this.tr("Username"), "userName"), {
+      layout.add(new qx.ui.basic.Label(this.tr("Username")), { // Not sortable
         row: 0,
         column: this.self().COLUMNS.USERNAME,
       });
