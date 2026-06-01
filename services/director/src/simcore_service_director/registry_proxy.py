@@ -8,6 +8,7 @@ from typing import Any, Final, cast
 
 import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
@@ -16,6 +17,7 @@ from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import traced
 from servicelib.utils import limited_as_completed
+from settings_library.redis import RedisDatabase
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -200,9 +202,11 @@ async def registry_request(
     use_cache: bool,
     **request_kwargs,
 ) -> tuple[dict, Mapping]:
-    cache: SimpleMemoryCache = app.state.registry_cache_memory
+    cache: BaseCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
     if use_cache and (cached_response := await cache.get(cache_key)):
+        if isinstance(cached_response, list):
+            cached_response = tuple(cached_response)
         assert isinstance(cached_response, tuple)  # nosec
         return cast(tuple[dict, Mapping], cached_response)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
@@ -232,9 +236,10 @@ async def registry_request(
         raise DirectorRuntimeError(msg=msg) from exc
 
     if app_settings.DIRECTOR_REGISTRY_CACHING and method.upper() == "GET":
+        cached_response: tuple[dict, dict[str, str]] = (response, dict(response_headers))
         await cache.set(
             cache_key,
-            (response, response_headers),
+            cached_response,
             ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
         )
 
@@ -261,13 +266,40 @@ async def _list_all_services_task(*, app: FastAPI) -> None:
         await list_services(app, ServiceType.ALL, update_cache=True)
 
 
+def _create_registry_cache(app_settings: ApplicationSettings) -> BaseCache:
+    if app_settings.DIRECTOR_REGISTRY_CACHING and app_settings.DIRECTOR_REDIS_CACHE_BACKEND == "redis":
+        assert app_settings.DIRECTOR_REDIS is not None  # nosec
+        assert Cache.REDIS is not None  # nosec
+        redis_settings = app_settings.DIRECTOR_REDIS
+        connection_pool_kwargs: dict[str, Any] = {}
+        if redis_settings.REDIS_USER:
+            connection_pool_kwargs["username"] = redis_settings.REDIS_USER
+
+        return cast(
+            BaseCache,
+            Cache(
+                Cache.REDIS,
+                endpoint=redis_settings.REDIS_HOST,
+                port=redis_settings.REDIS_PORT,
+                db=int(RedisDatabase.AIOCACHE),
+                password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
+                ssl=redis_settings.REDIS_SECURE,
+                connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
+                namespace=app_settings.DIRECTOR_REDIS_CACHE_NAMESPACE,
+            ),
+        )
+
+    cache = Cache(Cache.MEMORY)
+    assert isinstance(cache, SimpleMemoryCache)  # nosec
+    return cache
+
+
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        cache = Cache(Cache.MEMORY)
-        assert isinstance(cache, SimpleMemoryCache)  # nosec
+        app_settings = get_application_settings(app)
+        cache = _create_registry_cache(app_settings)
         app.state.registry_cache_memory = cache
         await _setup_registry(app)
-        app_settings = get_application_settings(app)
         app.state.auto_cache_task = None
         if app_settings.DIRECTOR_REGISTRY_CACHING:
             app.state.auto_cache_task = create_periodic_task(
@@ -280,6 +312,8 @@ def setup(app: FastAPI) -> None:
     async def on_shutdown() -> None:
         if app.state.auto_cache_task:
             await cancel_wait_task(app.state.auto_cache_task)
+        if app.state.registry_cache_memory:
+            await app.state.registry_cache_memory.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
