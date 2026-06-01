@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "prune-pydeps",
+  "scope": "osparc-simcore monorepo (packages/* and services/*)",
+  "optimized_for_model": "claude-3-5-haiku",
+  "last_updated": "2026-06-01",
+  "maintenance_frequency": "periodic (quarterly review recommended)",
+  "maintained_via": "Re-run skill workflow on 2–3 package targets; update SKILL.md if new deptry patterns or repo requirements structure changes emerge.",
+  "strategies_catalog": {
+    "purpose": "Deterministic patterns for detecting and safely removing unused Python deps in layered requirements monorepo using uvx deptry, grep, and uv tooling.",
+    "entries": [
+      {
+        "id": "deptry-requirements-file-mode",
+        "applies_to": "Scanning packages with _base.in/_test.in deps instead of pyproject.toml.",
+        "helper": "uvx deptry with --requirements-files and --requirements-files-dev",
+        "header": "### 1. Detect unused dependencies with `deptry` (isolated)",
+        "reference": "SKILL.md#1-detect-unused-dependencies-with-deptry-isolated",
+        "example": "services/catalog"
+      },
+      {
+        "id": "confirm-before-removing",
+        "applies_to": "Validating DEP002 flagged packages are truly unimported before deletion.",
+        "helper": "uv pip tree --package and grep -rnw for direct import presence",
+        "header": "### 2. Confirm impact before removing",
+        "reference": "SKILL.md#2-confirm-impact-before-removing",
+        "example": "services/catalog"
+      },
+      {
+        "id": "inherited-deps-caveat",
+        "applies_to": "Distinguishing direct vs. inherited DEP002 when packages use --requirement includes.",
+        "helper": "Filter by package name; prune only direct _base.in declarations.",
+        "header": "## catpcha (repo-specific caveats)",
+        "reference": "SKILL.md#catpcha-repo-specific-caveats",
+        "example": [
+          "packages/settings-library",
+          "packages/postgres-database"
+        ]
+      },
+      {
+        "id": "fallback-import-scan",
+        "applies_to": "Manual audit when deptry fails (network, unsupported layout).",
+        "helper": "grep -Rho + sed pipeline to normalize import module names",
+        "header": "### 1. Detect unused dependencies with `deptry` (isolated)",
+        "reference": "SKILL.md#1-detect-unused-dependencies-with-deptry-isolated"
+      },
+      {
+        "id": "selective-recompile-downstream",
+        "applies_to": "Recompiling only affected services after pruning a library.",
+        "helper": "make reqs upgrade=<pkg> instead of blanket make reqs",
+        "header": "### 4. Propagate downstream with selective recompiles",
+        "reference": "SKILL.md#4-propagate-downstream-with-selective-recompiles",
+        "example": "services/catalog"
+      },
+      {
+        "id": "validate-compiled",
+        "applies_to": "Verifying pruned package and downstream services compile and pass tests.",
+        "helper": "make install-dev && make tests-unit per package",
+        "header": "### 5. Validate",
+        "reference": "SKILL.md#5-validate",
+        "example": "packages/simcore-sdk"
+      }
+    ]
+  },
+  "authoring_guidelines": [
+    "Always use uvx for scanner isolation; never pip install into project venv.",
+    "Filter deptry output for direct _base.in declarations only; inherited DEP002 means prune at origin, not downstream.",
+    "Run deptry in --requirements-files mode (not pyproject.toml) due to repo's layered *.in structure.",
+    "Verify every DEP002 candidate with grep before editing; false positives occur with plugins and string-imports.",
+    "Recompile only affected packages downstream; minimize diff coupling by avoiding blanket make reqs."
+  ],
+  "token_budget_strategy": "Low-cost Claude Haiku optimized. Uses deterministic external tools (uvx, grep, sed, make) with minimal AI reasoning. Model invocations are read-only (SKILL.md parsing) plus light deptry output filtering.",
+  "changelog": [
+    "2026-06-01: v1.0 created. Added repo-specific catpcha section on layered requirements, inherited DEP002 handling, and src-vs-tests scanning. Documented deptry --requirements-files mode for packages without pyproject.toml. Fallback grep-based import scan added. Marked for periodic quarterly maintenance."
+  ]
+}

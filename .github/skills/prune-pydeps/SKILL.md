@@ -1,5 +1,5 @@
 ---
-name: requirements-prune-pydeps
+name: prune-pydeps
 description: 'Detect and remove unused Python dependencies from a package/service and propagate the cleanup downstream. Use when: pruning requirements, removing unused dependencies, cleaning up `_base.in`/`_test.in`, shrinking install size, fixing leftover deps after refactor, or auditing imports vs declared requirements in osparc-simcore.'
 argument-hint: '<package-or-service-path> (e.g. packages/simcore-sdk)'
 ---
@@ -43,16 +43,21 @@ source .venv/bin/activate
 
 Run **deptry** via `uvx` so nothing is installed into the project venv. It is
 purpose-built to report *unused*, *missing*, and *transitive* dependencies in a
-single pass and understands `setup.py` / `pyproject.toml`. Mark the repo's
-first-party packages as known so intra-repo imports aren't flagged:
+single pass.
+
+In this repo, many packages do not expose dependency metadata via
+`pyproject.toml`, so run deptry in **requirements-file mode**:
 
 ```bash
-cd packages/simcore-sdk
-uvx deptry src \
-  --known-first-party simcore_sdk \
-  --known-first-party servicelib \
-  --known-first-party models_library
+cd <package-path>
+uvx deptry src tests \
+  --requirements-files requirements/_base.in \
+  --requirements-files-dev requirements/_test.in \
+  --known-first-party <first_party_module>
 ```
+
+If tests are very heavy/noisy for a first pass, start with `src` only and then
+rerun including `tests` before deciding removals.
 
 deptry reports, per category:
 - `DEP002` **unused** — declared but never imported → candidates to remove from `_base.in`
@@ -63,6 +68,16 @@ For this skill, act on `DEP002` findings first. `DEP001` and `DEP003` are out
 of scope unless they are directly related to a dependency being pruned; otherwise
 log them for a separate follow-up task.
 
+`deptry` exits with code `1` when issues are found. Treat this as expected scan
+output, not a command failure.
+
+`UserWarning: Unused option -c (constraint)` from requirement parsers is expected
+for this repo's layered requirements format and does not invalidate results.
+
+When a package includes another package's requirements via `--requirement ...`,
+`DEP002` may point to inherited dependencies. In that case, prune at the origin
+package (where that dependency is declared), not in the downstream package.
+
 > Use `uvx` (ephemeral, isolated) — never `pip install` the scanner into the
 > project environment. Optionally cross-check imports with
 > `uvx pipreqs --print src/simcore_sdk` (prints only, writes nothing).
@@ -72,7 +87,12 @@ layout), fall back to a manual import scan and compare results against declared
 dependencies in `requirements/_base.in`:
 
 ```bash
-grep -rh "^import\|^from" src/ | sort -u
+grep -Rho "^[[:space:]]*\(from\|import\)[[:space:]].*" src tests \
+  --exclude-dir='__pycache__' \
+| sed -E 's/^[[:space:]]*(from|import)[[:space:]]+//' \
+| sed -E 's/[[:space:]].*$//' \
+| sed -E 's/\..*$//' \
+| sort -u
 ```
 
 ### 2. Confirm impact before removing
@@ -88,6 +108,10 @@ grep -rnw 'src' -e '<top_level_import_name>' # is it truly unimported?
 
 Then edit `requirements/_base.in` (or `_test.in`) and delete the
 confirmed-unused lines.
+
+Before editing, confirm each candidate is declared directly in the current
+package's `requirements/_base.in` and not pulled transitively via another
+`--requirement` include.
 
 ### 3. Recompile the package
 
@@ -154,4 +178,13 @@ integration testing are out of scope.
 - [python-dependencies.md](../../../requirements/python-dependencies.md) — dependency model and security workflow
 - [how-to-unify-versions.md](../../../requirements/how-to-unify-versions.md)
 - [how-to-upgrade-python.md](../../../requirements/how-to-upgrade-python.md)
-- [deptry](https://deptry.com/): a CLI tool to check for issues with dependencies in a python project suc as unused or missing dependencies.
+- [deptry](https://deptry.com/): a CLI tool to check for issues with dependencies in a python project such as unused or missing dependencies.
+
+## catpcha (repo-specific caveats)
+
+- This monorepo uses layered `requirements/*.in` with `--constraint` and
+  `--requirement` includes; deptry needs explicit `--requirements-files` inputs.
+- `DEP002` in a downstream package can be a false local target when the package
+  inherits dependencies from `packages/common-library/requirements/_base.in`.
+- `deptry` may report imports found in both `src` and `tests`; run with `src`
+  first for signal, then `src tests` for final decision.
