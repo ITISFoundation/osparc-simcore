@@ -7,6 +7,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from ..db.plugin import get_asyncpg_engine
 from . import _metadata_repository
@@ -20,17 +21,36 @@ async def get_project_custom_metadata_for_user(
     app: web.Application, user_id: UserID, project_uuid: ProjectID
 ) -> MetadataDict:
     """raises: ProjectNotFoundError"""
-    await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
+    await validate_project_ownership(get_asyncpg_engine(app), user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_repository.get_project_custom_metadata(
-        engine=get_asyncpg_engine(app), project_uuid=project_uuid
+        engine=get_asyncpg_engine(app), connection=None, project_uuid=project_uuid
     )
+
+
+async def batch_get_project_custom_metadata_for_user(
+    app: web.Application, *, user_id: UserID, project_uuids: list[ProjectID]
+) -> dict[ProjectID, MetadataDict]:
+    """raises: ProjectNotFoundError, ProjectInvalidRightsError"""
+    engine = get_asyncpg_engine(app)
+
+    results: dict[ProjectID, MetadataDict] = {}
+    async with pass_or_acquire_connection(engine) as connection:
+        # N.B. A single connection doesn't support concurrent queries.
+        # For concurrency: implement the following directly as a single db query, don't use multiple connections.
+        for project_uuid in project_uuids:
+            await validate_project_ownership(engine, user_id=user_id, project_uuid=project_uuid, connection=connection)
+            results[project_uuid] = await _metadata_repository.get_project_custom_metadata(
+                engine=engine, connection=connection, project_uuid=project_uuid
+            )
+
+    return results
 
 
 async def get_project_custom_metadata_or_empty_dict(app: web.Application, project_uuid: ProjectID) -> MetadataDict:
     try:
         output = await _metadata_repository.get_project_custom_metadata(
-            engine=get_asyncpg_engine(app), project_uuid=project_uuid
+            engine=get_asyncpg_engine(app), connection=None, project_uuid=project_uuid
         )
     except ProjectNotFoundError:
         # This is a valid case when the project is not found
@@ -45,7 +65,7 @@ async def set_project_custom_metadata(
     project_uuid: ProjectID,
     value: MetadataDict,
 ) -> MetadataDict:
-    await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
+    await validate_project_ownership(get_asyncpg_engine(app), user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_repository.set_project_custom_metadata(
         engine=get_asyncpg_engine(app),
@@ -58,7 +78,7 @@ _NIL_NODE_UUID: Final[NodeID] = NodeID(int=0)
 
 
 async def _project_has_ancestors(app: web.Application, *, user_id: UserID, project_uuid: ProjectID) -> bool:
-    await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
+    await validate_project_ownership(get_asyncpg_engine(app), user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_repository.project_has_ancestors(engine=get_asyncpg_engine(app), project_uuid=project_uuid)
 
@@ -70,7 +90,7 @@ async def set_project_ancestors_from_custom_metadata(
     custom_metadata: MetadataDict,
 ) -> None:
     """NOTE: this should not be used anywhere else than from the metadata handler!"""
-    await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
+    await validate_project_ownership(get_asyncpg_engine(app), user_id=user_id, project_uuid=project_uuid)
     if await _project_has_ancestors(app, user_id=user_id, project_uuid=project_uuid):
         # we do not override any existing ancestors via this method
         return
@@ -102,7 +122,7 @@ async def set_project_ancestors(
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
 ) -> None:
-    await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
+    await validate_project_ownership(get_asyncpg_engine(app), user_id=user_id, project_uuid=project_uuid)
 
     await _metadata_repository.set_project_ancestors(
         get_asyncpg_engine(app),

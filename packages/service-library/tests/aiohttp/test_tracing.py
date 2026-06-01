@@ -15,7 +15,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY, setup_tracing
-from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingConfig
+from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingConfig, traced
 from settings_library.tracing import TracingSettings
 
 
@@ -272,3 +272,9 @@ async def test_tracing_finds_project_id_and_node_id_if_available(
         assert server_span.attributes
         assert server_span.attributes.get("project_id") == "123"
         assert server_span.attributes.get("node_id") == "456"
+
+
+def test_traced_decorator_accepts_aiohttp_app():
+    @traced
+    async def _aiohttp(app: web.Application) -> None:
+        pass

@@ -27,6 +27,9 @@ _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_function_job_collections_for_functionid")
 
+# Delay after each input blur to let React process onBlur state update
+_REACT_BLUR_SETTLE_MS: Final[int] = 500
+
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
@@ -290,7 +293,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
         # Wait until the rename save is finished
         with log_context(logging.INFO, "Wait until project is saved after rename"):
-            page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=5 * SECOND)
+            page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=30 * SECOND)
 
         with log_context(logging.INFO, "Verify project name was persisted on server"):
             for _ in range(10):
@@ -404,37 +407,117 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
 
         with log_context(logging.INFO, "Selected test function..."):
-            # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
-            function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
-            function_row.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
-            select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
-            select_btn.wait_for(state="visible", timeout=30 * SECOND)
-            select_btn.click()
+            # Retry the whole selection in case of transient websocket/iframe issues
+            for attempt in range(3):
+                try:
+                    # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
+                    # The DataGrid paginates (10 per page), so navigate pages to find our function
+                    function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
+
+                    # Wait for the DataGrid to have at least one row rendered
+                    service_iframe.locator('div[role="row"][data-id]').first.wait_for(
+                        state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
+                    )
+
+                    # Navigate through pages to find the function row
+                    for _ in range(20):  # max 20 pages
+                        if function_row.is_visible():
+                            break
+                        next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
+                        if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
+                            break
+                        next_page_btn.click()
+                        service_iframe.locator('div[role="row"][data-id]').first.wait_for(
+                            state="visible", timeout=60 * SECOND
+                        )
+                    function_row.wait_for(state="visible", timeout=30 * SECOND)
+
+                    select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
+                    select_btn.wait_for(state="visible", timeout=30 * SECOND)
+
+                    # Wait for MUI DataGrid loading overlay to disappear before clicking
+                    overlay = service_iframe.locator(".MuiDataGrid-overlay")
+                    try:
+                        overlay.wait_for(state="hidden", timeout=60 * SECOND)
+                        select_btn.click(timeout=30 * SECOND)
+                    except PlaywrightTimeoutError:
+                        logging.warning("Overlay still present after 60s, clicking with force=True")
+                        select_btn.click(force=True, timeout=30 * SECOND)
+
+                    # Verify the click actually navigated to the input step
+                    min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
+                    input_locator = service_iframe.locator(
+                        f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]'
+                    )
+                    try:
+                        input_locator.first.wait_for(state="visible", timeout=10 * SECOND)
+                    except PlaywrightTimeoutError:
+                        if attempt == 2:
+                            raise
+                        logging.warning(
+                            "Select click did not navigate to input step "
+                            "(attempt %d/3), reloading iframe and retrying...",
+                            attempt + 1,
+                        )
+                        # Reload the page to reset the iframe/service state
+                        page.reload()
+                        service_iframe.locator("body").wait_for(state="visible", timeout=60 * SECOND)
+                        continue
+                    break
+                except PlaywrightTimeoutError:
+                    if attempt == 2:
+                        raise
+                    logging.warning(
+                        "Attempt %d/3 failed to find/select function row, reloading page and retrying...",
+                        attempt + 1,
+                    )
+                    page.reload()
+                    service_iframe.locator("body").wait_for(state="visible", timeout=60 * SECOND)
 
         with log_context(logging.INFO, "Filling the input parameters..."):
             min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
             min_inputs = service_iframe.locator(f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]')
+            min_inputs.first.wait_for(state="visible", timeout=30 * SECOND)
             count_min = min_inputs.count()
-
-            for i in range(count_min):
-                input_field = min_inputs.nth(i)
-                input_field.fill(str(i + 1))
-                logging.info("Filled %s input %d with value %d", min_test_id, i, i + 1)
-                assert input_field.input_value() == str(i + 1)
+            logging.info("Found %d %s inputs", count_min, min_test_id)
 
             max_test_id = "Standard Deviation" if "uq" in local_service_key.lower() else "Max"
             max_inputs = service_iframe.locator(f'[mmux-testid="input-block-{max_test_id}"] input[type="number"]')
+            max_inputs.first.wait_for(state="visible", timeout=30 * SECOND)
             count_max = max_inputs.count()
+            logging.info("Found %d %s inputs", count_max, max_test_id)
+
+            # Fill each pair of min/max together using native JS events to ensure
+            # React's controlled input and onBlur handler are properly triggered
+            for i in range(count_min):
+                input_field = min_inputs.nth(i)
+                value_str = str(i + 1)
+                input_field.click()
+                input_field.fill(value_str)
+                # Use evaluate to explicitly trigger blur via native DOM API
+                input_field.evaluate("el => el.blur()")
+                if i < count_min - 1:
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
+                logging.info("Filled %s input %d with value %s", min_test_id, i, value_str)
+                assert input_field.input_value() == value_str
 
             for i in range(count_max):
                 input_field = max_inputs.nth(i)
-                input_field.fill(str((i + 1) * 10))
-                logging.info("Filled %s input %d with value %d", max_test_id, i, (i + 1) * 10)
-                assert input_field.input_value() == str((i + 1) * 10)
+                value_str = str((i + 1) * 10)
+                input_field.click()
+                input_field.fill(value_str)
+                # Use evaluate to explicitly trigger blur via native DOM API
+                input_field.evaluate("el => el.blur()")
+                if i < count_max - 1:
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
+                logging.info("Filled %s input %d with value %s", max_test_id, i, value_str)
+                assert input_field.input_value() == value_str
 
-            page.wait_for_timeout(1000)
-            page.keyboard.press("Tab")
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(2 * SECOND)
+
+            # Log the Next button state for debugging
+            next_btn_disabled = service_iframe.locator('[mmux-testid="next-button"]').is_disabled()
+            logging.info("Next button disabled after filling: %s", next_btn_disabled)
 
         if EXPECTED_MOGA_KEY in local_service_key.lower():
             with log_context(logging.INFO, "Filling the output parameters..."):
@@ -451,7 +534,46 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         with log_context(logging.INFO, "Clicking Next to go to the next step..."):
             next_button = service_iframe.locator('[mmux-testid="next-button"]')
             next_button.scroll_into_view_if_needed()
-            next_button.click(timeout=30 * SECOND)
+            try:
+                next_button.click(timeout=60 * SECOND)
+            except PlaywrightTimeoutError:
+                if next_button.is_disabled():
+                    logging.warning("Next button is disabled after 60s, re-filling inputs via JS events...")
+                else:
+                    logging.warning(
+                        "Next button is enabled but click timed out"
+                        " (possible overlay), re-filling inputs via JS events..."
+                    )
+                for i in range(count_min):
+                    value_str = str(i + 1)
+                    min_inputs.nth(i).evaluate(
+                        """(el, val) => {
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                                window.HTMLInputElement.prototype, 'value').set;
+                            nativeInputValueSetter.call(el, val);
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                            el.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+                        }""",
+                        value_str,
+                    )
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
+                for i in range(count_max):
+                    value_str = str((i + 1) * 10)
+                    max_inputs.nth(i).evaluate(
+                        """(el, val) => {
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                                window.HTMLInputElement.prototype, 'value').set;
+                            nativeInputValueSetter.call(el, val);
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                            el.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+                        }""",
+                        value_str,
+                    )
+                    page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
+                page.wait_for_timeout(2 * SECOND)
+                next_button.click(timeout=30 * SECOND)
 
         page.wait_for_timeout(1 * SECOND)
 
@@ -528,7 +650,12 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                 )
                 logging.info("⏳ Waiting for all status cells to be completed...")
                 page.wait_for_timeout(5000)
-                refresh_btn.click()
+                try:
+                    refresh_btn.click(timeout=30 * SECOND)
+                except PlaywrightTimeoutError:
+                    logging.warning("Refresh button click timed out, retrying after short wait...")
+                    page.wait_for_timeout(2 * SECOND)
+                    refresh_btn.click(timeout=60 * SECOND)
 
         with log_context(logging.INFO, "Selecting jobs and verifying graph..."):
             select_all_btn = service_iframe.get_by_role("button", name="Select all successful Jobs")

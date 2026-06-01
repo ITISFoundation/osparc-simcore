@@ -44,7 +44,7 @@ def test_create_invitation(
 
     # checks issue with `//` reported in https://github.com/ITISFoundation/osparc-simcore/issues/7055
     assert invitation.invitation_url
-    assert invitation.invitation_url.path == "/"
+    assert invitation.invitation_url.path == "/"  # pylint: disable=no-member
 
     assert invitation.product
     if invitation_input.product:

@@ -4,6 +4,7 @@ import logging
 
 from aiohttp import web
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.tracing import traced
 
 from ..resource_manager.registry import get_registry
 from ._core_disconnected import remove_disconnected_user_resources
@@ -13,6 +14,7 @@ from ._core_orphans import remove_orphaned_services
 _logger = logging.getLogger(__name__)
 
 
+@traced
 async def collect_garbage(app: web.Application):
     """
     Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
