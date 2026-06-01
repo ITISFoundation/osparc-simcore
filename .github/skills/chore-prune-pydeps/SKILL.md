@@ -1,5 +1,5 @@
 ---
-name: prune-pydeps
+name: chore-prune-pydeps
 description: 'Detect and remove unused Python dependencies from a package/service and propagate the cleanup downstream. Use when: pruning requirements, removing unused dependencies, cleaning up `_base.in`/`_test.in`, shrinking install size, fixing leftover deps after refactor, or auditing imports vs declared requirements in osparc-simcore.'
 argument-hint: '<package-or-service-path> (e.g. packages/simcore-sdk)'
 ---

@@ -215,7 +215,7 @@ jobs:
                   f.write("\n")
                   f.write("> **Security SLA**: Critical → fix within 24 h · High → fix within 1 week\n")
                   f.write(">\n")
-                  f.write("> Run `scripts/propagate-security-fix.sh <package> <min-safe-version>` to apply a fix.\n")
+                  f.write("> Run `.github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh <package> <min-safe-version>` to apply a fix.\n")
           PYEOF
 
       - name: Fail if production vulnerabilities found

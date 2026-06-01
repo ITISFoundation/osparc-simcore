@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "name": "prune-pydeps",
+  "name": "chore-prune-pydeps",
   "scope": "osparc-simcore monorepo (packages/* and services/*)",
   "optimized_for_model": "claude-3-5-haiku",
   "last_updated": "2026-06-01",

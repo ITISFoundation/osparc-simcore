@@ -4,7 +4,11 @@
 # pinned requirements across the monorepo.
 #
 # Usage:
-#   scripts/propagate-security-fix.sh <package> <constraint> [<cve-id>]
+#   .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh [--yes] <package> <constraint> [<cve-id>]
+#
+# Options:
+#   -y, --yes, --force   Replace an existing constraint without prompting
+#                        (use for non-interactive / CI / agent runs)
 #
 # Arguments:
 #   package     Package name, e.g. "aiohttp"
@@ -12,8 +16,8 @@
 #   cve-id      Optional CVE or GHSA id, e.g. "CVE-2024-12345" or "GHSA-xxxx"
 #
 # Examples:
-#   scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
-#   scripts/propagate-security-fix.sh cryptography ">=43.0.1"
+#   .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
+#   .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh cryptography ">=43.0.1"
 #
 # What this script does:
 #   1. Validates inputs.
@@ -37,8 +41,32 @@ CONSTRAINTS_FILE="${REPO_ROOT}/requirements/constraints.txt"
 
 # ── argument validation ──────────────────────────────────────────────────────
 
+ASSUME_YES=0
+
+# Parse optional flags before positional args
+while [[ $# -gt 0 ]]; do
+  case "${1}" in
+    -y|--yes|--force)
+      ASSUME_YES=1
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "Error: unknown option '${1}'" >&2
+      echo "Usage: $0 [--yes] <package> <constraint> [<cve-id>]" >&2
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
 if [[ $# -lt 2 ]]; then
-  echo "Usage: $0 <package> <constraint> [<cve-id>]" >&2
+  echo "Usage: $0 [--yes] <package> <constraint> [<cve-id>]" >&2
   echo "  e.g. $0 aiohttp '>=3.11.14' CVE-2024-23334" >&2
   exit 1
 fi
@@ -91,7 +119,12 @@ if grep -qiE "^[[:space:]]*${PACKAGE}[^=!<>]*(==|!=|>=|<=|~=|>|<)" "${CONSTRAINT
   echo "Found existing constraint for '${PACKAGE}' in constraints.txt:"
   grep -iE "^[[:space:]]*${PACKAGE}[^=!<>]*(==|!=|>=|<=|~=|>|<)" "${CONSTRAINTS_FILE}"
   echo ""
-  read -r -p "Replace it with '${NEW_LINE}'? [y/N] " confirm
+  if [[ "${ASSUME_YES}" -eq 1 ]]; then
+    confirm="y"
+    echo "--yes given: replacing with '${NEW_LINE}'"
+  else
+    read -r -p "Replace it with '${NEW_LINE}'? [y/N] " confirm
+  fi
   case "${confirm}" in
     [yY]|[yY][eE][sS])
       # Replace the first matching line

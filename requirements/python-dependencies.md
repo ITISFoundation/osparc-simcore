@@ -231,11 +231,11 @@ Security SLA:
 When a CVE is found in a production dependency:
 
 1. Check the fix version on PyPI / the CVE advisory.
-2. Run the propagation script:
+2. Run the propagation script (bundled with the `propagate-security-fix` skill):
    ```console
-   $ scripts/propagate-security-fix.sh <package> <constraint> [<CVE-id>]
+   $ .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh <package> <constraint> [<CVE-id>]
    # Example:
-   $ scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
+   $ .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
    ```
    The script:
    - Adds or updates the pin in `requirements/constraints.txt`.
