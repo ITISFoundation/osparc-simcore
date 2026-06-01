@@ -122,7 +122,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
       this.getChildControl("registered-users-container");
       this.getChildControl("pagination-layout");
       this.__currentOrderBy = "-accountRequestedReviewedAt";
-      this.__fetchPage();
+      this.addListenerOnce("appear", () => this.__fetchPage());
     },
 
     __createSortableHeader: function(label, fieldName) {
