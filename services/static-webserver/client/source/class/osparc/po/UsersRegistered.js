@@ -26,6 +26,8 @@ qx.Class.define("osparc.po.UsersRegistered", {
       DATE: 3,
       INFO: 4,
     },
+
+    PAGE_LIMIT: 10,
   },
 
   members: {
@@ -33,7 +35,6 @@ qx.Class.define("osparc.po.UsersRegistered", {
     __currentOrderBy: null,
     __registeredUsers: null,
     __currentOffset: 0,
-    __pageLimit: 5,
     __totalUsers: 0,
 
     _createChildControlImpl: function(id) {
@@ -97,7 +98,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
             toolTipText: this.tr("Previous page"),
           });
           control.addListener("execute", () => {
-            this.__currentOffset = Math.max(0, this.__currentOffset - this.__pageLimit);
+            this.__currentOffset = Math.max(0, this.__currentOffset - this.self().PAGE_LIMIT);
             this.__fetchPage();
           });
           this.getChildControl("pagination-layout").add(control);
@@ -116,7 +117,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
             toolTipText: this.tr("Next page"),
           });
           control.addListener("execute", () => {
-            this.__currentOffset += this.__pageLimit;
+            this.__currentOffset += this.self().PAGE_LIMIT;
             this.__fetchPage();
           });
           this.getChildControl("pagination-layout").add(control);
@@ -261,7 +262,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
       const params = {
         url: {
           offset: this.__currentOffset,
-          limit: this.__pageLimit,
+          limit: this.self().PAGE_LIMIT,
           orderBy: this.__currentOrderBy,
         }
       };
@@ -283,13 +284,13 @@ qx.Class.define("osparc.po.UsersRegistered", {
     },
 
     __updatePaginationControls: function() {
-      const currentPage = Math.floor(this.__currentOffset / this.__pageLimit) + 1;
-      const totalPages = Math.ceil(this.__totalUsers / this.__pageLimit) || 1;
-      this.getChildControl("page-info-label").setValue(
-        this.tr("Page %1 of %2 (%3 users)", currentPage, totalPages, this.__totalUsers)
-      );
       this.getChildControl("prev-page-button").setEnabled(this.__currentOffset > 0);
-      this.getChildControl("next-page-button").setEnabled(this.__currentOffset + this.__pageLimit < this.__totalUsers);
+      const currentPage = Math.floor(this.__currentOffset / this.self().PAGE_LIMIT) + 1;
+      const totalPages = Math.ceil(this.__totalUsers / this.self().PAGE_LIMIT) || 1;
+      this.getChildControl("page-info-label").setValue(
+        this.tr("Page %1/%2 (%3 users)", currentPage, totalPages, this.__totalUsers)
+      );
+      this.getChildControl("next-page-button").setEnabled(this.__currentOffset + this.self().PAGE_LIMIT < this.__totalUsers);
     },
 
     __reload: function() {
