@@ -30,6 +30,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
 
   members: {
     __currentFilterText: "",
+    __currentOrderBy: null,
     __registeredUsers: null,
 
     _createChildControlImpl: function(id) {
@@ -94,7 +95,44 @@ qx.Class.define("osparc.po.UsersRegistered", {
       this.getChildControl("reload-button");
       this.getChildControl("intro-text");
       this.getChildControl("loading-spinner");
+      this.__currentOrderBy = "-accountRequestedReviewedAt";
       this.__populateRegisteredUsersLayout();
+    },
+
+    __createSortableHeader: function(label, fieldName) {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.HBox(4).set({
+        alignY: "middle"
+      }));
+      container.set({
+        cursor: "pointer",
+      });
+      const textLabel = new qx.ui.basic.Label(label).set({
+        font: "text-14",
+      });
+      container.add(textLabel);
+      const sortIcon = new qx.ui.basic.Label("").set({
+        font: "text-12",
+      });
+      container.add(sortIcon);
+      // Update icon based on current sort
+      const currentField = this.__currentOrderBy.replace(/^-/, "");
+      const isDesc = this.__currentOrderBy.startsWith("-");
+      if (currentField === fieldName) {
+        sortIcon.setValue(isDesc ? "\u25BC" : "\u25B2");
+      }
+      container.addListener("tap", () => {
+        const curField = this.__currentOrderBy.replace(/^-/, "");
+        const curDesc = this.__currentOrderBy.startsWith("-");
+        if (curField === fieldName) {
+          // Toggle direction
+          this.__currentOrderBy = curDesc ? fieldName : "-" + fieldName;
+        } else {
+          // Default to ascending for new field
+          this.__currentOrderBy = fieldName;
+        }
+        this.__reload();
+      });
+      return container;
     },
 
     __addHeader: function() {
@@ -107,23 +145,17 @@ qx.Class.define("osparc.po.UsersRegistered", {
         column: this.self().COLUMNS.NAME,
       });
 
-      layout.add(new qx.ui.basic.Label(this.tr("Username")).set({
-        font: "text-14"
-      }), {
+      layout.add(this.__createSortableHeader(this.tr("Username"), "name"), {
         row: 0,
         column: this.self().COLUMNS.USERNAME,
       });
 
-      layout.add(new qx.ui.basic.Label(this.tr("Email")).set({
-        font: "text-14"
-      }), {
+      layout.add(this.__createSortableHeader(this.tr("Email"), "email"), {
         row: 0,
         column: this.self().COLUMNS.EMAIL,
       });
 
-      layout.add(new qx.ui.basic.Label(this.tr("Reviewed At")).set({
-        font: "text-14"
-      }), {
+      layout.add(this.__createSortableHeader(this.tr("Reviewed At"), "accountRequestedReviewedAt"), {
         row: 0,
         column: this.self().COLUMNS.DATE,
       });
@@ -192,18 +224,12 @@ qx.Class.define("osparc.po.UsersRegistered", {
 
       const params = {
         url: {
-          registered: "true",
+          orderBy: this.__currentOrderBy,
         }
       };
       osparc.data.Resources.getInstance().getAllPages("poUsers", params, "getRegisteredUsers")
         .then(users => {
           this.getChildControl("filter-users").show();
-          const sortByDate = (a, b) => {
-            const dateA = a.accountRequestReviewedAt ? new Date(a.accountRequestReviewedAt) : new Date(0);
-            const dateB = b.accountRequestReviewedAt ? new Date(b.accountRequestReviewedAt) : new Date(0);
-            return dateB - dateA;
-          };
-          users.sort(sortByDate);
           this.__registeredUsers = users;
           this.__renderRegisteredUsers();
         })

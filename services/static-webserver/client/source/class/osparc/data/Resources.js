@@ -1149,7 +1149,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           getRegisteredUsers: {
             method: "GET",
-            url: statics.API + "/admin/user-accounts?registered=true&offset={offset}&limit={limit}"
+            url: statics.API + "/admin/user-accounts?registered=true&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           previewApproval: {
             method: "POST",
