@@ -121,7 +121,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
       this.getChildControl("loading-spinner");
       this.getChildControl("registered-users-container");
       this.getChildControl("pagination-layout");
-      this.__currentOrderBy = "-accountRequestedReviewedAt";
+      this.__currentOrderBy = "-accountRequestReviewedAt";
       this.addListenerOnce("appear", () => this.__fetchPage());
     },
 
@@ -171,7 +171,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
         column: this.self().COLUMNS.NAME,
       });
 
-      layout.add(this.__createSortableHeader(this.tr("Username"), "name"), {
+      layout.add(this.__createSortableHeader(this.tr("Username"), "userName"), {
         row: 0,
         column: this.self().COLUMNS.USERNAME,
       });
@@ -181,7 +181,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
         column: this.self().COLUMNS.EMAIL,
       });
 
-      layout.add(this.__createSortableHeader(this.tr("Reviewed At"), "accountRequestedReviewedAt"), {
+      layout.add(this.__createSortableHeader(this.tr("Reviewed At"), "accountRequestReviewedAt"), {
         row: 0,
         column: this.self().COLUMNS.DATE,
       });
