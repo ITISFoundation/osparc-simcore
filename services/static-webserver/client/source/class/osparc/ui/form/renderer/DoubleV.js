@@ -109,6 +109,7 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
         });
 
         this._connectVisibility(item, label);
+        item.bind("visibility", itemLayout, "visibility");
 
         if (takeDouble || col === 1) {
           col = 0;
