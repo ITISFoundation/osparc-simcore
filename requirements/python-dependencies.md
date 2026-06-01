@@ -58,15 +58,15 @@ Every python package specifies its dependencies to the installer via the ``setup
 - All ``*.in`` files contain third-party dependencies
   - created by the developer
   - should not be very restrictive with versions. Add only constraints that must be enforced: e.g. to fix vulnerabilities, compatibility issues, etc
-  - used as input to [pip-tools] which will determine the final version used
-- All ``*.txt`` files are actual requirements, i.e. can be used in ``pip install -r requirements/filename.txt``. There are two types:
-  1. *frozen dependencies* are automatically created using [pip-tools] from ``_*.in`` files. These includes a strict list of libraries with pinned versions. Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these files start with ``_`` and therefore are listed at the top of the tree. These follow a [workflow of layered requirements](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements) in which ``_base.txt`` contains dependencies for production and ``_test.txt`` **extra** dependencies for setting up testing.
+  - used as input to [uv] which will determine the final version used
+- All ``*.txt`` files are actual requirements, i.e. can be used in ``uv pip install -r requirements/filename.txt``. There are two types:
+  1. *frozen dependencies* are automatically created using [uv] from ``_*.in`` files. These includes a strict list of libraries with pinned versions. Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these files start with ``_`` and therefore are listed at the top of the tree. These follow a [workflow of layered requirements](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements) in which ``_base.txt`` contains dependencies for production and ``_test.txt`` **extra** dependencies for setting up testing.
   2. installation *shortcuts* for three different *contexts*:
-     1. **development**: ``pip install -r requirements/dev.txt``
+     1. **development**: ``uv pip install -r requirements/dev.txt``
         - Installs target package in [develop (or edit)](https://pip.pypa.io/en/stable/reference/pip_install/#usage) mode as well as  other tools or packages within the simcore repository
-     2. **contiguous integration**: ``pip install -r requirements/ci.txt``
+     2. **contiguous integration**: ``uv pip install -r requirements/ci.txt``
         - Installs target package, simcore-repo  and tests dependencies
-     3. **production**: ``pip install -r requirements/prod.txt``
+     3. **production**: ``uv pip install -r requirements/prod.txt``
         - Installs target package  and simcore-repo dependencies
 - ``setup.py`` read dependencies into the setup (a bit more below)
   - **libraries** (e.g. in [packages/service-lib](../packages/service-library/setup.py)) have *flexible dependencies*, i.e. requirements read from  ``requirements/_base.in``
@@ -89,21 +89,28 @@ Libraries requirements are only frozen for testing (therefore ``tests_require= .
 
 
  ---
-## Limitations [@ May 6, 2019]
+## Limitations
 
-1. Needs to install [pip-tools]
-   - pollutes the venv
-   - **SOLUTION** under development: [pip-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/pip-kit) is a containarized solution with multiple packages
+1. ~~Needs to install [pip-tools]~~ **RESOLVED [June 2026]**: replaced by [uv]; the `make reqs` recipes run `uv pip compile` in an isolated tooling image, no longer polluting the venv.
+   - ~~pollutes the venv~~
+   - ~~**SOLUTION** under development: [pip-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/pip-kit) is a containarized solution with multiple packages~~
 1. Requirements from in-place packages are not accounted in services upon *pip-compilation* since they cannot be added to ``_base.txt`` or ``_test.txt`` !!!!!!
 1. Adding dependencies to **in-place simcore's repo packages** is error-prone since it requires changes in multiple places, namely:
    - paths entries in ``requirements/[dev|ci|prod].txt``
    - package names+version in requirements list for ``setup.py``
-1. Cannot use [pip-tools] (e.g. ``pip-sync``) with ``requirements/ci.txt`` or ``requirements/prod.txt`` because of in-place dependencies: ``pip-compile does not support URLs as packages, unless they are editable. Perhaps add -e option? (constraint was: file:///home/crespo/devp/osparc-simcore/packages/s3wrapper (from -r requirements/ci.txt (line 13)))``
+1. ~~Cannot use [pip-tools] (e.g. ``pip-sync``) with ``requirements/ci.txt`` or ``requirements/prod.txt`` because of in-place dependencies: ``pip-compile does not support URLs as packages, unless they are editable. Perhaps add -e option? (constraint was: file:///home/crespo/devp/osparc-simcore/packages/s3wrapper (from -r requirements/ci.txt (line 13)))``~~ **RESOLVED [June 2026]**: [uv] resolves local path dependencies natively.
 
 
 ### Updates [March 2020]
 
 1. Created common makefile in [requirements/base.Makefile](requirements/base.Makefile)
+
+### Updates [June 2026]
+
+1. Replaced [pip-tools] with [uv] for all `pip-compile` operations. The Makefile targets (`make reqs`, `make reqs-all`) call `uv pip compile` internally — developer-facing commands are unchanged.
+2. Added `requirements/constraints.txt` as a **repo-wide constraint file** applied to every `*.in` compilation via `--constraint ../../../../requirements/constraints.txt`. This is the primary mechanism for CVE fixes and strategic version pins (see Security workflow below).
+3. Added automated CVE scanning via `pip-audit` (see `.github/workflows/pip-audit.yml`).
+4. Disabled Dependabot pip version-update PRs; Docker and GitHub Actions ecosystems are tracked with a cool-down policy (see `.github/dependabot.yml`).
 
 ## Workflows
 
@@ -114,43 +121,42 @@ $ cd path/to/package
 ```
 then to **develop** your library/service type
 ```console
-$ pip install -r requirements/dev.txt
+$ uv pip install -r requirements/dev.txt
 ```
 for **CI** of your your library/service (normally used in ci/travis/...) type
 ```console
-$ pip install -r requirements/ci.txt
+$ uv pip install -r requirements/ci.txt
 ```
 to **deploy** your service
 ```console
-$ pip install -r requirements/prod.txt
+$ uv pip install -r requirements/prod.txt
 ```
-or if it is a library, then ``pip install .`` is preferred.
+or if it is a library, then ``uv pip install .`` is preferred.
 
 
 ### Updating dependencies
 
-This is the typical [pip-tools] workflow
+This is the typical [uv] workflow
 
 1. developer **only** sets ``*.in`` files (or the shortcut files)
-2. ``pip-compile`` requirements
-3. ``pip install -r requirements/[dev|ci|prod].txt`` depending on your context
-
-![](https://github.com/jazzband/pip-tools/raw/master/img/pip-tools-overview.png)
+2. ``uv pip compile`` requirements (via ``make reqs`` in the package folder)
+3. ``uv pip install -r requirements/[dev|ci|prod].txt`` depending on your context
 
 
 ### auto-compile requirements
 
-or how to convert all ``requirements/*.in`` into ``requirements/*.txt`` using ``requirements/Makefile``:
+Or how to convert all ``requirements/*.in`` into ``requirements/*.txt`` using the Makefile:
 
 ```console
 $ cd path/to/package/requirements
 $ make help
-all – pip-compiles all requirements/*.in -> requirements/*.txt
-check – Checks whether pip-compile is installed
-clean – Cleans all requirements/*.txt (except dev.txt)
+all – compiles all requirements/*.in -> requirements/*.txt (via uv pip compile)
+clean – Cleans all requirements/*.txt (except dev.txt, ci.txt, prod.txt, dev.txt)
 help – Display all callable targets
 $ make
 ```
+
+The Makefile targets call ``uv pip compile`` internally in an isolated tooling environment.
 
 ### Updating testing & tooling requirements (t&t reqs)
 
@@ -202,6 +208,81 @@ crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs upgrade=fastap
 crespo@8ac9edf78469:~/services/api-server/requirements$ touch _tests.in
 crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs
 ```
+---
+## Security workflow
+
+### Why Dependabot pip is disabled
+
+Dependabot's `package-ecosystem: pip` works by editing `*.txt` files directly. In this repo `*.txt` files are **generated artifacts** — they are compiled from `*.in` sources by `uv pip compile` and must respect the full constraint chain:
+
+```
+_base.in  →  _base.txt  →  _test.in  →  _test.txt
+              ↑
+       requirements/constraints.txt  (applied to every compile)
+```
+
+If Dependabot edits `_base.txt` directly, the change is invisible to `uv pip compile` and will be overwritten the next time `make reqs` runs. Dependabot pip version-update PRs are therefore set to `open-pull-requests-limit: 0` (disabled). GitHub's security-alert mechanism uses a separate internal limit and is **not** affected by this setting.
+
+### `requirements/constraints.txt` — the security override layer
+
+This file is applied as `--constraint` to **every** `*.in` compilation across the repo. It is the canonical place to:
+
+- Pin a minimum safe version after a CVE (e.g. `aiohttp>=3.11.14  # CVE-2024-23334`).
+- Block a broken release across all services at once (e.g. `httpx!=0.28.0`).
+- Coordinate a strategic upgrade that spans multiple services.
+
+Do **not** use service-local `*.in` files for these cross-cutting pins — they would silently miss other services.
+
+### Automated CVE scanning — pip-audit
+
+The workflow [`.github/workflows/pip-audit.yml`](../.github/workflows/pip-audit.yml) runs:
+
+- **Weekly** (Monday 06:00 UTC) and on any push/PR touching `**/requirements/*.{in,txt}` or `requirements/constraints.txt`.
+- Scans all `_base.txt` files (35 files across 18 services + 9 packages): **CI fails** on any CVE.
+- Scans all `_test.txt` files: **warning only**, never blocks CI.
+- Uploads a SARIF report to the GitHub Security tab and writes a markdown summary in the job log.
+
+Security SLA:
+
+| Severity     | Deadline                  |
+| ------------ | ------------------------- |
+| Critical     | 24 hours                  |
+| High         | 1 week                    |
+| Medium / Low | next regular update cycle |
+
+### Applying a security fix
+
+When a CVE is found in a production dependency:
+
+1. Check the fix version on PyPI / the CVE advisory.
+2. Run the propagation script:
+   ```console
+   $ scripts/propagate-security-fix.sh <package> <constraint> [<CVE-id>]
+   # Example:
+   $ scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
+   ```
+   The script:
+   - Adds or updates the pin in `requirements/constraints.txt`.
+   - Runs `make -C requirements/tools reqs-all upgrade=<package>` which re-pins the package across all `*.txt` files in the repo.
+   - Prints the changed files and a ready-made `git commit` command.
+3. Review the diff (`git diff requirements/`), run unit tests, then commit.
+
+For an isolated single-service fix use `make reqs upgrade=<package>` inside that service's `requirements/` folder instead of `reqs-all`.
+
+### Cool-down / N-1 policy
+
+A *cool-down* (also called patch-lag or N-1 policy) delays adoption of newly released versions to avoid inheriting bugs introduced in fresh releases.
+
+| Dependency type         | Major  | Minor  | Patch  | Security  |
+| ----------------------- | ------ | ------ | ------ | --------- |
+| GitHub Actions          | 30 d   | 14 d   | 7 d    | immediate |
+| Docker base images      | 30 d   | 14 d   | 7 d    | immediate |
+| Python libs (strategic) | manual | manual | manual | immediate |
+
+For GitHub Actions and Docker, cool-down is enforced by Dependabot's `cooldown:` block in `.github/dependabot.yml`.
+
+For Python libraries, the cool-down is applied **manually** via `requirements/constraints.txt`. When a new release of a strategic library (e.g. `pydantic`, `aiohttp`, `sqlalchemy`) is published, add an upper bound to `constraints.txt` (e.g. `pydantic<2.12.0`) and remove it only after the release has been validated in CI and staging. Security updates always bypass this — apply them immediately regardless of cool-down.
+
 ## References
 
 1. [pip] manual
@@ -214,6 +295,7 @@ crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs
 1. [Dealing with dependency conflicts](https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts) in [pip] doc
 
 [pip-tools]:https://github.com/jazzband/pip-tools
+[uv]:https://github.com/astral-sh/uv
 [pip]:https://pip.pypa.io/en/stable/reference/
 [pipkit-repo]:https://github.com/ITISFoundation/dockerfiles/tree/master/pip-kit
 [Setup vs requirements]:https://caremad.io/posts/2013/07/setup-vs-requirement/

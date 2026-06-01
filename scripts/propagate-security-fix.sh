@@ -54,7 +54,8 @@ if [[ ! "${PACKAGE}" =~ ^[A-Za-z0-9._-]+$ ]]; then
 fi
 
 # Validate constraint starts with a PEP-440 operator
-if [[ ! "${CONSTRAINT}" =~ ^[><=!~] ]]; then
+constraint_re='^[><=!~]'
+if [[ ! "${CONSTRAINT}" =~ ${constraint_re} ]]; then
   echo "Error: constraint '${CONSTRAINT}' must start with a comparison operator (>=, ==, !=, etc.)" >&2
   exit 1
 fi
