@@ -1,5 +1,9 @@
-# pylint: disable=W0613, W0621
-# pylint: disable=unused-variable
+# pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
+
 
 import asyncio
 import json
@@ -251,7 +255,7 @@ def configure_registry_cache_backend(
 ) -> EnvVarsDict:
     if request.param == "redis":
         request.getfixturevalue("fakeredis_aiocache_client")
-        monkeypatch.setattr("simcore_service_director.core.application.setup_redis", lambda app: None)
+        monkeypatch.setattr("simcore_service_director.core.application.setup_redis", lambda app: None)  # noqa: ARG005
         return request.getfixturevalue("configure_registry_redis_backend")
     return configure_registry_caching
 
@@ -287,15 +291,15 @@ def fakeredis_aiocache_client(
 
     monkeypatch.setattr(
         "redis.asyncio.from_url",
-        lambda *args, **kwargs: fake_client,
+        lambda *args, **kwargs: fake_client,  # noqa: ARG005
     )
     monkeypatch.setattr(
         "aiocache.backends.redis.redis.ConnectionPool",
-        lambda *args, **kwargs: object(),
+        lambda *args, **kwargs: object(),  # noqa: ARG005
     )
     monkeypatch.setattr(
         "aiocache.backends.redis.redis.Redis",
-        lambda *args, **kwargs: fake_client,
+        lambda *args, **kwargs: fake_client,  # noqa: ARG005
     )
 
     return fake_client
