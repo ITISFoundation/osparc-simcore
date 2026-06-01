@@ -173,7 +173,7 @@ qx.Class.define("osparc.po.UsersPending", {
       this.getChildControl("reload-button");
       this.getChildControl("intro-text");
       this.getChildControl("loading-spinner");
-      this.__populatePendingUsersLayout();
+      this.addListenerOnce("appear", () => this.__populatePendingUsersLayout());
     },
 
     __addHeader: function() {
