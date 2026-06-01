@@ -276,10 +276,14 @@ qx.Class.define("osparc.support.Conversations", {
       this.__isFetchingMore = true;
       this.__showLoadingSpinner(true);
 
+      const requestId = this.__fetchRequestId;
       const filter = this.getCurrentFilter();
       const offset = this.__conversationListItems.length;
       osparc.store.ConversationsSupport.getInstance().fetchConversations(filter, offset)
         .then(resp => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
           if (resp && resp.conversations && resp.conversations.length) {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
