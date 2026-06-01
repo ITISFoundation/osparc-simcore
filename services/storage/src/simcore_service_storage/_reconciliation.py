@@ -34,7 +34,6 @@ ops observability. They are designed to be safe to run repeatedly.
 import logging
 from collections.abc import Iterable
 from datetime import UTC, datetime
-from uuid import UUID
 
 import arrow
 import redis.asyncio as aioredis
@@ -49,6 +48,7 @@ from simcore_postgres_database.storage_models import file_meta_data, projects
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from .core.settings import ApplicationSettings, get_application_settings
+from .models import is_uuid
 from .modules.db import get_db_engine
 from .modules.redis import get_redis_client_manager
 from .modules.s3 import get_s3_client
@@ -61,19 +61,6 @@ def _get_simcore_bucket_name(app: FastAPI) -> str:
     assert settings.STORAGE_S3  # nosec
     s3_settings: S3Settings = settings.STORAGE_S3
     return s3_settings.S3_BUCKET_NAME
-
-
-def _is_uuid(candidate: str) -> bool:
-    try:
-        UUID(candidate)
-    except (ValueError, AttributeError):
-        return False
-    return True
-
-
-def _strip_trailing_slash(prefix: object) -> str:
-    s = f"{prefix}"
-    return s[:-1] if s.endswith("/") else s
 
 
 async def _project_ids_with_fmd_rows(app: FastAPI, candidate_ids: Iterable[ProjectID]) -> set[str]:
@@ -124,8 +111,8 @@ async def reconcile_s3_to_db(app: FastAPI, *, force: bool = False, dry_run: bool
         for entry in entries:
             if not isinstance(entry, S3DirectoryMetaData):
                 continue
-            top = _strip_trailing_slash(entry.prefix).split("/", 1)[0]
-            if _is_uuid(top):
+            top = f"{entry.prefix}".removesuffix("/").split("/", 1)[0]
+            if is_uuid(top):
                 project_id_candidates.append(ProjectID(top))
 
         if project_id_candidates:
