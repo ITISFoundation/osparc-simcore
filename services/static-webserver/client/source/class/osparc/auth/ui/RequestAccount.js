@@ -216,17 +216,16 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         }
       }
 
-      if ([
-        "tis",
-        "tiplite",
-      ].includes(osparc.product.Utils.getProductName())) {
+      if (osparc.product.Utils.isTIPProduct()) {
         const researchGroup = new qx.ui.form.TextField().set({
           required: true,
         });
         fullWidth.push(researchGroup);
         this._form.add(researchGroup, this.tr("What research group do you belong to?"), null, "researchGroup");
 
+        const earlyAdopterDefault = false;
         const earlyAdopter = new qx.ui.form.CheckBox().set({
+          value: earlyAdopterDefault,
           required: true,
           paddingRight: 8,
         });
@@ -235,25 +234,36 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
 
         const contactPerson = new qx.ui.form.TextField().set({
-          required: false,
+          required: earlyAdopterDefault ? true : false,
+          visibility: earlyAdopterDefault ? "visible" : "excluded",
         });
         fullWidth.push(contactPerson);
         this._form.add(contactPerson, this.tr("What is the name of your contact person at TI Solutions AG?"), null, "contactPerson");
-        earlyAdopter.bind("value", contactPerson, "visibility", {
-          converter: value => value ? "visible" : "excluded"
-        });
         earlyAdopter.bind("value", contactPerson, "required");
 
         const researchTopic = new qx.ui.form.TextField().set({
-          required: true,
+          required: earlyAdopterDefault ? false : true,
+          visibility: earlyAdopterDefault ? "excluded" : "visible",
         });
         fullWidth.push(researchTopic);
         this._form.add(researchTopic, this.tr("Please describe the research you intend to do with the TIP platform"), null, "researchTopic");
-        earlyAdopter.bind("value", researchTopic, "visibility", {
-          converter: value => value ? "excluded" : "visible"
-        });
         earlyAdopter.bind("value", researchTopic, "required", {
           converter: value => !value
+        });
+
+        earlyAdopter.addListener("changeValue", e => {
+          const checked = e.getData();
+          const toShow = checked ? contactPerson : researchTopic;
+          const toHide = checked ? researchTopic : contactPerson;
+          toHide.getContentElement().setStyle("transition", "opacity 200ms ease");
+          toShow.getContentElement().setStyle("transition", "opacity 200ms ease");
+          toHide.setOpacity(0);
+          setTimeout(() => {
+            toHide.setVisibility("excluded");
+            toShow.setVisibility("visible");
+            toShow.setOpacity(0);
+            setTimeout(() => toShow.setOpacity(1), 30);
+          }, 200);
         });
       }
 
