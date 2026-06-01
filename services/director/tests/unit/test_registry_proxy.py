@@ -285,22 +285,11 @@ async def app_with_registry_cache_backend(
 
 @pytest.fixture
 def fakeredis_aiocache_client(
-    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
 ) -> FakeAsyncRedis:
     fake_client = FakeAsyncRedis()
-
-    monkeypatch.setattr(
-        "redis.asyncio.from_url",
-        lambda *args, **kwargs: fake_client,  # noqa: ARG005
-    )
-    monkeypatch.setattr(
-        "aiocache.backends.redis.redis.ConnectionPool",
-        lambda *args, **kwargs: object(),  # noqa: ARG005
-    )
-    monkeypatch.setattr(
-        "aiocache.backends.redis.redis.Redis",
-        lambda *args, **kwargs: fake_client,  # noqa: ARG005
-    )
+    mocker.patch("redis.asyncio.Redis", fake_client)
+    mocker.patch("aiocache.backends.redis.redis.Redis", fake_client)
 
     return fake_client
 
