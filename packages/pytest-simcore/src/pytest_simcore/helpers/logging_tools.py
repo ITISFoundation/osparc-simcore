@@ -23,16 +23,23 @@ def _resolve(val: str | Callable[[], str], prefix: str, suffix: str) -> str:
         return f"❌❌❌ [{val} message generation failed TIP: Check how the {val} message is generated!] ❌❌❌"
 
 
+def _iter_effective_handlers(logger: logging.Logger) -> Iterator[logging.Handler]:
+    current_logger: logging.Logger | None = logger
+    while current_logger is not None:
+        yield from current_logger.handlers
+        if not current_logger.propagate:
+            break
+        current_logger = current_logger.parent
+
+
 class DynamicIndentFormatter(logging.Formatter):
-    indent_char: str = "    "
+    indent_char: str = "|   "
     _cls_indent_level: int = 0
     _instance_indent_level: int = 0
 
-    def __init__(self, *args, **kwargs):
-        fmt = args[0] if args else None
-        dynamic_fmt = fmt or "%(asctime)s %(levelname)s %(message)s"
-        assert "message" in dynamic_fmt
-        super().__init__(dynamic_fmt, *args, **kwargs)
+    def __init__(self, formatter: logging.Formatter | None = None):
+        self._formatter = formatter
+        super().__init__("%(asctime)s %(levelname)s %(message)s")
 
     def format(self, record) -> str:
         original_message = record.msg
@@ -40,9 +47,12 @@ class DynamicIndentFormatter(logging.Formatter):
             f"{self.indent_char * self._cls_indent_level}{self.indent_char * self._instance_indent_level}"
             f"{original_message}"
         )
-        result = super().format(record)
-        record.msg = original_message
-        return result
+        try:
+            if self._formatter is not None:
+                return self._formatter.format(record)
+            return super().format(record)
+        finally:
+            record.msg = original_message
 
     @classmethod
     def cls_increase_indent(cls) -> None:
@@ -60,10 +70,15 @@ class DynamicIndentFormatter(logging.Formatter):
 
     @classmethod
     def setup(cls, logger: logging.Logger) -> None:
-        _formatter = DynamicIndentFormatter()
-        _handler = logging.StreamHandler()
-        _handler.setFormatter(_formatter)
-        logger.addHandler(_handler)
+        for handler in _iter_effective_handlers(logger):
+            if isinstance(handler.formatter, DynamicIndentFormatter):
+                continue
+
+            if handler.formatter is None:
+                handler.setFormatter(DynamicIndentFormatter())
+                continue
+
+            handler.setFormatter(DynamicIndentFormatter(handler.formatter))
 
 
 test_logger = logging.getLogger(__name__)
@@ -99,14 +114,14 @@ type LogMessageStr = str
 def _increased_logger_indent(logger: logging.Logger) -> Iterator[None]:
     try:
         if formatter := next(
-            (h.formatter for h in logger.handlers if isinstance(h.formatter, DynamicIndentFormatter)),
+            (h.formatter for h in _iter_effective_handlers(logger) if isinstance(h.formatter, DynamicIndentFormatter)),
             None,
         ):
             formatter.increase_indent()
         yield
     finally:
         if formatter := next(
-            (h.formatter for h in logger.handlers if isinstance(h.formatter, DynamicIndentFormatter)),
+            (h.formatter for h in _iter_effective_handlers(logger) if isinstance(h.formatter, DynamicIndentFormatter)),
             None,
         ):
             formatter.decrease_indent()
@@ -136,6 +151,7 @@ def log_context(
 
     started_time = datetime.datetime.now(tz=datetime.UTC)
     try:
+        DynamicIndentFormatter.setup(logger)
         DynamicIndentFormatter.cls_increase_indent()
 
         logger.log(
