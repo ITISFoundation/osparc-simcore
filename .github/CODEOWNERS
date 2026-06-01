@@ -46,8 +46,8 @@ Makefile                                           @pcrespov @sanderegg
 /services/web/server/                              @pcrespov @sanderegg @GitHK @matusdrobuliak66
 /tests/e2e-frontend/                               @odeimaiz
 /tests/e2e-playwright/                             @matusdrobuliak66
-/tests/e2e-playwright/metamodeling                 @wvangeit
-/tests/e2e-playwright/tip                          @Konohana0608
+/tests/e2e-playwright/tests/metamodeling           @wvangeit
+/tests/e2e-playwright/tests/tip                    @Konohana0608
 /tests/environment-setup/                          @pcrespov
 /tests/performance/                                @pcrespov @sanderegg
 /tests/public-api/                                 @pcrespov
