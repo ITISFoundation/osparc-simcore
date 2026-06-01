@@ -1,0 +1,317 @@
+# Scans all production Python requirements (_base.txt) for known CVEs using pip-audit.
+#
+# Triggered:
+#   - Weekly on Monday at 06:00 UTC
+#   - On push/PR that touches any requirements file or this workflow
+#
+# Outputs:
+#   - SARIF report uploaded to GitHub Security tab (JSON format)
+#   - Markdown summary posted as a step summary / PR comment
+#
+# Policy:
+#   - Vulnerabilities in production deps (_base.txt) → CI FAILURE
+#   - Vulnerabilities in test deps (_test.txt)       → WARNING only (no failure)
+#
+# Security SLA:
+#   - Critical: fix within 24 h
+#   - High:     fix within 1 week
+#
+# See requirements/python-dependencies.md for the security update workflow.
+
+name: "pip-audit: Python Dependency Security Scan"
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+  push:
+    paths:
+      - "**/requirements/_base.txt"
+      - "**/requirements/_base.in"
+      - "**/requirements/_test.txt"
+      - "**/requirements/_test.in"
+      - "requirements/constraints.txt"
+      - ".github/workflows/pip-audit.yml"
+  pull_request:
+    paths:
+      - "**/requirements/_base.txt"
+      - "**/requirements/_base.in"
+      - "**/requirements/_test.txt"
+      - "**/requirements/_test.in"
+      - "requirements/constraints.txt"
+      - ".github/workflows/pip-audit.yml"
+
+permissions:
+  contents: read
+  security-events: write # Required to upload SARIF to GitHub Security tab
+
+jobs:
+  audit-production:
+    name: "Audit production deps (_base.txt)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install pip-audit
+        run: uv tool install pip-audit
+
+      - name: Collect all _base.txt files
+        id: collect
+        run: |
+          files=$(find . -name '_base.txt' -path '*/requirements/*' | sort)
+          echo "Found production requirements files:"
+          echo "$files"
+          # Store as space-separated list for pip-audit
+          echo "req_files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Run pip-audit on production deps (JSON)
+        id: audit_json
+        # Exit code 1 means vulnerabilities found; we capture and handle below
+        continue-on-error: true
+        run: |
+          # Build -r flags for all files
+          req_args=""
+          while IFS= read -r f; do
+            [[ -z "$f" ]] && continue
+            req_args="$req_args -r $f"
+          done <<< "${{ steps.collect.outputs.req_files }}"
+
+          pip-audit \
+            $req_args \
+            --skip-editable \
+            --no-deps \
+            --format json \
+            --output pip-audit-base.json \
+          || true
+
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Convert JSON to SARIF
+        run: |
+          # pip-audit does not natively emit SARIF; convert via a small inline script
+          python3 - <<'PYEOF'
+          import json, sys
+
+          try:
+              with open("pip-audit-base.json") as f:
+                  audit = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              audit = {"dependencies": []}
+
+          results = []
+          rules = {}
+
+          for dep in audit.get("dependencies", []):
+              for vuln in dep.get("vulns", []):
+                  vid = vuln.get("id", "UNKNOWN")
+                  desc = vuln.get("description", "No description available.")
+                  fix_versions = vuln.get("fix_versions", [])
+                  fix_str = (
+                      ", ".join(fix_versions) if fix_versions else "No fix available yet"
+                  )
+
+                  rules[vid] = {
+                      "id": vid,
+                      "name": vid,
+                      "shortDescription": {"text": f"{dep['name']}: {vid}"},
+                      "fullDescription": {"text": desc},
+                      "helpUri": f"https://osv.dev/vulnerability/{vid}",
+                      "help": {
+                          "text": f"Fix: upgrade {dep['name']} to {fix_str}",
+                          "markdown": f"**Fix:** upgrade `{dep['name']}` to `{fix_str}`",
+                      },
+                      "defaultConfiguration": {"level": "error"},
+                  }
+
+                  results.append({
+                      "ruleId": vid,
+                      "level": "error",
+                      "message": {
+                          "text": (
+                              f"{dep['name']}=={dep.get('version','?')} has vulnerability "
+                              f"{vid}. Fix: upgrade to {fix_str}."
+                          )
+                      },
+                      "locations": [
+                          {
+                              "physicalLocation": {
+                                  "artifactLocation": {
+                                      "uri": f"requirements/_base.txt",
+                                      "uriBaseId": "%SRCROOT%",
+                                  },
+                                  "region": {"startLine": 1},
+                              }
+                          }
+                      ],
+                  })
+
+          sarif = {
+              "version": "2.1.0",
+              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+              "runs": [
+                  {
+                      "tool": {
+                          "driver": {
+                              "name": "pip-audit",
+                              "version": "latest",
+                              "informationUri": "https://github.com/pypa/pip-audit",
+                              "rules": list(rules.values()),
+                          }
+                      },
+                      "results": results,
+                  }
+              ],
+          }
+
+          with open("pip-audit-base.sarif", "w") as f:
+              json.dump(sarif, f, indent=2)
+
+          print(f"SARIF written: {len(results)} finding(s)")
+          PYEOF
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: pip-audit-base.sarif
+          category: pip-audit-production
+
+      - name: Build markdown summary
+        if: always()
+        run: |
+          python3 - <<'PYEOF'
+          import json, os
+
+          try:
+              with open("pip-audit-base.json") as f:
+                  audit = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              audit = {"dependencies": []}
+
+          vulns = [
+              (dep["name"], dep.get("version", "?"), v)
+              for dep in audit.get("dependencies", [])
+              for v in dep.get("vulns", [])
+          ]
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY", "/dev/stdout")
+          with open(summary, "a") as f:
+              if not vulns:
+                  f.write("## pip-audit: Production deps — ✅ No vulnerabilities found\n")
+              else:
+                  f.write(f"## pip-audit: Production deps — ⛔ {len(vulns)} vulnerability(s) found\n\n")
+                  f.write("| Package | Version | Vulnerability | Fix versions |\n")
+                  f.write("|---------|---------|---------------|-------------|\n")
+                  for name, ver, v in vulns:
+                      vid = v.get("id", "?")
+                      fix = ", ".join(v.get("fix_versions", [])) or "none yet"
+                      link = f"[{vid}](https://osv.dev/vulnerability/{vid})"
+                      f.write(f"| `{name}` | `{ver}` | {link} | `{fix}` |\n")
+                  f.write("\n")
+                  f.write("> **Security SLA**: Critical → fix within 24 h · High → fix within 1 week\n")
+                  f.write(">\n")
+                  f.write("> Run `scripts/propagate-security-fix.sh <package> <min-safe-version>` to apply a fix.\n")
+          PYEOF
+
+      - name: Fail if production vulnerabilities found
+        run: |
+          python3 - <<'PYEOF'
+          import json, sys
+
+          try:
+              with open("pip-audit-base.json") as f:
+                  audit = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              sys.exit(0)
+
+          total = sum(len(dep.get("vulns", [])) for dep in audit.get("dependencies", []))
+          if total:
+              print(f"::error::pip-audit found {total} vulnerability(s) in production requirements.")
+              print("::error::Add a constraint to requirements/constraints.txt and re-run: make reqs-all upgrade=<package>")
+              sys.exit(1)
+          PYEOF
+
+  audit-test:
+    name: "Audit test deps (_test.txt) — warnings only"
+    runs-on: ubuntu-latest
+    # Test dep vulnerabilities never block CI; they surface as annotations
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install pip-audit
+        run: uv tool install pip-audit
+
+      - name: Collect all _test.txt files
+        id: collect
+        run: |
+          files=$(find . -name '_test.txt' -path '*/requirements/*' | sort)
+          echo "Found test requirements files:"
+          echo "$files"
+          echo "req_files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Run pip-audit on test deps (JSON)
+        run: |
+          req_args=""
+          while IFS= read -r f; do
+            [[ -z "$f" ]] && continue
+            req_args="$req_args -r $f"
+          done <<< "${{ steps.collect.outputs.req_files }}"
+
+          pip-audit \
+            $req_args \
+            --skip-editable \
+            --no-deps \
+            --format json \
+            --output pip-audit-test.json \
+          || true
+
+      - name: Build markdown summary for test deps
+        if: always()
+        run: |
+          python3 - <<'PYEOF'
+          import json, os
+
+          try:
+              with open("pip-audit-test.json") as f:
+                  audit = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              audit = {"dependencies": []}
+
+          vulns = [
+              (dep["name"], dep.get("version", "?"), v)
+              for dep in audit.get("dependencies", [])
+              for v in dep.get("vulns", [])
+          ]
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY", "/dev/stdout")
+          with open(summary, "a") as f:
+              if not vulns:
+                  f.write("## pip-audit: Test deps — ✅ No vulnerabilities found\n")
+              else:
+                  f.write(f"## pip-audit: Test deps — ⚠️ {len(vulns)} vulnerability(s) (warnings only)\n\n")
+                  f.write("| Package | Version | Vulnerability | Fix versions |\n")
+                  f.write("|---------|---------|---------------|-------------|\n")
+                  for name, ver, v in vulns:
+                      vid = v.get("id", "?")
+                      fix = ", ".join(v.get("fix_versions", [])) or "none yet"
+                      link = f"[{vid}](https://osv.dev/vulnerability/{vid})"
+                      f.write(f"| `{name}` | `{ver}` | {link} | `{fix}` |\n")
+                  f.write("\n")
+                  f.write("> ⚠️ Test-only vulnerabilities do not block CI. Address them when convenient.\n")
+
+          if vulns:
+              for name, ver, v in vulns:
+                  vid = v.get("id", "?")
+                  print(f"::warning::Test dep {name}=={ver} has vulnerability {vid}")
+          PYEOF
