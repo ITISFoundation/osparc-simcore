@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "chore-propagate-security-fix",
+  "scope": "osparc-simcore monorepo (repo-wide requirements maintenance)",
+  "optimized_for_model": "claude-3-5-haiku",
+  "last_updated": "2026-06-01",
+  "maintenance_frequency": "as-needed (triggered by CVE/GHSA alerts or pip-audit)",
+  "maintained_via": "When SKILL.md procedures or script changes occur, regenerate via /create-skill-metadata prompt. Keep script path and header references in sync.",
+  "strategies_catalog": {
+    "purpose": "Deterministic patterns for applying security constraints repo-wide using shell scripting, make tooling, and constraint management. Emphasizes non-interactive flag support for agent/CI automation.",
+    "entries": [
+      {
+        "id": "triage-advisory",
+        "applies_to": "Verifying CVE/GHSA before propagation: package name, min-safe version, PyPI availability, advisory ID.",
+        "helper": "Manual verification steps (grep, pip, CVE links)",
+        "header": "### 1. Triage the advisory",
+        "reference": "SKILL.md#1-triage-the-advisory",
+        "example": "CVE-2024-23334 aiohttp vulnerability"
+      },
+      {
+        "id": "run-propagation-script",
+        "applies_to": "Applying a security constraint and re-pinning across all requirements/*.txt files.",
+        "helper": "propagate-security-fix.sh with --yes flag for non-interactive mode",
+        "header": "### 2. Run the propagation script",
+        "reference": "SKILL.md#2-run-the-propagation-script",
+        "example": ".github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh --yes aiohttp \">=3.11.14\" CVE-2024-23334"
+      },
+      {
+        "id": "non-interactive-automation",
+        "applies_to": "Executing the script unattended in CI/agent workflows without user prompt for existing constraints.",
+        "helper": "--yes/-y/--force flag skips confirmation prompts",
+        "header": "### 2. Run the propagation script",
+        "reference": "SKILL.md#2-run-the-propagation-script",
+        "example": "Non-interactive invocation in CI pipelines or agents"
+      },
+      {
+        "id": "validate-propagation",
+        "applies_to": "Verifying constraint was applied correctly and no unrelated packages were bumped.",
+        "helper": "git diff requirements/, grep, make tests-unit",
+        "header": "### 3. Validate",
+        "reference": "SKILL.md#3-validate",
+        "example": "requirements/constraints.txt diff review"
+      },
+      {
+        "id": "commit-security-fix",
+        "applies_to": "Recording the security fix in git history with conventional commit message.",
+        "helper": "git add + git commit with fix(deps) prefix",
+        "header": "### 4. Commit",
+        "reference": "SKILL.md#4-commit",
+        "example": "fix(deps): aiohttp>=3.11.14 (CVE-2024-23334)"
+      }
+    ]
+  },
+  "authoring_guidelines": [
+    "Favor shell scripting and deterministic CLI tools (uv, make, grep) over model reasoning; minimize agent token usage.",
+    "All constraint updates must be annotated with advisory ID (CVE/GHSA) for audit trail.",
+    "Support non-interactive execution via --yes/--force flag; agents/CI workflows require unattended mode.",
+    "Validate PEP-440 constraint syntax early; reject invalid operators before applying.",
+    "Always re-pin via make reqs-all (never manual *.txt edits); this ensures consistency across 35+ generated files.",
+    "Test with focused make tests-unit after re-pinning; verify no unrelated bumps."
+  ],
+  "token_budget_strategy": "Claude Haiku optimized. Skill delegates to deterministic external tools (shell script validation, uv, make). Agent role is limited to script invocation with triage context, not dependency resolution or conflict detection.",
+  "changelog": [
+    "2026-06-01: v1.0 created. Documented five core strategies: triage, script-run, non-interactive automation, validation, commit. Added --yes flag pattern for agent/CI automation. Emphasized deterministic tooling to minimize model tokens."
+  ]
+}
