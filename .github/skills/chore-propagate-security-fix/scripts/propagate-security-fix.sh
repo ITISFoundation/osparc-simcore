@@ -129,7 +129,7 @@ if grep -qiE "^[[:space:]]*${PACKAGE}[^=!<>]*(==|!=|>=|<=|~=|>|<)" "${CONSTRAINT
     [yY]|[yY][eE][sS])
       # Replace the first matching line
       # Use a temp file for portability (sed -i behaves differently on macOS vs Linux)
-      sed -E "0,/^[[:space:]]*${PACKAGE}[^=!<>]*(==|!=|>=|<=|~=|>|<)/s|.*|${NEW_LINE}|" \
+      sed -E "0,/^[[:space:]]*${PACKAGE_RE}[^=!<>]*(==|!=|>=|<=|~=|>|<)/s|.*|${NEW_LINE}|" \
         "${CONSTRAINTS_FILE}" > "${CONSTRAINTS_FILE}.tmp"
       mv "${CONSTRAINTS_FILE}.tmp" "${CONSTRAINTS_FILE}"
       echo "Updated constraint in ${CONSTRAINTS_FILE}"
