@@ -9,23 +9,19 @@ import asyncio
 import json
 import logging
 import time
-from collections.abc import AsyncIterator
 from unittest import mock
 
 import httpx
 import pytest
 import respx
-from asgi_lifespan import LifespanManager
 from fakeredis import FakeAsyncRedis
 from fastapi import FastAPI, status
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.tracing import TracingConfig
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_director import registry_proxy
-from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings, get_application_settings
 
 _logger = logging.getLogger(__name__)
@@ -260,29 +256,6 @@ def configure_registry_cache_backend(
 
 
 @pytest.fixture
-def app_settings_with_registry_cache_backend(configure_registry_cache_backend: EnvVarsDict) -> ApplicationSettings:
-    return ApplicationSettings.create_from_envs()
-
-
-@pytest.fixture
-async def app_with_registry_cache_backend(
-    app_settings_with_registry_cache_backend: ApplicationSettings,
-    is_pdb_enabled: bool,
-) -> AsyncIterator[FastAPI]:
-    tracing_config = TracingConfig.create(
-        service_name=app_settings_with_registry_cache_backend.APP_NAME,
-        tracing_settings=None,
-    )
-    the_test_app = create_app(settings=app_settings_with_registry_cache_backend, tracing_config=tracing_config)
-    async with LifespanManager(
-        the_test_app,
-        startup_timeout=None if is_pdb_enabled else 10,
-        shutdown_timeout=None if is_pdb_enabled else 10,
-    ):
-        yield the_test_app
-
-
-@pytest.fixture
 def fakeredis_aiocache_client(
     mocker: MockerFixture,
 ) -> FakeAsyncRedis:
@@ -303,22 +276,22 @@ async def test_registry_caching(
     configure_registry_cache_backend: EnvVarsDict,
     with_disabled_auto_caching: mock.Mock,
     mocker: MockerFixture,
-    app_settings_with_registry_cache_backend: ApplicationSettings,
-    app_with_registry_cache_backend: FastAPI,
+    app_settings: ApplicationSettings,
+    app: FastAPI,
     push_services,
 ):
     images = await push_services(number_of_computational_services=31, number_of_interactive_services=33)
-    assert app_settings_with_registry_cache_backend.DIRECTOR_REGISTRY_CACHING is True
+    assert app_settings.DIRECTOR_REGISTRY_CACHING is True
 
     retried_request_spy = mocker.spy(registry_proxy, "_retried_request")
 
-    services = await registry_proxy.list_services(app_with_registry_cache_backend, registry_proxy.ServiceType.ALL)
+    services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert len(services) == len(images)
 
     request_count_after_first_call = retried_request_spy.call_count
     assert request_count_after_first_call > 0
 
-    services = await registry_proxy.list_services(app_with_registry_cache_backend, registry_proxy.ServiceType.ALL)
+    services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert len(services) == len(images)
     assert retried_request_spy.call_count == request_count_after_first_call
 
