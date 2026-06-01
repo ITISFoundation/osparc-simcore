@@ -1789,7 +1789,7 @@ qx.Class.define("osparc.data.Resources", {
           params["url"] = {};
         }
         params["url"]["offset"] = offset;
-        params["url"]["limit"] = 10;
+        params["url"]["limit"] = params["url"]["limit"] || 10;
         const options = {
           resolveWResponse: true
         };
