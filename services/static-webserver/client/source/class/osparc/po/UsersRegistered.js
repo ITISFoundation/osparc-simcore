@@ -45,13 +45,6 @@ qx.Class.define("osparc.po.UsersRegistered", {
           }));
           this._add(control);
           break;
-        case "reload-button":
-          control = new qx.ui.form.Button(this.tr("Reload")).set({
-            allowGrowX: false,
-          });
-          control.addListener("execute", () => this.__reload());
-          this.getChildControl("header-layout").add(control);
-          break;
         case "intro-text":
           control = new qx.ui.basic.Label(this.tr("List of fully registered users:")).set({
             font: "text-14",
@@ -80,9 +73,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
         }
         case "registered-users-container":
           control = new qx.ui.container.Scroll();
-          this._add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         case "registered-users-layout": {
           const grid = new qx.ui.layout.Grid(15, 5);
@@ -91,15 +82,19 @@ qx.Class.define("osparc.po.UsersRegistered", {
           break;
         }
         case "pagination-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-            alignY: "middle"
-          }));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+            alignY: "middle",
+            alignX: "left"
+          })).set({
+            marginTop: 5,
+          });
           this._add(control);
           break;
         case "prev-page-button":
-          control = new qx.ui.form.Button(this.tr("Previous")).set({
+          control = new qx.ui.form.Button(null, "@MaterialIcons/chevron_left/20").set({
             allowGrowX: false,
             enabled: false,
+            toolTipText: this.tr("Previous page"),
           });
           control.addListener("execute", () => {
             this.__currentOffset = Math.max(0, this.__currentOffset - this.__pageLimit);
@@ -109,14 +104,16 @@ qx.Class.define("osparc.po.UsersRegistered", {
           break;
         case "page-info-label":
           control = new qx.ui.basic.Label("").set({
-            font: "text-14",
+            font: "text-13",
+            textColor: "text",
           });
           this.getChildControl("pagination-layout").add(control);
           break;
         case "next-page-button":
-          control = new qx.ui.form.Button(this.tr("Next")).set({
+          control = new qx.ui.form.Button(null, "@MaterialIcons/chevron_right/20").set({
             allowGrowX: false,
             enabled: false,
+            toolTipText: this.tr("Next page"),
           });
           control.addListener("execute", () => {
             this.__currentOffset += this.__pageLimit;
@@ -129,12 +126,11 @@ qx.Class.define("osparc.po.UsersRegistered", {
     },
 
     _buildLayout: function() {
-      this.getChildControl("reload-button");
       this.getChildControl("intro-text");
+      this.getChildControl("filter-users").exclude();
       this.getChildControl("loading-spinner");
-      this.getChildControl("prev-page-button");
-      this.getChildControl("page-info-label");
-      this.getChildControl("next-page-button");
+      this.getChildControl("registered-users-container");
+      this.getChildControl("pagination-layout");
       this.__currentOrderBy = "-accountRequestedReviewedAt";
       this.__fetchPage();
     },

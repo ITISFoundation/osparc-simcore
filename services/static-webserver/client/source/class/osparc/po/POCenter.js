@@ -50,7 +50,7 @@ qx.Class.define("osparc.po.POCenter", {
 
     __addRegisteredUsersPage: function() {
       const title = this.tr("Active Users");
-      const iconSrc = "@FontAwesome5Solid/user/22";
+      const iconSrc = "@MaterialIcons/how_to_reg/34";
       const usersRegistered = new osparc.po.UsersRegistered();
       this.addTab(title, iconSrc, usersRegistered);
     },
