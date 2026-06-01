@@ -359,6 +359,49 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    /**
+     * Animates swapping two widgets: slides the hiding widget out to the left
+     * and slides the showing widget in from the right.
+     *
+     * @param {qx.ui.core.Widget} toHide Widget to hide
+     * @param {qx.ui.core.Widget} toShow Widget to show
+     * @param {Object} [opts] Options
+     * @param {Number} [opts.duration=200] Animation duration in ms
+     * @param {Number} [opts.translation=200] Slide distance in px
+     */
+    animateSwap: function(toHide, toShow, opts) {
+      const duration = (opts && opts.duration) || 200;
+      const translation = (opts && opts.translation) || 200;
+      const hideContainer = toHide.getLayoutParent();
+      const hideDom = hideContainer ? hideContainer.getContentElement().getDomElement() : null;
+      if (hideDom) {
+        qx.bom.element.Animation.animate(hideDom, {
+          duration,
+          keyFrames: {
+            0: {opacity: 1, translate: ["0px"]},
+            100: {opacity: 0, translate: [`-${translation}px`]}
+          }
+        }).addListenerOnce("end", () => {
+          toHide.setVisibility("excluded");
+          toShow.setVisibility("visible");
+          const showContainer = toShow.getLayoutParent();
+          const showDom = showContainer ? showContainer.getContentElement().getDomElement() : null;
+          if (showDom) {
+            qx.bom.element.Animation.animate(showDom, {
+              duration,
+              keyFrames: {
+                0: {opacity: 0, translate: [`${translation}px`]},
+                100: {opacity: 1, translate: ["0px"]}
+              }
+            });
+          }
+        });
+      } else {
+        toHide.setVisibility("excluded");
+        toShow.setVisibility("visible");
+      }
+    },
+
     getGridsFirstColumnWidth: function(grid) {
       let firstColumnWidth = null;
       const firstElement = grid.getCellWidget(0, 0);

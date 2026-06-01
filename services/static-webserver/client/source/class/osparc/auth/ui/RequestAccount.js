@@ -32,6 +32,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._addTitleHeader(this.tr("Request Account"));
 
       const fullWidth = [];
+      const inlineItems = [];
 
       // form
       const firstName = new qx.ui.form.TextField().set({
@@ -81,7 +82,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         compactField: true,
       });
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
-
 
       const institution = new qx.ui.form.TextField();
       fullWidth.push(institution);
@@ -216,6 +216,53 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         }
       }
 
+      if (osparc.product.Utils.isTIPProduct()) {
+        const researchGroup = new qx.ui.form.TextField().set({
+          required: true,
+        });
+        fullWidth.push(researchGroup);
+        this._form.add(researchGroup, this.tr("What research group do you belong to?"), null, "researchGroup");
+
+        const earlyAdopterDefault = false;
+        const earlyAdopter = new qx.ui.form.CheckBox().set({
+          value: earlyAdopterDefault,
+          required: true,
+          paddingRight: 8,
+        });
+        fullWidth.push(earlyAdopter);
+        inlineItems.push(earlyAdopter);
+        this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
+
+        const contactPerson = new qx.ui.form.TextField().set({
+          required: earlyAdopterDefault ? true : false,
+          visibility: earlyAdopterDefault ? "visible" : "excluded",
+        });
+        fullWidth.push(contactPerson);
+        this._form.add(contactPerson, this.tr("What is the name of your contact person at TI Solutions AG?"), null, "contactPerson");
+        earlyAdopter.bind("value", contactPerson, "required");
+
+        const researchTopic = new qx.ui.form.TextField().set({
+          required: earlyAdopterDefault ? false : true,
+          visibility: earlyAdopterDefault ? "excluded" : "visible",
+        });
+        fullWidth.push(researchTopic);
+        this._form.add(researchTopic, this.tr("Please describe the research you intend to do with the TIP platform"), null, "researchTopic");
+        earlyAdopter.bind("value", researchTopic, "required", {
+          converter: value => !value
+        });
+
+        // Add animation when switching between contactPerson and researchTopic
+        earlyAdopter.addListener("changeValue", e => {
+          const checked = e.getData();
+          const toShow = checked ? contactPerson : researchTopic;
+          const toHide = checked ? researchTopic : contactPerson;
+          toHide.resetValue();
+          osparc.utils.Utils.animateSwap(toHide, toShow, {
+            duration: 200,
+            translation: 200
+          });
+        });
+      }
 
       const hear = new qx.ui.form.SelectBox();
       hear.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
@@ -285,9 +332,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const ppText = this.tr("I acknowledge that data will be processed in accordance to ") + ppLink;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
-        value: false
+        value: false,
+        paddingRight: 8,
       });
       fullWidth.push(privacyPolicy);
+      inlineItems.push(privacyPolicy);
       this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
 
       // Eula link
@@ -296,15 +345,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
         const eula = new qx.ui.form.CheckBox().set({
           required: true,
-          value: false
+          value: false,
+          paddingRight: 8,
         });
         fullWidth.push(eula);
+        inlineItems.push(eula);
         this._form.add(eula, eulaText, null, "eula");
       }
 
 
       const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, fullWidth);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, fullWidth, inlineItems);
       content.add(formRenderer);
       const captchaLayout = this.__createCaptchaLayout();
       this._form.getValidationManager().add(this.__captchaField);
