@@ -31,7 +31,6 @@ qx.Class.define("osparc.po.UsersRegistered", {
   },
 
   members: {
-    __currentFilterText: "",
     __currentOrderBy: null,
     __registeredUsers: null,
     __currentOffset: 0,
@@ -61,17 +60,6 @@ qx.Class.define("osparc.po.UsersRegistered", {
           control.getContentElement().addClass("rotate");
           this._add(control);
           break;
-        case "filter-users": {
-          const filterGroupId = "registeredUsersLayout";
-          control = new osparc.filter.TextFilter("text", filterGroupId).set({
-            minWidth: 300,
-          });
-          control.getChildControl("textfield").setPlaceholder(this.tr("Filter by Name, Username or Email"));
-          const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
-          qx.event.message.Bus.getInstance().subscribe(msgName, this.__onFilterChange, this);
-          this._add(control);
-          break;
-        }
         case "registered-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control);
@@ -128,7 +116,6 @@ qx.Class.define("osparc.po.UsersRegistered", {
 
     _buildLayout: function() {
       this.getChildControl("intro-text");
-      this.getChildControl("filter-users").exclude();
       this.getChildControl("loading-spinner");
       this.getChildControl("registered-users-container");
       this.getChildControl("pagination-layout");
@@ -257,7 +244,6 @@ qx.Class.define("osparc.po.UsersRegistered", {
 
     __fetchPage: function() {
       this.getChildControl("loading-spinner").show();
-      this.getChildControl("filter-users").exclude();
 
       const params = {
         url: {
@@ -275,7 +261,6 @@ qx.Class.define("osparc.po.UsersRegistered", {
           const data = ("_meta" in resp["data"]) ? resp["data"]["data"] : resp["data"];
           this.__totalUsers = meta.total;
           this.__registeredUsers = data;
-          this.getChildControl("filter-users").show();
           this.__updatePaginationControls();
           this.__renderRegisteredUsers();
         })
@@ -299,36 +284,11 @@ qx.Class.define("osparc.po.UsersRegistered", {
       this.__fetchPage();
     },
 
-    __onFilterChange: function(msg) {
-      const data = msg ? msg.getData() : null;
-      this.__currentFilterText = data && data.text ? data.text : "";
-      this.__renderRegisteredUsers();
-    },
-
-    __filterRegisteredUsers: function() {
-      if (!this.__registeredUsers) {
-        return [];
-      }
-
-      const text = this.__currentFilterText.trim();
-      if (!text || text.length < 2) {
-        return this.__registeredUsers;
-      }
-
-      const query = text.toLowerCase();
-      return this.__registeredUsers.filter(user => {
-        const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim().toLowerCase();
-        const email = (user.email || "").toLowerCase();
-        const username = (user.userName || "").toLowerCase();
-        return [fullName, email, username].some(value => value.includes(query));
-      });
-    },
-
     __renderRegisteredUsers: function() {
       const layout = this.getChildControl("registered-users-layout");
       layout.removeAll();
       this.__addHeader();
-      this.__addRows(this.__filterRegisteredUsers());
+      this.__addRows(this.__registeredUsers || []);
     },
   }
 });
