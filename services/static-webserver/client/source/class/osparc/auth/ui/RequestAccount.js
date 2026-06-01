@@ -256,6 +256,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           const checked = e.getData();
           const toShow = checked ? contactPerson : researchTopic;
           const toHide = checked ? researchTopic : contactPerson;
+          toHide.resetValue();
           osparc.utils.Utils.animateSwap(toHide, toShow, {
             duration: 200,
             translation: 200
