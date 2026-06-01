@@ -31,7 +31,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     _buildPage: function() {
       this._addTitleHeader(this.tr("Request Account"));
 
-      const doubleSpaced = [];
+      const fullWidth = [];
 
       // form
       const firstName = new qx.ui.form.TextField().set({
@@ -84,18 +84,27 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
 
       const institution = new qx.ui.form.TextField();
-      doubleSpaced.push(institution);
+      fullWidth.push(institution);
       const institutionAlias = osparc.product.Utils.getInstitutionAlias();
       this._form.add(institution, institutionAlias.label, null, institutionAlias.key);
       if (institutionAlias.required) {
         institution.setRequired(true);
       }
 
+      if (osparc.product.Utils.getProductName() === "s4llite") {
+        const position = new qx.ui.form.TextField();
+        position.setRequired(true);
+        this._form.add(position, this.tr("Position"), null, "position");
+
+        const professorName = new qx.ui.form.TextField();
+        professorName.setRequired(true);
+        this._form.add(professorName, this.tr("Professor Name"), null, "professorName");
+      }
 
       const address = new qx.ui.form.TextField().set({
         required: true
       });
-      doubleSpaced.push(address);
+      fullWidth.push(address);
       this._form.add(address, this.tr("Address"), null, "address");
 
 
@@ -114,7 +123,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       country.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
-      doubleSpaced.push(country);
+      fullWidth.push(country);
       const countries = osparc.store.StaticInfo.getCountries();
       countries.forEach(c => {
         const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
@@ -151,11 +160,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
             });
             application.add(lItem);
           });
-          doubleSpaced.push(application);
+          fullWidth.push(application);
           this._form.add(application, this.tr("Application"), null, "application");
 
           const description = new qx.ui.form.TextField();
-          doubleSpaced.push(description);
+          fullWidth.push(description);
           this._form.add(description, this.tr("Description"), null, "description");
           break;
         }
@@ -201,7 +210,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
             });
             application.add(lItem);
           });
-          doubleSpaced.push(application);
+          fullWidth.push(application);
           this._form.add(application, this.tr("Application"), null, "application");
           break;
         }
@@ -256,7 +265,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
       });
-      doubleSpaced.push(hear);
+      fullWidth.push(hear);
       this._form.add(hear, this.tr("How did you hear about us?"), null, "hear");
 
 
@@ -278,7 +287,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true,
         value: false
       });
-      doubleSpaced.push(privacyPolicy);
+      fullWidth.push(privacyPolicy);
       this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
 
       // Eula link
@@ -289,13 +298,13 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           required: true,
           value: false
         });
-        doubleSpaced.push(eula);
+        fullWidth.push(eula);
         this._form.add(eula, eulaText, null, "eula");
       }
 
 
       const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, fullWidth);
       content.add(formRenderer);
       const captchaLayout = this.__createCaptchaLayout();
       this._form.getValidationManager().add(this.__captchaField);
