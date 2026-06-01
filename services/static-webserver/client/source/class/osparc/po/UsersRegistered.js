@@ -49,7 +49,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
           this.getChildControl("header-layout").add(control);
           break;
         case "intro-text":
-          control = new qx.ui.basic.Label(this.tr("List of active, registered, users:")).set({
+          control = new qx.ui.basic.Label(this.tr("List of fully registered users:")).set({
             font: "text-14",
             textColor: "text",
             allowGrowX: true
