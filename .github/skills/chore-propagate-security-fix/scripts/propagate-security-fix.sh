@@ -22,7 +22,7 @@
 # What this script does:
 #   1. Validates inputs.
 #   2. Adds or updates a line in requirements/constraints.txt.
-#   3. Runs  make -C requirements/tools reqs-all upgrade=<package>
+#   3. Runs make -C requirements/tools reqs-all upgrade=<package>
 #      which re-pins <package> across all 35+ *.txt requirement files.
 #
 # Prerequisites:
@@ -102,10 +102,6 @@ echo "====================================================================="
 
 # ── update constraints.txt ───────────────────────────────────────────────────
 
-# Normalise package name for matching: convert _ and . to [-_.] regex
-PATTERN_NAME="${PACKAGE//_/[-_.]}"
-PATTERN_NAME="${PATTERN_NAME//./$PATTERN_NAME}"
-
 COMMENT=""
 if [[ -n "${CVE_ID}" ]]; then
   COMMENT="  # security: ${CVE_ID}"
@@ -129,7 +125,7 @@ if grep -qiE "^[[:space:]]*${PACKAGE}[^=!<>]*(==|!=|>=|<=|~=|>|<)" "${CONSTRAINT
     [yY]|[yY][eE][sS])
       # Replace the first matching line
       # Use a temp file for portability (sed -i behaves differently on macOS vs Linux)
-      sed -E "0,/^[[:space:]]*${PACKAGE_RE}[^=!<>]*(==|!=|>=|<=|~=|>|<)/s|.*|${NEW_LINE}|" \
+      sed -E "0,/^[[:space:]]*${PACKAGE}[^=!<>]*(==|!=|>=|<=|~=|>|<)/s|.*|${NEW_LINE}|" \
         "${CONSTRAINTS_FILE}" > "${CONSTRAINTS_FILE}.tmp"
       mv "${CONSTRAINTS_FILE}.tmp" "${CONSTRAINTS_FILE}"
       echo "Updated constraint in ${CONSTRAINTS_FILE}"
@@ -140,7 +136,7 @@ if grep -qiE "^[[:space:]]*${PACKAGE}[^=!<>]*(==|!=|>=|<=|~=|>|<)" "${CONSTRAINT
       ;;
   esac
 else
-  # Append a new entry under a comment block
+  # Append new entry, with optional CVE comment line.
   {
     echo ""
     [[ -n "${CVE_ID}" ]] && echo "# ${CVE_ID} security fix"
