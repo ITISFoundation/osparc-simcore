@@ -32,6 +32,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._addTitleHeader(this.tr("Request Account"));
 
       const fullWidth = [];
+      const inlineItems = [];
 
       // form
       const firstName = new qx.ui.form.TextField().set({
@@ -81,7 +82,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         compactField: true,
       });
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
-
 
       const institution = new qx.ui.form.TextField();
       fullWidth.push(institution);
@@ -216,6 +216,41 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         }
       }
 
+      if ([
+        "tis",
+        "tiplite",
+      ].includes(osparc.product.Utils.getProductName())) {
+        const researchGroup = new qx.ui.form.TextField().set({
+          required: true,
+        });
+        fullWidth.push(researchGroup);
+        this._form.add(researchGroup, this.tr("What research group do you belong to?"), null, "researchGroup");
+
+        const earlyAdopter = new qx.ui.form.CheckBox().set({
+          required: true,
+        });
+        fullWidth.push(earlyAdopter);
+        inlineItems.push(earlyAdopter);
+        this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
+
+        const contactPerson = new qx.ui.form.TextField().set({
+          required: true,
+        });
+        fullWidth.push(contactPerson);
+        this._form.add(contactPerson, this.tr("What is the name of your contact person at TI Solutions AG?"), null, "contactPerson");
+        earlyAdopter.bind("value", contactPerson, "visibility", {
+          converter: value => value ? "visible" : "excluded"
+        });
+
+        const researchTopic = new qx.ui.form.TextField().set({
+          required: true,
+        });
+        fullWidth.push(researchTopic);
+        this._form.add(researchTopic, this.tr("Please describe the research you intend to do with the TIP platform"), null, "researchTopic");
+        earlyAdopter.bind("value", researchTopic, "visibility", {
+          converter: value => value ? "visible" : "excluded"
+        });
+      }
 
       const hear = new qx.ui.form.SelectBox();
       hear.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
@@ -288,6 +323,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         value: false
       });
       fullWidth.push(privacyPolicy);
+      inlineItems.push(privacyPolicy);
       this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
 
       // Eula link
@@ -299,12 +335,13 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           value: false
         });
         fullWidth.push(eula);
+        inlineItems.push(eula);
         this._form.add(eula, eulaText, null, "eula");
       }
 
 
       const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, fullWidth);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, fullWidth, inlineItems);
       content.add(formRenderer);
       const captchaLayout = this.__createCaptchaLayout();
       this._form.getValidationManager().add(this.__captchaField);
