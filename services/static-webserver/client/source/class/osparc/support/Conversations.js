@@ -118,7 +118,10 @@ qx.Class.define("osparc.support.Conversations", {
           this.getChildControl("filters-layout").add(control);
           break;
         case "loading-button":
-          control = new osparc.ui.form.FetchButton();
+          control = new osparc.ui.form.FetchButton().set({
+            backgroundColor: "transparent",
+            iconSize: 24,
+          });
           this._addAt(control, 1);
           break;
         case "no-messages-label":
@@ -240,6 +243,7 @@ qx.Class.define("osparc.support.Conversations", {
     __fetchConversations: function(filter) {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
+      loadMoreButton.show();
 
       const requestId = ++this.__fetchRequestId;
       osparc.store.ConversationsSupport.getInstance().fetchConversations(filter)
