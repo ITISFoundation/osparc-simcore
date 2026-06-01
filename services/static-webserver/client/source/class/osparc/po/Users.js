@@ -159,7 +159,7 @@ qx.Class.define("osparc.po.Users", {
       foundUsers.forEach((user, index) => {
         const row = index + 1;
 
-        const userNameLabel = new qx.ui.basic.Label(user["username"]).set({
+        const userNameLabel = new qx.ui.basic.Label(user["userName"]).set({
           selectable: true,
         });
         foundUsersLayout.add(userNameLabel, {
