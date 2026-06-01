@@ -120,6 +120,41 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = 500
 
+    STORAGE_CLEANER_RECONCILE_API_ORPHANS_ENABLED: Annotated[
+        bool,
+        Field(
+            description=(
+                "Reconciliation pass (d) that detects user-uploaded api/ files no longer referenced"
+                " by any project workbench and removes them (fmd row + S3 object)."
+                " Uses a two-phase Redis-cached scan: Phase A collects referenced api/ paths from all"
+                " project workbenches; Phase A' collects candidate file_ids from file_meta_data;"
+                " Phase B deletes the diff. The grace period gate ensures no false positives."
+                " Disabled by default — enable per environment after dry-run validation."
+            ),
+        ),
+    ] = False
+
+    STORAGE_CLEANER_RECONCILE_API_GRACE_PERIOD: Annotated[
+        timedelta,
+        Field(
+            description=(
+                "Minimum age of an api/ file (relative to scan_started_at) before it is eligible"
+                " for orphan deletion. Must be long enough to outlast a full scan cycle."
+                " 30 days is conservative and safe for any deployment size."
+            ),
+        ),
+    ] = timedelta(days=30)
+
+    STORAGE_CLEANER_RECONCILE_API_SCAN_BATCH_SIZE: Annotated[
+        PositiveInt,
+        Field(
+            description=(
+                "Number of projects scanned per cleaner tick during the api/ orphan Phase A scan."
+                " Larger values finish faster but add more DB load per tick."
+            ),
+        ),
+    ] = 100
+
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
         int,
         Field(

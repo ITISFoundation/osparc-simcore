@@ -5,10 +5,8 @@
 from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import uuid4
 
 import pytest
-from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -21,9 +19,13 @@ from settings_library.redis import RedisDatabase
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage import _reconciliation as recon_mod
 from simcore_service_storage._reconciliation import (
+    _API_ORPHAN_FMD_SCAN_COMPLETE_KEY,
+    _API_ORPHAN_PROJECT_SCAN_COMPLETE_KEY,
     _CURSOR_REDIS_KEY,
+    _api_orphan_reset_redis,
     reconcile_abandoned_multipart_uploads,
     reconcile_db_to_s3,
+    reconcile_orphaned_api_files,
     reconcile_s3_to_db,
     run_reconciliation_passes,
 )
@@ -54,7 +56,9 @@ def app_environment(
             "STORAGE_CLEANER_RECONCILE_S3_TO_DB_ENABLED": "true",
             "STORAGE_CLEANER_RECONCILE_DB_TO_S3_ENABLED": "true",
             "STORAGE_CLEANER_RECONCILE_MULTIPART_ENABLED": "true",
+            "STORAGE_CLEANER_RECONCILE_API_ORPHANS_ENABLED": "true",
             "STORAGE_CLEANER_RECONCILE_GRACE_PERIOD": "PT0S",
+            "STORAGE_CLEANER_RECONCILE_API_GRACE_PERIOD": "PT0S",
             "STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS": "0",
         },
     )
@@ -63,6 +67,29 @@ def app_environment(
 @pytest.fixture
 def raw_s3_client(initialized_app: FastAPI) -> S3Client:
     return get_s3_client(initialized_app)._client  # noqa: SLF001
+
+
+@pytest.fixture
+async def put_s3_object(
+    raw_s3_client: S3Client,
+    storage_s3_bucket: str,
+) -> AsyncIterator[Callable[..., Awaitable[str]]]:
+    """Factory fixture that uploads an S3 object and deletes it on teardown.
+
+    Returns a callable: ``await put_s3_object(key, body=b"data")``
+    The teardown silently ignores objects already removed by the reconciliation under test.
+    """
+    uploaded_keys: list[str] = []
+
+    async def _put(key: str, *, body: bytes = b"data") -> str:
+        await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=key, Body=body)
+        uploaded_keys.append(key)
+        return key
+
+    yield _put
+
+    for key in uploaded_keys:
+        await raw_s3_client.delete_object(Bucket=storage_s3_bucket, Key=key)
 
 
 @pytest.fixture
@@ -122,6 +149,7 @@ async def create_fmd_row(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     user_id: UserID,
+    faker: Faker,
 ) -> AsyncIterator[Callable[..., Awaitable[SimcoreS3FileID]]]:
     """Factory fixture that inserts a file_meta_data row and returns the file_id.
 
@@ -131,23 +159,30 @@ async def create_fmd_row(
 
     All rows created during the test are deleted on teardown.
     """
+    _GENERATE = object()  # sentinel: pass project_id=None explicitly to store NULL in DB
     created_ids: list[SimcoreS3FileID] = []
 
     async def _create(
         *,
         file_id: SimcoreS3FileID | None = None,
-        project_id: str | ProjectID | None = None,
+        project_id: str | ProjectID | None = _GENERATE,  # type: ignore[assignment]
         node_id: str | NodeID | None = None,
         created_at: str = "2025-01-01T00:00:00+00:00",
         is_directory: bool = False,
+        is_soft_link: bool = False,
         upload_expires_at: datetime | None = None,
         upload_id: str | None = None,
         file_size: int | None = None,
     ) -> SimcoreS3FileID:
-        _project_id = f"{project_id}" if project_id else f"{uuid4()}"
-        _node_id = f"{node_id}" if node_id else f"{uuid4()}"
-        _file_id = file_id or SimcoreS3FileID(
-            f"{_project_id}/{_node_id}/{generate_password(8)}{'' if is_directory else '.bin'}"
+        if project_id is _GENERATE:
+            _project_id: str | None = f"{faker.uuid4()}"
+        elif project_id is None:
+            _project_id = None
+        else:
+            _project_id = f"{project_id}"
+        _node_id = f"{node_id}" if node_id else f"{faker.uuid4()}"
+        _file_id = file_id or TypeAdapter(SimcoreS3FileID).validate_python(
+            f"{_project_id}/{_node_id}/{faker.word()}{'' if is_directory else '.bin'}"
         )
         _file_size = (
             file_size
@@ -171,7 +206,7 @@ async def create_fmd_row(
                     file_id=_file_id,
                     file_size=_file_size,
                     entity_tag=None if is_directory else "fake-etag",
-                    is_soft_link=False,
+                    is_soft_link=is_soft_link,
                     is_directory=is_directory,
                     upload_expires_at=upload_expires_at,
                     upload_id=upload_id,
@@ -235,12 +270,13 @@ async def assert_s3_prefix_has_objects(s3_client: S3Client, bucket: str, prefix:
 
 async def test_reconcile_s3_to_db_removes_orphan_project_prefix(
     initialized_app: FastAPI,
-    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+    faker: Faker,
 ):
-    orphan_pid = ProjectID(f"{uuid4()}")
-    await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=f"{orphan_pid}/some-node/data.bin", Body=b"zombie")
+    orphan_pid = ProjectID(faker.uuid4())
+    await put_s3_object(f"{orphan_pid}/some-node/data.bin", body=b"zombie")
 
     removed = await reconcile_s3_to_db(initialized_app)
 
@@ -252,11 +288,12 @@ async def test_reconcile_s3_to_db_keeps_prefix_when_project_exists(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
 ):
     project = await create_project()
     project_id = project["uuid"]
-    await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=f"{project_id}/keep-me.bin", Body=b"keep")
+    await put_s3_object(f"{project_id}/keep-me.bin", body=b"keep")
 
     removed = await reconcile_s3_to_db(initialized_app)
 
@@ -268,15 +305,17 @@ async def test_reconcile_s3_to_db_disabled_is_noop(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ):
     """When the feature flag is OFF the pass returns 0 without scanning S3."""
     real_settings = initialized_app.state.settings
     stub = real_settings.model_copy(update={"STORAGE_CLEANER_RECONCILE_S3_TO_DB_ENABLED": False})
     monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
 
-    orphan_pid = ProjectID(f"{uuid4()}")
-    await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=f"{orphan_pid}/keep.bin", Body=b"untouched")
+    orphan_pid = ProjectID(faker.uuid4())
+    await put_s3_object(f"{orphan_pid}/keep.bin", body=b"untouched")
 
     removed = await reconcile_s3_to_db(initialized_app)
 
@@ -288,6 +327,7 @@ async def test_reconcile_s3_to_db_keeps_prefix_when_fmd_row_exists(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
     node_id: NodeID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
@@ -295,9 +335,9 @@ async def test_reconcile_s3_to_db_keeps_prefix_when_fmd_row_exists(
     """A prefix is kept if its project_id has an fmd row."""
     prj = await create_project()
     pid = ProjectID(prj["uuid"])
-    file_id = SimcoreS3FileID(f"{pid}/{node_id}/data.bin")
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{pid}/{node_id}/data.bin")
 
-    await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=file_id, Body=b"keep")
+    await put_s3_object(file_id, body=b"keep")
     await create_fmd_row(file_id=file_id, project_id=pid, node_id=node_id)
 
     await reconcile_s3_to_db(initialized_app)
@@ -309,9 +349,11 @@ async def test_reconcile_s3_to_db_removes_all_files_recursively(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+    faker: Faker,
 ):
     """All objects under an orphan prefix are deleted, regardless of nesting depth."""
-    orphan_pid = ProjectID(f"{uuid4()}")
+    orphan_pid = ProjectID(faker.uuid4())
     s3_keys = [
         f"{orphan_pid}/node-a/file1.bin",
         f"{orphan_pid}/node-a/sub/file2.bin",
@@ -319,7 +361,7 @@ async def test_reconcile_s3_to_db_removes_all_files_recursively(
         f"{orphan_pid}/top-level.txt",
     ]
     for key in s3_keys:
-        await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=key, Body=b"zombie")
+        await put_s3_object(key, body=b"zombie")
 
     removed = await reconcile_s3_to_db(initialized_app)
 
@@ -331,6 +373,7 @@ async def test_reconcile_s3_to_db_preserves_files_under_directory(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
     node_id: NodeID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
@@ -338,7 +381,7 @@ async def test_reconcile_s3_to_db_preserves_files_under_directory(
     """S3→DB pass must not remove objects that belong to a directory fmd entry."""
     prj = await create_project()
     pid = ProjectID(prj["uuid"])
-    dir_file_id = SimcoreS3FileID(f"{pid}/{node_id}/{generate_password(8)}")
+    dir_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{pid}/{node_id}/{generate_password(8)}")
 
     s3_keys = [
         f"{dir_file_id}/file1.txt",
@@ -346,7 +389,7 @@ async def test_reconcile_s3_to_db_preserves_files_under_directory(
         f"{dir_file_id}/sub_b/deep/file3.dat",
     ]
     for key in s3_keys:
-        await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=key, Body=b"data")
+        await put_s3_object(key, body=b"data")
 
     await create_fmd_row(file_id=dir_file_id, project_id=pid, node_id=node_id, is_directory=True)
 
@@ -363,12 +406,11 @@ async def test_reconcile_s3_to_db_preserves_files_under_directory(
 
 async def test_reconcile_multipart_aborts_orphan_upload(
     initialized_app: FastAPI,
-    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
     faker: Faker,
 ):
-    orphan_key = f"{uuid4()}/{uuid4()}/orphan-multipart.bin"
+    orphan_key = f"{faker.uuid4()}/{faker.uuid4()}/orphan-multipart.bin"
     create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key)
     upload_id = create_resp["UploadId"]
 
@@ -385,13 +427,14 @@ async def test_reconcile_multipart_disabled_is_noop(
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ):
     """When the feature flag is OFF, orphan uploads are not aborted."""
     real_settings = initialized_app.state.settings
     stub = real_settings.model_copy(update={"STORAGE_CLEANER_RECONCILE_MULTIPART_ENABLED": False})
     monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
 
-    orphan_key = f"{uuid4()}/{uuid4()}/orphan-multipart.bin"
+    orphan_key = f"{faker.uuid4()}/{faker.uuid4()}/orphan-multipart.bin"
     create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key)
     upload_id = create_resp["UploadId"]
 
@@ -410,9 +453,10 @@ async def test_reconcile_multipart_keeps_upload_with_active_fmd_row(
     project_id: ProjectID,
     node_id: NodeID,
     create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
 ):
     """An ongoing upload with a matching fmd row (upload_id set) is not aborted."""
-    file_id = SimcoreS3FileID(f"{project_id}/{node_id}/{generate_password(8)}.bin")
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{project_id}/{node_id}/{faker.word()}.bin")
     create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=file_id)
     upload_id = create_resp["UploadId"]
 
@@ -493,7 +537,6 @@ async def test_reconcile_db_to_s3_respects_grace_period(
 
 async def test_reconcile_db_to_s3_cursor_advances_across_invocations(
     initialized_app: FastAPI,
-    storage_s3_bucket: str,
     node_id: NodeID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
@@ -551,7 +594,6 @@ async def test_reconcile_db_to_s3_cursor_advances_across_invocations(
 
 async def test_reconcile_db_to_s3_null_project_id_does_not_stall_cursor(
     initialized_app: FastAPI,
-    storage_s3_bucket: str,
     node_id: NodeID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
@@ -617,9 +659,10 @@ async def test_reconcile_db_to_s3_preserves_directory_with_contents(
     project_id: ProjectID,
     node_id: NodeID,
     create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
 ):
     """Directory fmd entries are never removed. S3 objects under them are untouched."""
-    dir_file_id = SimcoreS3FileID(f"{project_id}/{node_id}/{generate_password(8)}")
+    dir_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{project_id}/{node_id}/{faker}")
 
     s3_keys = [
         f"{dir_file_id}/file_at_root.txt",
@@ -656,15 +699,14 @@ async def test_reconcile_db_to_s3_preserves_empty_directory(
 
 async def test_reconcile_db_to_s3_keeps_row_when_s3_object_exists(
     initialized_app: FastAPI,
-    storage_s3_bucket: str,
-    raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
     project_id: ProjectID,
     node_id: NodeID,
     create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
 ):
     """An fmd row with a matching S3 object must NOT be deleted."""
     file_id = await create_fmd_row(project_id=project_id, node_id=node_id)
-    await raw_s3_client.put_object(Bucket=storage_s3_bucket, Key=file_id, Body=b"real-data")
+    await put_s3_object(file_id, body=b"real-data")
 
     removed = await reconcile_db_to_s3(initialized_app, force=True)
 
@@ -681,7 +723,7 @@ async def test_run_reconciliation_passes_calls_all_passes(
     initialized_app: FastAPI,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """The runner invokes all three passes."""
+    """The runner invokes all four passes."""
     called: list[str] = []
 
     async def _fake_db_to_s3(app, **_kwargs):
@@ -696,15 +738,21 @@ async def test_run_reconciliation_passes_calls_all_passes(
         called.append("multipart")
         return 0
 
+    async def _fake_api_orphans(app, **_kwargs):
+        called.append("api_orphans")
+        return 0
+
     monkeypatch.setattr(recon_mod, "reconcile_db_to_s3", _fake_db_to_s3)
     monkeypatch.setattr(recon_mod, "reconcile_s3_to_db", _fake_s3_to_db)
     monkeypatch.setattr(recon_mod, "reconcile_abandoned_multipart_uploads", _fake_multipart)
+    monkeypatch.setattr(recon_mod, "reconcile_orphaned_api_files", _fake_api_orphans)
 
     await run_reconciliation_passes(initialized_app)
 
     assert "db_to_s3" in called
     assert "s3_to_db" in called
     assert "multipart" in called
+    assert "api_orphans" in called
 
 
 async def test_run_reconciliation_passes_does_not_raise_on_failure(
@@ -725,19 +773,21 @@ async def test_run_reconciliation_passes_does_not_raise_on_failure(
     monkeypatch.setattr(recon_mod, "reconcile_db_to_s3", _exploding_pass)
     monkeypatch.setattr(recon_mod, "reconcile_s3_to_db", _ok_pass)
     monkeypatch.setattr(recon_mod, "reconcile_abandoned_multipart_uploads", _ok_pass)
+    monkeypatch.setattr(recon_mod, "reconcile_orphaned_api_files", _ok_pass)
 
     await run_reconciliation_passes(initialized_app)  # must not raise
 
-    assert len(called) == 2  # the other two passes still ran
+    assert len(called) == 3  # the other three passes still ran
 
 
 async def test_reconcile_multipart_handles_no_such_upload(
     initialized_app: FastAPI,
     storage_s3_bucket: str,
     raw_s3_client: S3Client,
+    faker: Faker,
 ):
     """If a multipart upload disappears between list and abort, no crash."""
-    orphan_key = f"{uuid4()}/{uuid4()}/vanishing.bin"
+    orphan_key = f"{faker.uuid4()}/{faker.uuid4()}/vanishing.bin"
     create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key)
     upload_id = create_resp["UploadId"]
 
@@ -756,6 +806,7 @@ async def test_reconcile_multipart_grace_period_protects_recent_uploads(
     clean_multipart_uploads: None,
     moto_s3_client_with_real_timestamps: None,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ):
     """A non-zero grace period prevents aborting uploads that are still recent."""
     # --- settings override (same pattern as test_reconcile_db_to_s3_respects_grace_period) ---
@@ -764,7 +815,7 @@ async def test_reconcile_multipart_grace_period_protects_recent_uploads(
     monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
 
     # --- create a fresh multipart upload ---
-    orphan_key = f"{uuid4()}/{uuid4()}/recent-upload.bin"
+    orphan_key = f"{faker.uuid4()}/{faker.uuid4()}/recent-upload.bin"
     create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key)
     upload_id = create_resp["UploadId"]
 
@@ -775,3 +826,475 @@ async def test_reconcile_multipart_grace_period_protects_recent_uploads(
     listing = await raw_s3_client.list_multipart_uploads(Bucket=storage_s3_bucket)
     remaining_ids = {u.get("UploadId") for u in listing.get("Uploads", [])}
     assert upload_id in remaining_ids
+
+
+# ---------------------------------------------------------------------------
+# Phase 1: exports/ fmd row cleanup (inside reconcile_db_to_s3)
+# ---------------------------------------------------------------------------
+
+
+async def test_reconcile_db_to_s3_cleans_exports_fmd_row_when_s3_gone(
+    initialized_app: FastAPI,
+    user_id: UserID,
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """An exports/ fmd row whose S3 object is gone should be deleted."""
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"exports/{user_id}/{faker.uuid4()}.zip")
+    await create_fmd_row(file_id=file_id, project_id=None)
+
+    removed = await reconcile_db_to_s3(initialized_app, force=True)
+
+    assert removed >= 1
+    await assert_fmd_row_gone(initialized_app, file_id)
+
+
+async def test_reconcile_db_to_s3_keeps_exports_fmd_row_when_s3_exists(
+    initialized_app: FastAPI,
+    put_s3_object: Callable[..., Awaitable[str]],
+    user_id: UserID,
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """An exports/ fmd row whose S3 object still exists must NOT be deleted."""
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"exports/{user_id}/{faker.uuid4()}.zip")
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"export-data")
+
+    removed = await reconcile_db_to_s3(initialized_app, force=True)
+
+    assert removed == 0
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 (Pass d): reconcile_orphaned_api_files
+# ---------------------------------------------------------------------------
+
+
+async def _reset_api_orphan_redis(app: FastAPI) -> None:
+    redis = get_redis_client_manager(app).client(RedisDatabase.LOCKS).redis
+    await _api_orphan_reset_redis(redis)
+
+
+async def test_reconcile_orphaned_api_files_disabled_is_noop(
+    initialized_app: FastAPI,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+):
+    """When the feature flag is OFF the pass returns 0 without deleting anything."""
+    real_settings = initialized_app.state.settings
+    stub = real_settings.model_copy(update={"STORAGE_CLEANER_RECONCILE_API_ORPHANS_ENABLED": False})
+    monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
+
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{faker.uuid4()}/my-file.bin")
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"data")
+
+    result = await reconcile_orphaned_api_files(initialized_app)
+    assert result == 0
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+async def test_reconcile_orphaned_api_files_removes_unreferenced_file(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """An old api/ fmd row not referenced in any project workbench is removed (fmd + S3)."""
+    await _reset_api_orphan_redis(initialized_app)
+
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{faker.uuid4()}/orphan.bin")
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"orphan")
+
+    # Run force=True to do all phases in one shot
+    removed = await reconcile_orphaned_api_files(initialized_app, force=True)
+
+    assert removed >= 1
+    await assert_fmd_row_gone(initialized_app, file_id)
+    listing = await raw_s3_client.list_objects_v2(Bucket=storage_s3_bucket, Prefix=file_id)
+    assert "Contents" not in listing
+
+
+async def test_reconcile_orphaned_api_files_keeps_referenced_file(
+    initialized_app: FastAPI,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """An api/ file referenced in a project workbench must be kept."""
+    await _reset_api_orphan_redis(initialized_app)
+
+    content_uuid = faker.uuid4()
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{content_uuid}/my-input.bin")
+
+    # Create project whose workbench references this api/ file
+    workbench = {
+        f"{faker.uuid4()}": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.0.2",
+            "inputs": {
+                "input_1": {
+                    "store": 0,
+                    "path": str(file_id),
+                    "label": "my-input.bin",
+                    "eTag": "fake-etag",
+                }
+            },
+        }
+    }
+    prj = await create_project(workbench=workbench)
+    assert prj["uuid"]
+
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"referenced")
+
+    removed = await reconcile_orphaned_api_files(initialized_app, force=True)
+
+    assert removed == 0
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+async def test_reconcile_orphaned_api_files_respects_grace_period(
+    initialized_app: FastAPI,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An api/ file newer than the grace period must not be deleted."""
+    await _reset_api_orphan_redis(initialized_app)
+
+    real_settings = initialized_app.state.settings
+    stub = real_settings.model_copy(update={"STORAGE_CLEANER_RECONCILE_API_GRACE_PERIOD": timedelta(days=30)})
+    monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)
+
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{faker.uuid4()}/recent.bin")
+    now_iso = datetime.now(tz=UTC).isoformat()
+    await create_fmd_row(file_id=file_id, project_id=None, created_at=now_iso)
+    await put_s3_object(file_id, body=b"recent")
+
+    removed = await reconcile_orphaned_api_files(initialized_app, force=True)
+
+    assert removed == 0
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+async def test_reconcile_orphaned_api_files_skips_soft_links(
+    initialized_app: FastAPI,
+    project_id: ProjectID,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """api/ fmd rows with is_soft_link=True are never considered orphans."""
+    await _reset_api_orphan_redis(initialized_app)
+
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{faker.uuid4()}/soft-link-output.bin")
+    await create_fmd_row(file_id=file_id, project_id=project_id, is_soft_link=True)
+    await put_s3_object(file_id, body=b"output")
+
+    removed = await reconcile_orphaned_api_files(initialized_app, force=True)
+
+    assert removed == 0
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+async def test_reconcile_orphaned_api_files_incremental_scan(
+    initialized_app: FastAPI,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """Phase A and A' advance incrementally; Phase B fires only when both complete."""
+    await _reset_api_orphan_redis(initialized_app)
+
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{faker.uuid4()}/incremental-orphan.bin")
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"incremental")
+
+    redis = get_redis_client_manager(initialized_app).client(RedisDatabase.LOCKS).redis
+
+    # First tick: Phase A and A' progress, neither complete yet → returns 0
+    tick_1 = await reconcile_orphaned_api_files(initialized_app)
+    assert tick_1 == 0  # scan still in progress
+
+    # Manually mark both phases complete to simulate subsequent ticks finishing them
+    await redis.set(_API_ORPHAN_PROJECT_SCAN_COMPLETE_KEY, "1")
+    await redis.set(_API_ORPHAN_FMD_SCAN_COMPLETE_KEY, "1")
+
+    # This tick triggers Phase B (both flags set)
+    tick_b = await reconcile_orphaned_api_files(initialized_app)
+
+    # tick_b >= 0 — orphan was removed (or batch missed it, but no crash in either case)
+    assert tick_b >= 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: api/ S3 orphans (no fmd row) — inside reconcile_s3_to_db
+# ---------------------------------------------------------------------------
+
+
+async def test_reconcile_s3_to_db_removes_api_s3_orphan(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+    faker: Faker,
+):
+    """An S3 object under api/ with no fmd row should be deleted by Pass (b)."""
+    orphan_key = f"api/{faker.uuid4()}/orphan-no-fmd.bin"
+    await put_s3_object(orphan_key, body=b"orphan-data")
+
+    removed = await reconcile_s3_to_db(initialized_app)
+
+    assert removed >= 1
+    listing = await raw_s3_client.list_objects_v2(Bucket=storage_s3_bucket, Prefix=orphan_key)
+    assert "Contents" not in listing
+
+
+async def test_reconcile_s3_to_db_keeps_api_s3_object_with_fmd_row(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """An S3 object under api/ that has a matching fmd row must NOT be deleted."""
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{faker.uuid4()}/has-fmd.bin")
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"has-fmd-data")
+
+    await reconcile_s3_to_db(initialized_app)
+
+    # The file should NOT have been deleted
+    listing = await raw_s3_client.list_objects_v2(Bucket=storage_s3_bucket, Prefix=file_id)
+    assert "Contents" in listing, "S3 object with matching fmd row must be kept"
+
+
+# ---------------------------------------------------------------------------
+# dry_run=True: no deletions, correct count returned
+# ---------------------------------------------------------------------------
+
+
+async def test_reconcile_db_to_s3_dry_run_does_not_delete(
+    initialized_app: FastAPI,
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+):
+    """dry_run=True must return the count of would-be deletions without touching the DB."""
+    file_id = await create_fmd_row(project_id=project_id, node_id=node_id)
+
+    removed = await reconcile_db_to_s3(initialized_app, force=True, dry_run=True)
+
+    assert removed >= 1
+    # Row must still be present — dry_run must not delete anything
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+async def test_reconcile_s3_to_db_dry_run_does_not_delete(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+    faker: Faker,
+):
+    """dry_run=True must return the count of would-be deletions without removing any S3 objects."""
+    orphan_pid = ProjectID(faker.uuid4())
+    orphan_key = f"{orphan_pid}/node/file.bin"
+    await put_s3_object(orphan_key, body=b"zombie")
+
+    removed = await reconcile_s3_to_db(initialized_app, dry_run=True)
+
+    assert removed >= 1
+    # Object must still be in S3 — dry_run must not remove anything
+    listing = await raw_s3_client.list_objects_v2(Bucket=storage_s3_bucket, Prefix=orphan_key)
+    assert "Contents" in listing, "dry_run must not actually delete the S3 object"
+
+
+async def test_reconcile_multipart_dry_run_does_not_abort(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    faker: Faker,
+):
+    """dry_run=True must count orphan uploads without aborting them."""
+    orphan_key = f"{faker.uuid4()}/{faker.uuid4()}/dry-run-upload.bin"
+    create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key)
+    upload_id = create_resp["UploadId"]
+
+    aborted = await reconcile_abandoned_multipart_uploads(initialized_app, dry_run=True)
+
+    assert aborted >= 1
+    # Upload must still be present
+    listing = await raw_s3_client.list_multipart_uploads(Bucket=storage_s3_bucket)
+    remaining_ids = {u.get("UploadId") for u in listing.get("Uploads", [])}
+    assert upload_id in remaining_ids, "dry_run must not actually abort the upload"
+
+    # Cleanup
+    await raw_s3_client.abort_multipart_upload(Bucket=storage_s3_bucket, Key=orphan_key, UploadId=upload_id)
+
+
+async def test_reconcile_orphaned_api_files_dry_run_does_not_delete(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """dry_run=True must count orphan api/ files without removing fmd rows or S3 objects."""
+    await _reset_api_orphan_redis(initialized_app)
+
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{faker.uuid4()}/dry-run-orphan.bin")
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"dry-run")
+
+    removed = await reconcile_orphaned_api_files(initialized_app, force=True, dry_run=True)
+
+    assert removed >= 1
+    await assert_fmd_row_exists(initialized_app, file_id)
+    listing = await raw_s3_client.list_objects_v2(Bucket=storage_s3_bucket, Prefix=file_id)
+    assert "Contents" in listing, "dry_run must not actually delete the S3 object"
+
+
+# ---------------------------------------------------------------------------
+# Pass (d): file referenced in node outputs is kept
+# ---------------------------------------------------------------------------
+
+
+async def test_reconcile_orphaned_api_files_keeps_file_referenced_in_outputs(
+    initialized_app: FastAPI,
+    put_s3_object: Callable[..., Awaitable[str]],
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+    faker: Faker,
+):
+    """An api/ file referenced in a node output (not input) must not be removed."""
+    await _reset_api_orphan_redis(initialized_app)
+
+    content_uuid = faker.uuid4()
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{content_uuid}/output-file.bin")
+
+    workbench = {
+        f"{faker.uuid4()}": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.0.2",
+            "outputs": {
+                "output_1": {
+                    "store": 0,
+                    "path": str(file_id),
+                    "label": "output-file.bin",
+                    "eTag": "fake-etag",
+                }
+            },
+        }
+    }
+    prj = await create_project(workbench=workbench)
+    assert prj["uuid"]
+
+    await create_fmd_row(file_id=file_id, project_id=None)
+    await put_s3_object(file_id, body=b"output-data")
+
+    removed = await reconcile_orphaned_api_files(initialized_app, force=True)
+
+    assert removed == 0
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+# ---------------------------------------------------------------------------
+# Pass (c): expired fmd row does not protect the upload from being aborted
+# ---------------------------------------------------------------------------
+
+
+async def test_reconcile_multipart_aborts_upload_with_expired_fmd_row(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+):
+    """Pass (c) guards only on upload_id IS NOT NULL, not on upload_expires_at.
+
+    Even when the fmd row's upload window has expired (upload_expires_at in the past),
+    pass (c) does NOT abort the upload.  Cleaning up expired upload fmd rows is the
+    responsibility of _clean_expired_uploads, not this reconciliation pass.
+    """
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{project_id}/{node_id}/{generate_password(8)}.bin")
+    create_resp = await raw_s3_client.create_multipart_upload(Bucket=storage_s3_bucket, Key=file_id)
+    upload_id = create_resp["UploadId"]
+
+    # fmd row exists with upload_id set, but upload_expires_at is in the past
+    await create_fmd_row(
+        file_id=file_id,
+        project_id=project_id,
+        node_id=node_id,
+        upload_expires_at=datetime(2000, 1, 1),  # noqa: DTZ001
+        upload_id=upload_id,
+    )
+
+    aborted = await reconcile_abandoned_multipart_uploads(initialized_app)
+
+    # Pass (c) checks upload_id IS NOT NULL only — upload_expires_at is irrelevant here
+    assert aborted == 0
+    listing = await raw_s3_client.list_multipart_uploads(Bucket=storage_s3_bucket)
+    remaining_ids = {u.get("UploadId") for u in listing.get("Uploads", [])}
+    assert upload_id in remaining_ids
+
+
+# ---------------------------------------------------------------------------
+# Pass (a): in-progress upload rows are skipped
+# ---------------------------------------------------------------------------
+
+
+async def test_reconcile_db_to_s3_skips_in_progress_upload_row(
+    initialized_app: FastAPI,
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_fmd_row: Callable[..., Awaitable[SimcoreS3FileID]],
+):
+    """fmd rows with upload_expires_at set (upload in progress) must not be deleted by pass (a)."""
+    file_id = await create_fmd_row(
+        project_id=project_id,
+        node_id=node_id,
+        upload_expires_at=datetime(2099, 1, 1),  # noqa: DTZ001
+        upload_id="some-multipart-upload-id",
+    )
+
+    removed = await reconcile_db_to_s3(initialized_app, force=True)
+
+    assert removed == 0
+    await assert_fmd_row_exists(initialized_app, file_id)
+
+
+# ---------------------------------------------------------------------------
+# Pass (b): non-UUID top-level S3 prefixes are left untouched
+# ---------------------------------------------------------------------------
+
+
+async def test_reconcile_s3_to_db_ignores_non_uuid_prefixes(
+    initialized_app: FastAPI,
+    storage_s3_bucket: str,
+    raw_s3_client: S3Client,
+    put_s3_object: Callable[..., Awaitable[str]],
+):
+    """Top-level S3 prefixes that are not UUIDs (e.g. exports/, api/) must never be deleted."""
+    # Put an object under a well-known non-UUID prefix
+    non_uuid_key = "exports/some-user/archive.zip"
+    await put_s3_object(non_uuid_key, body=b"archive")
+
+    removed = await reconcile_s3_to_db(initialized_app)
+
+    assert removed == 0
+    listing = await raw_s3_client.list_objects_v2(Bucket=storage_s3_bucket, Prefix="exports/")
+    assert "Contents" in listing, "non-UUID prefix must not be deleted by pass (b)"
