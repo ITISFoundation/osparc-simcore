@@ -41,6 +41,7 @@ import sqlalchemy as sa
 from aws_library.s3 import S3DirectoryMetaData, S3MetaData, S3UploadNotFoundError, SimcoreS3API
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from servicelib.redis import handle_redis_returns_union_types
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 from settings_library.s3 import S3Settings
@@ -674,8 +675,8 @@ async def _api_orphan_phase_b(
     app: FastAPI, redis: aioredis.Redis, bucket: str, s3_client: SimcoreS3API, *, dry_run: bool = False
 ) -> int:
     """Compute orphans (candidates - referenced) and delete them; reset Redis state."""
-    orphan_raw: set[bytes | str] = await redis.sdiff(  # type: ignore[assignment]
-        [_API_ORPHAN_CANDIDATES_KEY, _API_ORPHAN_REFERENCED_KEY]
+    orphan_raw: list[bytes | str] = await handle_redis_returns_union_types(
+        redis.sdiff([_API_ORPHAN_CANDIDATES_KEY, _API_ORPHAN_REFERENCED_KEY])
     )
     orphan_ids: list[str] = [fid.decode() if isinstance(fid, bytes) else str(fid) for fid in orphan_raw]
 
