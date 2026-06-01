@@ -235,13 +235,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
 
         const contactPerson = new qx.ui.form.TextField().set({
-          required: true,
+          required: false,
         });
         fullWidth.push(contactPerson);
         this._form.add(contactPerson, this.tr("What is the name of your contact person at TI Solutions AG?"), null, "contactPerson");
         earlyAdopter.bind("value", contactPerson, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+        earlyAdopter.bind("value", contactPerson, "required");
 
         const researchTopic = new qx.ui.form.TextField().set({
           required: true,
@@ -249,7 +250,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         fullWidth.push(researchTopic);
         this._form.add(researchTopic, this.tr("Please describe the research you intend to do with the TIP platform"), null, "researchTopic");
         earlyAdopter.bind("value", researchTopic, "visibility", {
-          converter: value => value ? "visible" : "excluded"
+          converter: value => value ? "excluded" : "visible"
+        });
+        earlyAdopter.bind("value", researchTopic, "required", {
+          converter: value => !value
         });
       }
 
