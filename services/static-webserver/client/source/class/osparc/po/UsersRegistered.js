@@ -93,6 +93,34 @@ qx.Class.define("osparc.po.UsersRegistered", {
           });
           this.getChildControl("pagination-layout").add(control);
           break;
+        case "first-page-button":
+          control = new qx.ui.form.Button(null, "@MaterialIcons/first_page/16").set({
+            allowGrowX: false,
+            enabled: false,
+            toolTipText: this.tr("First page"),
+          });
+          control.addListener("execute", () => {
+            this.__currentOffset = 0;
+            this.__fetchPage();
+          });
+          this.getChildControl("pagination-layout").add(control);
+          break;
+        case "page-spinner": {
+          control = new qx.ui.form.Spinner(1, 1, 1).set({
+            width: 60,
+            allowGrowX: false,
+          });
+          control.addListener("changeValue", e => {
+            const page = e.getData();
+            const newOffset = (page - 1) * this.self().PAGE_LIMIT;
+            if (newOffset !== this.__currentOffset) {
+              this.__currentOffset = newOffset;
+              this.__fetchPage();
+            }
+          });
+          this.getChildControl("pagination-layout").add(control);
+          break;
+        }
         case "page-info-label":
           control = new qx.ui.basic.Label("").set({
             font: "text-13",
@@ -112,6 +140,19 @@ qx.Class.define("osparc.po.UsersRegistered", {
           });
           this.getChildControl("pagination-layout").add(control);
           break;
+        case "last-page-button":
+          control = new qx.ui.form.Button(null, "@MaterialIcons/last_page/16").set({
+            allowGrowX: false,
+            enabled: false,
+            toolTipText: this.tr("Last page"),
+          });
+          control.addListener("execute", () => {
+            const totalPages = Math.ceil(this.__totalUsers / this.self().PAGE_LIMIT) || 1;
+            this.__currentOffset = (totalPages - 1) * this.self().PAGE_LIMIT;
+            this.__fetchPage();
+          });
+          this.getChildControl("pagination-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -120,7 +161,12 @@ qx.Class.define("osparc.po.UsersRegistered", {
       this.getChildControl("intro-text");
       this.getChildControl("loading-spinner");
       this.getChildControl("registered-users-container");
-      this.getChildControl("pagination-layout");
+      this.getChildControl("first-page-button");
+      this.getChildControl("prev-page-button");
+      this.getChildControl("page-spinner");
+      this.getChildControl("page-info-label");
+      this.getChildControl("next-page-button");
+      this.getChildControl("last-page-button");
       this.__currentOrderBy = "-accountRequestReviewedAt";
       this.addListenerOnce("appear", () => this.__fetchPage());
     },
@@ -269,13 +315,23 @@ qx.Class.define("osparc.po.UsersRegistered", {
     },
 
     __updatePaginationControls: function() {
-      this.getChildControl("prev-page-button").setEnabled(this.__currentOffset > 0);
       const currentPage = Math.floor(this.__currentOffset / this.self().PAGE_LIMIT) + 1;
       const totalPages = Math.ceil(this.__totalUsers / this.self().PAGE_LIMIT) || 1;
+
+      this.getChildControl("first-page-button").setEnabled(currentPage > 1);
+      this.getChildControl("prev-page-button").setEnabled(currentPage > 1);
+      this.getChildControl("next-page-button").setEnabled(currentPage < totalPages);
+      this.getChildControl("last-page-button").setEnabled(currentPage < totalPages);
+
+      const spinner = this.getChildControl("page-spinner");
+      spinner.set({
+        maximum: totalPages,
+        value: currentPage,
+      });
+
       this.getChildControl("page-info-label").setValue(
-        this.tr("Page %1/%2 (%3 users)", currentPage, totalPages, this.__totalUsers)
+        this.tr("of %1 (%2 users)", totalPages, this.__totalUsers)
       );
-      this.getChildControl("next-page-button").setEnabled(this.__currentOffset + this.self().PAGE_LIMIT < this.__totalUsers);
     },
 
     __reload: function() {
