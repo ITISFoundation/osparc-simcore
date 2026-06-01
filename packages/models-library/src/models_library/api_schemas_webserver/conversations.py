@@ -9,6 +9,7 @@ from ..conversations import (
     ConversationMessageGetDB,
     ConversationMessageID,
     ConversationMessageType,
+    ConversationName,
     ConversationStatus,
     ConversationType,
 )
@@ -23,7 +24,7 @@ from ._base import InputSchema, OutputSchema
 class ConversationRestGet(OutputSchema):
     conversation_id: ConversationID
     product_name: ProductName
-    name: Annotated[str, Field(max_length=50)]
+    name: ConversationName | None
     project_uuid: ProjectID | None
     user_group_id: GroupID
     type: ConversationType
