@@ -34,7 +34,7 @@ conversations = sa.Table(
     sa.Column(
         "name",
         sa.String,
-        nullable=False,
+        nullable=True,
     ),
     sa.Column(
         "project_uuid",

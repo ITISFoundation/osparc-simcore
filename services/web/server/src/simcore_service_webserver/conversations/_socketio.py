@@ -52,7 +52,7 @@ class BaseConversationEvent(BaseEvent):
 
 
 class ConversationCreatedOrUpdatedEvent(BaseConversationEvent):
-    name: ConversationName
+    name: ConversationName | None
     created: datetime.datetime
     modified: datetime.datetime
 

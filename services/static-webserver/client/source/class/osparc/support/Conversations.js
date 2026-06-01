@@ -71,6 +71,7 @@ qx.Class.define("osparc.support.Conversations", {
     __conversationListItems: null,
     __totalConversations: null,
     __isFetchingMore: false,
+    __fetchRequestId: 0,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -117,7 +118,10 @@ qx.Class.define("osparc.support.Conversations", {
           this.getChildControl("filters-layout").add(control);
           break;
         case "loading-button":
-          control = new osparc.ui.form.FetchButton();
+          control = new osparc.ui.form.FetchButton().set({
+            backgroundColor: "transparent",
+            iconSize: 24,
+          });
           this._addAt(control, 1);
           break;
         case "no-messages-label":
@@ -239,9 +243,14 @@ qx.Class.define("osparc.support.Conversations", {
     __fetchConversations: function(filter) {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
+      loadMoreButton.show();
 
+      const requestId = ++this.__fetchRequestId;
       osparc.store.ConversationsSupport.getInstance().fetchConversations(filter)
         .then(resp => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
           if (resp && resp.conversations && resp.conversations.length) {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
@@ -251,6 +260,9 @@ qx.Class.define("osparc.support.Conversations", {
           this.__updateLoadingSpinner();
         })
         .finally(() => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
           this.__showNoMessagesLabelIfNeeded(filter);
@@ -264,10 +276,14 @@ qx.Class.define("osparc.support.Conversations", {
       this.__isFetchingMore = true;
       this.__showLoadingSpinner(true);
 
+      const requestId = this.__fetchRequestId;
       const filter = this.getCurrentFilter();
       const offset = this.__conversationListItems.length;
       osparc.store.ConversationsSupport.getInstance().fetchConversations(filter, offset)
         .then(resp => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
           if (resp && resp.conversations && resp.conversations.length) {
             resp.conversations.forEach(conversation => this.__addConversation(conversation));
           }
