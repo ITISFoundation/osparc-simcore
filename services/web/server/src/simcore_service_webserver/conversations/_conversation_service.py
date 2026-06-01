@@ -10,6 +10,7 @@ from models_library.basic_types import IDStr
 from models_library.conversations import (
     ConversationGetDB,
     ConversationID,
+    ConversationName,
     ConversationPatchDB,
     ConversationStatus,
     ConversationType,
@@ -59,7 +60,7 @@ async def create_conversation(
     user_id: UserID,
     project_uuid: ProjectID | None,
     # Creation attributes
-    name: str,
+    name: ConversationName | None,
     type_: ConversationType,
     extra_context: dict[str, Any],
 ) -> ConversationGetDB:

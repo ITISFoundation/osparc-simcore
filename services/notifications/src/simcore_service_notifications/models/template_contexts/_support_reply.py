@@ -16,7 +16,7 @@ class User(BaseModel):
 @register_template_context(channel=Channel.email, template_name="support_reply")
 class SupportReplyTemplateContext(BaseTemplateContext):
     user: User
-    conversation_name: str
+    conversation_name: str | None
     conversation_url: HttpUrl
     message_content: str
     message_created_at: datetime

@@ -11,7 +11,9 @@ import pytest
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.email import EmailProtocol, SMTPSettings
+from settings_library.email import EmailProtocol, SMTPLocals, SMTPSettings
+
+_LOCAL_PARTS = {"SUPPORT": "support", "NO_REPLY": "no-reply"}
 
 
 @pytest.fixture
@@ -31,17 +33,20 @@ def all_env_devel_undefined(monkeypatch: pytest.MonkeyPatch, env_devel_dict: Env
         {
             "SMTP_HOST": "test",
             "SMTP_PORT": 113,
+            "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
         },
         {
             "SMTP_HOST": "test",
             "SMTP_PORT": 113,
             "SMTP_PROTOCOL": EmailProtocol.UNENCRYPTED.value,
+            "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
         },
         {
             "SMTP_HOST": "test",
             "SMTP_PORT": 113,
             "SMTP_USERNAME": "test",
             "SMTP_PASSWORD": "test",
+            "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
         },
         {
             "SMTP_HOST": "test",
@@ -49,6 +54,7 @@ def all_env_devel_undefined(monkeypatch: pytest.MonkeyPatch, env_devel_dict: Env
             "SMTP_USERNAME": "test",
             "SMTP_PASSWORD": "test",
             "SMTP_PROTOCOL": EmailProtocol.UNENCRYPTED.value,
+            "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
         },
         {
             "SMTP_HOST": "test",
@@ -56,6 +62,7 @@ def all_env_devel_undefined(monkeypatch: pytest.MonkeyPatch, env_devel_dict: Env
             "SMTP_USERNAME": "test",
             "SMTP_PASSWORD": "test",
             "SMTP_PROTOCOL": EmailProtocol.TLS.value,
+            "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
         },
         {
             "SMTP_HOST": "test",
@@ -63,6 +70,7 @@ def all_env_devel_undefined(monkeypatch: pytest.MonkeyPatch, env_devel_dict: Env
             "SMTP_USERNAME": "test",
             "SMTP_PASSWORD": "test",
             "SMTP_PROTOCOL": EmailProtocol.STARTTLS.value,
+            "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
         },
     ],
 )
@@ -73,7 +81,10 @@ def test_smtp_configuration_ok(
 ):
     assert SMTPSettings.model_validate(cfg)
 
-    setenvs_from_dict(monkeypatch, {k: f"{v}" for k, v in cfg.items()})
+    setenvs_from_dict(
+        monkeypatch,
+        {k: (json.dumps(v) if isinstance(v, dict) else f"{v}") for k, v in cfg.items()},
+    )
     assert SMTPSettings.create_from_envs()
 
 
@@ -85,6 +96,7 @@ def test_smtp_configuration_ok(
                 "SMTP_HOST": "test",
                 "SMTP_PORT": 111,
                 "SMTP_USERNAME": "test",
+                "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
                 # password required if username provided
             },
             "value_error",
@@ -94,6 +106,7 @@ def test_smtp_configuration_ok(
                 "SMTP_HOST": "test",
                 "SMTP_PORT": 112,
                 "SMTP_PASSWORD": "test",
+                "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
                 # username required if password provided
             },
             "value_error",
@@ -104,6 +117,7 @@ def test_smtp_configuration_ok(
                 "SMTP_PORT": 113,
                 "SMTP_PROTOCOL": EmailProtocol.STARTTLS,
                 "SMTP_PASSWORD": "test",
+                "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
             },
             "value_error",
         ),
@@ -113,6 +127,7 @@ def test_smtp_configuration_ok(
                 "SMTP_PORT": 114,
                 "SMTP_PROTOCOL": EmailProtocol.STARTTLS,
                 "SMTP_USERNAME": "test",
+                "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
             },
             "value_error",
         ),
@@ -123,6 +138,7 @@ def test_smtp_configuration_ok(
                 "SMTP_USERNAME": "",
                 "SMTP_PASSWORD": "test",
                 "SMTP_PROTOCOL": EmailProtocol.STARTTLS,
+                "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
             },
             "string_too_short",
         ),
@@ -133,6 +149,7 @@ def test_smtp_configuration_ok(
                 "SMTP_USERNAME": "",
                 "SMTP_PASSWORD": "test",
                 "SMTP_PROTOCOL": EmailProtocol.TLS,
+                "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
             },
             "string_too_short",
         ),
@@ -152,7 +169,10 @@ def test_smtp_configuration_fails(
 
     setenvs_from_dict(
         monkeypatch,
-        {k: str(v.value if isinstance(v, Enum) else v) for k, v in cfg.items()},
+        {
+            k: (json.dumps(v) if isinstance(v, dict) else str(v.value if isinstance(v, Enum) else v))
+            for k, v in cfg.items()
+        },
     )
     with pytest.raises(ValidationError) as err_info:
         SMTPSettings.create_from_envs()
@@ -194,6 +214,7 @@ def test_smtp_extra_headers_valid(
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
         "SMTP_EXTRA_HEADERS": extra_headers,
+        "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
     }
     settings = SMTPSettings(**cfg)
     assert extra_headers == settings.SMTP_EXTRA_HEADERS
@@ -232,6 +253,7 @@ def test_smtp_extra_headers_invalid(
         "SMTP_HOST": "test",
         "SMTP_PORT": 113,
         "SMTP_EXTRA_HEADERS": extra_headers,
+        "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
     }
     with pytest.raises(ValidationError) as err_info:
         SMTPSettings(**cfg)
@@ -262,6 +284,7 @@ def test_smtp_extra_headers_case_insensitive_validation(
             "SMTP_HOST": "test",
             "SMTP_PORT": 113,
             "SMTP_EXTRA_HEADERS": headers,
+            "SMTP_LOCAL_PARTS": _LOCAL_PARTS,
         }
         settings = SMTPSettings(**cfg)
         assert headers == settings.SMTP_EXTRA_HEADERS
@@ -284,6 +307,7 @@ def test_smtp_extra_headers_with_envvars(
             "SMTP_HOST": "test",
             "SMTP_PORT": "113",
             "SMTP_EXTRA_HEADERS": json.dumps(valid_headers),
+            "SMTP_LOCAL_PARTS": json.dumps(_LOCAL_PARTS),
         },
     )
     settings = SMTPSettings.create_from_envs()
@@ -297,8 +321,106 @@ def test_smtp_extra_headers_with_envvars(
             "SMTP_HOST": "test",
             "SMTP_PORT": "113",
             "SMTP_EXTRA_HEADERS": json.dumps(invalid_headers),
+            "SMTP_LOCAL_PARTS": json.dumps(_LOCAL_PARTS),
         },
     )
     with pytest.raises(ValidationError) as err_info:
         SMTPSettings.create_from_envs()
     assert "non-permitted headers" in str(err_info.value)
+
+
+def test_smtp_locals_requires_fields():
+    """SMTPLocals requires SUPPORT and NO_REPLY fields."""
+    with pytest.raises(ValidationError) as err_info:
+        SMTPLocals()
+    assert err_info.value.error_count() == 2
+
+    # Providing both required fields works
+    locals_ = SMTPLocals(SUPPORT="support", NO_REPLY="no-reply")
+    assert locals_.SUPPORT == "support"
+    assert locals_.NO_REPLY == "no-reply"
+
+
+def test_smtp_locals_custom_values():
+    """SMTPLocals accepts custom local-part values."""
+    locals_ = SMTPLocals(SUPPORT="help", NO_REPLY="noreply")
+    assert locals_.SUPPORT == "help"
+    assert locals_.NO_REPLY == "noreply"
+
+
+def test_smtp_locals_partial_override():
+    """SMTPLocals requires all fields; providing only one fails."""
+    with pytest.raises(ValidationError) as err_info:
+        SMTPLocals(SUPPORT="helpdesk")
+    assert err_info.value.error_count() == 1
+    assert "NO_REPLY" in str(err_info.value)
+
+
+def test_smtp_locals_ignores_unknown_keys():
+    """SMTPLocals silently drops keys not defined as fields (extra='ignore')."""
+    locals_ = SMTPLocals.model_validate(
+        {"SUPPORT": "help", "NO_REPLY": "noreply", "UNKNOWN_KEY": "value", "ANOTHER": "x"}
+    )
+    assert locals_.SUPPORT == "help"
+    assert locals_.NO_REPLY == "noreply"
+    assert not hasattr(locals_, "UNKNOWN_KEY")
+    assert not hasattr(locals_, "ANOTHER")
+
+
+def test_smtp_settings_with_locals(
+    all_env_devel_undefined: None,
+):
+    """SMTPSettings correctly parses SMTP_LOCAL_PARTS as a nested model."""
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+        "SMTP_LOCAL_PARTS": {"SUPPORT": "help", "NO_REPLY": "noreply"},
+    }
+    settings = SMTPSettings(**cfg)
+    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "help"
+    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "noreply"
+
+
+def test_smtp_settings_locals_required(
+    all_env_devel_undefined: None,
+):
+    """SMTPSettings fails when SMTP_LOCAL_PARTS is not provided."""
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+    }
+    with pytest.raises(ValidationError):
+        SMTPSettings(**cfg)
+
+
+def test_smtp_settings_locals_ignores_unknown_keys(
+    all_env_devel_undefined: None,
+):
+    """SMTPSettings SMTP_LOCAL_PARTS ignores unrecognized keys from input."""
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+        "SMTP_LOCAL_PARTS": {"SUPPORT": "help", "NO_REPLY": "noreply", "INVALID": "garbage"},
+    }
+    settings = SMTPSettings(**cfg)
+    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "help"
+    assert not hasattr(settings.SMTP_LOCAL_PARTS, "INVALID")
+
+
+def test_smtp_settings_locals_with_envvars(
+    all_env_devel_undefined: None,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """SMTP_LOCAL_PARTS can be set via environment variables as JSON."""
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": "113",
+            "SMTP_LOCAL_PARTS": json.dumps({"SUPPORT": "helpdesk", "NO_REPLY": "noreply", "EXTRA": "ignored"}),
+        },
+    )
+    settings = SMTPSettings.create_from_envs()
+    assert settings.SMTP_LOCAL_PARTS.SUPPORT == "helpdesk"
+    assert settings.SMTP_LOCAL_PARTS.NO_REPLY == "noreply"
+    assert not hasattr(settings.SMTP_LOCAL_PARTS, "EXTRA")

@@ -438,11 +438,31 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                     # Wait for MUI DataGrid loading overlay to disappear before clicking
                     overlay = service_iframe.locator(".MuiDataGrid-overlay")
                     try:
-                        overlay.wait_for(state="hidden", timeout=10 * SECOND)
+                        overlay.wait_for(state="hidden", timeout=60 * SECOND)
                         select_btn.click(timeout=30 * SECOND)
                     except PlaywrightTimeoutError:
-                        logging.warning("Overlay still present, clicking with force=True")
+                        logging.warning("Overlay still present after 60s, clicking with force=True")
                         select_btn.click(force=True, timeout=30 * SECOND)
+
+                    # Verify the click actually navigated to the input step
+                    min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
+                    input_locator = service_iframe.locator(
+                        f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]'
+                    )
+                    try:
+                        input_locator.first.wait_for(state="visible", timeout=10 * SECOND)
+                    except PlaywrightTimeoutError:
+                        if attempt == 2:
+                            raise
+                        logging.warning(
+                            "Select click did not navigate to input step "
+                            "(attempt %d/3), reloading iframe and retrying...",
+                            attempt + 1,
+                        )
+                        # Reload the page to reset the iframe/service state
+                        page.reload()
+                        service_iframe.locator("body").wait_for(state="visible", timeout=60 * SECOND)
+                        continue
                     break
                 except PlaywrightTimeoutError:
                     if attempt == 2:
