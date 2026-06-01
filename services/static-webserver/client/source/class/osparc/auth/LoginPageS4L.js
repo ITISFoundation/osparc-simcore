@@ -43,8 +43,10 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
           backgroundImage = liteBG;
           break;
         case "s4lacad":
+        case "s4ldesktopacad":
           backgroundImage = academyBG;
           break;
+        case "s4ldesktop":
         case "s4l":
         default:
           backgroundImage = defaultBG;

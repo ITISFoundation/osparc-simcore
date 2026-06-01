@@ -55,6 +55,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       switch (osparc.product.Utils.getProductName()) {
         case "s4lacad":
+        case "s4ldesktopacad":
         case "tiplite": {
           this._form.add(email, this.tr("University Email"), null, "email");
           let validator = qx.util.Validate.email();
@@ -149,7 +150,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       switch (osparc.product.Utils.getProductName()) {
         case "s4l":
-        case "s4lacad": {
+        case "s4lacad":
+        case "s4ldesktopacad": {
           const application = new qx.ui.form.SelectBox();
           application.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           osparc.product.Utils.S4L_TOPICS.forEach(topic => {

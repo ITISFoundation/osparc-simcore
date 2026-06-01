@@ -35,7 +35,9 @@ qx.Class.define("osparc.product.Utils", {
     isS4LProduct: function() {
       return (
         this.isProduct("s4l") ||
-        this.isProduct("s4lacad")
+        this.isProduct("s4lacad") ||
+        this.isProduct("s4ldesktop") ||
+        this.isProduct("s4ldesktopacad")
       );
     },
 
@@ -212,6 +214,12 @@ qx.Class.define("osparc.product.Utils", {
           logosPath = lightLogo ? "osparc/s4llite-white.png" : "osparc/s4llite-black.png";
           break;
         case "s4lacad":
+          logosPath = lightLogo ? "osparc/Sim4Life_full_logo_white.svg" : "osparc/Sim4Life_full_logo_black.svg";
+          break;
+        case "s4ldesktop":
+          logosPath = lightLogo ? "osparc/Sim4Life_full_logo_white.svg" : "osparc/Sim4Life_full_logo_black.svg";
+          break;
+        case "s4ldesktopacad":
           logosPath = lightLogo ? "osparc/Sim4Life_full_logo_white.svg" : "osparc/Sim4Life_full_logo_black.svg";
           break;
         case "tis":
