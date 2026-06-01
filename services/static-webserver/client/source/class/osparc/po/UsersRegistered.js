@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2024 IT'IS Foundation, https://itis.swiss
+     2026 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -27,7 +27,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
       INFO: 4,
     },
 
-    PAGE_LIMIT: 10,
+    PAGE_LIMIT: 20,
   },
 
   members: {
@@ -65,7 +65,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
           this._add(control);
           break;
         case "registered-users-layout": {
-          const grid = new qx.ui.layout.Grid(15, 5);
+          const grid = new qx.ui.layout.Grid(20, 5);
           control = new qx.ui.container.Composite(grid);
           this.getChildControl("registered-users-container").add(control);
           break;
@@ -80,7 +80,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
           this._add(control);
           break;
         case "prev-page-button":
-          control = new qx.ui.form.Button(null, "@MaterialIcons/chevron_left/20").set({
+          control = new qx.ui.form.Button(null, "@MaterialIcons/chevron_left/16").set({
             allowGrowX: false,
             enabled: false,
             toolTipText: this.tr("Previous page"),
@@ -99,7 +99,7 @@ qx.Class.define("osparc.po.UsersRegistered", {
           this.getChildControl("pagination-layout").add(control);
           break;
         case "next-page-button":
-          control = new qx.ui.form.Button(null, "@MaterialIcons/chevron_right/20").set({
+          control = new qx.ui.form.Button(null, "@MaterialIcons/chevron_right/16").set({
             allowGrowX: false,
             enabled: false,
             toolTipText: this.tr("Next page"),
