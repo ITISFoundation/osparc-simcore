@@ -88,30 +88,6 @@ The main reason is that the former are shared among different services and provi
 Libraries requirements are only frozen for testing (therefore ``tests_require= .. txt`` in libraries setup).
 
 
- ---
-## Limitations
-
-1. ~~Needs to install [pip-tools]~~ **RESOLVED [June 2026]**: replaced by [uv]; the `make reqs` recipes run `uv pip compile` in an isolated tooling image, no longer polluting the venv.
-   - ~~pollutes the venv~~
-   - ~~**SOLUTION** under development: [pip-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/pip-kit) is a containarized solution with multiple packages~~
-1. Requirements from in-place packages are not accounted in services upon *pip-compilation* since they cannot be added to ``_base.txt`` or ``_test.txt`` !!!!!!
-1. Adding dependencies to **in-place simcore's repo packages** is error-prone since it requires changes in multiple places, namely:
-   - paths entries in ``requirements/[dev|ci|prod].txt``
-   - package names+version in requirements list for ``setup.py``
-1. ~~Cannot use [pip-tools] (e.g. ``pip-sync``) with ``requirements/ci.txt`` or ``requirements/prod.txt`` because of in-place dependencies: ``pip-compile does not support URLs as packages, unless they are editable. Perhaps add -e option? (constraint was: file:///home/crespo/devp/osparc-simcore/packages/s3wrapper (from -r requirements/ci.txt (line 13)))``~~ **RESOLVED [June 2026]**: [uv] resolves local path dependencies natively.
-
-
-### Updates [March 2020]
-
-1. Created common makefile in [requirements/base.Makefile](requirements/base.Makefile)
-
-### Updates [June 2026]
-
-1. Replaced [pip-tools] with [uv] for all `pip-compile` operations. The Makefile targets (`make reqs`, `make reqs-all`) call `uv pip compile` internally — developer-facing commands are unchanged.
-2. Added `requirements/constraints.txt` as a **repo-wide constraint file** applied to every `*.in` compilation via `--constraint ../../../../requirements/constraints.txt`. This is the primary mechanism for CVE fixes and strategic version pins (see Security workflow below).
-3. Added automated CVE scanning via `pip-audit` (see `.github/workflows/pip-audit.yml`).
-4. Disabled Dependabot pip version-update PRs; Docker and GitHub Actions ecosystems are tracked with a cool-down policy (see `.github/dependabot.yml`).
-
 ## Workflows
 
 To install a given workflow we use directly [pip]. Assume we are in the package folder
