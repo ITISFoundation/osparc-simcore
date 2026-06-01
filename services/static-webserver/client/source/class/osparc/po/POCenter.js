@@ -27,6 +27,7 @@ qx.Class.define("osparc.po.POCenter", {
     this.addWidgetToTabs(miniProfile);
 
     this.__addReviewUsersPage();
+    this.__addRegisteredUsersPage();
     this.__addActiveUsersPage();
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
@@ -52,6 +53,13 @@ qx.Class.define("osparc.po.POCenter", {
       const iconSrc = "@FontAwesome5Solid/user/22";
       const users = new osparc.po.Users();
       this.addTab(title, iconSrc, users);
+    },
+
+    __addRegisteredUsersPage: function() {
+      const title = this.tr("Registered Users");
+      const iconSrc = "@FontAwesome5Solid/user/22";
+      const usersRegistered = new osparc.po.UsersRegistered();
+      this.addTab(title, iconSrc, usersRegistered);
     },
 
     __addPreRegistrationPage: function() {
