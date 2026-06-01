@@ -28,7 +28,7 @@ qx.Class.define("osparc.po.POCenter", {
 
     this.__addReviewUsersPage();
     this.__addRegisteredUsersPage();
-    this.__addActiveUsersPage();
+    this.__addSearchUsersPage();
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
@@ -48,18 +48,18 @@ qx.Class.define("osparc.po.POCenter", {
       page.pageId = "reviewUsers";
     },
 
-    __addActiveUsersPage: function() {
-      const title = this.tr("Active Users");
-      const iconSrc = "@FontAwesome5Solid/user/22";
-      const users = new osparc.po.Users();
-      this.addTab(title, iconSrc, users);
-    },
-
     __addRegisteredUsersPage: function() {
-      const title = this.tr("Registered Users");
+      const title = this.tr("Active Users");
       const iconSrc = "@FontAwesome5Solid/user/22";
       const usersRegistered = new osparc.po.UsersRegistered();
       this.addTab(title, iconSrc, usersRegistered);
+    },
+
+    __addSearchUsersPage: function() {
+      const title = this.tr("Search Users");
+      const iconSrc = "@FontAwesome5Solid/search/22";
+      const users = new osparc.po.UsersSearch();
+      this.addTab(title, iconSrc, users);
     },
 
     __addPreRegistrationPage: function() {

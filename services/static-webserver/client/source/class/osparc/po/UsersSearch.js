@@ -16,7 +16,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.po.Users", {
+qx.Class.define("osparc.po.UsersSearch", {
   extend: osparc.po.BaseView,
 
   statics: {
