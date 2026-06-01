@@ -251,19 +251,41 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           converter: value => !value
         });
 
+        // Add animation when switching between contactPerson and researchTopic
         earlyAdopter.addListener("changeValue", e => {
           const checked = e.getData();
           const toShow = checked ? contactPerson : researchTopic;
           const toHide = checked ? researchTopic : contactPerson;
-          toHide.getContentElement().setStyle("transition", "opacity 200ms ease");
-          toShow.getContentElement().setStyle("transition", "opacity 200ms ease");
-          toHide.setOpacity(0);
-          setTimeout(() => {
+          const hideContainer = toHide.getLayoutParent();
+          const hideDom = hideContainer.getContentElement().getDomElement();
+          const duration = 200;
+          const translation = 200;
+          if (hideDom) {
+            qx.bom.element.Animation.animate(hideDom, {
+              duration,
+              keyFrames: {
+                0: {opacity: 1, translate: ["0px"]},
+                100: {opacity: 0, translate: [`-${translation}px`]}
+              }
+            }).addListenerOnce("end", () => {
+              toHide.setVisibility("excluded");
+              toShow.setVisibility("visible");
+              const showContainer = toShow.getLayoutParent();
+              const showDom = showContainer.getContentElement().getDomElement();
+              if (showDom) {
+                qx.bom.element.Animation.animate(showDom, {
+                  duration,
+                  keyFrames: {
+                    0: {opacity: 0, translate: [`${translation}px`]},
+                    100: {opacity: 1, translate: ["0px"]}
+                  }
+                });
+              }
+            });
+          } else {
             toHide.setVisibility("excluded");
             toShow.setVisibility("visible");
-            toShow.setOpacity(0);
-            setTimeout(() => toShow.setOpacity(1), 30);
-          }, 200);
+          }
         });
       }
 
