@@ -124,6 +124,11 @@ make touch reqs
 `*.txt` files. Inspect the diff: it should only drop the pruned packages and
 their now-orphaned transitive deps.
 
+If `make reqs` fails after removal (including compilation failures), the pruned
+package may still be needed transitively by another declared dependency. Restore
+the removed line, inspect the dependency tree with `uv pip tree`, and only
+remove it again if the failure is unrelated.
+
 ### 4. Propagate downstream with selective recompiles
 
 Find which services/libraries depend on the pruned library:
@@ -180,7 +185,7 @@ integration testing are out of scope.
 - [how-to-upgrade-python.md](../../../requirements/how-to-upgrade-python.md)
 - [deptry](https://deptry.com/): a CLI tool to check for issues with dependencies in a python project such as unused or missing dependencies.
 
-## catpcha (repo-specific caveats)
+## captcha (repo-specific caveats)
 
 - This monorepo uses layered `requirements/*.in` with `--constraint` and
   `--requirement` includes; deptry needs explicit `--requirements-files` inputs.
