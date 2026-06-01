@@ -24,7 +24,7 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
 
   construct: function(form, fullWidthItems, inlineItems) {
     const layout = new qx.ui.layout.Grid();
-    layout.setSpacing(15);
+    layout.setSpacingX(15);
     layout.setColumnAlign(0, "left", "bottom");
     layout.setColumnAlign(1, "left", "bottom");
     layout.setColumnFlex(0, 1);
@@ -88,6 +88,7 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
 
         const inline = this.__inlineItems.includes(item);
         const itemLayout = new qx.ui.container.Composite(inline ? new qx.ui.layout.HBox(5) : new qx.ui.layout.VBox());
+        itemLayout.setMarginTop(this.__row > 0 ? 15 : 0);
         const label = this._createLabel(name, item).set({
           font: "text-12",
           allowGrowX: true,

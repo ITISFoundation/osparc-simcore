@@ -228,6 +228,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
         const earlyAdopter = new qx.ui.form.CheckBox().set({
           required: true,
+          paddingRight: 8,
         });
         fullWidth.push(earlyAdopter);
         inlineItems.push(earlyAdopter);
@@ -320,7 +321,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const ppText = this.tr("I acknowledge that data will be processed in accordance to ") + ppLink;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
-        value: false
+        value: false,
+        paddingRight: 8,
       });
       fullWidth.push(privacyPolicy);
       inlineItems.push(privacyPolicy);
@@ -332,7 +334,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
         const eula = new qx.ui.form.CheckBox().set({
           required: true,
-          value: false
+          value: false,
+          paddingRight: 8,
         });
         fullWidth.push(eula);
         inlineItems.push(eula);
