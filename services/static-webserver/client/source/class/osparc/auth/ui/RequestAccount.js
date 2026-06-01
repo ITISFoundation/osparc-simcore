@@ -256,36 +256,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           const checked = e.getData();
           const toShow = checked ? contactPerson : researchTopic;
           const toHide = checked ? researchTopic : contactPerson;
-          const hideContainer = toHide.getLayoutParent();
-          const hideDom = hideContainer.getContentElement().getDomElement();
-          const duration = 200;
-          const translation = 200;
-          if (hideDom) {
-            qx.bom.element.Animation.animate(hideDom, {
-              duration,
-              keyFrames: {
-                0: {opacity: 1, translate: ["0px"]},
-                100: {opacity: 0, translate: [`-${translation}px`]}
-              }
-            }).addListenerOnce("end", () => {
-              toHide.setVisibility("excluded");
-              toShow.setVisibility("visible");
-              const showContainer = toShow.getLayoutParent();
-              const showDom = showContainer.getContentElement().getDomElement();
-              if (showDom) {
-                qx.bom.element.Animation.animate(showDom, {
-                  duration,
-                  keyFrames: {
-                    0: {opacity: 0, translate: [`${translation}px`]},
-                    100: {opacity: 1, translate: ["0px"]}
-                  }
-                });
-              }
-            });
-          } else {
-            toHide.setVisibility("excluded");
-            toShow.setVisibility("visible");
-          }
+          osparc.utils.Utils.animateSwap(toHide, toShow, {
+            duration: 200,
+            translation: 200
+          });
         });
       }
 
