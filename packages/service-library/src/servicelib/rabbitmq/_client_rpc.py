@@ -24,10 +24,10 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class RabbitMQRPCClient(RabbitMQClientBase):
-    _connection: aio_pika.abc.AbstractConnection | None = None
+    _connection: aio_pika.abc.AbstractRobustConnection | None = None
     _channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: aio_pika.patterns.RPC | None = None
-    _registered_handlers: dict[str, Callable[..., Any]] = field(default_factory=dict)
+    _registered_handlers: dict[RPCNamespacedMethodName, Callable[..., Any]] = field(default_factory=dict)
 
     @classmethod
     async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
