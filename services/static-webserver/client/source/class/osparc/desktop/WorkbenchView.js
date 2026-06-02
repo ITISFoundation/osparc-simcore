@@ -1096,9 +1096,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
-      const view = new osparc.node.ParameterEditor(parameter);
-      view.buildForm(false);
-      this.__serviceOptionsPage.add(view, {
+      const parameterEditor = new osparc.node.ParameterEditor(parameter);
+      parameterEditor.buildForm();
+      this.__serviceOptionsPage.add(parameterEditor, {
         flex: 1
       });
     },

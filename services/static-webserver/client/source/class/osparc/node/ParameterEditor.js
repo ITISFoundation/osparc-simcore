@@ -92,28 +92,11 @@ qx.Class.define("osparc.node.ParameterEditor", {
       return control || this.base(arguments, id);
     },
 
-    buildForm: function(allSettings = true) {
+    buildForm: function() {
       this._removeAll();
 
       const node = this.getNode();
-
       const type = this.self().getParameterOutputType(node);
-      if (allSettings) {
-        const label = this.getChildControl("label");
-        label.setValue(node.getLabel());
-        label.bind("value", node, "label");
-        this.__form.add(label, "Label", null, "label");
-
-        const typeBox = this.getChildControl("data-type");
-        typeBox.getSelectables().forEach(selectable => {
-          if (selectable.type === type) {
-            typeBox.setSelection([selectable]);
-            typeBox.setEnabled(false);
-          }
-        });
-        this.__form.add(typeBox, "Data Type", null, "type");
-      }
-
       const valueField = this.getChildControl(type);
       const output = node.getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
       if (type === "ref_contentSchema") {
