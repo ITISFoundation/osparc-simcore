@@ -68,31 +68,27 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         if not self._registered_handlers:
             return
 
-        _logger.warning(
-            "RabbitMQ reconnected (%s), re-registering %d RPC handler(s)...",
-            self.client_name,
-            len(self._registered_handlers),
-        )
-
         assert self._channel is not None  # nosec
 
-        # Re-create RPC on the existing (restored) channel
-        self._rpc = aio_pika.patterns.RPC(self._channel)
-        await self._rpc.initialize()
+        with log_context(
+            _logger,
+            logging.WARNING,
+            msg=(
+                f"re-registering {len(self._registered_handlers)} RPC handler(s)"
+                f" after RabbitMQ reconnection ({self.client_name})"
+            ),
+        ):
+            # Re-create RPC on the existing (restored) channel
+            self._rpc = aio_pika.patterns.RPC(self._channel)
+            await self._rpc.initialize()
 
-        for namespaced_method_name, handler in self._registered_handlers.items():
-            await self._rpc.register(
-                namespaced_method_name,
-                handler,
-                auto_delete=True,
-            )
-            _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
-
-        _logger.warning(
-            "Successfully re-registered all %d RPC handler(s) for %s",
-            len(self._registered_handlers),
-            self.client_name,
-        )
+            for namespaced_method_name, handler in self._registered_handlers.items():
+                await self._rpc.register(
+                    namespaced_method_name,
+                    handler,
+                    auto_delete=True,
+                )
+                _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
 
     async def close(self) -> None:
         with log_context(
