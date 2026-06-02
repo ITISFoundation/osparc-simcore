@@ -27,6 +27,66 @@ from simcore_service_director.core.settings import ApplicationSettings, get_appl
 _logger = logging.getLogger(__name__)
 
 
+@pytest.fixture(params=["docker_registry", "docker_registry_v2"], ids=["registry_v3", "registry_v2"])
+def configure_registry_access_both_versions(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> EnvVarsDict:
+    """Parametrized fixture that tests with both registry v3 and v2 - use only for specific tests that need both"""
+    registry_url = request.getfixturevalue(request.param)
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "REGISTRY_URL": registry_url,
+            "REGISTRY_PATH": registry_url,
+            "REGISTRY_SSL": False,
+        },
+    )
+
+
+@pytest.fixture
+def configure_registry_redis_backend(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"DIRECTOR_REDIS_CACHE_BACKEND": "redis"},
+    )
+
+
+@pytest.fixture(
+    params=["memory", "redis"],
+    ids=["memory-backend", "redis-backend"],
+)
+def configure_registry_cache_backend(
+    request: pytest.FixtureRequest,
+    configure_registry_caching: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    if request.param == "redis":
+        request.getfixturevalue("fakeredis_aiocache_client")
+        return request.getfixturevalue("configure_registry_redis_backend")
+    return configure_registry_caching
+
+
+@pytest.fixture
+def fakeredis_aiocache_client(
+    mocker: MockerFixture,
+) -> FakeAsyncRedis:
+    fake_client = FakeAsyncRedis()
+    mocker.patch("redis.asyncio.Redis", fake_client)
+    mocker.patch("aiocache.backends.redis.redis.Redis", fake_client)
+
+    return fake_client
+
+
+@pytest.fixture
+def with_disabled_auto_caching(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
+
+
 async def test_list_no_services_available(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
@@ -103,25 +163,6 @@ async def test_list_interactive_service_dependencies(
             assert len(image_dependencies) == len(docker_dependencies)
             assert image_dependencies[0]["key"] == docker_dependencies[0]["key"]
             assert image_dependencies[0]["tag"] == docker_dependencies[0]["tag"]
-
-
-@pytest.fixture(params=["docker_registry", "docker_registry_v2"], ids=["registry_v3", "registry_v2"])
-def configure_registry_access_both_versions(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    request: pytest.FixtureRequest,
-) -> EnvVarsDict:
-    """Parametrized fixture that tests with both registry v3 and v2 - use only for specific tests that need both"""
-    registry_url = request.getfixturevalue(request.param)
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        envs={
-            "REGISTRY_URL": registry_url,
-            "REGISTRY_PATH": registry_url,
-            "REGISTRY_SSL": False,
-            "DIRECTOR_REGISTRY_CACHING": False,
-        },
-    )
 
 
 async def test_get_image_labels(
@@ -222,53 +263,6 @@ async def test_list_services(
     await push_services(number_of_computational_services=21, number_of_interactive_services=21)
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert len(services) == 42
-
-
-@pytest.fixture
-def configure_registry_caching(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(monkeypatch, {"DIRECTOR_REGISTRY_CACHING": True})
-
-
-@pytest.fixture
-def configure_registry_redis_backend(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {"DIRECTOR_REDIS_CACHE_BACKEND": "redis"},
-    )
-
-
-@pytest.fixture(
-    params=["memory", "redis"],
-    ids=["memory-backend", "redis-backend"],
-)
-def configure_registry_cache_backend(
-    request: pytest.FixtureRequest,
-    configure_registry_caching: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    if request.param == "redis":
-        request.getfixturevalue("fakeredis_aiocache_client")
-        return request.getfixturevalue("configure_registry_redis_backend")
-    return configure_registry_caching
-
-
-@pytest.fixture
-def fakeredis_aiocache_client(
-    mocker: MockerFixture,
-) -> FakeAsyncRedis:
-    fake_client = FakeAsyncRedis()
-    mocker.patch("redis.asyncio.Redis", fake_client)
-    mocker.patch("aiocache.backends.redis.redis.Redis", fake_client)
-
-    return fake_client
-
-
-@pytest.fixture
-def with_disabled_auto_caching(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
 
 
 async def test_registry_caching(
@@ -400,7 +394,6 @@ def configure_authed_registry_access(
             "REGISTRY_USER": "testuser",
             "REGISTRY_PW": "testpassword",
             "REGISTRY_SSL": "false",
-            "DIRECTOR_REGISTRY_CACHING": "false",
         },
     )
 

@@ -80,7 +80,6 @@ def configure_registry_access(
             "REGISTRY_URL": docker_registry,
             "REGISTRY_PATH": docker_registry,
             "REGISTRY_SSL": False,
-            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
 
@@ -97,7 +96,6 @@ def configure_external_registry_access(
         envs={
             **external_registry_settings.model_dump(by_alias=True, exclude_none=True),
             "REGISTRY_PW": external_registry_settings.REGISTRY_PW.get_secret_value(),
-            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
 
@@ -127,9 +125,16 @@ def configure_custom_registry(
             "REGISTRY_USER": registry_user,
             "REGISTRY_PW": registry_pw,
             "REGISTRY_SSL": False,
-            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
+
+
+@pytest.fixture
+def configure_registry_caching(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(monkeypatch, {"DIRECTOR_REGISTRY_CACHING": True})
 
 
 @pytest.fixture
@@ -147,6 +152,7 @@ def app_environment(
         {
             **docker_compose_service_environment_dict,
             "DIRECTOR_TRACING": "null",
+            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
 
