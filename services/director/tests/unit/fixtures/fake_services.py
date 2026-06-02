@@ -194,7 +194,7 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
             continue
         response.raise_for_status()
 
-        _logger.info("Image %s manifest response %s, headers %s", image["image_path"], response.text, response.headers)
+        _logger.debug("Image %s manifest response %s, headers %s", image["image_path"], response.text, response.headers)
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
         delete_url = f"http://{registry_url}/v2/{name}/manifests/{docker_content_digest}"
