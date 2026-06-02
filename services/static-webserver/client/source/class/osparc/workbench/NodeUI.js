@@ -641,7 +641,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       });
       const outputToValue = () => {
         const output = this.getNode().getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
-        if (output && output.getValue()) {
+        if (output && output.getValue() !== undefined) {
           const val = output.getValue();
           if (Array.isArray(val)) {
             return "[" + val.join(",") + "]";

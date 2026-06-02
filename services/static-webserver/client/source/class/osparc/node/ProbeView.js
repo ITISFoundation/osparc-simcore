@@ -54,7 +54,7 @@ qx.Class.define("osparc.node.ProbeView", {
           inputNode.bind("outputs", linkLabel, "value", {
             converter: outputs => {
               const output = outputs.find(out => out.getPortKey() === portKey);
-              if (output && output.getValue()) {
+              if (output && output.getValue() !== undefined) {
                 const val = output.getValue();
                 if (node.getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
                   return "[" + val.join(",") + "]";
@@ -104,6 +104,8 @@ qx.Class.define("osparc.node.ProbeView", {
     },
 
     __populateLayout: function(node) {
+      this._removeAll();
+
       const inputs = new osparc.desktop.PanelView(this.tr("Input"), node.getPropsForm());
       this._add(inputs);
 
