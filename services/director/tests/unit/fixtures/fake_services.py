@@ -12,46 +12,26 @@ import sys
 from collections.abc import Awaitable, Iterator
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Literal, Protocol, TypedDict
+from typing import Any, Literal
 
+import httpx
 import pytest
-import requests
 from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+from pytest_simcore.helpers.docker_registry_images import (
+    NodeRequirementsDict,
+    PushServicesCallable,
+    ServiceDescriptionDict,
+    ServiceExtrasDict,
+    ServiceInRegistryInfoDict,
+)
 from simcore_service_director.core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-class NodeRequirementsDict(TypedDict):
-    CPU: float
-    RAM: float
-
-
-class ServiceExtrasDict(TypedDict):
-    node_requirements: NodeRequirementsDict
-    build_date: str
-    vcs_ref: str
-    vcs_url: str
-
-
-class ServiceDescriptionDict(TypedDict):
-    key: str
-    version: str
-    type: Literal["computational", "dynamic"]
-
-
-class ServiceInRegistryInfoDict(TypedDict):
-    service_description: ServiceDescriptionDict
-    docker_labels: dict[str, Any]
-    image_path: str
-    internal_port: int | None
-    entry_point: str
-    service_extras: ServiceExtrasDict
 
 
 def _create_service_description(
@@ -84,7 +64,7 @@ def _create_docker_labels(service_description: ServiceDescriptionDict, *, bad_js
     return docker_labels
 
 
-async def _create_base_image(labels, tag) -> dict[str, Any]:
+async def _create_base_image(labels: dict[str, Any], tag: str) -> dict[str, Any]:
     dockerfile = """
 FROM alpine
 CMD while true; do sleep 10; done
@@ -93,10 +73,8 @@ CMD while true; do sleep 10; done
     tar_obj = utils.mktar_from_dockerfile(f)
 
     # build docker base image
-    docker = Docker()
-    base_docker_image = await docker.images.build(fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag)
-    await docker.close()
-    return base_docker_image
+    async with Docker() as docker:
+        return await docker.images.build(fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag)
 
 
 async def _build_and_push_image(
@@ -176,14 +154,8 @@ async def _build_and_push_image(
     await _create_base_image(docker_labels, image_tag)
 
     # push image to registry
-    try:
-        docker = Docker()
+    async with Docker() as docker:
         await docker.images.push(image_tag)
-    finally:
-        await docker.close()
-
-    # remove image from host
-    # docker.images.remove(image_tag)
 
     return ServiceInRegistryInfoDict(
         service_description=service_description,
@@ -216,7 +188,7 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
         registry_url = image["image_path"].split("/")[0]
 
         url = f"http://{registry_url}/v2/{name}/manifests/{tag}"
-        response = requests.get(url, headers=request_headers, timeout=10)
+        response = httpx.get(url, headers=request_headers, timeout=10)
         if response.status_code == 404:
             _logger.warning("Image %s not found in registry, skipping deletion", image["image_path"])
             continue
@@ -226,20 +198,8 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
         delete_url = f"http://{registry_url}/v2/{name}/manifests/{docker_content_digest}"
-        delete_resp = requests.delete(delete_url, timeout=5)
+        delete_resp = httpx.delete(delete_url, timeout=5)
         delete_resp.raise_for_status()
-
-
-class PushServicesCallable(Protocol):
-    async def __call__(
-        self,
-        *,
-        number_of_computational_services: int,
-        number_of_interactive_services: int,
-        inter_dependent_services: bool = False,
-        bad_json_format: bool = False,
-        version="1.0.",
-    ) -> list[ServiceInRegistryInfoDict]: ...
 
 
 @pytest.fixture
