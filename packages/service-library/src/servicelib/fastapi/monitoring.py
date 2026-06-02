@@ -55,7 +55,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 response = await call_next(request)
                 status_code = response.status_code
 
-        except Exception:  # pylint: disable=broad-except
+        except BaseException:
             # NOTE: The prometheus metrics middleware should be "outside" exception handling
             # middleware. See https://fastapi.tiangolo.com/advanced/middleware/#adding-asgi-middlewares
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
