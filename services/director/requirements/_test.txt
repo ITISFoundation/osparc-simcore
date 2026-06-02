@@ -76,6 +76,8 @@ jsonref==1.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+lupa==2.8
+    # via fakeredis
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt
