@@ -207,5 +207,9 @@ def configure_registry_redis_backend(
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
-        {"DIRECTOR_REDIS_CACHE_BACKEND": "redis"},
+        {
+            "DIRECTOR_REDIS_CACHE_BACKEND": "redis",
+            "REDIS_USER": "null",
+            "REDIS_PASSWORD": "null",
+        },
     )
