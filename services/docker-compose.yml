@@ -417,6 +417,7 @@ services:
     environment:
       <<:
         - *postgres_settings
+        - *redis_settings
         - *registry_settings
         - *tracing_open_telemetry_environments
 
