@@ -198,3 +198,14 @@ def configured_docker_network(
         monkeypatch,
         {"DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME": with_docker_network["Name"]},
     )
+
+
+@pytest.fixture
+def configure_registry_redis_backend(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"DIRECTOR_REDIS_CACHE_BACKEND": "redis"},
+    )

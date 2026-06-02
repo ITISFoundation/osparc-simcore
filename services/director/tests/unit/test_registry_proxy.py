@@ -50,17 +50,6 @@ def configure_registry_access_both_versions(
 
 
 @pytest.fixture
-def configure_registry_redis_backend(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {"DIRECTOR_REDIS_CACHE_BACKEND": "redis"},
-    )
-
-
-@pytest.fixture
 def configure_registry_memory_backend(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
