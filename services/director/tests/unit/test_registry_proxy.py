@@ -14,7 +14,6 @@ from unittest import mock
 import httpx
 import pytest
 import respx
-from fakeredis import FakeAsyncRedis
 from fastapi import FastAPI, status
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_mock.plugin import MockerFixture
@@ -57,17 +56,6 @@ def configure_registry_redis_backend(
     )
 
 
-@pytest.fixture
-def fakeredis_aiocache_client(
-    mocker: MockerFixture,
-) -> FakeAsyncRedis:
-    fake_client = FakeAsyncRedis()
-    mocker.patch("redis.asyncio.Redis", fake_client)
-    mocker.patch("aiocache.backends.redis.redis.Redis", fake_client)
-
-    return fake_client
-
-
 @pytest.fixture(
     params=["memory", "redis"],
     ids=["memory-backend", "redis-backend"],
@@ -77,7 +65,7 @@ def configure_registry_cache_backend(
     configure_registry_caching: EnvVarsDict,
 ) -> EnvVarsDict:
     if request.param == "redis":
-        request.getfixturevalue("fakeredis_aiocache_client")
+        request.getfixturevalue("use_in_memory_redis")
         return request.getfixturevalue("configure_registry_redis_backend")
     return configure_registry_caching
 
@@ -267,7 +255,6 @@ async def test_list_services(
 
 async def test_registry_caching(
     configure_registry_access: EnvVarsDict,
-    configure_registry_caching: EnvVarsDict,
     configure_registry_cache_backend: EnvVarsDict,
     with_disabled_auto_caching_task: mock.Mock,
     mocker: MockerFixture,
