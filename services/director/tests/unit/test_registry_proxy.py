@@ -18,6 +18,7 @@ from fakeredis import FakeAsyncRedis
 from fastapi import FastAPI, status
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.docker_registry_images import PushServicesCallable
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
@@ -102,7 +103,7 @@ async def test_list_no_services_available(
 async def test_list_computational_services(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     await push_services(number_of_computational_services=6, number_of_interactive_services=3)
 
@@ -113,7 +114,7 @@ async def test_list_computational_services(
 async def test_list_interactive_services(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     await push_services(number_of_computational_services=5, number_of_interactive_services=4)
     interactive_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.DYNAMIC)
@@ -123,7 +124,7 @@ async def test_list_interactive_services(
 async def test_list_of_image_tags(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(number_of_computational_services=5, number_of_interactive_services=3)
     image_number = {}
@@ -142,7 +143,7 @@ async def test_list_of_image_tags(
 async def test_list_interactive_service_dependencies(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(
         number_of_computational_services=2,
@@ -168,7 +169,7 @@ async def test_list_interactive_service_dependencies(
 async def test_get_image_labels(
     configure_registry_access_both_versions: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(
         number_of_computational_services=1,
@@ -240,7 +241,7 @@ def test_get_service_last_names():
 async def test_get_image_details(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(number_of_computational_services=1, number_of_interactive_services=1)
     for image in images:
@@ -258,7 +259,7 @@ async def test_list_services(
     configure_registry_access: EnvVarsDict,
     configure_number_concurrency_calls: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     await push_services(number_of_computational_services=21, number_of_interactive_services=21)
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
@@ -273,7 +274,7 @@ async def test_registry_caching(
     mocker: MockerFixture,
     app_settings: ApplicationSettings,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(number_of_computational_services=31, number_of_interactive_services=33)
     assert app_settings.DIRECTOR_REGISTRY_CACHING is True

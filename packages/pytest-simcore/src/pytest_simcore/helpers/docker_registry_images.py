@@ -37,4 +37,5 @@ class PushServicesCallable(Protocol):
         inter_dependent_services: bool = False,
         bad_json_format: bool = False,
         version="1.0.",
+        override_registry_url: str | None = None,
     ) -> list[ServiceInRegistryInfoDict]: ...
