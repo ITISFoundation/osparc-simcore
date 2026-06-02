@@ -291,7 +291,7 @@ async def _is_cache_fresh(app: FastAPI) -> bool:
         redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
         marker_exists = await redis_client.redis.exists(_REGISTRY_CACHE_REFRESH_MARKER_KEY)
         if marker_exists:
-            _logger.info("Cache freshness marker found, skipping refresh")
+            _logger.debug("Cache freshness marker found, skipping refresh")
             return True
     except Exception:
         _logger.warning("Error checking cache freshness marker", exc_info=True)

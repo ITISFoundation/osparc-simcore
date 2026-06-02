@@ -72,7 +72,7 @@ def configure_registry_memory_backend(
 
 
 @pytest.fixture
-async def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
+def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
     fake_server = FakeServer()
     OriginalPool = redis_asyncio.ConnectionPool
 
