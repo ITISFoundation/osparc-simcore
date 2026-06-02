@@ -862,7 +862,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__populateSecondaryColumnFilePicker(node);
       } else if (node && node.isParameter()) {
         this.__populateSecondaryColumnParameter(node);
-      } else if (node && node.isProbe(node)) {
+      } else if (node && node.isProbe()) {
         this.__populateSecondaryColumnProbe(node);
       } else if (node) {
         this.__populateSecondaryColumnNode(node);
