@@ -33,12 +33,13 @@ import logging
 from typing import Any, cast
 
 from aiocache import cached  # type: ignore[import-untyped]
+from aiocache.decorators import cached_stampede  # type: ignore[import-untyped]
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 
-from .._constants import DIRECTOR_CACHING_TTL
+from .._constants import DIRECTOR_BULK_FETCH_LEASE, DIRECTOR_CACHING_TTL
 from ..clients.director import DirectorClient
 from ..models.services_ports import ServicePort
 from .function_services import get_function_service, is_function_service
@@ -104,8 +105,12 @@ async def get_service(
     return service
 
 
-@cached(
+@cached_stampede(
     ttl=DIRECTOR_CACHING_TTL,
+    # NOTE: `lease` locks the populate step so that a burst of concurrent calls on a
+    # cold cache results in a *single* director bulk fetch (the others await the
+    # in-flight populate and read the freshly cached value) instead of a thundering herd.
+    lease=DIRECTOR_BULK_FETCH_LEASE,
     namespace=__name__,
     key_builder=lambda f, *_args, **_kwargs: f.__name__,
 )

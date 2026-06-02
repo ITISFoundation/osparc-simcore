@@ -6,6 +6,8 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
+
 import pytest
 import toolz
 from fastapi import FastAPI
@@ -160,6 +162,30 @@ async def test_get_batch_services_uses_single_bulk_director_call(
     # resolves the whole selection with a single bulk director call ...
     assert mocked_director_rest_api["list_services"].call_count == 1
     # ... and never fans out to the per-service endpoint
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_coalesces_concurrent_cold_cache_calls(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    # ensure a cold cache so all concurrent calls race on the populate step
+    await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    mocked_director_rest_api["list_services"].reset()
+    mocked_director_rest_api["get_service"].reset()
+
+    # a burst of concurrent callers on a cold cache
+    results = await asyncio.gather(*(manifest.get_batch_services(selection, director_client) for _ in range(10)))
+
+    for got_services in results:
+        assert [(s.key, s.version) for s in got_services] == selection
+
+    # the stampede lock collapses the burst into a single bulk director call
+    assert mocked_director_rest_api["list_services"].call_count == 1
     assert not mocked_director_rest_api["get_service"].called
 
 
