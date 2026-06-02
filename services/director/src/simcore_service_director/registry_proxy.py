@@ -205,8 +205,6 @@ async def registry_request(
     cache: BaseCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
     if use_cache and (cached_response := await cache.get(cache_key)):
-        if isinstance(cached_response, list):
-            cached_response = tuple(cached_response)
         assert isinstance(cached_response, tuple)  # nosec
         return cast(tuple[dict, Mapping], cached_response)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
@@ -236,10 +234,9 @@ async def registry_request(
         raise DirectorRuntimeError(msg=msg) from exc
 
     if app_settings.DIRECTOR_REGISTRY_CACHING and method.upper() == "GET":
-        cached_response: tuple[dict, dict[str, str]] = (response, dict(response_headers))
         await cache.set(
             cache_key,
-            cached_response,
+            (response, response_headers),
             ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
         )
 

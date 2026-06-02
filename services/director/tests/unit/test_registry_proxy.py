@@ -267,7 +267,8 @@ async def test_list_services(
 
 async def test_registry_caching(
     configure_registry_access: EnvVarsDict,
-    configure_registry_cache_backend: EnvVarsDict,
+    configure_registry_caching: EnvVarsDict,
+    # configure_registry_cache_backend: EnvVarsDict,
     with_disabled_auto_caching: mock.Mock,
     mocker: MockerFixture,
     app_settings: ApplicationSettings,
