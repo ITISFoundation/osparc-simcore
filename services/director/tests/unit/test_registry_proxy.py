@@ -61,6 +61,17 @@ def configure_registry_redis_backend(
 
 
 @pytest.fixture
+def configure_registry_memory_backend(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"DIRECTOR_REDIS_CACHE_BACKEND": "memory"},
+    )
+
+
+@pytest.fixture
 async def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
     fake_server = FakeServer()
     OriginalPool = redis_asyncio.ConnectionPool
@@ -91,7 +102,7 @@ def configure_registry_cache_backend(
     if request.param == "redis":
         request.getfixturevalue("use_in_memory_redis")
         return request.getfixturevalue("configure_registry_redis_backend")
-    return configure_registry_caching
+    return request.getfixturevalue("configure_registry_memory_backend")
 
 
 @pytest.fixture

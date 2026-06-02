@@ -18,6 +18,7 @@ from simcore_service_director.core.settings import ApplicationSettings
 def test_valid_application_settings(app_environment: EnvVarsDict):
     settings = ApplicationSettings()  # type: ignore
     assert settings
+    assert settings.DIRECTOR_REDIS_CACHE_BACKEND == "redis"
 
     assert settings == ApplicationSettings.create_from_envs()
 

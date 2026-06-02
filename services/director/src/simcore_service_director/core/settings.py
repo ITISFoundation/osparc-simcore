@@ -87,7 +87,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         RedisSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ] = None
-    DIRECTOR_REDIS_CACHE_BACKEND: Literal["memory", "redis"] = "memory"
+    DIRECTOR_REDIS_CACHE_BACKEND: Literal["memory", "redis"] = "redis"
     DIRECTOR_REDIS_CACHE_NAMESPACE: str = "director-v0-registry-cache"
 
     DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
