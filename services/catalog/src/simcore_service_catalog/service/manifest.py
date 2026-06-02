@@ -32,7 +32,6 @@ services but not to modify the registry. This ensures data integrity and consist
 import logging
 from typing import Any, cast
 
-from aiocache import cached  # type: ignore[import-untyped]
 from aiocache.decorators import cached_stampede  # type: ignore[import-untyped]
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
@@ -82,8 +81,11 @@ async def get_services_map(
     return services
 
 
-@cached(
+@cached_stampede(
     ttl=DIRECTOR_CACHING_TTL,
+    # NOTE: `lease` coalesces a cold-cache burst for the *same* service into a single
+    # director call (the others await the in-flight populate), avoiding a stampede.
+    lease=DIRECTOR_BULK_FETCH_LEASE,
     namespace=__name__,
     key_builder=lambda f, *_args, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
 )
