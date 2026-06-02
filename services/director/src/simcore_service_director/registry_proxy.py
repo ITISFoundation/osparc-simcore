@@ -553,7 +553,7 @@ async def get_image_labels(
                     "application/vnd.docker.distribution.manifest.list.v2+json",
                     "application/vnd.oci.image.index.v1+json",
                 ):
-                    _logger.info(
+                    _logger.debug(
                         "Docker image %s:%s contains multiple architectures %s. "
                         "Currently defaulting to first architecture",
                         image,
