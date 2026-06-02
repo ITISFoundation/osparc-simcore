@@ -1096,9 +1096,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
+      const parameterContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+        backgroundColor: "transparent"
+      });
+
+      const parameterLabel = new qx.ui.basic.Label().set({
+        font: "text-14"
+      });
+      parameter.bind("label", parameterLabel, "value");
+      parameterContent.add(parameterLabel);
+
       const parameterEditor = new osparc.node.ParameterEditor(parameter);
       parameterEditor.buildForm();
-      this.__serviceOptionsPage.add(parameterEditor, {
+      parameterContent.add(parameterEditor, {
+        flex: 1
+      });
+      this.__serviceOptionsPage.add(parameterContent, {
         flex: 1
       });
     },
