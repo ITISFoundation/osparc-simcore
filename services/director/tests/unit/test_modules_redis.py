@@ -7,6 +7,7 @@ from settings_library.redis import RedisSettings
 
 
 async def test_redis_module_initializes_and_shuts_down(
+    docker_registry: str,
     configure_registry_caching: EnvVarsDict,
     configure_registry_redis_backend: EnvVarsDict,
     use_in_memory_redis: RedisSettings,
