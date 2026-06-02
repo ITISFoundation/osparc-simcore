@@ -265,9 +265,7 @@ async def test_get_namespaced_method_name_max_length(
         await rpc_client.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
 
 
-async def test_rpc_handlers_re_registered_after_reconnection(
-    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
-):
+async def test_rpc_handlers_re_registered_after_reconnection(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
 
     # Simulate reconnection by invoking the callback directly

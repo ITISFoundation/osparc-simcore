@@ -27,9 +27,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     _connection: aio_pika.abc.AbstractConnection | None = None
     _channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: aio_pika.patterns.RPC | None = None
-    _registered_handlers: dict[str, Callable[..., Any]] = field(
-        default_factory=dict
-    )
+    _registered_handlers: dict[str, Callable[..., Any]] = field(default_factory=dict)
 
     @classmethod
     async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
@@ -58,9 +56,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
         await self._rpc.initialize()
 
-    async def _on_reconnect(
-        self, _connection: aio_pika.abc.AbstractRobustConnection | None = None
-    ) -> None:
+    async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
         """Re-register all RPC handlers after a reconnection event.
 
         When the RabbitMQ connection drops (network issue, broker restart, Docker
@@ -90,9 +86,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 handler,
                 auto_delete=True,
             )
-            _logger.debug(
-                "Re-registered RPC handler: %s", namespaced_method_name
-            )
+            _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
 
         _logger.warning(
             "Successfully re-registered all %d RPC handler(s) for %s",
@@ -177,9 +171,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         if self._rpc is None:
             raise RPCNotInitializedError
 
-        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
-            namespace, method_name
-        )
+        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
         await self._rpc.register(
             namespaced_method_name,
             handler,
@@ -208,11 +200,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             raise RPCNotInitializedError
 
         await self._rpc.unregister(handler)
-        self._registered_handlers = {
-            name: h
-            for name, h in self._registered_handlers.items()
-            if h is not handler
-        }
+        self._registered_handlers = {name: h for name, h in self._registered_handlers.items() if h is not handler}
 
 
 @asynccontextmanager
