@@ -273,10 +273,16 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
             visibility: selectedId === "yes" ? "visible" : "excluded",
             required: selectedId === "yes",
           });
+          if (selectedId !== "yes") {
+            contactPerson.resetValue();
+          }
           researchTopic.set({
             visibility: selectedId === "no" ? "visible" : "excluded",
             required: selectedId === "no",
           });
+          if (selectedId !== "no") {
+            researchTopic.resetValue();
+          }
         });
       }
 
