@@ -133,6 +133,7 @@ async def _notify_support_reply(
                 channel=Channel.email,
                 group_ids=None,
                 external_contacts=[EmailContact(name=recipient_name, email=recipient_user["email"])],
+                from_local="no-reply",
                 template_name="support_reply",
                 context={
                     "user": {
