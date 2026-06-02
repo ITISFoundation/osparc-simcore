@@ -68,6 +68,8 @@ qx.Class.define("osparc.node.ProbeView", {
               return "";
             }
           });
+        } else {
+          linkLabel.setValue("");
         }
       } else {
         linkLabel.setValue("");
@@ -120,6 +122,11 @@ qx.Class.define("osparc.node.ProbeView", {
       });
       const outputPanel = new osparc.desktop.PanelView(this.tr("Value"), valueContainer);
       this._add(outputPanel);
+      // Hide the value panel when the probe is not connected
+      valueLabel.addListener("changeVisibility", e => {
+        outputPanel.setVisibility(e.getData());
+      });
+      outputPanel.setVisibility(valueLabel.getVisibility());
     },
   }
 });
