@@ -112,6 +112,13 @@ qx.Class.define("osparc.node.ParameterEditor", {
       }
       valueField.addListener("changeValue", e => osparc.node.ParameterEditor.setParameterOutputValue(node, e.getData()));
       this.__form.add(valueField, "Value", null, "value");
+      // Replace the text label with an atom to show the parameter icon
+      const labelWidget = this._labels[this._labels.length - 1];
+      if (labelWidget) {
+        this._remove(labelWidget);
+        const atom = new qx.ui.basic.Atom("Value", "@FontAwesome5Solid/sliders-h/14");
+        this._add(atom, {row: this._row - 1, column: 0});
+      }
     }
   }
 });
