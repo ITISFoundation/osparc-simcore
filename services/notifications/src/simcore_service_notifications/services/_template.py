@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from ..models.template import Template, TemplatePreview, TemplateRef
 from ..renderers import Renderer
-from ..repositories import TemplateRepository
+from ..repositories.template import TemplateRepository
 
 _logger = logging.getLogger(__name__)
 
