@@ -244,6 +244,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         });
         fullWidth.push(earlyAdopter);
         this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
+        this._form.getValidationManager().add(earlyAdopter, value => {
+          const selectedId = earlyAdopter.getSelection()[0].getModel();
+          if (selectedId === "not-valid") {
+            throw new qx.core.ValidationError("Validation Error", this.tr("Please select an option"));
+          }
+        });
 
         const contactPerson = new qx.ui.form.TextField().set({
           required: true,
