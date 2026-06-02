@@ -255,7 +255,8 @@ async def registry_request(
         await cache.set(
             cache_key,
             (response, normalized_headers),
-            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
+            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds()
+            * 2,  # cache TTL should be longer than refresh interval to avoid cache misses
         )
         return response, normalized_headers
 
@@ -311,7 +312,7 @@ async def _set_cache_fresh_marker(app: FastAPI) -> None:
     try:
         redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
         # Set marker TTL to half the cache TTL, so it expires if no refresh happens
-        marker_ttl = int(app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds() / 2)
+        marker_ttl = int(app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds())
         await redis_client.redis.setex(_REGISTRY_CACHE_REFRESH_MARKER_KEY, marker_ttl, "1")
         _logger.info("Cache freshness marker set with TTL=%s seconds", marker_ttl)
     except Exception:
