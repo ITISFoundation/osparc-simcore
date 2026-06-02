@@ -11,14 +11,6 @@ from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings
 
 
-async def test_redis_module_starts_disabled_by_default(app_settings: ApplicationSettings):
-    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=None)
-    app = create_app(settings=app_settings, tracing_config=tracing_config)
-
-    async with LifespanManager(app):
-        assert app.state.redis_clients_manager is None
-
-
 async def test_redis_module_initializes_and_shuts_down(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
@@ -59,5 +51,6 @@ async def test_redis_module_initializes_and_shuts_down(
 
     async with LifespanManager(app):
         assert set_up_called is True
+        assert app.state.redis_clients_manager is not None
 
     assert shut_down_called is True
