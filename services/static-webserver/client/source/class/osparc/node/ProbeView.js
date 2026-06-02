@@ -30,6 +30,10 @@ qx.Class.define("osparc.node.ProbeView", {
 
   statics: {
     setProbeOutputValue: function(node, linkLabel) {
+      // Remove previous bindings from any source to this label
+      qx.data.SingleValueBinding.removeAllBindingsForObject(linkLabel);
+      linkLabel.setValue("");
+
       const populateLinkLabel = linkInfo => {
         const locationId = linkInfo.store;
         const fileId = linkInfo.path;
@@ -68,11 +72,7 @@ qx.Class.define("osparc.node.ProbeView", {
               return "";
             }
           });
-        } else {
-          linkLabel.setValue("");
         }
-      } else {
-        linkLabel.setValue("");
       }
     },
 
