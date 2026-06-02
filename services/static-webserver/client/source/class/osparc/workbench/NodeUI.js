@@ -681,7 +681,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoIteratorIteratedUI: function() {
-      this.removeShadows;
+      this.removeShadows();
       this.__turnIntoParameterUI();
       if (this.hasChildControl("progress")) {
         this.getChildControl("progress").exclude();
@@ -693,18 +693,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const width = 120;
       this.__setNodeUIWidth(width);
 
-      const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        paddingLeft: 4,
+      const linkLabel = osparc.node.ProbeView.createProbeValueLabel(this.getNode()).set({
         font: "text-14",
-        rich: false, // this will make the ellipsis work
+        paddingLeft: 4,
       });
       const middleContainer = this.getChildControl("middle-container");
       middleContainer.add(linkLabel, {
         flex: 1
       });
-
-      this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(linkLabel), this);
-      this.__setProbeValue(linkLabel);
     },
 
     __turnIntoUnknownUI: function() {
@@ -731,51 +727,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
           osparc.wrapper.Svg.removeItem(shadow);
         });
         delete this["shadows"];
-      }
-    },
-
-    __setProbeValue: function(linkLabel) {
-      const populateLinkLabel = linkInfo => {
-        const locationId = linkInfo.store;
-        const fileId = linkInfo.path;
-        osparc.store.Data.getInstance().getPresignedLink(true, locationId, fileId)
-          .then(presignedLinkData => {
-            if ("resp" in presignedLinkData && presignedLinkData.resp) {
-              const filename = linkInfo.filename || osparc.file.FilePicker.getFilenameFromPath(linkInfo);
-              linkLabel.set({
-                value: filename,
-                url: presignedLinkData.resp.link
-              });
-            }
-          });
-      }
-
-      const link = this.getNode().getLink("in_1");
-      if (link && "nodeUuid" in link) {
-        const inputNodeId = link["nodeUuid"];
-        const portKey = link["output"];
-        const inputNode = this.getNode().getWorkbench().getNode(inputNodeId);
-        if (inputNode) {
-          inputNode.bind("outputs", linkLabel, "value", {
-            converter: outputs => {
-              const output = outputs.find(out => out.getPortKey() === portKey);
-              if (output && output.getValue()) {
-                const val = output.getValue();
-                if (this.getNode().getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
-                  return "[" + val.join(",") + "]";
-                } else if (this.getNode().getMetadata()["key"].includes("probe/file")) {
-                  const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
-                  populateLinkLabel(val);
-                  return filename;
-                }
-                return String(val);
-              }
-              return "";
-            }
-          });
-        }
-      } else {
-        linkLabel.setValue("");
       }
     },
 

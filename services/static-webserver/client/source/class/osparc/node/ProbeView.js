@@ -29,6 +29,61 @@ qx.Class.define("osparc.node.ProbeView", {
   },
 
   statics: {
+    setProbeOutputValue: function(node, linkLabel) {
+      const populateLinkLabel = linkInfo => {
+        const locationId = linkInfo.store;
+        const fileId = linkInfo.path;
+        osparc.store.Data.getInstance().getPresignedLink(true, locationId, fileId)
+          .then(presignedLinkData => {
+            if ("resp" in presignedLinkData && presignedLinkData.resp) {
+              const filename = linkInfo.filename || osparc.file.FilePicker.getFilenameFromPath(linkInfo);
+              linkLabel.set({
+                value: filename,
+                url: presignedLinkData.resp.link
+              });
+            }
+          });
+      }
+
+      const link = node.getLink("in_1");
+      if (link && "nodeUuid" in link) {
+        const inputNodeId = link["nodeUuid"];
+        const portKey = link["output"];
+        const inputNode = node.getWorkbench().getNode(inputNodeId);
+        if (inputNode) {
+          inputNode.bind("outputs", linkLabel, "value", {
+            converter: outputs => {
+              const output = outputs.find(out => out.getPortKey() === portKey);
+              if (output && output.getValue()) {
+                const val = output.getValue();
+                if (node.getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
+                  return "[" + val.join(",") + "]";
+                } else if (node.getMetadata()["key"].includes("probe/file")) {
+                  const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
+                  populateLinkLabel(val);
+                  return filename;
+                }
+                return String(val);
+              }
+              return "";
+            }
+          });
+        }
+      } else {
+        linkLabel.setValue("");
+      }
+    },
+
+    createProbeValueLabel: function(node) {
+      const linkLabel = new osparc.ui.basic.LinkLabel().set({
+        rich: false, // this will make the ellipsis work
+      });
+
+      node.getPropsForm().addListener("linkFieldModified", () => this.setProbeOutputValue(node, linkLabel));
+      this.setProbeOutputValue(node, linkLabel);
+
+      return linkLabel;
+    },
   },
 
   properties: {
@@ -55,6 +110,6 @@ qx.Class.define("osparc.node.ProbeView", {
         margin: 8
       });
       this._add(inputs);
-    }
+    },
   }
 });
