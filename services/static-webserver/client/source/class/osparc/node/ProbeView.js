@@ -49,12 +49,12 @@ qx.Class.define("osparc.node.ProbeView", {
     },
 
     __populateLayout: function(node) {
-      const inputsForm = node.getPropsForm().set({
-        paddingLeft: 6,
+      const inputsForm = node.getPropsForm();
+      const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), inputsForm);
+      inputs._innerContainer.set({
+        margin: 8
       });
-      this._add(inputsForm, {
-        flex: 1
-      });
+      this._add(inputs);
     }
   }
 });
