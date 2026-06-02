@@ -49,8 +49,6 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         const descriptionLabel = new qx.ui.basic.Label().set({
           value: description,
           font: "text-14",
-          alignX: "center",
-          textAlign: "center",
           rich: true
         });
         loginAnnouncement.add(descriptionLabel);
