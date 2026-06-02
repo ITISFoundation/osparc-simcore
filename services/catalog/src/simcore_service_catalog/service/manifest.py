@@ -30,7 +30,7 @@ services but not to modify the registry. This ensures data integrity and consist
 """
 
 import logging
-from typing import Any, cast
+from typing import Any, Final, cast
 
 from aiocache.decorators import cached_stampede  # type: ignore[import-untyped]
 from models_library.function_services_catalog.api import iter_service_docker_data
@@ -38,7 +38,7 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 
-from .._constants import DIRECTOR_BULK_FETCH_LEASE, DIRECTOR_CACHING_TTL
+from .._constants import DEFAULT_DIRECTOR_BULK_FETCH_LEASE, DIRECTOR_CACHING_TTL
 from ..clients.director import DirectorClient
 from ..models.services_ports import ServicePort
 from .function_services import get_function_service, is_function_service
@@ -81,14 +81,18 @@ async def get_services_map(
     return services
 
 
-@cached_stampede(
+_get_service_cache: Final = cached_stampede(
     ttl=DIRECTOR_CACHING_TTL,
     # NOTE: `lease` coalesces a cold-cache burst for the *same* service into a single
     # director call (the others await the in-flight populate), avoiding a stampede.
-    lease=DIRECTOR_BULK_FETCH_LEASE,
+    # It is reconfigured from settings at startup (see `set_services_cache_lease`).
+    lease=DEFAULT_DIRECTOR_BULK_FETCH_LEASE,
     namespace=__name__,
     key_builder=lambda f, *_args, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
 )
+
+
+@_get_service_cache
 async def get_service(
     director_client: DirectorClient,
     *,
@@ -107,21 +111,32 @@ async def get_service(
     return service
 
 
-@cached_stampede(
+_get_cached_services_map_cache: Final = cached_stampede(
     ttl=DIRECTOR_CACHING_TTL,
     # NOTE: `lease` locks the populate step so that a burst of concurrent calls on a
     # cold cache results in a *single* director bulk fetch (the others await the
     # in-flight populate and read the freshly cached value) instead of a thundering herd.
-    lease=DIRECTOR_BULK_FETCH_LEASE,
+    # It is reconfigured from settings at startup (see `set_services_cache_lease`).
+    lease=DEFAULT_DIRECTOR_BULK_FETCH_LEASE,
     namespace=__name__,
     key_builder=lambda f, *_args, **_kwargs: f.__name__,
 )
+
+
+@_get_cached_services_map_cache
 async def _get_cached_services_map(
     director_client: DirectorClient,
 ) -> ServiceMetaDataPublishedDict:
     # NOTE: caches the *entire* registry manifest so that resolving a batch of
     # services requires a single director call instead of one call per service.
     return await get_services_map(director_client)
+
+
+def set_services_cache_lease(lease_seconds: float) -> None:
+    # NOTE: aiocache binds `lease` when the cache decorators above are created at import
+    # time, so the value coming from settings is applied here at application startup.
+    _get_service_cache.lease = lease_seconds
+    _get_cached_services_map_cache.lease = lease_seconds
 
 
 async def get_batch_services(

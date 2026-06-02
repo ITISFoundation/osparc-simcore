@@ -14,8 +14,9 @@ SECOND: Final[int] = 1
 MINUTE: Final[int] = 60 * SECOND
 DIRECTOR_CACHING_TTL: Final[int] = 15 * MINUTE
 LIST_SERVICES_CACHING_TTL: Final[int] = 30 * SECOND
-# lease for the lock that coalesces concurrent cold-cache bulk fetches of the
-# services manifest: long enough to cover a slow director bulk fetch
-DIRECTOR_BULK_FETCH_LEASE: Final[int] = 30 * SECOND
+# default lease (in seconds) for the lock that coalesces concurrent cold-cache bulk fetches
+# of the services manifest. It is the import-time default for the cache decorators and the
+# default of the `CATALOG_DIRECTOR_BULK_FETCH_LEASE` setting that can override it at startup.
+DEFAULT_DIRECTOR_BULK_FETCH_LEASE: Final[int] = 30 * SECOND
 
 SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
