@@ -32,6 +32,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._addTitleHeader(this.tr("Request Account"));
 
       const fullWidth = [];
+      const inlineItems = [];
 
       // form
       const firstName = new qx.ui.form.TextField().set({
@@ -81,7 +82,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         compactField: true,
       });
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
-
 
       const institution = new qx.ui.form.TextField();
       fullWidth.push(institution);
@@ -216,6 +216,75 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         }
       }
 
+      if (osparc.product.Utils.isTIPProduct()) {
+        const researchGroup = new qx.ui.form.TextField().set({
+          required: true,
+        });
+        fullWidth.push(researchGroup);
+        this._form.add(researchGroup, this.tr("What research group do you belong to?"), null, "researchGroup");
+
+        const earlyAdopter = new qx.ui.form.SelectBox().set({
+          required: true,
+        });
+        earlyAdopter.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
+        [{
+          id: "not-valid",
+          label: ""
+        }, {
+          id: "yes",
+          label: "Yes"
+        }, {
+          id: "no",
+          label: "No"
+        }].forEach(appData => {
+          const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
+            rich: true
+          });
+          earlyAdopter.add(lItem);
+        });
+        fullWidth.push(earlyAdopter);
+        this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
+        this._form.getValidationManager().add(earlyAdopter, value => {
+          const selectedId = earlyAdopter.getSelection()[0].getModel();
+          if (selectedId === "not-valid") {
+            throw new qx.core.ValidationError("Validation Error", this.tr("Please select an option"));
+          }
+        });
+
+        const contactPerson = new qx.ui.form.TextField().set({
+          required: true,
+          visibility: "excluded",
+        });
+        fullWidth.push(contactPerson);
+        this._form.add(contactPerson, this.tr("What is the name of your contact person at TI Solutions AG?"), null, "contactPerson");
+
+        const researchTopic = new qx.ui.form.TextField().set({
+          required: true,
+          visibility: "excluded",
+        });
+        fullWidth.push(researchTopic);
+        this._form.add(researchTopic, this.tr("Please describe the research you intend to do with the TIP platform"), null, "researchTopic");
+
+        // Show/hide follow-up fields based on earlyAdopter selection
+        earlyAdopter.addListener("changeSelection", e => {
+          const selectedItem = e.getData()[0];
+          const selectedId = selectedItem ? selectedItem.getModel() : "not-valid";
+          contactPerson.set({
+            visibility: selectedId === "yes" ? "visible" : "excluded",
+            required: selectedId === "yes",
+          });
+          if (selectedId !== "yes") {
+            contactPerson.resetValue();
+          }
+          researchTopic.set({
+            visibility: selectedId === "no" ? "visible" : "excluded",
+            required: selectedId === "no",
+          });
+          if (selectedId !== "no") {
+            researchTopic.resetValue();
+          }
+        });
+      }
 
       const hear = new qx.ui.form.SelectBox();
       hear.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
@@ -285,9 +354,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const ppText = this.tr("I acknowledge that data will be processed in accordance to ") + ppLink;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
-        value: false
+        value: false,
+        paddingRight: 8,
       });
       fullWidth.push(privacyPolicy);
+      inlineItems.push(privacyPolicy);
       this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
 
       // Eula link
@@ -296,15 +367,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
         const eula = new qx.ui.form.CheckBox().set({
           required: true,
-          value: false
+          value: false,
+          paddingRight: 8,
         });
         fullWidth.push(eula);
+        inlineItems.push(eula);
         this._form.add(eula, eulaText, null, "eula");
       }
 
 
       const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, fullWidth);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, fullWidth, inlineItems);
       content.add(formRenderer);
       const captchaLayout = this.__createCaptchaLayout();
       this._form.getValidationManager().add(this.__captchaField);

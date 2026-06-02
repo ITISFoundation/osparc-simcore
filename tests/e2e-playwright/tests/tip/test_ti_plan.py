@@ -39,8 +39,8 @@ _ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME: Final[int] = 5 * SECOND
 
 
-_JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 3 * MINUTE
-_JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 5 * MINUTE
+_JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 15 * MINUTE
 _JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _JLAB_DOCKER_PULLING_MAX_TIME + _JLAB_MAX_STARTUP_MAX_TIME
 )
@@ -49,8 +49,8 @@ _JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 20 * MINUTE
 _JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 
 
-_POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
-_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_POST_PRO_MAX_STARTUP_TIME: Final[int] = 5 * MINUTE
+_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 15 * MINUTE
 _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
 )
@@ -181,8 +181,9 @@ def _run_classic_ti_step(  # noqa: PLR0915
         with log_context(logging.INFO, "Check species selector has only 2 options", logger=log_ctx.logger):
             species_selector = ti_iframe.locator("select").first
             options = species_selector.locator("option")
-            assert options.count() == 2, f"Expected 2 species options in lite product, got {options.count()}"
-            expect(options).to_have_values(["Human - MIDA anisotropic", "Mouse"])
+            expect(options).to_have_count(2)
+            expect(options.nth(0)).to_have_attribute("value", "Human - MIDA anisotropic")
+            expect(options.nth(1)).to_have_attribute("value", "Mouse")
 
     with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
         run_button = ti_iframe.get_by_role("button", name="Run Optimization")

@@ -526,12 +526,12 @@ def test_ordering_query_params_equivalence_folders_pattern():
 
 def test_ordering_query_params_equivalence_users_accounts_pattern():
     """Equivalent to users accounts ordering with multiple API-to-column mappings."""
-    UserField = Literal["name", "email", "status", "accountRequestedReviewedAt", "preRegistrationCreated"]
+    UserField = Literal["name", "email", "status", "accountRequestReviewedAt", "preRegistrationCreated"]
 
     class UserOrdering(OrderingQueryParams[UserField]):
         _field_name_map: ClassVar[dict[str, str]] = {
             "name": "first_name",
-            "accountRequestedReviewedAt": "account_request_reviewed_at",
+            "accountRequestReviewedAt": "account_request_reviewed_at",
             "preRegistrationCreated": "created",
         }
         _default_order_by: ClassVar[str] = "email"
