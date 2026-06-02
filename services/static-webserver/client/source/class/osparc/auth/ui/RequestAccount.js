@@ -262,25 +262,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           const selectedItem = e.getData()[0];
           const selectedId = selectedItem ? selectedItem.getModel() : "not-valid";
           if (selectedId === "yes") {
-            const toShow = contactPerson;
-            const toHide = researchTopic;
-            toHide.resetValue();
-            toHide.setRequired(false);
-            toShow.setRequired(true);
-            osparc.utils.Utils.animateSwap(toHide, toShow, {
-              duration: 200,
-              translation: 200
-            });
+            contactPerson.setVisibility("visible");
+            contactPerson.setRequired(true);
+            researchTopic.resetValue();
+            researchTopic.setVisibility("excluded");
+            researchTopic.setRequired(false);
           } else if (selectedId === "no") {
-            const toShow = researchTopic;
-            const toHide = contactPerson;
-            toHide.resetValue();
-            toHide.setRequired(false);
-            toShow.setRequired(true);
-            osparc.utils.Utils.animateSwap(toHide, toShow, {
-              duration: 200,
-              translation: 200
-            });
+            researchTopic.setVisibility("visible");
+            researchTopic.setRequired(true);
+            contactPerson.resetValue();
+            contactPerson.setVisibility("excluded");
+            contactPerson.setRequired(false);
           } else {
             contactPerson.resetValue();
             contactPerson.setRequired(false);
