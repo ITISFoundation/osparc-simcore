@@ -1136,10 +1136,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       probe.bind("label", parameterLabel, "value");
       vBox.add(parameterLabel);
 
-      const inputsForm = probe.getPropsForm().set({
-        paddingLeft: 6,
-      });
-      vBox.add(inputsForm, {
+      const probeView = new osparc.node.ProbeView(probe);
+      vBox.add(probeView, {
         flex: 1
       });
 

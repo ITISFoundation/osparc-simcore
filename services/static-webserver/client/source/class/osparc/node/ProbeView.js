@@ -18,34 +18,17 @@
 qx.Class.define("osparc.node.ProbeView", {
   extend: qx.ui.core.Widget,
 
-  construct: function(node, portId) {
+  construct: function(probe) {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    if (node) {
-      this.setNode(node);
-    }
-
-    if (portId) {
-      this.setPortId(portId);
+    if (probe) {
+      this.setNode(probe);
     }
   },
 
   statics: {
-    getOutputValues: function(metaStudy, nodeId, portId) {
-      return new Promise((resolve, reject) => {
-        metaStudy.getIterations()
-          .then(iterations => {
-            const outputValues = [];
-            iterations.forEach(iteration => outputValues.push(osparc.data.model.Study.getOutputValue(iteration, nodeId, portId)));
-            resolve(outputValues);
-          })
-          .catch(err => {
-            reject(err);
-          });
-      });
-    }
   },
 
   properties: {
@@ -55,13 +38,6 @@ qx.Class.define("osparc.node.ProbeView", {
       nullable: false,
       apply: "__applyNode"
     },
-
-    portId: {
-      check: "String",
-      init: null,
-      nullable: false,
-      apply: "__populateLayout"
-    }
   },
 
   members: {
@@ -69,20 +45,15 @@ qx.Class.define("osparc.node.ProbeView", {
       if (!node.isProbe()) {
         console.error("Only Probe nodes are supported");
       }
-      this.__populateLayout();
+      this.__populateLayout(node);
     },
 
-    __populateLayout: function() {
-      const node = this.getNode();
-      const portId = this.getPortId();
-      if (!node) {
-        return;
-      }
-
-      this._removeAll();
-      const outputValues = this.self().getOutputValues(node.getStudy(), node, portId);
-      outputValues.forEach(outputValue => {
-        this._add(new qx.ui.basic.Label(outputValue));
+    __populateLayout: function(node) {
+      const inputsForm = node.getPropsForm().set({
+        paddingLeft: 6,
+      });
+      this._add(inputsForm, {
+        flex: 1
       });
     }
   }
