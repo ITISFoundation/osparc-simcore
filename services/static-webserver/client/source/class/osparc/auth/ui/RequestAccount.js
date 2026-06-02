@@ -223,44 +223,72 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         fullWidth.push(researchGroup);
         this._form.add(researchGroup, this.tr("What research group do you belong to?"), null, "researchGroup");
 
-        const earlyAdopterDefault = false;
-        const earlyAdopter = new qx.ui.form.CheckBox().set({
-          value: earlyAdopterDefault,
-          required: true,
-          paddingRight: 8,
+        const earlyAdopter = new qx.ui.form.SelectBox();
+        earlyAdopter.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
+        [{
+          id: "not-valid",
+          label: ""
+        }, {
+          id: "yes",
+          label: "Yes"
+        }, {
+          id: "no",
+          label: "No"
+        }].forEach(appData => {
+          const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
+            rich: true
+          });
+          earlyAdopter.add(lItem);
         });
         fullWidth.push(earlyAdopter);
-        inlineItems.push(earlyAdopter);
         this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
 
         const contactPerson = new qx.ui.form.TextField().set({
-          required: earlyAdopterDefault ? true : false,
-          visibility: earlyAdopterDefault ? "visible" : "excluded",
+          required: false,
+          visibility: "excluded",
         });
         fullWidth.push(contactPerson);
         this._form.add(contactPerson, this.tr("What is the name of your contact person at TI Solutions AG?"), null, "contactPerson");
-        earlyAdopter.bind("value", contactPerson, "required");
 
         const researchTopic = new qx.ui.form.TextField().set({
-          required: earlyAdopterDefault ? false : true,
-          visibility: earlyAdopterDefault ? "excluded" : "visible",
+          required: false,
+          visibility: "excluded",
         });
         fullWidth.push(researchTopic);
         this._form.add(researchTopic, this.tr("Please describe the research you intend to do with the TIP platform"), null, "researchTopic");
-        earlyAdopter.bind("value", researchTopic, "required", {
-          converter: value => !value
-        });
 
-        // Add animation when switching between contactPerson and researchTopic
-        earlyAdopter.addListener("changeValue", e => {
-          const checked = e.getData();
-          const toShow = checked ? contactPerson : researchTopic;
-          const toHide = checked ? researchTopic : contactPerson;
-          toHide.resetValue();
-          osparc.utils.Utils.animateSwap(toHide, toShow, {
-            duration: 200,
-            translation: 200
-          });
+        // Show/hide follow-up fields based on earlyAdopter selection
+        earlyAdopter.addListener("changeSelection", e => {
+          const selectedItem = e.getData()[0];
+          const selectedId = selectedItem ? selectedItem.getModel() : "not-valid";
+          if (selectedId === "yes") {
+            const toShow = contactPerson;
+            const toHide = researchTopic;
+            toHide.resetValue();
+            toHide.setRequired(false);
+            toShow.setRequired(true);
+            osparc.utils.Utils.animateSwap(toHide, toShow, {
+              duration: 200,
+              translation: 200
+            });
+          } else if (selectedId === "no") {
+            const toShow = researchTopic;
+            const toHide = contactPerson;
+            toHide.resetValue();
+            toHide.setRequired(false);
+            toShow.setRequired(true);
+            osparc.utils.Utils.animateSwap(toHide, toShow, {
+              duration: 200,
+              translation: 200
+            });
+          } else {
+            contactPerson.resetValue();
+            contactPerson.setRequired(false);
+            contactPerson.setVisibility("excluded");
+            researchTopic.resetValue();
+            researchTopic.setRequired(false);
+            researchTopic.setVisibility("excluded");
+          }
         });
       }
 
