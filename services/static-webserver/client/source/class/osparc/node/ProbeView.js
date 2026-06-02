@@ -21,7 +21,7 @@ qx.Class.define("osparc.node.ProbeView", {
   construct: function(probe) {
     this.base();
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(16));
 
     if (probe) {
       this.setNode(probe);
@@ -104,12 +104,20 @@ qx.Class.define("osparc.node.ProbeView", {
     },
 
     __populateLayout: function(node) {
-      const inputsForm = node.getPropsForm();
-      const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), inputsForm);
-      inputs._innerContainer.set({
-        margin: 8
-      });
+      const inputs = new osparc.desktop.PanelView(this.tr("Input"), node.getPropsForm());
       this._add(inputs);
+
+      const valueContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(16)).set({
+        paddingTop: 8,
+      });
+      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/thermometer/14");
+      const valueLabel = osparc.node.ProbeView.createProbeValueLabel(node);
+      valueContainer.add(icon);
+      valueContainer.add(valueLabel, {
+        flex: 1
+      });
+      const outputPanel = new osparc.desktop.PanelView(this.tr("Value"), valueContainer);
+      this._add(outputPanel);
     },
   }
 });
