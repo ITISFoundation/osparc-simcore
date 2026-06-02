@@ -57,21 +57,6 @@ def configure_registry_redis_backend(
     )
 
 
-@pytest.fixture(
-    params=["memory", "redis"],
-    ids=["memory-backend", "redis-backend"],
-)
-def configure_registry_cache_backend(
-    request: pytest.FixtureRequest,
-    configure_registry_caching: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    if request.param == "redis":
-        request.getfixturevalue("fakeredis_aiocache_client")
-        return request.getfixturevalue("configure_registry_redis_backend")
-    return configure_registry_caching
-
-
 @pytest.fixture
 def fakeredis_aiocache_client(
     mocker: MockerFixture,
@@ -83,8 +68,22 @@ def fakeredis_aiocache_client(
     return fake_client
 
 
+@pytest.fixture(
+    params=["memory", "redis"],
+    ids=["memory-backend", "redis-backend"],
+)
+def configure_registry_cache_backend(
+    request: pytest.FixtureRequest,
+    configure_registry_caching: EnvVarsDict,
+) -> EnvVarsDict:
+    if request.param == "redis":
+        request.getfixturevalue("fakeredis_aiocache_client")
+        return request.getfixturevalue("configure_registry_redis_backend")
+    return configure_registry_caching
+
+
 @pytest.fixture
-def with_disabled_auto_caching(mocker: MockerFixture) -> mock.Mock:
+def with_disabled_auto_caching_task(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
 
 
@@ -270,7 +269,7 @@ async def test_registry_caching(
     configure_registry_access: EnvVarsDict,
     configure_registry_caching: EnvVarsDict,
     configure_registry_cache_backend: EnvVarsDict,
-    with_disabled_auto_caching: mock.Mock,
+    with_disabled_auto_caching_task: mock.Mock,
     mocker: MockerFixture,
     app_settings: ApplicationSettings,
     app: FastAPI,
