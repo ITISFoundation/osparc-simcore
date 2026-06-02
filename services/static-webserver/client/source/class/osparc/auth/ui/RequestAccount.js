@@ -223,7 +223,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         fullWidth.push(researchGroup);
         this._form.add(researchGroup, this.tr("What research group do you belong to?"), null, "researchGroup");
 
-        const earlyAdopter = new qx.ui.form.SelectBox();
+        const earlyAdopter = new qx.ui.form.SelectBox().set({
+          required: true,
+        });
         earlyAdopter.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
         [{
           id: "not-valid",
@@ -244,14 +246,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         this._form.add(earlyAdopter, this.tr("Are you a member of the Early Adopter Program of TI Solutions AG?"), null, "earlyAdopter");
 
         const contactPerson = new qx.ui.form.TextField().set({
-          required: false,
+          required: true,
           visibility: "excluded",
         });
         fullWidth.push(contactPerson);
         this._form.add(contactPerson, this.tr("What is the name of your contact person at TI Solutions AG?"), null, "contactPerson");
 
         const researchTopic = new qx.ui.form.TextField().set({
-          required: false,
+          required: true,
           visibility: "excluded",
         });
         fullWidth.push(researchTopic);
@@ -261,26 +263,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         earlyAdopter.addListener("changeSelection", e => {
           const selectedItem = e.getData()[0];
           const selectedId = selectedItem ? selectedItem.getModel() : "not-valid";
-          if (selectedId === "yes") {
-            contactPerson.setVisibility("visible");
-            contactPerson.setRequired(true);
-            researchTopic.resetValue();
-            researchTopic.setVisibility("excluded");
-            researchTopic.setRequired(false);
-          } else if (selectedId === "no") {
-            researchTopic.setVisibility("visible");
-            researchTopic.setRequired(true);
-            contactPerson.resetValue();
-            contactPerson.setVisibility("excluded");
-            contactPerson.setRequired(false);
-          } else {
-            contactPerson.resetValue();
-            contactPerson.setRequired(false);
-            contactPerson.setVisibility("excluded");
-            researchTopic.resetValue();
-            researchTopic.setRequired(false);
-            researchTopic.setVisibility("excluded");
-          }
+          contactPerson.set({
+            visibility: selectedId === "yes" ? "visible" : "excluded",
+            required: selectedId === "yes",
+          });
+          researchTopic.set({
+            visibility: selectedId === "no" ? "visible" : "excluded",
+            required: selectedId === "no",
+          });
         });
       }
 
