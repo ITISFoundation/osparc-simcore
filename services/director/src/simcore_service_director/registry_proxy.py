@@ -54,6 +54,12 @@ class ServiceType(enum.Enum):
     DYNAMIC = "dynamic"
 
 
+def _normalize_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
+    if not headers:
+        return {}
+    return {str(k).lower(): str(v) for k, v in headers.items()}
+
+
 async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
     app_settings = get_application_settings(app)
     # try the registry with basic authentication first, spare 1 call
@@ -205,7 +211,8 @@ async def registry_request(
     cache: BaseCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
     if use_cache and (cached_response := await cache.get(cache_key)):
-        return cast(tuple[dict, Mapping], cached_response)
+        cached_body, cached_headers = cast(tuple[dict, Mapping], cached_response)
+        return cached_body, _normalize_headers(cached_headers)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
     if "manifests/" in path and method.upper() == "GET":
         headers = request_kwargs.get("headers", {})
@@ -233,13 +240,15 @@ async def registry_request(
         raise DirectorRuntimeError(msg=msg) from exc
 
     if app_settings.DIRECTOR_REGISTRY_CACHING and method.upper() == "GET":
+        normalized_headers = _normalize_headers(response_headers)
         await cache.set(
             cache_key,
-            (response, dict(response_headers)),
+            (response, normalized_headers),
             ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
         )
+        return response, normalized_headers
 
-    return response, response_headers
+    return response, _normalize_headers(response_headers)
 
 
 async def _setup_registry(app: FastAPI) -> None:
@@ -341,8 +350,8 @@ async def _list_repositories_gen(
         prefetch_task: asyncio.Task | None = None
         try:
             while True:
-                if "Link" in headers:
-                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                if link_header := headers.get("link"):
+                    next_path = str(link_header).split(";")[0].strip("<>").removeprefix("/v2/")
                     prefetch_task = asyncio.create_task(
                         registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
                     )
@@ -375,8 +384,8 @@ async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=Fals
         prefetch_task: asyncio.Task | None = None
         try:
             while True:
-                if "Link" in headers:
-                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                if link_header := headers.get("link"):
+                    next_path = str(link_header).split(";")[0].strip("<>").removeprefix("/v2/")
                     prefetch_task = asyncio.create_task(
                         registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
                     )
@@ -411,7 +420,7 @@ async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     return image_tags
 
 
-_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "Docker-Content-Digest"
+_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "docker-content-digest"
 
 
 async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
