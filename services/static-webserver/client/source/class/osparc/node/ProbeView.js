@@ -58,7 +58,7 @@ qx.Class.define("osparc.node.ProbeView", {
           inputNode.bind("outputs", linkLabel, "value", {
             converter: outputs => {
               const output = outputs.find(out => out.getPortKey() === portKey);
-              if (output && output.getValue() !== undefined) {
+              if (output && output.getValue() != null) {
                 const val = output.getValue();
                 if (node.getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
                   return "[" + val.join(",") + "]";
