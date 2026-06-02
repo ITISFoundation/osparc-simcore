@@ -100,7 +100,7 @@ async def _create_email_addressing(
     )
 
     if from_local:
-        from_contact = from_contact.replace(new_local=from_local, new_name=None)
+        from_contact = from_contact.replace(new_local=from_local, new_name="")
 
     to_contacts: list[EmailContact] = []
 
