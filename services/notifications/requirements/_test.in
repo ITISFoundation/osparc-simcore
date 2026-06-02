@@ -24,3 +24,4 @@ pytest-cov
 pytest-mock
 pytest-runner
 python-dotenv
+sqlalchemy[mypy]
