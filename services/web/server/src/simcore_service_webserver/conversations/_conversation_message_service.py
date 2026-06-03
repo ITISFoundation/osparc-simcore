@@ -122,7 +122,7 @@ async def _notify_support_reply(
 
             recipient_user = await users_service.get_user(app, conversation_creator_user_id)
             recipient_name = (
-                f"{recipient_user.get('first_name', '')} {recipient_user.get('last_name', '')}".strip()
+                f"{recipient_user.get('first_name') or ''} {recipient_user.get('last_name') or ''}".strip()
                 or recipient_user["email"]
             )
 

@@ -11,7 +11,6 @@ import base64
 import json
 import logging
 import re
-import time
 from collections.abc import Callable, Iterator
 from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
@@ -22,6 +21,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, ServiceType, wait_for_service_running
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, stop_after_delay, wait_fixed
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
@@ -37,6 +37,11 @@ _SAMPLING_TIMEOUT: Final[int] = 10 * MINUTE
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
 _NUM_SAMPLING_POINTS: Final[int] = 40
+_PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
+_PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
+_SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
+_SELECT_FUNCTION_RETRY_WAIT_SECONDS: Final[int] = 2
+_SAMPLING_STATUS_POLL_SECONDS: Final[int] = 5
 _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
@@ -90,6 +95,116 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     api_host = f"api.{parsed.hostname}"
     api_netloc = f"{api_host}:{parsed.port}" if parsed.port else api_host
     return urlunparse(parsed._replace(netloc=api_netloc))
+
+
+def _reload_page_before_retry(retry_state) -> None:
+    page = retry_state.kwargs["page"]
+    service_iframe = retry_state.kwargs["service_iframe"]
+    logging.warning(
+        "Attempt %d/%d failed to find/select function row, reloading page and retrying...",
+        retry_state.attempt_number,
+        _SELECT_FUNCTION_MAX_ATTEMPTS,
+    )
+    page.reload()
+    service_iframe.locator("body").wait_for(state="visible", timeout=60 * SECOND)
+
+
+def _refresh_sampling_before_retry(retry_state) -> None:
+    page = retry_state.kwargs["page"]
+    refresh_btn = retry_state.kwargs["refresh_btn"]
+    logging.info("⏳ Waiting for all status cells to be completed...")
+    try:
+        refresh_btn.click(timeout=30 * SECOND)
+    except PlaywrightTimeoutError:
+        logging.warning("Refresh button click timed out, retrying after short wait...")
+        page.wait_for_timeout(2 * SECOND)
+        refresh_btn.click(timeout=60 * SECOND)
+
+
+@retry(
+    wait=wait_fixed(_SELECT_FUNCTION_RETRY_WAIT_SECONDS),
+    stop=stop_after_attempt(_SELECT_FUNCTION_MAX_ATTEMPTS),
+    retry=retry_if_exception_type(PlaywrightTimeoutError),
+    before_sleep=_reload_page_before_retry,
+    reraise=True,
+)
+def _select_test_function(*, page: Page, service_iframe, function_uuid: str, local_service_key: str) -> None:
+    # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
+    # The DataGrid paginates (10 per page), so navigate pages to find our function
+    function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
+
+    # Wait for the DataGrid to have at least one row rendered
+    service_iframe.locator('div[role="row"][data-id]').first.wait_for(
+        state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
+    )
+
+    # Navigate through pages to find the function row
+    for _ in range(20):  # max 20 pages
+        if function_row.is_visible():
+            break
+        next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
+        if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
+            break
+        next_page_btn.click()
+        service_iframe.locator('div[role="row"][data-id]').first.wait_for(state="visible", timeout=60 * SECOND)
+    function_row.wait_for(state="visible", timeout=30 * SECOND)
+
+    select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
+    select_btn.wait_for(state="visible", timeout=30 * SECOND)
+
+    # Wait for MUI DataGrid loading overlay to disappear before clicking
+    overlay = service_iframe.locator(".MuiDataGrid-overlay")
+    try:
+        overlay.wait_for(state="hidden", timeout=60 * SECOND)
+        select_btn.click(timeout=30 * SECOND)
+    except PlaywrightTimeoutError:
+        logging.warning("Overlay still present after 60s, clicking with force=True")
+        select_btn.click(force=True, timeout=30 * SECOND)
+
+    # Verify the click actually navigated to the input step
+    min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
+    input_locator = service_iframe.locator(f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]')
+    input_locator.first.wait_for(state="visible", timeout=10 * SECOND)
+
+
+@retry(
+    wait=wait_fixed(_PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS),
+    stop=stop_after_attempt(_PROJECT_RENAME_PERSISTENCE_ATTEMPTS),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+)
+def _assert_project_name_persisted(
+    *,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+    project_uuid: str,
+    expected_project_name: str,
+) -> None:
+    get_prj_resp = api_request_context.get(f"{product_url}v0/projects/{project_uuid}")
+    assert get_prj_resp.ok, f"Failed to GET project: {get_prj_resp.status} {get_prj_resp.text()}"
+    actual_project_name = get_prj_resp.json()["data"]["name"]
+    assert actual_project_name == expected_project_name, (
+        f"Project name was not persisted as '{expected_project_name}', server still reports '{actual_project_name}'"
+    )
+
+
+@retry(
+    wait=wait_fixed(_SAMPLING_STATUS_POLL_SECONDS),
+    stop=stop_after_delay(_SAMPLING_TIMEOUT / 1000),
+    retry=retry_if_exception_type(AssertionError),
+    before_sleep=_refresh_sampling_before_retry,
+    reraise=True,
+)
+def _assert_sampling_completed(
+    *,
+    service_iframe,
+    page: Page,
+    refresh_btn,
+    check_sampling_status: Callable[[Any, Page], str],
+) -> None:
+    status = check_sampling_status(service_iframe, page)
+    assert status != "failed", "Sampling job failed! Check the deployment logs."
+    assert status == "complete", "Sampling is still running"
 
 
 @pytest.fixture
@@ -147,7 +262,6 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
-    service_key: str,
     service_version: str | None,
     product_url: AnyUrl,
     is_service_legacy: bool,
@@ -296,17 +410,12 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             page.get_by_test_id("savingStudyIcon").wait_for(state="hidden", timeout=30 * SECOND)
 
         with log_context(logging.INFO, "Verify project name was persisted on server"):
-            for _ in range(10):
-                get_prj_resp = api_request_context.get(f"{product_url}v0/projects/{jsonifier_prj_uuid}")
-                assert get_prj_resp.ok, f"Failed to GET project: {get_prj_resp.status} {get_prj_resp.text()}"
-                if get_prj_resp.json()["data"]["name"] == _STUDY_FUNCTION_NAME:
-                    break
-                page.wait_for_timeout(500)
-            else:
-                pytest.fail(
-                    f"Project name was not persisted as '{_STUDY_FUNCTION_NAME}', "
-                    f"server still reports '{get_prj_resp.json()['data']['name']}'"
-                )
+            _assert_project_name_persisted(
+                api_request_context=api_request_context,
+                product_url=product_url,
+                project_uuid=jsonifier_prj_uuid,
+                expected_project_name=_STUDY_FUNCTION_NAME,
+            )
 
     # 2. go back to dashboard
     with (
@@ -407,72 +516,13 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
             service_iframe.locator("body").wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
 
         with log_context(logging.INFO, "Selected test function..."):
-            # Retry the whole selection in case of transient websocket/iframe issues
-            for attempt in range(3):
-                try:
-                    # Find the exact row by function UUID (data-id attribute in the MUI DataGrid)
-                    # The DataGrid paginates (10 per page), so navigate pages to find our function
-                    function_row = service_iframe.locator(f'div[role="row"][data-id="{function_uuid}"]')
-
-                    # Wait for the DataGrid to have at least one row rendered
-                    service_iframe.locator('div[role="row"][data-id]').first.wait_for(
-                        state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
-                    )
-
-                    # Navigate through pages to find the function row
-                    for _ in range(20):  # max 20 pages
-                        if function_row.is_visible():
-                            break
-                        next_page_btn = service_iframe.locator('button[aria-label="Go to next page"]')
-                        if next_page_btn.count() == 0 or not next_page_btn.is_enabled():
-                            break
-                        next_page_btn.click()
-                        service_iframe.locator('div[role="row"][data-id]').first.wait_for(
-                            state="visible", timeout=60 * SECOND
-                        )
-                    function_row.wait_for(state="visible", timeout=30 * SECOND)
-
-                    select_btn = function_row.locator('[mmux-testid="select-function-btn"]')
-                    select_btn.wait_for(state="visible", timeout=30 * SECOND)
-
-                    # Wait for MUI DataGrid loading overlay to disappear before clicking
-                    overlay = service_iframe.locator(".MuiDataGrid-overlay")
-                    try:
-                        overlay.wait_for(state="hidden", timeout=60 * SECOND)
-                        select_btn.click(timeout=30 * SECOND)
-                    except PlaywrightTimeoutError:
-                        logging.warning("Overlay still present after 60s, clicking with force=True")
-                        select_btn.click(force=True, timeout=30 * SECOND)
-
-                    # Verify the click actually navigated to the input step
-                    min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
-                    input_locator = service_iframe.locator(
-                        f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]'
-                    )
-                    try:
-                        input_locator.first.wait_for(state="visible", timeout=10 * SECOND)
-                    except PlaywrightTimeoutError:
-                        if attempt == 2:
-                            raise
-                        logging.warning(
-                            "Select click did not navigate to input step "
-                            "(attempt %d/3), reloading iframe and retrying...",
-                            attempt + 1,
-                        )
-                        # Reload the page to reset the iframe/service state
-                        page.reload()
-                        service_iframe.locator("body").wait_for(state="visible", timeout=60 * SECOND)
-                        continue
-                    break
-                except PlaywrightTimeoutError:
-                    if attempt == 2:
-                        raise
-                    logging.warning(
-                        "Attempt %d/3 failed to find/select function row, reloading page and retrying...",
-                        attempt + 1,
-                    )
-                    page.reload()
-                    service_iframe.locator("body").wait_for(state="visible", timeout=60 * SECOND)
+            # Retry the whole selection in case of transient websocket/iframe issues.
+            _select_test_function(
+                page=page,
+                service_iframe=service_iframe,
+                function_uuid=function_uuid,
+                local_service_key=local_service_key,
+            )
 
         with log_context(logging.INFO, "Filling the input parameters..."):
             min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
@@ -638,24 +688,12 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                 page.wait_for_timeout(2 * SECOND)
                 refresh_btn.wait_for(state="visible", timeout=30 * SECOND)
 
-            start_time = time.monotonic()
-            while True:
-                status = check_all_pages_status(service_iframe, page)
-                if status == "complete":
-                    break
-                assert status != "failed", "Sampling job failed! Check the deployment logs."
-                elapsed = time.monotonic() - start_time
-                assert elapsed < _SAMPLING_TIMEOUT / 1000, (
-                    f"Sampling did not complete within {_SAMPLING_TIMEOUT / 1000}s"
-                )
-                logging.info("⏳ Waiting for all status cells to be completed...")
-                page.wait_for_timeout(5000)
-                try:
-                    refresh_btn.click(timeout=30 * SECOND)
-                except PlaywrightTimeoutError:
-                    logging.warning("Refresh button click timed out, retrying after short wait...")
-                    page.wait_for_timeout(2 * SECOND)
-                    refresh_btn.click(timeout=60 * SECOND)
+            _assert_sampling_completed(
+                service_iframe=service_iframe,
+                page=page,
+                refresh_btn=refresh_btn,
+                check_sampling_status=check_all_pages_status,
+            )
 
         with log_context(logging.INFO, "Selecting jobs and verifying graph..."):
             select_all_btn = service_iframe.get_by_role("button", name="Select all successful Jobs")
