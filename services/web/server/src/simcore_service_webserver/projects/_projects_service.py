@@ -197,12 +197,12 @@ _logger = logging.getLogger(__name__)
 
 
 async def create_project_document_and_notify(
-    app,
+    app: web.Application,
     *,
     project_id: ProjectID,
     user_id: UserID,
     client_session_id: ClientSessionID | None,
-):
+) -> None:
     app_settings = get_application_settings(app)
     if app_settings.WEBSERVER_REALTIME_COLLABORATION is None:
         return
