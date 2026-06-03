@@ -39,8 +39,9 @@ from .core.errors import (
 from .core.settings import ApplicationSettings, get_application_settings
 
 DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
-_REGISTRY_CACHE_REFRESH_MARKER_KEY: Final[str] = "director:registry_cache:refresh_marker"
-_REGISTRY_CACHE_REFRESH_LOCK_KEY: Final[str] = "director:registry_cache:refresh_lock"
+_REDIS_NAMESPACE: Final[str] = "director:registry_cache"
+_REGISTRY_CACHE_REFRESH_MARKER_KEY: Final[str] = f"{_REDIS_NAMESPACE}:refresh_marker"
+_REGISTRY_CACHE_REFRESH_LOCK_KEY: Final[str] = f"{_REDIS_NAMESPACE}:refresh_lock"
 
 VERSION_REG = re.compile(
     r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
