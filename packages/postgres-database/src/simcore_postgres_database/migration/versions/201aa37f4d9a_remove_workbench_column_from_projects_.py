@@ -269,9 +269,9 @@ def _flush_node_batch(connection, batch: list[dict]) -> int:
             modified = NOW()
     """
 
-    for node_values in batch:
-        connection.execute(sa.text(upsert_sql), node_values)
+    connection.execute(sa.text(upsert_sql), batch)
 
+    return len(batch)
     return len(batch)
 
 
