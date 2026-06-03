@@ -11,13 +11,14 @@ as a full sweep in a single run.
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
 
 import arrow
+import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aws_library.s3 import S3DirectoryMetaData, SimcoreS3API
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from servicelib.redis import handle_redis_returns_union_types
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 from settings_library.s3 import S3Settings
@@ -138,7 +139,7 @@ async def run_reconciliation_passes(app: FastAPI) -> None:
 # Reconciliation logic
 async def _run_incremental_tick(
     app: FastAPI,
-    redis: Any,
+    redis: aioredis.Redis,
     bucket: str,
     s3_client: SimcoreS3API,
     snapshot: _PassSnapshot,
@@ -342,7 +343,7 @@ async def _build_snapshot(app: FastAPI) -> _PassSnapshot:
     return _PassSnapshot(started_at=started_at, live_projects=live_projects, referenced_paths=referenced_paths)
 
 
-async def _ensure_incremental_snapshot(app: FastAPI, redis: Any) -> _PassSnapshot:
+async def _ensure_incremental_snapshot(app: FastAPI, redis: aioredis.Redis) -> _PassSnapshot:
     """Load pass snapshot from Redis or create a new one.
 
     A missing ``_RECONCILE_SCAN_STARTED_AT_KEY`` means no active pass exists,
@@ -363,7 +364,7 @@ async def _ensure_incremental_snapshot(app: FastAPI, redis: Any) -> _PassSnapsho
     return _PassSnapshot(started_at=started_at, live_projects=live_projects, referenced_paths=referenced_paths)
 
 
-async def _persist_snapshot(redis: Any, snapshot: _PassSnapshot) -> None:
+async def _persist_snapshot(redis: aioredis.Redis, snapshot: _PassSnapshot) -> None:
     """Atomically replace persisted snapshot keys.
 
     ``MULTI/EXEC`` ensures workers never observe mixed old/new snapshot sets.
@@ -488,8 +489,8 @@ def _extract_store_zero_paths(workbench: dict) -> set[str]:
     return paths
 
 
-async def _decode_redis_set(redis: Any, key: str) -> set[str]:
-    raw_values = await redis.smembers(key)
+async def _decode_redis_set(redis: aioredis.Redis, key: str) -> set[str]:
+    raw_values = await handle_redis_returns_union_types(redis.smembers(key))
     return {value.decode() if isinstance(value, bytes) else f"{value}" for value in raw_values}
 
 
@@ -503,18 +504,18 @@ def _is_reachable(row: _FmdRow, snapshot: _PassSnapshot) -> bool:
     )
 
 
-async def _get_cursor(redis: Any) -> str:
+async def _get_cursor(redis: aioredis.Redis) -> str:
     raw = await redis.get(_RECONCILE_CURSOR_KEY)
     if raw is None:
         return ""
     return raw.decode() if isinstance(raw, bytes) else f"{raw}"
 
 
-async def _set_cursor(redis: Any, cursor: str) -> None:
+async def _set_cursor(redis: aioredis.Redis, cursor: str) -> None:
     await redis.set(_RECONCILE_CURSOR_KEY, cursor)
 
 
-async def _reset_pass_state(redis: Any) -> None:
+async def _reset_pass_state(redis: aioredis.Redis) -> None:
     await redis.delete(
         _RECONCILE_CURSOR_KEY,
         _RECONCILE_SCAN_STARTED_AT_KEY,
