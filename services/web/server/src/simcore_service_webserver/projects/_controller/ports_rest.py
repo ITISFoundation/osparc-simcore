@@ -97,19 +97,21 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         update[node_id] = input_update.value
 
     # validates values against JSON schema and updates workbench in-place
-    _ports_service.set_inputs_in_project(current_workbench, update)
+    changed_node_ids = _ports_service.set_inputs_in_project(current_workbench, update)
 
-    partial_workbench_data = {
-        node_id: current_workbench[node_id].model_dump(include={"outputs"}, exclude_unset=True) for node_id in update
-    }
+    if changed_node_ids:
+        partial_workbench_data = {
+            node_id: current_workbench[node_id].model_dump(include={"outputs"}, exclude_unset=True)
+            for node_id in changed_node_ids
+        }
 
-    partial_nodes_map = TypeAdapter(dict[NodeID, PartialNode]).validate_python(partial_workbench_data)
+        partial_nodes_map = TypeAdapter(dict[NodeID, PartialNode]).validate_python(partial_workbench_data)
 
-    await _nodes_service.update_project_nodes_map(
-        request.app,
-        project_id=path_params.project_id,
-        partial_nodes_map=partial_nodes_map,
-    )
+        await _nodes_service.update_project_nodes_map(
+            request.app,
+            project_id=path_params.project_id,
+            partial_nodes_map=partial_nodes_map,
+        )
 
     # get updated workbench (including not updated nodes)
     updated_workbench = await _nodes_service.get_project_nodes_map(request.app, project_id=path_params.project_id)
