@@ -45,31 +45,6 @@ def configure_registry_access_both_versions(
     )
 
 
-@pytest.fixture
-def configure_registry_memory_backend(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {"DIRECTOR_REDIS_CACHE_BACKEND": "memory"},
-    )
-
-
-@pytest.fixture(
-    params=["memory", "redis"],
-    ids=["memory-backend", "redis-backend"],
-)
-def configure_registry_cache_backend(
-    request: pytest.FixtureRequest,
-    configure_registry_caching: EnvVarsDict,
-) -> EnvVarsDict:
-    if request.param == "redis":
-        request.getfixturevalue("use_in_memory_redis")
-        return request.getfixturevalue("configure_registry_redis_backend")
-    return request.getfixturevalue("configure_registry_memory_backend")
-
-
 async def test_list_no_services_available(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
@@ -250,7 +225,9 @@ async def test_list_services(
 
 async def test_registry_caching(
     configure_registry_access: EnvVarsDict,
-    configure_registry_cache_backend: EnvVarsDict,
+    configure_registry_caching: EnvVarsDict,
+    configure_registry_redis_backend: EnvVarsDict,
+    use_in_memory_redis,
     with_disabled_auto_caching_task: mock.Mock,
     mocker: MockerFixture,
     app_settings: ApplicationSettings,

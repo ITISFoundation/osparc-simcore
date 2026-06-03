@@ -18,7 +18,6 @@ from simcore_service_director.core.settings import ApplicationSettings
 def test_valid_application_settings(app_environment: EnvVarsDict):
     settings = ApplicationSettings()  # type: ignore
     assert settings
-    assert settings.DIRECTOR_REDIS_CACHE_BACKEND == "redis"
 
     assert settings == ApplicationSettings.create_from_envs()
 
@@ -48,16 +47,13 @@ def test_redis_backend_requires_redis_settings_when_caching_enabled(
         {
             **app_environment,
             "DIRECTOR_REGISTRY_CACHING": "True",
-            "DIRECTOR_REDIS_CACHE_BACKEND": "redis",
             "DIRECTOR_REDIS": "null",
         },
     )
 
     with pytest.raises(
         ValidationError,
-        match=(
-            "DIRECTOR_REDIS_CACHE_BACKEND='redis' with DIRECTOR_REGISTRY_CACHING=True requires DIRECTOR_REDIS settings"
-        ),
+        match="DIRECTOR_REGISTRY_CACHING=True requires DIRECTOR_REDIS settings",
     ):
         ApplicationSettings.create_from_envs()
 
@@ -71,7 +67,6 @@ def test_redis_backend_does_not_require_redis_settings_when_caching_disabled(
         {
             **app_environment,
             "DIRECTOR_REGISTRY_CACHING": "False",
-            "DIRECTOR_REDIS_CACHE_BACKEND": "redis",
             "DIRECTOR_REDIS": "null",
         },
     )
@@ -86,7 +81,6 @@ def test_redis_settings_can_be_configured(app_environment: EnvVarsDict, monkeypa
         {
             **app_environment,
             "DIRECTOR_REGISTRY_CACHING": "True",
-            "DIRECTOR_REDIS_CACHE_BACKEND": "redis",
             "DIRECTOR_REDIS": '{"REDIS_SECURE": false, "REDIS_HOST": "redis", "REDIS_PORT": 6379}',
         },
     )

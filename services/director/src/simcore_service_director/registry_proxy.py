@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator, Mapping
 from typing import Any, Final, cast
 
 import httpx
-from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
+from aiocache import Cache  # type: ignore[import-untyped]
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
@@ -220,9 +220,9 @@ async def registry_request(
     use_cache: bool,
     **request_kwargs,
 ) -> tuple[dict, Mapping]:
-    cache: BaseCache = app.state.registry_cache_memory
+    cache: BaseCache | None = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
-    if use_cache and (cached_response := await cache.get(cache_key)):
+    if use_cache and cache and (cached_response := await cache.get(cache_key)):
         cached_body, cached_headers = cast(tuple[dict, Mapping], cached_response)
         return cached_body, _normalize_headers(cached_headers)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
@@ -253,6 +253,7 @@ async def registry_request(
 
     if app_settings.DIRECTOR_REGISTRY_CACHING and method.upper() == "GET":
         normalized_headers = _normalize_headers(response_headers)
+        assert cache is not None  # nosec
         await cache.set(
             cache_key,
             (response, normalized_headers),
@@ -281,7 +282,7 @@ async def _setup_registry(app: FastAPI) -> None:
 async def _is_cache_fresh(app: FastAPI) -> bool:
     """Check if cache freshness marker exists in Redis (skip refresh if fresh)."""
     app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY_CACHING or app_settings.DIRECTOR_REDIS_CACHE_BACKEND != "redis":
+    if not app_settings.DIRECTOR_REGISTRY_CACHING:
         return False
 
     redis_manager = _get_redis_clients_manager(app)
@@ -303,7 +304,7 @@ async def _is_cache_fresh(app: FastAPI) -> bool:
 async def _set_cache_fresh_marker(app: FastAPI) -> None:
     """Set cache freshness marker in Redis after successful refresh."""
     app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY_CACHING or app_settings.DIRECTOR_REDIS_CACHE_BACKEND != "redis":
+    if not app_settings.DIRECTOR_REGISTRY_CACHING:
         return
 
     redis_manager = _get_redis_clients_manager(app)
@@ -347,16 +348,7 @@ async def _list_all_services_task_locked(*, app: FastAPI) -> None:
 
 @traced
 async def _list_all_services_task(*, app: FastAPI) -> None:
-    """Refresh cache with optional distributed lock to prevent concurrent updates from multiple replicas."""
-    app_settings = get_application_settings(app)
-
-    # Without Redis backend, just update the cache
-    if not app_settings.DIRECTOR_REGISTRY_CACHING or app_settings.DIRECTOR_REDIS_CACHE_BACKEND != "redis":
-        with log_context(_logger, logging.INFO, msg="Updating cache with services (memory backend)"):
-            await list_services(app, ServiceType.ALL, update_cache=True)
-        return
-
-    # With Redis backend, try to use distributed lock
+    """Refresh cache with distributed lock to prevent concurrent updates from multiple replicas."""
     try:
         await _list_all_services_task_locked(app=app)
     except CouldNotAcquireLockError:
@@ -365,32 +357,30 @@ async def _list_all_services_task(*, app: FastAPI) -> None:
         _logger.exception("Error during cache refresh with lock, skipping this cycle")
 
 
-def _create_registry_cache(app_settings: ApplicationSettings) -> BaseCache:
-    if app_settings.DIRECTOR_REGISTRY_CACHING and app_settings.DIRECTOR_REDIS_CACHE_BACKEND == "redis":
-        assert app_settings.DIRECTOR_REDIS is not None  # nosec
-        assert Cache.REDIS is not None  # nosec
-        redis_settings = app_settings.DIRECTOR_REDIS
-        connection_pool_kwargs: dict[str, Any] = {}
-        if redis_settings.REDIS_USER:
-            connection_pool_kwargs["username"] = redis_settings.REDIS_USER
+def _create_registry_cache(app_settings: ApplicationSettings) -> BaseCache | None:
+    if not app_settings.DIRECTOR_REGISTRY_CACHING:
+        return None
 
-        return cast(
-            BaseCache,
-            Cache(
-                Cache.REDIS,
-                endpoint=redis_settings.REDIS_HOST,
-                port=redis_settings.REDIS_PORT,
-                db=int(RedisDatabase.AIOCACHE),
-                password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
-                ssl=redis_settings.REDIS_SECURE,
-                connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
-                namespace=app_settings.DIRECTOR_REDIS_CACHE_NAMESPACE,
-            ),
-        )
+    assert app_settings.DIRECTOR_REDIS is not None  # nosec
+    assert Cache.REDIS is not None  # nosec
+    redis_settings = app_settings.DIRECTOR_REDIS
+    connection_pool_kwargs: dict[str, Any] = {}
+    if redis_settings.REDIS_USER:
+        connection_pool_kwargs["username"] = redis_settings.REDIS_USER
 
-    cache = Cache(Cache.MEMORY)
-    assert isinstance(cache, SimpleMemoryCache)  # nosec
-    return cache
+    return cast(
+        BaseCache,
+        Cache(
+            Cache.REDIS,
+            endpoint=redis_settings.REDIS_HOST,
+            port=redis_settings.REDIS_PORT,
+            db=int(RedisDatabase.AIOCACHE),
+            password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
+            ssl=redis_settings.REDIS_SECURE,
+            connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
+            namespace=app_settings.DIRECTOR_REDIS_CACHE_NAMESPACE,
+        ),
+    )
 
 
 def setup(app: FastAPI) -> None:

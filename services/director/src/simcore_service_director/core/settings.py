@@ -1,7 +1,7 @@
 import datetime
 import warnings
 from functools import cached_property
-from typing import Annotated, Literal, cast
+from typing import Annotated, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
@@ -87,7 +87,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         RedisSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ] = None
-    DIRECTOR_REDIS_CACHE_BACKEND: Literal["memory", "redis"] = "redis"
     DIRECTOR_REDIS_CACHE_NAMESPACE: str = "director-v0-registry-cache"
 
     DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
@@ -202,15 +201,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @model_validator(mode="after")
     def _validate_redis_settings(self) -> "ApplicationSettings":
-        if (
-            self.DIRECTOR_REGISTRY_CACHING
-            and self.DIRECTOR_REDIS_CACHE_BACKEND == "redis"
-            and self.DIRECTOR_REDIS is None
-        ):
-            msg = (
-                "DIRECTOR_REDIS_CACHE_BACKEND='redis' with DIRECTOR_REGISTRY_CACHING=True "
-                "requires DIRECTOR_REDIS settings"
-            )
+        if self.DIRECTOR_REGISTRY_CACHING and self.DIRECTOR_REDIS is None:
+            msg = "DIRECTOR_REGISTRY_CACHING=True requires DIRECTOR_REDIS settings"
             raise ValueError(msg)
         return self
 
