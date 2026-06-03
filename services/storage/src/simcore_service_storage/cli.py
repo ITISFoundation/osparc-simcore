@@ -13,7 +13,7 @@ from settings_library.utils_cli import (
     print_as_envfile,
 )
 
-from . import _reconciliation_v2 as recon
+from . import _reconciliation as recon
 from ._meta import PROJECT_NAME, __version__
 from .core.application import create_app
 from .core.settings import ApplicationSettings

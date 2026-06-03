@@ -30,7 +30,7 @@ from servicelib.logging_utils import log_context
 from servicelib.tracing import traced
 from settings_library.redis import RedisDatabase
 
-from ._reconciliation_v2 import run_reconciliation_passes
+from ._reconciliation import run_reconciliation_passes
 from .core.settings import get_application_settings
 from .dsm import get_dsm_provider
 from .modules.redis import get_redis_client_manager

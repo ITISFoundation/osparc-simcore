@@ -15,8 +15,8 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from settings_library.redis import RedisDatabase
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage import _reconciliation_v2 as recon_mod
-from simcore_service_storage._reconciliation_v2 import (
+from simcore_service_storage import _reconciliation as recon_mod
+from simcore_service_storage._reconciliation import (
     _RECONCILE_CURSOR_KEY,
     _RECONCILE_LIVE_PROJECTS_KEY,
     _RECONCILE_REFERENCED_PATHS_KEY,
