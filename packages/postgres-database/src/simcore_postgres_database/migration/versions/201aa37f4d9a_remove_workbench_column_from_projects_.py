@@ -23,6 +23,40 @@ depends_on = None
 _logger = logging.getLogger("alembic.runtime.migration")
 
 
+# --- projects_nodes column inventory (frozen at this migration) --------------
+# Scalar columns persisted as-is.
+_SCALAR_COLUMNS: frozenset[str] = frozenset({"key", "version", "label", "progress", "thumbnail", "run_hash", "parent"})
+# JSONB columns: values are serialized with json.dumps when not None.
+_JSONB_COLUMNS: frozenset[str] = frozenset(
+    {
+        "input_access",
+        "input_nodes",
+        "inputs",
+        "inputs_required",
+        "inputs_units",
+        "output_nodes",
+        "outputs",
+        "state",
+        "boot_options",
+    }
+)
+# Columns that must be present and non-None for every node row.
+_REQUIRED_COLUMNS: frozenset[str] = frozenset({"key", "version", "label"})
+_ALL_NODE_COLUMNS: frozenset[str] = _SCALAR_COLUMNS | _JSONB_COLUMNS
+
+
+def _snake_to_camel(s: str) -> str:
+    head, *tail = s.split("_")
+    return head + "".join(p.title() for p in tail)
+
+
+# camelCase alias -> snake_case projects_nodes column.
+_ALIAS_TO_COLUMN: dict[str, str] = {_snake_to_camel(c): c for c in _ALL_NODE_COLUMNS if "_" in c}
+# Workbench keys deliberately not migrated into projects_nodes
+# (handled elsewhere or no longer persisted).
+_IGNORED_WORKBENCH_KEYS: frozenset[str] = frozenset({"position"})
+
+
 def _migrate_position_to_projects_ui() -> None:
     """Migrate position data from projects.workbench[*].position to projects.ui.workbench[*].position."""
 
@@ -90,6 +124,61 @@ def _migrate_position_to_projects_ui() -> None:
     _logger.info("Position migration: %d projects had position data migrated to projects.ui", migrated_count)
 
 
+def _workbench_node_to_db_values(
+    project_uuid: str, node_id: str, node_data: dict[str, Any]
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """Pure transform: single workbench node dict -> projects_nodes row dict.
+
+    Returns ``(row, errors)``. When ``errors`` is non-empty, ``row`` is None.
+
+    Reliability rules:
+    - Accepts both camelCase aliases (canonical workbench JSON form) and
+      snake_case keys; when both are present for the same field,
+      snake_case (the column form) wins.
+    - Presence is determined by key membership: empty containers,
+      empty strings and zero are preserved. ``None`` and missing keys
+      become NULL.
+    - Required-column values that are missing or ``None``/``""`` are an
+      error.
+    - Unknown keys are an error unless explicitly listed in
+      ``_IGNORED_WORKBENCH_KEYS``.
+    """
+    if not isinstance(node_data, dict):
+        return None, [f"Project {project_uuid}, Node {node_id}: Node data is not a dictionary"]
+
+    collected: dict[str, Any] = {}
+    unknown_keys: list[str] = []
+    for raw_key, value in node_data.items():
+        if raw_key in _IGNORED_WORKBENCH_KEYS:
+            continue
+        column = _ALIAS_TO_COLUMN.get(raw_key, raw_key)
+        if column not in _ALL_NODE_COLUMNS:
+            unknown_keys.append(raw_key)
+            continue
+        # snake_case (column form) wins over a previously seen camelCase alias
+        if column in collected and raw_key != column:
+            continue
+        collected[column] = value
+
+    if unknown_keys:
+        return None, [f"Project {project_uuid}, Node {node_id}: Unknown workbench keys: {sorted(unknown_keys)}"]
+
+    missing_required = [col for col in _REQUIRED_COLUMNS if collected.get(col) in {None, ""}]
+    if missing_required:
+        return None, [
+            f"Project {project_uuid}, Node {node_id}: Missing required fields: {', '.join(sorted(missing_required))}"
+        ]
+
+    row: dict[str, Any] = {"project_uuid": project_uuid, "node_id": node_id}
+    for column in _ALL_NODE_COLUMNS:
+        value = collected.get(column)
+        if column in _JSONB_COLUMNS:
+            row[column] = None if value is None else json.dumps(value)
+        else:
+            row[column] = value
+    return row, []
+
+
 def _migrate_workbench_to_projects_nodes() -> None:
     """Migrate nodes from projects.workbench to projects_nodes table."""
 
@@ -102,7 +191,7 @@ def _migrate_workbench_to_projects_nodes() -> None:
 
     # Collect all nodes for batch upsert
     batch: list[dict] = []
-    _BATCH_SIZE = 500
+    batch_size = 500
 
     for project_uuid, workbench_json in projects_result:
         if not workbench_json:
@@ -119,73 +208,14 @@ def _migrate_workbench_to_projects_nodes() -> None:
             continue
 
         for node_id, node_data in workbench_data.items():
-            if not isinstance(node_data, dict):
-                errors.append(f"Project {project_uuid}, Node {node_id}: Node data is not a dictionary")
+            row, node_errors = _workbench_node_to_db_values(project_uuid, node_id, node_data)
+            if node_errors:
+                errors.extend(node_errors)
                 continue
+            assert row is not None  # nosec
+            batch.append(row)
 
-            # Validate required fields
-            missing_fields = []
-            if not node_data.get("key"):
-                missing_fields.append("key")
-            if not node_data.get("version"):
-                missing_fields.append("version")
-            if not node_data.get("label"):
-                missing_fields.append("label")
-
-            if missing_fields:
-                errors.append(
-                    f"Project {project_uuid}, Node {node_id}: Missing required fields: {', '.join(missing_fields)}"
-                )
-                continue
-
-            node_values = {
-                "project_uuid": project_uuid,
-                "node_id": node_id,
-                "key": node_data["key"],
-                "version": node_data["version"],
-                "label": node_data["label"],
-                "progress": node_data.get("progress"),
-                "thumbnail": node_data.get("thumbnail"),
-                "input_access": (
-                    json.dumps(node_data.get("inputAccess") or node_data.get("input_access"))
-                    if node_data.get("inputAccess") or node_data.get("input_access")
-                    else None
-                ),
-                "input_nodes": (
-                    json.dumps(node_data.get("inputNodes") or node_data.get("input_nodes"))
-                    if node_data.get("inputNodes") or node_data.get("input_nodes")
-                    else None
-                ),
-                "inputs": (json.dumps(node_data["inputs"]) if node_data.get("inputs") else None),
-                "inputs_required": (
-                    json.dumps(node_data.get("inputsRequired") or node_data.get("inputs_required"))
-                    if node_data.get("inputsRequired") or node_data.get("inputs_required")
-                    else None
-                ),
-                "inputs_units": (
-                    json.dumps(node_data.get("inputsUnits") or node_data.get("inputs_units"))
-                    if node_data.get("inputsUnits") or node_data.get("inputs_units")
-                    else None
-                ),
-                "output_nodes": (
-                    json.dumps(node_data.get("outputNodes") or node_data.get("output_nodes"))
-                    if node_data.get("outputNodes") or node_data.get("output_nodes")
-                    else None
-                ),
-                "outputs": (json.dumps(node_data["outputs"]) if node_data.get("outputs") else None),
-                "run_hash": node_data.get("runHash", node_data.get("run_hash")),
-                "state": (json.dumps(node_data["state"]) if node_data.get("state") else None),
-                "parent": node_data.get("parent"),
-                "boot_options": (
-                    json.dumps(node_data.get("bootOptions") or node_data.get("boot_options"))
-                    if node_data.get("bootOptions") or node_data.get("boot_options")
-                    else None
-                ),
-            }
-
-            batch.append(node_values)
-
-            if len(batch) >= _BATCH_SIZE:
+            if len(batch) >= batch_size:
                 upserted_nodes_count += _flush_node_batch(connection, batch)
                 batch.clear()
 
