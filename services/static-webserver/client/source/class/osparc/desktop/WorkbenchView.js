@@ -862,6 +862,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__populateSecondaryColumnFilePicker(node);
       } else if (node && node.isParameter()) {
         this.__populateSecondaryColumnParameter(node);
+      } else if (node && node.isProbe()) {
+        this.__populateSecondaryColumnProbe(node);
       } else if (node) {
         this.__populateSecondaryColumnNode(node);
       }
@@ -1096,9 +1098,50 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
-      const view = new osparc.node.ParameterEditor(parameter);
-      view.buildForm(false);
-      this.__serviceOptionsPage.add(view, {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(16).set({
+        separator: "separator-vertical",
+      }));
+
+      const parameterLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        paddingLeft: 6,
+      });
+      parameter.bind("label", parameterLabel, "value");
+      vBox.add(parameterLabel);
+
+      const parameterEditor = new osparc.node.ParameterEditor(parameter).set({
+        paddingLeft: 6,
+      });
+      parameterEditor.buildForm();
+      vBox.add(parameterEditor, {
+        flex: 1
+      });
+      this.__serviceOptionsPage.add(vBox, {
+        flex: 1
+      });
+    },
+
+    __populateSecondaryColumnProbe: function(probe) {
+      this.__serviceOptionsPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
+
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(16).set({
+        separator: "separator-vertical",
+      }));
+
+      const parameterLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        paddingLeft: 6,
+      });
+      probe.bind("label", parameterLabel, "value");
+      vBox.add(parameterLabel);
+
+      const probeView = new osparc.node.ProbeView(probe);
+      vBox.add(probeView, {
+        flex: 1
+      });
+
+      this.__serviceOptionsPage.add(vBox, {
         flex: 1
       });
     },
@@ -1119,7 +1162,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const nodeMetadata = node.getMetadata();
       const version = osparc.store.Services.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
       const header = new qx.ui.basic.Label(`${nodeMetadata["name"]} ${version}`).set({
-        paddingLeft: 5
+        paddingLeft: 6
       });
       vBox.add(header);
 
