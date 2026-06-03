@@ -7,6 +7,7 @@ Create Date: 2025-07-22 19:25:42.125196+00:00
 """
 
 import json
+import logging
 from typing import Any
 
 import sqlalchemy as sa
@@ -18,6 +19,8 @@ revision = "201aa37f4d9a"
 down_revision = "1c5160923b2a"
 branch_labels = None
 depends_on = None
+
+_logger = logging.getLogger("alembic.runtime.migration")
 
 
 def _migrate_position_to_projects_ui() -> None:
@@ -84,7 +87,7 @@ def _migrate_position_to_projects_ui() -> None:
         )
         migrated_count += 1
 
-    print(f"Position migration: {migrated_count} projects had position data migrated to projects.ui")
+    _logger.info("Position migration: %d projects had position data migrated to projects.ui", migrated_count)
 
 
 def _migrate_workbench_to_projects_nodes() -> None:
@@ -190,11 +193,11 @@ def _migrate_workbench_to_projects_nodes() -> None:
     if batch:
         upserted_nodes_count += _flush_node_batch(connection, batch)
 
-    print(f"Migration summary: {upserted_nodes_count} nodes upserted")
+    _logger.info("Migration summary: %d nodes upserted", upserted_nodes_count)
 
     if errors:
         error_message = f"Migration failed with {len(errors)} errors:\n" + "\n".join(errors)
-        print(error_message)
+        _logger.error(error_message)
         raise RuntimeError(error_message)
 
 
@@ -359,11 +362,11 @@ def _restore_workbench_from_projects_nodes() -> None:
             except Exception as e:
                 errors.append(f"Project {project_uuid}: Failed to restore workbench data - {e}")
 
-    print(f"Downgrade summary: {restored_projects_count} projects restored with workbench data")
+    _logger.info("Downgrade summary: %d projects restored with workbench data", restored_projects_count)
 
     if errors:
         error_message = f"Downgrade failed with {len(errors)} errors:\n" + "\n".join(errors)
-        print(error_message)
+        _logger.error(error_message)
         raise RuntimeError(error_message)
 
 
