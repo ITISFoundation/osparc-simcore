@@ -337,7 +337,7 @@ async def test_insert_project_to_db(
     "user_role",
     [UserRole.USER],
 )
-@pytest.mark.parametrize("number_of_nodes", [1, randint(50, 80)])  # noqa: S311
+@pytest.mark.parametrize("number_of_nodes", [1, randint(200, 300)])  # noqa: S311
 async def test_update_project_nodes_concurrently(
     fake_project: dict[str, Any],
     logged_user: dict[str, Any],
