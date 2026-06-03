@@ -13,7 +13,7 @@ description: 'Run Python tests for any service or package in this monorepo. Use 
 
 ## Procedure
 
-Follow these steps **in order**. Do not skip the install step unless you have already installed dependencies for this project in the current session.
+Follow these steps **in order**. Do not skip the install step unless you have already installed dependencies for this project in the current python virtual environment.
 
 ### Step 1: Activate the workspace virtual environment
 
@@ -64,7 +64,7 @@ pytest tests/unit/test_<name>.py::test_function_name -v
 
 > **Warning**: Do **NOT** use `make test*` — these targets normally include `--pdb`, which drops into an interactive debugger on failure and will block execution.
 
-Use `--keep-docker-up` flag when running integration tests to keep docker containers up between sessions.
+Use `--keep-docker-up` flag when running unit and integration tests to keep docker containers up between sessions and improve performance.
 
 ### Step 4b: Quick static analysis
 For any code changes, run the following quick checks and fix any issues before running the full test suite. These checks are much faster than the full test run and can catch common issues early.:
@@ -74,7 +74,7 @@ For any code changes, run the following quick checks and fix any issues before r
 make ruff
 ```
 
-### Step 4b: Long static analysis (required before committing changes)
+### Step 4c: Long static analysis (required before committing changes)
 
 Verify the project passes static analysis from the project directory:
 
@@ -86,7 +86,7 @@ make mypy
 make pylint
 ```
 
-These are fast checks that can catch issues without running the full test suite. Run them after making code changes to confirm correctness.
+These are slow checks that can catch issues without running the full test suite. Run them after making code changes to confirm correctness.
 
 ### Step 5: Troubleshooting
 
