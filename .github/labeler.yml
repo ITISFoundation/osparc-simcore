@@ -123,7 +123,9 @@
 
 "a:static-webserver":
   - changed-files:
-      - any-glob-to-any-file: services/static-webserver/**
+      - any-glob-to-any-file:
+          - services/static-webserver/**
+          - '!services/static-webserver/client/**'
 
 # =====================================================================
 # Packages (packages/<name>/**)
