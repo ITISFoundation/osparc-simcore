@@ -19,7 +19,8 @@ Makefile                                           @pcrespov @sanderegg
 /packages/postgres-database/                       @matusdrobuliak66
 /packages/pytest-simcore/                          @pcrespov @sanderegg
 /packages/service-integration/                     @pcrespov @sanderegg @GitHK
-/packages/service-library/                         @pcrespov @giancarloromeo
+/packages/service-library/                         @pcrespov
+/packages/service-library/src/servicelib/rabbitmq/ @pcrespov @giancarloromeo
 /packages/settings-library/                        @pcrespov @sanderegg
 /requirements/                                     @pcrespov @matusdrobuliak66
 /services/agent/                                   @GitHK
