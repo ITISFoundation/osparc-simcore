@@ -17,12 +17,11 @@ from simcore_postgres_database.utils_repos import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from simcore_service_webserver.projects._projects_repository_legacy_utils import (
+from ..db.base_repository import BaseRepository
+from ._projects_repository_legacy_utils import (
     get_project_workbench,
     get_projects_workbenches,
 )
-
-from ..db.base_repository import BaseRepository
 from .models import ProjectDBGet, ProjectJobDBGet
 
 _logger = logging.getLogger(__name__)
