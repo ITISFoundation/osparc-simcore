@@ -71,6 +71,18 @@ class ProjectNodeCreate(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
+def _snake_to_camel(s: str) -> str:
+    head, *tail = s.split("_")
+    return head + "".join(p.title() for p in tail)
+
+
+# Mapping from workbench-JSON camelCase keys to projects_nodes snake_case columns.
+# Derived from ProjectNodeCreate to keep a single source of truth.
+WORKBENCH_NODE_ALIAS_TO_COLUMN: dict[str, str] = {
+    _snake_to_camel(name): name for name in ProjectNodeCreate.model_fields if "_" in name
+}
+
+
 class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime

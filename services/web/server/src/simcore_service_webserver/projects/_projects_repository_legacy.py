@@ -52,6 +52,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 from simcore_postgres_database.utils_projects_nodes import (
+    WORKBENCH_NODE_ALIAS_TO_COLUMN,
     ProjectNode,
     ProjectNodeCreate,
     ProjectNodesRepo,
@@ -279,23 +280,15 @@ class ProjectDBAPI(BaseProjectDB):
         workbench: dict[str, Any] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
 
-        # Mapping from camelCase (workbench JSON) to snake_case (DB columns)
-        _camel_to_snake = {
-            "inputAccess": "input_access",
-            "inputNodes": "input_nodes",
-            "inputsRequired": "inputs_required",
-            "inputsUnits": "inputs_units",
-            "outputNodes": "output_nodes",
-            "runHash": "run_hash",
-            "bootOptions": "boot_options",
-        }
         valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
         # Build ProjectNodeCreate from workbench JSON (camelCase → snake_case)
         workbench_nodes: dict[NodeID, ProjectNodeCreate] = {}
         for node_id_str, node_data in workbench.items():
             create_kwargs = {
-                _camel_to_snake.get(k, k): v for k, v in node_data.items() if _camel_to_snake.get(k, k) in valid_fields
+                WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
+                for k, v in node_data.items()
+                if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
             }
             workbench_nodes[NodeID(node_id_str)] = ProjectNodeCreate(node_id=NodeID(node_id_str), **create_kwargs)
 

@@ -16,7 +16,10 @@ from deepdiff import DeepDiff
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from simcore_postgres_database import webserver_models
-from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
+from simcore_postgres_database.utils_projects_nodes import (
+    WORKBENCH_NODE_ALIAS_TO_COLUMN,
+    ProjectNodeCreate,
+)
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects._groups_repository import (
@@ -87,17 +90,6 @@ async def create_project(
     # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
     valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
-    # Mapping from camelCase (workbench) to snake_case (ProjectNodeCreate)
-    field_mapping = {
-        "inputAccess": "input_access",
-        "inputNodes": "input_nodes",
-        "inputsRequired": "inputs_required",
-        "inputsUnits": "inputs_units",
-        "outputNodes": "output_nodes",
-        "runHash": "run_hash",
-        "bootOptions": "boot_options",
-    }
-
     fake_required_resources: dict[str, Any] = ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][
         0
     ]
@@ -108,9 +100,9 @@ async def create_project(
             # NOTE: fake initial resources until more is needed
             required_resources=fake_required_resources,
             **{
-                str(field_mapping.get(field, field)): value
+                str(WORKBENCH_NODE_ALIAS_TO_COLUMN.get(field, field)): value
                 for field, value in raw_node.items()
-                if field_mapping.get(field, field) in valid_fields
+                if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(field, field) in valid_fields
             },
         )
         for node_id, raw_node in raw_workbench.items()
