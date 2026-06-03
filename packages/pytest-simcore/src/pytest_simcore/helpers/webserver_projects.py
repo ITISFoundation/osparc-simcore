@@ -211,8 +211,6 @@ async def assert_get_same_project(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
-    # without our control
-
     if not error:
         diff = DeepDiff(data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']")
         assert not diff, diff.pretty()
