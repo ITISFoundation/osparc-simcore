@@ -44,7 +44,6 @@ def app_environment(
         {
             "STORAGE_CLEANER_INTERVAL_S": "null",
             "STORAGE_CLEANER_RECONCILE_ENABLED": "true",
-            "STORAGE_CLEANER_RECONCILE_INTERVAL_S": "1",
             "STORAGE_CLEANER_RECONCILE_GRACE_PERIOD": "PT0S",
             "STORAGE_CLEANER_RECONCILE_SCAN_BATCH_SIZE": "2",
             "STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS": "0",
@@ -297,7 +296,6 @@ async def test_run_reconciliation_passes_respects_tick_gate(
     stub = real_settings.model_copy(
         update={
             "STORAGE_CLEANER_RECONCILE_ENABLED": True,
-            "STORAGE_CLEANER_RECONCILE_INTERVAL_S": 3600,
         }
     )
     monkeypatch.setattr(recon_mod, "get_application_settings", lambda _app: stub)

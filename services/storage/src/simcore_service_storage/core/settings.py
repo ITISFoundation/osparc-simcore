@@ -3,6 +3,7 @@ from typing import Annotated, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from fastapi import FastAPI
 from pydantic import AliasChoices, Field, PositiveInt, field_validator, model_validator
 from settings_library.application import BaseApplicationSettings
@@ -164,6 +165,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             raise ValueError(msg)
 
         return self
+
+    _validate_storage_cleaner_reconcile_interval = validate_numeric_string_as_timedelta(
+        "STORAGE_CLEANER_RECONCILE_INTERVAL"
+    )
+    _validate_storage_cleaner_reconcile_grace_period = validate_numeric_string_as_timedelta(
+        "STORAGE_CLEANER_RECONCILE_GRACE_PERIOD"
+    )
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:

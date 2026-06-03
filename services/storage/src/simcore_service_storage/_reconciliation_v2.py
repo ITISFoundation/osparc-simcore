@@ -152,7 +152,10 @@ def _get_simcore_bucket_name(app: FastAPI) -> str:
 
 def _parse_created_at(created_at_raw: str | None) -> datetime:
     try:
-        return arrow.get(created_at_raw or "").datetime
+        dt = arrow.get(created_at_raw or "").datetime
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
     except (arrow.parser.ParserError, ValueError, TypeError):
         return datetime.min.replace(tzinfo=UTC)
 
