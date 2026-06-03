@@ -46,6 +46,7 @@ _JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 )
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME: Final[int] = 2 * MINUTE
 _JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 20 * MINUTE
+_JLAB_EXPORTING_MAX_TIME: Final[int] = 2 * MINUTE
 _JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 
 
@@ -132,6 +133,13 @@ def _wait_for_optimization_complete(run_button) -> None:
     if not run_button.is_enabled():
         msg = f"Optimization not finished yet: {run_button=}"
         raise ValueError(msg)
+
+
+def _click_and_wait_for_export(button, *, timeout: int) -> None:
+    """Click an export button and wait for it to finish by observing the spinner (disabled state)."""
+    button.click()
+    expect(button).to_be_disabled(timeout=_JLAB_EXPORTING_MAX_TIME)
+    expect(button).to_be_enabled(timeout=timeout)
 
 
 def _run_classic_ti_step(  # noqa: PLR0915
@@ -230,10 +238,10 @@ def _run_classic_ti_step(  # noqa: PLR0915
                 params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             with log_context(
                 logging.INFO,
-                f"Click button - `Export to S4L` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                "Click button - `Export to S4L` and wait for spinner",
             ):
-                ti_iframe.get_by_role("button", name="Export to S4L").click()
-                params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                export_s4l_button = ti_iframe.get_by_role("button", name="Export to S4L")
+                _click_and_wait_for_export(export_s4l_button, timeout=_JLAB_EXPORTING_MAX_TIME)
             with log_context(
                 logging.INFO,
                 f"Click button - `Add to Report (1)` and wait for {_JLAB_REPORTING_MAX_TIME}",
@@ -242,10 +250,10 @@ def _run_classic_ti_step(  # noqa: PLR0915
                 params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             with log_context(
                 logging.INFO,
-                f"Click button - `Export Report` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                "Click button - `Export Report` and wait for spinner",
             ):
-                ti_iframe.get_by_role("button", name="Export Report").click()
-                params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                export_report_button = ti_iframe.get_by_role("button", name="Export Report")
+                _click_and_wait_for_export(export_report_button, timeout=_JLAB_EXPORTING_MAX_TIME)
 
     with log_context(logging.INFO, "Check outputs", logger=log_ctx.logger):
         if params.is_product_lite:
