@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
 @dataclass
 class RabbitMQRPCClient(RabbitMQClientBase):
     _connection: aio_pika.abc.AbstractRobustConnection | None = None
-    _channel: aio_pika.abc.AbstractChannel | None = None
+    _channel: aio_pika.abc.AbstractRobustChannel | None = None
     _rpc: aio_pika.patterns.RPC | None = None
     _registered_handlers: dict[RPCNamespacedMethodName, Callable[..., Any]] = field(default_factory=dict)
 
