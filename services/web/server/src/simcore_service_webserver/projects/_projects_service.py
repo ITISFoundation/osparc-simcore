@@ -16,7 +16,6 @@ from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import suppress
 from decimal import Decimal
-from pprint import pformat
 from typing import Any, Final, cast
 from uuid import uuid4
 
@@ -734,6 +733,8 @@ async def _check_project_node_has_all_required_inputs(
 
     nodes_map = dict(nodes)
 
+    if node_id not in nodes_map:
+        raise NodeNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_id}")
     node = nodes_map[node_id]
 
     unset_required_inputs: list[str] = []
@@ -1341,12 +1342,6 @@ async def update_project_node_outputs(
         client_session_id=client_session_id,
     )
 
-    _logger.debug(
-        "patched project %s, following entries changed: %s",
-        project_id,
-        pformat(updated_node),
-    )
-
     updated_project = await _projects_repository.get_project_with_workbench(app, project_uuid=project_id)
 
     updated_project_with_states = await add_project_states_for_user(
@@ -1356,6 +1351,14 @@ async def update_project_node_outputs(
     )
 
     changed_keys = [k for k in {*new_outputs, *old_outputs} if new_outputs.get(k) != old_outputs.get(k)]
+
+    _logger.debug(
+        "patched project %s node %s, changed output keys: %s",
+        project_id,
+        node_id,
+        changed_keys,
+    )
+
     return updated_project_with_states, changed_keys
 
 
