@@ -110,7 +110,7 @@ async def get_project(
 
 
 async def get_project_product(
-    app,
+    app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     project_uuid: ProjectID,
