@@ -272,7 +272,6 @@ def _flush_node_batch(connection, batch: list[dict]) -> int:
     connection.execute(sa.text(upsert_sql), batch)
 
     return len(batch)
-    return len(batch)
 
 
 def _restore_workbench_from_projects_nodes() -> None:
@@ -336,32 +335,33 @@ def _restore_workbench_from_projects_nodes() -> None:
                 "label": row.label,
             }
 
-            # Add optional fields if they exist
+            # Add optional fields — use `is not None` to preserve falsy values
+            # (empty strings, empty dicts/lists, zero, False)
             if row.progress is not None:
                 node_data["progress"] = float(row.progress)
-            if row.thumbnail:
+            if row.thumbnail is not None:
                 node_data["thumbnail"] = row.thumbnail
-            if row.input_access:
+            if row.input_access is not None:
                 node_data["inputAccess"] = row.input_access
-            if row.input_nodes:
+            if row.input_nodes is not None:
                 node_data["inputNodes"] = row.input_nodes
-            if row.inputs:
+            if row.inputs is not None:
                 node_data["inputs"] = row.inputs
-            if row.inputs_required:
+            if row.inputs_required is not None:
                 node_data["inputsRequired"] = row.inputs_required
-            if row.inputs_units:
+            if row.inputs_units is not None:
                 node_data["inputsUnits"] = row.inputs_units
-            if row.output_nodes:
+            if row.output_nodes is not None:
                 node_data["outputNodes"] = row.output_nodes
-            if row.outputs:
+            if row.outputs is not None:
                 node_data["outputs"] = row.outputs
-            if row.run_hash:
+            if row.run_hash is not None:
                 node_data["runHash"] = row.run_hash
-            if row.state:
+            if row.state is not None:
                 node_data["state"] = row.state
-            if row.parent:
+            if row.parent is not None:
                 node_data["parent"] = row.parent
-            if row.boot_options:
+            if row.boot_options is not None:
                 node_data["bootOptions"] = row.boot_options
 
             # Restore position from projects.ui
