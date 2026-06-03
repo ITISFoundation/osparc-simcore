@@ -84,7 +84,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             self._rpc = aio_pika.patterns.RPC(self._channel)
             await self._rpc.initialize()
 
-            for namespaced_method_name, handler in self._registered_handlers.items():
+            for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
                 await self._rpc.register(
                     namespaced_method_name,
                     handler,
