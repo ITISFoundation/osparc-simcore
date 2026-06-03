@@ -65,6 +65,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         restore aio_pika.patterns.RPC internal state. This callback ensures all
         previously registered handlers are re-registered on a fresh RPC instance.
         """
+        self._healthy_state = True
+
         if not self._registered_handlers:
             return
 
