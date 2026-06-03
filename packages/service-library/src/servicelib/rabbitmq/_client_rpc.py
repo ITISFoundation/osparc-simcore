@@ -198,7 +198,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             raise RPCNotInitializedError
 
         await self._rpc.unregister(handler)
-        self._registered_handlers = {name: h for name, h in self._registered_handlers.items() if h is not handler}
+        for name in [n for n, h in self._registered_handlers.items() if h is handler]:
+            del self._registered_handlers[name]
 
 
 @asynccontextmanager
