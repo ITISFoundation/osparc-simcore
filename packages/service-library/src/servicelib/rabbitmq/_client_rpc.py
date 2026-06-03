@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import functools
 import logging
 from collections.abc import AsyncIterator, Callable
@@ -69,9 +70,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         restore aio_pika.patterns.RPC internal state. This callback ensures all
         previously registered handlers are re-registered on a fresh RPC instance.
         """
-        self._healthy_state = True
-
         if not self._registered_handlers:
+            self._healthy_state = True
             return
 
         assert self._channel is not None  # nosec
@@ -84,6 +84,11 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 f" after RabbitMQ reconnection ({self.client_name})"
             ),
         ):
+            # Close the previous RPC to avoid leaking its background consumer
+            if self._rpc is not None:
+                with contextlib.suppress(Exception):
+                    await self._rpc.close()
+
             # Re-create RPC on the existing (restored) channel
             await self._create_rpc()
 
@@ -94,6 +99,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                     auto_delete=True,
                 )
                 _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
+
+            self._healthy_state = True
 
     async def close(self) -> None:
         with log_context(
