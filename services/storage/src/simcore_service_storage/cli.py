@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from typing import Annotated
 
 import typer
 from asgi_lifespan import LifespanManager
@@ -91,11 +92,13 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
 @main.command()
 def reconcile(
     *,
-    dry_run: bool = typer.Option(
-        True,  # noqa: FBT003
-        "--dry-run/--execute",
-        help="Report what would be cleaned without actually deleting.",
-    ),
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run/--execute",
+            help="Report what would be cleaned without actually deleting.",
+        ),
+    ] = True,
 ) -> None:
     """One-shot ops command to run one full reconciliation v2 sweep.
 
@@ -113,11 +116,16 @@ def reconcile(
             return await recon.run_reconciliation_pass(app, force=True, dry_run=dry_run)
 
     counts = asyncio.run(_run())
+
     prefix = "[DRY-RUN] " if dry_run else ""
-    typer.secho(f"{prefix}Reconciliation complete:", fg=typer.colors.GREEN if dry_run else typer.colors.RED)
-    typer.echo(f"  Unreachable rows {'found' if dry_run else 'removed'}:                 {counts.unreachable_removed}")
-    typer.echo(f"  Dangling rows {'found' if dry_run else 'removed'}:                    {counts.dangling_removed}")
-    typer.echo(
-        f"  Orphan project prefixes {'found' if dry_run else 'removed'}:         {counts.orphan_prefixes_removed}"
-    )
-    typer.echo(f"  Total {'found' if dry_run else 'removed'}:                           {counts.total_removed}")
+    action_str = "found" if dry_run else "removed"
+    color = typer.colors.YELLOW if dry_run else typer.colors.BRIGHT_RED
+
+    for to_display in [
+        f"{prefix}Reconciliation complete:",
+        f"  Unreachable rows {action_str}:        {counts.unreachable_removed}",
+        f"  Dangling rows {action_str}:           {counts.dangling_removed}",
+        f"  Orphan project prefixes {action_str}: {counts.orphan_prefixes_removed}",
+        f"  Total {action_str}:                   {counts.total_removed}",
+    ]:
+        typer.secho(to_display, fg=color)
