@@ -254,7 +254,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
             params.page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
         else:
-            expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
+            expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv", "MIDA_Anisotropic.smash", "WM.cache"]
             text_on_output_button = f"Outputs ({len(expected_outputs)})"
             params.page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
