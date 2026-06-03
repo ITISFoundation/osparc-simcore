@@ -116,12 +116,13 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     # get updated workbench (including not updated nodes)
     updated_workbench = await _nodes_service.get_project_nodes_map(request.app, project_id=path_params.project_id)
 
-    await create_project_document_and_notify(
-        request.app,
-        project_id=path_params.project_id,
-        user_id=req_ctx.user_id,
-        client_session_id=header_params.client_session_id,
-    )
+    if changed_node_ids:
+        await create_project_document_and_notify(
+            request.app,
+            project_id=path_params.project_id,
+            user_id=req_ctx.user_id,
+            client_session_id=header_params.client_session_id,
+        )
 
     inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(updated_workbench)
 
