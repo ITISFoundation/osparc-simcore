@@ -163,10 +163,6 @@ def _build_product_context(
         },
         "footer": {
             "social_links": [{"name": name, "url": url} for name, url in vendor.get("footer_social_links", []) or []],
-            "share_links": [
-                {"name": name, "label": label, "url": url}
-                for name, label, url in vendor.get("footer_share_links", []) or []
-            ],
             "company_name": vendor.get("company_name", "") or "",
             "company_address": vendor.get("company_address", "") or "",
             "company_links": [{"name": name, "url": url} for name, url in vendor.get("company_links", []) or []],

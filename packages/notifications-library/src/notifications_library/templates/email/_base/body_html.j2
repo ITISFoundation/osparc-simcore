@@ -41,7 +41,6 @@
 {%- set link_style = "color: #bbbbbb; font-size: 12px; text-decoration: none;" -%}
 {%- set footer = product.footer if product.footer is defined else none -%}
 {%- set product_social_links = footer.social_links if footer else [] -%}
-{%- set product_share_links = footer.share_links if footer else [] -%}
 {%- set product_company_name = footer.company_name if footer else '' -%}
 {%- set product_company_address = footer.company_address if footer else '' -%}
 {%- set product_company_links = footer.company_links if footer else [] -%}
@@ -108,33 +107,6 @@
                           {{ social_name[:2] | upper }}
                         {% endif %}
                       </span>
-                    </a>
-                  </td>
-                  {% endfor %}
-                </tr>
-              </table>
-              {% endif %}
-
-              {% if product_share_links %}
-              <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 16px;">
-                <tr>
-                  {% for share in product_share_links %}
-                  {# Support NamedTuple, tuple, and dict - use index access which works for all #}
-                  {% set share_name = share[0] if share is not mapping else share['name'] %}
-                  {% set share_label = share[1] if share is not mapping else share['label'] %}
-                  {% set share_url = share[2] if share is not mapping else share['url'] %}
-                  {% set share_key = share_name | lower %}
-                  {% set share_icon = footer_share_icon_svgs.get(share_key) %}
-                  <td style="{{ footer_share_td_style }}">
-                    <a href="{{ share_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_share_link_style }}" title="{{ share_name }}">
-                      <span style="{{ footer_share_icon_wrapper_style }}">
-                        {% if share_icon %}
-                          {{ share_icon | safe }}
-                        {% else %}
-                          <span style="{{ footer_share_badge_style }}">{{ share_name[:1] | upper }}</span>
-                        {% endif %}
-                      </span>
-                      <span style="{{ footer_share_label_style }}">{{ share_label }}</span>
                     </a>
                   </td>
                   {% endfor %}
