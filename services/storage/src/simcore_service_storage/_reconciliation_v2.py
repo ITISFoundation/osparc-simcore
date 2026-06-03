@@ -198,9 +198,9 @@ async def _load_referenced_paths(app: FastAPI) -> set[str]:
     referenced: set[str] = set()
     async with pass_or_acquire_connection(get_db_engine(app)) as conn:
         rows = await conn.execute(sa.select(projects.c.workbench))
-    for (workbench,) in rows.fetchall():
-        if isinstance(workbench, dict):
-            referenced.update(_extract_store_zero_paths(workbench))
+        for (workbench,) in rows.fetchall():
+            if isinstance(workbench, dict):
+                referenced.update(_extract_store_zero_paths(workbench))
     return referenced
 
 
@@ -328,16 +328,16 @@ async def _fetch_fmd_batch(app: FastAPI, cursor: str, limit: int) -> list[_FmdRo
             .limit(limit)
         )
 
-    return [
-        _FmdRow(
-            file_id=f"{file_id}",
-            project_id=f"{project_id}" if project_id else None,
-            created_at=_parse_created_at(created_at_raw),
-            upload_expires_at=upload_expires_at,
-            is_directory=is_directory,
-        )
-        for file_id, project_id, created_at_raw, upload_expires_at, is_directory in rows.fetchall()
-    ]
+        return [
+            _FmdRow(
+                file_id=f"{file_id}",
+                project_id=f"{project_id}" if project_id else None,
+                created_at=_parse_created_at(created_at_raw),
+                upload_expires_at=upload_expires_at,
+                is_directory=is_directory,
+            )
+            for file_id, project_id, created_at_raw, upload_expires_at, is_directory in rows.fetchall()
+        ]
 
 
 async def _process_fmd_rows(
@@ -455,7 +455,7 @@ async def _project_ids_with_fmd_rows(app: FastAPI, candidate_ids: list[ProjectID
         rows = await conn.execute(
             sa.select(file_meta_data.c.project_id).where(file_meta_data.c.project_id.in_(as_str)).distinct()
         )
-    return {f"{row[0]}" for row in rows.fetchall() if row[0]}
+        return {f"{row[0]}" for row in rows.fetchall() if row[0]}
 
 
 async def _delete_fmd_rows(app: FastAPI, file_ids: list[str]) -> None:
