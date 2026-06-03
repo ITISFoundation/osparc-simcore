@@ -20,6 +20,7 @@ class RedisDatabase(IntEnum):
     DYNAMIC_SERVICES = 8
     CELERY_TASKS = 9
     DOCUMENTS = 10
+    AIOCACHE = 11
 
 
 class RedisSettings(BaseCustomSettings):

@@ -1,5 +1,9 @@
-# pylint: disable=W0613, W0621
-# pylint: disable=unused-variable
+# pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
+
 
 import asyncio
 import json
@@ -13,6 +17,7 @@ import respx
 from fastapi import FastAPI, status
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.docker_registry_images import PushServicesCallable
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
@@ -20,6 +25,24 @@ from simcore_service_director import registry_proxy
 from simcore_service_director.core.settings import ApplicationSettings, get_application_settings
 
 _logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(params=["docker_registry", "docker_registry_v2"], ids=["registry_v3", "registry_v2"])
+def configure_registry_access_both_versions(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> EnvVarsDict:
+    """Parametrized fixture that tests with both registry v3 and v2 - use only for specific tests that need both"""
+    registry_url = request.getfixturevalue(request.param)
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "REGISTRY_URL": registry_url,
+            "REGISTRY_PATH": registry_url,
+            "REGISTRY_SSL": False,
+        },
+    )
 
 
 async def test_list_no_services_available(
@@ -37,7 +60,7 @@ async def test_list_no_services_available(
 async def test_list_computational_services(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     await push_services(number_of_computational_services=6, number_of_interactive_services=3)
 
@@ -48,7 +71,7 @@ async def test_list_computational_services(
 async def test_list_interactive_services(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     await push_services(number_of_computational_services=5, number_of_interactive_services=4)
     interactive_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.DYNAMIC)
@@ -58,7 +81,7 @@ async def test_list_interactive_services(
 async def test_list_of_image_tags(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(number_of_computational_services=5, number_of_interactive_services=3)
     image_number = {}
@@ -77,7 +100,7 @@ async def test_list_of_image_tags(
 async def test_list_interactive_service_dependencies(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(
         number_of_computational_services=2,
@@ -100,29 +123,10 @@ async def test_list_interactive_service_dependencies(
             assert image_dependencies[0]["tag"] == docker_dependencies[0]["tag"]
 
 
-@pytest.fixture(params=["docker_registry", "docker_registry_v2"], ids=["registry_v3", "registry_v2"])
-def configure_registry_access_both_versions(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    request: pytest.FixtureRequest,
-) -> EnvVarsDict:
-    """Parametrized fixture that tests with both registry v3 and v2 - use only for specific tests that need both"""
-    registry_url = request.getfixturevalue(request.param)
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        envs={
-            "REGISTRY_URL": registry_url,
-            "REGISTRY_PATH": registry_url,
-            "REGISTRY_SSL": False,
-            "DIRECTOR_REGISTRY_CACHING": False,
-        },
-    )
-
-
 async def test_get_image_labels(
     configure_registry_access_both_versions: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(
         number_of_computational_services=1,
@@ -194,7 +198,7 @@ def test_get_service_last_names():
 async def test_get_image_details(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     images = await push_services(number_of_computational_services=1, number_of_interactive_services=1)
     for image in images:
@@ -212,45 +216,38 @@ async def test_list_services(
     configure_registry_access: EnvVarsDict,
     configure_number_concurrency_calls: EnvVarsDict,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
     await push_services(number_of_computational_services=21, number_of_interactive_services=21)
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert len(services) == 42
 
 
-@pytest.fixture
-def configure_registry_caching(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(monkeypatch, {"DIRECTOR_REGISTRY_CACHING": True})
-
-
-@pytest.fixture
-def with_disabled_auto_caching(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
-
-
 async def test_registry_caching(
     configure_registry_access: EnvVarsDict,
     configure_registry_caching: EnvVarsDict,
-    with_disabled_auto_caching: mock.Mock,
+    configure_registry_redis_backend: EnvVarsDict,
+    use_in_memory_redis,
+    with_disabled_auto_caching_task: mock.Mock,
+    mocker: MockerFixture,
     app_settings: ApplicationSettings,
     app: FastAPI,
-    push_services,
+    push_services: PushServicesCallable,
 ):
-    images = await push_services(number_of_computational_services=201, number_of_interactive_services=201)
+    images = await push_services(number_of_computational_services=31, number_of_interactive_services=33)
     assert app_settings.DIRECTOR_REGISTRY_CACHING is True
 
-    start_time = time.perf_counter()
+    retried_request_spy = mocker.spy(registry_proxy, "_retried_request")
+
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
-    time_to_retrieve_without_cache = time.perf_counter() - start_time
     assert len(services) == len(images)
-    start_time = time.perf_counter()
+
+    request_count_after_first_call = retried_request_spy.call_count
+    assert request_count_after_first_call > 0
+
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
-    time_to_retrieve_with_cache = time.perf_counter() - start_time
     assert len(services) == len(images)
-    assert time_to_retrieve_with_cache < time_to_retrieve_without_cache
-    print("time to retrieve services without cache: ", time_to_retrieve_without_cache)
-    print("time to retrieve services with cache: ", time_to_retrieve_with_cache)
+    assert retried_request_spy.call_count == request_count_after_first_call
 
 
 @pytest.fixture
@@ -357,7 +354,6 @@ def configure_authed_registry_access(
             "REGISTRY_USER": "testuser",
             "REGISTRY_PW": "testpassword",
             "REGISTRY_SSL": "false",
-            "DIRECTOR_REGISTRY_CACHING": "false",
         },
     )
 
