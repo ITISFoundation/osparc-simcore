@@ -73,7 +73,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             description=(
                 "Master switch for the reconciliation janitor."
-                " The pass runs incrementally and crash-resumably from Redis cursor state."
+                " The pass runs incrementally and crash-resumable from Redis cursor state."
             ),
         ),
     ] = False

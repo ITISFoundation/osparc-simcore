@@ -277,8 +277,9 @@ async def _run_incremental_tick(
         await _reset_pass_state(redis)
         return ReconciliationCounts(orphan_prefixes_removed=prefixes_removed)
 
+    counts = await _process_fmd_rows(app, bucket, s3_client, batch, snapshot, cutoff, dry_run=dry_run)
     await _set_cursor(redis, batch[-1].file_id)
-    return await _process_fmd_rows(app, bucket, s3_client, batch, snapshot, cutoff, dry_run=dry_run)
+    return counts
 
 
 async def _run_full_sweep(
