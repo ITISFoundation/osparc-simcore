@@ -182,7 +182,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "11",
+        "12",
         "--appendonly",
         "yes",
         "--requirepass",
@@ -417,6 +417,7 @@ services:
     environment:
       <<:
         - *postgres_settings
+        - *redis_settings
         - *registry_settings
         - *tracing_open_telemetry_environments
 
