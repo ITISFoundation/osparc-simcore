@@ -222,26 +222,22 @@ qx.Class.define("osparc.file.FilePicker", {
 
     downloadOutput: function(node, downloadFileBtn) {
       downloadFileBtn.setFetching(true);
-      const progressWindow = new osparc.ui.window.Progress(
-        qx.locale.Manager.tr("Downloading file"),
-        "@FontAwesome5Solid/download/14",
-        qx.locale.Manager.tr("Starting download..."),
-      );
-      progressWindow.addHideButton();
-      progressWindow.open();
+      const originalLabel = downloadFileBtn.getLabel();
+      const btnWidth = downloadFileBtn.getSizeHint().width;
+      downloadFileBtn.setMinWidth(btnWidth);
       const progressCb = ({loaded, total, progress}) => {
         if (progress !== null) {
-          progressWindow.setProgress(progress * 100);
+          const pct = Math.round(progress * 100);
+          downloadFileBtn.setLabel(`${pct}%`);
+        } else {
+          const loadedStr = osparc.utils.Utils.bytesToSize(loaded);
+          downloadFileBtn.setLabel(loadedStr);
         }
-        const loadedStr = osparc.utils.Utils.bytesToSize(loaded);
-        const totalStr = total ? osparc.utils.Utils.bytesToSize(total) : "?";
-        progressWindow.setMessage(
-          qx.locale.Manager.tr("Downloading: ") + loadedStr + " / " + totalStr
-        );
       };
       const doneCb = () => {
         downloadFileBtn.setFetching(false);
-        progressWindow.close();
+        downloadFileBtn.setLabel(originalLabel);
+        downloadFileBtn.resetMinWidth();
       };
       if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
         this.self().getOutputFileMetadata(node)
